@@ -114,11 +114,12 @@ class FakePdfPage(private val pageNum: Int, override val height: Int, override v
     }
 
     override fun updatePageAnnotation(annotationId: Int, annotation: PdfAnnotation): Boolean {
-        TODO("Not yet implemented")
+        if (pageNum < 0) throw IllegalStateException()
+        return true
     }
 
     override fun removePageAnnotation(annotationId: Int) {
-        TODO("Not yet implemented")
+        if (pageNum < 0) throw IllegalStateException()
     }
 
     override fun close() {

@@ -17,8 +17,10 @@
 package androidx.xr.scenecore.internal
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Matrix3
+import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
 import com.google.common.util.concurrent.ListenableFuture
@@ -583,6 +585,54 @@ public interface RenderingRuntime : JxrRuntime {
      * @param alphaCutoff The alpha cutoff value.
      */
     public fun setAlphaCutoffOnKhronosPbrMaterial(material: MaterialResource, alphaCutoff: Float)
+
+    /**
+     * A factory function to create a SceneCore GltfEntity. The parent may be the activity space or
+     * GltfEntity in the scene.
+     *
+     * @param pose The initial position and orientation of the new GltfEntity in the 3D scene.
+     * @param loadedGltf Represents the 3D model data that will be rendered for this entity.
+     * @param parentEntity The parent for the newly created GltfEntity in the scene hierarchy.
+     */
+    public fun createGltfEntity(
+        pose: Pose,
+        loadedGltf: GltfModelResource,
+        parentEntity: Entity,
+    ): GltfEntity
+
+    /**
+     * Factory method for SurfaceEntity.
+     *
+     * @param stereoMode Stereo mode for the surface.
+     * @param pose Pose of this entity relative to its parent, default value is Identity.
+     * @param shape The [SurfaceEntity.Shape] which describes the 3D geometry of the entity.
+     * @param surfaceProtection The [SurfaceEntity.SurfaceProtection] which describes whether DRM is
+     *   enabled.
+     * @param superSampling The [SurfaceEntity.SuperSampling] which describes whether super sampling
+     *   is enabled. Whether to use super sampling for the surface.
+     * @param parentEntity The parent entity of this entity.
+     * @return A [SurfaceEntity] which is a child of the parent entity.
+     */
+    public fun createSurfaceEntity(
+        stereoMode: Int,
+        pose: Pose,
+        shape: SurfaceEntity.Shape,
+        @SurfaceEntity.SurfaceProtection surfaceProtection: Int,
+        superSampling: Int,
+        parentEntity: Entity,
+    ): SurfaceEntity
+
+    /**
+     * A factory function to create a SubspaceNodeEntity.
+     *
+     * @param subspaceNodeHolder Hold the SubspaceNode to create the SubspaceNodeEntity from.
+     * @param size The (width, depth, height) of the [SubspaceNodeEntity].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public fun createSubspaceNodeEntity(
+        subspaceNodeHolder: SubspaceNodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity
 
     /** Starts the renderer. */
     public fun startRenderer()

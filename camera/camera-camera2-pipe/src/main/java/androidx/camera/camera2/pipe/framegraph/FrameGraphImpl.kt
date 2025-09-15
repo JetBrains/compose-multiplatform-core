@@ -40,6 +40,7 @@ import javax.inject.Inject
 import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
 
 @FrameGraphScope
@@ -173,5 +174,6 @@ constructor(
 
     override fun close() {
         cameraGraph.close()
+        frameGraphCoroutineScope.cancel()
     }
 }

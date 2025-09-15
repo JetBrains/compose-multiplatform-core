@@ -148,4 +148,12 @@ object ComposeFoundationFlags {
      * currently composed items, this includes visible and items composed through beyond bounds.
      */
     @Suppress("MutableBareField") @JvmField var isCacheWindowForPagerEnabled = true
+
+    /**
+     * Controls a fix for how scrollable containers measure their content. When enabled, it ensures
+     * that the scrollable content is measured with a minimum constraint of zero in the scrolling
+     * direction, allowing the content to shrink to its natural size. This prevents issues where the
+     * content is forced to be larger than intended due to minimum constraints.
+     */
+    @Suppress("MutableBareField") @JvmField var isScrollMinConstraintsFixEnabled = true
 }

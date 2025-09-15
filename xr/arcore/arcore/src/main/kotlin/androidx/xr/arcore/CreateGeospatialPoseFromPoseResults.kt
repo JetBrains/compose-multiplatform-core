@@ -66,7 +66,8 @@ public sealed class CreateGeospatialPoseFromPoseResult
  * @property orientationYawAccuracy the estimated orientation yaw angle accuracy.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class CreateGeospatialPoseFromPoseSuccess(
+public class CreateGeospatialPoseFromPoseSuccess
+internal constructor(
     public val pose: GeospatialPose,
     public val horizontalAccuracy: Double,
     public val verticalAccuracy: Double,

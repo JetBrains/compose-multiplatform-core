@@ -19,7 +19,8 @@ package androidx.compose.remote.player.compose
 import androidx.compose.remote.frontend.layout.RemoteCanvas
 import androidx.compose.remote.frontend.layout.RemoteOffset
 import androidx.compose.remote.frontend.state.rf
-import androidx.compose.remote.player.compose.test.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.test.screenshot.TargetPlayer
+import androidx.compose.remote.test.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.ui.graphics.Color
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -38,7 +39,11 @@ import org.junit.runners.JUnit4
 class ScreenshotCheckTest {
 
     @get:Rule
-    val remoteComposeTestRule = RemoteComposeScreenshotTestRule(SCREENSHOT_GOLDEN_DIRECTORY)
+    val remoteComposeTestRule =
+        RemoteComposeScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            targetPlayer = TargetPlayer.Compose,
+        )
 
     @Test
     fun screenshotTests_withFrontend() {

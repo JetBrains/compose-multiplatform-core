@@ -112,6 +112,7 @@ constructor(
     private val cameraGraphConfig: CameraGraph.Config,
     graphListener3A: Listener3A,
     @ForCameraGraph graphListeners: List<@JvmSuppressWildcards Request.Listener>,
+    camera2Quirks: Camera2Quirks,
 ) : GraphProcessor, GraphListener {
     private val graphLoop: GraphLoop
 
@@ -130,7 +131,7 @@ constructor(
         }
 
         val requestsUntilActive =
-            Camera2Quirks.getRepeatingRequestFrameCountForCapture(cameraGraphConfig.flags)
+            camera2Quirks.getRepeatingRequestFrameCountForCapture(cameraGraphConfig.flags)
 
         val captureLimiter =
             if (requestsUntilActive != 0) {

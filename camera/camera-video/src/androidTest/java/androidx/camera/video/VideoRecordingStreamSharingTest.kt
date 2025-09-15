@@ -24,7 +24,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /** Tests video recording with StreamSharing enabled. */
-@SdkSuppress(minSdkVersion = 24) // b/441563673
+@SdkSuppress(minSdkVersion = 23)
 @LargeTest
 @RunWith(Parameterized::class)
 class VideoRecordingStreamSharingTest(

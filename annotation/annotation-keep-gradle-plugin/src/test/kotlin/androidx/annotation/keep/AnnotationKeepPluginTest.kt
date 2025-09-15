@@ -73,7 +73,6 @@ class AnnotationKeepPluginTest {
             """
                 |plugins {
                 |  id("com.android.library")
-                |  id("org.jetbrains.kotlin.android")
                 |  id("androidx.annotation.keep")
                 |}
                 |

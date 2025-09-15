@@ -22,6 +22,7 @@ import android.view.Surface;
 
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
+import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.impl.impress.Texture;
 import androidx.xr.scenecore.internal.CameraViewActivityPose;
 import androidx.xr.scenecore.internal.Dimensions;
@@ -53,8 +54,8 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     private final ImpressApi mImpressApi;
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager;
     // TODO: b/362520810 - Wrap impress nodes w/ Java class.
-    private final int mEntityImpressNode;
-    private final int mSubspaceImpressNode;
+    private final ImpressNode mEntityImpressNode;
+    private final ImpressNode mSubspaceImpressNode;
     @StereoMode private int mStereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE;
 
     @SurfaceProtection private int mSurfaceProtection = SurfaceEntity.SurfaceProtection.NONE;
@@ -129,9 +130,11 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
 
         // System will only render Impress nodes that are parented by this subspace node.
         mSubspaceImpressNode = impressApi.createImpressNode();
-        String subspaceName = "stereo_surface_panel_entity_subspace_" + mSubspaceImpressNode;
+        String subspaceName =
+                "stereo_surface_panel_entity_subspace_" + mSubspaceImpressNode.getHandle();
 
-        mSubspace = splitEngineSubspaceManager.createSubspace(subspaceName, mSubspaceImpressNode);
+        mSubspace = splitEngineSubspaceManager.createSubspace(
+                subspaceName, mSubspaceImpressNode.getHandle());
 
         try (NodeTransaction transaction = extensions.createNodeTransaction()) {
             // Make the Entity node a parent of the subspace node.
@@ -360,7 +363,7 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
 
     // Note this returns the Impress node for the entity, not the subspace. The subspace Impress
     // node is the parent of the entity Impress node.
-    public int getEntityImpressNode() {
+    public ImpressNode getEntityImpressNode() {
         return mEntityImpressNode;
     }
 

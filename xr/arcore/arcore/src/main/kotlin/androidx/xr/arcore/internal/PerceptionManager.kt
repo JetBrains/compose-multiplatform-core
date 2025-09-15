@@ -62,6 +62,18 @@ public interface PerceptionManager {
     public val trackables: Collection<Trackable>
 
     /**
+     * Eye tracking information for the left [androidx.xr.arcore.internal.Eye]. Only available on
+     * supported platforms.
+     */
+    public val leftEye: Eye?
+
+    /**
+     * Eye tracking information for the right [androidx.xr.arcore.internal.Eye]. Only available on
+     * supported platforms.
+     */
+    public val rightEye: Eye?
+
+    /**
      * Hand tracking information for the left [androidx.xr.arcore.internal.Hand]. Only available on
      * supported platforms.
      */

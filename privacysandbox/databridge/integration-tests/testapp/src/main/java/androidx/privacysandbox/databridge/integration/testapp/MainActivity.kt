@@ -18,7 +18,7 @@ package androidx.privacysandbox.databridge.integration.testapp
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.privacysandbox.databridge.client.SyncCallback
+import androidx.privacysandbox.databridge.client.SyncFailureCallback
 import androidx.privacysandbox.databridge.core.Key
 import androidx.privacysandbox.databridge.core.KeyUpdateCallback
 import androidx.privacysandbox.databridge.integration.testsdk.SdkKeyUpdateCallback
@@ -134,12 +134,15 @@ class MainActivity : AppCompatActivity() {
         return testAppApi.getSyncedKeys()
     }
 
-    internal fun addDataSyncCallback(executor: Executor, syncCallback: SyncCallback) {
-        testAppApi.addDataSyncCallback(executor, syncCallback)
+    internal fun addSyncFailureCallback(
+        executor: Executor,
+        syncFailureCallback: SyncFailureCallback,
+    ) {
+        testAppApi.addSyncFailureCallback(executor, syncFailureCallback)
     }
 
-    internal fun removeDataSyncCallback(syncCallback: SyncCallback) {
-        testAppApi.removeDataSyncCallback(syncCallback)
+    internal fun removeSyncFailureCallback(syncFailureCallback: SyncFailureCallback) {
+        testAppApi.removeSyncFailureCallback(syncFailureCallback)
     }
 
     class SdkKeyUpdateCallbackImpl(val executor: Executor, val callback: KeyUpdateCallback) :

@@ -17,6 +17,7 @@ package androidx.xr.arcore.projected
 
 import android.app.Activity
 import android.content.ComponentName
+import android.content.Context
 import android.content.ServiceConnection
 import android.os.IBinder
 import androidx.annotation.RestrictTo
@@ -24,10 +25,15 @@ import androidx.xr.projected.ProjectedServiceBinding
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.LifecycleManager
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.time.ComparableTimeMark
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Manages the lifecycle of a Projected session.
@@ -52,18 +58,7 @@ internal constructor(
     // TODO(b/411154789): Remove once Session runtime invocations are forced to run sequentially.
     internal var running: Boolean = false
     private val serviceDeferred = CompletableDeferred<IProjectedPerceptionService>()
-    private val serviceConnection =
-        object : ServiceConnection {
-            override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-                val service = IProjectedPerceptionService.Stub.asInterface(binder)
-                serviceDeferred.complete(service)
-                perceptionManager.service = service
-            }
-
-            override fun onServiceDisconnected(name: ComponentName?) {
-                perceptionManager.service = null
-            }
-        }
+    private lateinit var serviceConnection: ServiceConnection
 
     /**
      * This method implements the [LifecycleManager.create] method.
@@ -73,37 +68,27 @@ internal constructor(
      */
     override fun create() {
         checkProjectedSupportedAndUpToDate(activity)
-        // Other create's are blocking and this makes testing easier.
-        runBlocking(coroutineContext) {
+        CoroutineScope(coroutineContext).launch {
             if (testPerceptionService != null) {
                 perceptionManager.service = testPerceptionService
-                return@runBlocking
+                return@launch
             }
 
-            val isBindingPermitted =
-                ProjectedServiceBinding.bindPerception(activity, serviceConnection)
-            check(isBindingPermitted) {
-                "Projected perception service not found or binding was not permitted."
-            }
-            withTimeout(SERVICE_CONNECTION_TIMEOUT_MS) { serviceDeferred.await() }
+            val binder = bindPerceptionService(activity)
         }
     }
 
-    override fun configure(config: Config) {
-        throw NotImplementedError("configure is currently not supported by Projected.")
-    }
+    override fun configure(config: Config) {}
 
-    override fun resume() {
-        throw NotImplementedError("resume is currently not supported by Projected.")
-    }
+    override fun resume() {}
 
     override suspend fun update(): ComparableTimeMark {
-        throw NotImplementedError("update is currently not supported by Projected.")
+        val now = timeSource.markNow()
+        delay(30.milliseconds)
+        return timeSource.markNow()
     }
 
-    override fun pause() {
-        throw NotImplementedError("pause is currently not supported by Projected.")
-    }
+    override fun pause() {}
 
     override fun stop() {
         if (testPerceptionService == null) {
@@ -112,14 +97,48 @@ internal constructor(
         perceptionManager.service = null
     }
 
+    internal suspend fun bindPerceptionService(context: Context): IBinder {
+        return suspendCancellableCoroutine { continuation ->
+            serviceConnection =
+                object : ServiceConnection {
+                    override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+                        println("ProjectedManager: onServiceConnected called")
+                        val service = IProjectedPerceptionService.Stub.asInterface(binder)
+                        serviceDeferred.complete(service)
+                        perceptionManager.service = service
+                        service.start(true /* enableVps*/, "" /* api key */)
+
+                        // When the service connects, we resume the coroutine with the binder.
+                        if (continuation.isActive) {
+                            continuation.resume(binder!!)
+                        }
+                    }
+
+                    override fun onServiceDisconnected(name: ComponentName?) {
+                        println("onServiceDisconnected called")
+                        perceptionManager.service = null
+                    }
+
+                    override fun onBindingDied(name: ComponentName?) {
+                        if (continuation.isActive) {
+                            continuation.resumeWithException(
+                                IllegalStateException("Binding died for $name")
+                            )
+                        }
+                    }
+                }
+
+            // When the coroutine is cancelled, we must unbind the service.
+            continuation.invokeOnCancellation { context.unbindService(serviceConnection) }
+
+            val isBindingPermitted =
+                ProjectedServiceBinding.bindPerception(context, serviceConnection)
+            check(isBindingPermitted) {
+                "Projected perception service not found or binding was not permitted."
+            }
+        }
+    }
+
     // Verify that Projected is installed and using the current version.
     internal fun checkProjectedSupportedAndUpToDate(activity: Activity) {}
-
-    private companion object {
-        /**
-         * Timeout for binding to the projected service. 2 sec is what we hope the 95%ile is for
-         * binding to the service is.
-         */
-        private const val SERVICE_CONNECTION_TIMEOUT_MS = 2000L
-    }
 }

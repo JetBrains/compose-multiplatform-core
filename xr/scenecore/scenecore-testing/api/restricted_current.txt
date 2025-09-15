@@ -96,11 +96,10 @@ package androidx.xr.scenecore.testing {
     property public java.util.Map<android.media.AudioTrack,java.lang.Integer> spatialSourceTypeMap;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeBaseRenderingFeature implements androidx.xr.runtime.internal.RenderingFeature {
-    ctor public FakeBaseRenderingFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeBaseRenderingFeature implements androidx.xr.scenecore.internal.RenderingFeature {
+    ctor public FakeBaseRenderingFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> _nodeHolder);
     method public void dispose();
     method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> getNodeHolder();
-    property public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeCameraViewActivityPose extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.internal.CameraViewActivityPose {
@@ -199,6 +198,7 @@ package androidx.xr.scenecore.testing {
     method @RequiresApi(android.os.Build.VERSION_CODES.O) public androidx.xr.scenecore.testing.FakeAnchorEntity createAnchorEntity(androidx.xr.arcore.internal.Anchor anchor);
     method @RequiresApi(android.os.Build.VERSION_CODES.O) public androidx.xr.scenecore.testing.FakeAnchorEntity createAnchorEntity(androidx.xr.scenecore.internal.Dimensions bounds, androidx.xr.scenecore.internal.PlaneType planeType, androidx.xr.scenecore.internal.PlaneSemantic planeSemantic, java.time.Duration searchTimeout);
     method public androidx.xr.scenecore.testing.FakeAnchorPlacement createAnchorPlacementForPlanes(java.util.Set<androidx.xr.scenecore.internal.PlaneType> planeTypeFilter, java.util.Set<androidx.xr.scenecore.internal.PlaneSemantic> planeSemanticFilter);
+    method public androidx.xr.runtime.SubspaceNodeHolder<androidx.xr.scenecore.testing.FakeSubspaceNode> createFakeSubspaceNode(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
     method public androidx.xr.scenecore.internal.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.internal.GltfModelResource loadedGltf, androidx.xr.scenecore.internal.Entity parentEntity);
     method public androidx.xr.scenecore.internal.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.scenecore.internal.Entity parent);
     method public androidx.xr.scenecore.internal.InteractableComponent createInteractableComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.internal.InputEventListener listener);
@@ -531,6 +531,9 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.internal.Dimensions size;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface FakeNode {
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakePanelEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.internal.PanelEntity {
     ctor public FakePanelEntity();
     method public float getCornerRadius();
@@ -558,7 +561,11 @@ package androidx.xr.scenecore.testing {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRenderingRuntime implements androidx.xr.scenecore.internal.RenderingRuntime {
     ctor public FakeRenderingRuntime(androidx.xr.scenecore.internal.RenderingEntityFactory entityFactory);
     method public androidx.xr.scenecore.internal.TextureResource? borrowReflectionTexture();
+    method public androidx.xr.scenecore.internal.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.internal.GltfModelResource loadedGltf, androidx.xr.scenecore.internal.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.internal.MaterialResource>? createKhronosPbrMaterial(androidx.xr.scenecore.internal.KhronosPbrMaterialSpec spec);
+    method public androidx.xr.scenecore.internal.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.runtime.SubspaceNodeHolder<? extends java.lang.Object?> subspaceNodeHolder, androidx.xr.scenecore.internal.Dimensions size);
+    method public androidx.xr.runtime.SubspaceNodeHolder<? extends java.lang.Object?> createSubspaceNodeHolder();
+    method public androidx.xr.scenecore.internal.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.internal.SurfaceEntity.Shape shape, int surfaceProtection, int superSampling, androidx.xr.scenecore.internal.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.internal.MaterialResource> createWaterMaterial(boolean isAlphaMapVersion);
     method public void destroyKhronosPbrMaterial(androidx.xr.scenecore.internal.MaterialResource material);
     method public void destroyTexture(androidx.xr.scenecore.internal.TextureResource texture);
@@ -847,6 +854,8 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.testing.FakePointerCaptureComponent createPointerCaptureComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.internal.PointerCaptureComponent.StateListener stateListener, androidx.xr.scenecore.internal.InputEventListener inputListener);
     method public androidx.xr.scenecore.testing.FakeResizableComponent createResizableComponent(androidx.xr.scenecore.internal.Dimensions minimumSize, androidx.xr.scenecore.internal.Dimensions maximumSize);
     method public androidx.xr.scenecore.internal.SpatialPointerComponent createSpatialPointerComponent();
+    method public androidx.xr.scenecore.internal.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.scenecore.internal.SubspaceNodeFeature feature);
+    method public androidx.xr.scenecore.internal.SurfaceEntity createSurfaceEntity(androidx.xr.scenecore.internal.SurfaceFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.internal.Entity parentEntity);
     method public void dispose();
     method public void enablePanelDepthTest(boolean enabled);
     method public androidx.xr.scenecore.internal.ActivitySpace getActivitySpace();
@@ -981,13 +990,33 @@ package androidx.xr.scenecore.testing {
     method public void setSpatialPointerIcon(@androidx.xr.scenecore.internal.SpatialPointerIconType int iconType);
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface FakeSubspaceNode {
+    method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> getNodeHolder();
+    property public abstract androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSubspaceNodeEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.internal.SubspaceNodeEntity {
-    ctor public FakeSubspaceNodeEntity(com.google.androidxr.splitengine.SubspaceNode subspaceNode, optional androidx.xr.scenecore.internal.Dimensions size);
+    ctor public FakeSubspaceNodeEntity();
+    ctor public FakeSubspaceNodeEntity(optional androidx.xr.scenecore.internal.SubspaceNodeFeature? mockSubspaceNodeFeature, optional androidx.xr.scenecore.internal.Dimensions size);
     method public androidx.xr.scenecore.internal.Dimensions getSize();
-    method public com.google.androidxr.splitengine.SubspaceNode getSubspaceNode();
     method public void setSize(androidx.xr.scenecore.internal.Dimensions);
     property public androidx.xr.scenecore.internal.Dimensions size;
-    property public com.google.androidxr.splitengine.SubspaceNode subspaceNode;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSubspaceNodeFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.internal.SubspaceNodeFeature {
+    ctor public FakeSubspaceNodeFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> _nodeHolder, optional androidx.xr.scenecore.internal.Dimensions initSize);
+    method public androidx.xr.scenecore.internal.Dimensions getSize();
+    method public void setAlpha(float alpha);
+    method public void setHidden(boolean hidden);
+    method public void setPose(androidx.xr.runtime.math.Pose pose);
+    method public void setScale(androidx.xr.runtime.math.Vector3 scaleActivity);
+    method public void setSize(androidx.xr.scenecore.internal.Dimensions);
+    property public androidx.xr.scenecore.internal.Dimensions size;
+    field public static final androidx.xr.scenecore.testing.FakeSubspaceNodeFeature.Companion Companion;
+  }
+
+  public static final class FakeSubspaceNodeFeature.Companion {
+    method public androidx.xr.scenecore.internal.SubspaceNodeFeature createWithMockFeature(androidx.xr.scenecore.internal.SubspaceNodeFeature mockFeature, androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder, androidx.xr.scenecore.internal.Dimensions size);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSurfaceEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.internal.SurfaceEntity {
@@ -1031,6 +1060,45 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.internal.SurfaceEntity.Shape shape;
     property public int stereoMode;
     property public android.view.Surface surface;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSurfaceFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.internal.SurfaceFeature {
+    ctor public FakeSurfaceFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
+    method public int getColorRange();
+    method public int getColorSpace();
+    method public int getColorTransfer();
+    method public boolean getContentColorMetadataSet();
+    method public androidx.xr.scenecore.internal.Dimensions getDimensions();
+    method public androidx.xr.scenecore.internal.SurfaceEntity.EdgeFeather getEdgeFeather();
+    method public int getMaxContentLightLevel();
+    method public androidx.xr.scenecore.internal.TextureResource? getPrimaryAlphaMask();
+    method public androidx.xr.scenecore.internal.SurfaceEntity.Shape getShape();
+    method public int getStereoMode();
+    method public android.view.Surface getSurface();
+    method public void resetContentColorMetadata();
+    method public void setAuxiliaryAlphaMaskTexture(androidx.xr.scenecore.internal.TextureResource? alphaMask);
+    method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxCLL);
+    method public void setEdgeFeather(androidx.xr.scenecore.internal.SurfaceEntity.EdgeFeather);
+    method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.internal.TextureResource? alphaMask);
+    method public void setShape(androidx.xr.scenecore.internal.SurfaceEntity.Shape);
+    method public void setStereoMode(int);
+    method public void setSurface(android.view.Surface surface);
+    property public int colorRange;
+    property public int colorSpace;
+    property public int colorTransfer;
+    property public boolean contentColorMetadataSet;
+    property public androidx.xr.scenecore.internal.Dimensions dimensions;
+    property public androidx.xr.scenecore.internal.SurfaceEntity.EdgeFeather edgeFeather;
+    property public int maxContentLightLevel;
+    property public androidx.xr.scenecore.internal.TextureResource? primaryAlphaMask;
+    property public androidx.xr.scenecore.internal.SurfaceEntity.Shape shape;
+    property public int stereoMode;
+    property public android.view.Surface surface;
+    field public static final androidx.xr.scenecore.testing.FakeSurfaceFeature.Companion Companion;
+  }
+
+  public static final class FakeSurfaceFeature.Companion {
+    method public androidx.xr.scenecore.internal.SurfaceFeature createWithMockFeature(androidx.xr.scenecore.internal.SurfaceFeature feature, androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeSystemSpaceEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.internal.SystemSpaceEntity {

@@ -42,6 +42,6 @@ public class DisableAbortCapturesOnStopQuirk : Quirk {
             Device.isSamsungDevice() && "d2q".equals(Build.DEVICE, true)
 
         private val isPocoX3ProDevice: Boolean =
-            Device.isPocoDevice() && "vayu".equals(Build.DEVICE, true)
+            Device.isPocoDevice() && "M2102J20SG".equals(Build.MODEL, true)
     }
 }

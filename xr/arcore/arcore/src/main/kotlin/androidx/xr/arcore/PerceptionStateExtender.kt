@@ -57,6 +57,7 @@ internal class PerceptionStateExtender : StateExtender {
             perceptionManager.monoDepthMap,
         )
         xrResourcesManager.initiateFace(perceptionManager.userFace)
+        xrResourcesManager.initiateEyes(perceptionManager.leftEye, perceptionManager.rightEye)
     }
 
     override suspend fun extend(coreState: CoreState) {
@@ -67,6 +68,8 @@ internal class PerceptionStateExtender : StateExtender {
         xrResourcesManager.syncTrackables(perceptionManager.trackables)
         xrResourcesManager.update()
 
+        xrResourcesManager.leftEye?.update()
+        xrResourcesManager.rightEye?.update()
         xrResourcesManager.leftHand?.update()
         xrResourcesManager.rightHand?.update()
         xrResourcesManager.arDevice.update()
@@ -104,6 +107,8 @@ internal class PerceptionStateExtender : StateExtender {
                 xrResourcesManager.rightDepthMap,
                 xrResourcesManager.monoDepthMap,
                 xrResourcesManager.userFace,
+                xrResourcesManager.leftEye,
+                xrResourcesManager.rightEye,
             ),
         )
         timeMarkQueue.add(coreState.timeMark)

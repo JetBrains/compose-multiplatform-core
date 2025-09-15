@@ -65,7 +65,7 @@ public class FakeImpressApiImpl implements ImpressApi {
             VR_180_HEMISPHERE
         }
 
-        int mImpressNode;
+        ImpressNode mImpressNode;
         Surface mSurface;
         boolean mUseSuperSampling;
         @StereoMode int mStereoMode;
@@ -174,11 +174,11 @@ public class FakeImpressApiImpl implements ImpressApi {
     // Map of impress nodes to their parent impress nodes.
     private final Map<GltfNodeData, GltfNodeData> mImpressNodes = new HashMap<>();
     // Map of impress nodes and animations that are currently playing (non looping)
-    final Map<Integer, AnimationInProgress> mImpressAnimatedNodes = new HashMap<>();
+    final Map<ImpressNode, AnimationInProgress> mImpressAnimatedNodes = new HashMap<>();
     // Map of impress nodes and animations that are currently playing (looping)
-    final Map<Integer, AnimationInProgress> mImpressLoopAnimatedNodes = new HashMap<>();
+    final Map<ImpressNode, AnimationInProgress> mImpressLoopAnimatedNodes = new HashMap<>();
     // Map of impress entity nodes to their associated StereoSurfaceEntityData
-    final Map<Integer, StereoSurfaceEntityData> mStereoSurfaceEntities = new HashMap<>();
+    final Map<ImpressNode, StereoSurfaceEntityData> mStereoSurfaceEntities = new HashMap<>();
     // Map of texture image tokens to their associated Texture object
     final Map<Long, Texture> mTextureImages = new HashMap<>();
     // Map of material tokens to their associated MaterialData object
@@ -191,7 +191,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     private long mCurrentEnvironmentLightId = -1;
 
     @NonNull
-    public Map<Integer, StereoSurfaceEntityData> getStereoSurfaceEntities() {
+    public Map<ImpressNode, StereoSurfaceEntityData> getStereoSurfaceEntities() {
         return mStereoSurfaceEntities;
     }
 
@@ -279,12 +279,12 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public int instanceGltfModel(long gltfToken) {
+    public @NonNull ImpressNode instanceGltfModel(long gltfToken) {
         return instanceGltfModel(gltfToken, true);
     }
 
     @Override
-    public int instanceGltfModel(long gltfToken, boolean enableCollider) {
+    public @NonNull ImpressNode instanceGltfModel(long gltfToken, boolean enableCollider) {
         if (!mGltfModels.containsKey(gltfToken)) {
             throw new IllegalArgumentException("Model token not found");
         }
@@ -293,11 +293,12 @@ public class FakeImpressApiImpl implements ImpressApi {
         GltfNodeData gltfNodeData = new GltfNodeData();
         gltfNodeData.setEntityId(entityId);
         mImpressNodes.put(gltfNodeData, null);
-        return entityId;
+        return new ImpressNode(entityId);
     }
 
     @Override
-    public void setGltfModelColliderEnabled(int impressNode, boolean enableCollider) {
+    public void setGltfModelColliderEnabled(
+            @NonNull ImpressNode impressNode, boolean enableCollider) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -305,7 +306,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     @NonNull
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     public ListenableFuture<Void> animateGltfModel(
-            int impressNode, @Nullable String animationName, boolean loop) {
+            @NonNull ImpressNode impressNode, @Nullable String animationName, boolean loop) {
         ResolvableFuture<Void> future = ResolvableFuture.create();
         if (getGltfNodeData(impressNode) == null) {
             future.setException(new IllegalArgumentException("Impress node not found"));
@@ -323,7 +324,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public void stopGltfModelAnimation(int impressNode) {
+    public void stopGltfModelAnimation(@NonNull ImpressNode impressNode) {
         if (getGltfNodeData(impressNode) == null) {
             throw new IllegalArgumentException("Impress node not found");
         } else if (!mImpressAnimatedNodes.containsKey(impressNode)
@@ -337,23 +338,23 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public int createImpressNode() {
+    public @NonNull ImpressNode createImpressNode() {
         int entityId = mNextNodeId++;
         GltfNodeData gltfNodeData = new GltfNodeData();
         gltfNodeData.setEntityId(entityId);
         mImpressNodes.put(gltfNodeData, null);
-        return entityId;
+        return new ImpressNode(entityId);
     }
 
     @Override
-    public void destroyImpressNode(int impressNode) {
+    public void destroyImpressNode(@NonNull ImpressNode impressNode) {
         GltfNodeData gltfNodeData = getGltfNodeData(impressNode);
         if (gltfNodeData == null) {
             throw new IllegalArgumentException("Impress node not found");
         }
         for (Map.Entry<Long, List<Integer>> pair : mGltfModels.entrySet()) {
-            if (pair.getValue().contains(impressNode)) {
-                pair.getValue().remove(Integer.valueOf(impressNode));
+            if (pair.getValue().contains(impressNode.getHandle())) {
+                pair.getValue().remove(Integer.valueOf(impressNode.getHandle()));
             }
         }
         for (Map.Entry<GltfNodeData, GltfNodeData> pair : mImpressNodes.entrySet()) {
@@ -368,7 +369,8 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public void setImpressNodeParent(int impressNodeChild, int impressNodeParent) {
+    public void setImpressNodeParent(
+            @NonNull ImpressNode impressNodeChild, @NonNull ImpressNode impressNodeParent) {
         GltfNodeData childGltfNodeData = getGltfNodeData(impressNodeChild);
         GltfNodeData parentGltfNodeData = getGltfNodeData(impressNodeParent);
         if (childGltfNodeData == null || parentGltfNodeData == null) {
@@ -384,7 +386,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     /** Returns true if the given impress node has a parent. */
-    public boolean impressNodeHasParent(int impressNode) {
+    public boolean impressNodeHasParent(@NonNull ImpressNode impressNode) {
         GltfNodeData gltfNodeData = getGltfNodeData(impressNode);
         if (gltfNodeData == null) {
             return false;
@@ -393,7 +395,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     /** Returns the parent impress node for the given impress node. */
-    public int getImpressNodeParent(int impressNode) {
+    public int getImpressNodeParent(@NonNull ImpressNode impressNode) {
         GltfNodeData gltfNodeData = getGltfNodeData(impressNode);
         GltfNodeData parentGltfNodeData = mImpressNodes.get(gltfNodeData);
         if (gltfNodeData == null || parentGltfNodeData == null) {
@@ -413,26 +415,26 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public int createStereoSurface(@StereoMode int stereoMode) {
+    public @NonNull ImpressNode createStereoSurface(@StereoMode int stereoMode) {
         return createStereoSurface(
                 stereoMode, ContentSecurityLevel.NONE, /* useSuperSampling= */ false);
     }
 
     // TODO - b/410899125: Set the content security level properly.
     @Override
-    public int createStereoSurface(
+    public @NonNull ImpressNode createStereoSurface(
             @StereoMode int stereoMode, @ContentSecurityLevel int contentSecurityLevel) {
         return createStereoSurface(stereoMode, contentSecurityLevel, /* useSuperSampling= */ false);
     }
 
     @Override
-    public int createStereoSurface(
+    public @NonNull ImpressNode createStereoSurface(
             @StereoMode int stereoMode,
             @ContentSecurityLevel int contentSecurityLevel,
             boolean useSuperSampling) {
         StereoSurfaceEntityData data = new StereoSurfaceEntityData();
         data.mImpressNode = createImpressNode();
-        data.mSurface = new TestSurface(data.mImpressNode);
+        data.mSurface = new TestSurface(data.mImpressNode.getHandle());
         data.mUseSuperSampling = useSuperSampling;
         data.mStereoMode = stereoMode;
         data.mCanvasShape = null;
@@ -448,7 +450,8 @@ public class FakeImpressApiImpl implements ImpressApi {
      * @param height The height in local spatial units to set the quad to.
      */
     @Override
-    public void setStereoSurfaceEntityCanvasShapeQuad(int impressNode, float width, float height) {
+    public void setStereoSurfaceEntityCanvasShapeQuad(
+            @NonNull ImpressNode impressNode, float width, float height) {
         if (!mStereoSurfaceEntities.containsKey(impressNode)) {
             throw new IllegalArgumentException("Couldn't find stereo surface entity!");
         }
@@ -465,7 +468,8 @@ public class FakeImpressApiImpl implements ImpressApi {
      * @param radius The radius in local spatial units to set the sphere to.
      */
     @Override
-    public void setStereoSurfaceEntityCanvasShapeSphere(int impressNode, float radius) {
+    public void setStereoSurfaceEntityCanvasShapeSphere(
+            @NonNull ImpressNode impressNode, float radius) {
         if (!mStereoSurfaceEntities.containsKey(impressNode)) {
             throw new IllegalArgumentException("Couldn't find stereo surface entity!");
         }
@@ -481,7 +485,8 @@ public class FakeImpressApiImpl implements ImpressApi {
      * @param radius The radius in local spatial units of the hemisphere.
      */
     @Override
-    public void setStereoSurfaceEntityCanvasShapeHemisphere(int impressNode, float radius) {
+    public void setStereoSurfaceEntityCanvasShapeHemisphere(
+            @NonNull ImpressNode impressNode, float radius) {
         StereoSurfaceEntityData data = mStereoSurfaceEntities.get(impressNode);
         data.mCanvasShape = StereoSurfaceEntityData.CanvasShape.VR_180_HEMISPHERE;
         data.mRadius = radius;
@@ -489,7 +494,7 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     @NonNull
-    public Surface getSurfaceFromStereoSurface(int panelImpressNode) {
+    public Surface getSurfaceFromStereoSurface(@NonNull ImpressNode panelImpressNode) {
         if (!mStereoSurfaceEntities.containsKey(panelImpressNode)) {
             // TODO: b/387323937 - the Native code currently CHECK fails in this case
             throw new IllegalArgumentException("Couldn't find stereo surface entity!");
@@ -499,7 +504,7 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setFeatherRadiusForStereoSurface(
-            int panelImpressNode, float radiusX, float radiusY) {
+            @NonNull ImpressNode panelImpressNode, float radiusX, float radiusY) {
         if (!mStereoSurfaceEntities.containsKey(panelImpressNode)) {
             // TODO: b/387323937 - the Native code currently CHECK fails in this case
             throw new IllegalArgumentException("Couldn't find stereo surface entity!");
@@ -509,7 +514,8 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public void setStereoModeForStereoSurface(int panelImpressNode, @StereoMode int mode) {
+    public void setStereoModeForStereoSurface(
+            @NonNull ImpressNode panelImpressNode, @StereoMode int mode) {
         if (!mStereoSurfaceEntities.containsKey(panelImpressNode)) {
             // TODO: b/387323937 - the Native code currently CHECK fails in this case
             throw new IllegalArgumentException("Couldn't find stereo surface entity!");
@@ -519,14 +525,14 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setContentColorMetadataForStereoSurface(
-            int stereoSurfaceNode,
+            @NonNull ImpressNode stereoSurfaceNode,
             @ColorSpace int colorSpace,
             @ColorTransfer int colorTransfer,
             @ColorRange int colorRange,
             int maxLuminance) {}
 
     @Override
-    public void resetContentColorMetadataForStereoSurface(int stereoSurfaceNode) {}
+    public void resetContentColorMetadataForStereoSurface(@NonNull ImpressNode stereoSurfaceNode) {}
 
     @Override
     @NonNull
@@ -907,7 +913,7 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setMaterialOverride(
-            int impressNode, long nativeMaterial, @NonNull String meshName) {
+            @NonNull ImpressNode impressNode, long nativeMaterial, @NonNull String meshName) {
         GltfNodeData gltfNodeData = getGltfNodeData(impressNode);
         if (gltfNodeData == null) {
             throw new IllegalArgumentException("Impress node not found");
@@ -926,12 +932,14 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Override
-    public void setPrimaryAlphaMaskForStereoSurface(int impressNode, long alphaMask) {
+    public void setPrimaryAlphaMaskForStereoSurface(
+            @NonNull ImpressNode impressNode, long alphaMask) {
         throw new IllegalArgumentException("not implemented");
     }
 
     @Override
-    public void setAuxiliaryAlphaMaskForStereoSurface(int impressNode, long alphaMask) {
+    public void setAuxiliaryAlphaMaskForStereoSurface(
+            @NonNull ImpressNode impressNode, long alphaMask) {
         throw new IllegalArgumentException("not implemented");
     }
 
@@ -980,9 +988,9 @@ public class FakeImpressApiImpl implements ImpressApi {
     }
 
     @Nullable
-    private GltfNodeData getGltfNodeData(int impressNode) {
+    private GltfNodeData getGltfNodeData(@NonNull ImpressNode impressNode) {
         for (Map.Entry<GltfNodeData, GltfNodeData> pair : mImpressNodes.entrySet()) {
-            if (pair.getKey().mEntityId == impressNode) {
+            if (pair.getKey().mEntityId == impressNode.getHandle()) {
                 return pair.getKey();
             }
         }

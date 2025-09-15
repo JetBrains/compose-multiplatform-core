@@ -24,12 +24,14 @@ import android.util.Range
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsZoomOverride
 import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.integration.compat.workaround.getActiveArraySizeSafely
 import androidx.camera.camera2.pipe.integration.compat.workaround.getControlZoomRatioRangeSafely
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.integration.internal.ZoomMath.nearZero
 import dagger.Module
 import dagger.Provides
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 
 public interface ZoomCompat {
@@ -61,17 +63,25 @@ public interface ZoomCompat {
     public abstract class Bindings {
         public companion object {
             @Provides
-            public fun provideZoomRatio(cameraProperties: CameraProperties): ZoomCompat {
-                return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    val range = cameraProperties.metadata.getControlZoomRatioRangeSafely()
-                    if (range != null) {
-                        AndroidRZoomCompat(cameraProperties, range)
-                    } else {
-                        CropRegionZoomCompat(cameraProperties)
+            public fun provideZoomCompat(cameraProperties: CameraProperties): ZoomCompat {
+                if ("robolectric" == Build.FINGERPRINT) {
+                    val isMissingCharacteristics =
+                        NoOpZoomCompat.requiredCharacteristics.any {
+                            Log.warn { "Failed to read $it for zoom features." }
+                            cameraProperties.metadata[it] == null
+                        }
+                    if (isMissingCharacteristics) {
+                        // In a Robolectric environment with missing characteristics, use a no-op
+                        // implementation.
+                        return NoOpZoomCompat(cameraProperties)
                     }
-                } else {
-                    CropRegionZoomCompat(cameraProperties)
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    cameraProperties.metadata.getControlZoomRatioRangeSafely()?.let { range ->
+                        // Return Android R implementation if zoom ratio range is valid.
+                        return AndroidRZoomCompat(cameraProperties, range)
+                    }
                 }
+                return CropRegionZoomCompat(cameraProperties)
             }
         }
     }
@@ -176,4 +186,27 @@ public class AndroidRZoomCompat(
 
     override fun getCropSensorRegion(): Rect =
         cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]!!
+}
+
+/**
+ * A [ZoomCompat] implementation that is no-op. This is used for testing environments like
+ * Robolectric where camera characteristics might not be fully supported.
+ */
+internal class NoOpZoomCompat(private val cameraProperties: CameraProperties) : ZoomCompat {
+    override val minZoomRatio: Float = 1.0f
+    override val maxZoomRatio: Float = 1.0f
+
+    override fun applyAsync(
+        zoomRatio: Float,
+        requestControl: UseCaseCameraRequestControl,
+    ): Deferred<Unit> = CompletableDeferred(Unit)
+
+    override fun resetAsync(requestControl: UseCaseCameraRequestControl): Deferred<Unit> =
+        CompletableDeferred(Unit)
+
+    override fun getCropSensorRegion(): Rect = cameraProperties.metadata.getActiveArraySizeSafely()
+
+    internal companion object {
+        val requiredCharacteristics = listOf(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
+    }
 }

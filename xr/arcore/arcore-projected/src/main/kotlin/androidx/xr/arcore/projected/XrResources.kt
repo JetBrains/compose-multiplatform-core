@@ -18,6 +18,10 @@ package androidx.xr.arcore.projected
 
 /** Object that holds resources that are used in the XR session. */
 internal class XrResources {
+
+    /** Pose */
+    val arDevice: ProjectedArDevice = ProjectedArDevice()
+
     /** The data of the Earth */
     val earth: ProjectedEarth = ProjectedEarth(this)
 }

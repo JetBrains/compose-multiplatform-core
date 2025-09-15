@@ -91,8 +91,7 @@ private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessin
     // round starting from 0.
     private var roundIndex = -1
 
-    override fun annotations() =
-        setOf(IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.canonicalName())
+    override fun annotations() = setOf(IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.canonicalName)
 
     override fun process(
         env: XProcessingEnv,
@@ -103,7 +102,7 @@ private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessin
         roundIndex += 1
 
         val documentElements: Set<XTypeElement> =
-            elementsByAnnotation[IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.canonicalName()]
+            elementsByAnnotation[IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.canonicalName]
                 ?.filterIsInstance<XTypeElement>()
                 ?.toSet() ?: emptySet()
 

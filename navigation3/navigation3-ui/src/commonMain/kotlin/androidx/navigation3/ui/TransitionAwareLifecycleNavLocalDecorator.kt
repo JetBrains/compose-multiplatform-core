@@ -19,22 +19,25 @@ package androidx.navigation3.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleOwner
 import androidx.navigation3.runtime.navEntryDecorator
 
 @Composable
-internal fun transitionAwareLifecycleNavEntryDecorator(backStack: List<Any>) =
-    navEntryDecorator<Any> { entry ->
-        val isSettled = LocalNavTransitionSettledState.current
-        val isInBackStack = entry.isInBackStack(backStack)
-        val maxLifecycle =
-            when {
-                isInBackStack && isSettled -> Lifecycle.State.RESUMED
-                isInBackStack && !isSettled -> Lifecycle.State.STARTED
-                else /* !isInBackStack */ -> Lifecycle.State.CREATED
-            }
-        LifecycleOwner(maxLifecycle = maxLifecycle) { entry.Content() }
+internal fun rememberTransitionAwareLifecycleNavEntryDecorator(backStack: List<Any>) =
+    remember(backStack) {
+        navEntryDecorator<Any> { entry ->
+            val isSettled = LocalNavTransitionSettledState.current
+            val isInBackStack = entry.isInBackStack(backStack)
+            val maxLifecycle =
+                when {
+                    isInBackStack && isSettled -> Lifecycle.State.RESUMED
+                    isInBackStack && !isSettled -> Lifecycle.State.STARTED
+                    else /* !isInBackStack */ -> Lifecycle.State.CREATED
+                }
+            LifecycleOwner(maxLifecycle = maxLifecycle) { entry.Content() }
+        }
     }
 
 internal val LocalNavTransitionSettledState: ProvidableCompositionLocal<Boolean> =

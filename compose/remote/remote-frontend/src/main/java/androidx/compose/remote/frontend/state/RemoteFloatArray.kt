@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.frontend.state
 
+import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.frontend.capture.RemoteComposeCreationState
@@ -26,7 +28,8 @@ import androidx.compose.ui.util.fastMap
  *
  * @property input The collection of floats to store in the document
  */
-class RemoteFloatArray(input: List<RemoteFloat>) : RemoteState<List<RemoteFloat>> {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class RemoteFloatArray(input: List<RemoteFloat>) : RemoteState<List<RemoteFloat>> {
     private val floatArray = input
 
     override val hasConstantValue: Boolean
@@ -44,7 +47,7 @@ class RemoteFloatArray(input: List<RemoteFloat>) : RemoteState<List<RemoteFloat>
      * Array access operator for [RemoteFloatArray] with a [RemoteFloat] index. Performs a
      * dereference operation on a remote float array.
      */
-    operator fun get(v: RemoteFloat): RemoteFloat {
+    public operator fun get(v: RemoteFloat): RemoteFloat {
         return RemoteFloatExpression(hasConstantValue) { creationState ->
             floatArrayOf(
                 *arrayForCreationState(creationState),
@@ -58,7 +61,7 @@ class RemoteFloatArray(input: List<RemoteFloat>) : RemoteState<List<RemoteFloat>
      * Array access operator for [RemoteFloatArray] with an [Int] index. Performs a dereference
      * operation on a remote float array.
      */
-    operator fun get(v: Int): RemoteFloat {
+    public operator fun get(v: Int): RemoteFloat {
         return RemoteFloatExpression(hasConstantValue) { creationState ->
             floatArrayOf(
                 *arrayForCreationState(creationState),
@@ -72,7 +75,7 @@ class RemoteFloatArray(input: List<RemoteFloat>) : RemoteState<List<RemoteFloat>
      * Array access operator for [RemoteFloatArray] with a [RemoteInt] index. Performs a dereference
      * operation on a remote float array.
      */
-    operator fun get(v: RemoteInt): RemoteFloat {
+    public operator fun get(v: RemoteInt): RemoteFloat {
         return RemoteFloatExpression(hasConstantValue && v.hasConstantValue) { creationState ->
             floatArrayOf(
                 *arrayForCreationState(creationState),

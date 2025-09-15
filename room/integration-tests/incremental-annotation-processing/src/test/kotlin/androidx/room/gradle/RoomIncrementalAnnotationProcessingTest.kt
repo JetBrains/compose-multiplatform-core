@@ -275,6 +275,10 @@ class RoomIncrementalAnnotationProcessingTest(
             ksp.incremental=true
             ksp.incremental.log=true
             android.useAndroidX=true
+            # TODO: Remove when we upgrade KSP
+            ksp.version.check=false
+            # TODO: Remove this b/442016756
+            android.builtInKotlin=false
             """
                     .trimIndent()
             )

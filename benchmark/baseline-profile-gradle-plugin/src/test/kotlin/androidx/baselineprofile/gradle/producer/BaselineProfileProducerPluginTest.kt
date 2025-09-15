@@ -29,6 +29,7 @@ import androidx.baselineprofile.gradle.utils.buildAndFailAndAssertThatOutput
 import androidx.baselineprofile.gradle.utils.require
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -331,6 +332,7 @@ class BaselineProfileProducerPluginTestWithAgp82AndAbove(agpVersion: TestAgpVers
             }
     }
 
+    @Ignore // b/441089720
     @Test
     fun runWhenInstrumentationRunnerArgumentsAreSetManually() {
         projectSetup.appTarget.setup()

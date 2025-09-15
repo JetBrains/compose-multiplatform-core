@@ -29,6 +29,7 @@ import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.GltfNodeData;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape;
 import androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode;
+import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial;
 import androidx.xr.scenecore.impl.impress.Texture;
 import androidx.xr.scenecore.impl.impress.WaterMaterial;
@@ -128,8 +129,9 @@ public final class FakeImpressApiImplTest {
             throws ExecutionException, InterruptedException {
         ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
         Long modelToken = modelFuture.get();
-        int entityId = mFakeImpressApi.instanceGltfModel(modelToken, /* enableCollider= */ true);
-        assertThat(entityId).isNotEqualTo(0);
+        ImpressNode entityNode = mFakeImpressApi.instanceGltfModel(
+                modelToken, /* enableCollider= */ true);
+        assertThat(entityNode.getHandle()).isNotEqualTo(0);
     }
 
     @Test
@@ -137,22 +139,23 @@ public final class FakeImpressApiImplTest {
             throws ExecutionException, InterruptedException {
         ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
         Long modelToken = modelFuture.get();
-        int entityId = mFakeImpressApi.instanceGltfModel(modelToken, /* enableCollider= */ false);
-        assertThat(entityId).isNotEqualTo(0);
+        ImpressNode entityNode = mFakeImpressApi.instanceGltfModel(
+                modelToken, /* enableCollider= */ false);
+        assertThat(entityNode.getHandle()).isNotEqualTo(0);
     }
 
     @Test
     public void createImpressNode_returnsEntityId() {
-        int entityId = mFakeImpressApi.createImpressNode();
-        assertThat(entityId).isNotEqualTo(0);
-        int entityId2 = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
+        assertThat(entityNode.getHandle()).isNotEqualTo(0);
+        ImpressNode entityNode2 = mFakeImpressApi.createImpressNode();
         // The entityId is incremented by 1 whenever a new node is created.
-        assertThat(entityId2).isEqualTo(entityId + 1);
+        assertThat(entityNode2.getHandle()).isEqualTo(entityNode.getHandle() + 1);
     }
 
     @Test
     public void getImpressNodes_returnsNodes() {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         Map<GltfNodeData, GltfNodeData> nodes = mFakeImpressApi.getImpressNodes();
         assertThat(nodes).hasSize(1);
         GltfNodeData lastNode =
@@ -161,49 +164,49 @@ public final class FakeImpressApiImplTest {
             lastNode = node;
         }
         assertThat(lastNode).isNotNull();
-        assertThat(lastNode.getEntityId()).isEqualTo(entityId);
+        assertThat(lastNode.getEntityId()).isEqualTo(entityNode.getHandle());
     }
 
     @Test
     public void destroyImpressNode_destroysNode() {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         Map<GltfNodeData, GltfNodeData> nodes = mFakeImpressApi.getImpressNodes();
         int nodesSize = nodes.size();
-        mFakeImpressApi.destroyImpressNode(entityId);
+        mFakeImpressApi.destroyImpressNode(entityNode);
         nodes = mFakeImpressApi.getImpressNodes();
         assertThat(nodes).hasSize(nodesSize - 1);
     }
 
     @Test
     public void setGltfModelColliderEnabled_enablesCollider() {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
                         () ->
                                 mFakeImpressApi.setGltfModelColliderEnabled(
-                                        entityId, /* enableCollider= */ true));
+                                        entityNode, /* enableCollider= */ true));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
     @Test
     public void setGltfModelColliderEnabled_disablesCollider() {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
                         () ->
                                 mFakeImpressApi.setGltfModelColliderEnabled(
-                                        entityId, /* enableCollider= */ false));
+                                        entityNode, /* enableCollider= */ false));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
     @Test
     public void animateGltfModel_animatesModelWithoutLooping() {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         int animatingSize = mFakeImpressApi.impressNodeAnimatingSize();
         ListenableFuture<Void> future =
-                mFakeImpressApi.animateGltfModel(entityId, "animation_name", /* loop= */ false);
+                mFakeImpressApi.animateGltfModel(entityNode, "animation_name", /* loop= */ false);
         assertThat(future).isNotNull();
         int animatingSize2 = mFakeImpressApi.impressNodeAnimatingSize();
         assertThat(animatingSize2).isEqualTo(animatingSize + 1);
@@ -211,10 +214,10 @@ public final class FakeImpressApiImplTest {
 
     @Test
     public void animateGltfModel_animatesModelWithLooping() {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         int animatingSize = mFakeImpressApi.impressNodeLoopAnimatingSize();
         ListenableFuture<Void> future =
-                mFakeImpressApi.animateGltfModel(entityId, "animation_name", /* loop= */ true);
+                mFakeImpressApi.animateGltfModel(entityNode, "animation_name", /* loop= */ true);
         assertThat(future).isNotNull();
         int animatingSize2 = mFakeImpressApi.impressNodeLoopAnimatingSize();
         assertThat(animatingSize2).isEqualTo(animatingSize + 1);
@@ -222,65 +225,65 @@ public final class FakeImpressApiImplTest {
 
     @Test
     public void stopGltfModelAnimation_stopsModelWithoutLooping() {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         ListenableFuture<Void> future =
-                mFakeImpressApi.animateGltfModel(entityId, "animation_name", /* loop= */ false);
+                mFakeImpressApi.animateGltfModel(entityNode, "animation_name", /* loop= */ false);
         assertThat(future).isNotNull();
         int animatingSize = mFakeImpressApi.impressNodeAnimatingSize();
-        mFakeImpressApi.stopGltfModelAnimation(entityId);
+        mFakeImpressApi.stopGltfModelAnimation(entityNode);
         int animatingSize2 = mFakeImpressApi.impressNodeAnimatingSize();
         assertThat(animatingSize2).isEqualTo(animatingSize - 1);
     }
 
     @Test
     public void stopGltfModelAnimation_stopsModelWithLooping() {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         ListenableFuture<Void> future =
-                mFakeImpressApi.animateGltfModel(entityId, "animation_name", /* loop= */ true);
+                mFakeImpressApi.animateGltfModel(entityNode, "animation_name", /* loop= */ true);
         assertThat(future).isNotNull();
         int animatingSize = mFakeImpressApi.impressNodeLoopAnimatingSize();
-        mFakeImpressApi.stopGltfModelAnimation(entityId);
+        mFakeImpressApi.stopGltfModelAnimation(entityNode);
         int animatingSize2 = mFakeImpressApi.impressNodeLoopAnimatingSize();
         assertThat(animatingSize2).isEqualTo(animatingSize - 1);
     }
 
     @Test
     public void impressNodeHasParent_byDefault_returnsFalse() {
-        int entityId = mFakeImpressApi.createImpressNode();
-        boolean hasParent = mFakeImpressApi.impressNodeHasParent(entityId);
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
+        boolean hasParent = mFakeImpressApi.impressNodeHasParent(entityNode);
         assertThat(hasParent).isFalse();
     }
 
     @Test
     public void impressNodeHasParent_whenParentIsSet_returnsTrue() {
-        int childEntityId = mFakeImpressApi.createImpressNode();
-        int parentEntityId = mFakeImpressApi.createImpressNode();
-        mFakeImpressApi.setImpressNodeParent(childEntityId, parentEntityId);
-        boolean hasParent = mFakeImpressApi.impressNodeHasParent(childEntityId);
+        ImpressNode childEntityNode = mFakeImpressApi.createImpressNode();
+        ImpressNode parentEntityNode = mFakeImpressApi.createImpressNode();
+        mFakeImpressApi.setImpressNodeParent(childEntityNode, parentEntityNode);
+        boolean hasParent = mFakeImpressApi.impressNodeHasParent(childEntityNode);
         assertThat(hasParent).isTrue();
     }
 
     @Test
     public void getImpressNodeParent_returnsParent() {
-        int childEntityId = mFakeImpressApi.createImpressNode();
-        int parentEntityId = mFakeImpressApi.createImpressNode();
-        mFakeImpressApi.setImpressNodeParent(childEntityId, parentEntityId);
-        int entityId = mFakeImpressApi.getImpressNodeParent(childEntityId);
-        assertThat(entityId).isEqualTo(parentEntityId);
+        ImpressNode childEntityNode = mFakeImpressApi.createImpressNode();
+        ImpressNode parentEntityNode = mFakeImpressApi.createImpressNode();
+        mFakeImpressApi.setImpressNodeParent(childEntityNode, parentEntityNode);
+        int entityId = mFakeImpressApi.getImpressNodeParent(childEntityNode);
+        assertThat(entityId).isEqualTo(parentEntityNode.getHandle());
     }
 
     @Test
     public void getImpressNodeParent_whenParentIsNotSet_returnsNegativeOne() {
-        int childEntityId = mFakeImpressApi.createImpressNode();
-        int entityId = mFakeImpressApi.getImpressNodeParent(childEntityId);
+        ImpressNode childEntityNode = mFakeImpressApi.createImpressNode();
+        int entityId = mFakeImpressApi.getImpressNodeParent(childEntityNode);
         assertThat(entityId).isEqualTo(-1);
     }
 
     @Test
     public void createStereoSurface_createsStereoSurface() {
         int stereoMode = StereoMode.MONO;
-        int stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
-        Map<Integer, StereoSurfaceEntityData> stereoSurface =
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        Map<ImpressNode, StereoSurfaceEntityData> stereoSurface =
                 mFakeImpressApi.getStereoSurfaceEntities();
         StereoSurfaceEntityData stereoSurfaceData = stereoSurface.get(stereoSurfaceNode);
         assertNotNull(stereoSurfaceData);
@@ -293,9 +296,9 @@ public final class FakeImpressApiImplTest {
     @Test
     public void setStereoSurfaceEntityCanvasShapeQuad_setsCanvasShapeQuad() {
         int stereoMode = StereoMode.MONO;
-        int stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
         mFakeImpressApi.setStereoSurfaceEntityCanvasShapeQuad(stereoSurfaceNode, 11.0f, 11.0f);
-        Map<Integer, StereoSurfaceEntityData> stereoSurface =
+        Map<ImpressNode, StereoSurfaceEntityData> stereoSurface =
                 mFakeImpressApi.getStereoSurfaceEntities();
         StereoSurfaceEntityData stereoSurfaceData = stereoSurface.get(stereoSurfaceNode);
         assertNotNull(stereoSurfaceData);
@@ -310,9 +313,9 @@ public final class FakeImpressApiImplTest {
     @Test
     public void setStereoSurfaceEntityCanvasShapeSphere_setsCanvasShapeSphere() {
         int stereoMode = StereoMode.MONO;
-        int stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
         mFakeImpressApi.setStereoSurfaceEntityCanvasShapeSphere(stereoSurfaceNode, 11.0f);
-        Map<Integer, StereoSurfaceEntityData> stereoSurface =
+        Map<ImpressNode, StereoSurfaceEntityData> stereoSurface =
                 mFakeImpressApi.getStereoSurfaceEntities();
         StereoSurfaceEntityData stereoSurfaceData = stereoSurface.get(stereoSurfaceNode);
         assertNotNull(stereoSurfaceData);
@@ -325,9 +328,9 @@ public final class FakeImpressApiImplTest {
     @Test
     public void setStereoSurfaceEntityCanvasShapeHemisphere_setsCanvasShapeHemisphere() {
         int stereoMode = StereoMode.MONO;
-        int stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
         mFakeImpressApi.setStereoSurfaceEntityCanvasShapeHemisphere(stereoSurfaceNode, 11.0f);
-        Map<Integer, StereoSurfaceEntityData> stereoSurface =
+        Map<ImpressNode, StereoSurfaceEntityData> stereoSurface =
                 mFakeImpressApi.getStereoSurfaceEntities();
         StereoSurfaceEntityData stereoSurfaceData = stereoSurface.get(stereoSurfaceNode);
         assertNotNull(stereoSurfaceData);
@@ -340,14 +343,14 @@ public final class FakeImpressApiImplTest {
     @Test
     public void getSurfaceFromStereoSurface_returnsSurface() {
         int stereoMode = StereoMode.MONO;
-        int stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
         Surface surface = mFakeImpressApi.getSurfaceFromStereoSurface(stereoSurfaceNode);
         assertThat(surface).isNotNull();
     }
 
     @Test
     public void getSurfaceFromStereoSurface_whenSurfaceDoesNotExist_throwsException() {
-        int stereoSurfaceNode = 12345;
+        ImpressNode stereoSurfaceNode = new ImpressNode(12345);
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
@@ -358,11 +361,11 @@ public final class FakeImpressApiImplTest {
     @Test
     public void setFeatherRadiusForStereoSurface_setsFeatherRadius() {
         int stereoMode = StereoMode.MONO;
-        int stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
         float radiusX = 11.0f;
         float radiusY = 12.0f;
         mFakeImpressApi.setFeatherRadiusForStereoSurface(stereoSurfaceNode, radiusX, radiusY);
-        Map<Integer, StereoSurfaceEntityData> stereoSurface =
+        Map<ImpressNode, StereoSurfaceEntityData> stereoSurface =
                 mFakeImpressApi.getStereoSurfaceEntities();
         StereoSurfaceEntityData stereoSurfaceData = stereoSurface.get(stereoSurfaceNode);
         assertNotNull(stereoSurfaceData);
@@ -375,10 +378,10 @@ public final class FakeImpressApiImplTest {
     @Test
     public void setStereoModeForStereoSurface_setsStereoMode() {
         int stereoMode = StereoMode.MONO;
-        int stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
         stereoMode = StereoMode.SIDE_BY_SIDE;
         mFakeImpressApi.setStereoModeForStereoSurface(stereoSurfaceNode, stereoMode);
-        Map<Integer, StereoSurfaceEntityData> stereoSurface =
+        Map<ImpressNode, StereoSurfaceEntityData> stereoSurface =
                 mFakeImpressApi.getStereoSurfaceEntities();
         StereoSurfaceEntityData stereoSurfaceData = stereoSurface.get(stereoSurfaceNode);
         assertNotNull(stereoSurfaceData);
@@ -849,13 +852,14 @@ public final class FakeImpressApiImplTest {
     @Test
     public void setMaterialOverride_setsMaterialOverride()
             throws ExecutionException, InterruptedException {
-        int entityId = mFakeImpressApi.createImpressNode();
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         WaterMaterial material = mFakeImpressApi.createWaterMaterial(true).get();
-        mFakeImpressApi.setMaterialOverride(entityId, material.getNativeHandle(), "fake_mesh_name");
+        mFakeImpressApi.setMaterialOverride(
+                entityNode, material.getNativeHandle(), "fake_mesh_name");
         Map<GltfNodeData, GltfNodeData> nodes = mFakeImpressApi.getImpressNodes();
         boolean foundMaterial = false;
         for (Map.Entry<GltfNodeData, GltfNodeData> node : nodes.entrySet()) {
-            if (node.getKey().getEntityId() == entityId
+            if (node.getKey().getEntityId() == entityNode.getHandle()
                     && Objects.requireNonNull(node.getKey().getMaterialOverride())
                                     .getMaterialHandle()
                             == material.getNativeHandle()) {
@@ -888,7 +892,8 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setPrimaryAlphaMaskForStereoSurface(0, 0));
+                        () -> mFakeImpressApi.setPrimaryAlphaMaskForStereoSurface(
+                            new ImpressNode(0), 0));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -897,7 +902,8 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setAuxiliaryAlphaMaskForStereoSurface(0, 0));
+                        () -> mFakeImpressApi.setAuxiliaryAlphaMaskForStereoSurface(
+                            new ImpressNode(0), 0));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -905,7 +911,7 @@ public final class FakeImpressApiImplTest {
     public void disposeAllResources_disposesAllResources() {
         ListenableFuture<Long> unused =
                 mFakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment");
-        int unused2 = mFakeImpressApi.createImpressNode();
+        ImpressNode unused2 = mFakeImpressApi.createImpressNode();
         ListenableFuture<Long> unused3 = mFakeImpressApi.loadGltfAsset("fakeAsset");
         ListenableFuture<Texture> unused4 = mFakeImpressApi.loadTexture("FakeAsset.exr");
         ListenableFuture<WaterMaterial> unused5 = mFakeImpressApi.createWaterMaterial(false);

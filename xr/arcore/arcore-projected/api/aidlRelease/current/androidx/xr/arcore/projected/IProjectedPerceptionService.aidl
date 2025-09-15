@@ -35,4 +35,6 @@ package androidx.xr.arcore.projected;
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 interface IProjectedPerceptionService {
   boolean checkVpsAvailability(double latDeg, double lonDeg, androidx.xr.arcore.projected.IVpsAvailabilityCallback callback) = 0;
+  void start(boolean enableVps, String apiKey) = 1;
+  void stop() = 2;
 }

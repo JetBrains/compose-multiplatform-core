@@ -66,7 +66,7 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
         set(value) {
             field = value
             for (callback in eventCallbacks) {
-                callback.isEnabled = value
+                callback.isBackEnabled = value
             }
         }
 
@@ -133,21 +133,21 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
     }
 
     private class EventCallback(private val onBackPressedCallback: OnBackPressedCallback) :
-        NavigationEventCallback<NotProvided>(isEnabled = onBackPressedCallback.isEnabled) {
+        NavigationEventCallback<NotProvided>(isBackEnabled = onBackPressedCallback.isEnabled) {
 
-        override fun onEventStarted(event: NavigationEvent) {
+        override fun onBackStarted(event: NavigationEvent) {
             onBackPressedCallback.handleOnBackStarted(BackEventCompat(event))
         }
 
-        override fun onEventProgressed(event: NavigationEvent) {
+        override fun onBackProgressed(event: NavigationEvent) {
             onBackPressedCallback.handleOnBackProgressed(BackEventCompat(event))
         }
 
-        override fun onEventCompleted() {
+        override fun onBackCompleted() {
             onBackPressedCallback.handleOnBackPressed()
         }
 
-        override fun onEventCancelled() {
+        override fun onBackCancelled() {
             onBackPressedCallback.handleOnBackCancelled()
         }
     }

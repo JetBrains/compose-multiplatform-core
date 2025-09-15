@@ -29,10 +29,10 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertThrows
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDisplayManager
 import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 
@@ -110,24 +110,20 @@ class ProjectedContextTest {
     }
 
     @Test
-    @Ignore // Bring back this test once a new Robolectric version is available
-    fun createProjectedActivityOptions_projectedDeviceContext_returnsActivityOptionsWithLaunchDisplayId() {
-        createVirtualDevice()
-
-        val activityOptions =
-            ProjectedContext.createProjectedActivityOptions(projectedDeviceContext)
-
-        assertThat(activityOptions.launchDisplayId).isEqualTo(DISPLAY_ID)
-    }
-
-    @Test
-    @Ignore // Bring back this test once a new Robolectric version is available
-    fun createProjectedActivityOptions_anotherContext_returnsActivityOptionsWithLaunchDisplayId() {
-        createVirtualDevice()
+    fun createProjectedActivityOptions_projectedDisplayAvailable_returnsActivityOptionsWithLaunchDisplayId() {
+        val expectedDisplayId =
+            ShadowDisplayManager.addDisplay("", ProjectedContext.PROJECTED_DISPLAY_NAME)
 
         val activityOptions = ProjectedContext.createProjectedActivityOptions(context)
 
-        assertThat(activityOptions.launchDisplayId).isEqualTo(DISPLAY_ID)
+        assertThat(activityOptions.launchDisplayId).isEqualTo(expectedDisplayId)
+    }
+
+    @Test
+    fun createProjectedActivityOptions_projectedDisplayUnavailable_throwsIllegalStateException() {
+        assertThrows(IllegalStateException::class.java) {
+            ProjectedContext.createProjectedActivityOptions(context)
+        }
     }
 
     @Test
@@ -165,10 +161,6 @@ class ProjectedContextTest {
             ClassParameter(Int::class.javaPrimitiveType, 1),
             ClassParameter(virtualDeviceParamsClass, virtualDeviceParamsBuilder),
         )
-    }
-
-    companion object {
-        private const val DISPLAY_ID = 5
     }
 
     class LocalContextWrapper(context: Context, private val deviceId: Int) :

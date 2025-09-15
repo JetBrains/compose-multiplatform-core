@@ -1134,7 +1134,7 @@ public final class ResourceBuilders {
         @RequiresSchemaVersion(major = 1, minor = 600)
         public static @NonNull LottieProperty colorForSlot(
                 @NonNull String sid, @NonNull ColorProp color) {
-            return new LottieSlotColorFilter.Builder().setSid(sid).setColor(color).build();
+            return new LottieColorForSlot.Builder().setSid(sid).setColor(color).build();
         }
 
         /** Get the protocol buffer representation of this object. */
@@ -1157,7 +1157,7 @@ public final class ResourceBuilders {
     public static @NonNull LottieProperty lottiePropertyFromProto(
             ResourceProto.@NonNull LottieProperty proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasSlotColor()) {
-            return LottieSlotColorFilter.fromProto(proto.getSlotColor(), fingerprint);
+            return LottieColorForSlot.fromProto(proto.getSlotColor(), fingerprint);
         }
         throw new IllegalStateException("Proto was not a recognised instance of LottieProperty");
     }
@@ -1172,12 +1172,12 @@ public final class ResourceBuilders {
      * the specified slot ID.
      */
     @RequiresSchemaVersion(major = 1, minor = 600)
-    static final class LottieSlotColorFilter extends LottieProperty {
-        private final ResourceProto.LottieSlotColorFilter mImpl;
+    static final class LottieColorForSlot extends LottieProperty {
+        private final ResourceProto.LottieColorForSlot mImpl;
         private final @Nullable Fingerprint mFingerprint;
 
-        LottieSlotColorFilter(
-                ResourceProto.LottieSlotColorFilter impl, @Nullable Fingerprint fingerprint) {
+        LottieColorForSlot(
+                ResourceProto.LottieColorForSlot impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
             this.mFingerprint = fingerprint;
         }
@@ -1208,19 +1208,19 @@ public final class ResourceBuilders {
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public static @NonNull LottieSlotColorFilter fromProto(
-                ResourceProto.@NonNull LottieSlotColorFilter proto,
+        public static @NonNull LottieColorForSlot fromProto(
+                ResourceProto.@NonNull LottieColorForSlot proto,
                 @Nullable Fingerprint fingerprint) {
-            return new LottieSlotColorFilter(proto, fingerprint);
+            return new LottieColorForSlot(proto, fingerprint);
         }
 
-        static @NonNull LottieSlotColorFilter fromProto(
-                ResourceProto.@NonNull LottieSlotColorFilter proto) {
+        static @NonNull LottieColorForSlot fromProto(
+                ResourceProto.@NonNull LottieColorForSlot proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
-        ResourceProto.@NonNull LottieSlotColorFilter toProto() {
+        ResourceProto.@NonNull LottieColorForSlot toProto() {
             return mImpl;
         }
 
@@ -1232,14 +1232,14 @@ public final class ResourceBuilders {
 
         @Override
         public @NonNull String toString() {
-            return "LottieSlotColorFilter{" + "sid=" + getSid() + ", color=" + getColor() + "}";
+            return "LottieColorForSlot{" + "sid=" + getSid() + ", color=" + getColor() + "}";
         }
 
-        /** Builder for {@link LottieSlotColorFilter}. */
+        /** Builder for {@link LottieColorForSlot}. */
         @SuppressWarnings("HiddenSuperclass")
         public static final class Builder implements LottieProperty.Builder {
-            private final ResourceProto.LottieSlotColorFilter.Builder mImpl =
-                    ResourceProto.LottieSlotColorFilter.newBuilder();
+            private final ResourceProto.LottieColorForSlot.Builder mImpl =
+                    ResourceProto.LottieColorForSlot.newBuilder();
             private final Fingerprint mFingerprint = new Fingerprint(-1002991796);
 
             /** Creates an instance of {@link Builder}. */
@@ -1267,7 +1267,7 @@ public final class ResourceBuilders {
             public @NonNull Builder setColor(@NonNull ColorProp color) {
                 if (color.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
-                            "LottieSlotColorFilter.Builder.setColor doesn't support dynamic"
+                            "LottieColorForSlot.Builder.setColor doesn't support dynamic"
                                     + " values.");
                 }
                 mImpl.setColor(color.toProto());
@@ -1278,8 +1278,8 @@ public final class ResourceBuilders {
 
             /** Builds an instance from accumulated values. */
             @Override
-            public @NonNull LottieSlotColorFilter build() {
-                return new LottieSlotColorFilter(mImpl.build(), mFingerprint);
+            public @NonNull LottieColorForSlot build() {
+                return new LottieColorForSlot(mImpl.build(), mFingerprint);
             }
         }
     }

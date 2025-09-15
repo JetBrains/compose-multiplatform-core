@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.frontend.action
 
 import android.app.PendingIntent
+import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.frontend.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.frontend.capture.PendingIntentAwareWriter
@@ -25,13 +27,14 @@ import androidx.compose.runtime.Composable
 
 /** Create a [PendingIntentAction] to send the [PendingIntent] when invoked. */
 @Composable
-fun pendingIntentAction(pendingIntent: PendingIntent) =
+public fun pendingIntentAction(pendingIntent: PendingIntent): PendingIntentAction =
     PendingIntentAction(LocalRemoteComposeCreationState.current, pendingIntent)
 
 /** Send the [PendingIntent] when invoked. */
-class PendingIntentAction(
-    val remoteComposeCreationState: RemoteComposeCreationState,
-    val pendingIntent: PendingIntent,
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class PendingIntentAction(
+    public val remoteComposeCreationState: RemoteComposeCreationState,
+    public val pendingIntent: PendingIntent,
 ) : Action {
 
     override fun toRemoteAction(): androidx.compose.remote.creation.actions.Action {
@@ -54,7 +57,7 @@ class PendingIntentAction(
 
     @Composable override fun toComposeUiAction(): () -> Unit = {}
 
-    companion object {
-        const val ACTION_NAME = "SendPendingIntent"
+    public companion object {
+        public const val ACTION_NAME: String = "SendPendingIntent"
     }
 }

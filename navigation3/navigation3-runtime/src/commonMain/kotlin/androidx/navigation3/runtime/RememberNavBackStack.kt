@@ -22,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.toMutableStateList
 import androidx.savedstate.serialization.SavedStateConfiguration
 import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.serializer
 
 /**
  * Provides a [NavBackStack] that is automatically remembered in the Compose hierarchy across
@@ -41,38 +42,18 @@ import kotlinx.serialization.modules.SerializersModule
  *       subtypes of [NavKey] in a [SerializersModule] and pass that via [configuration]. You must
  *       also provide the same configuration to the encoder/decoder when saving/restoring state.
  *
- * ### Example
- *
- * ```kotlin
- * @Serializable sealed interface Screen : NavKey
- * @Serializable data class Home(val id: String) : Screen
- * @Serializable data class Details(val itemId: Long) : Screen
- *
- * // Closed polymorphism with sealed interface works out of the box on Android:
- * val backStack = rememberNavBackStack(Home("start"))
- *
- * // Open polymorphism requires registering subtypes (non-Android):
- * val module = SerializersModule {
- *   polymorphic(Screen::class) {
- *     subclass(Home::class, Home.serializer())
- *     subclass(Details::class, Details.serializer())
- *   }
- * }
- * val config = SavedStateConfiguration(serializersModule = module)
- * val backStack = rememberNavBackStack(Home("start"), configuration = config)
- * ```
- *
- * @param elements The initial keys of this back stack.
+ * @sample androidx.navigation3.runtime.samples.rememberNavBackStack_withSerializersModule
  * @param configuration Controls how element serializers are resolved. On Android,
  *   [SavedStateConfiguration.DEFAULT] uses reflection; otherwise, the provided [SerializersModule]
  *   is used.
+ * @param elements The initial keys of this back stack.
  * @return A [NavBackStack] that survives process death and configuration changes.
  * @see NavBackStackSerializer
  */
 @Composable
 public inline fun <reified T : NavKey> rememberNavBackStack(
     vararg elements: T,
-    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+    configuration: SavedStateConfiguration,
 ): NavBackStack<NavKey> {
     val base =
         rememberSerializable(
@@ -82,4 +63,37 @@ public inline fun <reified T : NavKey> rememberNavBackStack(
             elements.toList().toMutableStateList()
         }
     return remember { NavBackStack(base) }
+}
+
+/**
+ * Provides a [NavBackStack] that is automatically remembered in the Compose hierarchy across
+ * process death and configuration changes.
+ *
+ * This overload **does not take a [SavedStateConfiguration]**. It relies on the platform default:
+ * on **Android**, state is saved/restored using a **reflection-based serializer**; on **other
+ * platforms this will fail at runtime**. If you target non-Android platforms, use the overload that
+ * accepts a [SavedStateConfiguration] and register your serializers explicitly.
+ *
+ * ### When to use this overload
+ * - You are on **Android only** and want a simple API that uses reflection under the hood.
+ * - Your back stack elements use **closed polymorphism** (sealed hierarchies) or otherwise work
+ *   with Android’s reflective serializer.
+ *
+ * ### Serialization requirements
+ * - Each element placed in the [NavBackStack] must be `@Serializable`.
+ * - For **closed polymorphism** (sealed hierarchies), the compiler knows all subtypes and generates
+ *   serializers; Android’s reflection will also work.
+ * - For **open polymorphism** (interfaces or non-sealed hierarchies):
+ *     - On Android, the reflection path can handle subtypes without manual registration.
+ *     - On non-Android, this overload is **unsupported**; use the configuration overload and
+ *       register all subtypes of [NavKey] in a [SerializersModule].
+ *
+ * @sample androidx.navigation3.runtime.samples.rememberNavBackStack_withReflection
+ * @param elements The initial keys of this back stack.
+ * @return A [NavBackStack] that survives process death and configuration changes on Android.
+ * @see NavBackStackSerializer
+ */
+@Composable
+public fun <T : NavKey> rememberNavBackStack(vararg elements: T): NavBackStack<NavKey> {
+    return rememberSerializable(serializer = serializer()) { NavBackStack(*elements) }
 }

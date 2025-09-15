@@ -221,6 +221,8 @@ final class Camera2CameraImpl implements CameraInternal {
     private final ErrorTimeoutReopenScheduler
             mErrorTimeoutReopenScheduler = new ErrorTimeoutReopenScheduler();
 
+    private final AtomicBoolean mIsRemoved = new AtomicBoolean(false);
+
     /**
      * Constructor for a camera.
      *
@@ -1049,6 +1051,10 @@ final class Camera2CameraImpl implements CameraInternal {
 
     @Override
     public void onRemoved() {
+        if (mIsRemoved.getAndSet(true)) {
+            return;
+        }
+
         mExecutor.execute(() -> {
             debugLog("Camera is removed. Updating state and cleaning up.");
 
@@ -1082,6 +1088,11 @@ final class Camera2CameraImpl implements CameraInternal {
                 finishClose();
             }
         });
+    }
+
+    @Override
+    public boolean isRemoved() {
+        return mIsRemoved.get();
     }
 
     @Override

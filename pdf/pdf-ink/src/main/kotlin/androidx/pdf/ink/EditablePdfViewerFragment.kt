@@ -82,14 +82,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
      * @throws IllegalStateException If the document is not available (e.g., not loaded or lost due
      *   to process death).
      */
-    public suspend fun writeTo(dest: ParcelFileDescriptor) {
-        val document = documentViewModel.editablePdfDocument
-        if (document == null) {
-            throw IllegalStateException("Document not available for saving.")
-        }
-
-        documentViewModel.saveEdits(dest)
-    }
+    public suspend fun writeTo(dest: ParcelFileDescriptor): Unit = documentViewModel.saveEdits(dest)
 
     /** Undoes the last edit. If there are no more edits to undo, this is a no-op. */
     public fun undo(): Unit = documentViewModel.undo()
@@ -156,6 +149,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         setupTouchListeners()
         setupBackPressedCallback()
         attachOnViewportChangedListener()
+        setupDiscardChangesDialogListener()
     }
 
     /**
@@ -166,11 +160,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
      */
     override fun onLoadDocumentSuccess(document: PdfDocument) {
         super.onLoadDocumentSuccess(document)
-        if (documentUri != null && document is EditablePdfDocument) {
-            documentViewModel.editablePdfDocument = document
-        } else {
-            documentViewModel.editablePdfDocument = null
-        }
+        documentViewModel.maybeInitialiseForDocument(document)
     }
 
     override fun onDestroyView() {
@@ -184,6 +174,15 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         backPressedCallback.isEnabled = isEnabled
         wetStrokesView.visibility = if (isEnabled) VISIBLE else GONE
         toolboxView.visibility = if (isEnabled) GONE else VISIBLE
+    }
+
+    private fun setupDiscardChangesDialogListener() {
+        childFragmentManager.setFragmentResultListener(
+            DiscardChangesDialog.REQUEST_KEY,
+            viewLifecycleOwner,
+        ) { _, _ ->
+            documentViewModel.discardUnsavedChanges()
+        }
     }
 
     private fun setupTouchListeners() {
@@ -227,12 +226,11 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
     private fun showDiscardChangesDialog() {
         val dialog =
-            (childFragmentManager.findFragmentByTag(DISCARD_CHANGES_DIALOG_TAG)
-                as? DiscardChangesDialog)
-                ?: DiscardChangesDialog(onDiscardChanges = documentViewModel::discardUnsavedChanges)
+            (childFragmentManager.findFragmentByTag(DiscardChangesDialog.TAG)
+                as? DiscardChangesDialog) ?: DiscardChangesDialog()
 
         if (!dialog.isAdded) {
-            dialog.show(childFragmentManager, DISCARD_CHANGES_DIALOG_TAG)
+            dialog.show(childFragmentManager, DiscardChangesDialog.TAG)
         }
     }
 

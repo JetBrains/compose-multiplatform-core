@@ -217,7 +217,7 @@ internal constructor(
         return AnchorCreateSuccess(anchor)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(
             State(

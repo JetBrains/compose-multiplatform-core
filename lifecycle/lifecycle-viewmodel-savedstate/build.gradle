@@ -56,7 +56,7 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api("androidx.annotation:annotation:1.9.1")
-                api(project(":savedstate:savedstate"))
+                api("androidx.savedstate:savedstate:1.4.0-alpha03")
                 api(project(":lifecycle:lifecycle-viewmodel"))
                 implementation(project(":lifecycle:lifecycle-common"))
                 api(libs.kotlinStdlib)

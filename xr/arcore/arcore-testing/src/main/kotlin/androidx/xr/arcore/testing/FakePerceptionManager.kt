@@ -21,6 +21,7 @@ import androidx.xr.arcore.internal.Anchor
 import androidx.xr.arcore.internal.AnchorInvalidUuidException
 import androidx.xr.arcore.internal.DepthMap
 import androidx.xr.arcore.internal.Earth
+import androidx.xr.arcore.internal.Eye
 import androidx.xr.arcore.internal.Face
 import androidx.xr.arcore.internal.Hand
 import androidx.xr.arcore.internal.HitResult
@@ -44,6 +45,12 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     /** List of anchors created by this [FakePerceptionManager]. */
     public val anchors: MutableList<Anchor> = mutableListOf<Anchor>()
     override val trackables: MutableList<Trackable> = mutableListOf<Trackable>()
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val leftEye: Eye? = FakeRuntimeEye()
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val rightEye: Eye? = FakeRuntimeEye()
 
     override val leftHand: Hand? = FakeRuntimeHand()
     override val rightHand: Hand? = FakeRuntimeHand()
@@ -69,13 +76,10 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val earth: Earth = FakeRuntimeEarth()
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val leftDepthMap: DepthMap? = FakeRuntimeDepthMap()
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val rightDepthMap: DepthMap? = FakeRuntimeDepthMap()
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val monoDepthMap: DepthMap? = FakeRuntimeDepthMap()
 
     private val hitResults = mutableListOf<HitResult>()

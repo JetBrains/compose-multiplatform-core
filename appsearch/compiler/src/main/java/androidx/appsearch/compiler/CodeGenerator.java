@@ -24,13 +24,12 @@ import static androidx.room.compiler.codegen.XTypeNameKt.toJavaPoet;
 import static androidx.room.compiler.processing.compat.XConverters.toJavac;
 
 import androidx.room.compiler.codegen.XClassName;
+import androidx.room.compiler.codegen.XTypeName;
 import androidx.room.compiler.processing.XProcessingEnv;
 
 import com.google.auto.common.GeneratedAnnotationSpecs;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import org.jspecify.annotations.NonNull;
@@ -84,15 +83,15 @@ class CodeGenerator {
         String className = qualifiedName.substring(mOutputPackage.length() + 1);
         XClassName genClassName = getDocumentClassFactoryForClass(mOutputPackage, className);
 
-        TypeName genClassType = mModel.getClassElement().getType().getTypeName();
-        TypeName factoryType =
-                ParameterizedTypeName.get(DOCUMENT_CLASS_FACTORY_CLASS, genClassType);
+        XTypeName genClassType = mModel.getClassElement().getType().asTypeName();
+        XTypeName factoryType =
+                DOCUMENT_CLASS_FACTORY_CLASS.parametrizedBy(genClassType);
 
         TypeSpec.Builder genClass = TypeSpec
                 .classBuilder(toJavaPoet(genClassName))
                 .addOriginatingElement(toJavac(mModel.getClassElement()))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addSuperinterface(factoryType);
+                .addSuperinterface(toJavaPoet(factoryType));
 
         // Add the @Generated annotation to avoid static analysis running on these files
         GeneratedAnnotationSpecs.generatedAnnotationSpec(
@@ -104,8 +103,11 @@ class CodeGenerator {
         if (mRestrictGeneratedCodeToLib) {
             // Add @RestrictTo(LIBRARY_GROUP) to the generated class
             genClass.addAnnotation(
-                    AnnotationSpec.builder(RESTRICT_TO_ANNOTATION_CLASS)
-                            .addMember(/* name= */"value", "$T.LIBRARY", RESTRICT_TO_SCOPE_CLASS)
+                    AnnotationSpec.builder(toJavaPoet(RESTRICT_TO_ANNOTATION_CLASS))
+                            .addMember(
+                                    /* name= */"value",
+                                    "$T.LIBRARY",
+                                    toJavaPoet(RESTRICT_TO_SCOPE_CLASS))
                             .build());
         }
 

@@ -21,6 +21,7 @@ import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.hardware.camera2.CameraDevice
 import android.os.Build
 import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.core.Permissions
 import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.TimestampNs
@@ -83,7 +84,8 @@ internal class PruningCamera2DeviceManagerImplTest {
                 val fakeCameraMetadata = FakeCameraMetadata(cameraId = cameraId)
                 val fakeCamera2MetadataProvider =
                     FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata))
-                val fakeCamera2Quirks = Camera2Quirks(fakeCamera2MetadataProvider)
+                val fakeCamera2Quirks =
+                    Camera2Quirks(fakeCamera2MetadataProvider, CameraPipe.Flags())
                 val fakeAndroidCameraState =
                     AndroidCameraState(
                         cameraId,
@@ -913,7 +915,7 @@ internal class PruningCamera2DeviceManagerImplTest {
         val fakeCameraMetadata = FakeCameraMetadata(cameraId = cameraId)
         val fakeCamera2MetadataProvider =
             FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata))
-        val fakeCamera2Quirks = Camera2Quirks(fakeCamera2MetadataProvider)
+        val fakeCamera2Quirks = Camera2Quirks(fakeCamera2MetadataProvider, CameraPipe.Flags())
         val fakeAndroidCameraState =
             AndroidCameraState(
                 cameraId,

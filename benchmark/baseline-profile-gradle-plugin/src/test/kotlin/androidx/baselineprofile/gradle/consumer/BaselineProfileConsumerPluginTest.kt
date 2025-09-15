@@ -1981,6 +1981,10 @@ class BaselineProfileConsumerPluginTestWithKmp(agpVersion: TestAgpVersion) {
                     f.deleteOnExit()
                 }
 
+        // TODO: remove when b/442018105 is fixed
+        projectSetup.rootFolder.root
+            .resolve("gradle.properties")
+            .writeText("android.builtInKotlin=false")
         gradleRunner.buildAndAssertThatOutput("releaseSources") {
             expected.forEach { e -> contains(e.absolutePath) }
         }
@@ -2034,6 +2038,10 @@ class BaselineProfileConsumerPluginTestWithKmp(agpVersion: TestAgpVersion) {
                     f.deleteOnExit()
                 }
 
+        // TODO: remove when b/442018105 is fixed
+        projectSetup.rootFolder.root
+            .resolve("gradle.properties")
+            .writeText("android.builtInKotlin=false")
         gradleRunner.buildAndAssertThatOutput("releaseSources") {
             expected.forEach { e -> contains(e.absolutePath) }
         }

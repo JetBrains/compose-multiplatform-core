@@ -75,6 +75,8 @@ interface BooksDao {
 
     @Insert fun addPublisher(publisher: Publisher)
 
+    @Insert suspend fun addPublishersSuspend(vararg publishers: Publisher)
+
     @Delete fun deletePublishers(vararg publishers: Publisher)
 
     @Delete fun deletePublishersSingle(vararg publishers: Publisher): Single<Int>
@@ -507,4 +509,8 @@ interface BooksDao {
     suspend fun executeTransactionSuspending(block: suspend () -> Unit) {
         block.invoke()
     }
+
+    @Query("SELECT * FROM Author") fun getAuthorsFlow(): Flow<List<Author>>
+
+    @Query("SELECT * FROM Publisher") fun getPublishersFlow(): Flow<List<Publisher>>
 }

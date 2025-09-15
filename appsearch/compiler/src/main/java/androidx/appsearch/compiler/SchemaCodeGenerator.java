@@ -104,9 +104,9 @@ class SchemaCodeGenerator {
         classBuilder.addMethod(
                 MethodSpec.methodBuilder("getSchema")
                         .addModifiers(Modifier.PUBLIC)
-                        .returns(APPSEARCH_SCHEMA_CLASS)
+                        .returns(toJavaPoet(APPSEARCH_SCHEMA_CLASS))
                         .addAnnotation(Override.class)
-                        .addException(APPSEARCH_EXCEPTION_CLASS)
+                        .addException(toJavaPoet(APPSEARCH_EXCEPTION_CLASS))
                         .addStatement("return $L", createSchemaInitializerGetDocumentTypes())
                         .build());
 
@@ -127,7 +127,7 @@ class SchemaCodeGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(listOfClasses)
                 .addAnnotation(Override.class)
-                .addException(APPSEARCH_EXCEPTION_CLASS);
+                .addException(toJavaPoet(APPSEARCH_EXCEPTION_CLASS));
 
         if (mDependencyDocumentClasses.isEmpty()) {
             methodBuilder.addStatement("return $T.emptyList()", ClassName.get(Collections.class));
@@ -151,7 +151,9 @@ class SchemaCodeGenerator {
      */
     private CodeBlock createSchemaInitializerGetDocumentTypes() throws XProcessingException {
         CodeBlock.Builder codeBlock = CodeBlock.builder()
-                .add("new $T(SCHEMA_NAME)", APPSEARCH_SCHEMA_CLASS.nestedClass("Builder"))
+                .add(
+                        "new $T(SCHEMA_NAME)",
+                        toJavaPoet(APPSEARCH_SCHEMA_CLASS.nestedClass("Builder")))
                 .indent();
         for (XTypeElement parentType : mModel.getParentTypes()) {
             XClassName parentDocumentFactoryClass =
@@ -195,14 +197,14 @@ class SchemaCodeGenerator {
                     getterOrField.getComponentType().getTypeElement().asClassName();
             XClassName documentFactoryClass = getDocumentClassFactoryForClass(documentClass);
             codeBlock.add("new $T.Builder($S, $T.SCHEMA_NAME)",
-                    DocumentPropertyAnnotation.CONFIG_CLASS,
+                    toJavaPoet(DocumentPropertyAnnotation.CONFIG_CLASS),
                     annotation.getName(),
                     toJavaPoet(documentFactoryClass));
         } else {
             // All other property configs have a single param constructor that just takes the
             // property's serialized name as input
             codeBlock.add("new $T.Builder($S)",
-                    annotation.getConfigClassName(), annotation.getName());
+                    toJavaPoet(annotation.getConfigClassName()), annotation.getName());
         }
         codeBlock.indent().add(createSetCardinalityExpr(annotation, getterOrField));
         switch (annotation.getDataPropertyKind()) {
@@ -327,7 +329,8 @@ class SchemaCodeGenerator {
             default:
                 throw new IllegalStateException("Unhandled type category: " + typeCategory);
         }
-        return CodeBlock.of("\n.setCardinality($T.$N)", PROPERTY_CONFIG_CLASS, enumName);
+        return CodeBlock.of(
+                "\n.setCardinality($T.$N)", toJavaPoet(PROPERTY_CONFIG_CLASS), enumName);
     }
 
     /**
@@ -361,7 +364,7 @@ class SchemaCodeGenerator {
             }
         }
         return CodeBlock.of("\n.setTokenizerType($T.$N)",
-                StringPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(StringPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
@@ -387,7 +390,7 @@ class SchemaCodeGenerator {
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setIndexingType($T.$N)",
-                StringPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(StringPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
@@ -419,7 +422,7 @@ class SchemaCodeGenerator {
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setIndexingType($T.$N)",
-                LongPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(LongPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
@@ -443,7 +446,7 @@ class SchemaCodeGenerator {
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setIndexingType($T.$N)",
-                EmbeddingPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(EmbeddingPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
@@ -467,7 +470,7 @@ class SchemaCodeGenerator {
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setQuantizationType($T.$N)",
-                EmbeddingPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(EmbeddingPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 
     /**
@@ -504,6 +507,6 @@ class SchemaCodeGenerator {
                         getterOrField.getElement());
         }
         return CodeBlock.of("\n.setJoinableValueType($T.$N)",
-                StringPropertyAnnotation.CONFIG_CLASS, enumName);
+                toJavaPoet(StringPropertyAnnotation.CONFIG_CLASS), enumName);
     }
 }

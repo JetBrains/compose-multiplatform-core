@@ -55,6 +55,7 @@ constructor(
         CameraConfigs.defaultConfig()
     private val debugId = cameraAdapterIds.incrementAndGet()
     private var sessionProcessor: SessionProcessor? = null
+    private val isRemoved = atomic(false)
 
     init {
         debug { "Created $this for $cameraId" }
@@ -150,14 +151,20 @@ constructor(
      */
     override fun onRemoved() {
         debug { "$this received removed signal. Cleaning up." }
-        threads.scope.launch {
-            // 1. Immediately update the public state via the state adapter.
-            cameraStateAdapter.onRemoved()
+        if (isRemoved.compareAndSet(expect = false, update = true)) {
+            threads.scope.launch {
+                // 1. Immediately update the public state via the state adapter.
+                cameraStateAdapter.onRemoved()
 
-            // 2. Asynchronously clean up all resources by closing the UseCaseManager,
-            // which in turn closes the CameraGraph.
-            useCaseManager.close()
+                // 2. Asynchronously clean up all resources by closing the UseCaseManager,
+                // which in turn closes the CameraGraph.
+                useCaseManager.close()
+            }
         }
+    }
+
+    override fun isRemoved(): Boolean {
+        return isRemoved.value
     }
 
     override fun toString(): String = "CameraInternalAdapter<$cameraId($debugId)>"

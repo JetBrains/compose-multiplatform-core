@@ -78,12 +78,12 @@ import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialCurvedRow
-import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.PlaneOrientation
 import androidx.xr.compose.subspace.layout.SpatialAlignment
+import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.aspectRatio
@@ -221,7 +221,8 @@ class SpatialCompose : ComponentActivity() {
                 curveRadius = curveRadius,
             ) {
                 SpatialColumn(
-                    modifier = SubspaceModifier.width(200.dp).fillMaxHeight().testTag("LeftColumn")
+                    modifier = SubspaceModifier.width(200.dp).fillMaxHeight().testTag("LeftColumn"),
+                    verticalArrangement = SpatialArrangement.spacedBy(40.dp),
                 ) {
                     Orbiter(
                         position = ContentEdge.Start,
@@ -238,12 +239,10 @@ class SpatialCompose : ComponentActivity() {
                     }
 
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Left")
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(40.dp))
                     AnchorPanel(
                         modifier = SubspaceModifier.height(200.dp),
                         text = "Anchorable Panel",
                     )
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(40.dp))
                     ViewBasedAppPanel(
                         modifier = sidePanelModifier,
                         text = "Panel Bottom Left (View)",
@@ -256,6 +255,7 @@ class SpatialCompose : ComponentActivity() {
                             .padding(horizontal = 20.dp)
                             .testTag("CenterColumn"),
                     alignment = SpatialAlignment.TopCenter,
+                    verticalArrangement = SpatialArrangement.SpaceAround,
                 ) {
                     SpatialMainPanel(modifier = SubspaceModifier.fillMaxWidth().height(600.dp))
                     val intent = Intent(this@SpatialCompose, AnotherActivity::class.java)
@@ -270,12 +270,12 @@ class SpatialCompose : ComponentActivity() {
                     )
                 }
                 SpatialColumn(
-                    modifier = SubspaceModifier.width(200.dp).fillMaxHeight().testTag("RightColumn")
+                    modifier =
+                        SubspaceModifier.width(200.dp).fillMaxHeight().testTag("RightColumn"),
+                    verticalArrangement = SpatialArrangement.spacedBy(40.dp),
                 ) {
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Right")
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(40.dp))
                     AppPanel(modifier = sidePanelModifier, text = "Panel Bottom Right")
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(40.dp))
                     AspectRatioPanel()
                 }
             }

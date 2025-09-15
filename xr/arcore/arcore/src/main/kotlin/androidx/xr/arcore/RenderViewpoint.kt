@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.internal.ArDevice as RuntimeArDevice
 import androidx.xr.arcore.internal.RenderViewpoint as RuntimeRenderViewpoint
 import androidx.xr.runtime.FieldOfView
@@ -101,7 +102,8 @@ internal constructor(
      *   scenarios like stereo rendering (left/right eye views).
      * @property fieldOfView Contains the camera's field of view in radians.
      */
-    public class State(
+    public class State
+    internal constructor(
         public val pose: Pose,
         public val localPose: Pose,
         public val fieldOfView: FieldOfView,
@@ -130,6 +132,7 @@ internal constructor(
     /** The current [State] of the render viewpoint. */
     public val state: StateFlow<State> = _state.asStateFlow()
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         val poseInPerceptionSpace = runtimeArDevice.devicePose.compose(runtimeRenderViewpoint.pose)
         _state.emit(

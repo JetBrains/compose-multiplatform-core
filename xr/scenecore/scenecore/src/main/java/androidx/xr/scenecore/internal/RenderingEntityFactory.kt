@@ -37,4 +37,21 @@ public interface RenderingEntityFactory {
      * GltfEntity in the scene.
      */
     public fun createGltfEntity(feature: GltfFeature, pose: Pose, parentEntity: Entity): GltfEntity
+
+    /**
+     * Factory method for SurfaceEntity.
+     *
+     * @param feature The rendering implementation of SurfaceEntity.
+     * @param pose Pose of this entity relative to its parent, default value is Identity.
+     * @param parentEntity The parent entity of this entity.
+     * @return A [SurfaceEntity] which is a child of the parent entity.
+     */
+    public fun createSurfaceEntity(
+        feature: SurfaceFeature,
+        pose: Pose,
+        parentEntity: Entity,
+    ): SurfaceEntity
+
+    /** A factory function to create a SubspaceNodeEntity. */
+    public fun createSubspaceNodeEntity(feature: SubspaceNodeFeature): SubspaceNodeEntity
 }

@@ -68,7 +68,7 @@ android {
 
 androidx {
     name = "XR Projected ARCore"
-    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_WITH_API_TASKS
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "An implementation of the XR Perception APIs using the XR Projected SDK."
     enableRobolectric()

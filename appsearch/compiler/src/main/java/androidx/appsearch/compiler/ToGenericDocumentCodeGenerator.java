@@ -20,6 +20,7 @@ import static androidx.appsearch.compiler.CodegenUtils.createNewArrayExpr;
 import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_EXCEPTION_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.GENERIC_DOCUMENT_CLASS;
 import static androidx.room.compiler.codegen.compat.XConverters.toJavaPoet;
+import static androidx.room.compiler.processing.compat.XConverters.toJavac;
 
 import androidx.appsearch.compiler.AnnotatedGetterOrField.ElementTypeCategory;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
@@ -29,15 +30,13 @@ import androidx.appsearch.compiler.annotationwrapper.MetadataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.PropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.SerializerClass;
 import androidx.appsearch.compiler.annotationwrapper.StringPropertyAnnotation;
+import androidx.room.compiler.codegen.XTypeName;
 import androidx.room.compiler.processing.XProcessingEnv;
 import androidx.room.compiler.processing.XType;
-import androidx.room.compiler.processing.compat.XConverters;
 
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
-import com.squareup.javapoet.WildcardTypeName;
 
 import org.jspecify.annotations.NonNull;
 
@@ -75,17 +74,17 @@ class ToGenericDocumentCodeGenerator {
         // Method header
         MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("toGenericDocument")
                 .addModifiers(Modifier.PUBLIC)
-                .returns(GENERIC_DOCUMENT_CLASS)
+                .returns(toJavaPoet(GENERIC_DOCUMENT_CLASS))
                 .addAnnotation(Override.class)
                 .addParameter(toJavaPoet(mModel.getClassElement().asClassName()), "document")
-                .addException(APPSEARCH_EXCEPTION_CLASS);
+                .addException(toJavaPoet(APPSEARCH_EXCEPTION_CLASS));
 
         // Construct a new GenericDocument.Builder with the namespace, id, and schema type
         methodBuilder.addStatement("$T builder =\nnew $T<>($L, $L, SCHEMA_NAME)",
-                ParameterizedTypeName.get(
-                        GENERIC_DOCUMENT_CLASS.nestedClass("Builder"),
-                        WildcardTypeName.subtypeOf(Object.class)),
-                GENERIC_DOCUMENT_CLASS.nestedClass("Builder"),
+                toJavaPoet(
+                        GENERIC_DOCUMENT_CLASS.nestedClass("Builder")
+                                .parametrizedBy(XTypeName.ANY_WILDCARD)),
+                toJavaPoet(GENERIC_DOCUMENT_CLASS.nestedClass("Builder")),
                 createReadExpr(mModel.getNamespaceAnnotatedGetterOrField()),
                 createReadExpr(mModel.getIdAnnotatedGetterOrField()));
 
@@ -482,11 +481,12 @@ class ToGenericDocumentCodeGenerator {
                         collectionType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = new $T[$NCopy.size()]",
-                        GENERIC_DOCUMENT_CLASS, jvmName, GENERIC_DOCUMENT_CLASS, jvmName)
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName,
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName)
                 .addStatement("int i = 0")
                 .beginControlFlow("for ($T item : $NCopy)", documentClass.getTypeName(), jvmName)
                 .addStatement("$NConv[i++] = $T.fromDocumentClass(item)",
-                        jvmName, GENERIC_DOCUMENT_CLASS)
+                        jvmName, toJavaPoet(GENERIC_DOCUMENT_CLASS))
                 .endControlFlow() // for (...) {
                 .addStatement("builder.setPropertyDocument($S, $NConv)",
                         annotation.getName(), jvmName)
@@ -514,8 +514,8 @@ class ToGenericDocumentCodeGenerator {
                         propType.getTypeName(), jvmName, propType.getTypeName(), jvmName)
                 .addStatement(
                         "$T serializer = new $T()",
-                        XConverters.toJavac(serializerClass.getElement()),
-                        XConverters.toJavac(serializerClass.getElement()))
+                        toJavac(serializerClass.getElement()),
+                        toJavac(serializerClass.getElement()))
                 .addStatement("int i = 0")
                 .beginControlFlow("for ($T item : $NCopy)", customType.getTypeName(), jvmName)
                 .addStatement("$NConv[i++] = serializer.serialize(item)", jvmName)
@@ -594,10 +594,11 @@ class ToGenericDocumentCodeGenerator {
                         jvmType.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T[] $NConv = new $T[$NCopy.length]",
-                        GENERIC_DOCUMENT_CLASS, jvmName, GENERIC_DOCUMENT_CLASS, jvmName)
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName,
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName)
                 .beginControlFlow("for (int i = 0; i < $NConv.length; i++)", jvmName)
                 .addStatement("$NConv[i] = $T.fromDocumentClass($NCopy[i])",
-                        jvmName, GENERIC_DOCUMENT_CLASS, jvmName)
+                        jvmName, toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName)
                 .endControlFlow() // for (...) {
                 .addStatement("builder.setPropertyDocument($S, $NConv)",
                         annotation.getName(), jvmName)
@@ -624,8 +625,8 @@ class ToGenericDocumentCodeGenerator {
                         propType.getTypeName(), jvmName, propType.getTypeName(), jvmName)
                 .addStatement(
                         "$T serializer = new $T()",
-                        XConverters.toJavac(serializerClass.getElement()),
-                        XConverters.toJavac(serializerClass.getElement()))
+                        toJavac(serializerClass.getElement()),
+                        toJavac(serializerClass.getElement()))
                 .beginControlFlow("for (int i = 0; i < $NConv.length; i++)", jvmName)
                 .addStatement("$NConv[i] = serializer.serialize($NCopy[i])", jvmName, jvmName)
                 .endControlFlow() // for (...) {
@@ -697,7 +698,8 @@ class ToGenericDocumentCodeGenerator {
                         documentClass.getTypeName(), jvmName, createReadExpr(getterOrField))
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement("$T $NConv = $T.fromDocumentClass($NCopy)",
-                        GENERIC_DOCUMENT_CLASS, jvmName, GENERIC_DOCUMENT_CLASS, jvmName)
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName,
+                        toJavaPoet(GENERIC_DOCUMENT_CLASS), jvmName)
                 .addStatement("builder.setPropertyDocument($S, $NConv)",
                         annotation.getName(), jvmName)
                 .endControlFlow() // if ($NCopy != null) {
@@ -721,8 +723,8 @@ class ToGenericDocumentCodeGenerator {
                 .beginControlFlow("if ($NCopy != null)", jvmName)
                 .addStatement(
                         "$T serializer = new $T()",
-                        XConverters.toJavac(serializerClass.getElement()),
-                        XConverters.toJavac(serializerClass.getElement()))
+                        toJavac(serializerClass.getElement()),
+                        toJavac(serializerClass.getElement()))
                 .addStatement(
                         "$T $NConv = serializer.serialize($NCopy)",
                         annotation.getUnderlyingTypeWithinGenericDoc(mHelper).getTypeName(),

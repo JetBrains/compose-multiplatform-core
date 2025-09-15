@@ -148,7 +148,17 @@ public interface CameraPipe {
         val cameraBackendConfig: CameraBackendConfig = CameraBackendConfig(),
         val cameraInteropConfig: CameraInteropConfig = CameraInteropConfig(),
         val imageSources: ImageSources? = null,
+        val flags: Flags = Flags(),
     )
+
+    /**
+     * Boolean Flags for controlling [CameraPipe] behaviours.
+     *
+     * @param strictModeEnabled disable all special treatment in
+     *   [androidx.camera.camera2.pipe.compat.Camera2Quirks]
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public data class Flags(val strictModeEnabled: Boolean = false)
 
     /**
      * Application level configuration for Camera2Interop callbacks. If set, these callbacks will be

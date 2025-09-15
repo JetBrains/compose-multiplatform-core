@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.util.fastForEach
+import kotlin.math.abs
 import kotlin.math.min
 
 @Composable
@@ -143,7 +144,31 @@ internal fun rememberGlimmerListMeasurePolicy(
                     layoutProperties = layoutProperties,
                     measureResult = measureResult,
                 )
-                state.applyMeasureResult(measureResult)
+
+                val delta = state.scrollToBeConsumed - measureResult.consumedScroll
+                val consumedScroll =
+                    if (abs(delta) <= 0.5f) {
+                        // Delta is within rounding error - report that we consumed everything.
+                        state.scrollToBeConsumed
+                    } else {
+                        // Delta is larger than rounding error - report the actual consumed part.
+                        measureResult.consumedScroll
+                    }
+                val accumulatedScroll =
+                    if (abs(delta) <= 0.5f) {
+                        // The leftover/surplus will be used in the next pass.
+                        delta
+                    } else {
+                        // We consumed less scroll than what was provided, no need to accumulate.
+                        0f
+                    }
+
+                state.applyMeasureResult(
+                    result = measureResult,
+                    consumedScroll = consumedScroll,
+                    accumulatedScroll = accumulatedScroll,
+                )
+
                 measureResult
             }
         }

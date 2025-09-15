@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.ComponentValue;
@@ -60,6 +61,7 @@ import java.util.Set;
  * Represents a platform independent RemoteCompose document, containing RemoteCompose operations +
  * state
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class CoreDocument implements Serializable {
 
     private static final boolean DEBUG = false;
@@ -594,6 +596,7 @@ public class CoreDocument implements Serializable {
     }
 
     // ============== Haptic support ==================
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface HapticEngine {
         /**
          * Implements a haptic effect
@@ -632,6 +635,7 @@ public class CoreDocument implements Serializable {
     }
 
     /** Callback interface for host actions */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface ActionCallback {
         /**
          * Callback for actions
@@ -672,6 +676,7 @@ public class CoreDocument implements Serializable {
     }
 
     /** Id Actions */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface IdActionCallback {
         /**
          * Callback on Id Actions
@@ -1602,6 +1607,7 @@ public class CoreDocument implements Serializable {
     }
 
     /** defines if a shader can be run */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface ShaderControl {
         /**
          * validate if a shader can run in the document
@@ -1613,7 +1619,7 @@ public class CoreDocument implements Serializable {
     }
 
     /**
-     * validate the shaders
+     * validate the shaders.
      *
      * @param context the remote context
      * @param ctl the call back to allow evaluation of shaders

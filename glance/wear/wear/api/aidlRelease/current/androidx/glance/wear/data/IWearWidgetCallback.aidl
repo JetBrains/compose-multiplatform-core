@@ -34,5 +34,5 @@
 package androidx.glance.wear.data;
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 interface IWearWidgetCallback {
-  oneway void updateWidgetContent(in androidx.glance.wear.data.WearWidgetContentData contentData) = 0;
+  oneway void updateWidgetContent(in androidx.glance.wear.data.WearWidgetRawContentData contentData) = 0;
 }

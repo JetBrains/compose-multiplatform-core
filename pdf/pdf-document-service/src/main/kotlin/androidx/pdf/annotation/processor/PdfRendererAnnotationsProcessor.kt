@@ -16,13 +16,16 @@
 
 package androidx.pdf.annotation.processor
 
+import android.graphics.pdf.component.PdfAnnotation as AospPdfAnnotation
 import android.os.Build
 import androidx.annotation.RequiresExtension
 import androidx.pdf.adapter.PdfDocumentRenderer
+import androidx.pdf.adapter.PdfPage
 import androidx.pdf.annotation.converters.PdfAnnotationConvertersFactory
 import androidx.pdf.annotation.models.AddEditResult
 import androidx.pdf.annotation.models.AnnotationResult
 import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.JetpackAospIdPair
 import androidx.pdf.annotation.models.ModifyEditResult
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
@@ -39,21 +42,44 @@ internal class PdfRendererAnnotationsProcessor(private val renderer: PdfDocument
     }
 
     override fun processAddEdits(annotations: List<PdfAnnotationData>): AddEditResult {
-        // TODO: b/440914015 - Implements Add/Remove/Update Batch operations for PdfEdits in
-        // PdfRenderer
-        return AddEditResult(success = emptyList(), failures = emptyList())
+        val (success, failures) =
+            processAnnotationsByPage(annotations) { editId, page, convertedAnnotation ->
+                val aospId = page.addPageAnnotation(convertedAnnotation)
+                JetpackAospIdPair(editId, EditId(editId.pageNum, aospId.toString()))
+            }
+        return AddEditResult(success, failures)
     }
 
     override fun processUpdateEdits(annotations: List<PdfAnnotationData>): ModifyEditResult {
-        // TODO: b/440914015 - Implements Add/Remove/Update Batch operations for PdfEdits in
-        // PdfRenderer
-        return ModifyEditResult(success = emptyList(), failures = emptyList())
+        val (success, failures) =
+            processAnnotationsByPage(annotations) { editId, page, convertedAnnotation ->
+                val aospId: Int = editId.value.toInt()
+                page.updatePageAnnotation(aospId, convertedAnnotation)
+                editId
+            }
+        return ModifyEditResult(success, failures)
     }
 
     override fun processRemoveEdits(editIds: List<EditId>): ModifyEditResult {
-        // TODO: b/440914015 - Implements Add/Remove/Update Batch operations for PdfEdits in
-        // PdfRenderer
-        return ModifyEditResult(success = emptyList(), failures = emptyList())
+        val success = mutableListOf<EditId>()
+        val failures = mutableListOf<EditId>()
+
+        editIds
+            .groupBy { it.pageNum }
+            .forEach { pageNum, editIds ->
+                renderer.withPage(pageNum) { page ->
+                    editIds.forEach {
+                        try {
+                            val aospId: Int = it.value.toInt()
+                            page.removePageAnnotation(aospId)
+                            success.add(it)
+                        } catch (e: Exception) {
+                            failures.add(it)
+                        }
+                    }
+                }
+            }
+        return ModifyEditResult(success, failures)
     }
 
     // TODO: Revisit this code. We are losing exception info and generated annotation id
@@ -70,5 +96,38 @@ internal class PdfRendererAnnotationsProcessor(private val renderer: PdfDocument
         } catch (e: Exception) {
             return false
         }
+    }
+
+    // Takes a list of annotations and operation to perform on success
+    private fun <T> processAnnotationsByPage(
+        annotations: List<PdfAnnotationData>,
+        onSuccessAction:
+            (editId: EditId, page: PdfPage, convertedAnnotation: AospPdfAnnotation) -> T,
+    ): Pair<List<T>, List<EditId>> {
+
+        val success = mutableListOf<T>()
+        val failures = mutableListOf<EditId>()
+
+        annotations
+            .groupBy { it.editId.pageNum }
+            .forEach { (pageNum, annotationsData) ->
+                renderer.withPage(pageNum) { page ->
+                    annotationsData.forEach { annotationData ->
+                        try {
+                            val converter =
+                                PdfAnnotationConvertersFactory.create<PdfAnnotation>(
+                                    annotationData.annotation
+                                )
+                            val aospAnnotation = converter.convert(annotationData.annotation)
+                            val result =
+                                onSuccessAction(annotationData.editId, page, aospAnnotation)
+                            success.add(result)
+                        } catch (e: Exception) {
+                            failures.add(annotationData.editId)
+                        }
+                    }
+                }
+            }
+        return success to failures
     }
 }

@@ -88,8 +88,6 @@ class ProjectedManagerTest {
             )
 
         manager.create()
-        check(perceptionManager.service == mockPerceptionService)
-
         manager.stop()
 
         assertThat(perceptionManager.service).isNull()

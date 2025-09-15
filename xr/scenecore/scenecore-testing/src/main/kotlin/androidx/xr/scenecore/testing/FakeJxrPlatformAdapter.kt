@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.internal.Anchor
+import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.TypeHolder
 import androidx.xr.runtime.math.Matrix3
@@ -64,7 +65,6 @@ import androidx.xr.scenecore.internal.SubspaceNodeEntity
 import androidx.xr.scenecore.internal.SurfaceEntity
 import androidx.xr.scenecore.internal.TextureResource
 import androidx.xr.scenecore.internal.TextureSampler
-import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.util.concurrent.Futures.immediateFailedFuture
 import com.google.common.util.concurrent.Futures.immediateFuture
 import com.google.common.util.concurrent.ListenableFuture
@@ -803,13 +803,28 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
         return entity
     }
 
+    public fun createFakeSubspaceNode(
+        nodeHolder: NodeHolder<*>
+    ): SubspaceNodeHolder<FakeSubspaceNode> {
+        return SubspaceNodeHolder(
+            object : FakeSubspaceNode {
+                override val nodeHolder: NodeHolder<*> = nodeHolder
+            },
+            FakeSubspaceNode::class.java,
+        )
+    }
+
+    /** Only accept SubspaceNodeHolder<FakeSubspaceNode> created by [createFakeSubspaceNode] */
     override fun createSubspaceNodeEntity(
         subspaceNodeHolder: SubspaceNodeHolder<*>,
         size: Dimensions,
     ): SubspaceNodeEntity =
         FakeSubspaceNodeEntity(
-            TypeHolder.assertGetValue(subspaceNodeHolder, SubspaceNode::class.java),
-            size,
+            FakeSubspaceNodeFeature(
+                TypeHolder.assertGetValue(subspaceNodeHolder, FakeSubspaceNode::class.java)
+                    .nodeHolder,
+                size,
+            )
         )
 
     @Suppress("ExecutorRegistration")

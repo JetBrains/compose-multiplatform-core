@@ -54,6 +54,10 @@ import androidx.xr.scenecore.internal.SpatialEnvironment
 import androidx.xr.scenecore.internal.SpatialModeChangeListener
 import androidx.xr.scenecore.internal.SpatialPointerComponent
 import androidx.xr.scenecore.internal.SpatialVisibility
+import androidx.xr.scenecore.internal.SubspaceNodeEntity
+import androidx.xr.scenecore.internal.SubspaceNodeFeature
+import androidx.xr.scenecore.internal.SurfaceEntity
+import androidx.xr.scenecore.internal.SurfaceFeature
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.Executor
@@ -98,7 +102,14 @@ public class FakeSceneRuntime() : SceneRuntime, RenderingEntityFactory {
         dimensions: Dimensions,
         name: String,
         parent: Entity,
-    ): PanelEntity = FakePanelEntity()
+    ): PanelEntity {
+        val panelEntity = FakePanelEntity()
+        panelEntity.setPose(pose)
+        panelEntity.size = dimensions
+        panelEntity.parent = parent
+
+        return panelEntity
+    }
 
     override fun createPanelEntity(
         context: Context,
@@ -107,7 +118,14 @@ public class FakeSceneRuntime() : SceneRuntime, RenderingEntityFactory {
         pixelDimensions: PixelDimensions,
         name: String,
         parent: Entity,
-    ): PanelEntity = FakePanelEntity()
+    ): PanelEntity {
+        val panelEntity = FakePanelEntity()
+        panelEntity.setPose(pose)
+        panelEntity.sizeInPixels = pixelDimensions
+        panelEntity.parent = parent
+
+        return panelEntity
+    }
 
     override fun createActivityPanelEntity(
         pose: Pose,
@@ -115,7 +133,14 @@ public class FakeSceneRuntime() : SceneRuntime, RenderingEntityFactory {
         name: String,
         hostActivity: Activity,
         parent: Entity,
-    ): ActivityPanelEntity = FakeActivityPanelEntity()
+    ): ActivityPanelEntity {
+        val activityPanelEntity = FakeActivityPanelEntity()
+        activityPanelEntity.setPose(pose)
+        activityPanelEntity.sizeInPixels = windowBoundsPx
+        activityPanelEntity.parent = parent
+
+        return activityPanelEntity
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun createAnchorEntity(
@@ -153,21 +178,72 @@ public class FakeSceneRuntime() : SceneRuntime, RenderingEntityFactory {
         feature: GltfFeature,
         pose: Pose,
         parentEntity: Entity,
-    ): GltfEntity = FakeGltfEntity()
+    ): GltfEntity {
+        val gltfEntity = FakeGltfEntity()
+        gltfEntity.setPose(pose)
+        gltfEntity.parent = parentEntity
 
-    override fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity = FakeEntity()
+        return gltfEntity
+    }
+
+    override fun createSurfaceEntity(
+        feature: SurfaceFeature,
+        pose: Pose,
+        parentEntity: Entity,
+    ): SurfaceEntity {
+        val surfaceEntity = FakeSurfaceEntity()
+        surfaceEntity.setPose(pose)
+        surfaceEntity.parent = parentEntity
+
+        return surfaceEntity
+    }
+
+    override fun createSubspaceNodeEntity(feature: SubspaceNodeFeature): SubspaceNodeEntity {
+        val subspaceNodeEntity = FakeSubspaceNodeEntity()
+        subspaceNodeEntity.parent = activitySpace
+
+        return subspaceNodeEntity
+    }
+
+    override fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity {
+        val entity = FakeEntity()
+        entity.setPose(pose)
+        entity.parent = parent
+
+        return entity
+    }
 
     override fun createLoggingEntity(pose: Pose): LoggingEntity =
         object : LoggingEntity, FakeEntity() {}
 
+    /**
+     * For test purposes only.
+     *
+     * A map tracking the listeners registered for spatial capability changes. The key is the
+     * [Executor] on which the listener should be invoked, and the value is the [Consumer] listener
+     * itself.
+     *
+     * This map is populated by calls to [addSpatialCapabilitiesChangedListener] and modified by
+     * [removeSpatialCapabilitiesChangedListener]. Tests can inspect its contents to verify that the
+     * correct listeners are registered with their intended executors.
+     */
+    internal val spatialCapabilitiesChangedMap: Map<Executor, Consumer<SpatialCapabilities>>
+        get() = _spatialCapabilitiesChangedMap
+
+    private val _spatialCapabilitiesChangedMap:
+        MutableMap<Executor, Consumer<SpatialCapabilities>> =
+        mutableMapOf()
+
     override fun addSpatialCapabilitiesChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<SpatialCapabilities>,
-    ) {}
+    ) {
+        _spatialCapabilitiesChangedMap[callbackExecutor] = listener
+    }
 
-    override fun removeSpatialCapabilitiesChangedListener(
-        listener: Consumer<SpatialCapabilities>
-    ) {}
+    override fun removeSpatialCapabilitiesChangedListener(listener: Consumer<SpatialCapabilities>) {
+        _spatialCapabilitiesChangedMap.values.remove(listener)
+    }
 
     /**
      * For test purposes only.
@@ -292,7 +368,8 @@ public class FakeSceneRuntime() : SceneRuntime, RenderingEntityFactory {
         minimumSize: Dimensions,
         maximumSize: Dimensions,
     ): FakeResizableComponent {
-        val resizableComponent = FakeResizableComponent(minimumSize, maximumSize)
+        val resizableComponent =
+            FakeResizableComponent(minimumSize = minimumSize, maximumSize = maximumSize)
 
         return resizableComponent
     }

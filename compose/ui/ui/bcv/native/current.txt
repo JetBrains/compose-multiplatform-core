@@ -201,6 +201,8 @@ abstract interface androidx.compose.ui.autofill/FillableData { // androidx.compo
 
     open fun getDateMillisOrDefault(kotlin/Long): kotlin/Long // androidx.compose.ui.autofill/FillableData.getDateMillisOrDefault|getDateMillisOrDefault(kotlin.Long){}[0]
     open fun getListIndexOrDefault(kotlin/Int): kotlin/Int // androidx.compose.ui.autofill/FillableData.getListIndexOrDefault|getListIndexOrDefault(kotlin.Int){}[0]
+
+    final object Companion // androidx.compose.ui.autofill/FillableData.Companion|null[0]
 }
 
 abstract interface androidx.compose.ui.draganddrop/DragAndDropModifierNode : androidx.compose.ui.draganddrop/DragAndDropTarget, androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.draganddrop/DragAndDropModifierNode|null[0]
@@ -3947,6 +3949,10 @@ final var androidx.compose.ui.semantics/verticalScrollAxisRange // androidx.comp
 
 final fun (androidx.compose.runtime/Composer).androidx.compose.ui/materialize(androidx.compose.ui/Modifier): androidx.compose.ui/Modifier // androidx.compose.ui/materialize|materialize@androidx.compose.runtime.Composer(androidx.compose.ui.Modifier){}[0]
 final fun (androidx.compose.runtime/Composer).androidx.compose.ui/materializeWithCompositionLocalInjection(androidx.compose.ui/Modifier): androidx.compose.ui/Modifier // androidx.compose.ui/materializeWithCompositionLocalInjection|materializeWithCompositionLocalInjection@androidx.compose.runtime.Composer(androidx.compose.ui.Modifier){}[0]
+final fun (androidx.compose.ui.autofill/FillableData.Companion).androidx.compose.ui.autofill/createFrom(kotlin/Boolean): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/createFrom|createFrom@androidx.compose.ui.autofill.FillableData.Companion(kotlin.Boolean){}[0]
+final fun (androidx.compose.ui.autofill/FillableData.Companion).androidx.compose.ui.autofill/createFrom(kotlin/CharSequence): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/createFrom|createFrom@androidx.compose.ui.autofill.FillableData.Companion(kotlin.CharSequence){}[0]
+final fun (androidx.compose.ui.autofill/FillableData.Companion).androidx.compose.ui.autofill/createFrom(kotlin/Int): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/createFrom|createFrom@androidx.compose.ui.autofill.FillableData.Companion(kotlin.Int){}[0]
+final fun (androidx.compose.ui.autofill/FillableData.Companion).androidx.compose.ui.autofill/createFrom(kotlin/Long): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/createFrom|createFrom@androidx.compose.ui.autofill.FillableData.Companion(kotlin.Long){}[0]
 final fun (androidx.compose.ui.focus/FocusPropertiesModifierNode).androidx.compose.ui.focus/invalidateFocusProperties() // androidx.compose.ui.focus/invalidateFocusProperties|invalidateFocusProperties@androidx.compose.ui.focus.FocusPropertiesModifierNode(){}[0]
 final fun (androidx.compose.ui.focus/FocusRequesterModifierNode).androidx.compose.ui.focus/captureFocus(): kotlin/Boolean // androidx.compose.ui.focus/captureFocus|captureFocus@androidx.compose.ui.focus.FocusRequesterModifierNode(){}[0]
 final fun (androidx.compose.ui.focus/FocusRequesterModifierNode).androidx.compose.ui.focus/freeFocus(): kotlin/Boolean // androidx.compose.ui.focus/freeFocus|freeFocus@androidx.compose.ui.focus.FocusRequesterModifierNode(){}[0]
@@ -4144,10 +4150,6 @@ final fun <#A: kotlin/Any?> (androidx.compose.ui/Modifier).androidx.compose.ui.m
 final fun <#A: kotlin/Any?> androidx.compose.ui.modifier/modifierLocalMapOf(androidx.compose.ui.modifier/ModifierLocal<#A>): androidx.compose.ui.modifier/ModifierLocalMap // androidx.compose.ui.modifier/modifierLocalMapOf|modifierLocalMapOf(androidx.compose.ui.modifier.ModifierLocal<0:0>){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.compose.ui.modifier/modifierLocalMapOf(kotlin/Pair<androidx.compose.ui.modifier/ModifierLocal<#A>, #A>): androidx.compose.ui.modifier/ModifierLocalMap // androidx.compose.ui.modifier/modifierLocalMapOf|modifierLocalMapOf(kotlin.Pair<androidx.compose.ui.modifier.ModifierLocal<0:0>,0:0>){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.compose.ui.modifier/modifierLocalOf(kotlin/Function0<#A>): androidx.compose.ui.modifier/ProvidableModifierLocal<#A> // androidx.compose.ui.modifier/modifierLocalOf|modifierLocalOf(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
-final fun androidx.compose.ui.autofill/FillableData(kotlin/Boolean): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/FillableData|FillableData(kotlin.Boolean){}[0]
-final fun androidx.compose.ui.autofill/FillableData(kotlin/CharSequence): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/FillableData|FillableData(kotlin.CharSequence){}[0]
-final fun androidx.compose.ui.autofill/FillableData(kotlin/Int): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/FillableData|FillableData(kotlin.Int){}[0]
-final fun androidx.compose.ui.autofill/FillableData(kotlin/Long): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/FillableData|FillableData(kotlin.Long){}[0]
 final fun androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillManager$stableprop_getter|androidx_compose_ui_autofill_AutofillManager$stableprop_getter(){}[0]
 final fun androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillNode$stableprop_getter(): kotlin/Int // androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillNode$stableprop_getter|androidx_compose_ui_autofill_AutofillNode$stableprop_getter(){}[0]
 final fun androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillTree$stableprop_getter(): kotlin/Int // androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillTree$stableprop_getter|androidx_compose_ui_autofill_AutofillTree$stableprop_getter(){}[0]

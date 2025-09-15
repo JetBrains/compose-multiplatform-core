@@ -49,6 +49,8 @@ interface FillableData {
      * [defaultValue].
      */
     fun getDateMillisOrDefault(defaultValue: Long): Long = dateMillisValue ?: defaultValue
+
+    companion object
 }
 
 /**
@@ -61,7 +63,7 @@ interface FillableData {
  * @return A [FillableData] object containing the boolean data, or `null` if the platform does not
  *   support autofill.
  */
-expect fun FillableData(booleanValue: Boolean): FillableData?
+expect fun FillableData.Companion.createFrom(booleanValue: Boolean): FillableData?
 
 /**
  * Creates a [FillableData] instance from a [CharSequence].
@@ -72,7 +74,7 @@ expect fun FillableData(booleanValue: Boolean): FillableData?
  * @return A [FillableData] object containing the text data, or `null` if the platform does not
  *   support autofill.
  */
-expect fun FillableData(textValue: CharSequence): FillableData?
+expect fun FillableData.Companion.createFrom(textValue: CharSequence): FillableData?
 
 /**
  * Creates a [FillableData] instance from an [Int].
@@ -85,7 +87,7 @@ expect fun FillableData(textValue: CharSequence): FillableData?
  * @return A [FillableData] object containing the integer data, or `null` if the platform does not
  *   support autofill.
  */
-expect fun FillableData(listIndexValue: Int): FillableData?
+expect fun FillableData.Companion.createFrom(listIndexValue: Int): FillableData?
 
 /**
  * Creates a [FillableData] instance from a [Long].
@@ -98,4 +100,4 @@ expect fun FillableData(listIndexValue: Int): FillableData?
  * @return A [FillableData] object containing the long data, or `null` if the platform does not
  *   support autofill.
  */
-expect fun FillableData(dateMillisValue: Long): FillableData?
+expect fun FillableData.Companion.createFrom(dateMillisValue: Long): FillableData?

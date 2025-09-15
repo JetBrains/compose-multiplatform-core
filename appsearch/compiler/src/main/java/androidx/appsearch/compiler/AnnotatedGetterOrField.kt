@@ -294,7 +294,7 @@ data class AnnotatedGetterOrField(
                     .stream()
                     .filter {
                         it.qualifiedName.startsWith(
-                            IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.canonicalName()
+                            IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.canonicalName
                         )
                     }
                     .toList()
@@ -505,7 +505,7 @@ data class AnnotatedGetterOrField(
                 }
             if (!isValid) {
                 val error =
-                    ("@${getterOrField.annotation.className.simpleName()}" +
+                    ("@${getterOrField.annotation.className.simpleName}" +
                         " must only be placed on a getter/field of type " +
                         (if (allowRepeated) "or array or collection of " else "") +
                         expectedTypes
@@ -537,7 +537,7 @@ data class AnnotatedGetterOrField(
                     ("@%s with serializer = %s must only be placed on a getter/field of type or " +
                             "array or collection of %s")
                         .format(
-                            getterOrField.annotation.className.simpleName(),
+                            getterOrField.annotation.className.simpleName,
                             serializerClass.element.name,
                             serializerClass.customType,
                         ),

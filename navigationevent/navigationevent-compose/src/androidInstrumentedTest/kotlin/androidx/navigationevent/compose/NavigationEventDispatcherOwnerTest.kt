@@ -66,10 +66,10 @@ internal class NavigationEventDispatcherOwnerTest {
         assertThat(childOwner).isNotEqualTo(parentOwner)
 
         // Verify that the child's dispatcher was invoked.
-        assertThat(callback.startedInvocations).isEqualTo(0)
-        assertThat(callback.progressedInvocations).isEqualTo(0)
-        assertThat(callback.completedInvocations).isEqualTo(1)
-        assertThat(callback.cancelledInvocations).isEqualTo(0)
+        assertThat(callback.onBackStartedInvocations).isEqualTo(0)
+        assertThat(callback.onBackProgressedInvocations).isEqualTo(0)
+        assertThat(callback.onBackCompletedInvocations).isEqualTo(1)
+        assertThat(callback.onBackCancelledInvocations).isEqualTo(0)
     }
 
     @Test
@@ -139,11 +139,11 @@ internal class NavigationEventDispatcherOwnerTest {
         assertThat(childOwner.navigationEventDispatcher.isEnabled).isFalse()
 
         // Verify that the callback was never invoked because the dispatcher was disabled.
-        assertThat(callback.isEnabled).isFalse()
-        assertThat(callback.startedInvocations).isEqualTo(0)
-        assertThat(callback.progressedInvocations).isEqualTo(0)
-        assertThat(callback.completedInvocations).isEqualTo(0)
-        assertThat(callback.cancelledInvocations).isEqualTo(0)
+        assertThat(callback.isBackEnabled).isFalse()
+        assertThat(callback.onBackStartedInvocations).isEqualTo(0)
+        assertThat(callback.onBackProgressedInvocations).isEqualTo(0)
+        assertThat(callback.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(callback.onBackCancelledInvocations).isEqualTo(0)
     }
 
     @Test
@@ -169,10 +169,10 @@ internal class NavigationEventDispatcherOwnerTest {
         assertThat(rootOwner.navigationEventDispatcher.isEnabled).isTrue()
 
         // Verify the callback was invoked correctly.
-        assertThat(callback.startedInvocations).isEqualTo(0)
-        assertThat(callback.progressedInvocations).isEqualTo(0)
-        assertThat(callback.completedInvocations).isEqualTo(1)
-        assertThat(callback.cancelledInvocations).isEqualTo(0)
+        assertThat(callback.onBackStartedInvocations).isEqualTo(0)
+        assertThat(callback.onBackProgressedInvocations).isEqualTo(0)
+        assertThat(callback.onBackCompletedInvocations).isEqualTo(1)
+        assertThat(callback.onBackCancelledInvocations).isEqualTo(0)
     }
 
     @Test
@@ -230,10 +230,10 @@ internal class NavigationEventDispatcherOwnerTest {
         assertThat(rootOwner.navigationEventDispatcher.isEnabled).isFalse()
 
         // Verify no callbacks were invoked because the dispatcher was off.
-        assertThat(callback.startedInvocations).isEqualTo(0)
-        assertThat(callback.progressedInvocations).isEqualTo(0)
-        assertThat(callback.completedInvocations).isEqualTo(0)
-        assertThat(callback.cancelledInvocations).isEqualTo(0)
+        assertThat(callback.onBackStartedInvocations).isEqualTo(0)
+        assertThat(callback.onBackProgressedInvocations).isEqualTo(0)
+        assertThat(callback.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(callback.onBackCancelledInvocations).isEqualTo(0)
     }
 
     @Test

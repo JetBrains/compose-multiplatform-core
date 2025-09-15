@@ -31,6 +31,7 @@ import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
+import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.internal.CameraViewActivityPose;
 import androidx.xr.scenecore.internal.Entity;
 import androidx.xr.scenecore.internal.PerceivedResolutionResult;
@@ -102,10 +103,11 @@ public final class SurfaceEntityImplTest {
         when(splitEngineSubspaceManager.createSubspace(anyString(), anyInt()))
                 .thenReturn(expectedSubspaceNode);
 
-        int subspaceImpressNode = mImpressApi.createImpressNode();
-        String subspaceName = "stereo_surface_panel_entity_subspace_" + subspaceImpressNode;
-        SubspaceNode subspaceNode =
-                splitEngineSubspaceManager.createSubspace(subspaceName, subspaceImpressNode);
+        ImpressNode subspaceImpressNode = mImpressApi.createImpressNode();
+        String subspaceName = "stereo_surface_panel_entity_subspace_"
+                + subspaceImpressNode.getHandle();
+        SubspaceNode subspaceNode = splitEngineSubspaceManager.createSubspace(
+                subspaceName, subspaceImpressNode.getHandle());
 
         mEntityManager = new EntityManager();
         FakeScheduledExecutorService executor = new FakeScheduledExecutorService();

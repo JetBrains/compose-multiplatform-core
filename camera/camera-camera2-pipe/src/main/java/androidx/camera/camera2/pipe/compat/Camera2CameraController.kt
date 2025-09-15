@@ -43,6 +43,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -420,6 +421,7 @@ constructor(
 
                 shutdownListener.onControllerClosed(this)
                 closedDeferred.complete(Unit)
+                scope.cancel()
             }
         }
     }

@@ -138,6 +138,7 @@ package androidx.compose.ui {
     property public boolean areWindowInsetsRulersEnabled;
     property public boolean isAdaptiveRefreshRateEnabled;
     property public boolean isBypassUnfocusableComposeViewEnabled;
+    property public boolean isCanScrollUsingLastDownEventFixEnabled;
     property public boolean isClearFocusOnPointerDownEnabled;
     property @Deprecated public boolean isClearFocusOnResetEnabled;
     property public boolean isContentCaptureOptimizationEnabled;
@@ -159,6 +160,7 @@ package androidx.compose.ui {
     field public static boolean areWindowInsetsRulersEnabled;
     field public static boolean isAdaptiveRefreshRateEnabled;
     field public static boolean isBypassUnfocusableComposeViewEnabled;
+    field public static boolean isCanScrollUsingLastDownEventFixEnabled;
     field public static boolean isClearFocusOnPointerDownEnabled;
     field @Deprecated public static boolean isClearFocusOnResetEnabled;
     field public static boolean isContentCaptureOptimizationEnabled;
@@ -476,14 +478,18 @@ package androidx.compose.ui.autofill {
     property public default Long? dateMillisValue;
     property public default Integer? listIndexValue;
     property public default CharSequence? textValue;
+    field public static final androidx.compose.ui.autofill.FillableData.Companion Companion;
+  }
+
+  public static final class FillableData.Companion {
   }
 
   public final class FillableData_androidKt {
-    method public static androidx.compose.ui.autofill.FillableData? FillableData(android.view.autofill.AutofillValue autofillValue);
-    method public static androidx.compose.ui.autofill.FillableData? FillableData(boolean booleanValue);
-    method public static androidx.compose.ui.autofill.FillableData? FillableData(int listIndexValue);
-    method public static androidx.compose.ui.autofill.FillableData? FillableData(CharSequence textValue);
-    method public static androidx.compose.ui.autofill.FillableData? FillableData(long dateMillisValue);
+    method public static androidx.compose.ui.autofill.FillableData? createFrom(androidx.compose.ui.autofill.FillableData.Companion, android.view.autofill.AutofillValue autofillValue);
+    method public static androidx.compose.ui.autofill.FillableData? createFrom(androidx.compose.ui.autofill.FillableData.Companion, boolean booleanValue);
+    method public static androidx.compose.ui.autofill.FillableData? createFrom(androidx.compose.ui.autofill.FillableData.Companion, int listIndexValue);
+    method public static androidx.compose.ui.autofill.FillableData? createFrom(androidx.compose.ui.autofill.FillableData.Companion, CharSequence textValue);
+    method public static androidx.compose.ui.autofill.FillableData? createFrom(androidx.compose.ui.autofill.FillableData.Companion, long dateMillisValue);
     method public static android.view.autofill.AutofillValue? toAutofillValue(androidx.compose.ui.autofill.FillableData);
   }
 

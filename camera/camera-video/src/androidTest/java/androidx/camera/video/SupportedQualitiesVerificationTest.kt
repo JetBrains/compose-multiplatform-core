@@ -74,7 +74,7 @@ import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@SdkSuppress(minSdkVersion = 24) // b/441563673
+@SdkSuppress(minSdkVersion = 23)
 @LargeTest
 @RunWith(Parameterized::class)
 class SupportedQualitiesVerificationTest(

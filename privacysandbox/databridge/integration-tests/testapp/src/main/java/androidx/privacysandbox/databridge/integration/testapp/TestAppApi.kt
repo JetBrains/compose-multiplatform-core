@@ -20,7 +20,7 @@ import android.content.Context
 import android.os.Bundle
 import androidx.privacysandbox.databridge.client.DataBridgeClient
 import androidx.privacysandbox.databridge.client.DataSynchronizationManager
-import androidx.privacysandbox.databridge.client.SyncCallback
+import androidx.privacysandbox.databridge.client.SyncFailureCallback
 import androidx.privacysandbox.databridge.core.Key
 import androidx.privacysandbox.databridge.core.KeyUpdateCallback
 import androidx.privacysandbox.databridge.integration.testsdk.TestSdk
@@ -74,11 +74,11 @@ class TestAppApi(appContext: Context) {
         return dataSynchronizationManager.getKeys()
     }
 
-    fun addDataSyncCallback(executor: Executor, syncCallback: SyncCallback) {
-        dataSynchronizationManager.addSyncCallback(executor, syncCallback)
+    fun addSyncFailureCallback(executor: Executor, syncFailureCallback: SyncFailureCallback) {
+        dataSynchronizationManager.addSyncFailureCallback(executor, syncFailureCallback)
     }
 
-    fun removeDataSyncCallback(syncCallback: SyncCallback) {
-        dataSynchronizationManager.removeSyncCallback(syncCallback)
+    fun removeSyncFailureCallback(syncFailureCallback: SyncFailureCallback) {
+        dataSynchronizationManager.removeSyncFailureCallback(syncFailureCallback)
     }
 }

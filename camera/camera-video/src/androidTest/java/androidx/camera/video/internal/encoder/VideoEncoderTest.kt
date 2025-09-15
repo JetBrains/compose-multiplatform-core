@@ -20,6 +20,7 @@ import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.media.MediaFormat.KEY_CAPTURE_RATE
 import android.media.MediaFormat.KEY_OPERATING_RATE
 import android.media.MediaFormat.KEY_PRIORITY
 import android.os.Build
@@ -44,8 +45,6 @@ import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
 import androidx.camera.video.internal.compat.quirk.ExtraSupportedResolutionQuirk
-import androidx.camera.video.internal.encoder.EncoderImpl.PARAMETER_KEY_TIMELAPSE_ENABLED
-import androidx.camera.video.internal.encoder.EncoderImpl.PARAMETER_KEY_TIMELAPSE_FPS
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -386,17 +385,9 @@ class VideoEncoderTest(private val implName: String, private val cameraConfig: C
         initVideoEncoder(captureFrameRate = captureFrameRate, encodeFrameRate = encodeFrameRate)
 
         val format = videoEncoder.mMediaFormat
+        assertThat(format.getInteger(KEY_CAPTURE_RATE)).isEqualTo(captureFrameRate)
         assertThat(format.getInteger(KEY_OPERATING_RATE)).isEqualTo(captureFrameRate)
         assertThat(format.getInteger(KEY_PRIORITY)).isEqualTo(0)
-
-        videoEncoder.start()
-
-        val captor = ArgumentCaptor.forClass(OutputConfig::class.java)
-        verify(videoEncoderCallback, timeout(5000L)).onOutputConfigUpdate(captor.capture())
-
-        val outputFormat = captor.value.mediaFormat!!
-        assertThat(outputFormat.getInteger(PARAMETER_KEY_TIMELAPSE_ENABLED)).isEqualTo(1)
-        assertThat(outputFormat.getInteger(PARAMETER_KEY_TIMELAPSE_FPS)).isEqualTo(captureFrameRate)
     }
 
     private fun initVideoEncoder(

@@ -25,7 +25,7 @@ plugins {
 
 androidx {
     name = "Remote Compose Foundation"
-    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2025"
     description = "Provides a set of RemoteCompose foundational UI components, that are built with the RemoteCompose frontend APIs."
     addGoldenImageAssets()
@@ -34,7 +34,6 @@ androidx {
 android {
     namespace = "androidx.compose.remote.foundation"
     compileSdk = 35
-
 }
 
 dependencies {

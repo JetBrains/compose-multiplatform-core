@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.arcore.testapp.common.TestCaseButton
 import androidx.xr.arcore.testapp.depthmaps.DepthMapActivity
+import androidx.xr.arcore.testapp.eyetracking.EyeTrackingActivity
 import androidx.xr.arcore.testapp.facetracking.FaceTrackingActivity
 import androidx.xr.arcore.testapp.handtracking.HandTrackingActivity
 import androidx.xr.arcore.testapp.helloar.HelloArObjectActivity
@@ -186,6 +187,7 @@ class MainActivity : ComponentActivity() {
                 TestCaseColumnRowItem(R.string.object_tracking) {
                     startTest<HelloArObjectActivity>(it)
                 }
+                TestCaseColumnRowItem(R.string.eye_tracking) { startTest<EyeTrackingActivity>(it) }
             }
         }
     }
@@ -258,5 +260,7 @@ class MainActivity : ComponentActivity() {
         const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
         const val HEAD_TRACKING_PERMISSION = "android.permission.HEAD_TRACKING"
         const val FACE_TRACKING_PERMISSION = "android.permission.FACE_TRACKING"
+        const val EYE_TRACKING_COARSE_PERMISSION = "android.permission.EYE_TRACKING_COARSE"
+        const val EYE_TRACKING_FINE_PERMISSION = "android.permission.EYE_TRACKING_FINE"
     }
 }

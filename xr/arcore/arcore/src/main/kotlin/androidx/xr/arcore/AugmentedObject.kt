@@ -86,7 +86,8 @@ internal constructor(
     }
 
     /** The representation of the current state of an [AugmentedObject]. */
-    public class State(
+    public class State
+    internal constructor(
         public override val trackingState: TrackingState,
         /**
          * * The category of the augmented object.

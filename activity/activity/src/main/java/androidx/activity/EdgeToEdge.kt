@@ -83,20 +83,20 @@ fun ComponentActivity.enableEdgeToEdge(
     val navigationBarIsDark = navigationBarStyle.detectDarkMode(view.resources)
     val impl =
         Impl
-            ?: if (Build.VERSION.SDK_INT >= 35) {
-                EdgeToEdgeApi35()
-            } else if (Build.VERSION.SDK_INT >= 30) {
-                EdgeToEdgeApi30()
-            } else if (Build.VERSION.SDK_INT >= 29) {
-                EdgeToEdgeApi29()
-            } else if (Build.VERSION.SDK_INT >= 28) {
-                EdgeToEdgeApi28()
-            } else if (Build.VERSION.SDK_INT >= 26) {
-                EdgeToEdgeApi26()
-            } else {
-                EdgeToEdgeApi23()
-            }
-    Impl = impl
+            ?: (if (Build.VERSION.SDK_INT >= 35) {
+                    EdgeToEdgeApi35()
+                } else if (Build.VERSION.SDK_INT >= 30) {
+                    EdgeToEdgeApi30()
+                } else if (Build.VERSION.SDK_INT >= 29) {
+                    EdgeToEdgeApi29()
+                } else if (Build.VERSION.SDK_INT >= 28) {
+                    EdgeToEdgeApi28()
+                } else if (Build.VERSION.SDK_INT >= 26) {
+                    EdgeToEdgeApi26()
+                } else {
+                    EdgeToEdgeApi23()
+                })
+                .also { Impl = it }
     impl.setUp(
         statusBarStyle,
         navigationBarStyle,

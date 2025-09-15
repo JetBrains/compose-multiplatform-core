@@ -96,6 +96,18 @@ package androidx.xr.arcore.openxr {
     property public androidx.xr.arcore.internal.Earth.State state;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrEye implements androidx.xr.arcore.internal.Eye {
+    ctor public OpenXrEye();
+    method public androidx.xr.runtime.math.Pose? getCoarsePose();
+    method public androidx.xr.arcore.EyeState? getCoarseState();
+    method public androidx.xr.runtime.math.Pose? getFinePose();
+    method public androidx.xr.arcore.EyeState? getFineState();
+    property public androidx.xr.runtime.math.Pose? coarsePose;
+    property public androidx.xr.arcore.EyeState? coarseState;
+    property public androidx.xr.runtime.math.Pose? finePose;
+    property public androidx.xr.arcore.EyeState? fineState;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrFace implements androidx.xr.arcore.internal.Face {
     ctor public OpenXrFace();
     method public float[] getBlendShapeValues();
@@ -135,12 +147,14 @@ package androidx.xr.arcore.openxr {
     method public androidx.xr.arcore.openxr.OpenXrDevice getArDevice();
     method public androidx.xr.arcore.openxr.OpenXrEarth getEarth();
     method public androidx.xr.arcore.internal.DepthMap? getLeftDepthMap();
+    method public androidx.xr.arcore.internal.Eye getLeftEye();
     method public androidx.xr.arcore.internal.Hand getLeftHand();
     method public androidx.xr.arcore.internal.RenderViewpoint? getLeftRenderViewpoint();
     method public androidx.xr.arcore.internal.DepthMap? getMonoDepthMap();
     method public androidx.xr.arcore.internal.RenderViewpoint? getMonoRenderViewpoint();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method public androidx.xr.arcore.internal.DepthMap? getRightDepthMap();
+    method public androidx.xr.arcore.internal.Eye getRightEye();
     method public androidx.xr.arcore.internal.Hand getRightHand();
     method public androidx.xr.arcore.internal.RenderViewpoint? getRightRenderViewpoint();
     method public java.util.Collection<androidx.xr.arcore.internal.Trackable> getTrackables();
@@ -153,11 +167,13 @@ package androidx.xr.arcore.openxr {
     property public androidx.xr.arcore.openxr.OpenXrDevice arDevice;
     property public androidx.xr.arcore.openxr.OpenXrEarth earth;
     property public androidx.xr.arcore.internal.DepthMap? leftDepthMap;
+    property public androidx.xr.arcore.internal.Eye leftEye;
     property public androidx.xr.arcore.internal.Hand leftHand;
     property public androidx.xr.arcore.internal.RenderViewpoint? leftRenderViewpoint;
     property public androidx.xr.arcore.internal.DepthMap? monoDepthMap;
     property public androidx.xr.arcore.internal.RenderViewpoint? monoRenderViewpoint;
     property public androidx.xr.arcore.internal.DepthMap? rightDepthMap;
+    property public androidx.xr.arcore.internal.Eye rightEye;
     property public androidx.xr.arcore.internal.Hand rightHand;
     property public androidx.xr.arcore.internal.RenderViewpoint? rightRenderViewpoint;
     property public java.util.Collection<androidx.xr.arcore.internal.Trackable> trackables;

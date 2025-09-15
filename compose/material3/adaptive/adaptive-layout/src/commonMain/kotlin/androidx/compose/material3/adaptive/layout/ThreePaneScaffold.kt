@@ -993,7 +993,7 @@ private class PaneMeasurable(
         if (data.preferredHeight.isSpecified) {
             with(density) { data.preferredHeight.roundToPx() }
         } else if (data.preferredHeightInProportion.isFinite()) {
-            (scaffoldSize.width * data.preferredHeightInProportion).toInt()
+            (scaffoldSize.height * data.preferredHeightInProportion).toInt()
         } else {
             defaultPreferredHeight
         }

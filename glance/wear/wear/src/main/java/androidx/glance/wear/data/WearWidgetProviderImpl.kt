@@ -46,8 +46,9 @@ internal class WearWidgetProviderImpl(
         mainScope.launch {
             val request = WearWidgetRequest.fromData(requestData)
             request?.let {
-                val widgetContentData = widget.provideWidgetContent(context, request)
-                callback.updateWidgetContent(widgetContentData.toData())
+                val widgetContent = widget.provideWidgetContent(context, request)
+                val rawContent = widgetContent.toRawContent()
+                callback.updateWidgetContent(rawContent.toData())
             }
         }
     }

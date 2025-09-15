@@ -21,6 +21,7 @@ import androidx.xr.arcore.internal.ArDevice as RuntimeArDevice
 import androidx.xr.arcore.internal.AugmentedObject as RuntimeObject
 import androidx.xr.arcore.internal.DepthMap as RuntimeDepthMap
 import androidx.xr.arcore.internal.Earth as RuntimeEarth
+import androidx.xr.arcore.internal.Eye as RuntimeEye
 import androidx.xr.arcore.internal.Face as RuntimeFace
 import androidx.xr.arcore.internal.Hand as RuntimeHand
 import androidx.xr.arcore.internal.Plane as RuntimePlane
@@ -49,6 +50,12 @@ internal class XrResourcesManager {
     private val _trackablesMap =
         java.util.concurrent.ConcurrentHashMap<RuntimeTrackable, Trackable<Trackable.State>>()
     val trackablesMap: Map<RuntimeTrackable, Trackable<Trackable.State>> = _trackablesMap
+
+    /** The data of eyes */
+    private var _leftRuntimeEye: RuntimeEye? = null
+    private var _rightRuntimeEye: RuntimeEye? = null
+    val leftEye: Eye? by lazy { _leftRuntimeEye?.let { Eye(it) } }
+    val rightEye: Eye? by lazy { _rightRuntimeEye?.let { Eye(it) } }
 
     /** The data of hands */
     private var _leftRuntimeHand: RuntimeHand? = null
@@ -91,6 +98,11 @@ internal class XrResourcesManager {
 
     internal fun initiateEarth(runtimeEarth: RuntimeEarth) {
         _earth = Earth(runtimeEarth, this)
+    }
+
+    internal fun initiateEyes(leftRuntimeEye: RuntimeEye?, rightRuntimeEye: RuntimeEye?) {
+        _leftRuntimeEye = leftRuntimeEye
+        _rightRuntimeEye = rightRuntimeEye
     }
 
     internal fun initiateHands(leftRuntimeHand: RuntimeHand?, rightRuntimeHand: RuntimeHand?) {

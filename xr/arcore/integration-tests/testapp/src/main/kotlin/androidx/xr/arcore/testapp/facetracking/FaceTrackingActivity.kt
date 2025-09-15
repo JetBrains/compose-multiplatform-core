@@ -53,7 +53,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.Face
 import androidx.xr.arcore.FaceBlendShapeType
-import androidx.xr.arcore.FaceConfidenceRegionType
+import androidx.xr.arcore.FaceConfidenceRegion
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
@@ -113,7 +113,10 @@ class FaceTrackingActivity : ComponentActivity() {
                     }
                 },
                 onSessionCalibrationRequired = { calibrationType ->
-                    if (calibrationType == RequiredCalibrationType.FACE_TRACKING) {
+                    if (
+                        calibrationType ==
+                            RequiredCalibrationType.REQUIRED_CALIBRATION_TYPE_FACE_TRACKING
+                    ) {
                         lifecycleScope.launch {
                             lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                                 setContent { CalibrationPanel() }
@@ -220,13 +223,13 @@ class FaceTrackingActivity : ComponentActivity() {
                     ) {
                         Text("Region Confidences: ")
                         Text(
-                            "LOWER: ${faceState.getConfidence(FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LOWER)}"
+                            "LOWER: ${faceState.getConfidence(FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LOWER)}"
                         )
                         Text(
-                            "LEFT_UPPER: ${faceState.getConfidence(FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LEFT_UPPER)}"
+                            "LEFT_UPPER: ${faceState.getConfidence(FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LEFT_UPPER)}"
                         )
                         Text(
-                            "RIGHT_UPPER: ${faceState.getConfidence(FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_RIGHT_UPPER)}"
+                            "RIGHT_UPPER: ${faceState.getConfidence(FaceConfidenceRegion.FACE_CONFIDENCE_REGION_RIGHT_UPPER)}"
                         )
                     }
                     if (faceState.trackingState == TrackingState.TRACKING) {

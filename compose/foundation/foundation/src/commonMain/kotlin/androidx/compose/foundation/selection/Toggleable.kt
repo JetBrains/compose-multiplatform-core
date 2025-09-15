@@ -28,6 +28,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.autofill.FillableData
+import androidx.compose.ui.autofill.createFrom
 import androidx.compose.ui.composed
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidateSemantics
@@ -35,6 +38,9 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.contentDataType
+import androidx.compose.ui.semantics.fillableData
+import androidx.compose.ui.semantics.onFillData
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 
@@ -364,7 +370,15 @@ private class ToggleableNode(
     }
 
     override fun SemanticsPropertyReceiver.applyAdditionalSemantics() {
-        toggleableState = ToggleableState(value)
+        this.toggleableState = ToggleableState(value)
+        this.contentDataType = ContentDataType.Toggle
+        FillableData.createFrom(value)?.let { this.fillableData = it }
+        this.onFillData { fillableData ->
+            fillableData.booleanValue?.let {
+                this.toggleableState = ToggleableState(it)
+                true
+            } ?: false
+        }
     }
 }
 
@@ -696,6 +710,18 @@ private class TriStateToggleableNode(
     }
 
     override fun SemanticsPropertyReceiver.applyAdditionalSemantics() {
-        toggleableState = state
+        this.toggleableState = state
+        this.contentDataType = ContentDataType.Toggle
+        // If the toggle state is not indeterminate, set the boolean value on the fillableData
+        // semantic property.
+        FillableData.createFrom(state != ToggleableState.Indeterminate)?.let {
+            this.fillableData = it
+        }
+        this.onFillData { fillableData ->
+            fillableData.booleanValue?.let {
+                this.toggleableState = ToggleableState(it)
+                true
+            } ?: false
+        }
     }
 }

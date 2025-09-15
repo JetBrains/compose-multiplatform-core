@@ -232,7 +232,7 @@ private constructor(
     }
 
     /**
-     * Returns `true` if there is at least one [NavigationEventCallback.isEnabled] callback
+     * Returns `true` if there is at least one [NavigationEventCallback.isBackEnabled] callback
      * registered with this dispatcher.
      *
      * @return True if there is at least one enabled callback.
@@ -338,7 +338,7 @@ private constructor(
     }
 
     /**
-     * Dispatch an [NavigationEventCallback.onEventStarted] event with the given event. This call is
+     * Dispatch an [NavigationEventCallback.onBackStarted] event with the given event. This call is
      * delegated to the shared [NavigationEventProcessor].
      *
      * @param input The [NavigationEventInput] that sourced this event.
@@ -359,7 +359,7 @@ private constructor(
     }
 
     /**
-     * Dispatch an [NavigationEventCallback.onEventProgressed] event with the given event. This call
+     * Dispatch an [NavigationEventCallback.onBackProgressed] event with the given event. This call
      * is delegated to the shared [NavigationEventProcessor].
      *
      * @param input The [NavigationEventInput] that sourced this event.
@@ -380,7 +380,7 @@ private constructor(
     }
 
     /**
-     * Dispatch an [NavigationEventCallback.onEventCompleted] event. This call is delegated to the
+     * Dispatch an [NavigationEventCallback.onBackCompleted] event. This call is delegated to the
      * shared [NavigationEventProcessor], passing the fallback action.
      *
      * @param input The [NavigationEventInput] that sourced this event.
@@ -399,7 +399,7 @@ private constructor(
     }
 
     /**
-     * Dispatch an [NavigationEventCallback.onEventCancelled] event. This call is delegated to the
+     * Dispatch an [NavigationEventCallback.onBackCancelled] event. This call is delegated to the
      * shared [NavigationEventProcessor].
      *
      * @param input The [NavigationEventInput] that sourced this event.

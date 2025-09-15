@@ -18,9 +18,13 @@ package androidx.xr.scenecore.testing
 
 import android.app.Activity
 import androidx.kruth.assertThat
+import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.internal.Dimensions
 import androidx.xr.scenecore.internal.RenderingEntityFactory
 import androidx.xr.scenecore.internal.RenderingRuntime
 import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.internal.SurfaceEntity
 import com.google.common.truth.Truth
 import org.junit.After
 import org.junit.Before
@@ -72,5 +76,59 @@ class FakeRenderingRuntimeTest {
         renderingRuntime.destroyTexture(resource)
 
         Truth.assertThat(fakeRenderingRuntime.reflectionTexture).isNull()
+    }
+
+    @Test
+    fun createGltfEntity_returnGltfEntity() {
+        val pose = Pose.Identity
+        val parent = sceneRuntime.activitySpace
+        val gltfEntity = renderingRuntime.createGltfEntity(pose, FakeGltfModelResource(0), parent)
+
+        assertThat(gltfEntity).isNotNull()
+        assertThat(gltfEntity.getPose()).isEqualTo(pose)
+        assertThat(gltfEntity.parent).isEqualTo(parent)
+
+        gltfEntity.dispose()
+    }
+
+    @Test
+    fun createSurfaceEntity_returnSurfaceEntity() {
+        val stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE
+        val pose = Pose.Identity
+        val canvasShape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f))
+        val contentSecurityLevel = SurfaceEntity.SurfaceProtection.NONE
+        val superSampling = 1
+
+        val surfaceEntity =
+            renderingRuntime.createSurfaceEntity(
+                stereoMode,
+                pose,
+                canvasShape,
+                contentSecurityLevel,
+                superSampling,
+                sceneRuntime.activitySpace,
+            )
+
+        assertThat(surfaceEntity).isNotNull()
+
+        assertThat(surfaceEntity.stereoMode).isEqualTo(stereoMode)
+        assertThat(surfaceEntity.getPose()).isEqualTo(pose)
+        assertThat(surfaceEntity.shape.dimensions).isEqualTo(canvasShape.dimensions)
+        assertThat(surfaceEntity.parent).isEqualTo(sceneRuntime.activitySpace)
+
+        surfaceEntity.dispose()
+    }
+
+    @Test
+    fun createSubspaceNodeEntity_returnSubspaceNodeEntity() {
+        val subspaceNodeEntity =
+            renderingRuntime.createSubspaceNodeEntity(
+                fakeRenderingRuntime.createSubspaceNodeHolder(),
+                Dimensions(1.0f, 1.0f, 1.0f),
+            )
+
+        assertThat(subspaceNodeEntity).isNotNull()
+
+        subspaceNodeEntity.dispose()
     }
 }

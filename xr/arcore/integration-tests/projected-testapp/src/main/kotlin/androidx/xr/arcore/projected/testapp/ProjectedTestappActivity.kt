@@ -30,6 +30,7 @@ import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
 import androidx.xr.runtime.VpsAvailabilityResult
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Test app which tests projected perception API surface. */
@@ -41,13 +42,23 @@ class ProjectedTestAppActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i(TAG, "onCreate")
         tryCreateSession()
     }
 
+    override fun onResume() {
+        super.onResume()
+        Log.i(TAG, "onResume")
+        lifecycleScope.launch {
+            delay(2000) // Sleep for 2 seconds
+            checkVpsAvailability(1.0, 1.0)
+        }
+    }
+
     private fun checkVpsAvailability(latitude: Double, longitude: Double) {
+        Log.i(TAG, "checkVpsAvailability")
         lifecycleScope.launch {
             vpsAvailabilityResult = Earth.checkVpsAvailability(session, latitude, longitude)
-            Log.i(TAG, "VPS availability result is: " + vpsAvailabilityResult)
         }
     }
 

@@ -17,18 +17,17 @@ BUILDSRC_TESTS = "1.0.0-alpha01"
 CAMERA = "1.6.0-alpha01"
 CAMERA_FEATURE_COMBINATION_QUERY = "1.6.0-alpha01"
 CAMERA_MEDIA3 = "1.0.0-alpha05"
-CAMERA_PIPE = "1.0.0-alpha01"
 CAMERA_VIEWFINDER = "1.6.0-alpha01"
 CAMERA_TESTING = "1.0.0-alpha01"
 CARDVIEW = "1.1.0-alpha01"
 CAR_APP = "1.8.0-alpha02"
 COLLECTION = "1.6.0-alpha01"
-COMPOSE = "1.10.0-alpha02"
-COMPOSE_MATERIAL3 = "1.5.0-alpha03"
+COMPOSE = "1.10.0-alpha03"
+COMPOSE_MATERIAL3 = "1.5.0-alpha04"
 COMPOSE_MATERIAL3_ADAPTIVE = "1.2.0-beta01"
 COMPOSE_MATERIAL3_ADAPTIVE_NAV3 = "1.0.0-alpha01"
 COMPOSE_MATERIAL3_XR = "1.0.0-alpha11"
-COMPOSE_RUNTIME = "1.10.0-alpha02"
+COMPOSE_RUNTIME = "1.10.0-alpha03"
 CONSTRAINTLAYOUT = "2.3.0-alpha01"
 CONSTRAINTLAYOUT_COMPOSE = "1.2.0-alpha01"
 CONSTRAINTLAYOUT_CORE = "1.2.0-alpha01"
@@ -186,7 +185,7 @@ WINDOW = "1.5.0-rc01"
 WINDOW_EXTENSIONS = "1.5.0"
 WINDOW_EXTENSIONS_CORE = "1.1.0-alpha01"
 WINDOW_SIDECAR = "1.0.0-rc01"
-WORK = "2.11.0-alpha01"
+WORK = "2.11.0-beta01"
 XR_ARCORE = "1.0.0-alpha06"
 XR_COMPOSE = "1.0.0-alpha07"
 XR_GLIMMER = "1.0.0-alpha01"
@@ -211,7 +210,6 @@ BUILDSRC_TESTS_MAX_DEP_VERSIONS_MAIN = { group = "androidx.buildSrc-tests-max-de
 CAMERA = { group = "androidx.camera", atomicGroupVersion = "versions.CAMERA" }
 CAMERA_FEATURE_COMBINATION_QUERY = { group = "androidx.camera.featurecombinationquery", atomicGroupVersion = "versions.CAMERA_FEATURE_COMBINATION_QUERY" }
 CAMERA_MEDIA3 = { group = "androidx.camera.media3", atomicGroupVersion = "versions.CAMERA_MEDIA3" }
-CAMERA_PIPE = { group = "androidx.camera", atomicGroupVersion = "versions.CAMERA_PIPE", overrideInclude = [ ":camera:camera-camera2-pipe", ":camera:camera-camera2-pipe-integration" ] }
 CAMERA_TESTING = { group = "androidx.camera", atomicGroupVersion = "versions.CAMERA_TESTING", overrideInclude = [ ":camera:camera-testing" ] }
 CAMERA_VIEWFINDER = { group = "androidx.camera.viewfinder", atomicGroupVersion = "versions.CAMERA_VIEWFINDER" }
 CARDVIEW = { group = "androidx.cardview", atomicGroupVersion = "versions.CARDVIEW" }

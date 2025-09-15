@@ -63,25 +63,25 @@ class OnBackInvokedInputTest {
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
-        callback.isEnabled = false
+        callback.isBackEnabled = false
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
 
-        callback.isEnabled = true
+        callback.isBackEnabled = true
 
         assertThat(invoker.registerCount).isEqualTo(2)
     }
 
     @Test
     fun testCallbackEnabledDisabled() {
-        val callback = TestNavigationEventCallback(isEnabled = false)
-        assertThat(callback.isEnabled).isFalse()
+        val callback = TestNavigationEventCallback(isBackEnabled = false)
+        assertThat(callback.isBackEnabled).isFalse()
 
-        callback.isEnabled = true
-        assertThat(callback.isEnabled).isTrue()
+        callback.isBackEnabled = true
+        assertThat(callback.isBackEnabled).isTrue()
 
-        callback.isEnabled = false
-        assertThat(callback.isEnabled).isFalse()
+        callback.isBackEnabled = false
+        assertThat(callback.isBackEnabled).isFalse()
     }
 
     @Test
@@ -90,7 +90,7 @@ class OnBackInvokedInputTest {
 
         val dispatcher = NavigationEventDispatcher {}
 
-        val callback = TestNavigationEventCallback(isEnabled = false)
+        val callback = TestNavigationEventCallback(isBackEnabled = false)
 
         val input = OnBackInvokedInput(invoker)
         dispatcher.addInput(input)
@@ -99,11 +99,11 @@ class OnBackInvokedInputTest {
 
         assertThat(invoker.registerCount).isEqualTo(0)
 
-        callback.isEnabled = true
+        callback.isBackEnabled = true
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
-        callback.isEnabled = false
+        callback.isBackEnabled = false
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
@@ -123,7 +123,7 @@ class OnBackInvokedInputTest {
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
-        callback.isEnabled = false
+        callback.isBackEnabled = false
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
@@ -145,13 +145,13 @@ class OnBackInvokedInputTest {
         assertThat(invoker.registerCount).isEqualTo(1)
 
         invoker.dispatchOnBackStarted(TestBackEvent())
-        assertThat(callback.startedInvocations).isEqualTo(1)
+        assertThat(callback.onBackStartedInvocations).isEqualTo(1)
 
         invoker.dispatchOnBackProgressed(TestBackEvent())
-        assertThat(callback.progressedInvocations).isEqualTo(1)
+        assertThat(callback.onBackProgressedInvocations).isEqualTo(1)
 
         invoker.dispatchOnBackCancelled()
-        assertThat(callback.cancelledInvocations).isEqualTo(1)
+        assertThat(callback.onBackCancelledInvocations).isEqualTo(1)
 
         callback.remove()
 
@@ -177,7 +177,7 @@ class OnBackInvokedInputTest {
         invoker.dispatchOnBackStarted(TestBackEvent())
 
         callback.remove()
-        assertThat(callback.cancelledInvocations).isEqualTo(1)
+        assertThat(callback.onBackCancelledInvocations).isEqualTo(1)
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
@@ -192,7 +192,7 @@ class OnBackInvokedInputTest {
         val input = OnBackInvokedInput(invoker)
         dispatcher.addInput(input)
 
-        val callback = TestNavigationEventCallback(onEventStarted = { remove() })
+        val callback = TestNavigationEventCallback(onBackStarted = { remove() })
 
         dispatcher.addCallback(callback)
 
@@ -200,7 +200,7 @@ class OnBackInvokedInputTest {
 
         invoker.dispatchOnBackStarted(TestBackEvent())
 
-        assertThat(callback.cancelledInvocations).isEqualTo(1)
+        assertThat(callback.onBackCancelledInvocations).isEqualTo(1)
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
@@ -226,7 +226,7 @@ class OnBackInvokedInputTest {
 
         invoker.dispatchOnBackInvoked()
 
-        assertThat(callback.completedInvocations).isEqualTo(1)
+        assertThat(callback.onBackCompletedInvocations).isEqualTo(1)
     }
 
     @Test
@@ -254,8 +254,8 @@ class OnBackInvokedInputTest {
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
-        assertThat(callback1.cancelledInvocations).isEqualTo(1)
+        assertThat(callback1.onBackCancelledInvocations).isEqualTo(1)
 
-        assertThat(callback2.startedInvocations).isEqualTo(1)
+        assertThat(callback2.onBackStartedInvocations).isEqualTo(1)
     }
 }

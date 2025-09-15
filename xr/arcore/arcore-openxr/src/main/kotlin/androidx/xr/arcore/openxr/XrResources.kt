@@ -31,6 +31,10 @@ internal class XrResources {
     private val _updatables = CopyOnWriteArrayList<Updatable>()
     val updatables: List<Updatable> = _updatables
 
+    /** The data of eyes */
+    val leftEye: OpenXrEye
+    val rightEye: OpenXrEye
+
     /** The data of hands */
     val leftHand: OpenXrHand
     val rightHand: OpenXrHand
@@ -52,6 +56,8 @@ internal class XrResources {
     val rightDepthMap: OpenXrDepthMap
 
     init {
+        this.leftEye = OpenXrEye()
+        this.rightEye = OpenXrEye()
         this.leftHand = OpenXrHand(isLeftHand = true)
         this.rightHand = OpenXrHand(isLeftHand = false)
         this.arDevice = OpenXrDevice()

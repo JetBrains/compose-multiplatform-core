@@ -22,6 +22,7 @@ import androidx.xr.arcore.internal.Anchor
 import androidx.xr.arcore.internal.AnchorNotTrackingException
 import androidx.xr.arcore.internal.ArDevice
 import androidx.xr.arcore.internal.DepthMap
+import androidx.xr.arcore.internal.Eye
 import androidx.xr.arcore.internal.Face
 import androidx.xr.arcore.internal.Hand
 import androidx.xr.arcore.internal.HitResult
@@ -196,6 +197,20 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     }
 
     override val trackables: Collection<Trackable> = xrResources.trackables.values
+
+    /**
+     * Returns the left eye.
+     *
+     * ARCore does not support eye tracking, so this property is always null.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val leftEye: Eye? = null
+
+    /**
+     * Returns the right eye.
+     *
+     * ARCore does not support eye tracking, so this property is always null.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val rightEye: Eye? = null
 
     /**
      * Returns the left hand.

@@ -16,9 +16,9 @@
 package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
+import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.processing.XAnnotationValue
 import androidx.room.compiler.processing.XType
-import com.squareup.javapoet.ClassName
 
 /** An instance of the `@Document.DocumentProperty` annotation. */
 data class DocumentPropertyAnnotation(
@@ -48,11 +48,11 @@ data class DocumentPropertyAnnotation(
         genericDocSetterName = "setPropertyDocument",
     ) {
     companion object {
-        val CLASS_NAME: ClassName =
+        val CLASS_NAME: XClassName =
             IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.nestedClass("DocumentProperty")
 
         @JvmField
-        val CONFIG_CLASS: ClassName =
+        val CONFIG_CLASS: XClassName =
             IntrospectionHelper.APPSEARCH_SCHEMA_CLASS.nestedClass("DocumentPropertyConfig")
 
         /**

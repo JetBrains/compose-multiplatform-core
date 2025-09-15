@@ -82,7 +82,7 @@ internal class NavDisplayInfoTest {
 
             // The `previousInfo` should reflect the back stack after a pop,
             // as calculated by the SceneStrategy.
-            assertThat(currentState.previousInfo?.visibleEntries)
+            assertThat(currentState.backInfo.lastOrNull()?.visibleEntries)
                 .containsExactlyElementsIn(currentBackStack.dropLast(2))
         }
     }

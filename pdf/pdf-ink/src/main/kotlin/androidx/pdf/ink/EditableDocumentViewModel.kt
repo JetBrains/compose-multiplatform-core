@@ -28,6 +28,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.pdf.PdfDocument
 import androidx.pdf.PdfLoader
 import androidx.pdf.SandboxedPdfLoader
 import androidx.pdf.annotation.EditablePdfDocument
@@ -52,8 +53,8 @@ import kotlinx.coroutines.withContext
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class EditableDocumentViewModel(private val state: SavedStateHandle, loader: PdfLoader) :
     PdfDocumentViewModel(state, loader) {
-    private lateinit var editsHistoryManager: AnnotationEditsHistoryManager
-    private lateinit var editOperationsHandler: AnnotationEditOperationsHandler
+    private var editsHistoryManager: AnnotationEditsHistoryManager? = null
+    private var editOperationsHandler: AnnotationEditOperationsHandler? = null
 
     private val _annotationDisplayStateFlow = MutableStateFlow(AnnotationsDisplayState.EMPTY)
 
@@ -70,14 +71,7 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
         }
 
     // TODO: b/441634479 Refactor to extract the document from `DocumentLoaded` UI state.
-    internal var editablePdfDocument: EditablePdfDocument? = null
-        set(value) {
-            field = value
-
-            if (value != null) {
-                maybeInitialiseForDocument(value)
-            }
-        }
+    private var editablePdfDocument: EditablePdfDocument? = null
 
     @VisibleForTesting
     public override fun resetState() {
@@ -87,37 +81,53 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
         _annotationDisplayStateFlow.value = AnnotationsDisplayState.EMPTY
     }
 
-    @VisibleForTesting
-    private fun maybeInitialiseForDocument(document: EditablePdfDocument) {
-        val documentUri = document.uri
+    internal fun maybeInitialiseForDocument(document: PdfDocument) {
+        if (document is EditablePdfDocument) {
+            val documentUri = document.uri
 
-        // If the document has changed, reset the edit states
-        if (documentUri != state.get<Uri>(LOADED_DOCUMENT_URI_KEY)) {
-            state[LOADED_DOCUMENT_URI_KEY] = documentUri
-            editablePdfDocument = document
-            editsHistoryManager = AnnotationEditsHistoryManager()
-            editOperationsHandler =
-                AnnotationEditOperationsHandler(document, editsHistoryManager) {
-                    _annotationDisplayStateFlow
-                }
-
-            _annotationDisplayStateFlow.value =
-                AnnotationsDisplayState(
-                    edits = document.getAllEdits(),
-                    transformationMatrices = HashMap(),
-                )
+            // If the document has changed, reset the edit states
+            if (documentUri != state.get<Uri>(LOADED_DOCUMENT_URI_KEY)) {
+                setupManagersAndHandlers(documentUri, document)
+            } else if (editablePdfDocument == null) {
+                editablePdfDocument = document
+            }
+        } else {
+            editablePdfDocument = null
         }
     }
 
     /** Adds a [PdfAnnotation] to the draft state. */
-    internal fun addDraftAnnotation(annotation: PdfAnnotation) =
-        editOperationsHandler.addDraftAnnotation(annotation)
+    internal fun addDraftAnnotation(annotation: PdfAnnotation) {
+        if (editOperationsHandler == null) {
+            setupManagersAndHandlers(
+                documentUri = state.get<Uri>(LOADED_DOCUMENT_URI_KEY),
+                document = editablePdfDocument,
+            )
+        }
+        editOperationsHandler?.addDraftAnnotation(annotation)
+    }
 
     /** Undoes the last edit operation. */
-    internal fun undo() = editOperationsHandler.undo()
+    internal fun undo() {
+        if (editOperationsHandler == null) {
+            setupManagersAndHandlers(
+                documentUri = state.get<Uri>(LOADED_DOCUMENT_URI_KEY),
+                document = editablePdfDocument,
+            )
+        }
+        editOperationsHandler?.undo()
+    }
 
     /** Redoes the last undo edit operation. */
-    internal fun redo() = editOperationsHandler.redo()
+    internal fun redo() {
+        if (editOperationsHandler == null) {
+            setupManagersAndHandlers(
+                documentUri = state.get<Uri>(LOADED_DOCUMENT_URI_KEY),
+                document = editablePdfDocument,
+            )
+        }
+        editOperationsHandler?.redo()
+    }
 
     /** Updates the transformation matrices for rendering annotations. */
     internal fun updateTransformationMatrices(transformationMatrices: Map<Int, Matrix>) {
@@ -153,7 +163,10 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
 
     /** Saves the draft annotations to the PDF document. */
     internal suspend fun saveEdits(dest: ParcelFileDescriptor) {
-        val document = editablePdfDocument ?: return
+        val document = editablePdfDocument
+        if (document == null) {
+            throw IllegalStateException("Document not available for saving.")
+        }
 
         _fragmentUiScreenState.update { PdfFragmentUiState.SavingEdits }
         try {
@@ -181,7 +194,7 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
      *   no changes.
      */
     internal fun hasUnsavedChanges(): Boolean =
-        editablePdfDocument != null && editsHistoryManager.canUndo()
+        editablePdfDocument != null && editsHistoryManager?.canUndo() ?: false
 
     /** Discards all uncommitted edits, reverting the document to its last saved state. */
     internal fun discardUnsavedChanges() {
@@ -192,6 +205,30 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
             displayState.copy(edits = document.getAllEdits())
         }
         isEditModeEnabled = false
+    }
+
+    private fun setupManagersAndHandlers(documentUri: Uri?, document: EditablePdfDocument?) {
+        if (documentUri != null && document != null) {
+            state[LOADED_DOCUMENT_URI_KEY] = documentUri
+            editablePdfDocument = document
+
+            val localEditsHistoryManager = AnnotationEditsHistoryManager()
+            val localEditOperationsHandler =
+                AnnotationEditOperationsHandler(document, localEditsHistoryManager) {
+                    _annotationDisplayStateFlow
+                }
+
+            editsHistoryManager = localEditsHistoryManager
+            editOperationsHandler = localEditOperationsHandler
+
+            _annotationDisplayStateFlow.value =
+                AnnotationsDisplayState(
+                    edits = document.getAllEdits(),
+                    transformationMatrices = HashMap(),
+                )
+        } else {
+            editablePdfDocument = null
+        }
     }
 
     @Suppress("UNCHECKED_CAST")

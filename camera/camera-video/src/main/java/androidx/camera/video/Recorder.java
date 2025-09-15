@@ -1561,7 +1561,7 @@ public final class Recorder implements VideoOutput {
         // Gets the expected sample rate ratio for slow-motion effect.
         VideoEncoderConfig videoEncoderConfig = checkNotNull(mVideoEncoderConfig);
         Rational expectedSampleRateRatio;
-        if (videoEncoderConfig.getCaptureFrameRate() != videoEncoderConfig.getEncodeFrameRate()) {
+        if (videoEncoderConfig.isSlowMotion()) {
             expectedSampleRateRatio = new Rational(videoEncoderConfig.getCaptureFrameRate(),
                     videoEncoderConfig.getEncodeFrameRate());
         } else {
@@ -1733,6 +1733,17 @@ public final class Recorder implements VideoOutput {
             if (location != null) {
                 try {
                     muxer.setLocation(location.getLatitude(), location.getLongitude());
+                } catch (IllegalArgumentException e) {
+                    muxer.release();
+                    onInProgressRecordingInternalError(recordingToStart,
+                            ERROR_INVALID_OUTPUT_OPTIONS, e);
+                    return;
+                }
+            }
+            VideoEncoderConfig videoEncoderConfig = checkNotNull(mVideoEncoderConfig);
+            if (videoEncoderConfig.isSlowMotion()) {
+                try {
+                    muxer.setCaptureFps(videoEncoderConfig.getCaptureFrameRate());
                 } catch (IllegalArgumentException e) {
                     muxer.release();
                     onInProgressRecordingInternalError(recordingToStart,

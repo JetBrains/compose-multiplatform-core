@@ -17,6 +17,7 @@
 package androidx.compose.foundation
 
 import android.os.Build.VERSION.SDK_INT
+import android.os.Looper
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
@@ -108,6 +109,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Correspondence
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.reflect.KClass
 import kotlin.test.Ignore
 import kotlin.test.assertFailsWith
@@ -1737,6 +1739,40 @@ class ClickableTest {
             assertThat(clickCounter).isEqualTo(1)
             assertThat(outerCounter).isEqualTo(0)
         }
+    }
+
+    @Test
+    fun performClick_executesCallbackOnUiThread() {
+        var counter = 0
+        val wasOnUiThread = AtomicBoolean(false)
+        val onClick: () -> Unit = {
+            ++counter
+            val isOnUiThread = Thread.currentThread() == Looper.getMainLooper().thread
+            wasOnUiThread.set(isOnUiThread)
+        }
+
+        rule.setContent {
+            Box(modifier = Modifier.clickable(onClick = onClick)) {
+                BasicText("Foo")
+                BasicText("Bar")
+            }
+        }
+
+        rule.onNodeWithText("Foo").assertExists()
+        rule.onNodeWithText("Bar").assertExists()
+
+        rule.onNodeWithText("Foo").performClick()
+
+        rule.waitForIdle()
+        assertThat(counter).isEqualTo(1)
+        assertTrue(wasOnUiThread.get(), "The onClick() was not invoked on the UI thread.")
+
+        wasOnUiThread.set(false)
+        rule.onNodeWithText("Bar").performClick()
+
+        rule.waitForIdle()
+        assertThat(counter).isEqualTo(2)
+        assertTrue(wasOnUiThread.get(), "The onClick() was not invoked on the UI thread.")
     }
 
     // Helper functions for next several tests

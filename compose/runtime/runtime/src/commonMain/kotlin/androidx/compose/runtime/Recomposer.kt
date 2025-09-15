@@ -804,6 +804,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // composeInitial will throw because of corrupted composition while original exception
             // won't be recorded.
             synchronized(stateLock) {
+                logError("Error was captured in composition.", e)
                 val errorState = errorState
                 if (errorState == null) {
                     // Record exception if current error state is empty.

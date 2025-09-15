@@ -32,6 +32,8 @@ import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
+import androidx.xr.runtime.manifest.EYE_TRACKING_COARSE
+import androidx.xr.runtime.manifest.EYE_TRACKING_FINE
 import androidx.xr.runtime.manifest.FACE_TRACKING
 import androidx.xr.runtime.manifest.HAND_TRACKING
 import androidx.xr.runtime.manifest.HEAD_TRACKING
@@ -95,9 +97,17 @@ class SessionLifecycleHelper(
         if (config.headTracking != Config.HeadTrackingMode.DISABLED) {
             permissions.add(HEAD_TRACKING)
         }
+        if (config.eyeTracking.isCoarseTrackingEnabled) {
+            permissions.add(EYE_TRACKING_COARSE)
+        }
+        if (config.eyeTracking.isFineTrackingEnabled) {
+            permissions.add(EYE_TRACKING_FINE)
+        }
         return permissions
     }
 
+    // TODO: b/442623996 -- this code needs to be reworked to better convey
+    // the correct usage pattern.
     internal fun tryCreateSession() {
         try {
             when (val result = Session.create(activity)) {
@@ -134,6 +144,35 @@ class SessionLifecycleHelper(
                 is SessionCreateUnsupportedDevice -> {
                     showErrorMessage("Session could not be created, device is Unsupported.")
                     activity.finish()
+                }
+            }
+        } catch (e: SecurityException) {
+            requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
+        }
+    }
+
+    internal fun tryUpdateConfig(config: Config) {
+        if (!::session.isInitialized) {
+            Log.e(TAG, "Can't update config, session has not been initialized")
+            return
+        }
+        try {
+            when (val result = session.configure(config)) {
+                is SessionConfigureConfigurationNotSupported -> {
+                    showErrorMessage("Session configuration not supported.")
+                    activity.finish()
+                }
+                is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
+                    Log.e(
+                        TAG,
+                        "Google Play Services Location Library is not linked, this should not happen.",
+                    )
+                }
+                is SessionConfigureCalibrationRequired -> {
+                    onSessionCalibrationRequired(result.calibrationType)
+                }
+                is SessionConfigureSuccess -> {
+                    onSessionAvailable(session)
                 }
             }
         } catch (e: SecurityException) {

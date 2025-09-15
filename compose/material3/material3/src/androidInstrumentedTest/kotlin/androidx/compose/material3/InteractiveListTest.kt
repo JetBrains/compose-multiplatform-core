@@ -68,16 +68,16 @@ class InteractiveListTest {
     val TrailingTag = "trailing"
     val OverlineTag = "overline"
     val SupportingTag = "supporting"
-    val HeadlineTag = "headline"
+    val ContentTag = "content"
 
     @Test
     fun clickableListItem_intrinsicSize() {
-        val headlineSize = 200.dp
+        val contentSize = 200.dp
         rule.setMaterialContent(lightColorScheme()) {
             Column(Modifier.height(IntrinsicSize.Min)) {
                 ClickableListItem(
                     modifier = Modifier.fillMaxHeight().testTag(ListTag),
-                    headlineContent = { Box(Modifier.size(headlineSize)) },
+                    content = { Box(Modifier.size(contentSize)) },
                     leadingContent = { Box(Modifier.fillMaxHeight().testTag(LeadingTag)) },
                     trailingContent = { Box(Modifier.fillMaxHeight().testTag(TrailingTag)) },
                     onClick = {},
@@ -85,10 +85,10 @@ class InteractiveListTest {
             }
         }
 
-        val expectedHeight = headlineSize + InteractiveListTopPadding + InteractiveListBottomPadding
+        val expectedHeight = contentSize + InteractiveListTopPadding + InteractiveListBottomPadding
         rule.onNodeWithTag(ListTag, useUnmergedTree = true).assertHeightIsEqualTo(expectedHeight)
-        rule.onNodeWithTag(LeadingTag, useUnmergedTree = true).assertHeightIsEqualTo(headlineSize)
-        rule.onNodeWithTag(TrailingTag, useUnmergedTree = true).assertHeightIsEqualTo(headlineSize)
+        rule.onNodeWithTag(LeadingTag, useUnmergedTree = true).assertHeightIsEqualTo(contentSize)
+        rule.onNodeWithTag(TrailingTag, useUnmergedTree = true).assertHeightIsEqualTo(contentSize)
     }
 
     @Test
@@ -96,17 +96,17 @@ class InteractiveListTest {
         rule.setMaterialContent(lightColorScheme()) {
             Column(Modifier.width(300.dp).height(IntrinsicSize.Min)) {
                 // 2 identical list items. Leading content leaves small space
-                // for headline, so it has to wrap.
+                // for content, so it has to wrap.
                 ClickableListItem(
                     modifier = Modifier.testTag("ListItem1"),
                     leadingContent = { Box(Modifier.width(240.dp)) },
-                    headlineContent = { Text("A B C D E F G H") },
+                    content = { Text("A B C D E F G H") },
                     onClick = {},
                 )
                 ClickableListItem(
                     modifier = Modifier.testTag("ListItem2"),
                     leadingContent = { Box(Modifier.width(240.dp)) },
-                    headlineContent = { Text("A B C D E F G H") },
+                    content = { Text("A B C D E F G H") },
                     onClick = {},
                 )
             }
@@ -130,7 +130,7 @@ class InteractiveListTest {
                 trailingContent = { Box(Modifier.testTag(TrailingTag).size(48.dp)) },
                 overlineContent = { Text("Overline", Modifier.testTag(OverlineTag)) },
                 supportingContent = { Text("Supporting", Modifier.testTag(SupportingTag)) },
-                headlineContent = { Text("Content", Modifier.testTag(HeadlineTag)) },
+                content = { Text("Content", Modifier.testTag(ContentTag)) },
                 onClick = {},
             )
         }
@@ -141,8 +141,8 @@ class InteractiveListTest {
             rule.onNodeWithTag(OverlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val supportingBounds =
             rule.onNodeWithTag(SupportingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val headlineBounds =
-            rule.onNodeWithTag(HeadlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag(ContentTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val trailingNodeBounds =
             rule.onNodeWithTag(TrailingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
 
@@ -151,11 +151,11 @@ class InteractiveListTest {
 
         val mainContentX = leadingBounds.right + InteractiveListInternalSpacing
         val mainContentHeight =
-            overlineBounds.height + supportingBounds.height + headlineBounds.height
+            overlineBounds.height + supportingBounds.height + contentBounds.height
         overlineBounds.top.assertIsEqualTo((rule.rootHeight() - mainContentHeight) / 2)
         overlineBounds.left.assertIsEqualTo(mainContentX)
         supportingBounds.left.assertIsEqualTo(mainContentX)
-        headlineBounds.left.assertIsEqualTo(mainContentX)
+        contentBounds.left.assertIsEqualTo(mainContentX)
 
         trailingNodeBounds.right.assertIsEqualTo(rule.rootWidth() - InteractiveListEndPadding)
         trailingNodeBounds.top.assertIsEqualTo((rule.rootHeight() - trailingNodeBounds.height) / 2)
@@ -171,7 +171,7 @@ class InteractiveListTest {
                 trailingContent = { Box(Modifier.testTag(TrailingTag).size(48.dp)) },
                 overlineContent = { Text("Overline", Modifier.testTag(OverlineTag)) },
                 supportingContent = { Text("Supporting", Modifier.testTag(SupportingTag)) },
-                headlineContent = { Text("Content", Modifier.testTag(HeadlineTag)) },
+                content = { Text("Content", Modifier.testTag(ContentTag)) },
                 onClick = {},
             )
         }
@@ -182,8 +182,8 @@ class InteractiveListTest {
             rule.onNodeWithTag(OverlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val supportingBounds =
             rule.onNodeWithTag(SupportingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val headlineBounds =
-            rule.onNodeWithTag(HeadlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag(ContentTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val trailingNodeBounds =
             rule.onNodeWithTag(TrailingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
 
@@ -194,7 +194,7 @@ class InteractiveListTest {
         overlineBounds.top.assertIsEqualTo(InteractiveListTopPadding)
         overlineBounds.left.assertIsEqualTo(mainContentX)
         supportingBounds.left.assertIsEqualTo(mainContentX)
-        headlineBounds.left.assertIsEqualTo(mainContentX)
+        contentBounds.left.assertIsEqualTo(mainContentX)
 
         trailingNodeBounds.right.assertIsEqualTo(rule.rootWidth() - InteractiveListEndPadding)
         trailingNodeBounds.top.assertIsEqualTo(InteractiveListTopPadding)
@@ -211,7 +211,7 @@ class InteractiveListTest {
                     trailingContent = { Box(Modifier.testTag(TrailingTag).size(48.dp)) },
                     overlineContent = { Text("Overline", Modifier.testTag(OverlineTag)) },
                     supportingContent = { Text("Supporting", Modifier.testTag(SupportingTag)) },
-                    headlineContent = { Text("Content", Modifier.testTag(HeadlineTag)) },
+                    content = { Text("Content", Modifier.testTag(ContentTag)) },
                     onClick = {},
                 )
             }
@@ -223,8 +223,8 @@ class InteractiveListTest {
             rule.onNodeWithTag(OverlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val supportingBounds =
             rule.onNodeWithTag(SupportingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val headlineBounds =
-            rule.onNodeWithTag(HeadlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag(ContentTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val trailingNodeBounds =
             rule.onNodeWithTag(TrailingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
 
@@ -233,11 +233,11 @@ class InteractiveListTest {
 
         val mainContentRightX = leadingBounds.left - InteractiveListInternalSpacing
         val mainContentHeight =
-            overlineBounds.height + supportingBounds.height + headlineBounds.height
+            overlineBounds.height + supportingBounds.height + contentBounds.height
         overlineBounds.top.assertIsEqualTo((rule.rootHeight() - mainContentHeight) / 2)
         overlineBounds.right.assertIsEqualTo(mainContentRightX)
         supportingBounds.right.assertIsEqualTo(mainContentRightX)
-        headlineBounds.right.assertIsEqualTo(mainContentRightX)
+        contentBounds.right.assertIsEqualTo(mainContentRightX)
 
         trailingNodeBounds.left.assertIsEqualTo(InteractiveListEndPadding)
         trailingNodeBounds.top.assertIsEqualTo((rule.rootHeight() - trailingNodeBounds.height) / 2)
@@ -254,7 +254,7 @@ class InteractiveListTest {
                     trailingContent = { Box(Modifier.testTag(TrailingTag).size(48.dp)) },
                     overlineContent = { Text("Overline", Modifier.testTag(OverlineTag)) },
                     supportingContent = { Text("Supporting", Modifier.testTag(SupportingTag)) },
-                    headlineContent = { Text("Content", Modifier.testTag(HeadlineTag)) },
+                    content = { Text("Content", Modifier.testTag(ContentTag)) },
                     onClick = {},
                 )
             }
@@ -266,8 +266,8 @@ class InteractiveListTest {
             rule.onNodeWithTag(OverlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val supportingBounds =
             rule.onNodeWithTag(SupportingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val headlineBounds =
-            rule.onNodeWithTag(HeadlineTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val contentBounds =
+            rule.onNodeWithTag(ContentTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val trailingNodeBounds =
             rule.onNodeWithTag(TrailingTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
 
@@ -278,7 +278,7 @@ class InteractiveListTest {
         overlineBounds.top.assertIsEqualTo(InteractiveListTopPadding)
         overlineBounds.right.assertIsEqualTo(mainContentRightX)
         supportingBounds.right.assertIsEqualTo(mainContentRightX)
-        headlineBounds.right.assertIsEqualTo(mainContentRightX)
+        contentBounds.right.assertIsEqualTo(mainContentRightX)
 
         trailingNodeBounds.left.assertIsEqualTo(InteractiveListEndPadding)
         trailingNodeBounds.top.assertIsEqualTo(InteractiveListTopPadding)
@@ -290,7 +290,7 @@ class InteractiveListTest {
         rule.setMaterialContent(lightColorScheme()) {
             ClickableListItem(
                 modifier = Modifier.testTag(ListTag),
-                headlineContent = { Text("Headline") },
+                content = { Text("Content") },
                 onClick = { clicked = true },
             )
         }
@@ -311,7 +311,7 @@ class InteractiveListTest {
         rule.setMaterialContent(lightColorScheme()) {
             ClickableListItem(
                 modifier = Modifier.testTag(ListTag),
-                headlineContent = { Text("Headline") },
+                content = { Text("Content") },
                 onClick = { clicked = true },
                 onLongClick = { longClicked = true },
             )
@@ -336,7 +336,7 @@ class InteractiveListTest {
         rule.setMaterialContent(lightColorScheme()) {
             SelectableListItem(
                 modifier = Modifier.testTag(ListTag),
-                headlineContent = { Text("Headline") },
+                content = { Text("Content") },
                 selected = selected,
                 onClick = { selected = !selected },
             )
@@ -358,7 +358,7 @@ class InteractiveListTest {
         rule.setMaterialContent(lightColorScheme()) {
             SelectableListItem(
                 modifier = Modifier.testTag(ListTag),
-                headlineContent = { Text("Headline") },
+                content = { Text("Content") },
                 selected = selected,
                 onClick = { selected = !selected },
                 onLongClick = { longClicked = true },
@@ -384,7 +384,7 @@ class InteractiveListTest {
         rule.setMaterialContent(lightColorScheme()) {
             ToggleableListItem(
                 modifier = Modifier.testTag(ListTag),
-                headlineContent = { Text("Headline") },
+                content = { Text("Content") },
                 checked = checked,
                 onCheckedChange = { checked = it },
             )
@@ -406,7 +406,7 @@ class InteractiveListTest {
         rule.setMaterialContent(lightColorScheme()) {
             ToggleableListItem(
                 modifier = Modifier.testTag(ListTag),
-                headlineContent = { Text("Headline") },
+                content = { Text("Content") },
                 checked = checked,
                 onCheckedChange = { checked = it },
                 onLongClick = { longClicked = true },

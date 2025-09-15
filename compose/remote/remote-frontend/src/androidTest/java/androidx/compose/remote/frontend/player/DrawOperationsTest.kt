@@ -26,10 +26,13 @@ import androidx.compose.remote.core.Operations.PROFILE_WIDGETS
 import androidx.compose.remote.core.operations.BitmapFontData
 import androidx.compose.remote.core.operations.Header
 import androidx.compose.remote.creation.RemoteComposeWriter
-import androidx.compose.remote.frontend.test.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.frontend.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.frontend.test.util.createBitmap
 import androidx.compose.remote.frontend.test.util.getCoreDocument
+import androidx.compose.remote.test.screenshot.TargetPlayer
+import androidx.compose.remote.test.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -47,7 +50,11 @@ import org.junit.runners.JUnit4
 class DrawOperationsTest {
     @get:Rule
     val remoteComposeTestRule =
-        RemoteComposeScreenshotTestRule(matcher = MSSIMMatcher(threshold = 0.999))
+        RemoteComposeScreenshotTestRule(
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+            matcher = MSSIMMatcher(threshold = 0.999),
+            targetPlayer = TargetPlayer.View,
+        )
 
     @Test
     fun drawOperationsInGrid() {
@@ -85,7 +92,7 @@ class DrawOperationsTest {
 
         val columns = 5
 
-        remoteComposeTestRule.runScreenshotTest(backgroundColor = null) {
+        remoteComposeTestRule.runScreenshotTest(backgroundColor = Color.White) {
             val density = LocalDensity.current.density
             val itemWidth = (100f / density).toInt()
             val itemHeight = (100f / density).toInt()

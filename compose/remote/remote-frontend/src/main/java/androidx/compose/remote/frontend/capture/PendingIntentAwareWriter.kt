@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.compose.remote.frontend.capture
 
 import android.app.PendingIntent
+import androidx.annotation.RestrictTo
 
-interface PendingIntentAwareWriter {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface PendingIntentAwareWriter {
     /**
      * Stores a [PendingIntent].
      *
      * @param pendingIntent The [PendingIntent] to store.
      * @return The index for the host to retrieve the corresponding [PendingIntent].
      */
-    fun storePendingIntent(pendingIntent: PendingIntent): Int
+    public fun storePendingIntent(pendingIntent: PendingIntent): Int
 }

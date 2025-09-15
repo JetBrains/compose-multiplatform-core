@@ -39,7 +39,8 @@ import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import androidx.xr.glimmer.checkPrecondition
+import androidx.compose.ui.util.fastCoerceIn
+import androidx.xr.glimmer.list.ListState.Companion.Saver
 import kotlin.math.abs
 
 /**
@@ -108,6 +109,18 @@ public class ListState(firstVisibleItemIndex: Int = 0, firstVisibleItemScrollOff
      */
     internal var scrollToBeConsumed = 0f
         private set
+
+    /**
+     * The scroll value saved from the previous pass to be added to the dispatched scroll value in
+     * the next pass.
+     */
+    private var accumulatedScroll: Float = 0f
+
+    /**
+     * This value is updated after the measure pass inside [applyMeasureResult] and defines how much
+     * of the [scrollToBeConsumed] was actually used.
+     */
+    private var consumedScroll: Float = 0f
 
     internal val nearestRange: kotlin.ranges.IntRange by
         LazyLayoutNearestRangeState(0, NearestItemsSlidingWindowSize, NearestItemsExtraItemCount)
@@ -193,48 +206,69 @@ public class ListState(firstVisibleItemIndex: Int = 0, firstVisibleItemScrollOff
         firstItemIndex: Int,
     ): Int = scrollPosition.updateScrollPositionIfTheFirstItemWasMoved(itemProvider, firstItemIndex)
 
+    /**
+     * * It's called during the measurement pass once the dispatched [scrollToBeConsumed] has been
+     *   handled and the new item positions are known.
+     *
+     * @param result glimmer lazy list measuring results.
+     * @param consumedScroll defines how much scroll was consumed during the measure pass.
+     * @param accumulatedScroll tracks the amount of scrolling that the internal logic has reported
+     *   as consumed, but wants to save for later measurement. Also if the list consumes more scroll
+     *   than it was given (for example, due to rounding errors), this value can be set to a
+     *   negative amount to balance it out in the next pass. This amount will be added to the next
+     *   dispatched scroll distance, and they will be passed together as [scrollToBeConsumed]. This
+     *   value should never be larger than [consumedScroll].
+     */
     internal fun applyMeasureResult(
         result: GlimmerListMeasureResult,
-        visibleItemsStayedTheSame: Boolean = false,
+        consumedScroll: Float,
+        accumulatedScroll: Float,
     ) {
+        this.consumedScroll = consumedScroll
+        this.accumulatedScroll = accumulatedScroll
 
         canScrollBackward = result.canScrollBackward
         canScrollForward = result.canScrollForward
-        scrollToBeConsumed -= result.consumedScroll
         layoutInfoState.value = result
 
-        if (visibleItemsStayedTheSame) {
-            scrollPosition.updateScrollOffset(result.firstVisibleItemScrollOffset)
-        } else {
-            scrollPosition.updateFromMeasureResult(result)
-        }
+        scrollPosition.updateFromMeasureResult(result)
     }
 
     internal fun onScroll(distance: Float): Float {
-        checkPrecondition(abs(scrollToBeConsumed) <= 0.5f) {
-            "entered drag with non-zero pending scroll"
-        }
-        scrollToBeConsumed += distance
-
-        // scrollToBeConsumed will be consumed synchronously during the forceRemeasure invocation
-        // inside measuring we do scrollToBeConsumed.roundToInt() so there will be no scroll if
-        // we have less than 0.5 pixels
-        if (abs(scrollToBeConsumed) > 0.5f) {
-            remeasurement?.forceRemeasure()
-        }
-
-        // here scrollToBeConsumed is already consumed during the forceRemeasure invocation
-        if (abs(scrollToBeConsumed) <= 0.5f) {
-            // We consumed all of it - we'll hold onto the fractional scroll for later, so report
-            // that we consumed the whole thing
+        // Skip measure pass.
+        if (abs(distance + accumulatedScroll) <= 0.5f) {
+            // Inside measuring we do `scrollToBeConsumed.roundToInt()` so there will be no scroll
+            // if we have less than 0.5 pixels. So just accumulate it for the next pass.
+            accumulatedScroll += distance
             return distance
-        } else {
-            val scrollConsumed = distance - scrollToBeConsumed
-            // We did not consume all of it - return the rest to be consumed elsewhere (e.g.,
-            // nested scrolling)
-            scrollToBeConsumed = 0f // We're not consuming the rest, give it back
-            return scrollConsumed
         }
+
+        scrollToBeConsumed = distance + accumulatedScroll
+        // The `forceRemeasure()` invocation triggers the measure pass where `scrollToBeConsumed`
+        // will be used to update `consumedScroll` and `accumulatedScroll` values.
+        remeasurement?.forceRemeasure()
+
+        // Calculate consumed value excluding the accumulated part's effect, since it's internal.
+        val consumedDistance =
+            if (consumedScroll == scrollToBeConsumed) {
+                // This branch is needed, because `consumedScroll = distance + accumulatedScroll`.
+                // There is no need to report `accumulatedScroll` as consumed.
+                distance
+            } else {
+                // If, due to accumulated value, we consumed more than what was provided.
+                if (distance >= 0f) {
+                    consumedScroll.fastCoerceIn(0f, distance)
+                } else {
+                    consumedScroll.fastCoerceIn(distance, 0f)
+                }
+            }
+
+        // It's important to reset this value because there are measure passes
+        // triggered from outside scrolling. They read this value as well.
+        // So, after we used it, we need to reset it to zero.
+        scrollToBeConsumed = 0f
+
+        return consumedDistance
     }
 
     override suspend fun scroll(

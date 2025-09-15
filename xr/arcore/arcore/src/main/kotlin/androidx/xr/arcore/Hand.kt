@@ -203,7 +203,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
     /** The current [State] of this hand. */
     public val state: StateFlow<State> = _state.asStateFlow()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(State(runtimeHand.trackingState, runtimeHand.handJointsBuffer))
     }

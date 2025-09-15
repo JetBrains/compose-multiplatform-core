@@ -19,10 +19,9 @@ package androidx.appsearch.compiler.annotationwrapper;
 import static androidx.appsearch.compiler.IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS;
 
 import androidx.appsearch.compiler.IntrospectionHelper;
+import androidx.room.compiler.codegen.XClassName;
 import androidx.room.compiler.processing.XAnnotation;
 import androidx.room.compiler.processing.XType;
-
-import com.squareup.javapoet.ClassName;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -62,13 +61,13 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
             @NonNull XAnnotation annotation) {
         String qualifiedClassName = annotation.getQualifiedName();
         return Arrays.stream(values())
-                .filter(val -> val.getClassName().canonicalName().equals(qualifiedClassName))
+                .filter(val -> val.getClassName().getCanonicalName().equals(qualifiedClassName))
                 .findFirst()
                 .orElse(null);
     }
 
     @SuppressWarnings("ImmutableEnumChecker") // ClassName is an immutable third-party type
-    private final @NonNull ClassName mClassName;
+    private final @NonNull XClassName mClassName;
 
     private final @NonNull String mGenericDocGetterName;
 
@@ -84,10 +83,9 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
     }
 
     @Override
-    public @NonNull ClassName getClassName() {
+    public @NonNull XClassName getClassName() {
         return mClassName;
     }
-
 
     @Override
     public PropertyAnnotation.@NonNull Kind getPropertyKind() {

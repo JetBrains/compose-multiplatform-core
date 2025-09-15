@@ -34,6 +34,7 @@ import android.app.Activity;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.MaterialData;
+import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.internal.MaterialResource;
 import androidx.xr.scenecore.internal.SpatialEnvironment.SpatialEnvironmentPreference;
 
@@ -277,7 +278,8 @@ public final class SpatialEnvironmentImplTest {
         assertThat(animatingNodes).isEqualTo(0);
         assertThat(loopingAnimatingNodes).isEqualTo(0);
 
-        assertThat(mFakeImpressApi.impressNodeHasParent(geometryNodes.get(0))).isTrue();
+        assertThat(mFakeImpressApi.impressNodeHasParent(
+                new ImpressNode(geometryNodes.get(0)))).isTrue();
 
         // Ensure environment is removed
         mEnvironment.setPreferredSpatialEnvironment(null);
@@ -305,7 +307,8 @@ public final class SpatialEnvironmentImplTest {
         assertThat(initialSkybox).isNotEqualTo(INVALID_SPLIT_ENGINE_ID);
         assertThat(geometryNodes).isNotEmpty();
 
-        assertThat(mFakeImpressApi.impressNodeHasParent(geometryNodes.get(0))).isTrue();
+        assertThat(mFakeImpressApi.impressNodeHasParent(
+                new ImpressNode(geometryNodes.get(0)))).isTrue();
 
         // Ensure environment is not removed if both skybox and geometry are updated to null.
         mEnvironment.setPreferredSpatialEnvironment(new SpatialEnvironmentPreference(null, null));
@@ -343,7 +346,8 @@ public final class SpatialEnvironmentImplTest {
 
         assertThat(initialSkybox).isNotEqualTo(INVALID_SPLIT_ENGINE_ID);
         assertThat(geometryNodes).isNotEmpty();
-        assertThat(mFakeImpressApi.impressNodeHasParent(geometryNodes.get(0))).isTrue();
+        assertThat(mFakeImpressApi.impressNodeHasParent(
+                new ImpressNode(geometryNodes.get(0)))).isTrue();
         assertThat(materials).isNotEmpty();
         assertThat(materials.keySet().toArray()[0]).isEqualTo(WATER_MATERIAL_ID);
         assertThat(materials.get(WATER_MATERIAL_ID).getType()).isEqualTo(MaterialData.Type.WATER);
@@ -414,7 +418,8 @@ public final class SpatialEnvironmentImplTest {
         // Only the new nodes should have a parent.
         // TODO: b/354711945 - Uncomment when we can test the SetGeometrySplitEngine(null) path.
         // assertThat(fakeImpressApi.impressNodeHasParent(geometryNodes.get(0))).isFalse();
-        assertThat(mFakeImpressApi.impressNodeHasParent(newGeometryNodes.get(0))).isTrue();
+        assertThat(mFakeImpressApi.impressNodeHasParent(
+                new ImpressNode(newGeometryNodes.get(0)))).isTrue();
 
         // The resources should be different.
         assertThat(initialSkybox).isNotEqualTo(newSkybox);
@@ -663,7 +668,8 @@ public final class SpatialEnvironmentImplTest {
         assertThat(initialSkybox).isNotEqualTo(INVALID_SPLIT_ENGINE_ID);
         assertThat(geometryNodes).isNotEmpty();
 
-        assertThat(mFakeImpressApi.impressNodeHasParent(geometryNodes.get(0))).isTrue();
+        assertThat(mFakeImpressApi.impressNodeHasParent(
+                new ImpressNode(geometryNodes.get(0)))).isTrue();
 
         assertThat(mEnvironment.getPreferredSpatialEnvironment()).isNotNull();
         assertThat(mEnvironment.isPreferredSpatialEnvironmentActive()).isTrue();

@@ -20,6 +20,7 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.xr.scenecore.impl.impress.ImpressApi;
+import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.impl.impress.Material;
 import androidx.xr.scenecore.internal.Entity;
 import androidx.xr.scenecore.internal.GltfEntity;
@@ -50,8 +51,8 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager;
 
     private final SubspaceNode mSubspace;
-    private final int mModelImpressNode;
-    private final int mSubspaceImpressNode;
+    private final ImpressNode mModelImpressNode;
+    private final ImpressNode mSubspaceImpressNode;
     @AnimationStateValue private int mAnimationState = AnimationState.STOPPED;
 
     GltfEntityImpl(
@@ -70,9 +71,11 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
 
         // System will only render Impress nodes that are parented by this subspace node.
         mSubspaceImpressNode = impressApi.createImpressNode();
-        String subspaceName = "gltf_entity_subspace_" + mSubspaceImpressNode;
+        String subspaceName = "gltf_entity_subspace_" + mSubspaceImpressNode.getHandle();
 
-        mSubspace = splitEngineSubspaceManager.createSubspace(subspaceName, mSubspaceImpressNode);
+        mSubspace =
+            splitEngineSubspaceManager.createSubspace(subspaceName,
+                    mSubspaceImpressNode.getHandle());
 
         if (mSubspace != null) {
             try (NodeTransaction transaction = extensions.createNodeTransaction()) {

@@ -25,6 +25,7 @@ package androidx.xr.runtime {
     ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking);
     ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation);
     ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence);
+    ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.Config.FaceTrackingMode faceTracking);
     method public androidx.xr.runtime.Config copy();
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking);
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking);
@@ -33,11 +34,13 @@ package androidx.xr.runtime {
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence);
     method public androidx.xr.runtime.Config.AnchorPersistenceMode getAnchorPersistence();
     method public androidx.xr.runtime.Config.DepthEstimationMode getDepthEstimation();
+    method public androidx.xr.runtime.Config.FaceTrackingMode getFaceTracking();
     method public androidx.xr.runtime.Config.HandTrackingMode getHandTracking();
     method public androidx.xr.runtime.Config.HeadTrackingMode getHeadTracking();
     method public androidx.xr.runtime.Config.PlaneTrackingMode getPlaneTracking();
     property public androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence;
     property public androidx.xr.runtime.Config.DepthEstimationMode depthEstimation;
+    property public androidx.xr.runtime.Config.FaceTrackingMode faceTracking;
     property public androidx.xr.runtime.Config.HandTrackingMode handTracking;
     property public androidx.xr.runtime.Config.HeadTrackingMode headTracking;
     property public androidx.xr.runtime.Config.PlaneTrackingMode planeTracking;
@@ -80,6 +83,17 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.Config.DeviceTrackingMode LAST_KNOWN;
   }
 
+  public static final class Config.FaceTrackingMode {
+    field public static final androidx.xr.runtime.Config.FaceTrackingMode.Companion Companion;
+    field public static final androidx.xr.runtime.Config.FaceTrackingMode DISABLED;
+    field public static final androidx.xr.runtime.Config.FaceTrackingMode USER;
+  }
+
+  public static final class Config.FaceTrackingMode.Companion {
+    property public androidx.xr.runtime.Config.FaceTrackingMode DISABLED;
+    property public androidx.xr.runtime.Config.FaceTrackingMode USER;
+  }
+
   public static final class Config.HandTrackingMode {
     field public static final androidx.xr.runtime.Config.HandTrackingMode BOTH;
     field public static final androidx.xr.runtime.Config.HandTrackingMode.Companion Companion;
@@ -119,6 +133,15 @@ package androidx.xr.runtime {
     property public kotlin.time.ComparableTimeMark timeMark;
   }
 
+  public final class RequiredCalibrationType {
+    field public static final androidx.xr.runtime.RequiredCalibrationType.Companion Companion;
+    field public static final androidx.xr.runtime.RequiredCalibrationType REQUIRED_CALIBRATION_TYPE_FACE_TRACKING;
+  }
+
+  public static final class RequiredCalibrationType.Companion {
+    property public androidx.xr.runtime.RequiredCalibrationType REQUIRED_CALIBRATION_TYPE_FACE_TRACKING;
+  }
+
   public final class Session {
     method public androidx.xr.runtime.SessionConfigureResult configure(androidx.xr.runtime.Config config);
     method public static androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity);
@@ -137,6 +160,12 @@ package androidx.xr.runtime {
     method public androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity, androidx.lifecycle.LifecycleOwner lifecycleOwner);
     method public androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity, androidx.lifecycle.LifecycleOwner lifecycleOwner, optional kotlin.coroutines.CoroutineContext coroutineContext);
     method public androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity, optional kotlin.coroutines.CoroutineContext coroutineContext);
+  }
+
+  public final class SessionConfigureCalibrationRequired extends androidx.xr.runtime.SessionConfigureResult {
+    ctor public SessionConfigureCalibrationRequired(androidx.xr.runtime.RequiredCalibrationType calibrationType);
+    method public androidx.xr.runtime.RequiredCalibrationType getCalibrationType();
+    property public androidx.xr.runtime.RequiredCalibrationType calibrationType;
   }
 
   public final class SessionConfigureConfigurationNotSupported extends androidx.xr.runtime.SessionConfigureResult {

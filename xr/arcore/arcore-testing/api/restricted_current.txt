@@ -63,13 +63,15 @@ package androidx.xr.arcore.testing {
     method public java.util.List<androidx.xr.arcore.internal.Anchor> getAnchors();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeArDevice getArDevice();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Earth getEarth();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? getLeftDepthMap();
+    method public androidx.xr.arcore.internal.DepthMap? getLeftDepthMap();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Eye? getLeftEye();
     method public androidx.xr.arcore.internal.Hand? getLeftHand();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint? getLeftRenderViewpoint();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? getMonoDepthMap();
+    method public androidx.xr.arcore.internal.DepthMap? getMonoDepthMap();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint? getMonoRenderViewpoint();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? getRightDepthMap();
+    method public androidx.xr.arcore.internal.DepthMap? getRightDepthMap();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Eye? getRightEye();
     method public androidx.xr.arcore.internal.Hand? getRightHand();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint? getRightRenderViewpoint();
     method public java.util.List<androidx.xr.arcore.internal.Trackable> getTrackables();
@@ -85,12 +87,14 @@ package androidx.xr.arcore.testing {
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeArDevice arDevice;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Earth earth;
     property public boolean isTrackingAvailable;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? leftDepthMap;
+    property public androidx.xr.arcore.internal.DepthMap? leftDepthMap;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Eye? leftEye;
     property public androidx.xr.arcore.internal.Hand? leftHand;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint? leftRenderViewpoint;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? monoDepthMap;
+    property public androidx.xr.arcore.internal.DepthMap? monoDepthMap;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint? monoRenderViewpoint;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? rightDepthMap;
+    property public androidx.xr.arcore.internal.DepthMap? rightDepthMap;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Eye? rightEye;
     property public androidx.xr.arcore.internal.Hand? rightHand;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint? rightRenderViewpoint;
     property public java.util.List<androidx.xr.arcore.internal.Trackable> trackables;
@@ -196,7 +200,7 @@ package androidx.xr.arcore.testing {
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeDepthMap implements androidx.xr.arcore.internal.DepthMap {
+  public final class FakeRuntimeDepthMap implements androidx.xr.arcore.internal.DepthMap {
     ctor public FakeRuntimeDepthMap();
     ctor public FakeRuntimeDepthMap(optional int width, optional int height, optional java.nio.FloatBuffer? rawDepthMap, optional java.nio.ByteBuffer? rawConfidenceMap, optional java.nio.FloatBuffer? smoothDepthMap, optional java.nio.ByteBuffer? smoothConfidenceMap);
     method public int getHeight();
@@ -244,7 +248,23 @@ package androidx.xr.arcore.testing {
     property public androidx.xr.arcore.internal.Earth.State state;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeFace implements androidx.xr.arcore.internal.Face {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeEye implements androidx.xr.arcore.internal.Eye {
+    ctor public FakeRuntimeEye();
+    method public androidx.xr.runtime.math.Pose? getCoarsePose();
+    method public androidx.xr.arcore.EyeState? getCoarseState();
+    method public androidx.xr.runtime.math.Pose? getFinePose();
+    method public androidx.xr.arcore.EyeState? getFineState();
+    method public void setCoarsePose(androidx.xr.runtime.math.Pose?);
+    method public void setCoarseState(androidx.xr.arcore.EyeState?);
+    method public void setFinePose(androidx.xr.runtime.math.Pose?);
+    method public void setFineState(androidx.xr.arcore.EyeState?);
+    property public androidx.xr.runtime.math.Pose? coarsePose;
+    property public androidx.xr.arcore.EyeState? coarseState;
+    property public androidx.xr.runtime.math.Pose? finePose;
+    property public androidx.xr.arcore.EyeState? fineState;
+  }
+
+  public final class FakeRuntimeFace implements androidx.xr.arcore.internal.Face {
     ctor public FakeRuntimeFace();
     ctor public FakeRuntimeFace(optional androidx.xr.runtime.TrackingState trackingState, optional boolean isValid, optional float[] blendShapeValues, optional float[] confidenceValues);
     method public float[] getBlendShapeValues();

@@ -70,6 +70,29 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
     public fun awaitExtensionMetadata(extension: Int): CameraExtensionMetadata
 
     public companion object {
+
+        /**
+         * Replacement for [CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP] in conjunction
+         * with the [CameraMetadata.streamConfigurationMap] extension function.
+         *
+         * Associated android key name is `android.scalar.streamConfigurationMap`
+         */
+        @JvmStatic
+        public val CAMERA_STREAM_CONFIGURATION_MAP: Metadata.Key<CameraStreamConfigurationMap> =
+            Metadata.Key.create("androidx.camera.camera2.pipe.scalar.streamConfigurationMap")
+
+        /**
+         * Replacement for [CameraCharacteristics.REQUEST_AVAILABLE_COLOR_SPACE_PROFILES] in
+         * conjunction with the [CameraMetadata.availableColorSpaceProfiles] extension function.
+         *
+         * Associated android key name is `android.request.availableColorSpaceProfilesMap`
+         */
+        @JvmStatic
+        public val CAMERA_AVAILABLE_COLOR_SPACE_PROFILES: Metadata.Key<CameraColorSpaceProfiles> =
+            Metadata.Key.create(
+                "androidx.camera.camera2.pipe.request.availableColorSpaceProfilesMap"
+            )
+
         /**
          * Extension properties for querying the available capabilities of a camera device across
          * all API levels.
@@ -200,20 +223,22 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
         public val CameraMetadata.availableColorSpaceProfiles: CameraColorSpaceProfiles?
             @JvmStatic
             get() =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    this[CameraCharacteristics.REQUEST_AVAILABLE_COLOR_SPACE_PROFILES]?.let {
-                        Camera2ColorSpaceProfiles(it)
+                this[CAMERA_AVAILABLE_COLOR_SPACE_PROFILES]
+                    ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        this[CameraCharacteristics.REQUEST_AVAILABLE_COLOR_SPACE_PROFILES]?.let {
+                            Camera2ColorSpaceProfiles(it)
+                        }
+                    } else {
+                        UnsupportedCameraColorSpaceProfiles
                     }
-                } else {
-                    null
-                }
 
         public val CameraMetadata.streamConfigurationMap: CameraStreamConfigurationMap?
             @JvmStatic
             get() =
-                this[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let {
-                    Camera2StreamConfigurationMap(it)
-                }
+                this[CAMERA_STREAM_CONFIGURATION_MAP]
+                    ?: this[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let {
+                        Camera2StreamConfigurationMap(it)
+                    }
 
         public val CameraMetadata.supportsAutoFocusTrigger: Boolean
             @JvmStatic

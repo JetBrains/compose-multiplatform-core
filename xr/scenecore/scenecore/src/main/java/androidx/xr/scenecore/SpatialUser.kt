@@ -21,7 +21,8 @@ import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.scenecore.internal.JxrPlatformAdapter
 
 /** SpatialUser represents the user in a spatialized Activity. */
-public class SpatialUser(
+public class SpatialUser
+internal constructor(
     private val lifecycleManager: LifecycleManager,
     private val runtime: JxrPlatformAdapter,
 ) {

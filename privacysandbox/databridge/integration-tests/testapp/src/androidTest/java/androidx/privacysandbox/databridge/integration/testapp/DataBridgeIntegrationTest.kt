@@ -17,8 +17,8 @@
 package androidx.privacysandbox.databridge.integration.testapp
 
 import androidx.preference.PreferenceManager
-import androidx.privacysandbox.databridge.client.SyncCallback
-import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ErrorCode
+import androidx.privacysandbox.databridge.client.SyncFailureCallback
+import androidx.privacysandbox.databridge.client.SyncFailureCallback.Companion.ErrorCode
 import androidx.privacysandbox.databridge.core.Key
 import androidx.privacysandbox.databridge.integration.testutils.KeyUpdateCallbackImpl
 import androidx.privacysandbox.databridge.integration.testutils.SharedPreferenceChangeListener
@@ -433,34 +433,34 @@ class DataBridgeIntegrationTest {
     }
 
     @Test
-    fun testAddDataSyncCallback() = runTest {
-        val syncCallback = SyncCallbackImpl()
-        getActivity().addDataSyncCallback(currentThreadExecutor, syncCallback)
+    fun testAddSyncFailureCallback() = runTest {
+        val syncFailureCallback = SyncFailureCallbackImpl()
+        getActivity().addSyncFailureCallback(currentThreadExecutor, syncFailureCallback)
 
-        syncCallback.initializeLatch(setOf(intKey))
+        syncFailureCallback.initializeLatch(setOf(intKey))
         getActivity().addKeysForSynchronization(mapOf(intKey to "intValue"))
 
-        val valErrorData = syncCallback.getValueDataList(intKey)
+        val valErrorData = syncFailureCallback.getValueDataList(intKey)
         expect.that(valErrorData.size).isEqualTo(2)
     }
 
     @Test(expected = TimeoutException::class)
-    fun testRemoveDataSyncCallback() = runTest {
-        val syncCallback = SyncCallbackImpl()
-        getActivity().addDataSyncCallback(currentThreadExecutor, syncCallback)
+    fun testRemoveSyncFailureCallback() = runTest {
+        val syncFailureCallback = SyncFailureCallbackImpl()
+        getActivity().addSyncFailureCallback(currentThreadExecutor, syncFailureCallback)
 
-        syncCallback.initializeLatch(setOf(intKey))
+        syncFailureCallback.initializeLatch(setOf(intKey))
         getActivity().addKeysForSynchronization(mapOf(intKey to "intValue"))
 
-        val valErrorData = syncCallback.getValueDataList(intKey)
+        val valErrorData = syncFailureCallback.getValueDataList(intKey)
         expect.that(valErrorData.size).isEqualTo(2)
 
-        getActivity().removeDataSyncCallback(syncCallback)
-        syncCallback.initializeLatch(setOf(intKey))
+        getActivity().removeSyncFailureCallback(syncFailureCallback)
+        syncFailureCallback.initializeLatch(setOf(intKey))
         getActivity().addKeysForSynchronization(mapOf(intKey to "intValue"))
         // This throws a TimeoutException exception because it CountDownLatch.awaits returns a
         // boolean as the callback has been unregistered
-        val unused = syncCallback.getValueDataList(intKey)
+        val unused = syncFailureCallback.getValueDataList(intKey)
     }
 
     private fun verifySuccessfulResult(result: Result<Any?>, expectedVal: Any?) {
@@ -493,7 +493,7 @@ class DataBridgeIntegrationTest {
         val errorMessage: String,
     )
 
-    class SyncCallbackImpl : SyncCallback {
+    class SyncFailureCallbackImpl : SyncFailureCallback {
         private val latchMap = mutableMapOf<Key, CountDownLatch>()
         private val keyValueErrorData = mutableMapOf<Key, MutableList<ValueErrorData>>()
 

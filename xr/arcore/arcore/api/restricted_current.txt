@@ -12,6 +12,7 @@ package androidx.xr.arcore {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.Anchor loadFromNativePointer(androidx.xr.runtime.Session session, long nativePointer);
     method public suspend Object? persist(kotlin.coroutines.Continuation<? super java.util.UUID>);
     method public static void unpersist(androidx.xr.runtime.Session session, java.util.UUID uuid);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Anchor runtimeAnchor;
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Anchor.State> state;
     field public static final androidx.xr.arcore.Anchor.Companion Companion;
@@ -68,7 +69,7 @@ package androidx.xr.arcore {
   public final class ArDevice {
     method public static androidx.xr.arcore.ArDevice getInstance(androidx.xr.runtime.Session session);
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ArDevice.State> getState();
-    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ArDevice.State> state;
     field public static final androidx.xr.arcore.ArDevice.Companion Companion;
   }
@@ -78,7 +79,6 @@ package androidx.xr.arcore {
   }
 
   public static final class ArDevice.State {
-    ctor public ArDevice.State(androidx.xr.runtime.math.Pose devicePose);
     method public androidx.xr.runtime.math.Pose getDevicePose();
     property public androidx.xr.runtime.math.Pose devicePose;
   }
@@ -97,7 +97,6 @@ package androidx.xr.arcore {
   }
 
   public static final class AugmentedObject.State implements androidx.xr.arcore.Trackable.State {
-    ctor public AugmentedObject.State(androidx.xr.runtime.TrackingState trackingState, androidx.xr.runtime.AugmentedObjectCategory category, androidx.xr.runtime.math.Pose centerPose, androidx.xr.runtime.math.FloatSize3d extents);
     method public androidx.xr.runtime.AugmentedObjectCategory getCategory();
     method public androidx.xr.runtime.math.Pose getCenterPose();
     method public androidx.xr.runtime.math.FloatSize3d getExtents();
@@ -120,7 +119,6 @@ package androidx.xr.arcore {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class CreateGeospatialPoseFromPoseSuccess extends androidx.xr.arcore.CreateGeospatialPoseFromPoseResult {
-    ctor public CreateGeospatialPoseFromPoseSuccess(androidx.xr.runtime.math.GeospatialPose pose, double horizontalAccuracy, double verticalAccuracy, double orientationYawAccuracy);
     method public double getHorizontalAccuracy();
     method public double getOrientationYawAccuracy();
     method public androidx.xr.runtime.math.GeospatialPose getPose();
@@ -148,12 +146,12 @@ package androidx.xr.arcore {
     property public androidx.xr.runtime.math.Pose pose;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class DepthMap {
+  public final class DepthMap {
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.DepthMap.State> getState();
     method public static androidx.xr.arcore.DepthMap? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.DepthMap? mono(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.DepthMap? right(androidx.xr.runtime.Session session);
-    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.DepthMap.State> state;
     field public static final androidx.xr.arcore.DepthMap.Companion Companion;
   }
@@ -165,7 +163,6 @@ package androidx.xr.arcore {
   }
 
   public static final class DepthMap.State {
-    ctor public DepthMap.State(int width, int height, java.nio.FloatBuffer? rawDepthMap, java.nio.ByteBuffer? rawConfidenceMap, java.nio.FloatBuffer? smoothDepthMap, java.nio.ByteBuffer? smoothConfidenceMap);
     method public int getHeight();
     method public java.nio.ByteBuffer? getRawConfidenceMap();
     method public java.nio.FloatBuffer? getRawDepthMap();
@@ -189,7 +186,7 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.CreatePoseFromGeospatialPoseResult createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
     method public static androidx.xr.arcore.Earth getInstance(androidx.xr.runtime.Session session);
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Earth.State> getState();
-    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Earth.State> state;
     field public static final androidx.xr.arcore.Earth.Companion Companion;
   }
@@ -231,28 +228,67 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Earth.Surface TERRAIN;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Face {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Eye {
+    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Eye.State> getState();
+    method public static androidx.xr.arcore.Eye? left(androidx.xr.runtime.Session session);
+    method public static androidx.xr.arcore.Eye? right(androidx.xr.runtime.Session session);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Eye.State> state;
+    field public static final androidx.xr.arcore.Eye.Companion Companion;
+  }
+
+  public static final class Eye.Companion {
+    method public androidx.xr.arcore.Eye? left(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Eye? right(androidx.xr.runtime.Session session);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class Eye.State {
+    ctor public Eye.State(androidx.xr.arcore.EyeState? coarseEyeState, androidx.xr.runtime.math.Pose? coarseEyePose, androidx.xr.arcore.EyeState? fineEyeState, androidx.xr.runtime.math.Pose? fineEyePose);
+    method public androidx.xr.runtime.math.Pose? getCoarseEyePose();
+    method public androidx.xr.arcore.EyeState? getCoarseEyeState();
+    method public androidx.xr.runtime.math.Pose? getFineEyePose();
+    method public androidx.xr.arcore.EyeState? getFineEyeState();
+    property public androidx.xr.runtime.math.Pose? coarseEyePose;
+    property public androidx.xr.arcore.EyeState? coarseEyeState;
+    property public androidx.xr.runtime.math.Pose? fineEyePose;
+    property public androidx.xr.arcore.EyeState? fineEyeState;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class EyeState {
+    ctor public EyeState(int value);
+    field public static final androidx.xr.arcore.EyeState.Companion Companion;
+    field public static final androidx.xr.arcore.EyeState GAZING;
+    field public static final androidx.xr.arcore.EyeState INVALID;
+    field public static final androidx.xr.arcore.EyeState SHUT;
+  }
+
+  public static final class EyeState.Companion {
+    property public androidx.xr.arcore.EyeState GAZING;
+    property public androidx.xr.arcore.EyeState INVALID;
+    property public androidx.xr.arcore.EyeState SHUT;
+  }
+
+  public final class Face {
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> getState();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
-    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public static androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> state;
     field public static final androidx.xr.arcore.Face.Companion Companion;
   }
 
   public static final class Face.Companion {
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
   }
 
   public static final class Face.State {
-    ctor public Face.State(androidx.xr.runtime.TrackingState trackingState, float[] blendShapeValues, float[] confidenceValues);
     method public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> getBlendShapes();
-    method public float getConfidence(androidx.xr.arcore.FaceConfidenceRegionType region);
+    method public float getConfidence(androidx.xr.arcore.FaceConfidenceRegion region);
     method public androidx.xr.runtime.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> blendShapes;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FaceBlendShapeType {
+  public final class FaceBlendShapeType {
     field public static final androidx.xr.arcore.FaceBlendShapeType.Companion Companion;
     field public static final androidx.xr.arcore.FaceBlendShapeType FACE_BLEND_SHAPE_TYPE_BROW_LOWERER_LEFT;
     field public static final androidx.xr.arcore.FaceBlendShapeType FACE_BLEND_SHAPE_TYPE_BROW_LOWERER_RIGHT;
@@ -395,17 +431,17 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.FaceBlendShapeType FACE_BLEND_SHAPE_TYPE_UPPER_LIP_RAISER_RIGHT;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FaceConfidenceRegionType {
-    field public static final androidx.xr.arcore.FaceConfidenceRegionType.Companion Companion;
-    field public static final androidx.xr.arcore.FaceConfidenceRegionType FACE_CONFIDENCE_REGION_TYPE_LEFT_UPPER;
-    field public static final androidx.xr.arcore.FaceConfidenceRegionType FACE_CONFIDENCE_REGION_TYPE_LOWER;
-    field public static final androidx.xr.arcore.FaceConfidenceRegionType FACE_CONFIDENCE_REGION_TYPE_RIGHT_UPPER;
+  public final class FaceConfidenceRegion {
+    field public static final androidx.xr.arcore.FaceConfidenceRegion.Companion Companion;
+    field public static final androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_LEFT_UPPER;
+    field public static final androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_LOWER;
+    field public static final androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_RIGHT_UPPER;
   }
 
-  public static final class FaceConfidenceRegionType.Companion {
-    property public androidx.xr.arcore.FaceConfidenceRegionType FACE_CONFIDENCE_REGION_TYPE_LEFT_UPPER;
-    property public androidx.xr.arcore.FaceConfidenceRegionType FACE_CONFIDENCE_REGION_TYPE_LOWER;
-    property public androidx.xr.arcore.FaceConfidenceRegionType FACE_CONFIDENCE_REGION_TYPE_RIGHT_UPPER;
+  public static final class FaceConfidenceRegion.Companion {
+    property public androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_LEFT_UPPER;
+    property public androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_LOWER;
+    property public androidx.xr.arcore.FaceConfidenceRegion FACE_CONFIDENCE_REGION_RIGHT_UPPER;
   }
 
   public final class Hand {
@@ -413,6 +449,7 @@ package androidx.xr.arcore {
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
     method public static androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.Hand? right(androidx.xr.runtime.Session session);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> state;
     field public static final androidx.xr.arcore.Hand.Companion Companion;
   }
@@ -483,29 +520,33 @@ package androidx.xr.arcore {
 
   public final class PerceptionState {
     method public androidx.xr.arcore.ArDevice getArDevice();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.DepthMap? getLeftDepthMap();
+    method public androidx.xr.arcore.DepthMap? getLeftDepthMap();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Eye? getLeftEye();
     method public androidx.xr.arcore.Hand? getLeftHand();
     method public androidx.xr.arcore.RenderViewpoint? getLeftRenderViewpoint();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.DepthMap? getMonoDepthMap();
+    method public androidx.xr.arcore.DepthMap? getMonoDepthMap();
     method public androidx.xr.arcore.RenderViewpoint? getMonoRenderViewpoint();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.DepthMap? getRightDepthMap();
+    method public androidx.xr.arcore.DepthMap? getRightDepthMap();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Eye? getRightEye();
     method public androidx.xr.arcore.Hand? getRightHand();
     method public androidx.xr.arcore.RenderViewpoint? getRightRenderViewpoint();
     method public kotlin.time.ComparableTimeMark getTimeMark();
     method public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> getTrackables();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Face? getUserFace();
+    method public androidx.xr.arcore.Face? getUserFace();
     property public androidx.xr.arcore.ArDevice arDevice;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.DepthMap? leftDepthMap;
+    property public androidx.xr.arcore.DepthMap? leftDepthMap;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Eye? leftEye;
     property public androidx.xr.arcore.Hand? leftHand;
     property public androidx.xr.arcore.RenderViewpoint? leftRenderViewpoint;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.DepthMap? monoDepthMap;
+    property public androidx.xr.arcore.DepthMap? monoDepthMap;
     property public androidx.xr.arcore.RenderViewpoint? monoRenderViewpoint;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.DepthMap? rightDepthMap;
+    property public androidx.xr.arcore.DepthMap? rightDepthMap;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Eye? rightEye;
     property public androidx.xr.arcore.Hand? rightHand;
     property public androidx.xr.arcore.RenderViewpoint? rightRenderViewpoint;
     property public kotlin.time.ComparableTimeMark timeMark;
     property public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> trackables;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Face? userFace;
+    property public androidx.xr.arcore.Face? userFace;
   }
 
   public final class PerceptionStateExtenderKt {
@@ -518,6 +559,7 @@ package androidx.xr.arcore {
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> getState();
     method public androidx.xr.arcore.Plane.Type getType();
     method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Plane>> subscribe(androidx.xr.runtime.Session session);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> state;
     property public androidx.xr.arcore.Plane.Type type;
     field public static final androidx.xr.arcore.Plane.Companion Companion;
@@ -577,7 +619,7 @@ package androidx.xr.arcore {
     method public static androidx.xr.arcore.RenderViewpoint? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.RenderViewpoint? mono(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.RenderViewpoint? right(androidx.xr.runtime.Session session);
-    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.RenderViewpoint.State> state;
     field public static final androidx.xr.arcore.RenderViewpoint.Companion Companion;
   }
@@ -589,7 +631,6 @@ package androidx.xr.arcore {
   }
 
   public static final class RenderViewpoint.State {
-    ctor public RenderViewpoint.State(androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.math.Pose localPose, androidx.xr.runtime.FieldOfView fieldOfView);
     method public androidx.xr.runtime.FieldOfView getFieldOfView();
     method public androidx.xr.runtime.math.Pose getLocalPose();
     method public androidx.xr.runtime.math.Pose getPose();
@@ -758,6 +799,17 @@ package androidx.xr.arcore.internal {
     property public abstract long nativePointer;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Eye {
+    method public androidx.xr.runtime.math.Pose? getCoarsePose();
+    method public androidx.xr.arcore.EyeState? getCoarseState();
+    method public androidx.xr.runtime.math.Pose? getFinePose();
+    method public androidx.xr.arcore.EyeState? getFineState();
+    property public abstract androidx.xr.runtime.math.Pose? coarsePose;
+    property public abstract androidx.xr.arcore.EyeState? coarseState;
+    property public abstract androidx.xr.runtime.math.Pose? finePose;
+    property public abstract androidx.xr.arcore.EyeState? fineState;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Face {
     method public float[] getBlendShapeValues();
     method public float[] getConfidenceValues();
@@ -809,12 +861,14 @@ package androidx.xr.arcore.internal {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.ArDevice getArDevice();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Earth getEarth();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? getLeftDepthMap();
+    method public androidx.xr.arcore.internal.Eye? getLeftEye();
     method public androidx.xr.arcore.internal.Hand? getLeftHand();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.RenderViewpoint? getLeftRenderViewpoint();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? getMonoDepthMap();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.RenderViewpoint? getMonoRenderViewpoint();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.DepthMap? getRightDepthMap();
+    method public androidx.xr.arcore.internal.Eye? getRightEye();
     method public androidx.xr.arcore.internal.Hand? getRightHand();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.RenderViewpoint? getRightRenderViewpoint();
     method public java.util.Collection<androidx.xr.arcore.internal.Trackable> getTrackables();
@@ -826,11 +880,13 @@ package androidx.xr.arcore.internal {
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.arcore.internal.ArDevice arDevice;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.arcore.internal.Earth earth;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.arcore.internal.DepthMap? leftDepthMap;
+    property public abstract androidx.xr.arcore.internal.Eye? leftEye;
     property public abstract androidx.xr.arcore.internal.Hand? leftHand;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.arcore.internal.RenderViewpoint? leftRenderViewpoint;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.arcore.internal.DepthMap? monoDepthMap;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.arcore.internal.RenderViewpoint? monoRenderViewpoint;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.arcore.internal.DepthMap? rightDepthMap;
+    property public abstract androidx.xr.arcore.internal.Eye? rightEye;
     property public abstract androidx.xr.arcore.internal.Hand? rightHand;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.arcore.internal.RenderViewpoint? rightRenderViewpoint;
     property public abstract java.util.Collection<androidx.xr.arcore.internal.Trackable> trackables;

@@ -17,6 +17,10 @@
 package androidx.xr.runtime
 
 import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.os.Build
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.Service
@@ -63,7 +67,35 @@ internal fun <S : Any> loadProviders(
             providerClass.javaClass.name !in filteredProviderClassNames
         }
 
+    println("Detected filtered service loader classes: $filteredServiceLoaderClasses")
     return providers + filteredServiceLoaderClasses
+}
+
+internal fun findProjectedSystemService(context: Context, intent: Intent): ResolveInfo? {
+    val resolveInfoList: List<ResolveInfo> =
+        context.packageManager.queryIntentServices(intent, PackageManager.GET_RESOLVED_FILTER)
+
+    val resolveInfoSystemApps =
+        resolveInfoList.filter {
+            val applicationInfo =
+                context.packageManager.getApplicationInfo(
+                    it.serviceInfo.packageName,
+                    /* flags= */ 0,
+                )
+            (applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+        }
+    println("findProjectedSystemService: apps = $resolveInfoSystemApps")
+
+    if (resolveInfoSystemApps.isEmpty()) {
+        println("System doesn't include a service supporting Projected XR devices.")
+        return null
+    }
+    if (resolveInfoSystemApps.size > 1) {
+        println("More than one system service found for action: $intent.")
+        return null
+    }
+
+    return resolveInfoSystemApps.first()
 }
 
 /**
@@ -75,11 +107,17 @@ internal fun <S : Service> selectProvider(providers: List<S>, features: Set<Feat
 
 /** Returns the features that this device supports. */
 internal fun getDeviceFeatures(context: Context): Set<Feature> {
+    val ACTION_PERCEPTION_BIND: String = "androidx.xr.projected.ACTION_PERCEPTION_BIND"
+
     // Short-circuit for unit tests environments.
     if (Build.FINGERPRINT.contains("robolectric")) return emptySet()
 
     val features = mutableSetOf<Feature>(Feature.FULLSTACK)
     val packageManager = context.packageManager
+
+    if (findProjectedSystemService(context, Intent(ACTION_PERCEPTION_BIND)) != null) {
+        features.add(Feature.PROJECTED)
+    }
 
     // TODO(b/398957058): Remove emulator check once the emulator has the system feature.
     if (

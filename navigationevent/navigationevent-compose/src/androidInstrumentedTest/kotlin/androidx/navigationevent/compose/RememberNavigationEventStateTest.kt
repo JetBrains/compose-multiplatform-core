@@ -27,7 +27,6 @@ import androidx.navigationevent.NavigationEventState.InProgress
 import androidx.navigationevent.testing.TestNavigationEventDispatcherOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import kotlinx.coroutines.flow.collect
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,9 +52,7 @@ internal class RememberNavigationEventStateTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 // Provide a handler with CustomInfo1 so the dispatcher has a current info.
-                NavigationEventHandler(currentInfo = CustomInfo1(), previousInfo = null) {
-                    it.collect()
-                }
+                NavigationEventHandler(currentInfo = CustomInfo1(), onBackCompleted = {})
                 state = rememberNavigationEventState(initialInfo = CustomInfo1())
             }
         }
@@ -69,9 +66,7 @@ internal class RememberNavigationEventStateTest {
 
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
-                NavigationEventHandler(currentInfo = CustomInfo1(), previousInfo = null) {
-                    it.collect()
-                }
+                NavigationEventHandler(currentInfo = CustomInfo1(), onBackCompleted = {})
                 state = rememberNavigationEventState(initialInfo = CustomInfo1())
             }
         }
@@ -88,9 +83,7 @@ internal class RememberNavigationEventStateTest {
 
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
-                NavigationEventHandler(currentInfo = CustomInfo1(), previousInfo = null) {
-                    it.collect()
-                }
+                NavigationEventHandler(currentInfo = CustomInfo1(), onBackCompleted = {})
                 state = rememberNavigationEventState(initialInfo = CustomInfo1())
             }
         }
@@ -124,9 +117,7 @@ internal class RememberNavigationEventStateTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 // Dispatcher uses CustomInfo1.
-                NavigationEventHandler(currentInfo = CustomInfo1(), previousInfo = null) {
-                    it.collect()
-                }
+                NavigationEventHandler(currentInfo = CustomInfo1(), onBackCompleted = {})
                 state = rememberNavigationEventState(initialInfo = CustomInfo1())
             }
         }
@@ -147,9 +138,7 @@ internal class RememberNavigationEventStateTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 // Dispatcher uses CustomInfo2, but we observe CustomInfo1.
-                NavigationEventHandler(currentInfo = CustomInfo2(), previousInfo = null) {
-                    it.collect()
-                }
+                NavigationEventHandler(currentInfo = CustomInfo2(), onBackCompleted = {})
                 state = rememberNavigationEventState(initialInfo = CustomInfo1())
             }
         }

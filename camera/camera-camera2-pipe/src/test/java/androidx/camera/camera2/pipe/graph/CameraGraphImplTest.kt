@@ -55,6 +55,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -66,14 +67,15 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
 internal class CameraGraphImplTest {
-    private val testScope = TestScope()
+    private val testScheduler = TestCoroutineScheduler()
+    private val testScope = TestScope(testScheduler)
+    private val testBackgroundScope = TestScope(testScheduler)
 
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val metadata =
@@ -94,8 +96,8 @@ internal class CameraGraphImplTest {
     private val graphId = CameraGraphId.nextId()
     private val graphConfig =
         CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
-    private val threads = FakeThreads.fromTestScope(testScope)
-    private val cameraPipeLifetime = CameraPipeLifetime()
+    private val threads = FakeThreads.fromTestScope(testBackgroundScope)
+    private val cameraPipeLifetime = CameraPipeLifetime(Job())
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
     private val backends =
         CameraBackendsImpl(
@@ -133,9 +135,9 @@ internal class CameraGraphImplTest {
             frameCaptureQueue,
             audioRestriction,
             graphId,
-            CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testScope),
+            CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testBackgroundScope),
             sessionLock,
-            testScope,
+            testBackgroundScope,
         )
     private val stream1: CameraStream =
         checkNotNull(cameraGraph.streams[stream1Config]) {

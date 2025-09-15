@@ -97,15 +97,14 @@ class FaceTest {
         runTest(testDispatcher) {
             val perceptionManager = getFakePerceptionManager()
             val userFace = Face.getUserFace(session)
-            check(userFace != null)
-            check(userFace.state.value.trackingState != TrackingState.TRACKING)
-            check(userFace.state.value.blendShapeValues.isEmpty())
-            check(userFace.state.value.confidenceValues.isEmpty())
-
             val runtimeFace = perceptionManager.userFace!! as FakeRuntimeFace
-            runtimeFace.trackingState = TrackingState.TRACKING
             val expectedBlendShapeValues = floatArrayOf(0.1f, 0.2f, 0.3f)
             val expectedConfidenceValues = floatArrayOf(0.4f, 0.5f, 0.6f)
+            check(userFace != null)
+            check(userFace.state.value.trackingState != TrackingState.TRACKING)
+            check(!userFace.state.value.blendShapeValues.contentEquals(expectedBlendShapeValues))
+            check(!userFace.state.value.confidenceValues.contentEquals(expectedConfidenceValues))
+            runtimeFace.trackingState = TrackingState.TRACKING
             runtimeFace.blendShapeValues = expectedBlendShapeValues
             runtimeFace.confidenceValues = expectedConfidenceValues
 
@@ -130,12 +129,12 @@ class FaceTest {
     fun update_stateMachesRuntimeFace() = runBlocking {
         val runtimeFace = FakeRuntimeFace()
         val underTest = Face(runtimeFace)
-        check(underTest.state.value.trackingState != TrackingState.TRACKING)
-        check(underTest.state.value.blendShapeValues.isEmpty())
-        check(underTest.state.value.confidenceValues.isEmpty())
-        runtimeFace.trackingState = TrackingState.TRACKING
         val expectedBlendShapeValues = floatArrayOf(0.1f, 0.2f, 0.3f)
         val expectedConfidenceValues = floatArrayOf(0.4f, 0.5f, 0.6f)
+        check(underTest.state.value.trackingState != TrackingState.TRACKING)
+        check(!underTest.state.value.blendShapeValues.contentEquals(expectedBlendShapeValues))
+        check(!underTest.state.value.confidenceValues.contentEquals(expectedConfidenceValues))
+        runtimeFace.trackingState = TrackingState.TRACKING
         runtimeFace.blendShapeValues = expectedBlendShapeValues
         runtimeFace.confidenceValues = expectedConfidenceValues
 

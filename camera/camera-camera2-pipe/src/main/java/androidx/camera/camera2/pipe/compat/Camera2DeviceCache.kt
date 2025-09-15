@@ -25,10 +25,12 @@ import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.config.CameraPipeContext
+import androidx.camera.camera2.pipe.config.CameraPipeJob
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import javax.inject.Inject
@@ -37,8 +39,11 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.onFailure
@@ -48,6 +53,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 @Singleton
@@ -60,9 +66,15 @@ constructor(
     packageManager: PackageManager,
     private val cameraErrorListener: CameraErrorListener,
     private val cameraDeviceSetupCompatFactoryProvider: Provider<CameraDeviceSetupCompatFactory>,
+    cameraPipeLifetime: CameraPipeLifetime,
+    @CameraPipeJob cameraPipeJob: Job,
 ) {
     private val scope =
-        CoroutineScope(threads.lightweightDispatcher + CoroutineName("Camera2DeviceCache"))
+        CoroutineScope(
+            SupervisorJob(cameraPipeJob) +
+                threads.lightweightDispatcher +
+                CoroutineName("Camera2DeviceCache")
+        )
     private val lock = Any()
 
     @GuardedBy("lock") private var openableCameras: List<CameraId>? = null
@@ -81,6 +93,11 @@ constructor(
 
     init {
         Log.debug { "Camera2DeviceCache: Expected minimum camera count = $minimumCameraCount" }
+
+        cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
+            scope.cancel()
+            runBlocking { scope.coroutineContext[Job]?.cancelAndJoin() }
+        }
     }
 
     val cameraIds: Flow<List<CameraId>> =

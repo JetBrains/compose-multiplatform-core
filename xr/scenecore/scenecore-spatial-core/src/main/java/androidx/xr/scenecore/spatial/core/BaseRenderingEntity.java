@@ -19,7 +19,7 @@ package androidx.xr.scenecore.spatial.core;
 import android.content.Context;
 
 import androidx.xr.runtime.NodeHolder;
-import androidx.xr.runtime.internal.RenderingFeature;
+import androidx.xr.scenecore.internal.RenderingFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

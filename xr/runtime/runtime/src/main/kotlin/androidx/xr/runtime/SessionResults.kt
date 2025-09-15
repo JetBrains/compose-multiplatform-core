@@ -16,8 +16,6 @@
 
 package androidx.xr.runtime
 
-import androidx.annotation.RestrictTo
-
 /** Result of a [Session.create] call. */
 public sealed class SessionCreateResult
 
@@ -67,7 +65,6 @@ public class SessionConfigureGooglePlayServicesLocationLibraryNotLinked() :
  * Result of an unsuccessful [Session.configure] call. Required calibration has not been performed
  * for a requested feature.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SessionConfigureCalibrationRequired(
     public val calibrationType: RequiredCalibrationType
 ) : SessionConfigureResult()

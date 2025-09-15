@@ -65,7 +65,7 @@ internal class AndroidFillableData(internal val autofillValue: AutofillValue) : 
  * @return A [FillableData] object containing the text data, or `null` if the platform version is
  *   lower than [Build.VERSION_CODES.O].
  */
-actual fun FillableData(textValue: CharSequence): FillableData? {
+actual fun FillableData.Companion.createFrom(textValue: CharSequence): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         AndroidFillableData(AutofillValue.forText(textValue))
     } else null
@@ -81,7 +81,7 @@ actual fun FillableData(textValue: CharSequence): FillableData? {
  * @return A [FillableData] object containing the boolean data, or `null` if the platform version is
  *   lower than [Build.VERSION_CODES.O].
  */
-actual fun FillableData(booleanValue: Boolean): FillableData? {
+actual fun FillableData.Companion.createFrom(booleanValue: Boolean): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         AndroidFillableData(AutofillValue.forToggle(booleanValue))
     } else null
@@ -99,7 +99,7 @@ actual fun FillableData(booleanValue: Boolean): FillableData? {
  * @return A [FillableData] object containing the integer data, or `null` if the platform version is
  *   lower than [Build.VERSION_CODES.O].
  */
-actual fun FillableData(listIndexValue: Int): FillableData? {
+actual fun FillableData.Companion.createFrom(listIndexValue: Int): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         AndroidFillableData(AutofillValue.forList(listIndexValue))
     } else null
@@ -116,7 +116,7 @@ actual fun FillableData(listIndexValue: Int): FillableData? {
  * @return A [FillableData] object containing the long data, or `null` if the platform version is
  *   lower than [Build.VERSION_CODES.O].
  */
-actual fun FillableData(dateMillisValue: Long): FillableData? {
+actual fun FillableData.Companion.createFrom(dateMillisValue: Long): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         AndroidFillableData(AutofillValue.forDate(dateMillisValue))
     } else null
@@ -129,7 +129,7 @@ actual fun FillableData(dateMillisValue: Long): FillableData? {
  * @return A [FillableData] object containing the platform autofill data, or `null` if the platform
  *   version is lower than [Build.VERSION_CODES.O].
  */
-fun FillableData(autofillValue: AutofillValue): FillableData? {
+fun FillableData.Companion.createFrom(autofillValue: AutofillValue): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         AndroidFillableData(autofillValue)
     } else null

@@ -15,7 +15,7 @@
  */
 package androidx.glance.wear.data;
 
-import androidx.glance.wear.data.WearWidgetContentData;
+import androidx.glance.wear.data.WearWidgetRawContentData;
 
 /**
   * Callback used to return widget contents from a Provider to the system.
@@ -29,5 +29,5 @@ interface IWearWidgetCallback {
       *
       * @since version 1
       */
-    oneway void updateWidgetContent(in WearWidgetContentData contentData) = 0;
+    oneway void updateWidgetContent(in WearWidgetRawContentData contentData) = 0;
 }

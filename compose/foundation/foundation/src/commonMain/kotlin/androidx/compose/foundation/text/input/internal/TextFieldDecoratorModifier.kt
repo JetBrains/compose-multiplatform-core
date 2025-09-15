@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.FillableData
+import androidx.compose.ui.autofill.createFrom
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusProperties
 import androidx.compose.ui.focus.FocusPropertiesModifierNode
@@ -553,7 +554,7 @@ internal class TextFieldDecoratorModifierNode(
         // The developer will set `contentType`. TF populates the other autofill-related
         // semantics. And since we're in a TextField, set the `contentDataType` to be "Text".
         this.contentDataType = ContentDataType.Text
-        FillableData(text)?.let { this.fillableData = it }
+        FillableData.createFrom(text)?.let { this.fillableData = it }
         onFillData { dataValue ->
             if (!editable) return@onFillData false
             dataValue.textValue?.let { textFieldState.replaceAll(it) }

@@ -23,9 +23,9 @@ import androidx.xr.runtime.math.FloatSize2d
 /**
  * Interface for a spatialized Entity which manages an Android Surface. Applications can render to
  * this Surface in various ways, such as via MediaPlayer, ExoPlayer, or custom rendering. The
- * Surface content is texture mapped to the geometric shape defined by the [CanvasShape]. The
- * application can render stereoscopic content into the Surface and specify how it is routed to the
- * User's eyes for stereo viewing using the [stereoMode] property.
+ * Surface content is texture mapped to the geometric shape defined by the [Shape]. The application
+ * can render stereoscopic content into the Surface and specify how it is routed to the User's eyes
+ * for stereo viewing using the [stereoMode] property.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SurfaceEntity : Entity {

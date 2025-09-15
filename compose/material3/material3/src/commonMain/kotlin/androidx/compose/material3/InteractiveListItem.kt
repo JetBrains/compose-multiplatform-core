@@ -20,6 +20,7 @@ import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.FocusInteraction
@@ -33,6 +34,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.internal.FloatProducer
 import androidx.compose.material3.internal.ProvideContentColorTextStyle
 import androidx.compose.material3.internal.heightOrZero
 import androidx.compose.material3.internal.rememberAnimatedShape
@@ -44,6 +46,7 @@ import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.tokens.ShapeKeyTokens
 import androidx.compose.material3.tokens.TypographyKeyTokens
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -53,8 +56,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
@@ -64,6 +69,8 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.MultiContentMeasurePolicy
 import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -79,31 +86,25 @@ import androidx.compose.ui.unit.offset
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 internal fun ClickableListItem(
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-
-    // slots
-    headlineContent: @Composable () -> Unit, // TODO: should this be `content` trailing lambda?
+    enabled: Boolean = true,
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     overlineContent: @Composable (() -> Unit)? = null,
     supportingContent: @Composable (() -> Unit)? = null,
-
-    // interaction
-    onClick: () -> Unit,
-    enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
     onLongClickLabel: String? = null,
-    interactionSource: MutableInteractionSource? = null,
-
-    // styling
-    colors: InteractiveListItemColors = InteractiveListItemDefaults.colors(),
     shapes: InteractiveListItemShapes = InteractiveListItemDefaults.shapes(),
+    colors: InteractiveListItemColors = InteractiveListItemDefaults.colors(),
     elevation: InteractiveListItemElevation = InteractiveListItemDefaults.elevation(),
-    contentPadding: PaddingValues = InteractiveListPadding,
+    contentPadding: PaddingValues = InteractiveListItemDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable () -> Unit,
 ) {
     InteractiveListItem(
         modifier = modifier,
-        headlineContent = headlineContent,
+        content = content,
         leadingContent = leadingContent,
         trailingContent = trailingContent,
         overlineContent = overlineContent,
@@ -126,32 +127,26 @@ internal fun ClickableListItem(
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 internal fun SelectableListItem(
+    selected: Boolean,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-
-    // slots
-    headlineContent: @Composable () -> Unit, // TODO: should this be `content` trailing lambda?
+    enabled: Boolean = true,
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     overlineContent: @Composable (() -> Unit)? = null,
     supportingContent: @Composable (() -> Unit)? = null,
-
-    // interaction
-    selected: Boolean,
-    onClick: () -> Unit,
-    enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
     onLongClickLabel: String? = null,
-    interactionSource: MutableInteractionSource? = null,
-
-    // styling
-    colors: InteractiveListItemColors = InteractiveListItemDefaults.colors(),
     shapes: InteractiveListItemShapes = InteractiveListItemDefaults.shapes(),
+    colors: InteractiveListItemColors = InteractiveListItemDefaults.colors(),
     elevation: InteractiveListItemElevation = InteractiveListItemDefaults.elevation(),
-    contentPadding: PaddingValues = InteractiveListPadding,
+    contentPadding: PaddingValues = InteractiveListItemDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable () -> Unit,
 ) {
     InteractiveListItem(
         modifier = modifier,
-        headlineContent = headlineContent,
+        content = content,
         leadingContent = leadingContent,
         trailingContent = trailingContent,
         overlineContent = overlineContent,
@@ -174,32 +169,26 @@ internal fun SelectableListItem(
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 internal fun ToggleableListItem(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-
-    // slots
-    headlineContent: @Composable () -> Unit, // TODO: should this be `content` trailing lambda?
+    enabled: Boolean = true,
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     overlineContent: @Composable (() -> Unit)? = null,
     supportingContent: @Composable (() -> Unit)? = null,
-
-    // interaction
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
     onLongClickLabel: String? = null,
-    interactionSource: MutableInteractionSource? = null,
-
-    // styling
-    colors: InteractiveListItemColors = InteractiveListItemDefaults.colors(),
     shapes: InteractiveListItemShapes = InteractiveListItemDefaults.shapes(),
+    colors: InteractiveListItemColors = InteractiveListItemDefaults.colors(),
     elevation: InteractiveListItemElevation = InteractiveListItemDefaults.elevation(),
-    contentPadding: PaddingValues = InteractiveListPadding,
+    contentPadding: PaddingValues = InteractiveListItemDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable () -> Unit,
 ) {
     InteractiveListItem(
         modifier = modifier,
-        headlineContent = headlineContent,
+        content = content,
         leadingContent = leadingContent,
         trailingContent = trailingContent,
         overlineContent = overlineContent,
@@ -224,32 +213,32 @@ internal fun ToggleableListItem(
 internal class InteractiveListItemColors(
     // default
     val containerColor: Color,
-    val headlineColor: Color,
-    val leadingIconColor: Color,
-    val trailingIconColor: Color,
-    val overlineColor: Color,
-    val supportingTextColor: Color,
-    // selected
-    val selectedContainerColor: Color,
-    val selectedHeadlineColor: Color,
-    val selectedLeadingIconColor: Color,
-    val selectedTrailingIconColor: Color,
-    val selectedOverlineColor: Color,
-    val selectedSupportingTextColor: Color,
+    val contentColor: Color,
+    val leadingContentColor: Color,
+    val trailingContentColor: Color,
+    val overlineContentColor: Color,
+    val supportingContentColor: Color,
     // disabled
     val disabledContainerColor: Color,
-    val disabledHeadlineColor: Color,
-    val disabledLeadingIconColor: Color,
-    val disabledTrailingIconColor: Color,
-    val disabledOverlineColor: Color,
-    val disabledSupportingTextColor: Color,
+    val disabledContentColor: Color,
+    val disabledLeadingContentColor: Color,
+    val disabledTrailingContentColor: Color,
+    val disabledOverlineContentColor: Color,
+    val disabledSupportingContentColor: Color,
+    // selected
+    val selectedContainerColor: Color,
+    val selectedContentColor: Color,
+    val selectedLeadingContentColor: Color,
+    val selectedTrailingContentColor: Color,
+    val selectedOverlineContentColor: Color,
+    val selectedSupportingContentColor: Color,
     // dragged
     val draggedContainerColor: Color,
-    val draggedHeadlineColor: Color,
-    val draggedLeadingIconColor: Color,
-    val draggedTrailingIconColor: Color,
-    val draggedOverlineColor: Color,
-    val draggedSupportingTextColor: Color,
+    val draggedContentColor: Color,
+    val draggedLeadingContentColor: Color,
+    val draggedTrailingContentColor: Color,
+    val draggedOverlineContentColor: Color,
+    val draggedSupportingContentColor: Color,
 ) {
     /** TODO: docs */
     fun containerColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
@@ -261,113 +250,121 @@ internal class InteractiveListItemColors(
         }
 
     /** TODO: docs */
-    fun headlineColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    fun contentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
-            !enabled -> disabledHeadlineColor
-            dragged -> draggedHeadlineColor
-            selected -> selectedHeadlineColor
-            else -> headlineColor
+            !enabled -> disabledContentColor
+            dragged -> draggedContentColor
+            selected -> selectedContentColor
+            else -> contentColor
         }
 
     /** TODO: docs */
-    fun leadingIconColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    fun leadingContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
-            !enabled -> disabledLeadingIconColor
-            dragged -> draggedLeadingIconColor
-            selected -> selectedLeadingIconColor
-            else -> leadingIconColor
+            !enabled -> disabledLeadingContentColor
+            dragged -> draggedLeadingContentColor
+            selected -> selectedLeadingContentColor
+            else -> leadingContentColor
         }
 
     /** TODO: docs */
-    fun trailingIconColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    fun trailingContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
-            !enabled -> disabledTrailingIconColor
-            dragged -> draggedTrailingIconColor
-            selected -> selectedTrailingIconColor
-            else -> trailingIconColor
+            !enabled -> disabledTrailingContentColor
+            dragged -> draggedTrailingContentColor
+            selected -> selectedTrailingContentColor
+            else -> trailingContentColor
         }
 
     /** TODO: docs */
-    fun overlineColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    fun overlineContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
-            !enabled -> disabledOverlineColor
-            dragged -> draggedOverlineColor
-            selected -> selectedOverlineColor
-            else -> overlineColor
+            !enabled -> disabledOverlineContentColor
+            dragged -> draggedOverlineContentColor
+            selected -> selectedOverlineContentColor
+            else -> overlineContentColor
         }
 
     /** TODO: docs */
-    fun supportingTextColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
+    fun supportingContentColor(enabled: Boolean, selected: Boolean, dragged: Boolean): Color =
         when {
-            !enabled -> disabledSupportingTextColor
-            dragged -> draggedSupportingTextColor
-            selected -> selectedSupportingTextColor
-            else -> supportingTextColor
+            !enabled -> disabledSupportingContentColor
+            dragged -> draggedSupportingContentColor
+            selected -> selectedSupportingContentColor
+            else -> supportingContentColor
         }
 
     /** TODO: docs */
     fun copy(
+        // default
         containerColor: Color = this.containerColor,
-        headlineColor: Color = this.headlineColor,
-        leadingIconColor: Color = this.leadingIconColor,
-        trailingIconColor: Color = this.trailingIconColor,
-        overlineColor: Color = this.overlineColor,
-        supportingTextColor: Color = this.supportingTextColor,
-        selectedContainerColor: Color = this.selectedContainerColor,
-        selectedHeadlineColor: Color = this.selectedHeadlineColor,
-        selectedLeadingIconColor: Color = this.selectedLeadingIconColor,
-        selectedTrailingIconColor: Color = this.selectedTrailingIconColor,
-        selectedOverlineColor: Color = this.selectedOverlineColor,
-        selectedSupportingTextColor: Color = this.selectedSupportingTextColor,
+        contentColor: Color = this.contentColor,
+        leadingContentColor: Color = this.leadingContentColor,
+        trailingContentColor: Color = this.trailingContentColor,
+        overlineContentColor: Color = this.overlineContentColor,
+        supportingContentColor: Color = this.supportingContentColor,
+        // disabled
         disabledContainerColor: Color = this.disabledContainerColor,
-        disabledHeadlineColor: Color = this.disabledHeadlineColor,
-        disabledLeadingIconColor: Color = this.disabledLeadingIconColor,
-        disabledTrailingIconColor: Color = this.disabledTrailingIconColor,
-        disabledOverlineColor: Color = this.disabledOverlineColor,
-        disabledSupportingTextColor: Color = this.disabledSupportingTextColor,
+        disabledContentColor: Color = this.disabledContentColor,
+        disabledLeadingContentColor: Color = this.disabledLeadingContentColor,
+        disabledTrailingContentColor: Color = this.disabledTrailingContentColor,
+        disabledOverlineContentColor: Color = this.disabledOverlineContentColor,
+        disabledSupportingContentColor: Color = this.disabledSupportingContentColor,
+        // selected
+        selectedContainerColor: Color = this.selectedContainerColor,
+        selectedContentColor: Color = this.selectedContentColor,
+        selectedLeadingContentColor: Color = this.selectedLeadingContentColor,
+        selectedTrailingContentColor: Color = this.selectedTrailingContentColor,
+        selectedOverlineContentColor: Color = this.selectedOverlineContentColor,
+        selectedSupportingContentColor: Color = this.selectedSupportingContentColor,
+        // dragged
         draggedContainerColor: Color = this.draggedContainerColor,
-        draggedHeadlineColor: Color = this.draggedHeadlineColor,
-        draggedLeadingIconColor: Color = this.draggedLeadingIconColor,
-        draggedTrailingIconColor: Color = this.draggedTrailingIconColor,
-        draggedOverlineColor: Color = this.draggedOverlineColor,
-        draggedSupportingTextColor: Color = this.draggedSupportingTextColor,
+        draggedContentColor: Color = this.draggedContentColor,
+        draggedLeadingContentColor: Color = this.draggedLeadingContentColor,
+        draggedTrailingContentColor: Color = this.draggedTrailingContentColor,
+        draggedOverlineContentColor: Color = this.draggedOverlineContentColor,
+        draggedSupportingContentColor: Color = this.draggedSupportingContentColor,
     ): InteractiveListItemColors {
         return InteractiveListItemColors(
             containerColor = containerColor.takeOrElse { this.containerColor },
-            headlineColor = headlineColor.takeOrElse { this.headlineColor },
-            leadingIconColor = leadingIconColor.takeOrElse { this.leadingIconColor },
-            trailingIconColor = trailingIconColor.takeOrElse { this.trailingIconColor },
-            overlineColor = overlineColor.takeOrElse { this.overlineColor },
-            supportingTextColor = supportingTextColor.takeOrElse { this.supportingTextColor },
-            selectedContainerColor =
-                selectedContainerColor.takeOrElse { this.selectedContainerColor },
-            selectedHeadlineColor = selectedHeadlineColor.takeOrElse { this.selectedHeadlineColor },
-            selectedLeadingIconColor =
-                selectedLeadingIconColor.takeOrElse { this.selectedLeadingIconColor },
-            selectedTrailingIconColor =
-                selectedTrailingIconColor.takeOrElse { this.selectedTrailingIconColor },
-            selectedOverlineColor = selectedOverlineColor.takeOrElse { this.selectedOverlineColor },
-            selectedSupportingTextColor =
-                selectedSupportingTextColor.takeOrElse { this.selectedSupportingTextColor },
+            contentColor = contentColor.takeOrElse { this.contentColor },
+            leadingContentColor = leadingContentColor.takeOrElse { this.leadingContentColor },
+            trailingContentColor = trailingContentColor.takeOrElse { this.trailingContentColor },
+            overlineContentColor = overlineContentColor.takeOrElse { this.overlineContentColor },
+            supportingContentColor =
+                supportingContentColor.takeOrElse { this.supportingContentColor },
             disabledContainerColor =
                 disabledContainerColor.takeOrElse { this.disabledContainerColor },
-            disabledHeadlineColor = disabledHeadlineColor.takeOrElse { this.disabledHeadlineColor },
-            disabledLeadingIconColor =
-                disabledLeadingIconColor.takeOrElse { this.disabledLeadingIconColor },
-            disabledTrailingIconColor =
-                disabledTrailingIconColor.takeOrElse { this.disabledTrailingIconColor },
-            disabledOverlineColor = disabledOverlineColor.takeOrElse { this.disabledOverlineColor },
-            disabledSupportingTextColor =
-                disabledSupportingTextColor.takeOrElse { this.disabledSupportingTextColor },
+            disabledContentColor = disabledContentColor.takeOrElse { this.disabledContentColor },
+            disabledLeadingContentColor =
+                disabledLeadingContentColor.takeOrElse { this.disabledLeadingContentColor },
+            disabledTrailingContentColor =
+                disabledTrailingContentColor.takeOrElse { this.disabledTrailingContentColor },
+            disabledOverlineContentColor =
+                disabledOverlineContentColor.takeOrElse { this.disabledOverlineContentColor },
+            disabledSupportingContentColor =
+                disabledSupportingContentColor.takeOrElse { this.disabledSupportingContentColor },
+            selectedContainerColor =
+                selectedContainerColor.takeOrElse { this.selectedContainerColor },
+            selectedContentColor = selectedContentColor.takeOrElse { this.selectedContentColor },
+            selectedLeadingContentColor =
+                selectedLeadingContentColor.takeOrElse { this.selectedLeadingContentColor },
+            selectedTrailingContentColor =
+                selectedTrailingContentColor.takeOrElse { this.selectedTrailingContentColor },
+            selectedOverlineContentColor =
+                selectedOverlineContentColor.takeOrElse { this.selectedOverlineContentColor },
+            selectedSupportingContentColor =
+                selectedSupportingContentColor.takeOrElse { this.selectedSupportingContentColor },
             draggedContainerColor = draggedContainerColor.takeOrElse { this.draggedContainerColor },
-            draggedHeadlineColor = draggedHeadlineColor.takeOrElse { this.draggedHeadlineColor },
-            draggedLeadingIconColor =
-                draggedLeadingIconColor.takeOrElse { this.draggedLeadingIconColor },
-            draggedTrailingIconColor =
-                draggedTrailingIconColor.takeOrElse { this.draggedTrailingIconColor },
-            draggedOverlineColor = draggedOverlineColor.takeOrElse { this.draggedOverlineColor },
-            draggedSupportingTextColor =
-                draggedSupportingTextColor.takeOrElse { this.draggedSupportingTextColor },
+            draggedContentColor = draggedContentColor.takeOrElse { this.draggedContentColor },
+            draggedLeadingContentColor =
+                draggedLeadingContentColor.takeOrElse { this.draggedLeadingContentColor },
+            draggedTrailingContentColor =
+                draggedTrailingContentColor.takeOrElse { this.draggedTrailingContentColor },
+            draggedOverlineContentColor =
+                draggedOverlineContentColor.takeOrElse { this.draggedOverlineContentColor },
+            draggedSupportingContentColor =
+                draggedSupportingContentColor.takeOrElse { this.draggedSupportingContentColor },
         )
     }
 
@@ -376,58 +373,58 @@ internal class InteractiveListItemColors(
         if (other == null || other !is InteractiveListItemColors) return false
 
         if (containerColor != other.containerColor) return false
-        if (headlineColor != other.headlineColor) return false
-        if (leadingIconColor != other.leadingIconColor) return false
-        if (trailingIconColor != other.trailingIconColor) return false
-        if (overlineColor != other.overlineColor) return false
-        if (supportingTextColor != other.supportingTextColor) return false
-        if (selectedContainerColor != other.selectedContainerColor) return false
-        if (selectedHeadlineColor != other.selectedHeadlineColor) return false
-        if (selectedLeadingIconColor != other.selectedLeadingIconColor) return false
-        if (selectedTrailingIconColor != other.selectedTrailingIconColor) return false
-        if (selectedOverlineColor != other.selectedOverlineColor) return false
-        if (selectedSupportingTextColor != other.selectedSupportingTextColor) return false
+        if (contentColor != other.contentColor) return false
+        if (leadingContentColor != other.leadingContentColor) return false
+        if (trailingContentColor != other.trailingContentColor) return false
+        if (overlineContentColor != other.overlineContentColor) return false
+        if (supportingContentColor != other.supportingContentColor) return false
         if (disabledContainerColor != other.disabledContainerColor) return false
-        if (disabledHeadlineColor != other.disabledHeadlineColor) return false
-        if (disabledLeadingIconColor != other.disabledLeadingIconColor) return false
-        if (disabledTrailingIconColor != other.disabledTrailingIconColor) return false
-        if (disabledOverlineColor != other.disabledOverlineColor) return false
-        if (disabledSupportingTextColor != other.disabledSupportingTextColor) return false
+        if (disabledContentColor != other.disabledContentColor) return false
+        if (disabledLeadingContentColor != other.disabledLeadingContentColor) return false
+        if (disabledTrailingContentColor != other.disabledTrailingContentColor) return false
+        if (disabledOverlineContentColor != other.disabledOverlineContentColor) return false
+        if (disabledSupportingContentColor != other.disabledSupportingContentColor) return false
+        if (selectedContainerColor != other.selectedContainerColor) return false
+        if (selectedContentColor != other.selectedContentColor) return false
+        if (selectedLeadingContentColor != other.selectedLeadingContentColor) return false
+        if (selectedTrailingContentColor != other.selectedTrailingContentColor) return false
+        if (selectedOverlineContentColor != other.selectedOverlineContentColor) return false
+        if (selectedSupportingContentColor != other.selectedSupportingContentColor) return false
         if (draggedContainerColor != other.draggedContainerColor) return false
-        if (draggedHeadlineColor != other.draggedHeadlineColor) return false
-        if (draggedLeadingIconColor != other.draggedLeadingIconColor) return false
-        if (draggedTrailingIconColor != other.draggedTrailingIconColor) return false
-        if (draggedOverlineColor != other.draggedOverlineColor) return false
-        if (draggedSupportingTextColor != other.draggedSupportingTextColor) return false
+        if (draggedContentColor != other.draggedContentColor) return false
+        if (draggedLeadingContentColor != other.draggedLeadingContentColor) return false
+        if (draggedTrailingContentColor != other.draggedTrailingContentColor) return false
+        if (draggedOverlineContentColor != other.draggedOverlineContentColor) return false
+        if (draggedSupportingContentColor != other.draggedSupportingContentColor) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = containerColor.hashCode()
-        result = 31 * result + headlineColor.hashCode()
-        result = 31 * result + leadingIconColor.hashCode()
-        result = 31 * result + trailingIconColor.hashCode()
-        result = 31 * result + overlineColor.hashCode()
-        result = 31 * result + supportingTextColor.hashCode()
-        result = 31 * result + selectedContainerColor.hashCode()
-        result = 31 * result + selectedHeadlineColor.hashCode()
-        result = 31 * result + selectedLeadingIconColor.hashCode()
-        result = 31 * result + selectedTrailingIconColor.hashCode()
-        result = 31 * result + selectedOverlineColor.hashCode()
-        result = 31 * result + selectedSupportingTextColor.hashCode()
+        result = 31 * result + contentColor.hashCode()
+        result = 31 * result + leadingContentColor.hashCode()
+        result = 31 * result + trailingContentColor.hashCode()
+        result = 31 * result + overlineContentColor.hashCode()
+        result = 31 * result + supportingContentColor.hashCode()
         result = 31 * result + disabledContainerColor.hashCode()
-        result = 31 * result + disabledHeadlineColor.hashCode()
-        result = 31 * result + disabledLeadingIconColor.hashCode()
-        result = 31 * result + disabledTrailingIconColor.hashCode()
-        result = 31 * result + disabledOverlineColor.hashCode()
-        result = 31 * result + disabledSupportingTextColor.hashCode()
+        result = 31 * result + disabledContentColor.hashCode()
+        result = 31 * result + disabledLeadingContentColor.hashCode()
+        result = 31 * result + disabledTrailingContentColor.hashCode()
+        result = 31 * result + disabledOverlineContentColor.hashCode()
+        result = 31 * result + disabledSupportingContentColor.hashCode()
+        result = 31 * result + selectedContainerColor.hashCode()
+        result = 31 * result + selectedContentColor.hashCode()
+        result = 31 * result + selectedLeadingContentColor.hashCode()
+        result = 31 * result + selectedTrailingContentColor.hashCode()
+        result = 31 * result + selectedOverlineContentColor.hashCode()
+        result = 31 * result + selectedSupportingContentColor.hashCode()
         result = 31 * result + draggedContainerColor.hashCode()
-        result = 31 * result + draggedHeadlineColor.hashCode()
-        result = 31 * result + draggedLeadingIconColor.hashCode()
-        result = 31 * result + draggedTrailingIconColor.hashCode()
-        result = 31 * result + draggedOverlineColor.hashCode()
-        result = 31 * result + draggedSupportingTextColor.hashCode()
+        result = 31 * result + draggedContentColor.hashCode()
+        result = 31 * result + draggedLeadingContentColor.hashCode()
+        result = 31 * result + draggedTrailingContentColor.hashCode()
+        result = 31 * result + draggedOverlineContentColor.hashCode()
+        result = 31 * result + draggedSupportingContentColor.hashCode()
         return result
     }
 }
@@ -549,6 +546,15 @@ internal class InteractiveListItemElevation(val elevation: Dp, val draggedElevat
 @Immutable
 internal object InteractiveListItemDefaults {
     /** TODO: docs */
+    val ContentPadding: PaddingValues =
+        PaddingValues(
+            start = InteractiveListStartPadding,
+            end = InteractiveListEndPadding,
+            top = InteractiveListTopPadding,
+            bottom = InteractiveListBottomPadding,
+        )
+
+    /** TODO: docs */
     @Composable
     fun colors(): InteractiveListItemColors {
         return MaterialTheme.colorScheme.defaultInteractiveListItemColors
@@ -557,56 +563,60 @@ internal object InteractiveListItemDefaults {
     /** TODO: docs */
     @Composable
     fun colors(
+        // default
         containerColor: Color = Color.Unspecified,
-        headlineColor: Color = Color.Unspecified,
-        leadingIconColor: Color = Color.Unspecified,
-        trailingIconColor: Color = Color.Unspecified,
-        overlineColor: Color = Color.Unspecified,
-        supportingTextColor: Color = Color.Unspecified,
-        selectedContainerColor: Color = Color.Unspecified,
-        selectedHeadlineColor: Color = Color.Unspecified,
-        selectedLeadingIconColor: Color = Color.Unspecified,
-        selectedTrailingIconColor: Color = Color.Unspecified,
-        selectedOverlineColor: Color = Color.Unspecified,
-        selectedSupportingTextColor: Color = Color.Unspecified,
+        contentColor: Color = Color.Unspecified,
+        leadingContentColor: Color = Color.Unspecified,
+        trailingContentColor: Color = Color.Unspecified,
+        overlineContentColor: Color = Color.Unspecified,
+        supportingContentColor: Color = Color.Unspecified,
+        // disabled
         disabledContainerColor: Color = Color.Unspecified,
-        disabledHeadlineColor: Color = Color.Unspecified,
-        disabledLeadingIconColor: Color = Color.Unspecified,
-        disabledTrailingIconColor: Color = Color.Unspecified,
-        disabledOverlineColor: Color = Color.Unspecified,
-        disabledSupportingTextColor: Color = Color.Unspecified,
+        disabledContentColor: Color = Color.Unspecified,
+        disabledLeadingContentColor: Color = Color.Unspecified,
+        disabledTrailingContentColor: Color = Color.Unspecified,
+        disabledOverlineContentColor: Color = Color.Unspecified,
+        disabledSupportingContentColor: Color = Color.Unspecified,
+        // selected
+        selectedContainerColor: Color = Color.Unspecified,
+        selectedContentColor: Color = Color.Unspecified,
+        selectedLeadingContentColor: Color = Color.Unspecified,
+        selectedTrailingContentColor: Color = Color.Unspecified,
+        selectedOverlineContentColor: Color = Color.Unspecified,
+        selectedSupportingContentColor: Color = Color.Unspecified,
+        // dragged
         draggedContainerColor: Color = Color.Unspecified,
-        draggedHeadlineColor: Color = Color.Unspecified,
-        draggedLeadingIconColor: Color = Color.Unspecified,
-        draggedTrailingIconColor: Color = Color.Unspecified,
-        draggedOverlineColor: Color = Color.Unspecified,
-        draggedSupportingTextColor: Color = Color.Unspecified,
+        draggedContentColor: Color = Color.Unspecified,
+        draggedLeadingContentColor: Color = Color.Unspecified,
+        draggedTrailingContentColor: Color = Color.Unspecified,
+        draggedOverlineContentColor: Color = Color.Unspecified,
+        draggedSupportingContentColor: Color = Color.Unspecified,
     ): InteractiveListItemColors {
         return MaterialTheme.colorScheme.defaultInteractiveListItemColors.copy(
             containerColor = containerColor,
-            headlineColor = headlineColor,
-            leadingIconColor = leadingIconColor,
-            trailingIconColor = trailingIconColor,
-            overlineColor = overlineColor,
-            supportingTextColor = supportingTextColor,
-            selectedContainerColor = selectedContainerColor,
-            selectedHeadlineColor = selectedHeadlineColor,
-            selectedLeadingIconColor = selectedLeadingIconColor,
-            selectedTrailingIconColor = selectedTrailingIconColor,
-            selectedOverlineColor = selectedOverlineColor,
-            selectedSupportingTextColor = selectedSupportingTextColor,
+            contentColor = contentColor,
+            leadingContentColor = leadingContentColor,
+            trailingContentColor = trailingContentColor,
+            overlineContentColor = overlineContentColor,
+            supportingContentColor = supportingContentColor,
             disabledContainerColor = disabledContainerColor,
-            disabledHeadlineColor = disabledHeadlineColor,
-            disabledLeadingIconColor = disabledLeadingIconColor,
-            disabledTrailingIconColor = disabledTrailingIconColor,
-            disabledOverlineColor = disabledOverlineColor,
-            disabledSupportingTextColor = disabledSupportingTextColor,
+            disabledContentColor = disabledContentColor,
+            disabledLeadingContentColor = disabledLeadingContentColor,
+            disabledTrailingContentColor = disabledTrailingContentColor,
+            disabledOverlineContentColor = disabledOverlineContentColor,
+            disabledSupportingContentColor = disabledSupportingContentColor,
+            selectedContainerColor = selectedContainerColor,
+            selectedContentColor = selectedContentColor,
+            selectedLeadingContentColor = selectedLeadingContentColor,
+            selectedTrailingContentColor = selectedTrailingContentColor,
+            selectedOverlineContentColor = selectedOverlineContentColor,
+            selectedSupportingContentColor = selectedSupportingContentColor,
             draggedContainerColor = draggedContainerColor,
-            draggedHeadlineColor = draggedHeadlineColor,
-            draggedLeadingIconColor = draggedLeadingIconColor,
-            draggedTrailingIconColor = draggedTrailingIconColor,
-            draggedOverlineColor = draggedOverlineColor,
-            draggedSupportingTextColor = draggedSupportingTextColor,
+            draggedContentColor = draggedContentColor,
+            draggedLeadingContentColor = draggedLeadingContentColor,
+            draggedTrailingContentColor = draggedTrailingContentColor,
+            draggedOverlineContentColor = draggedOverlineContentColor,
+            draggedSupportingContentColor = draggedSupportingContentColor,
         )
     }
 
@@ -617,47 +627,46 @@ internal object InteractiveListItemDefaults {
                 ?: InteractiveListItemColors(
                         // default
                         containerColor = fromToken(ColorSchemeKeyTokens.SurfaceBright),
-                        headlineColor = fromToken(ColorSchemeKeyTokens.OnSurface),
-                        leadingIconColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        trailingIconColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        overlineColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        supportingTextColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
+                        contentColor = fromToken(ColorSchemeKeyTokens.OnSurface),
+                        leadingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
+                        trailingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
+                        overlineContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
+                        supportingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
                         // selected
                         selectedContainerColor = fromToken(ColorSchemeKeyTokens.SecondaryContainer),
-                        selectedHeadlineColor =
+                        selectedContentColor = fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                        selectedLeadingContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
-                        selectedLeadingIconColor =
+                        selectedTrailingContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
-                        selectedTrailingIconColor =
+                        selectedOverlineContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
-                        selectedOverlineColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
-                        selectedSupportingTextColor =
+                        selectedSupportingContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
                         // disabled
                         disabledContainerColor = fromToken(ColorSchemeKeyTokens.SurfaceBright),
-                        disabledHeadlineColor =
+                        disabledContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSurface)
                                 .copy(alpha = InteractiveListDisabledOpacity),
-                        disabledLeadingIconColor =
+                        disabledLeadingContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSurface)
                                 .copy(alpha = InteractiveListDisabledOpacity),
-                        disabledTrailingIconColor =
+                        disabledTrailingContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSurface)
                                 .copy(alpha = InteractiveListDisabledOpacity),
-                        disabledOverlineColor =
+                        disabledOverlineContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSurface)
                                 .copy(alpha = InteractiveListDisabledOpacity),
-                        disabledSupportingTextColor =
+                        disabledSupportingContentColor =
                             fromToken(ColorSchemeKeyTokens.OnSurface)
                                 .copy(alpha = InteractiveListDisabledOpacity),
                         // dragged
                         draggedContainerColor = fromToken(ColorSchemeKeyTokens.TertiaryContainer),
-                        draggedHeadlineColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedLeadingIconColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedTrailingIconColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedOverlineColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedSupportingTextColor = fromToken(ColorSchemeKeyTokens.Tertiary),
+                        draggedContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
+                        draggedLeadingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
+                        draggedTrailingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
+                        draggedOverlineContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
+                        draggedSupportingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
                     )
                     .also { defaultInteractiveListItemColorsCached = it }
         }
@@ -777,7 +786,7 @@ private fun SupportingDecorator(
 }
 
 @Composable
-private fun HeadlineDecorator(
+private fun ContentDecorator(
     color: Color,
     textStyle: TypographyKeyTokens,
     content: @Composable () -> Unit,
@@ -851,9 +860,10 @@ private data class InteractiveListColorState(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
+@Suppress("ComposableLambdaParameterPosition")
 private fun InteractiveListItem(
     modifier: Modifier,
-    headlineContent: @Composable () -> Unit,
+    content: @Composable () -> Unit,
     leadingContent: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
     overlineContent: @Composable (() -> Unit)?,
@@ -913,7 +923,7 @@ private fun InteractiveListItem(
         }
     val contentColor by
         transition.animateColor(transitionSpec = { colorAnimationSpec }) { state ->
-            colors.headlineColor(
+            colors.contentColor(
                 enabled = state.enabled,
                 selected = state.selected,
                 dragged = state.dragged,
@@ -921,7 +931,7 @@ private fun InteractiveListItem(
         }
     val leadingColor by
         transition.animateColor(transitionSpec = { colorAnimationSpec }) { state ->
-            colors.leadingIconColor(
+            colors.leadingContentColor(
                 enabled = state.enabled,
                 selected = state.selected,
                 dragged = state.dragged,
@@ -929,7 +939,7 @@ private fun InteractiveListItem(
         }
     val trailingColor by
         transition.animateColor(transitionSpec = { colorAnimationSpec }) { state ->
-            colors.trailingIconColor(
+            colors.trailingContentColor(
                 enabled = state.enabled,
                 selected = state.selected,
                 dragged = state.dragged,
@@ -937,7 +947,7 @@ private fun InteractiveListItem(
         }
     val overlineColor by
         transition.animateColor(transitionSpec = { colorAnimationSpec }) { state ->
-            colors.overlineColor(
+            colors.overlineContentColor(
                 enabled = state.enabled,
                 selected = state.selected,
                 dragged = state.dragged,
@@ -945,7 +955,7 @@ private fun InteractiveListItem(
         }
     val supportingColor by
         transition.animateColor(transitionSpec = { colorAnimationSpec }) { state ->
-            colors.supportingTextColor(
+            colors.supportingContentColor(
                 enabled = state.enabled,
                 selected = state.selected,
                 dragged = state.dragged,
@@ -961,71 +971,76 @@ private fun InteractiveListItem(
 
     val targetElevation = if (dragged.value) elevation.draggedElevation else elevation.elevation
     val shadowElevation = animateDpAsState(targetElevation, elevationAnimationSpec)
+    val density = LocalDensity.current
 
-    Surface(
-        modifier =
-            modifier
-                .semantics(mergeDescendants = true, properties = applySemantics)
-                .minimumInteractiveComponentSize()
-                // FIXME: we need to clip the ripple without clipping away the shadow applied by
-                //   Surface
-                .combinedClickable(
-                    interactionSource = interactionSource,
-                    indication = ripple(),
-                    enabled = enabled,
-                    onLongClick = onLongClick,
-                    onLongClickLabel = onLongClickLabel,
-                    onClick = onClick,
-                ),
-        shape = shape,
-        color = containerColor,
-        contentColor = contentColor,
-        shadowElevation = shadowElevation.value,
-    ) {
-        val alignmentBreakpoint =
-            (InteractiveListVerticalAlignmentBreakpoint -
-                    contentPadding.calculateTopPadding() -
-                    contentPadding.calculateBottomPadding())
-                .coerceAtLeast(0.dp)
-        InteractiveListItemLayout(
-            modifier = Modifier.padding(contentPadding),
-            alignmentBreakpoint = alignmentBreakpoint,
-            leading = {
-                LeadingDecorator(
-                    color = leadingColor,
-                    textStyle = leadingTextStyle,
-                    content = leadingContent,
-                )
-            },
-            trailing = {
-                TrailingDecorator(
-                    color = trailingColor,
-                    textStyle = trailingTextStyle,
-                    content = trailingContent,
-                )
-            },
-            overline = {
-                OverlineDecorator(
-                    color = overlineColor,
-                    textStyle = overlineTextStyle,
-                    content = overlineContent,
-                )
-            },
-            supporting = {
-                SupportingDecorator(
-                    color = supportingColor,
-                    textStyle = supportingTextStyle,
-                    content = supportingContent,
-                )
-            },
-            headline = {
-                HeadlineDecorator(
-                    color = contentColor,
-                    textStyle = contentTextStyle,
-                    content = headlineContent,
-                )
-            },
-        )
+    CompositionLocalProvider(LocalContentColor provides contentColor) {
+        Box(
+            modifier =
+                modifier
+                    .semantics(mergeDescendants = true, properties = applySemantics)
+                    .minimumInteractiveComponentSize()
+                    .zIndexLambda { if (shadowElevation.value > 0.dp) 1f else 0f }
+                    .graphicsLayer {
+                        this.shadowElevation = with(density) { shadowElevation.value.toPx() }
+                        this.shape = shape
+                        clip = false
+                    }
+                    .background(color = containerColor, shape = shape)
+                    .clip(shape)
+                    .combinedClickable(
+                        interactionSource = interactionSource,
+                        indication = ripple(),
+                        enabled = enabled,
+                        onLongClick = onLongClick,
+                        onLongClickLabel = onLongClickLabel,
+                        onClick = onClick,
+                    )
+        ) {
+            val alignmentBreakpoint =
+                (InteractiveListVerticalAlignmentBreakpoint -
+                        contentPadding.calculateTopPadding() -
+                        contentPadding.calculateBottomPadding())
+                    .coerceAtLeast(0.dp)
+            InteractiveListItemLayout(
+                modifier = Modifier.padding(contentPadding),
+                alignmentBreakpoint = alignmentBreakpoint,
+                leading = {
+                    LeadingDecorator(
+                        color = leadingColor,
+                        textStyle = leadingTextStyle,
+                        content = leadingContent,
+                    )
+                },
+                trailing = {
+                    TrailingDecorator(
+                        color = trailingColor,
+                        textStyle = trailingTextStyle,
+                        content = trailingContent,
+                    )
+                },
+                overline = {
+                    OverlineDecorator(
+                        color = overlineColor,
+                        textStyle = overlineTextStyle,
+                        content = overlineContent,
+                    )
+                },
+                supporting = {
+                    SupportingDecorator(
+                        color = supportingColor,
+                        textStyle = supportingTextStyle,
+                        content = supportingContent,
+                    )
+                },
+                content = {
+                    ContentDecorator(
+                        color = contentColor,
+                        textStyle = contentTextStyle,
+                        content = content,
+                    )
+                },
+            )
+        }
     }
 }
 
@@ -1037,13 +1052,13 @@ private fun InteractiveListItemLayout(
     trailing: @Composable () -> Unit,
     overline: @Composable () -> Unit,
     supporting: @Composable () -> Unit,
-    headline: @Composable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val measurePolicy =
         remember(alignmentBreakpoint) { InteractiveListItemMeasurePolicy(alignmentBreakpoint) }
     Layout(
         modifier = modifier,
-        contents = listOf(leading, trailing, overline, supporting, headline),
+        contents = listOf(leading, trailing, overline, supporting, content),
         measurePolicy = measurePolicy,
     )
 }
@@ -1059,7 +1074,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
             trailingMeasurable,
             overlineMeasurable,
             supportingMeasurable,
-            headlineMeasurable,
+            contentMeasurable,
         ) = measurables
 
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
@@ -1081,8 +1096,8 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
                 ?.measure(looseConstraints.offset(horizontal = -constraintOffsetX))
         constraintOffsetY += overlinePlaceable.heightOrZero
 
-        val headlinePlaceable =
-            headlineMeasurable
+        val contentPlaceable =
+            contentMeasurable
                 .firstOrNull()
                 ?.measure(
                     looseConstraints.offset(
@@ -1090,7 +1105,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
                         vertical = -constraintOffsetY,
                     )
                 )
-        constraintOffsetY += headlinePlaceable.heightOrZero
+        constraintOffsetY += contentPlaceable.heightOrZero
 
         val supportingPlaceable =
             supportingMeasurable
@@ -1108,7 +1123,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
                 trailingWidth = trailingPlaceable.widthOrZero,
                 overlineWidth = overlinePlaceable.widthOrZero,
                 supportingWidth = supportingPlaceable.widthOrZero,
-                headlineWidth = headlinePlaceable.widthOrZero,
+                contentWidth = contentPlaceable.widthOrZero,
                 constraints = constraints,
             )
         val height =
@@ -1117,7 +1132,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
                 trailingHeight = trailingPlaceable.heightOrZero,
                 overlineHeight = overlinePlaceable.heightOrZero,
                 supportingHeight = supportingPlaceable.heightOrZero,
-                headlineHeight = headlinePlaceable.heightOrZero,
+                contentHeight = contentPlaceable.heightOrZero,
                 constraints = constraints,
             )
 
@@ -1126,7 +1141,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
             height = height,
             leadingPlaceable = leadingPlaceable,
             trailingPlaceable = trailingPlaceable,
-            headlinePlaceable = headlinePlaceable,
+            contentPlaceable = contentPlaceable,
             overlinePlaceable = overlinePlaceable,
             supportingPlaceable = supportingPlaceable,
         )
@@ -1162,7 +1177,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
             trailingMeasurable,
             overlineMeasurable,
             supportingMeasurable,
-            headlineMeasurable,
+            contentMeasurable,
         ) = measurables
 
         return calculateWidth(
@@ -1170,7 +1185,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
             trailingWidth = trailingMeasurable.firstOrNull()?.intrinsicMeasure(height) ?: 0,
             overlineWidth = overlineMeasurable.firstOrNull()?.intrinsicMeasure(height) ?: 0,
             supportingWidth = supportingMeasurable.firstOrNull()?.intrinsicMeasure(height) ?: 0,
-            headlineWidth = headlineMeasurable.firstOrNull()?.intrinsicMeasure(height) ?: 0,
+            contentWidth = contentMeasurable.firstOrNull()?.intrinsicMeasure(height) ?: 0,
             constraints = Constraints(),
         )
     }
@@ -1185,7 +1200,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
             trailingMeasurable,
             overlineMeasurable,
             supportingMeasurable,
-            headlineMeasurable,
+            contentMeasurable,
         ) = measurables
 
         var remainingWidth = width
@@ -1211,14 +1226,14 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
         val overlineHeight = overlineMeasurable.firstOrNull()?.intrinsicMeasure(remainingWidth) ?: 0
         val supportingHeight =
             supportingMeasurable.firstOrNull()?.intrinsicMeasure(remainingWidth) ?: 0
-        val headlineHeight = headlineMeasurable.firstOrNull()?.intrinsicMeasure(remainingWidth) ?: 0
+        val contentHeight = contentMeasurable.firstOrNull()?.intrinsicMeasure(remainingWidth) ?: 0
 
         return calculateHeight(
             leadingHeight = leadingHeight,
             trailingHeight = trailingHeight,
             overlineHeight = overlineHeight,
             supportingHeight = supportingHeight,
-            headlineHeight = headlineHeight,
+            contentHeight = contentHeight,
             constraints = Constraints(),
         )
     }
@@ -1228,7 +1243,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
         height: Int,
         leadingPlaceable: Placeable?,
         trailingPlaceable: Placeable?,
-        headlinePlaceable: Placeable?,
+        contentPlaceable: Placeable?,
         overlinePlaceable: Placeable?,
         supportingPlaceable: Placeable?,
     ): MeasureResult {
@@ -1247,7 +1262,7 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
 
             val mainContentX = leadingPlaceable.widthOrZero
             val mainContentTotalHeight =
-                headlinePlaceable.heightOrZero +
+                contentPlaceable.heightOrZero +
                     overlinePlaceable.heightOrZero +
                     supportingPlaceable.heightOrZero
             val mainContentY = verticalAlignment.align(mainContentTotalHeight, height)
@@ -1256,8 +1271,8 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
             overlinePlaceable?.placeRelative(mainContentX, currY)
             currY += overlinePlaceable.heightOrZero
 
-            headlinePlaceable?.placeRelative(mainContentX, currY)
-            currY += headlinePlaceable.heightOrZero
+            contentPlaceable?.placeRelative(mainContentX, currY)
+            currY += contentPlaceable.heightOrZero
 
             supportingPlaceable?.placeRelative(mainContentX, currY)
 
@@ -1273,14 +1288,14 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
         trailingWidth: Int,
         overlineWidth: Int,
         supportingWidth: Int,
-        headlineWidth: Int,
+        contentWidth: Int,
         constraints: Constraints,
     ): Int {
         if (constraints.hasBoundedWidth) {
             return constraints.maxWidth
         }
         // Fallback behavior if width constraints are infinite
-        val mainContentWidth = maxOf(headlineWidth, overlineWidth, supportingWidth)
+        val mainContentWidth = maxOf(contentWidth, overlineWidth, supportingWidth)
         return leadingWidth + mainContentWidth + trailingWidth
     }
 
@@ -1289,14 +1304,20 @@ private class InteractiveListItemMeasurePolicy(val alignmentBreakpoint: Dp) :
         trailingHeight: Int,
         overlineHeight: Int,
         supportingHeight: Int,
-        headlineHeight: Int,
+        contentHeight: Int,
         constraints: Constraints,
     ): Int {
-        val mainContentHeight = headlineHeight + overlineHeight + supportingHeight
+        val mainContentHeight = contentHeight + overlineHeight + supportingHeight
 
         return constraints.constrainHeight(maxOf(leadingHeight, mainContentHeight, trailingHeight))
     }
 }
+
+private fun Modifier.zIndexLambda(zIndex: FloatProducer): Modifier =
+    layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        layout(placeable.width, placeable.height) { placeable.place(0, 0, zIndex = zIndex()) }
+    }
 
 // TODO: replace with tokens
 internal val InteractiveListStartPadding = 16.dp
@@ -1310,12 +1331,3 @@ internal val InteractiveListDisabledOpacity = 0.38f
  * center-aligned.
  */
 internal val InteractiveListVerticalAlignmentBreakpoint = 80.dp
-
-// TODO: move to defaults
-private val InteractiveListPadding =
-    PaddingValues(
-        start = InteractiveListStartPadding,
-        end = InteractiveListEndPadding,
-        top = InteractiveListTopPadding,
-        bottom = InteractiveListBottomPadding,
-    )

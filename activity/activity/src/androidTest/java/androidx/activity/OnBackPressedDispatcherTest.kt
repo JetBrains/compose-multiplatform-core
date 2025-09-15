@@ -522,7 +522,7 @@ class OnBackPressedHandlerTest {
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should not be incremented as the callback is not at the top")
-            .that(callback1.completedInvocations)
+            .that(callback1.onBackCompletedInvocations)
             .isEqualTo(0)
         assertWithMessage("Count should be incremented after each onBackPressed")
             .that(callback2.count)
@@ -591,7 +591,7 @@ class OnBackPressedHandlerTest {
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should be incremented after onBackPressed")
-            .that(callback.completedInvocations)
+            .that(callback.onBackCompletedInvocations)
             .isEqualTo(1)
     }
 

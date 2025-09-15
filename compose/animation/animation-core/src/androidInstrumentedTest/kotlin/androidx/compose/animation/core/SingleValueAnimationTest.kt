@@ -431,9 +431,17 @@ class SingleValueAnimationTest {
 
                 // The expected values and actual values should have a delta no larger than
                 // the visibility threshold
-                assertEquals(expectedOffset.x, offsetValue.x, 0.8f)
-                assertEquals(expectedOffset.y, offsetValue.y, 0.8f)
-                assertEquals(expectedFloat, floatValue, 2.1f)
+                assertEquals(
+                    expectedOffset.x,
+                    offsetValue.x,
+                    Dp.Companion.VisibilityThreshold.value,
+                )
+                assertEquals(
+                    expectedOffset.y,
+                    offsetValue.y,
+                    Dp.Companion.VisibilityThreshold.value,
+                )
+                assertEquals(expectedFloat, floatValue, Offset.Companion.VisibilityThreshold.x)
             }
         }
 

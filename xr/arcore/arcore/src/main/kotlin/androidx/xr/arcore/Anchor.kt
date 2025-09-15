@@ -220,7 +220,7 @@ internal constructor(
 
     override fun hashCode(): Int = runtimeAnchor.hashCode()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(State(runtimeAnchor.trackingState, runtimeAnchor.pose))
         if (persistContinuation == null) {

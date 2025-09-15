@@ -43,10 +43,10 @@ import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.TestScope
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
@@ -71,7 +71,8 @@ internal class StreamGraphImplTest {
     private val graphConfig =
         CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
     private val threads = FakeThreads.fromTestScope(testScope)
-    private val cameraPipeLifetime = CameraPipeLifetime()
+    private val cameraPipeJob = Job()
+    private val cameraPipeLifetime = CameraPipeLifetime(cameraPipeJob)
     private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
     private val backends =
         CameraBackendsImpl(

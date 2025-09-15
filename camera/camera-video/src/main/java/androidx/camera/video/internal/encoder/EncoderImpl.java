@@ -37,6 +37,7 @@ import android.media.MediaCodec;
 import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Range;
@@ -157,8 +158,6 @@ public class EncoderImpl implements Encoder {
     private static final Range<Long> NO_RANGE = Range.create(NO_LIMIT_LONG, NO_LIMIT_LONG);
     private static final long STOP_TIMEOUT_MS = 1000L;
     private static final long SIGNAL_EOS_TIMEOUT_MS = 1000L;
-    static final String PARAMETER_KEY_TIMELAPSE_ENABLED = "time-lapse-enable";
-    static final String PARAMETER_KEY_TIMELAPSE_FPS = "time-lapse-fps";
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     final String mTag;
@@ -166,7 +165,6 @@ public class EncoderImpl implements Encoder {
     final Object mLock = new Object();
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     final boolean mIsVideoEncoder;
-    private final EncoderConfig mEncoderConfig;
     @VisibleForTesting
     final MediaFormat mMediaFormat;
     @SuppressWarnings("WeakerAccess") // synthetic accessor
@@ -242,7 +240,6 @@ public class EncoderImpl implements Encoder {
             int sessionType)
             throws InvalidConfigException {
         Preconditions.checkNotNull(executor);
-        mEncoderConfig = Preconditions.checkNotNull(encoderConfig);
 
         mMediaCodec = createCodec(encoderConfig);
         MediaCodecInfo mediaCodecInfo = mMediaCodec.getCodecInfo();
@@ -1240,7 +1237,13 @@ public class EncoderImpl implements Encoder {
                             executor = mEncoderCallbackExecutor;
                         }
 
-                        if (mIsVideoEncoder && isSlowMotion()) {
+                        if (Build.VERSION.SDK_INT < 30 && mIsVideoEncoder && isSlowMotion()) {
+                            // Timestamps for slow-motion recording are automatically adjusted by
+                            // the GraphicBufferSource from API 30 onward (specifically when
+                            // configuring codec with different KEY_CAPTURE_RATE and
+                            // KEY_FRAME_RATE). For devices on earlier API levels, we manually
+                            // adjust the timestamp.
+                            // See ACodec.cpp/CCodec.cpp/GraphicBufferSource.cpp for details.
                             bufferInfo.presentationTimeUs =
                                     toPresentationTimeUsByCaptureEncodeRatio(
                                             bufferInfo.presentationTimeUs);
@@ -1600,13 +1603,6 @@ public class EncoderImpl implements Encoder {
                     case PENDING_START:
                     case PENDING_START_PAUSED:
                     case PENDING_RELEASE:
-                        if (mIsVideoEncoder && isSlowMotion()) {
-                            // MediaMuxer will write these values to the video metadata so Photos
-                            // can recognize that this is a slow-motion video.
-                            mediaFormat.setInteger(PARAMETER_KEY_TIMELAPSE_ENABLED, 1);
-                            mediaFormat.setInteger(PARAMETER_KEY_TIMELAPSE_FPS,
-                                    ((VideoEncoderConfig) mEncoderConfig).getCaptureFrameRate());
-                        }
                         EncoderCallback encoderCallback;
                         Executor executor;
                         synchronized (mLock) {

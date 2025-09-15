@@ -1,4 +1,8 @@
+-keep class androidx.xr.arcore.** { *; }
+-keep class androidx.xr.arcore.**$* { *; }
 -keep class androidx.xr.arcore.internal.** { *; }
 -keep class androidx.xr.arcore.internal.**$* { *; }
+-keep class * extends androidx.xr.arcore.** { *; }
+-keep class * extends androidx.xr.arcore.**$* { *; }
 -keep class * extends androidx.xr.arcore.internal.** { *; }
 -keep class * extends androidx.xr.arcore.internal.**$* { *; }

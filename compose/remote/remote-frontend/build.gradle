@@ -25,7 +25,7 @@ plugins {
 
 androidx {
     name = "Remote Compose Frontend"
-    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Provides a compose API to create RemoteCompose documents"
     enableRobolectric()

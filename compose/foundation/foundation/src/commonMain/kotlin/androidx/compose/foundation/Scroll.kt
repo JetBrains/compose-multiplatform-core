@@ -18,6 +18,7 @@ package androidx.compose.foundation
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.SpringSpec
+import androidx.compose.foundation.ComposeFoundationFlags.isScrollMinConstraintsFixEnabled
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
@@ -29,6 +30,7 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,6 +55,9 @@ import androidx.compose.ui.semantics.horizontalScrollAxisRange
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.verticalScrollAxisRange
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 
@@ -87,6 +92,7 @@ fun rememberScrollState(initial: Int = 0): ScrollState {
 class ScrollState(initial: Int) : ScrollableState {
 
     /** current scroll position value in pixels */
+    @get:FrequentlyChangingValue
     var value: Int by mutableIntStateOf(initial)
         private set
 
@@ -398,6 +404,7 @@ internal class ScrollNode(
     var reverseScrolling: Boolean,
     var isVertical: Boolean,
 ) : LayoutModifierNode, SemanticsModifierNode, Modifier.Node() {
+    @OptIn(ExperimentalFoundationApi::class)
     override fun MeasureScope.measure(
         measurable: Measurable,
         constraints: Constraints,
@@ -408,23 +415,47 @@ internal class ScrollNode(
         )
 
         val childConstraints =
-            constraints.copy(
-                maxHeight = if (isVertical) Constraints.Infinity else constraints.maxHeight,
-                maxWidth = if (isVertical) constraints.maxWidth else Constraints.Infinity,
-            )
+            if (isScrollMinConstraintsFixEnabled) {
+                Constraints(
+                    minHeight = if (isVertical) 0 else constraints.minHeight,
+                    minWidth = if (isVertical) constraints.minWidth else 0,
+                    maxHeight = if (isVertical) Constraints.Infinity else constraints.maxHeight,
+                    maxWidth = if (isVertical) constraints.maxWidth else Constraints.Infinity,
+                )
+            } else {
+                constraints.copy(
+                    maxHeight = if (isVertical) Constraints.Infinity else constraints.maxHeight,
+                    maxWidth = if (isVertical) constraints.maxWidth else Constraints.Infinity,
+                )
+            }
+
         val placeable = measurable.measure(childConstraints)
-        val width = placeable.width.coerceAtMost(constraints.maxWidth)
-        val height = placeable.height.coerceAtMost(constraints.maxHeight)
-        val scrollHeight = placeable.height - height
-        val scrollWidth = placeable.width - width
+
+        val viewportHeight =
+            if (isScrollMinConstraintsFixEnabled) {
+                constraints.constrainHeight(placeable.height)
+            } else {
+                placeable.height.coerceAtMost(constraints.maxHeight)
+            }
+        val viewportWidth =
+            if (isScrollMinConstraintsFixEnabled) {
+                constraints.constrainWidth(placeable.width)
+            } else {
+                placeable.width.coerceAtMost(constraints.maxWidth)
+            }
+
+        val scrollHeight = (placeable.height - viewportHeight).fastCoerceAtLeast(0)
+        val scrollWidth = (placeable.width - viewportWidth).fastCoerceAtLeast(0)
         val side = if (isVertical) scrollHeight else scrollWidth
+
         // The max value must be updated before returning from the measure block so that any other
         // chained RemeasurementModifiers that try to perform scrolling based on the new
         // measurements inside onRemeasured are able to scroll to the new max based on the newly-
         // measured size.
         state.maxValue = side
-        state.viewportSize = if (isVertical) height else width
-        return layout(width, height) {
+        state.viewportSize = if (isVertical) viewportHeight else viewportWidth
+
+        return layout(viewportWidth, viewportHeight) {
             val scroll = state.value.fastCoerceIn(0, side)
             val absScroll = if (reverseScrolling) scroll - side else -scroll
             val xOffset = if (isVertical) 0 else absScroll

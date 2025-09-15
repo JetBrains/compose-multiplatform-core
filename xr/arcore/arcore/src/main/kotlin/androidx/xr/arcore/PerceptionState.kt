@@ -29,6 +29,7 @@ import kotlin.time.ComparableTimeMark
  * @property trackables the trackables that are currently being tracked.
  * @property leftHand the left hand, or null when not supported by the current platform.
  * @property rightHand the right hand, or null when not supported by the current platform.
+ * @property userFace the user's face, or null when not supported by the current platform.
  */
 public class PerceptionState
 internal constructor(
@@ -40,10 +41,12 @@ internal constructor(
     public val leftRenderViewpoint: RenderViewpoint?,
     public val rightRenderViewpoint: RenderViewpoint?,
     public val monoRenderViewpoint: RenderViewpoint?,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val leftDepthMap: DepthMap?,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val rightDepthMap: DepthMap?,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val monoDepthMap: DepthMap?,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val userFace: Face?,
+    public val leftDepthMap: DepthMap?,
+    public val rightDepthMap: DepthMap?,
+    public val monoDepthMap: DepthMap?,
+    public val userFace: Face?,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val leftEye: Eye?,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val rightEye: Eye?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -60,6 +63,8 @@ internal constructor(
         if (rightDepthMap != other.rightDepthMap) return false
         if (monoDepthMap != other.monoDepthMap) return false
         if (userFace != other.userFace) return false
+        if (leftEye != other.leftEye) return false
+        if (rightEye != other.rightEye) return false
         return true
     }
 

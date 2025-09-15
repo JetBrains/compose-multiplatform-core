@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.update
 internal class NavigationEventProcessor {
 
     /** The private, mutable source of truth for the navigation state. */
-    internal val _state = MutableStateFlow<NavigationEventState<*>>(Idle(NotProvided))
+    internal val _state = MutableStateFlow<NavigationEventState<*>>(Idle(currentInfo = NotProvided))
 
     /**
      * The [StateFlow] from the highest-priority, enabled navigation callback.
@@ -123,12 +123,15 @@ internal class NavigationEventProcessor {
     fun updateEnabledCallbacks() {
         // `any` and `||` are efficient as they short-circuit on the first `true` result.
         hasEnabledCallbacks =
-            overlayCallbacks.any { it.isEnabled } || defaultCallbacks.any { it.isEnabled }
+            overlayCallbacks.any { it.isBackEnabled } || defaultCallbacks.any { it.isBackEnabled }
 
         // Whenever the set of enabled callbacks changes, we must immediately
         // synchronize the global navigation state. This picks the new highest-priority
         // active callback and updates the state to reflect its info, preventing stale data.
-        val enabledCallback = resolveEnabledCallback()
+        val enabledCallback =
+            inProgressCallback
+                ?: resolveEnabledCallback(direction = NavigationEventDirection.Back)
+                ?: resolveEnabledCallback(direction = NavigationEventDirection.Forward)
         if (enabledCallback != null) {
             updateEnabledCallbackState(enabledCallback)
         }
@@ -143,24 +146,29 @@ internal class NavigationEventProcessor {
      * overwriting the state.
      */
     internal fun updateEnabledCallbackState(callback: NavigationEventCallback<*>) {
-        val currentCallback = inProgressCallback ?: resolveEnabledCallback()
+        // Pick the single callback that is allowed to control state right now.
+        val currentCallback =
+            inProgressCallback
+                ?: resolveEnabledCallback(direction = NavigationEventDirection.Back)
+                ?: resolveEnabledCallback(direction = NavigationEventDirection.Forward)
+
         if (currentCallback != callback) return
+
+        val currentInfo = currentCallback.currentInfo ?: NotProvided
+        val combinedBackInfo = resolveCombinedBackInfo()
+        val forwardInfo = currentCallback.forwardInfo
 
         _state.update { state ->
             when (state) {
-                is Idle -> Idle(callback.currentInfo ?: NotProvided)
+                is Idle -> Idle(currentInfo, combinedBackInfo, forwardInfo)
                 is InProgress ->
-                    InProgress(
-                        currentInfo = callback.currentInfo ?: NotProvided,
-                        previousInfo = callback.previousInfo,
-                        latestEvent = state.latestEvent,
-                    )
+                    InProgress(currentInfo, combinedBackInfo, forwardInfo, state.latestEvent)
             }
         }
     }
 
     /**
-     * Returns `true` if there is at least one [NavigationEventCallback.isEnabled] callback
+     * Returns `true` if there is at least one [NavigationEventCallback.isBackEnabled] callback
      * registered globally within this processor.
      *
      * @return `true` if any callback is enabled, `false` otherwise.
@@ -231,7 +239,7 @@ internal class NavigationEventProcessor {
         // If the callback is the one currently being processed, it needs to be notified of
         // cancellation and then cleared from the in-progress state.
         if (callback == inProgressCallback) {
-            callback.doOnEventCancelled()
+            callback.doOnBackCancelled()
             inProgressCallback = null
         }
 
@@ -247,7 +255,7 @@ internal class NavigationEventProcessor {
     }
 
     /**
-     * Dispatches an [NavigationEventCallback.onEventStarted] event with the given event to the
+     * Dispatches an [NavigationEventCallback.onBackStarted] event with the given event to the
      * highest-priority enabled callback.
      *
      * If an event is currently in progress, it will be cancelled first to ensure a clean state for
@@ -265,7 +273,6 @@ internal class NavigationEventProcessor {
         event: NavigationEvent,
     ) {
         // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
-        // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
         if (inProgressCallback != null) {
             // It's important to ensure that any ongoing operations from previous events are
@@ -274,21 +281,26 @@ internal class NavigationEventProcessor {
         }
 
         // Find the highest-priority enabled callback to handle this event.
-        val callback = resolveEnabledCallback()
+        val callback = resolveEnabledCallback(direction)
         if (callback != null) {
             // Set this callback as the one in progress *before* execution. This ensures
             // `onCancelled` can be correctly handled if the callback removes itself during
             // `onEventStarted`.
             inProgressCallback = callback
-            callback.doOnEventStarted(event)
-            _state.update {
-                InProgress(callback.currentInfo ?: NotProvided, callback.previousInfo, event)
+            callback.doOnBackStarted(event)
+            _state.update { state ->
+                InProgress(
+                    currentInfo = state.currentInfo,
+                    backInfo = state.backInfo,
+                    forwardInfo = state.forwardInfo,
+                    latestEvent = event,
+                )
             }
         }
     }
 
     /**
-     * Dispatches an [NavigationEventCallback.onEventProgressed] event with the given event.
+     * Dispatches an [NavigationEventCallback.onBackProgressed] event with the given event.
      *
      * If a callback is currently in progress (from a [dispatchOnStarted] call), only that callback
      * will be notified. Otherwise, the highest-priority enabled callback will receive the progress
@@ -305,23 +317,27 @@ internal class NavigationEventProcessor {
         event: NavigationEvent,
     ) {
         // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
-        // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
         // If there is a callback in progress, only that one is notified.
         // Otherwise, the highest-priority enabled callback is notified.
-        val callback = inProgressCallback ?: resolveEnabledCallback()
+        val callback = inProgressCallback ?: resolveEnabledCallback(direction)
         // Progressed is not a terminal event, so `inProgressCallback` is not cleared.
 
         if (callback != null) {
-            callback.doOnEventProgressed(event)
-            _state.update {
-                InProgress(callback.currentInfo ?: NotProvided, callback.previousInfo, event)
+            callback.doOnBackProgressed(event)
+            _state.update { state ->
+                InProgress(
+                    currentInfo = state.currentInfo,
+                    backInfo = state.backInfo,
+                    forwardInfo = state.forwardInfo,
+                    latestEvent = event,
+                )
             }
         }
     }
 
     /**
-     * Dispatches an [NavigationEventCallback.onEventCompleted] event.
+     * Dispatches an [NavigationEventCallback.onBackCompleted] event.
      *
      * If a callback is currently in progress, only it will be notified. Otherwise, the
      * highest-priority enabled callback will be notified. This is a terminal event, clearing the
@@ -339,24 +355,29 @@ internal class NavigationEventProcessor {
         fallbackOnBackPressed: (() -> Unit)?,
     ) {
         // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
-        // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
         // If there is a callback in progress, only that one is notified.
         // Otherwise, the highest-priority enabled callback is notified.
-        val callback = inProgressCallback ?: resolveEnabledCallback()
+        val callback = inProgressCallback ?: resolveEnabledCallback(direction)
         inProgressCallback = null // Clear in-progress, as 'completed' is a terminal event.
 
         // If no callback is notified, use the fallback.
         if (callback == null) {
             fallbackOnBackPressed?.invoke()
         } else {
-            callback.doOnEventCompleted()
-            _state.update { Idle(callback.currentInfo ?: NotProvided) }
+            callback.doOnBackCompleted()
+            _state.update { state ->
+                Idle(
+                    currentInfo = state.currentInfo,
+                    backInfo = state.backInfo,
+                    forwardInfo = state.forwardInfo,
+                )
+            }
         }
     }
 
     /**
-     * Dispatches an [NavigationEventCallback.onEventCancelled] event.
+     * Dispatches an [NavigationEventCallback.onBackCancelled] event.
      *
      * If a callback is currently in progress, only it will be notified. Otherwise, the
      * highest-priority enabled callback will be notified. This is a terminal event, clearing the
@@ -368,16 +389,21 @@ internal class NavigationEventProcessor {
     @MainThread
     fun dispatchOnCancelled(input: NavigationEventInput, direction: NavigationEventDirection) {
         // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
-        // TODO(mgalhardo): Update the sharedProcessor to handle NavigationEventDirection.
 
         // If there is a callback in progress, only that one is notified.
         // Otherwise, the highest-priority enabled callback is notified.
-        val callback = inProgressCallback ?: resolveEnabledCallback()
+        val callback = inProgressCallback ?: resolveEnabledCallback(direction)
         inProgressCallback = null // Clear in-progress, as 'cancelled' is a terminal event.
 
         if (callback != null) {
-            callback.doOnEventCancelled()
-            _state.update { Idle(callback.currentInfo ?: NotProvided) }
+            callback.doOnBackCancelled()
+            _state.update { state ->
+                Idle(
+                    currentInfo = state.currentInfo,
+                    backInfo = state.backInfo,
+                    forwardInfo = state.forwardInfo,
+                )
+            }
         }
     }
 
@@ -396,9 +422,64 @@ internal class NavigationEventProcessor {
      * @return The single highest-priority [NavigationEventCallback] that is currently enabled, or
      *   `null` if no enabled callbacks exist.
      */
-    fun resolveEnabledCallback(): NavigationEventCallback<*>? {
+    fun resolveEnabledCallback(direction: NavigationEventDirection): NavigationEventCallback<*>? {
         // `firstOrNull` is efficient and respects the LIFO order of the ArrayDeque.
-        return overlayCallbacks.firstOrNull { it.isEnabled }
-            ?: defaultCallbacks.firstOrNull { it.isEnabled }
+        return when (direction) {
+            NavigationEventDirection.Back -> {
+                overlayCallbacks.firstOrNull { it.isBackEnabled }
+                    ?: defaultCallbacks.firstOrNull { it.isBackEnabled }
+            }
+            NavigationEventDirection.Forward -> {
+                overlayCallbacks.firstOrNull { it.isForwardEnabled }
+                    ?: defaultCallbacks.firstOrNull { it.isForwardEnabled }
+            }
+            else -> error("Unsupported NavigationEventDirection: '$direction'.")
+        }
+    }
+
+    /**
+     * Resolves and aggregates [NavigationEventCallback.backInfo] from all enabled callbacks to
+     * provide a comprehensive view of the back navigation history.
+     *
+     * This method constructs a unified list of [NavigationEventInfo] by traversing the registered
+     * callbacks in order of priority: it first collects `backInfo` from all enabled **overlay**
+     * callbacks, followed by all enabled **default** callbacks. This ordering ensures that the
+     * resulting list reflects the hierarchical navigation state, with higher-priority contexts
+     * appearing first.
+     *
+     * This is crucial for UIs that need to display a preview of the back stack, as it allows them
+     * to accurately represent the destinations that the user will navigate through when repeatedly
+     * going back.
+     *
+     * @return A `List<NavigationEventInfo>` containing the combined back navigation history,
+     *   ordered by callback priority. The list will be empty if no enabled callbacks provide
+     *   `backInfo`.
+     */
+    fun resolveCombinedBackInfo(): List<NavigationEventInfo> {
+        // TODO(b/436248277): Finalize back-info combination policy.
+        //  Ambiguity: when a parent (K4) hosts a child with its own back item (L1),
+        //  should the combined path be `L1 -> K4 -> parentStack` or `L1 -> parentStack`?
+        //  Decide if/when to include the host's current node, and document it.
+
+        // This function intentionally uses loops and a single mutable list. This is a
+        // performance optimization to avoid the intermediate list allocations that would
+        // be created by using chained collection functions like `filter` or `flatMap`.
+        val combinedBackInfo = mutableListOf<NavigationEventInfo>()
+
+        // Process overlay callbacks first to respect their higher priority.
+        for (callback in overlayCallbacks) {
+            if (callback.isBackEnabled && callback.backInfo.isNotEmpty()) {
+                combinedBackInfo.addAll(callback.backInfo)
+            }
+        }
+
+        // Process default callbacks second.
+        for (callback in defaultCallbacks) {
+            if (callback.isBackEnabled && callback.backInfo.isNotEmpty()) {
+                combinedBackInfo.addAll(callback.backInfo)
+            }
+        }
+
+        return combinedBackInfo
     }
 }

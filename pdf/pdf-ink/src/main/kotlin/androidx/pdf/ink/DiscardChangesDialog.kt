@@ -22,7 +22,7 @@ import androidx.fragment.app.DialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /** A [DialogFragment] to confirm whether unsaved changes should be discarded. */
-internal class DiscardChangesDialog(private val onDiscardChanges: () -> Unit) : DialogFragment() {
+internal class DiscardChangesDialog() : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return MaterialAlertDialogBuilder(requireContext())
@@ -33,10 +33,15 @@ internal class DiscardChangesDialog(private val onDiscardChanges: () -> Unit) : 
                     dialog.dismiss()
                 }
                 setPositiveButton(getString(R.string.discard_button)) { dialog, _ ->
-                    onDiscardChanges()
+                    parentFragmentManager.setFragmentResult(REQUEST_KEY, Bundle.EMPTY)
                     dialog.dismiss()
                 }
             }
             .create()
+    }
+
+    companion object {
+        const val TAG = "DiscardChangesDialog"
+        const val REQUEST_KEY = "discardChangesRequest"
     }
 }

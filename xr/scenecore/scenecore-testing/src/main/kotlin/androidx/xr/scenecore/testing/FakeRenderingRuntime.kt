@@ -17,15 +17,24 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.NodeHolder
+import androidx.xr.runtime.SubspaceNodeHolder
+import androidx.xr.runtime.TypeHolder
 import androidx.xr.runtime.math.Matrix3
+import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
+import androidx.xr.scenecore.internal.Dimensions
+import androidx.xr.scenecore.internal.Entity
 import androidx.xr.scenecore.internal.ExrImageResource
+import androidx.xr.scenecore.internal.GltfEntity
 import androidx.xr.scenecore.internal.GltfModelResource
 import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.internal.MaterialResource
 import androidx.xr.scenecore.internal.RenderingEntityFactory
 import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.internal.SubspaceNodeEntity
+import androidx.xr.scenecore.internal.SurfaceEntity
 import androidx.xr.scenecore.internal.TextureResource
 import androidx.xr.scenecore.internal.TextureSampler
 import com.google.common.util.concurrent.Futures.immediateFailedFuture
@@ -490,6 +499,62 @@ public class FakeRenderingRuntime(private val entityFactory: RenderingEntityFact
         alphaCutoff: Float,
     ) {
         (material as? FakeKhronosPbrMaterial)?.alphaCutoff = alphaCutoff
+    }
+
+    private fun createNode(): NodeHolder<*> {
+        return NodeHolder<FakeNode>(object : FakeNode {}, FakeNode::class.java)
+    }
+
+    override fun createGltfEntity(
+        pose: Pose,
+        loadedGltf: GltfModelResource,
+        parentEntity: Entity,
+    ): GltfEntity {
+        return entityFactory.createGltfEntity(FakeGltfFeature(createNode()), pose, parentEntity)
+    }
+
+    override fun createSurfaceEntity(
+        stereoMode: Int,
+        pose: Pose,
+        shape: SurfaceEntity.Shape,
+        surfaceProtection: Int,
+        superSampling: Int,
+        parentEntity: Entity,
+    ): SurfaceEntity {
+        val surfaceFeature = FakeSurfaceFeature(createNode())
+        surfaceFeature.stereoMode = stereoMode
+        surfaceFeature.shape = shape
+
+        // TODO: FakeSurfaceEntity didn't wrap FakeSurfaceFeature
+        val surfaceEntity = entityFactory.createSurfaceEntity(surfaceFeature, pose, parentEntity)
+        surfaceEntity.stereoMode = stereoMode
+        surfaceEntity.shape = shape
+        return surfaceEntity
+    }
+
+    public fun createSubspaceNodeHolder(): SubspaceNodeHolder<*> {
+        val subspaceNode: FakeSubspaceNode =
+            object : FakeSubspaceNode {
+                override val nodeHolder: NodeHolder<*> =
+                    NodeHolder(object : FakeNode {}, FakeNode::class.java)
+            }
+        val subspaceNodeHolder: SubspaceNodeHolder<*> =
+            SubspaceNodeHolder(subspaceNode, FakeSubspaceNode::class.java)
+        return subspaceNodeHolder
+    }
+
+    // Assuming the subspaceNodeHolder contains a valid FakeSubspaceNode and a valid FakeNode.
+    override fun createSubspaceNodeEntity(
+        subspaceNodeHolder: SubspaceNodeHolder<*>,
+        size: Dimensions,
+    ): SubspaceNodeEntity {
+        return entityFactory.createSubspaceNodeEntity(
+            FakeSubspaceNodeFeature(
+                TypeHolder.assertGetValue(subspaceNodeHolder, FakeSubspaceNode::class.java)
+                    .nodeHolder,
+                size,
+            )
+        )
     }
 
     override fun startRenderer() {}

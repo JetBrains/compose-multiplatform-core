@@ -365,6 +365,7 @@ internal constructor(
         }
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(runtimeStateToState(runtimeEarth.state))
     }

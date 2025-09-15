@@ -26,18 +26,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** Contains the tracking information of a detected human face. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Face internal constructor(internal val runtimeFace: RuntimeFace) : Updatable {
     public companion object {
         /**
-         * Returns the Face object that corresponds to the user
+         * Returns the Face object that corresponds to the user.
          *
          * @param session the currently active [Session].
          * @throws [IllegalStateException] if [FaceTrackingMode] is set to
          *   [FaceTrackingMode.DISABLED].
          */
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         public fun getUserFace(session: Session): Face? {
             val perceptionStateExtender: PerceptionStateExtender? =
                 session.stateExtenders.filterIsInstance<PerceptionStateExtender>().first()
@@ -122,11 +120,11 @@ public class Face internal constructor(internal val runtimeFace: RuntimeFace) : 
                 FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_DOWN,
             )
 
-        internal val confidenceRegions: List<FaceConfidenceRegionType> =
+        internal val confidenceRegions: List<FaceConfidenceRegion> =
             listOf(
-                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LOWER,
-                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LEFT_UPPER,
-                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_RIGHT_UPPER,
+                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LOWER,
+                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LEFT_UPPER,
+                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_RIGHT_UPPER,
             )
     }
 
@@ -134,10 +132,9 @@ public class Face internal constructor(internal val runtimeFace: RuntimeFace) : 
      * The representation of the current state of [Face].
      *
      * @param trackingState the current [TrackingState] of the face.
-     * @param blendShapeValues the values measuring the blend shapes of the face.
-     * @param confidenceValues the confidence values of the face tracker at different regions.
      */
-    public class State(
+    public class State
+    internal constructor(
         public val trackingState: TrackingState,
         internal val blendShapeValues: FloatArray,
         internal val confidenceValues: FloatArray,
@@ -151,19 +148,17 @@ public class Face internal constructor(internal val runtimeFace: RuntimeFace) : 
             blendShapeMapKeys.zip(blendShapeValues.toList()).toMap()
 
         /**
-         * Gets the confidence value of the face tracker at the specified region index.
+         * Gets the confidence value of the face tracker for the given region.
          *
-         * @param [FaceConfidenceRegionType] the region to get the confidence value for.
-         * @return the confidence value of the face tracker at the specified region index.
+         * @param region the [FaceConfidenceRegion] to get the confidence value for.
+         * @return the confidence value of the face tracker for the given region.
          * @throws IllegalArgumentException if the region does not exist.
          */
-        public fun getConfidence(region: FaceConfidenceRegionType): Float =
+        public fun getConfidence(region: FaceConfidenceRegion): Float =
             when (region) {
-                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LOWER -> confidenceValues[0]
-                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LEFT_UPPER ->
-                    confidenceValues[1]
-                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_RIGHT_UPPER ->
-                    confidenceValues[2]
+                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LOWER -> confidenceValues[0]
+                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LEFT_UPPER -> confidenceValues[1]
+                FaceConfidenceRegion.FACE_CONFIDENCE_REGION_RIGHT_UPPER -> confidenceValues[2]
                 else -> throw IllegalArgumentException("Unknown confidence for region ${region}.")
             }
 
@@ -190,11 +185,18 @@ public class Face internal constructor(internal val runtimeFace: RuntimeFace) : 
     }
 
     private val _state =
-        MutableStateFlow<State>(State(TrackingState.PAUSED, FloatArray(0), FloatArray(0)))
+        MutableStateFlow<State>(
+            State(
+                TrackingState.PAUSED,
+                FloatArray(blendShapeMapKeys.size),
+                FloatArray(confidenceRegions.size),
+            )
+        )
 
     /** The current [State] of this Face. */
     public val state: StateFlow<State> = _state.asStateFlow()
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public override suspend fun update() {
         if (!runtimeFace.isValid) {
             return

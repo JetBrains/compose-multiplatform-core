@@ -65,7 +65,7 @@ class EditableDocumentViewModelTest {
         annotationsViewModel =
             EditableDocumentViewModel(savedStateHandle, SandboxedPdfLoader(appContext, dispatcher))
 
-        annotationsViewModel.editablePdfDocument = requireNotNull(editablePdfDocument)
+        annotationsViewModel.maybeInitialiseForDocument(requireNotNull(editablePdfDocument))
     }
 
     @Test
@@ -77,7 +77,6 @@ class EditableDocumentViewModelTest {
         annotationsViewModel.resetState()
 
         assertThat(annotationsViewModel.isEditModeEnabledFlow.first()).isFalse()
-        assertThat(annotationsViewModel.editablePdfDocument).isNull()
         assertThat(annotationsViewModel.annotationsDisplayStateFlow.first())
             .isEqualTo(AnnotationsDisplayState.EMPTY)
     }
@@ -162,7 +161,7 @@ class EditableDocumentViewModelTest {
         val existingAnnotation = createAnnotation(pageNum = 0)
         val documentWithAnnotation =
             FakeEditablePdfDocument(initialEdits = listOf(existingAnnotation))
-        annotationsViewModel.editablePdfDocument = documentWithAnnotation
+        annotationsViewModel.maybeInitialiseForDocument(documentWithAnnotation)
 
         annotationsViewModel.fetchAnnotationsForPageRange(0, 0)
 
@@ -188,7 +187,7 @@ class EditableDocumentViewModelTest {
 
         // Change document URI
         val newDocUri = Uri.fromFile(File("test2.pdf"))
-        annotationsViewModel.editablePdfDocument = FakeEditablePdfDocument(uri = newDocUri)
+        annotationsViewModel.maybeInitialiseForDocument(FakeEditablePdfDocument(uri = newDocUri))
 
         // Verify state reset
         assertThat(annotationsViewModel.annotationsDisplayStateFlow.value.edits.editsByPage)
@@ -202,7 +201,7 @@ class EditableDocumentViewModelTest {
         val docUri = Uri.fromFile(File("test.pdf"))
         savedStateHandle[EditableDocumentViewModel.LOADED_DOCUMENT_URI_KEY] = docUri
 
-        annotationsViewModel.editablePdfDocument = FakeEditablePdfDocument(uri = docUri)
+        annotationsViewModel.maybeInitialiseForDocument(FakeEditablePdfDocument(uri = docUri))
 
         val initialAnnotation = createAnnotation(pageNum = 0)
         annotationsViewModel.addDraftAnnotation(initialAnnotation)

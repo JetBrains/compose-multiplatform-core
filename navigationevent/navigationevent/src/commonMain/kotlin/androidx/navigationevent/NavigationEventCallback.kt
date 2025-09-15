@@ -19,28 +19,66 @@ package androidx.navigationevent
 import androidx.annotation.EmptySuper
 
 /**
- * Receives and handles [NavigationEvent]s dispatched by a [NavigationEventDispatcher].
+ * Base class for handling navigation gestures dispatched by a [NavigationEventDispatcher].
  *
- * This is the base class you should extend to create custom navigation event logic. Callbacks are
- * added to a [NavigationEventDispatcher] and will only receive events when both the callback and
- * its dispatcher are enabled.
+ * A [NavigationEventCallback] defines how an active component responds to system navigation
+ * gestures (such as predictive back) and exposes the directional context needed to represent the
+ * app’s current navigation affordances:
+ * - [backInfo]: contextual information describing what is available when navigating back.
+ * - [currentInfo]: the single active destination represented by this callback.
+ * - [forwardInfo]: contextual information describing what is available when navigating forward.
  *
- * @param isEnabled The initial enabled state for this callback. Defaults to `true`.
+ * Subclasses can override lifecycle methods (e.g., `onBackStarted`, `onBackProgressed`,
+ * `onBackCompleted`, `onBackCancelled`, and their forward equivalents) to respond to gesture
+ * progression and terminal outcomes.
+ *
+ * A callback must be registered with a [NavigationEventDispatcher] to receive events. It will only
+ * be invoked while both the dispatcher and this callback are enabled.
+ *
+ * @param isBackEnabled Whether this callback should initially handle back gestures. Defaults to
+ *   `true`.
+ * @param isForwardEnabled Whether this callback should initially handle forward gestures. Defaults
+ *   to `true`.
  * @see NavigationEventDispatcher
  * @see NavigationEventInput
+ * @see NavigationEventState
  */
-public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled: Boolean = true) {
+public abstract class NavigationEventCallback<T : NavigationEventInfo>(
+    isBackEnabled: Boolean = true,
+    isForwardEnabled: Boolean = true,
+) {
 
-    /** The most recent navigation info provided via [setInfo]. */
+    /**
+     * The contextual information representing the active destination for this callback.
+     *
+     * This is always a single value, provided by the currently active handler, and reflects the
+     * foreground navigation state at this point in time.
+     */
     internal var currentInfo: T? = null
         private set
 
-    /** Caches the navigation info from before the most recent call to [setInfo]. */
-    internal var previousInfo: T? = null
+    /**
+     * Contextual information describing the application's *back* state for this callback.
+     *
+     * This is **not** a back stack. Instead, it contains app-defined [NavigationEventInfo] values
+     * (for example, titles or metadata) that help render back affordances in the UI. The list may
+     * be empty if no back navigation is possible in this scope.
+     */
+    internal var backInfo: List<T> = emptyList()
         private set
 
     /**
-     * Controls whether this callback is active and should be considered for event dispatching.
+     * Contextual information describing the application's *forward* state for this callback.
+     *
+     * This is **not** a forward stack. Instead, it contains app-defined [NavigationEventInfo]
+     * values that help render forward affordances in the UI. The list may be empty if no forward
+     * navigation is possible in this scope.
+     */
+    internal var forwardInfo: List<T> = emptyList()
+        private set
+
+    /**
+     * Controls whether this callback is active and should be considered for back event dispatching.
      *
      * A callback's effective enabled state is hierarchical; it is directly influenced by the
      * [NavigationEventDispatcher] it is registered with.
@@ -60,7 +98,24 @@ public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled
      * For a callback to be truly active, both its local `isEnabled` property and its dispatcher's
      * `isEnabled` property must evaluate to `true`.
      */
-    public var isEnabled: Boolean = isEnabled
+    public var isBackEnabled: Boolean = isBackEnabled
+        get() = if (dispatcher?.isEnabled == false) false else field
+        set(value) {
+            // Only proceed if the enabled state is actually changing to avoid redundant work.
+            if (field == value) return
+
+            field = value
+            dispatcher?.updateEnabledCallbacks()
+        }
+
+    /**
+     * Controls whether this callback is active for forward events and should be considered for
+     * forward event dispatching.
+     *
+     * For a callback to be truly active for forward events, both its local `isForwardEnabled`
+     * property and its dispatcher's `isForwardEnabled` property must evaluate to `true`.
+     */
+    public var isForwardEnabled: Boolean = isForwardEnabled
         get() = if (dispatcher?.isEnabled == false) false else field
         set(value) {
             // Only proceed if the enabled state is actually changing to avoid redundant work.
@@ -81,19 +136,30 @@ public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled
     }
 
     /**
-     * Updates the current and previous navigation information for this callback.
+     * Sets the directional navigation context for this callback.
      *
-     * This method updates the callback's local info and then notifies the central
-     * `NavigationEventProcessor`. The processor is responsible for deciding whether to update the
-     * global navigation state, ensuring that only the highest-priority callback can influence the
-     * state.
+     * Updates the three pieces of contextual information used to describe navigation affordances:
+     * - [currentInfo]: the active destination.
+     * - [backInfo]: contextual information for back navigation (nearest-first).
+     * - [forwardInfo]: contextual information for forward navigation (nearest-first).
      *
-     * @param currentInfo The new navigation information to be set as the current state.
-     * @param previousInfo The navigation information to be set as the previous state.
+     * The lists are app-defined [NavigationEventInfo] values (e.g., titles or metadata) that help
+     * the UI present navigation affordances or previews. An empty list indicates no affordance in
+     * that direction.
+     *
+     * @param currentInfo The contextual information representing the active destination.
+     * @param backInfo Context describing what is available when navigating back (nearest-first).
+     * @param forwardInfo Context describing what is available when navigating forward
+     *   (nearest-first).
      */
-    public fun setInfo(currentInfo: T, previousInfo: T?) {
+    public fun setInfo(
+        currentInfo: T,
+        backInfo: List<T> = emptyList(),
+        forwardInfo: List<T> = emptyList(),
+    ) {
         this.currentInfo = currentInfo
-        this.previousInfo = previousInfo
+        this.backInfo = backInfo
+        this.forwardInfo = forwardInfo
 
         // Simply notify the processor that info has changed.
         // The processor now owns all the logic for updating the shared state.
@@ -103,11 +169,11 @@ public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled
     /**
      * Internal-only method for dispatching.
      *
-     * @see onEventStarted
+     * @see onBackStarted
      * @see NavigationEventDispatcher.dispatchOnStarted
      */
-    internal fun doOnEventStarted(event: NavigationEvent) {
-        onEventStarted(event)
+    internal fun doOnBackStarted(event: NavigationEvent) {
+        onBackStarted(event)
     }
 
     /**
@@ -118,16 +184,16 @@ public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled
      *
      * @param event The [NavigationEvent] that triggered this callback.
      */
-    @EmptySuper protected open fun onEventStarted(event: NavigationEvent) {}
+    @EmptySuper protected open fun onBackStarted(event: NavigationEvent) {}
 
     /**
      * Internal-only method for dispatching.
      *
-     * @see onEventProgressed
+     * @see onBackProgressed
      * @see NavigationEventDispatcher.dispatchOnProgressed
      */
-    internal fun doOnEventProgressed(event: NavigationEvent) {
-        onEventProgressed(event)
+    internal fun doOnBackProgressed(event: NavigationEvent) {
+        onBackProgressed(event)
     }
 
     /**
@@ -138,16 +204,16 @@ public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled
      *
      * @param event The [NavigationEvent] containing progress information.
      */
-    @EmptySuper protected open fun onEventProgressed(event: NavigationEvent) {}
+    @EmptySuper protected open fun onBackProgressed(event: NavigationEvent) {}
 
     /**
      * Internal-only method for dispatching.
      *
-     * @see onEventCompleted
+     * @see onBackCompleted
      * @see NavigationEventDispatcher.dispatchOnCompleted
      */
-    internal fun doOnEventCompleted() {
-        onEventCompleted()
+    internal fun doOnBackCompleted() {
+        onBackCompleted()
     }
 
     /**
@@ -156,16 +222,16 @@ public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled
      * This is called when the user commits to the navigation action (e.g., by lifting their finger
      * at the end of a swipe), signaling that the navigation should be finalized.
      */
-    protected abstract fun onEventCompleted()
+    @EmptySuper protected open fun onBackCompleted() {}
 
     /**
      * Internal-only method for dispatching.
      *
-     * @see onEventCancelled
+     * @see onBackCancelled
      * @see NavigationEventDispatcher.dispatchOnCancelled
      */
-    internal fun doOnEventCancelled() {
-        onEventCancelled()
+    internal fun doOnBackCancelled() {
+        onBackCancelled()
     }
 
     /**
@@ -174,5 +240,33 @@ public abstract class NavigationEventCallback<T : NavigationEventInfo>(isEnabled
      * This is called when the user cancels the navigation action (e.g., by returning their finger
      * to the edge of the screen), signaling that the UI should return to its original state.
      */
-    @EmptySuper protected open fun onEventCancelled() {}
+    @EmptySuper protected open fun onBackCancelled() {}
+
+    internal fun doOnForwardStarted(event: NavigationEvent) {
+        onForwardStarted(event)
+    }
+
+    /** Override this to handle the beginning of a forward navigation event. */
+    @EmptySuper protected open fun onForwardStarted(event: NavigationEvent) {}
+
+    internal fun doOnForwardProgressed(event: NavigationEvent) {
+        onForwardProgressed(event)
+    }
+
+    /** Override this to handle the progress of an ongoing forward navigation event. */
+    @EmptySuper protected open fun onForwardProgressed(event: NavigationEvent) {}
+
+    internal fun doOnForwardCompleted() {
+        onForwardCompleted()
+    }
+
+    /** Override this to handle the completion of a forward navigation event. */
+    @EmptySuper protected open fun onForwardCompleted() {}
+
+    internal fun doOnForwardCancelled() {
+        onForwardCancelled()
+    }
+
+    /** Override this to handle the cancellation of a forward navigation event. */
+    @EmptySuper protected open fun onForwardCancelled() {}
 }

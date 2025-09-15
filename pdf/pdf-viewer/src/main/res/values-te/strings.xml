@@ -28,6 +28,8 @@
     <string name="label_page_single" msgid="456123685879261101">"<xliff:g id="PAGE">%1$d</xliff:g> / <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_page_single" msgid="8459583146661044094">"<xliff:g id="TOTAL">%2$d</xliff:g>లో <xliff:g id="PAGE">%1$d</xliff:g>వ పేజీ"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"జూమ్ <xliff:g id="FIRST">%1$d</xliff:g> శాతం"</string>
+    <!-- no translation found for desc_goto (1333698934111921601) -->
+    <skip />
     <string name="desc_goto_link" msgid="2461368384824849714">"<xliff:g id="PAGE_NUMBER">%1$d</xliff:g> పేజీకి వెళ్లండి"</string>
     <string name="desc_page" msgid="6702471448987833953">"పేజీ <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"ఖాళీ పేజీ"</string>

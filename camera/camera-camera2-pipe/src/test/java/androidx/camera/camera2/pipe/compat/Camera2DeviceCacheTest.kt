@@ -24,6 +24,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
@@ -35,6 +36,7 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -96,6 +98,9 @@ class Camera2DeviceCacheTest {
     val mockDeviceSetupFactoryProvider: Provider<CameraDeviceSetupCompatFactory> = mock()
     val mockDeviceSetupFactory: CameraDeviceSetupCompatFactory = mock()
 
+    private val fakeCameraPipeJob = Job()
+    private val fakeCameraPipeLifetime = CameraPipeLifetime(fakeCameraPipeJob)
+
     private fun setUpPackageManager(enableBack: Boolean, enableFront: Boolean) {
         whenever(packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA))
             .thenReturn(enableBack)
@@ -116,6 +121,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             val cameraIds = camera2DeviceCache.getCameraIds()
@@ -138,6 +145,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             val cameraIds = camera2DeviceCache.awaitCameraIds()
@@ -160,6 +169,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             val cameraIds = camera2DeviceCache.cameraIds.first()
@@ -186,6 +197,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             val cameraIds = camera2DeviceCache.cameraIds.first()
@@ -207,6 +220,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             // Get the camera ID list for the first time.
@@ -237,6 +252,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             // Get the camera ID list for the first time.
@@ -267,6 +284,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             // Get the camera ID list for the first time.
@@ -297,6 +316,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             // Get the camera ID list for the first time. Note that even if the camera ID list is
@@ -329,6 +350,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             val job = launch {
@@ -365,6 +388,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
             val collectedCameraIds = mutableListOf<List<CameraId>>()
 
@@ -432,6 +457,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
             val collectedCameraIds = mutableListOf<List<CameraId>>()
 
@@ -483,6 +510,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
             val collectedCameraIds = mutableListOf<List<CameraId>>()
 
@@ -539,6 +568,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             // First call should invoke the factory
@@ -584,6 +615,8 @@ class Camera2DeviceCacheTest {
                     packageManager,
                     mockErrorListener,
                     mockDeviceSetupFactoryProvider,
+                    fakeCameraPipeLifetime,
+                    fakeCameraPipeJob,
                 )
 
             // First call should invoke the cameraManager

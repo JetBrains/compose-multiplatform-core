@@ -29,10 +29,20 @@ import androidx.core.util.forEach
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.content.PageSelection
+import androidx.pdf.content.PdfPageContent
+import androidx.pdf.content.PdfPageGotoLinkContent
+import androidx.pdf.content.PdfPageLinkContent
+import androidx.pdf.content.toViewSelection
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.featureflag.PdfFeatureFlags
+import androidx.pdf.selection.model.GoToLinkSelection
+import androidx.pdf.selection.model.HyperLinkSelection
+import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
+import androidx.pdf.view.PageManager
 import androidx.pdf.view.PageMetadataLoader
+import kotlin.collections.firstOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -50,6 +60,7 @@ internal class SelectionStateManager(
     private val handleTouchTargetSizePx: Int,
     private val errorFlow: MutableSharedFlow<Throwable>,
     private val pageMetadataLoader: PageMetadataLoader?,
+    private val pageManager: PageManager?,
     initialSelection: SelectionModel? = null,
 ) {
     /** The current [Selection] */
@@ -101,13 +112,108 @@ internal class SelectionStateManager(
         }
     }
 
-    /** Asynchronously attempts to select the nearest block of text to [pdfPoint] */
-    fun maybeSelectWordAtPoint(pdfPoint: PdfPoint) {
+    /** Asynchronously attempts to select the nearest block of content to [pdfPoint] */
+    fun maybeSelectContentAtPoint(pdfPoint: PdfPoint) {
         _selectionUiSignalBus.tryEmit(SelectionUiSignal.ToggleActionMode(show = false))
         _selectionUiSignalBus.tryEmit(
             SelectionUiSignal.PlayHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         )
+        // Check for a link at this point.
+        if (PdfFeatureFlags.isLinkSelectionEnabled) {
+            pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
+                if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return
+                if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return
+            }
+        }
         updateRangeSelectionAsync(pdfPoint, pdfPoint)
+    }
+
+    /**
+     * Attempts to select a GoTo link at a specific point on the PDF page.
+     *
+     * @param goToLinks The list of available GoTo links on the page.
+     * @param pdfPoint The point to check, in PDF coordinates.
+     * @return `true` if a GoTo link was found and selected, `false` otherwise.
+     */
+    private fun selectGoToLinkAtPoint(
+        goToLinks: List<PdfPageGotoLinkContent>,
+        pdfPoint: PdfPoint,
+    ): Boolean {
+        return selectLinkAtPoint(goToLinks, pdfPoint) { goToLink, textSelection ->
+            GoToLinkSelection(
+                GoToLinkSelection.Destination(
+                    goToLink.destination.pageNumber,
+                    goToLink.destination.xCoordinate,
+                    goToLink.destination.yCoordinate,
+                    goToLink.destination.zoom,
+                ),
+                textSelection.text,
+                textSelection.bounds,
+            )
+        }
+    }
+
+    /**
+     * Attempts to select an external link at a specific point on the PDF page.
+     *
+     * @param externalLinks The list of available external links on the page.
+     * @param pdfPoint The point to check, in PDF coordinates.
+     * @return `true` if an external link was found and selected, `false` otherwise.
+     */
+    private fun selectExternalLinkAtPoint(
+        externalLinks: List<PdfPageLinkContent>,
+        pdfPoint: PdfPoint,
+    ): Boolean {
+        return selectLinkAtPoint(externalLinks, pdfPoint) { externalLink, textSelection ->
+            HyperLinkSelection(externalLink.uri, textSelection.text, textSelection.bounds)
+        }
+    }
+
+    /**
+     * A generic function to find and select a link at a given [pdfPoint].
+     *
+     * @param links The list of links to check.
+     * @param pdfPoint The point to check.
+     * @param createLinkSelection A lambda to create the appropriate `LinkSelection`.
+     * @return `true` if a link is selected, `false` otherwise.
+     */
+    private fun <T : PdfPageContent> selectLinkAtPoint(
+        links: List<T>,
+        pdfPoint: PdfPoint,
+        createLinkSelection: (T, TextSelection) -> LinkSelection,
+    ): Boolean {
+        links.forEach { link ->
+            val linkRect = link.bounds.firstOrNull { it.contains(pdfPoint.x, pdfPoint.y) }
+            linkRect?.let {
+                updateSelectionAsync(pdfPoint.pageNum..pdfPoint.pageNum) {
+                    val pageSelection =
+                        pdfDocument.getSelectionBounds(
+                            pdfPoint.pageNum,
+                            PointF(linkRect.left, (linkRect.bottom + linkRect.top) / 2),
+                            PointF(linkRect.right, (linkRect.bottom + linkRect.top) / 2),
+                        ) ?: return@updateSelectionAsync null
+
+                    val textSelection = pageSelection.toViewSelection().first() as TextSelection
+                    val documentSelection =
+                        DocumentSelection(SparseArray()).apply {
+                            selectedContents.put(
+                                pdfPoint.pageNum,
+                                listOf(createLinkSelection(link, textSelection)),
+                            )
+                        }
+
+                    val selectionBounds = documentSelection.getSelectionEndpoints()
+
+                    SelectionModel(
+                        documentSelection,
+                        UiSelectionBoundary(selectionBounds.first, false),
+                        UiSelectionBoundary(selectionBounds.second, false),
+                    )
+                }
+                return true
+            }
+        }
+        return false
     }
 
     /** Synchronously resets all state of this manager */

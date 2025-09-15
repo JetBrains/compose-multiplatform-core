@@ -32,6 +32,7 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.impl.perception.ViewProjections;
 import androidx.xr.scenecore.internal.ActivityPanelEntity;
 import androidx.xr.scenecore.internal.ActivitySpace;
 import androidx.xr.scenecore.internal.AnchorEntity;
@@ -64,6 +65,10 @@ import androidx.xr.scenecore.internal.SpatialEnvironment;
 import androidx.xr.scenecore.internal.SpatialModeChangeListener;
 import androidx.xr.scenecore.internal.SpatialPointerComponent;
 import androidx.xr.scenecore.internal.SpatialVisibility;
+import androidx.xr.scenecore.internal.SubspaceNodeEntity;
+import androidx.xr.scenecore.internal.SubspaceNodeFeature;
+import androidx.xr.scenecore.internal.SurfaceEntity;
+import androidx.xr.scenecore.internal.SurfaceFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
@@ -549,6 +554,28 @@ class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory {
     }
 
     @Override
+    public @NonNull SurfaceEntity createSurfaceEntity(
+            @NonNull SurfaceFeature feature, @NonNull Pose pose, @Nullable Entity parentEntity) {
+        SurfaceEntity entity =
+                new SurfaceEntityImpl(
+                        mActivity, feature, parentEntity, mExtensions, mEntityManager, mExecutor);
+        entity.setPose(pose, Space.PARENT);
+        return entity;
+    }
+
+    @Override
+    @NonNull
+    public SubspaceNodeEntity createSubspaceNodeEntity(
+            @NonNull SubspaceNodeFeature feature) {
+        return new SubspaceNodeEntityImpl(
+                mActivity,
+                feature,
+                mExtensions,
+                mEntityManager,
+                mExecutor);
+    }
+
+    @Override
     public @NonNull Entity createGroupEntity(
             @NonNull Pose pose, @NonNull String name, @NonNull Entity parent) {
         Node node = mExtensions.createNode();
@@ -818,5 +845,18 @@ class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory {
     @Override
     public @NonNull SpatialPointerComponent createSpatialPointerComponent() {
         return new SpatialPointerComponentImpl(mExtensions);
+    }
+
+    /**
+     * Get the user's current eye views relative to @c XR_REFERENCE_SPACE_TYPE_UNBOUNDED_ANDROID.
+     */
+    @VisibleForTesting
+    @Nullable ViewProjections getStereoViewsInOpenXrUnboundedSpace() {
+        Session session = mPerceptionLibrary.getSession();
+        if (session == null) {
+            // Perception session is uninitialized, returning null head pose.
+            return null;
+        }
+        return session.getStereoViews();
     }
 }

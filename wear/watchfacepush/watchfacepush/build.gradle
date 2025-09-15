@@ -39,6 +39,7 @@ android {
     namespace = "androidx.wear.watchfacepush"
     defaultConfig {
         minSdk = 36
+        targetSdk = 36
     }
 }
 

@@ -35,8 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.setGlimmerThemeContent
+import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -127,6 +130,64 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
 
         assertThat(state.canScrollForward).isFalse()
         assertThat(state.canScrollBackward).isTrue()
+    }
+
+    @Test
+    fun accumulatedPart_isApplied() = runTest {
+        val state = ListState()
+        rule.setContentAndSaveScope {
+            TestList(
+                state = state,
+                modifier = Modifier.size(100.dp),
+                itemContent = { Box(Modifier.size(20.dp).testTag("item-tag-$it")) },
+            )
+        }
+        // Set up the accumulated value. We expect it will be used in the next measure pass.
+        // The values inside the list state have an opposite sign, so it's negative.
+        val accumulatedValue = with(rule.density) { -60.dp.toPx() }
+        state.applyMeasureResult(
+            result = state.layoutInfo as GlimmerListMeasureResult,
+            consumedScroll = 0f,
+            accumulatedScroll = accumulatedValue,
+        )
+
+        // Scroll by a single pixel - we expect that accumulated value will be added up.
+        state.scrollByAndWaitForIdle(1.dp)
+
+        // Check that 4th item is the first one.
+        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(3)
+    }
+
+    @Test
+    fun scrolling_and_nonScrolling_measurePasses_workTogether_correctly() = runTest {
+        val state = ListState()
+        rule.setContentAndSaveScope {
+            TestList(
+                state = state,
+                modifier = Modifier.size(100.dp).background(Color.Black),
+                itemContent = { Box(Modifier.size(20.dp).testTag("item-tag-$it")) { Text("$it") } },
+            )
+        }
+
+        // Scrolling measure pass (item-2).
+        state.scrollByAndWaitForIdle(41.dp)
+        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(2)
+
+        // Non-scrolling measure pass (item-0).
+        scope.launch { state.animateScrollToItem(0) }
+        rule.waitForIdle()
+        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+
+        // Scrolling measure pass (item-1).
+        state.scrollByAndWaitForIdle(21.dp)
+        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(1)
+    }
+
+    private suspend fun ListState.scrollByAndWaitForIdle(value: Dp) {
+        val valuePx = with(rule.density) { value.toPx() }
+        val job = rule.runOnIdle { scope.launch { scrollBy(valuePx) } }
+        job.join()
+        rule.waitForIdle()
     }
 
     companion object {

@@ -208,19 +208,19 @@ internal class PdfDocumentRemoteImpl(
     override fun applyEdits(annots: List<PdfAnnotationData>): AnnotationResult =
         annotationsProcessor.process(annots)
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun addEdit(annots: List<PdfAnnotationData>): AddEditResult {
-        // TODO: b/440759826 - Add/Remove/Update PdfEdits from batches in PdfRenderer
-        return AddEditResult(listOf(), listOf())
+        return annotationsProcessor.processAddEdits(annots)
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun updateEdit(annots: List<PdfAnnotationData>): ModifyEditResult {
-        // TODO: b/440759826 - Add/Remove/Update PdfEdits from batches in PdfRenderer
-        return ModifyEditResult(listOf(), listOf())
+        return annotationsProcessor.processUpdateEdits(annots)
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun removeEdit(editIds: List<EditId>): ModifyEditResult {
-        // TODO: b/440759826 - Add/Remove/Update PdfEdits from batches in PdfRenderer
-        return ModifyEditResult(listOf(), listOf())
+        return annotationsProcessor.processRemoveEdits(editIds)
     }
 
     override fun isPdfLinearized(): Boolean {

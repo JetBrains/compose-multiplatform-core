@@ -10,3 +10,32 @@ index b9855a3ede2..0204c30c80b 100644
      override fun apply(project: Project) {
          val extension =
              project.extensions.create("darwinBenchmark", DarwinBenchmarkPluginExtension::class.java)
+diff --git a/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt b/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
+index bba13155856..00b9b157031 100644
+--- a/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
++++ b/buildSrc/private/src/main/kotlin/androidx/build/binarycompatibilityvalidator/BinaryCompatibilityValidation.kt
+@@ -319,9 +319,7 @@ class BinaryCompatibilityValidation(
+ 
+             val target = currentTarget.toKlibTarget()
+ 
+-            val isEnabled =
+-                currentTarget is KotlinNativeTarget &&
+-                    HostManager().isEnabled(currentTarget.konanTarget)
++            val isEnabled = HostManager().isEnabled(currentTarget.konanTarget)
+             if (isEnabled) {
+                 val buildTargetAbi =
+                     configureKlibCompilation(
+diff --git a/buildSrc/shared.gradle b/buildSrc/shared.gradle
+index b27c1ab28af..add98e68e37 100644
+--- a/buildSrc/shared.gradle
++++ b/buildSrc/shared.gradle
+@@ -48,7 +48,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
+         if (task.path == ":imports:binary-compatibility-validator:compileKotlin") {
+             friendPaths.from(configurations.friends.incoming.artifactView {}.files)
+         }
+-        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+-        apiVersion.set(KotlinVersion.KOTLIN_2_0)
++        languageVersion.set(KotlinVersion.KOTLIN_2_1)
++        apiVersion.set(KotlinVersion.KOTLIN_2_1)
+     }
+ }

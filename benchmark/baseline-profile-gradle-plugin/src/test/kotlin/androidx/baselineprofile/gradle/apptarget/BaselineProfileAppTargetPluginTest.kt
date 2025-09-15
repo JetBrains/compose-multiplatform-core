@@ -24,6 +24,7 @@ import androidx.baselineprofile.gradle.utils.buildAndAssertThatOutput
 import androidx.baselineprofile.gradle.utils.containsOnly
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -162,6 +163,7 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
             }
         }
 
+    @Ignore // b/441089720
     @Test
     fun verifyUnitTestDisabled() {
         projectSetup.appTarget.setBuildGradle(buildGradle)

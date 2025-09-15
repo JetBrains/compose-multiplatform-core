@@ -27,5 +27,11 @@ interface IProjectedPerceptionService {
   /** Returns if VPS is available and the status is returned in the callback */
   boolean checkVpsAvailability(
       double latDeg, double lonDeg, IVpsAvailabilityCallback callback) = 0;
+
+  /** Starts a perception session */
+  void start(boolean enableVps, String apiKey) = 1;
+
+  /** Stops a perception session */
+  void stop() = 2;
 }
 

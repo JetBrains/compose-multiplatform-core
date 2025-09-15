@@ -165,7 +165,7 @@ internal class WetStrokesViewTouchHandler(
                 family = StockBrushes.pressurePenLatest,
                 colorIntArgb = Color.GREEN,
                 size = 10F,
-                epsilon = 0.1F,
+                epsilon = 0.15F,
             )
     }
 }

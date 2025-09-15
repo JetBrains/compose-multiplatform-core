@@ -135,6 +135,17 @@ class SqlParserTest {
             SqlParser.parse("select x.id from (select * from books) as x").tables,
             `is`(setOf(Table("books", "books"))),
         )
+        assertThat(
+            SqlParser.parse("select id from books where id in (select id from banned)").tables,
+            `is`(setOf(Table("books", "books"), Table("banned", "banned"))),
+        )
+        /*
+        TODO(b/442032119): Fix extracting table name from simple 'IN <table>' expr
+        assertThat(
+            SqlParser.parse("select id from books where id in banned").tables,
+            `is`(setOf(Table("books", "books"), Table("banned", "banned"))),
+        )
+        */
     }
 
     @Test

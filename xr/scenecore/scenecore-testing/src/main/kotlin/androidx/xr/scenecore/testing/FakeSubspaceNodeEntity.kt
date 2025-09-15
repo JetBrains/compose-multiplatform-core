@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package androidx.xr.scenecore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.scenecore.internal.Dimensions
 import androidx.xr.scenecore.internal.SubspaceNodeEntity
-import com.google.androidxr.splitengine.SubspaceNode
+import androidx.xr.scenecore.internal.SubspaceNodeFeature
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSubspaceNodeEntity(
-    public val subspaceNode: SubspaceNode,
+    private var mockSubspaceNodeFeature: SubspaceNodeFeature? = null,
     /**
      * The size of the [androidx.xr.scenecore.internal.SubspaceNodeEntity] in meters, in unscaled
      * local space.
      */
-    public override var size: Dimensions = Dimensions(2f, 1f, 0f),
+    public override var size: Dimensions = mockSubspaceNodeFeature?.size ?: Dimensions(2f, 1f, 0f),
 ) : SubspaceNodeEntity, FakeEntity()

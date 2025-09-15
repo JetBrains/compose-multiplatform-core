@@ -17,7 +17,6 @@
 package androidx.xr.scenecore.internal
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.RenderingFeature
 import java.util.concurrent.Executor
 
 /** Provide the rendering implementation for [GltfEntity] */

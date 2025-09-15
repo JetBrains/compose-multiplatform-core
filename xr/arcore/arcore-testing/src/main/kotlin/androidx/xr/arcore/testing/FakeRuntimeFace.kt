@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.arcore.internal.Face as RuntimeFace
 import androidx.xr.runtime.TrackingState
 
@@ -28,7 +27,6 @@ import androidx.xr.runtime.TrackingState
  * @property blendShapeValues The array of blend shape values.
  * @property confidenceValues The array of confidence values.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRuntimeFace(
     override var trackingState: TrackingState = TrackingState.PAUSED,
     override var isValid: Boolean = true,

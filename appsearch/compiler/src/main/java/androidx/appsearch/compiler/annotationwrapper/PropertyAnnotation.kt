@@ -16,8 +16,8 @@
 package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
+import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.processing.XType
-import com.squareup.javapoet.ClassName
 
 /**
  * An instance of an AppSearch property annotation.
@@ -38,7 +38,7 @@ interface PropertyAnnotation {
      * For example, `androidx.appsearch.annotation.Document.StringProperty` for a
      * [StringPropertyAnnotation].
      */
-    val className: ClassName
+    val className: XClassName
 
     /** The [Kind] of [PropertyAnnotation]. */
     val propertyKind: Kind

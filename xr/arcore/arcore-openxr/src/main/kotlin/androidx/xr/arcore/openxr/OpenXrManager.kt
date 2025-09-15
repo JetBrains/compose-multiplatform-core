@@ -123,6 +123,7 @@ internal constructor(
                     depthEstimation = config.depthEstimation.mode,
                     anchorPersistence = config.anchorPersistence.mode,
                     faceTracking = config.faceTracking.mode,
+                    eyeTracking = config.eyeTracking.mode,
                     objectLabels = objectLabels.toLongArray(),
                     objectTracking = objectMode,
                 )
@@ -188,6 +189,10 @@ internal constructor(
                     perceptionManager.xrResources.userFace
                 )
             }
+        }
+
+        if (config.eyeTracking != this.config.eyeTracking) {
+            perceptionManager.eyeTrackingMode = config.eyeTracking
         }
 
         this.config = config
@@ -258,7 +263,7 @@ internal constructor(
         depthEstimation: Int,
         anchorPersistence: Int,
         faceTracking: Int = 0,
-        eyeTracking: Int = 0,
+        eyeTracking: Int,
         objectTracking: Int,
         objectLabels: LongArray,
     ): Long

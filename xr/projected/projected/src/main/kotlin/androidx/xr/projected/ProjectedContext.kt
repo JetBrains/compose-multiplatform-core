@@ -20,8 +20,8 @@ import android.app.ActivityOptions
 import android.companion.virtual.VirtualDeviceManager
 import android.content.Context
 import android.content.Intent
+import android.hardware.display.DisplayManager
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import kotlin.coroutines.CoroutineContext
@@ -50,6 +50,7 @@ public object ProjectedContext {
     private const val TAG = "ProjectedContext"
 
     @VisibleForTesting internal const val PROJECTED_DEVICE_NAME = "ProjectionDevice"
+    @VisibleForTesting internal const val PROJECTED_DISPLAY_NAME = "ProjectionDisplay"
 
     @VisibleForTesting
     internal const val REQUIRED_LAUNCH_FLAGS =
@@ -119,36 +120,18 @@ public object ProjectedContext {
     /**
      * Creates [ActivityOptions] that should be used to start an activity on the Projected device.
      *
-     * If the Projected device has more than one associated display, the activity will be started on
-     * the first one.
-     *
-     * @param context any context object. If the provided context is not a Projected device context,
-     *   a Projected device context will be created automatically and used to create Projected
-     *   [ActivityOptions].
-     * @throws IllegalStateException if the projected device was not found.
+     * @param context any context object.
+     * @throws IllegalStateException if the projected display was not found.
      */
     @JvmStatic
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun createProjectedActivityOptions(context: Context): ActivityOptions {
-        val localContext =
-            if (isProjectedDeviceContext(context)) {
-                context
-            } else {
-                createProjectedDeviceContext(context)
-            }
+        val projectionDisplay =
+            context.getSystemService(DisplayManager::class.java).displays.find {
+                it.name == PROJECTED_DISPLAY_NAME
+            } ?: throw IllegalStateException("No projected display found.")
 
-        val displayIds = getProjectedDisplayIds(localContext)
-
-        if (displayIds.isEmpty()) {
-            throw IllegalStateException("No projected display found.")
-        }
-
-        if (displayIds.size > 1) {
-            // TODO: b/424812731 - Add support for multiple display IDs.
-            Log.w(TAG, "More than one projected display found. Selecting the first one.")
-        }
-
-        return ActivityOptions.makeBasic().setLaunchDisplayId(displayIds.first())
+        return ActivityOptions.makeBasic().setLaunchDisplayId(projectionDisplay.displayId)
     }
 
     /**
@@ -207,8 +190,4 @@ public object ProjectedContext {
         context.getSystemService(VirtualDeviceManager::class.java).virtualDevices.find {
             it.deviceId == context.deviceId
         }
-
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    private fun getProjectedDisplayIds(context: Context) =
-        getVirtualDevice(context)?.displayIds ?: IntArray(size = 0)
 }

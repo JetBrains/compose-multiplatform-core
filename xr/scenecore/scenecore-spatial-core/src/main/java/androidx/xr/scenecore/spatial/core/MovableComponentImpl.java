@@ -225,6 +225,36 @@ class MovableComponentImpl implements MovableComponent {
         ((AndroidXrEntity) mEntity).updateReformOptions();
     }
 
+    private MoveEvent createMoveEvent(
+            ReformEvent reformEvent,
+            Pose lastPose,
+            Pose newPose,
+            Vector3 lastScale,
+            Vector3 newScale,
+            Entity initialParent,
+            Entity updatedParent,
+            Entity disposedEntity) {
+        Ray initialRay =
+                new Ray(
+                        RuntimeUtils.getVector3(reformEvent.getInitialRayOrigin()),
+                        RuntimeUtils.getVector3(reformEvent.getInitialRayDirection()));
+        Ray currentRay =
+                new Ray(
+                        RuntimeUtils.getVector3(reformEvent.getCurrentRayOrigin()),
+                        RuntimeUtils.getVector3(reformEvent.getCurrentRayDirection()));
+        return new MoveEvent(
+                reformEvent.getState(),
+                initialRay,
+                currentRay,
+                lastPose,
+                newPose,
+                lastScale,
+                newScale,
+                initialParent,
+                updatedParent,
+                disposedEntity);
+    }
+
     @Override
     public void addMoveEventListener(
             @NonNull Executor executor, @NonNull MoveEventListener moveEventListener) {
@@ -261,33 +291,20 @@ class MovableComponentImpl implements MovableComponent {
                                     ? RuntimeUtils.getVector3(reformEvent.getProposedScale())
                                     : mLastScale;
                     Entity disposeEntity = null;
-
                     Entity parent = updatedParent;
-
-                    Ray initialRay =
-                            new Ray(
-                                    RuntimeUtils.getVector3(reformEvent.getInitialRayOrigin()),
-                                    RuntimeUtils.getVector3(reformEvent.getInitialRayDirection()));
-                    Ray currentRay =
-                            new Ray(
-                                    RuntimeUtils.getVector3(reformEvent.getCurrentRayOrigin()),
-                                    RuntimeUtils.getVector3(reformEvent.getCurrentRayDirection()));
-                    MoveEvent newMoveEvent =
-                            new MoveEvent(
-                                    reformEvent.getState(),
-                                    initialRay,
-                                    currentRay,
-                                    mLastPose,
-                                    newPose,
-                                    mLastScale,
-                                    newScale,
-                                    mInitialParent,
-                                    parent,
-                                    disposeEntity);
                     mMoveEventListenersMap.forEach(
                             (listener, listenerExecutor) ->
                                     listenerExecutor.execute(
-                                            () -> listener.onMoveEvent(newMoveEvent)));
+                                            () -> listener.onMoveEvent(createMoveEvent(
+                                                    reformEvent,
+                                                    mLastPose,
+                                                    newPose,
+                                                    mLastScale,
+                                                    newScale,
+                                                    mInitialParent,
+                                                    parent,
+                                                    disposeEntity
+                                            ))));
                     mLastPose = newPose;
                     mLastScale = newScale;
                 };

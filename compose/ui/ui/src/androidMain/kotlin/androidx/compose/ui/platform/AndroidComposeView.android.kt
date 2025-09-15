@@ -53,7 +53,6 @@ import android.view.MotionEvent.ACTION_UP
 import android.view.MotionEvent.TOOL_TYPE_MOUSE
 import android.view.ScrollCaptureTarget
 import android.view.View
-import android.view.View.FOCUS_FORWARD
 import android.view.ViewGroup
 import android.view.ViewStructure
 import android.view.ViewTreeObserver
@@ -74,8 +73,10 @@ import androidx.collection.MutableObjectList
 import androidx.collection.ScatterMap
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableObjectListOf
+import androidx.compose.runtime.ForgetfulRetainScope
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.RetainScope
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,6 +85,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ComposeUiFlags.isAdaptiveRefreshRateEnabled
+import androidx.compose.ui.ComposeUiFlags.isCanScrollUsingLastDownEventFixEnabled
 import androidx.compose.ui.ComposeUiFlags.isIndirectTouchNavigationGestureDetectorEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
@@ -234,7 +236,11 @@ import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import androidx.lifecycle.get
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import java.lang.reflect.Method
@@ -294,6 +300,11 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     override val view: View
         get() = this
+
+    internal var frameEndScheduler: LifecycleRetainScopeOwner.FrameEndScheduler? = null
+    private var lifecycleRetainScopeOwnerEntry: LifecycleRetainScopeOwner.RetainScopeEntry? = null
+    override var retainScope: RetainScope = ForgetfulRetainScope
+        private set
 
     override var density by mutableStateOf(Density(context), referentialEqualityPolicy())
         private set
@@ -1043,6 +1054,11 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (SDK_INT < 30) {
             showLayoutBounds = getIsShowingLayoutBounds()
         }
+        lifecycleRetainScopeOwnerEntry?.stopKeepingExitedValues(frameEndScheduler!!)
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        lifecycleRetainScopeOwnerEntry?.startKeepingExitedValues()
     }
 
     override fun focusSearch(focused: View?, direction: Int): View? {
@@ -2190,15 +2206,21 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
         val lifecycleOwner = findViewTreeLifecycleOwner()
         val savedStateRegistryOwner = findViewTreeSavedStateRegistryOwner()
+        val viewModelStoreOwner = findViewTreeViewModelStoreOwner()
+
+        retainScope =
+            installLocalRetainScope(lifecycleOwner, viewModelStoreOwner) ?: ForgetfulRetainScope
 
         val oldViewTreeOwners = viewTreeOwners
         // We need to change the ViewTreeOwner if there isn't one yet (null)
-        // or if either the lifecycleOwner or savedStateRegistryOwner has changed.
+        // or if either the lifecycleOwner, savedStateRegistryOwner, viewModelStoreOwner has
+        // changed.
         val resetViewTreeOwner =
             oldViewTreeOwners == null ||
                 ((lifecycleOwner != null && savedStateRegistryOwner != null) &&
                     (lifecycleOwner !== oldViewTreeOwners.lifecycleOwner ||
-                        savedStateRegistryOwner !== oldViewTreeOwners.lifecycleOwner))
+                        savedStateRegistryOwner !== oldViewTreeOwners.savedStateRegistryOwner ||
+                        viewModelStoreOwner !== oldViewTreeOwners.viewModelStoreOwner))
         if (resetViewTreeOwner) {
             if (lifecycleOwner == null) {
                 throw IllegalStateException(
@@ -2217,6 +2239,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 ViewTreeOwners(
                     lifecycleOwner = lifecycleOwner,
                     savedStateRegistryOwner = savedStateRegistryOwner,
+                    viewModelStoreOwner = viewModelStoreOwner,
                 )
             _viewTreeOwners = viewTreeOwners
             onViewTreeOwnersAvailable?.invoke(viewTreeOwners)
@@ -2244,6 +2267,29 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (ComposeUiFlags.isContentCaptureOptimizationEnabled) {
             contentCaptureManager.let { semanticsOwner.listeners += it }
         }
+    }
+
+    private fun installLocalRetainScope(
+        lifecycleOwner: LifecycleOwner?,
+        viewModelStoreOwner: ViewModelStoreOwner?,
+    ): RetainScope? {
+        val frameEndScheduler = frameEndScheduler
+        if (lifecycleOwner == null || viewModelStoreOwner == null || frameEndScheduler == null)
+            return null
+
+        val retainScopeOwner =
+            ViewModelProvider.create(
+                    store = viewModelStoreOwner.viewModelStore,
+                    factory = ViewModelProvider.NewInstanceFactory(),
+                )
+                .get<LifecycleRetainScopeOwner>()
+
+        // If we have a unique View Id, its on our parent ComposeView, not the AndroidComposeView
+        // implementation child view.
+        val viewId = (parent as View).id
+        val retainScopeEntry = retainScopeOwner.getOrCreateRetainScopeEntry(viewId)
+        lifecycleRetainScopeOwnerEntry = retainScopeEntry
+        return retainScopeEntry.retainScope
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
@@ -2275,6 +2321,9 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         viewTreeObserver.removeOnGlobalLayoutListener(this)
         viewTreeObserver.removeOnScrollChangedListener(this)
         viewTreeObserver.removeOnTouchModeChangeListener(this)
+
+        lifecycleRetainScopeOwnerEntry?.release()
+        lifecycleRetainScopeOwnerEntry = null
 
         if (SDK_INT >= S) AndroidComposeViewTranslationCallbackS.clearViewTranslationCallback(this)
         _autofillManager?.let {
@@ -2625,13 +2674,14 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         }
     }
 
-    @OptIn(InternalCoreApi::class)
+    @OptIn(InternalCoreApi::class, ExperimentalComposeUiApi::class)
     private fun sendMotionEvent(motionEvent: MotionEvent): ProcessResult {
         if (keyboardModifiersRequireUpdate) {
             keyboardModifiersRequireUpdate = false
             _windowInfo.keyboardModifiers = PointerKeyboardModifiers(motionEvent.metaState)
         }
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent, this)
+        val action = motionEvent.actionMasked
         return if (pointerInputEvent != null) {
             // Cache the last position of the last pointer to go down so we can check if
             // it's in a scrollable region in canScroll{Vertically|Horizontally}. Those
@@ -2639,7 +2689,12 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             // this view, the pointer _position_, not _positionOnScreen_, is the offset that
             // needs to be cached.
             pointerInputEvent.pointers
-                .fastLastOrNull { it.down }
+                .fastLastOrNull {
+                    it.down &&
+                        (action == ACTION_DOWN ||
+                            action == ACTION_POINTER_DOWN ||
+                            !isCanScrollUsingLastDownEventFixEnabled)
+                }
                 ?.position
                 ?.let { lastDownPointerPosition = it }
 
@@ -2647,7 +2702,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 pointerInputEventProcessor.process(pointerInputEvent, this, isInBounds(motionEvent))
             // Clear the MotionEvent reference after dispatching it.
             pointerInputEvent.motionEvent = null
-            val action = motionEvent.actionMasked
+
             if (
                 (action == ACTION_DOWN || action == ACTION_POINTER_DOWN) &&
                     !result.dispatchedToAPointerInputModifier
@@ -3251,6 +3306,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         val lifecycleOwner: LifecycleOwner,
         /** The [SavedStateRegistryOwner] associated with this owner. */
         val savedStateRegistryOwner: SavedStateRegistryOwner,
+        /** The [ViewModelStoreOwner] associated with this owner. */
+        val viewModelStoreOwner: ViewModelStoreOwner?,
     )
 
     private inner class RootModifierNode :

@@ -207,27 +207,27 @@ public interface ImpressApi {
      * corresponding to the Impress node associated with the model. Using this method will enable
      * the collider for the model.
      */
-    public fun instanceGltfModel(gltfToken: Long): Int
+    public fun instanceGltfModel(gltfToken: Long): ImpressNode
 
     /**
      * This method instantiates a glTF model from a previously loaded model and returns an entity ID
      * corresponding to the Impress node associated with the model. It gives the ability to disable
      * the collider for the model.
      */
-    public fun instanceGltfModel(gltfToken: Long, enableCollider: Boolean): Int
+    public fun instanceGltfModel(gltfToken: Long, enableCollider: Boolean): ImpressNode
 
     /**
      * Toggle the collider of a glTF model.
      *
-     * @param impressNode The integer ID of the Impress node for the instance of the glTF model.
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
      * @param enableCollider If the glTF model should have a collider or not.
      */
-    public fun setGltfModelColliderEnabled(impressNode: Int, enableCollider: Boolean)
+    public fun setGltfModelColliderEnabled(impressNode: ImpressNode, enableCollider: Boolean)
 
     /**
      * Starts an animation on an instanced GLTFModel.
      *
-     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param impressNode The object of the Impress node for the instance of the GLTF
      * @param animationName A nullable String which contains a requested animation to play. If null
      *   is provided, this will attempt to play the first animation it finds
      * @param looping True if the animation should loop. Note that if the animation is looped, the
@@ -237,7 +237,7 @@ public interface ImpressApi {
      */
     // TODO: b/362829319 - Remove CompletableFuture from SE integration.
     public fun animateGltfModel(
-        impressNode: Int,
+        impressNode: ImpressNode,
         animationName: String?,
         looping: Boolean,
     ): ListenableFuture<Void?>
@@ -245,22 +245,22 @@ public interface ImpressApi {
     /**
      * Stops an animation on an instanced GLTFModel.
      *
-     * @param impressNode The integer ID of the Impress node for the instance of the GLTF
+     * @param impressNode The object of the Impress node for the instance of the GLTF
      */
-    public fun stopGltfModelAnimation(impressNode: Int)
+    public fun stopGltfModelAnimation(impressNode: ImpressNode)
 
-    /** This method creates an Impress node and returns its entity ID. */
-    public fun createImpressNode(): Int
+    /** This method creates an Impress node and returns its impress node object. */
+    public fun createImpressNode(): ImpressNode
 
-    /** This method destroys an Impress node using its entity ID. */
-    public fun destroyImpressNode(impressNode: Int)
+    /** This method destroys an Impress node using its node object. */
+    public fun destroyImpressNode(impressNode: ImpressNode)
 
-    /** This method parents an Impress node to another using their respective entity IDs. */
-    public fun setImpressNodeParent(impressNodeChild: Int, impressNodeParent: Int)
+    /** This method parents an Impress node to another using their respective node objects. */
+    public fun setImpressNodeParent(impressNodeChild: ImpressNode, impressNodeParent: ImpressNode)
 
     /**
-     * This method creates an Impress node with a stereo panel and returns the entity ID. Note that
-     * the StereoSurfaceEntity will not be render anything until the canvas shape is set.
+     * This method creates an Impress node with a stereo panel and returns the node object. Note
+     * that the StereoSurfaceEntity will not be render anything until the canvas shape is set.
      * Furthermore, the surface cannot be used to render secure content.
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
@@ -268,11 +268,11 @@ public interface ImpressApi {
      * @throws InvalidArgumentException if stereoMode is invalid.
      */
     // TODO - b/411225487: Remove this method.
-    public fun createStereoSurface(@StereoMode stereoMode: Int): Int
+    public fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode
 
     /**
-     * This method creates an Impress node with a stereo panel and returns the entity ID. Note that
-     * the StereoSurfaceEntity will not be render anything until the canvas shape is set.
+     * This method creates an Impress node with a stereo panel and returns the node object. Note
+     * that the StereoSurfaceEntity will not be render anything until the canvas shape is set.
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
      * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
@@ -283,11 +283,11 @@ public interface ImpressApi {
     public fun createStereoSurface(
         @StereoMode stereoMode: Int,
         @ContentSecurityLevel contentSecurityLevel: Int,
-    ): Int
+    ): ImpressNode
 
     /**
-     * This method creates an Impress node with a stereo panel and returns the entity ID. Note that
-     * the StereoSurfaceEntity will not be render anything until the canvas shape is set.
+     * This method creates an Impress node with a stereo panel and returns the node object. Note
+     * that the StereoSurfaceEntity will not be render anything until the canvas shape is set.
      *
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode.
      * @param contentSecurityLevel The [Int] contentSecurityLevel to apply. Must be a member of
@@ -301,32 +301,36 @@ public interface ImpressApi {
         @StereoMode stereoMode: Int,
         @ContentSecurityLevel contentSecurityLevel: Int,
         useSuperSampling: Boolean,
-    ): Int
+    ): ImpressNode
 
     /**
-     * This method sets the canvas shape of a StereoSurfaceEntity using its Impress ID.
+     * This method sets the canvas shape of a StereoSurfaceEntity using its Impress node object.
      *
      * @param impressNode The Impress node which hosts the StereoSurfaceEntity to be updated.
      * @param width The width in local spatial units to set the quad to.
      * @param height The height in local spatial units to set the quad to.
      */
-    public fun setStereoSurfaceEntityCanvasShapeQuad(impressNode: Int, width: Float, height: Float)
+    public fun setStereoSurfaceEntityCanvasShapeQuad(
+        impressNode: ImpressNode,
+        width: Float,
+        height: Float,
+    )
 
     /**
-     * This method sets the canvas shape of a StereoSurfaceEntity using its Impress ID.
+     * This method sets the canvas shape of a StereoSurfaceEntity using its Impress node object.
      *
      * @param impressNode The Impress node which hosts the StereoSurfaceEntity to be updated.
      * @param radius The radius in local spatial units to set the sphere to.
      */
-    public fun setStereoSurfaceEntityCanvasShapeSphere(impressNode: Int, radius: Float)
+    public fun setStereoSurfaceEntityCanvasShapeSphere(impressNode: ImpressNode, radius: Float)
 
     /**
-     * This method sets the canvas shape of a StereoSurfaceEntity using its Impress ID.
+     * This method sets the canvas shape of a StereoSurfaceEntity using its Impress node object.
      *
      * @param impressNode The Impress node which hosts the StereoSurfaceEntity to be updated.
      * @param radius The radius in local spatial units of the hemisphere.
      */
-    public fun setStereoSurfaceEntityCanvasShapeHemisphere(impressNode: Int, radius: Float)
+    public fun setStereoSurfaceEntityCanvasShapeHemisphere(impressNode: ImpressNode, radius: Float)
 
     /**
      * Updates the StereoMode for an impress node hosting a StereoSurface.
@@ -335,7 +339,10 @@ public interface ImpressApi {
      * @param stereoMode The [Int] stereoMode to apply. Must be a member of StereoMode
      * @throws InvalidArgumentException if stereoMode is invalid.
      */
-    public fun setStereoModeForStereoSurface(panelImpressNode: Int, @StereoMode stereoMode: Int)
+    public fun setStereoModeForStereoSurface(
+        panelImpressNode: ImpressNode,
+        @StereoMode stereoMode: Int,
+    )
 
     /**
      * Updates the color information for an impress node hosting a StereoSurface.
@@ -352,7 +359,7 @@ public interface ImpressApi {
      *   available.
      */
     public fun setContentColorMetadataForStereoSurface(
-        stereoSurfaceNode: Int,
+        stereoSurfaceNode: ImpressNode,
         @ColorSpace colorSpace: Int,
         @ColorTransfer colorTransfer: Int,
         @ColorRange colorRange: Int,
@@ -365,7 +372,7 @@ public interface ImpressApi {
      *
      * @param stereoSurfaceNode The Impress node which hosts the StereoSurface to be updated.
      */
-    public fun resetContentColorMetadataForStereoSurface(stereoSurfaceNode: Int)
+    public fun resetContentColorMetadataForStereoSurface(stereoSurfaceNode: ImpressNode)
 
     /**
      * Updates the radius of the (alpha) feathered edges for an Impress node hosting a
@@ -376,7 +383,7 @@ public interface ImpressApi {
      * @param radiusY The radius of the top/bottom feathering.
      */
     public fun setFeatherRadiusForStereoSurface(
-        panelImpressNode: Int,
+        panelImpressNode: ImpressNode,
         radiusX: Float,
         radiusY: Float,
     )
@@ -388,7 +395,7 @@ public interface ImpressApi {
      * @param panelImpressNode The Impress node which hosts the panel to be updated.
      * @param alphaMask The primary alpha mask texture
      */
-    public fun setPrimaryAlphaMaskForStereoSurface(panelImpressNode: Int, alphaMask: Long)
+    public fun setPrimaryAlphaMaskForStereoSurface(panelImpressNode: ImpressNode, alphaMask: Long)
 
     /**
      * Sets the auxiliary alpha mask for a stereo surface. The alpha mask will be composited into
@@ -398,7 +405,7 @@ public interface ImpressApi {
      * @param alphaMask The auxiliary alpha mask texture. Only used with interleaved video formats.
      *   If null or empty, the alpha mask will be disabled.
      */
-    public fun setAuxiliaryAlphaMaskForStereoSurface(panelImpressNode: Int, alphaMask: Long)
+    public fun setAuxiliaryAlphaMaskForStereoSurface(panelImpressNode: ImpressNode, alphaMask: Long)
 
     /**
      * Retrieve the android surface for this stereo panel
@@ -406,7 +413,7 @@ public interface ImpressApi {
      * @param panelImpressNode The Impress node which hosts the panel to be updated.
      * @return A Surface backed by an imp::AndroidExternalTextureSurface
      */
-    public fun getSurfaceFromStereoSurface(panelImpressNode: Int): Surface
+    public fun getSurfaceFromStereoSurface(panelImpressNode: ImpressNode): Surface
 
     /**
      * This method loads a local texture from the assets folder or a remote texture from a URL and
@@ -962,11 +969,11 @@ public interface ImpressApi {
     /**
      * This method sets the material override for the mesh of a glTF model.
      *
-     * @param impressNode The integer ID of the Impress node for the instance of the glTF model.
+     * @param impressNode The object of the Impress node for the instance of the glTF model.
      * @param nativeMaterial The native handle of the material to be used as the override.
      * @param meshName The name of the mesh to be overridden.
      */
-    public fun setMaterialOverride(impressNode: Int, nativeMaterial: Long, meshName: String)
+    public fun setMaterialOverride(impressNode: ImpressNode, nativeMaterial: Long, meshName: String)
 
     /**
      * This method sets the IBL asset preference of the client to be set by the system.

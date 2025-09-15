@@ -17,8 +17,8 @@ package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
 import androidx.appsearch.compiler.XProcessingException
+import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.processing.XAnnotation
-import com.squareup.javapoet.ClassName
 
 /**
  * An instance of an annotation for a data property e.g. `@Document.StringProperty`.
@@ -35,7 +35,7 @@ import com.squareup.javapoet.ClassName
  */
 abstract class DataPropertyAnnotation
 protected constructor(
-    override val className: ClassName,
+    override val className: XClassName,
 
     /**
      * The class used to configure data properties of this kind.
@@ -43,7 +43,7 @@ protected constructor(
      * For example, [androidx.appsearch.app.AppSearchSchema.StringPropertyConfig] for
      * [StringPropertyAnnotation].
      */
-    val configClassName: ClassName,
+    val configClassName: XClassName,
     override val genericDocGetterName: String,
 
     /**
@@ -85,21 +85,21 @@ protected constructor(
             val annotationParams = helper.getAnnotationParams(annotation)
             val qualifiedClassName = annotation.qualifiedName
             return when (qualifiedClassName) {
-                BooleanPropertyAnnotation.CLASS_NAME.canonicalName() ->
+                BooleanPropertyAnnotation.CLASS_NAME.canonicalName ->
                     BooleanPropertyAnnotation.parse(annotationParams, defaultName)
-                BytesPropertyAnnotation.CLASS_NAME.canonicalName() ->
+                BytesPropertyAnnotation.CLASS_NAME.canonicalName ->
                     BytesPropertyAnnotation.parse(annotationParams, defaultName)
-                DocumentPropertyAnnotation.CLASS_NAME.canonicalName() ->
+                DocumentPropertyAnnotation.CLASS_NAME.canonicalName ->
                     DocumentPropertyAnnotation.parse(annotationParams, defaultName)
-                DoublePropertyAnnotation.CLASS_NAME.canonicalName() ->
+                DoublePropertyAnnotation.CLASS_NAME.canonicalName ->
                     DoublePropertyAnnotation.parse(annotationParams, defaultName)
-                LongPropertyAnnotation.CLASS_NAME.canonicalName() ->
+                LongPropertyAnnotation.CLASS_NAME.canonicalName ->
                     LongPropertyAnnotation.parse(annotationParams, defaultName)
-                StringPropertyAnnotation.CLASS_NAME.canonicalName() ->
+                StringPropertyAnnotation.CLASS_NAME.canonicalName ->
                     StringPropertyAnnotation.parse(annotationParams, defaultName)
-                EmbeddingPropertyAnnotation.CLASS_NAME.canonicalName() ->
+                EmbeddingPropertyAnnotation.CLASS_NAME.canonicalName ->
                     EmbeddingPropertyAnnotation.parse(annotationParams, defaultName)
-                BlobHandlePropertyAnnotation.CLASS_NAME.canonicalName() ->
+                BlobHandlePropertyAnnotation.CLASS_NAME.canonicalName ->
                     BlobHandlePropertyAnnotation.parse(annotationParams, defaultName)
                 else -> return null
             }

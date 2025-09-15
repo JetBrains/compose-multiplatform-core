@@ -1246,6 +1246,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     resources.getDimensionPixelSize(R.dimen.text_select_handle_touch_size),
                 errorFlow = errorFlow,
                 pageMetadataLoader = pageMetadataLoader,
+                pageManager = pageManager,
                 initialSelection = localStateToRestore.selectionModel,
             )
 
@@ -1540,6 +1541,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         resources.getDimensionPixelSize(R.dimen.text_select_handle_touch_size),
                     errorFlow = errorFlow,
                     pageMetadataLoader = pageMetadataLoader,
+                    pageManager = pageManager,
                 )
             setAccessibility()
         }
@@ -2024,7 +2026,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     getVisibleAreaInContentCoords(),
                 ) ?: return super.onLongPress(e)
 
-            selectionStateManager?.maybeSelectWordAtPoint(touchPoint)
+            selectionStateManager?.maybeSelectContentAtPoint(touchPoint)
         }
 
         override fun onDoubleTap(e: MotionEvent): Boolean {

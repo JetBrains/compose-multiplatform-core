@@ -17,10 +17,10 @@ package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
 import androidx.appsearch.compiler.XProcessingException
+import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.processing.XAnnotationValue
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeElement
-import com.squareup.javapoet.ClassName
 
 /** An instance of the `@Document.StringProperty` annotation. */
 data class StringPropertyAnnotation(
@@ -54,14 +54,14 @@ data class StringPropertyAnnotation(
         genericDocSetterName = "setPropertyString",
     ) {
     companion object {
-        val CLASS_NAME: ClassName =
+        val CLASS_NAME: XClassName =
             IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.nestedClass("StringProperty")
 
         @JvmField
-        val CONFIG_CLASS: ClassName =
+        val CONFIG_CLASS: XClassName =
             IntrospectionHelper.APPSEARCH_SCHEMA_CLASS.nestedClass("StringPropertyConfig")
 
-        private val DEFAULT_SERIALIZER_CLASS: ClassName =
+        private val DEFAULT_SERIALIZER_CLASS: XClassName =
             CLASS_NAME.nestedClass("DefaultSerializer")
 
         /**
@@ -78,7 +78,7 @@ data class StringPropertyAnnotation(
             val serializerInAnnotation = annotationParams.getValue("serializer").asType()
             val typeName = serializerInAnnotation.toString()
             val customSerializer: SerializerClass? =
-                if (typeName == DEFAULT_SERIALIZER_CLASS.canonicalName()) {
+                if (typeName == DEFAULT_SERIALIZER_CLASS.canonicalName) {
                     null
                 } else {
                     SerializerClass.create(

@@ -732,7 +732,6 @@ package androidx.xr.scenecore {
   }
 
   public final class SpatialUser {
-    ctor public SpatialUser(androidx.xr.runtime.internal.LifecycleManager lifecycleManager, androidx.xr.scenecore.internal.JxrPlatformAdapter runtime);
     method public java.util.Map<androidx.xr.scenecore.CameraView.CameraType,androidx.xr.scenecore.CameraView> getCameraViews();
     method public androidx.xr.scenecore.Head? getHead();
     property public java.util.Map<androidx.xr.scenecore.CameraView.CameraType,androidx.xr.scenecore.CameraView> cameraViews;

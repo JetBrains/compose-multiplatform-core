@@ -16,10 +16,13 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
-
-/** Represents the type of face blend shape. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * Represents the type of face blend shape.
+ *
+ * A blend shape (also known as a morph target) is a deformation of a 3D model used to represent
+ * different facial expressions or poses. Each `FaceBlendShapeType` corresponds to a specific facial
+ * movement or deformation, and its intensity can be weighted to create a wide range of expressions.
+ */
 public class FaceBlendShapeType private constructor(private val value: Int) {
 
     public companion object {

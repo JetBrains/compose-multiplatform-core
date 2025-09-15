@@ -21,10 +21,12 @@ import androidx.kruth.assertThat
 import androidx.room.ExperimentalRoomApi
 import androidx.room.Room
 import androidx.room.integration.kotlintestapp.TestDatabase
+import androidx.room.integration.kotlintestapp.vo.Author
 import androidx.room.integration.kotlintestapp.vo.Book
 import androidx.room.integration.kotlintestapp.vo.Playlist
 import androidx.room.integration.kotlintestapp.vo.PlaylistSongXRef
 import androidx.room.integration.kotlintestapp.vo.PlaylistWithSongs
+import androidx.room.integration.kotlintestapp.vo.Publisher
 import androidx.room.integration.kotlintestapp.vo.Song
 import androidx.room.withTransaction
 import androidx.sqlite.driver.AndroidSQLiteDriver
@@ -36,16 +38,25 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Ignore
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.produceIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -502,5 +513,79 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
                 }
             }
             db.close()
+        }
+
+    /**
+     * A repeated test that validates async cancellations of flows (due to flatMapLatest) due not
+     * race during triggers sync (adding / removing) such that a notification on established flows
+     * are not missed. b/432365736 and b/439232923
+     */
+    @Test
+    fun flow_cancellations_flatMapLatest_combine() =
+        repeat(1000) {
+            val context = ApplicationProvider.getApplicationContext() as Context
+            context.deleteDatabase("test_db")
+            val db =
+                Room.databaseBuilder<TestDatabase>(context, "test_db")
+                    .setQueryCoroutineContext(Dispatchers.IO)
+                    .apply {
+                        if (useDriver == UseDriver.ANDROID) {
+                            setDriver(AndroidSQLiteDriver())
+                        } else if (useDriver == UseDriver.BUNDLED) {
+                            setDriver(BundledSQLiteDriver())
+                        }
+                    }
+                    .build()
+            val dao = db.booksDao()
+
+            runBlocking {
+                val input = MutableStateFlow(1)
+
+                launch(Dispatchers.IO) { input.update { it + 1 } }
+
+                val authors =
+                    dao.getAuthorsFlow()
+                        .transform {
+                            if (it.isNotEmpty()) {
+                                emit(it)
+                            } else {
+                                dao.addAuthorsSuspend(TestUtil.AUTHOR_1)
+                            }
+                        }
+                        .flowOn(Dispatchers.IO)
+
+                val publishers =
+                    dao.getPublishersFlow()
+                        .transform {
+                            if (it.isNotEmpty()) {
+                                emit(it)
+                            } else {
+                                dao.addPublishersSuspend(TestUtil.PUBLISHER)
+                            }
+                        }
+                        .flowOn(Dispatchers.IO)
+
+                val result =
+                    input
+                        .flatMapLatest { combine(authors, publishers) { a, b -> a to b } }
+                        .stateIn(
+                            CoroutineScope(Dispatchers.IO),
+                            SharingStarted.Eagerly,
+                            emptyList<Author>() to emptyList<Publisher>(),
+                        )
+                val job =
+                    launch(Dispatchers.IO) {
+                        result.collect { pair ->
+                            if (pair.first.isEmpty() || pair.second.isEmpty()) {
+                                return@collect
+                            }
+                            assertThat(pair.first.single()).isEqualTo(TestUtil.AUTHOR_1)
+                            assertThat(pair.second.single()).isEqualTo(TestUtil.PUBLISHER)
+                            throw CancellationException()
+                        }
+                    }
+                withTimeout(10.seconds) { job.join() }
+                db.close()
+            }
         }
 }

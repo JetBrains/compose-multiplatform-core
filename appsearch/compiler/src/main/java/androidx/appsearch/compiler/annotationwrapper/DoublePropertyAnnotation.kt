@@ -16,9 +16,9 @@
 package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
+import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.processing.XAnnotationValue
 import androidx.room.compiler.processing.XType
-import com.squareup.javapoet.ClassName
 
 /** An instance of the `@Document.DoubleProperty` annotation. */
 data class DoublePropertyAnnotation(override val name: String, override val isRequired: Boolean) :
@@ -30,10 +30,10 @@ data class DoublePropertyAnnotation(override val name: String, override val isRe
         genericDocSetterName = "setPropertyDouble",
     ) {
     companion object {
-        val CLASS_NAME: ClassName =
+        val CLASS_NAME: XClassName =
             IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS.nestedClass("DoubleProperty")
 
-        val CONFIG_CLASS: ClassName =
+        val CONFIG_CLASS: XClassName =
             IntrospectionHelper.APPSEARCH_SCHEMA_CLASS.nestedClass("DoublePropertyConfig")
 
         /**

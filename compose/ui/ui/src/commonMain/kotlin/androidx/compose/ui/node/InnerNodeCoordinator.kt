@@ -221,7 +221,7 @@ internal class InnerNodeCoordinator(layoutNode: LayoutNode) : NodeCoordinator(la
                         )
                         val wasHit = hitTestResult.hasHit()
                         val continueHitTest: Boolean
-                        if (!wasHit) {
+                        if (!wasHit || hitTestSource.shouldIgnoreHitNode(child)) {
                             continueHitTest = true
                         } else if (child.outerCoordinator.shouldSharePointerInputWithSiblings()) {
                             hitTestResult.acceptHits()

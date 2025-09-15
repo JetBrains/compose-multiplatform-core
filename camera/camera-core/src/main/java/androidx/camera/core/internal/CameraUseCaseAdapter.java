@@ -1466,6 +1466,16 @@ public final class CameraUseCaseAdapter implements Camera {
         return preview;
     }
 
+    /**
+     * Checks if the underlying camera(s) are still valid.
+     *
+     * @return true if any of the CameraInternal instances has been removed.
+     */
+    public boolean isRemoved() {
+        return mCameraInternal.isRemoved()
+                || (mSecondaryCameraInternal != null && mSecondaryCameraInternal.isRemoved());
+    }
+
     private ImageCapture createExtraImageCapture() {
         return new ImageCapture.Builder().setTargetName("ImageCapture-Extra").build();
     }

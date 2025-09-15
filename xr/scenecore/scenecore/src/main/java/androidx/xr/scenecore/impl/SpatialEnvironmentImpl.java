@@ -23,6 +23,7 @@ import android.util.Log;
 
 import androidx.annotation.VisibleForTesting;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
+import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.impl.impress.Material;
 import androidx.xr.scenecore.internal.ExrImageResource;
 import androidx.xr.scenecore.internal.GltfModelResource;
@@ -70,7 +71,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
     private Node mRootEnvironmentNode;
     private @Nullable Consumer<Node> mOnBeforeNodeAttachedListener = null;
     private SubspaceNode mGeometrySubspaceSplitEngine;
-    private int mGeometrySubspaceImpressNode;
+    private ImpressNode mGeometrySubspaceImpressNode;
     private boolean mIsPreferredSpatialEnvironmentActive = false;
 
     private final AtomicReference<SpatialEnvironmentPreference> mSpatialEnvironmentPreference =
@@ -308,11 +309,11 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
         }
 
         mGeometrySubspaceImpressNode = mImpressApi.createImpressNode();
-        String subspaceName = "geometry_subspace_" + mGeometrySubspaceImpressNode;
+        String subspaceName = "geometry_subspace_" + mGeometrySubspaceImpressNode.getHandle();
 
         mGeometrySubspaceSplitEngine =
                 mSplitEngineSubspaceManager.createSubspace(
-                        subspaceName, mGeometrySubspaceImpressNode);
+                        subspaceName, mGeometrySubspaceImpressNode.getHandle());
 
         try (NodeTransaction transaction = mXrExtensions.createNodeTransaction()) {
             transaction
@@ -325,7 +326,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
         }
 
         if (geometry != null) {
-            int modelImpressNode =
+            ImpressNode modelImpressNode =
                     mImpressApi.instanceGltfModel(
                             geometry.getExtensionModelToken(), /* enableCollider= */ false);
             if (material != null && meshName != null) {
@@ -556,7 +557,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
         mPassthroughOpacityPreference = NO_PASSTHROUGH_OPACITY_PREFERENCE;
         mRootEnvironmentNode = null;
         mGeometrySubspaceSplitEngine = null;
-        mGeometrySubspaceImpressNode = 0;
+        mGeometrySubspaceImpressNode = null;
         mSplitEngineSubspaceManager = null;
         mImpressApi = null;
         mSpatialEnvironmentPreference.set(null);

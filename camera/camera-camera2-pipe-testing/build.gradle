@@ -68,7 +68,6 @@ tasks.withType(KotlinCompile).configureEach {
 androidx {
     name = "Camera2 Pipe Testing"
     type = SoftwareType.PUBLISHED_LIBRARY
-    mavenVersion = LibraryVersions.CAMERA_PIPE
     inceptionYear = "2020"
     description = "Testing components for the Camera2 Pipe Library, a library providing a " +
             "consistent and reliable camera foundation that enables great camera driven " +

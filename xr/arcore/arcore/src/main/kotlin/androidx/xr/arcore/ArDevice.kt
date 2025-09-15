@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore
 
+import androidx.annotation.RestrictTo
 import androidx.xr.arcore.internal.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
@@ -59,7 +60,7 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
      *
      * @property devicePose The current [Pose] of the device.
      */
-    public class State(public val devicePose: Pose) {
+    public class State internal constructor(public val devicePose: Pose) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is State) return false
@@ -75,6 +76,7 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
     /** The current [State] of the AR Device tracking. */
     public val state: StateFlow<State> = _state.asStateFlow()
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(State(runtimeArDevice.devicePose))
     }

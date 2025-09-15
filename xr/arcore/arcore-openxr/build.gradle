@@ -64,8 +64,6 @@ android {
     }
     defaultConfig {
         consumerProguardFiles 'proguard-rules.pro'
-        // TODO: b/409058039 - Drop back to 23 (default) once dependency on scenecore is removed.
-        minSdk = 24
     }
     sourceSets.androidTest {
         jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")

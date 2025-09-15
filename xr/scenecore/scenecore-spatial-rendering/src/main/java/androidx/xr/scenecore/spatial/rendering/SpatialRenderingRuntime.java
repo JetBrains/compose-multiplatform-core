@@ -21,7 +21,9 @@ import android.os.Looper;
 
 import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
+import androidx.xr.runtime.SubspaceNodeHolder;
 import androidx.xr.runtime.math.Matrix3;
+import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.runtime.math.Vector4;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
@@ -30,19 +32,27 @@ import androidx.xr.scenecore.impl.impress.ImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial;
 import androidx.xr.scenecore.impl.impress.Texture;
 import androidx.xr.scenecore.impl.impress.WaterMaterial;
+import androidx.xr.scenecore.internal.Dimensions;
+import androidx.xr.scenecore.internal.Entity;
 import androidx.xr.scenecore.internal.ExrImageResource;
+import androidx.xr.scenecore.internal.GltfEntity;
+import androidx.xr.scenecore.internal.GltfFeature;
 import androidx.xr.scenecore.internal.GltfModelResource;
 import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec;
 import androidx.xr.scenecore.internal.MaterialResource;
 import androidx.xr.scenecore.internal.RenderingEntityFactory;
 import androidx.xr.scenecore.internal.RenderingRuntime;
 import androidx.xr.scenecore.internal.SceneRuntime;
+import androidx.xr.scenecore.internal.SubspaceNodeEntity;
+import androidx.xr.scenecore.internal.SubspaceNodeFeature;
+import androidx.xr.scenecore.internal.SurfaceEntity;
 import androidx.xr.scenecore.internal.TextureResource;
 import androidx.xr.scenecore.internal.TextureSampler;
 
 import com.android.extensions.xr.XrExtensions;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.androidxr.splitengine.SubspaceNode;
 import com.google.ar.imp.view.splitengine.ImpSplitEngine;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -959,6 +969,57 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         mImpressApi.setAlphaCutoffOnKhronosPbrMaterial(
                 ((MaterialResourceImpl) material).getMaterialToken(), alphaCutoff);
     }
+
+    @Override
+    @NonNull
+    public GltfEntity createGltfEntity(
+            @NonNull Pose pose,
+            @NonNull GltfModelResource loadedGltf,
+            @NonNull Entity parentEntity) {
+        GltfFeature feature = new GltfFeatureImpl(
+                (GltfModelResourceImpl) loadedGltf,
+                mImpressApi,
+                mSplitEngineSubspaceManager,
+                mExtensions);
+        return mRenderingEntityFactory.createGltfEntity(feature, pose, parentEntity);
+    }
+
+    @Override
+    @NonNull
+    public SurfaceEntity createSurfaceEntity(
+            @SurfaceEntity.StereoMode int stereoMode,
+            @NonNull Pose pose,
+            SurfaceEntity.@NonNull Shape canvasShape,
+            @SurfaceEntity.SurfaceProtection int contentSecurityLevel,
+            @SurfaceEntity.SuperSampling int superSampling,
+            @NonNull Entity parentEntity) {
+        SurfaceFeatureImpl feature = new SurfaceFeatureImpl(
+                mImpressApi,
+                mSplitEngineSubspaceManager,
+                mExtensions,
+                stereoMode,
+                canvasShape,
+                contentSecurityLevel,
+                superSampling);
+        return mRenderingEntityFactory.createSurfaceEntity(feature, pose, parentEntity);
+    }
+
+    @Override
+    @NonNull
+    public SubspaceNodeEntity createSubspaceNodeEntity(
+            @NonNull SubspaceNodeHolder<?> subspaceNodeHolder, @NonNull Dimensions size) {
+        SubspaceNodeFeature feature = new SubspaceNodeFeatureImpl(
+                mImpressApi,
+                mSplitEngineSubspaceManager,
+                mExtensions,
+                SubspaceNodeHolder.assertGetValue(
+                        subspaceNodeHolder, SubspaceNode.class).getSubspaceNode(),
+                size);
+        SubspaceNodeEntity entity = mRenderingEntityFactory.createSubspaceNodeEntity(feature);
+        entity.setSize(size);
+        return entity;
+    }
+
 
     @Override
     public void startRenderer() {

@@ -302,14 +302,14 @@ internal class TriggerBasedInvalidationTracker(
     /** Synchronizes database triggers with observed tables. */
     internal suspend fun syncTriggers() =
         database.closeBarrier.ifNotClosed {
-            observedTableStates.onSync { tablesToSync ->
-                database.useConnection(isReadOnly = false) { connection ->
-                    if (connection.inTransaction()) {
-                        // Triggers are not synced if the connection is already in a transaction, an
-                        // indication that this is a nested transaction and sync is expected to be
-                        // invoked before starting a top-level transaction.
-                        return@useConnection false
-                    }
+            database.useConnection(isReadOnly = false) { connection ->
+                if (connection.inTransaction()) {
+                    // Triggers are not synced if the connection is already in a transaction, an
+                    // indication that this is a nested transaction and sync is expected to be
+                    // invoked before starting a top-level transaction.
+                    return@useConnection
+                }
+                observedTableStates.onSync { tablesToSync ->
                     connection.withTransaction(SQLiteTransactionType.IMMEDIATE) {
                         tablesToSync.forEachIndexed { tableId, observeOp ->
                             when (observeOp) {
@@ -319,7 +319,6 @@ internal class TriggerBasedInvalidationTracker(
                             }
                         }
                     }
-                    return@useConnection true
                 }
             }
         }
@@ -502,10 +501,6 @@ internal class ObservedTableStates(size: Int) {
     // observed. These states are only valid if `needsSync` is false.
     private val tableObservedState = BooleanArray(size)
 
-    // The version of [tableObserversCount], incremented every time it is updated.
-    @Volatile private var version = 0
-
-    // Flag indicating that [tableObservedState] needs to be updated based on [tableObserversCount].
     @Volatile private var needsSync = false
 
     /**
@@ -514,48 +509,30 @@ internal class ObservedTableStates(size: Int) {
      * The [action] will be called with an array of operations to be performed for table at index i
      * from the last time this function was called and based on the [onObserverAdded] and
      * [onObserverRemoved] invocations that occurred in-between and if at least one operation is ADD
-     * or REMOVE. The observed states will be updated depending if the [action] returned `true` (did
-     * sync) or `false` (did not sync). This function also handles the various edge cases where
-     * another sync occurred concurrently or if the invocation of the [action] became outdated.
+     * or REMOVE. If the internal state indicates that a sync is not required or that no operations
+     * are to be performed, then the [action] will not be invoked.
      */
-    internal inline fun onSync(action: (Array<ObserveOp>) -> Boolean) {
-        val syncState =
-            lock.withLock {
-                if (!needsSync) {
-                    // Sync was already done, no need to do action.
-                    return
-                }
-                val currentVersion = version
-                var addOrRemove = false
-                val newStates = BooleanArray(tableObserversCount.size)
-                val ops =
-                    Array(tableObserversCount.size) { i ->
-                        val newState = tableObserversCount[i] > 0
-                        if (newState != tableObservedState[i]) {
-                            addOrRemove = true
-                            newStates[i] = newState
-                            if (newState) ObserveOp.ADD else ObserveOp.REMOVE
-                        } else {
-                            ObserveOp.NO_OP
-                        }
-                    }
-                if (!addOrRemove) {
-                    // No add or remove operations, no need to do action.
-                    return
-                }
-                SyncState(currentVersion, ops, newStates)
-            }
-        val synced = action.invoke(syncState.ops)
-        if (!synced) {
-            // Action did not actually performed sync, don't commit new state.
-            return
-        }
+    internal inline fun onSync(action: (Array<ObserveOp>) -> Unit) {
         lock.withLock {
-            // Check no other sync went ahead and that the version being synced is still the
-            // same (i.e. no observers where added / removed in-between).
-            if (needsSync && syncState.version == version) {
-                syncState.newStates.copyInto(tableObservedState)
-                needsSync = false
+            if (!needsSync) {
+                // Sync was already done, no need to do action.
+                return
+            }
+            needsSync = false
+            var addOrRemove = false
+            val ops =
+                Array(tableObserversCount.size) { i ->
+                    val newState = tableObserversCount[i] > 0
+                    if (newState != tableObservedState[i]) {
+                        addOrRemove = true
+                        tableObservedState[i] = newState
+                        if (newState) ObserveOp.ADD else ObserveOp.REMOVE
+                    } else {
+                        ObserveOp.NO_OP
+                    }
+                }
+            if (addOrRemove) {
+                action.invoke(ops)
             }
         }
     }
@@ -571,7 +548,6 @@ internal class ObservedTableStates(size: Int) {
                 val previousCount = tableObserversCount[tableId]
                 tableObserversCount[tableId] = previousCount + 1
                 if (previousCount == 0L) {
-                    version++
                     needsSync = true
                     shouldSync = true
                 }
@@ -590,7 +566,6 @@ internal class ObservedTableStates(size: Int) {
                 val previousCount = tableObserversCount[tableId]
                 tableObserversCount[tableId] = previousCount - 1
                 if (previousCount == 1L) {
-                    version++
                     needsSync = true
                     shouldSync = true
                 }
@@ -613,13 +588,6 @@ internal class ObservedTableStates(size: Int) {
         ADD, // Starting observation / tracking of a table
         REMOVE, // Stop observation / tracking of a table
     }
-
-    // Data holder for the [onSync] operation. Local classes not yet supported in inline functions.
-    internal class SyncState(
-        val version: Int,
-        val ops: Array<ObserveOp>,
-        val newStates: BooleanArray,
-    )
 }
 
 /**

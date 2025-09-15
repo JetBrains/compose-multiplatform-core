@@ -61,6 +61,7 @@ import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.fillableData
 import androidx.compose.ui.semantics.inputText
 import androidx.compose.ui.semantics.onAutofillText
 import androidx.compose.ui.semantics.onFillData
@@ -442,16 +443,19 @@ class AndroidAutofillManagerTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 26)
-    fun autofillManager_notifyValueChanged() {
+    fun autofillManager_notifyFillableDataChanged() {
         var changeText by mutableStateOf(false)
 
         rule.setTestContent {
             Box(
                 Modifier.semantics {
                         testTag = "username"
-                        contentType = ContentType.Username
-                        contentDataType = ContentDataType.Text
-                        inputText = AnnotatedString(if (changeText) "1234" else "****")
+                        onFillData { true }
+                        fillableData =
+                            AndroidFillableData(
+                                if (changeText) AutofillValue.forText("1234")
+                                else AutofillValue.forText("5678")
+                            )
                     }
                     .size(height, width)
             )
@@ -464,13 +468,172 @@ class AndroidAutofillManagerTest {
             .notifyValueChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                autofillValue = argThat { isText && textValue == "1234" },
+                autofillValue = eq(AutofillValue.forText("1234")),
             )
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 26)
-    fun autofillManager_notifyValueChanged_fromEmpty() {
+    fun autofillManager_notifyFillableDataChanged_fromEmpty() {
+        var changeText by mutableStateOf(false)
+        val initialValue = AutofillValue.forText("")
+        val finalValue = AutofillValue.forText("1234")
+
+        rule.setTestContent {
+            Box(
+                Modifier.semantics {
+                        testTag = "username"
+                        onFillData { true }
+                        fillableData =
+                            if (changeText) {
+                                AndroidFillableData(finalValue)
+                            } else {
+                                AndroidFillableData(initialValue)
+                            }
+                    }
+                    .size(height, width)
+            )
+        }
+
+        rule.runOnIdle { changeText = true }
+
+        rule.waitForIdle()
+        verify(am)
+            .notifyValueChanged(
+                view = eq(view),
+                semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
+                autofillValue = eq(finalValue),
+            )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_notifyFillableDataChanged_toEmpty() {
+        var changeText by mutableStateOf(false)
+        val initialValue = AutofillValue.forText("1234")
+        val finalValue = AutofillValue.forText("")
+
+        rule.setTestContent {
+            Box(
+                Modifier.semantics {
+                        testTag = "username"
+                        onFillData { true }
+                        fillableData =
+                            if (changeText) {
+                                AndroidFillableData(finalValue)
+                            } else {
+                                AndroidFillableData(initialValue)
+                            }
+                    }
+                    .size(height, width)
+            )
+        }
+
+        rule.runOnIdle { changeText = true }
+
+        rule.waitForIdle()
+        verify(am)
+            .notifyValueChanged(
+                view = eq(view),
+                semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
+                autofillValue = eq(finalValue),
+            )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_notifyFillableDataChanged_removed() {
+        var hasFillableData by mutableStateOf(true)
+
+        rule.setTestContent {
+            Box(
+                Modifier.semantics {
+                        testTag = "username"
+                        onFillData { true }
+                        if (hasFillableData) {
+                            fillableData = AndroidFillableData(AutofillValue.forText("1234"))
+                        }
+                    }
+                    .size(height, width)
+            )
+        }
+
+        rule.runOnIdle { hasFillableData = false }
+
+        rule.waitForIdle()
+        verify(am, never()).notifyValueChanged(any(), any(), any())
+        verify(am)
+            .notifyViewVisibilityChanged(
+                view = eq(view),
+                semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
+                isVisible = eq(false),
+            )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_notifyFillableDataChanged_addedEmpty() {
+        var hasFillableData by mutableStateOf(false)
+        val autofillValue = AutofillValue.forText("")
+
+        rule.setTestContent {
+            Box(
+                Modifier.semantics {
+                        testTag = "username"
+                        onFillData { true }
+                        if (hasFillableData) {
+                            fillableData = AndroidFillableData(autofillValue)
+                        }
+                    }
+                    .size(height, width)
+            )
+        }
+
+        rule.runOnIdle { hasFillableData = true }
+
+        rule.waitForIdle()
+        rule.runOnIdle { verify(am, never()).notifyValueChanged(any(), any(), any()) }
+        verify(am)
+            .notifyViewVisibilityChanged(
+                view = eq(view),
+                semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
+                isVisible = eq(true),
+            )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_notifyFillableDataChanged_removedEmpty() {
+        var hasFillableData by mutableStateOf(true)
+
+        rule.setTestContent {
+            Box(
+                Modifier.semantics {
+                        testTag = "username"
+                        onFillData { true }
+                        if (hasFillableData) {
+                            fillableData = AndroidFillableData(AutofillValue.forText(""))
+                        }
+                    }
+                    .size(height, width)
+            )
+        }
+
+        rule.runOnIdle { hasFillableData = false }
+
+        rule.waitForIdle()
+        verify(am, never()).notifyValueChanged(any(), any(), any())
+        verify(am)
+            .notifyViewVisibilityChanged(
+                view = eq(view),
+                semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
+                isVisible = eq(false),
+            )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_notifyValueChanged() {
         var changeText by mutableStateOf(false)
 
         rule.setTestContent {

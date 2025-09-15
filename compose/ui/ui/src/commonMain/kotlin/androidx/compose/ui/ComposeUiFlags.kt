@@ -197,4 +197,17 @@ object ComposeUiFlags {
 
     /** This flag enables clearing focus on pointer down by default. */
     @Suppress("MutableBareField") @JvmField var isClearFocusOnPointerDownEnabled: Boolean = true
+
+    /**
+     * Enable fix for `[ComposeView.canScrollHorizontally]` and `[ComposeView.canScrollVertically]`
+     * methods. Previously, these methods would sometimes use the last MOVE event's position to
+     * determine if scrolling was possible, even if the gesture started with a DOWN event at a
+     * different location. This could lead to incorrect scrollability checks, especially when a
+     * scrollable container was touched and then moved. With this flag enabled, the methods
+     * correctly use the position of the initial DOWN event to establish the pointer position for an
+     * event that started on a scrollable container, ensuring accurate scroll checks.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isCanScrollUsingLastDownEventFixEnabled: Boolean = true
 }

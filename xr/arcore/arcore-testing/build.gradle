@@ -31,23 +31,20 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api(project(":xr:arcore:arcore"))
     api(project(":xr:runtime:runtime"))
+    api(project(":xr:arcore:arcore"))
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
 }
 
 android {
     namespace = "androidx.xr.arcore.testing"
-    defaultConfig {
-        // TODO: b/409058039 - Drop back to 23 (default) once dependency on scenecore is removed.
-        minSdk = 24
-    }
 }
 
 androidx {

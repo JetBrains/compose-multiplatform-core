@@ -45,8 +45,8 @@ import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.platform.SpatialComposeScene
 import androidx.xr.compose.platform.disposableValueOf
-import androidx.xr.compose.platform.getActivity
 import androidx.xr.compose.platform.getValue
+import androidx.xr.compose.platform.requireActivity
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialBoxScope
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -210,7 +210,7 @@ private fun ApplicationSubspace(
         ) {
             it.dispose()
             subspaceRoot.dispose()
-            if (!context.getActivity().isDestroyed) {
+            if (!context.requireActivity().isDestroyed) {
                 session.scene.mainPanelEntity.setEnabled(true)
             }
         }

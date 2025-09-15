@@ -26,6 +26,9 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.lifecycle.Observer
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -38,9 +41,14 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * If any step fails, it orchestrates a rollback of all previously successful steps.
  */
-public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
+public class CameraPresenceProvider(
+    private val backgroundExecutor: Executor,
+    private val scheduledExecutor: ScheduledExecutorService,
+) {
 
     private val observerLock = Any()
+    private val retryLock = Any()
+    @GuardedBy("retryLock") private var retryScanFuture: ScheduledFuture<*>? = null
 
     private var cameraFactory: CameraFactory? = null
     private var cameraRepository: CameraRepository? = null
@@ -86,6 +94,10 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
         this.cameraRepository = cameraRepository
         this.sourcePresenceObservable = cameraFactory.cameraPresenceSource
 
+        backgroundExecutor.execute {
+            currentFilteredIds.forEach { conditionallySetupCameraStateObserver(it.internalId) }
+        }
+
         sourcePresenceObservable?.addObserver(
             CameraXExecutors.newSequentialExecutor(backgroundExecutor),
             sourceObserver,
@@ -99,6 +111,12 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
             return
         }
         Logger.i(TAG, "Shutting down CameraPresenceProvider monitoring.")
+
+        // Cancel any pending retry scans.
+        synchronized(retryLock) {
+            retryScanFuture?.cancel(false)
+            retryScanFuture = null
+        }
 
         sourcePresenceObservable?.removeObserver(sourceObserver)
         clearAllCameraStateObservers()
@@ -123,17 +141,27 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
 
             // For factories that support interrogation, we can pre-validate the change.
             if (factory is CameraFactory.Interrogator) {
-                val oldFilteredIds = currentFilteredIds
-                val potentialNewIds =
-                    factory.getAvailableCameraIds(rawIdStrings).map { CameraIdentifier.create(it) }
+                try {
+                    val oldFilteredIds = currentFilteredIds
+                    val potentialNewIds =
+                        factory.getAvailableCameraIds(rawIdStrings).map {
+                            CameraIdentifier.create(it)
+                        }
 
-                val removedCameras = oldFilteredIds.toSet() - potentialNewIds.toSet()
-                if (
-                    removedCameras.isNotEmpty() &&
-                        validator.isChangeInvalid(repo.cameras, removedCameras)
-                ) {
-                    Logger.w(TAG, "Camera removal update invalid. Aborting.")
-                    return
+                    val removedCameras = oldFilteredIds.toSet() - potentialNewIds.toSet()
+                    if (
+                        removedCameras.isNotEmpty() &&
+                            validator.isChangeInvalid(repo.cameras, removedCameras)
+                    ) {
+                        Logger.w(TAG, "Camera removal update invalid. Aborting.")
+                        return
+                    }
+                } catch (e: Exception) {
+                    Logger.w(
+                        TAG,
+                        "Failed to interrogate camera factory. Falling back to full update.",
+                        e,
+                    )
                 }
             }
 
@@ -173,6 +201,15 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
         val oldFilteredIdsSnapshot = currentFilteredIds.toList()
         if (newFilteredIdentifiers == oldFilteredIdsSnapshot) {
             return
+        }
+
+        // A successful update means any ongoing retry scan can be stopped.
+        synchronized(retryLock) {
+            if (retryScanFuture != null) {
+                Logger.d(TAG, "Camera list updated. Cancelling any pending retries.")
+                retryScanFuture!!.cancel(false)
+                retryScanFuture = null
+            }
         }
 
         // Calculate the diff once at the beginning.
@@ -289,15 +326,16 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
                             "Ignore camera state change handling since already stop monitoring",
                         )
                     } else if (
-                        cameraState?.error?.type == CameraState.ErrorType.CRITICAL ||
-                            cameraState?.type == CameraState.Type.CLOSED
+                        cameraState.error != null || cameraState?.type == CameraState.Type.CLOSED
                     ) {
                         Logger.w(
                             TAG,
                             "Camera $cameraIdStr state changed to ${cameraState.type} with " +
                                 "error: ${cameraState.error?.code}. Triggering refresh.",
                         )
-                        sourcePresenceObservable?.fetchData()
+                        // Post the trigger to the background executor to avoid blocking the
+                        // main thread and to ensure synchronized access to provider state.
+                        backgroundExecutor.execute { triggerRefreshWithRetries() }
                     }
                 }
             CameraXExecutors.mainThreadExecutor().execute {
@@ -306,6 +344,55 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
             cameraStateObservers[cameraIdStr] = stateObserver
             Logger.d(TAG, "Registered state observer for camera: $cameraIdStr")
         }
+    }
+
+    /**
+     * Triggers a camera availability scan with a delayed retry mechanism.
+     *
+     * This is invoked when a camera enters an error or closed state, which might indicate a
+     * transient issue where the system's camera list isn't immediately updated. This method cancels
+     * any pending retry sequence and starts a new one.
+     */
+    @ExecutedBy("backgroundExecutor")
+    private fun triggerRefreshWithRetries() {
+        synchronized(retryLock) {
+            // Cancel any previously scheduled scan and start a new one.
+            retryScanFuture?.cancel(false)
+            Logger.d(TAG, "Starting new refresh-with-retries sequence.")
+
+            // Schedule the first attempt with no delay.
+            scheduleRetryAttempt(MAX_SCAN_RETRIES, currentFilteredIds)
+        }
+    }
+
+    /** Schedules a single retry attempt. This method is designed to be called recursively. */
+    @ExecutedBy("backgroundExecutor")
+    private fun scheduleRetryAttempt(attemptsLeft: Int, initialIds: List<CameraIdentifier>) {
+        if (attemptsLeft <= 0 || !isMonitoring.get()) {
+            if (attemptsLeft <= 0) {
+                Logger.w(TAG, "Exhausted all retries for camera list refresh.")
+            }
+            return
+        }
+
+        val delay = if (attemptsLeft == MAX_SCAN_RETRIES) 0L else RETRY_DELAY_MS
+
+        retryScanFuture =
+            scheduledExecutor.schedule(
+                {
+                    backgroundExecutor.execute {
+                        if (!isMonitoring.get() || currentFilteredIds != initialIds) {
+                            // Stop if monitoring stopped or if list has already changed.
+                            return@execute
+                        }
+                        Logger.d(TAG, "Triggering refresh. Attempts left: $attemptsLeft")
+                        sourcePresenceObservable?.fetchData()
+                        scheduleRetryAttempt(attemptsLeft - 1, initialIds)
+                    }
+                },
+                delay,
+                TimeUnit.MILLISECONDS,
+            )
     }
 
     @ExecutedBy("backgroundExecutor")
@@ -388,5 +475,7 @@ public class CameraPresenceProvider(private val backgroundExecutor: Executor) {
 
     public companion object {
         private const val TAG = "CameraPresencePrvdr"
+        private const val MAX_SCAN_RETRIES = 3
+        private const val RETRY_DELAY_MS = 400L
     }
 }

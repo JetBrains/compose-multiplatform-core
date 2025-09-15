@@ -434,6 +434,84 @@ class AppFunctionDataTest {
     }
 
     @Test
+    fun testWrite_stringEnumValue_conformanceFailsForInvalidValues() {
+        val afdBuilder =
+            AppFunctionData.Builder(
+                parameterMetadataList =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "stringEnum",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionStringTypeMetadata(
+                                    isNullable = false,
+                                    enumValues = setOf("A", "B"),
+                                ),
+                        ),
+                        AppFunctionParameterMetadata(
+                            name = "stringEnumArray",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionArrayTypeMetadata(
+                                    isNullable = false,
+                                    itemType =
+                                        AppFunctionStringTypeMetadata(
+                                            isNullable = false,
+                                            enumValues = setOf("A", "B"),
+                                        ),
+                                ),
+                        ),
+                    ),
+                componentMetadata = AppFunctionComponentsMetadata(),
+            )
+
+        assertFailsWith<IllegalArgumentException> { afdBuilder.setString("stringEnum", "C") }
+        assertFailsWith<IllegalArgumentException> {
+            afdBuilder.setStringList("stringEnumArray", listOf("A", "B", "C"))
+        }
+    }
+
+    @Test
+    fun testReadWrite_stringEnumValues_conformanceSuccess() {
+        val afdBuilder =
+            AppFunctionData.Builder(
+                parameterMetadataList =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "stringEnum",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionStringTypeMetadata(
+                                    isNullable = false,
+                                    enumValues = setOf("A", "B"),
+                                ),
+                        ),
+                        AppFunctionParameterMetadata(
+                            name = "stringEnumList",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionArrayTypeMetadata(
+                                    isNullable = false,
+                                    itemType =
+                                        AppFunctionStringTypeMetadata(
+                                            isNullable = false,
+                                            enumValues = setOf("A", "B"),
+                                        ),
+                                ),
+                        ),
+                    ),
+                componentMetadata = AppFunctionComponentsMetadata(),
+            )
+
+        afdBuilder.setString("stringEnum", "A")
+        afdBuilder.setStringList("stringEnumList", listOf("A", "B"))
+        val afd = afdBuilder.build()
+
+        assertThat(afd.getString("stringEnum")).isEqualTo("A")
+        assertThat(afd.getStringList("stringEnumList")).containsExactly("A", "B")
+    }
+
+    @Test
     fun testWrite_asObject_notConformSpec() {
         val builder = AppFunctionData.Builder(TEST_OBJECT_METADATA, AppFunctionComponentsMetadata())
 
@@ -814,6 +892,88 @@ class AppFunctionDataTest {
                 listOf(correctInnerDataBuilder.build(), incorrectInnerDataBuilder.build()),
             )
         }
+    }
+
+    @Test
+    fun testRead_nonNullable_failsIfSetToNull() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "intParam",
+                    isRequired = true,
+                    dataType = AppFunctionIntTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "stringParam",
+                    isRequired = true,
+                    dataType = AppFunctionStringTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "longParam",
+                    isRequired = true,
+                    dataType = AppFunctionLongTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "floatParam",
+                    isRequired = true,
+                    dataType = AppFunctionFloatTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "doubleParam",
+                    isRequired = true,
+                    dataType = AppFunctionDoubleTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "pendingIntentParam",
+                    isRequired = true,
+                    dataType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "byteArrayParam",
+                    isRequired = true,
+                    dataType =
+                        AppFunctionArrayTypeMetadata(
+                            AppFunctionBytesTypeMetadata(isNullable = false),
+                            isNullable = false,
+                        ),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "objectParam",
+                    isRequired = true,
+                    dataType =
+                        AppFunctionObjectTypeMetadata(
+                            properties = mapOf(),
+                            isNullable = false,
+                            required = listOf(),
+                            qualifiedName = "",
+                        ),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "refParam",
+                    isRequired = true,
+                    dataType =
+                        AppFunctionReferenceTypeMetadata(
+                            referenceDataType = "customType",
+                            isNullable = false,
+                        ),
+                ),
+            )
+        val appFunctionData =
+            AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata()).build()
+
+        assertFailsWith<IllegalArgumentException> { appFunctionData.getIntOrNull("intParam") }
+        assertFailsWith<IllegalArgumentException> { appFunctionData.getStringOrNull("stringParam") }
+        assertFailsWith<IllegalArgumentException> { appFunctionData.getLongOrNull("longParam") }
+        assertFailsWith<IllegalArgumentException> { appFunctionData.getByteArray("byteArrayParam") }
+        assertFailsWith<IllegalArgumentException> { appFunctionData.getFloatOrNull("floatParam") }
+        assertFailsWith<IllegalArgumentException> { appFunctionData.getDoubleOrNull("doubleParam") }
+        assertFailsWith<IllegalArgumentException> {
+            appFunctionData.getPendingIntentOrNull("pendingIntentParam")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            appFunctionData.getAppFunctionData("objectParam")
+        }
+        assertFailsWith<IllegalArgumentException> { appFunctionData.getAppFunctionData("refParam") }
     }
 
     @Test

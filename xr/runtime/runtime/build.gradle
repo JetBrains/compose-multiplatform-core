@@ -54,10 +54,6 @@ dependencies {
 }
 
 android {
-    // TODO: b/409058039 - Drop back to 23 (default) once dependency on scenecore is removed.
-    defaultConfig {
-        minSdk = 24
-    }
     namespace = "androidx.xr.runtime"
     defaultConfig {
         consumerProguardFiles 'proguard-rules.pro'

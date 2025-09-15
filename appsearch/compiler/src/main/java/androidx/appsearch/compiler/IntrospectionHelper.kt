@@ -35,7 +35,6 @@ import androidx.room.compiler.processing.isArray
 import androidx.room.compiler.processing.isField
 import androidx.room.compiler.processing.isMethod
 import com.google.auto.value.AutoValue
-import com.squareup.javapoet.ClassName
 import java.util.ArrayDeque
 import java.util.Deque
 import java.util.WeakHashMap
@@ -48,10 +47,10 @@ import kotlin.metadata.jvm.KotlinClassMetadata
 @OptIn(ExperimentalProcessingApi::class)
 class IntrospectionHelper internal constructor(private val env: XProcessingEnv) {
     // Non-boxable objects
-    val blobHandleType: XType = env.requireType(APPSEARCH_BLOB_HANDLE_CLASS.canonicalName())
+    val blobHandleType: XType = env.requireType(APPSEARCH_BLOB_HANDLE_CLASS.canonicalName)
     val collectionType: XType = env.requireType(java.util.Collection::class.java.name)
-    val embeddingType: XType = env.requireType(EMBEDDING_VECTOR_CLASS.canonicalName())
-    val genericDocumentType: XType = env.requireType(GENERIC_DOCUMENT_CLASS.canonicalName())
+    val embeddingType: XType = env.requireType(EMBEDDING_VECTOR_CLASS.canonicalName)
+    val genericDocumentType: XType = env.requireType(GENERIC_DOCUMENT_CLASS.canonicalName)
     val listType: XType = env.requireType(java.util.List::class.java.name)
     val stringType: XType = env.requireType(java.lang.String::class.java.name)
 
@@ -80,50 +79,50 @@ class IntrospectionHelper internal constructor(private val env: XProcessingEnv) 
         const val APPSEARCH_PKG: String = "androidx.appsearch.app"
 
         @JvmField
-        val APPSEARCH_SCHEMA_CLASS: ClassName = ClassName.get(APPSEARCH_PKG, "AppSearchSchema")
+        val APPSEARCH_SCHEMA_CLASS: XClassName = XClassName.get(APPSEARCH_PKG, "AppSearchSchema")
 
         @JvmField
-        val PROPERTY_CONFIG_CLASS: ClassName = APPSEARCH_SCHEMA_CLASS.nestedClass("PropertyConfig")
+        val PROPERTY_CONFIG_CLASS: XClassName = APPSEARCH_SCHEMA_CLASS.nestedClass("PropertyConfig")
 
         const val APPSEARCH_EXCEPTION_PKG: String = "androidx.appsearch.exceptions"
 
         @JvmField
-        val APPSEARCH_EXCEPTION_CLASS: ClassName =
-            ClassName.get(APPSEARCH_EXCEPTION_PKG, "AppSearchException")
+        val APPSEARCH_EXCEPTION_CLASS: XClassName =
+            XClassName.get(APPSEARCH_EXCEPTION_PKG, "AppSearchException")
 
         const val APPSEARCH_ANNOTATION_PKG: String = "androidx.appsearch.annotation"
 
         const val DOCUMENT_ANNOTATION_SIMPLE_CLASS_NAME: String = "Document"
 
         @JvmField
-        val DOCUMENT_ANNOTATION_CLASS: ClassName =
-            ClassName.get(APPSEARCH_ANNOTATION_PKG, DOCUMENT_ANNOTATION_SIMPLE_CLASS_NAME)
+        val DOCUMENT_ANNOTATION_CLASS: XClassName =
+            XClassName.get(APPSEARCH_ANNOTATION_PKG, DOCUMENT_ANNOTATION_SIMPLE_CLASS_NAME)
 
         @JvmField
-        val GENERIC_DOCUMENT_CLASS: ClassName = ClassName.get(APPSEARCH_PKG, "GenericDocument")
+        val GENERIC_DOCUMENT_CLASS: XClassName = XClassName.get(APPSEARCH_PKG, "GenericDocument")
 
-        val EMBEDDING_VECTOR_CLASS: ClassName = ClassName.get(APPSEARCH_PKG, "EmbeddingVector")
+        val EMBEDDING_VECTOR_CLASS: XClassName = XClassName.get(APPSEARCH_PKG, "EmbeddingVector")
 
-        val APPSEARCH_BLOB_HANDLE_CLASS: ClassName =
-            ClassName.get(APPSEARCH_PKG, "AppSearchBlobHandle")
+        val APPSEARCH_BLOB_HANDLE_CLASS: XClassName =
+            XClassName.get(APPSEARCH_PKG, "AppSearchBlobHandle")
 
-        val BUILDER_PRODUCER_CLASS: ClassName =
+        val BUILDER_PRODUCER_CLASS: XClassName =
             DOCUMENT_ANNOTATION_CLASS.nestedClass("BuilderProducer")
 
         @JvmField
-        val DOCUMENT_CLASS_FACTORY_CLASS: ClassName =
-            ClassName.get(APPSEARCH_PKG, "DocumentClassFactory")
+        val DOCUMENT_CLASS_FACTORY_CLASS: XClassName =
+            XClassName.get(APPSEARCH_PKG, "DocumentClassFactory")
 
         @JvmField
-        val RESTRICT_TO_ANNOTATION_CLASS: ClassName =
-            ClassName.get("androidx.annotation", "RestrictTo")
+        val RESTRICT_TO_ANNOTATION_CLASS: XClassName =
+            XClassName.get("androidx.annotation", "RestrictTo")
 
         @JvmField
-        val RESTRICT_TO_SCOPE_CLASS: ClassName = RESTRICT_TO_ANNOTATION_CLASS.nestedClass("Scope")
+        val RESTRICT_TO_SCOPE_CLASS: XClassName = RESTRICT_TO_ANNOTATION_CLASS.nestedClass("Scope")
 
         @JvmField
-        val DOCUMENT_CLASS_MAPPING_CONTEXT_CLASS: ClassName =
-            ClassName.get(APPSEARCH_PKG, "DocumentClassMappingContext")
+        val DOCUMENT_CLASS_MAPPING_CONTEXT_CLASS: XClassName =
+            XClassName.get(APPSEARCH_PKG, "DocumentClassMappingContext")
 
         /**
          * Returns `androidx.appsearch.annotation.Document` annotation element from the input
@@ -140,11 +139,11 @@ class IntrospectionHelper internal constructor(private val env: XProcessingEnv) 
          * specified by the annotation's class name. Returns null if no annotation of such kind is
          * found.
          */
-        fun getAnnotations(element: XElement, className: ClassName): List<XAnnotation> {
+        fun getAnnotations(element: XElement, className: XClassName): List<XAnnotation> {
             return element
                 .getAllAnnotations()
                 .stream()
-                .filter { it.qualifiedName == className.canonicalName() }
+                .filter { it.qualifiedName == className.canonicalName }
                 .toList()
         }
 

@@ -32,6 +32,7 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
+    api(project(":xr:runtime:runtime"))
     api(project(":xr:arcore:arcore"))
     implementation(libs.kotlinCoroutinesRx3)
 
@@ -46,11 +47,6 @@ dependencies {
 
 android {
     compileSdk = 35
-    // TODO: b/409058039 - Drop back to 23 (default) once dependency on scenecore is removed.
-    defaultConfig {
-        minSdk = 24
-    }
-
     namespace = "androidx.xr.arcore.rxjava3"
 }
 
