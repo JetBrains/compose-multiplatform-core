@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.ui.backhandler
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.navigationevent.NavigationEventSwipeEdge
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.NavigationEventHandler
 import kotlinx.coroutines.CancellationException
@@ -34,7 +37,12 @@ actual fun PredictiveBackHandler(
     LocalNavigationEventDispatcherOwner.current ?: return
     NavigationEventHandler(enabled) { progress ->
         val compatProgress = progress.map { navEvent ->
-            BackEventCompat(navEvent.touchX, navEvent.touchY, navEvent.progress, navEvent.swipeEdge)
+            val swipeEdge = when (navEvent.swipeEdge) {
+                NavigationEventSwipeEdge.Left -> BackEventCompat.EDGE_LEFT
+                NavigationEventSwipeEdge.Right -> BackEventCompat.EDGE_RIGHT
+                else -> 0
+            }
+            BackEventCompat(navEvent.touchX, navEvent.touchY, navEvent.progress, swipeEdge)
         }
         onBack(compatProgress)
     }

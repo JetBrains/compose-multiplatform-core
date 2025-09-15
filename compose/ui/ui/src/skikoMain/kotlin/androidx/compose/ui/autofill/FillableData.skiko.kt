@@ -25,3 +25,4 @@ import kotlin.jvm.JvmName
 actual fun FillableData(booleanValue: Boolean): FillableData? = null
 actual fun FillableData(textValue: CharSequence): FillableData? = null
 actual fun FillableData(listIndexValue: Int): FillableData? = null
+actual fun FillableData(dateMillisValue: Long): FillableData? = null

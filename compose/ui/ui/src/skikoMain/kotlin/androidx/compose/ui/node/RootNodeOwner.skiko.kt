@@ -495,9 +495,8 @@ internal class RootNodeOwner(
         override val pointerIconService = PointerIconServiceImpl()
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
-        override val retainScope: RetainScope get() = ForgetfulRetainScope
-        // TODO: 1.8.0-alpha02 Implement ComposeUiFlags.isRectTrackingEnabled
-        //  https://youtrack.jetbrains.com/issue/CMP-6715/Support-ComposeUiFlags.isRectTrackingEnabled
+        // Temporary reverted in androidx-main. TODO: Revert after next merge
+        // override val retainScope: RetainScope get() = ForgetfulRetainScope
         override val rectManager = RectManager()
 
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
