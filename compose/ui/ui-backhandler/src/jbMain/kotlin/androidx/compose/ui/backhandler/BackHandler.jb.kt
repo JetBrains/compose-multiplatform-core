@@ -35,6 +35,8 @@ actual fun PredictiveBackHandler(
     onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
 ) {
     LocalNavigationEventDispatcherOwner.current ?: return
+    /*
+    TODO: https://youtrack.jetbrains.com/issue/CMP-8937
     NavigationEventHandler(enabled) { progress ->
         val compatProgress = progress.map { navEvent ->
             val swipeEdge = when (navEvent.swipeEdge) {
@@ -46,6 +48,7 @@ actual fun PredictiveBackHandler(
         }
         onBack(compatProgress)
     }
+    */
 }
 
 @Deprecated("Use NavigationEventHandler instead")

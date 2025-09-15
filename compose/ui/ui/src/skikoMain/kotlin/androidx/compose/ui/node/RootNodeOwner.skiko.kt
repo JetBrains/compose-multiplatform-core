@@ -495,8 +495,7 @@ internal class RootNodeOwner(
         override val pointerIconService = PointerIconServiceImpl()
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
-        // Temporary reverted in androidx-main. TODO: Revert after next merge
-        // override val retainScope: RetainScope get() = ForgetfulRetainScope
+        override val retainScope: RetainScope get() = ForgetfulRetainScope
         override val rectManager = RectManager()
 
         @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
