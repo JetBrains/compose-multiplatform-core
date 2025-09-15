@@ -25,7 +25,7 @@ import kotlinx.atomicfu.atomic
 
 /**
  * SnapshotCommandList is a class that manages commands and invalidations for snapshot-based recomposition.
- * It allows postponing execution of commands and performing them in the future.
+ * It allows postponing the execution of commands and performing them in the future.
  *
  * @param invalidate a function that is called whenever an invalidation is requested
  */

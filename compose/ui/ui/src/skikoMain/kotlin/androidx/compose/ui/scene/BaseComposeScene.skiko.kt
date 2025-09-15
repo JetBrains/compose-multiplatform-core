@@ -59,7 +59,9 @@ internal abstract class BaseComposeScene(
     coroutineContext: CoroutineContext,
     private val invalidate: (canRenderImmediately: Boolean) -> Unit,
 ) : ComposeScene {
-    protected val snapshotInvalidationTracker = SnapshotInvalidationTracker(::updateInvalidations)
+    protected val snapshotInvalidationTracker = SnapshotInvalidationTracker {
+        updateInvalidations(throttledToVsync = false)
+    }
     protected val inputHandler: ComposeSceneInputHandler =
         ComposeSceneInputHandler(
             prepareForPointerInputEvent = ::doMeasureAndLayout,
@@ -91,7 +93,7 @@ internal abstract class BaseComposeScene(
         check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
         isInvalidationDisabled = true
         return try {
-            // Try to get see the up-to-date state before running block
+            // Try to get the up-to-date state before running block
             // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
             // in a different thread than this code.
             snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
@@ -100,17 +102,27 @@ internal abstract class BaseComposeScene(
             snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
             isInvalidationDisabled = false
         }.also {
-            updateInvalidations()
+            // Perform invalidations that were requested while invalidation was disabled
+            updateInvalidations(throttledToVsync = !nonThrottledInvalidationRequested)
+            nonThrottledInvalidationRequested = false
         }
     }
 
     @Volatile
     private var hasPendingDraws = true
-    protected fun updateInvalidations(throttledToVsync: Boolean = false) {
+
+    private var nonThrottledInvalidationRequested = false
+
+    protected fun updateInvalidations(throttledToVsync: Boolean) {
         hasPendingDraws = frameClock.hasAwaiters ||
             snapshotInvalidationTracker.hasInvalidations
-        if (hasPendingDraws && !isInvalidationDisabled && !isClosed && composition != null) {
-            invalidate(throttledToVsync)
+
+        if (hasPendingDraws && !isClosed && composition != null) {
+            if (!isInvalidationDisabled) {
+                invalidate(throttledToVsync)
+            } else if (!throttledToVsync) {
+                nonThrottledInvalidationRequested = true
+            }
         }
     }
 
@@ -144,7 +156,7 @@ internal abstract class BaseComposeScene(
 
             /*
          * It's required before setting content to apply changed parameters
-         * before first recomposition. Otherwise, it can lead to double recomposition.
+         * before the first recomposition. Otherwise, it can lead to double recomposition.
          */
             recomposer.performScheduledRecomposerTasks()
 

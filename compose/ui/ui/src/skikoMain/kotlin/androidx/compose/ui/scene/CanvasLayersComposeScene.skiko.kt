@@ -453,7 +453,7 @@ private class CanvasLayersComposeSceneImpl(
         onOwnerAppended(layer.owner)
 
         inputHandler.onPointerUpdate()
-        updateInvalidations()
+        updateInvalidations(throttledToVsync = false)
     }
 
     private fun detachLayer(layer: AttachedComposeSceneLayer) {
@@ -464,7 +464,7 @@ private class CanvasLayersComposeSceneImpl(
         onOwnerRemoved(layer.owner)
 
         inputHandler.onPointerUpdate()
-        updateInvalidations()
+        updateInvalidations(throttledToVsync = false)
     }
 
     private fun requestFocus(layer: AttachedComposeSceneLayer) {
@@ -541,7 +541,7 @@ private class CanvasLayersComposeSceneImpl(
                     releaseFocus(this)
                 }
                 inputHandler.onPointerUpdate()
-                updateInvalidations()
+                updateInvalidations(throttledToVsync = false)
             }
 
         private val background: Modifier
