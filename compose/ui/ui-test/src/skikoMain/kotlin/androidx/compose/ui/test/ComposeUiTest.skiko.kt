@@ -30,7 +30,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformDragAndDropSource
@@ -44,6 +43,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -265,11 +265,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     private inline fun <R> withScene(block: () -> R): R {
-        scene = runOnUiThread(::createUi)
+        runOnUiThread(::createScene)
         try {
             return block()
         } finally {
-            runOnUiThread(scene::close)
+            runOnUiThread(::closeScene)
             // After the scene is closed, run all left foreground TestDispatchEvent.
             // They might've been added outside the runTest call, using the provided coroutineDispatcher:
             coroutineDispatcher.scheduler.advanceUntilIdle()
@@ -305,13 +305,21 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         )
     }
 
-    private fun createUi(): ComposeScene = CanvasLayersComposeScene(
-        density = density,
-        size = size,
-        coroutineContext = coroutineContext,
-        platformContext = TestContext(),
-        invalidate = { }
-    )
+    private fun createScene() {
+        scene = CanvasLayersComposeScene(
+            density = density,
+            size = size,
+            coroutineContext = coroutineContext,
+            platformContext = TestContext(),
+            invalidate = { }
+        )
+        testOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    }
+
+    private fun closeScene() {
+        testOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        scene.close()
+    }
 
     private fun advanceIfNeededAndRenderNextFrame() {
         if (mainClock.autoAdvance) {
@@ -399,12 +407,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     protected open fun areAllResourcesIdle() = true
 
     override fun setContent(composable: @Composable () -> Unit) {
-        val content = ProvideTestCompositionLocals(composable)
         if (isOnUiThread()) {
-            scene.setContent(content = content)
+            setContentUnsafe(content = composable)
         } else {
             runOnUiThread {
-                scene.setContent(content = content)
+                setContentUnsafe(content = composable)
             }
 
             // Only wait for idleness if not on the UI thread. If we are on the UI thread, the
@@ -412,6 +419,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             // executing future tasks on the main thread.
             waitForIdle()
         }
+    }
+
+    private fun setContentUnsafe(content: @Composable () -> Unit) = scene.setContent {
+        ProvideCommonCompositionLocals(content)
     }
 
     override fun onNode(
@@ -445,7 +456,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     @OptIn(InternalComposeUiApi::class)
-    internal inner class SkikoTestOwner : TestOwner {
+    internal inner class SkikoTestOwner : TestOwner, LifecycleOwner {
         override val mainClock
             get() = mainClockImpl
 
@@ -461,6 +472,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         override fun runCurrent() {
             mainClockImpl.runCurrent()
         }
+
+        override val lifecycle = LifecycleRegistry.createUnsafe(this)
 
         fun captureToImage(semanticsNode: SemanticsNode): ImageBitmap =
             this@SkikoComposeUiTest.captureToImage(semanticsNode)
@@ -518,16 +531,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
     }
 
-    private val lifecycleOwner = TestLifecycleOwner()
-
-    override fun sendLifecycleEvent(event: Lifecycle.Event) {
-        lifecycleOwner.lifecycle.handleLifecycleEvent(event)
-    }
-
-    private fun ProvideTestCompositionLocals(composable: @Composable () -> Unit): @Composable () -> Unit = {
+    @Composable
+    private fun ProvideCommonCompositionLocals(content: @Composable () -> Unit) {
         CompositionLocalProvider(
-            LocalLifecycleOwner provides lifecycleOwner,
-            content = composable
+            LocalLifecycleOwner provides testOwner,
+            content = content,
         )
     }
 }
@@ -546,11 +554,6 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
         condition: () -> Boolean
     )
     actual fun setContent(composable: @Composable () -> Unit)
-    fun sendLifecycleEvent(event: Lifecycle.Event)
-}
-
-private class TestLifecycleOwner : LifecycleOwner {
-    override val lifecycle = LifecycleRegistry(this)
 }
 
 private const val FRAME_DELAY_MILLIS = 16L

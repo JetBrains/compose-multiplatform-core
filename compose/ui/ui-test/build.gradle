@@ -151,8 +151,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependsOn(commonMain)
                 dependencies {
                     implementation(libs.atomicFu)
-                    implementation(project(":lifecycle:lifecycle-common"))
-                    implementation(project(":lifecycle:lifecycle-runtime"))
+                    implementation(project(":lifecycle:lifecycle-runtime-compose"))
                 }
             }
 
@@ -176,7 +175,6 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(libs.kotlinTest)
                 implementation(libs.atomicFu)
                 implementation(project(":kruth:kruth"))
-                implementation(project(":lifecycle:lifecycle-runtime-compose"))
             }
             skikoTest.dependsOn(commonTest)
 
