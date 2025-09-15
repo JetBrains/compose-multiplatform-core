@@ -29,6 +29,7 @@ import androidx.compose.ui.node.LayoutNode.LayoutState
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.util.fastForEach
 
 /**
  * [MeasurePassDelegate] manages the measure/layout and alignmentLine related queries for the actual
@@ -57,7 +58,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
      * nextChildPlaceOrder and increments this counter. Not placed items will still have
      * [NotPlacedPlaceOrder] set.
      */
-    internal var placeOrder: Int = NotPlacedPlaceOrder
+    override var placeOrder: Int = NotPlacedPlaceOrder
         private set
 
     private var measuredOnce = false
@@ -95,8 +96,7 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
     /**
      * Whether or not this [LayoutNode] and all of its parents have been placed in the hierarchy.
      */
-    override var isPlaced: Boolean = false
-        internal set
+    internal var isPlaced: Boolean = false
 
     var isPlacedByParent: Boolean = false
         internal set
@@ -176,7 +176,15 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
     private val layoutChildrenBlock: () -> Unit = {
         clearPlaceOrder()
         forEachChildAlignmentLinesOwner { it.alignmentLines.usedDuringParentLayout = false }
+
+        if (innerCoordinator.isPlacingForAlignment) {
+            layoutNode.children.fastForEach { it.outerCoordinator.isPlacingForAlignment = true }
+        }
         innerCoordinator.measureResult.placeChildren()
+
+        if (innerCoordinator.isPlacingForAlignment) {
+            layoutNode.children.fastForEach { it.outerCoordinator.isPlacingForAlignment = false }
+        }
 
         checkChildrenPlaceOrderForUpdates()
         forEachChildAlignmentLinesOwner {
@@ -279,6 +287,11 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
             if (!wasPlaced) {
                 innerCoordinator.onPlaced()
 
+                layoutNode
+                    .requireOwner()
+                    .rectManager
+                    .onLayoutPositionChanged(layoutNode, !layoutNode.measurePassDelegate.placedOnce)
+
                 // if the node was not placed previous remeasure request could have been ignored
                 if (measurePending) {
                     requestRemeasure(forceRequest = true)
@@ -353,20 +366,30 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
             parent?.invalidateLayer()
         }
 
-        if (!isPlaced) {
-            // when the visibility of a child has been changed we need to invalidate
-            // parents inner layer - the layer in which this child will be drawn
-            parent?.invalidateLayer()
-            markNodeAndSubtreeAsPlaced()
-            if (relayoutWithoutParentInProgress) {
-                // this node wasn't placed previously and the parent thinks this node is not
-                // visible, so we need to relayout the parent to get the `placeOrder`.
-                parent?.requestRelayout()
+        if (!innerCoordinator.isPlacingForAlignment) {
+            val wasPlaced = isPlaced
+            if (!wasPlaced || alignmentLines.queried) {
+                // this function ensures that all the nodes down the tree are marked as placed.
+                // usually we need to call it for the subtree when the value for this node changes,
+                // but we should also call it if the node was used by the alignment lines, as it
+                // might be possible that a child of this node was placed during the alignment
+                // lines calculation, which means that isPlaced for this node wasn't set.
+                markNodeAndSubtreeAsPlaced()
             }
-        } else {
-            // Call onPlaced callback on each placement, even if it was already placed,
-            // but without subtree invalidation.
-            layoutNode.innerCoordinator.onPlaced()
+            if (!wasPlaced) {
+                // when the visibility of a child has been changed we need to invalidate
+                // parents inner layer - the layer in which this child will be drawn
+                parent?.invalidateLayer()
+                if (relayoutWithoutParentInProgress) {
+                    // this node wasn't placed previously and the parent thinks this node is not
+                    // visible, so we need to relayout the parent to get the `placeOrder`.
+                    parent?.requestRelayout()
+                }
+            } else {
+                // Call onPlaced callback on each placement, even if it was already placed,
+                // but without subtree invalidation.
+                layoutNode.innerCoordinator.onPlaced()
+            }
         }
 
         if (parent != null) {
