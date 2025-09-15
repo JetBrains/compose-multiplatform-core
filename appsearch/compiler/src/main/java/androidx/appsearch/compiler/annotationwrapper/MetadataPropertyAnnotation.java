@@ -19,6 +19,8 @@ package androidx.appsearch.compiler.annotationwrapper;
 import static androidx.appsearch.compiler.IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS;
 
 import androidx.appsearch.compiler.IntrospectionHelper;
+import androidx.room.compiler.processing.XAnnotation;
+import androidx.room.compiler.processing.XType;
 
 import com.squareup.javapoet.ClassName;
 
@@ -26,9 +28,6 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
-
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.type.TypeMirror;
 
 /**
  * An annotation for a metadata property e.g. {@code @Document.Id}.
@@ -56,12 +55,12 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
             /* genericDocSetterName= */"setScore");
 
     /**
-     * Attempts to parse an {@link AnnotationMirror} into a {@link MetadataPropertyAnnotation},
+     * Attempts to parse an {@link XAnnotation} into a {@link MetadataPropertyAnnotation},
      * or null.
      */
     public static @Nullable MetadataPropertyAnnotation tryParse(
-            @NonNull AnnotationMirror annotation) {
-        String qualifiedClassName = annotation.getAnnotationType().toString();
+            @NonNull XAnnotation annotation) {
+        String qualifiedClassName = annotation.getQualifiedName();
         return Arrays.stream(values())
                 .filter(val -> val.getClassName().canonicalName().equals(qualifiedClassName))
                 .findFirst()
@@ -96,12 +95,12 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
     }
 
     @Override
-    public @NonNull TypeMirror getUnderlyingTypeWithinGenericDoc(
+    public @NonNull XType getUnderlyingTypeWithinGenericDoc(
             @NonNull IntrospectionHelper helper) {
         switch (this) {
             case ID: // fall-through
             case NAMESPACE:
-                return helper.stringType;
+                return helper.getStringType();
             case CREATION_TIMESTAMP_MILLIS: // fall-through
             case TTL_MILLIS:
                 return helper.longPrimitiveType;

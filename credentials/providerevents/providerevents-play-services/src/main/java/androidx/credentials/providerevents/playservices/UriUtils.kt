@@ -18,16 +18,20 @@ package androidx.credentials.providerevents.playservices
 
 import android.content.Context
 import android.net.Uri
-import androidx.annotation.RestrictTo
+import android.util.Log
 import java.io.BufferedReader
 import java.io.BufferedWriter
+import java.io.File
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 
 /** A util class for reading or writing credentials to URI */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-public class UriUtils {
+internal class UriUtils {
     public companion object {
+        private const val CREDENTIAL_TRANSFER_FILE_PATH = "import_export_temp"
+        private const val CREDENTIAL_TRANSFER_FILE_NAME = "tempImportedCredentials"
+        private const val TAG = "UriUtils"
+
         /** Write the credentials json into the provided uri. */
         public fun writeToUri(uri: Uri, responseJson: String, context: Context) {
             context.contentResolver.openOutputStream(uri).use {
@@ -47,6 +51,21 @@ public class UriUtils {
                 reader.close()
             }
             return credentialsJson
+        }
+
+        /** Creates a new temp file responsible for credential transfer and return its uri. */
+        public fun generateCredentialTransferFile(context: Context): File? {
+            val importExportDir = File(context.cacheDir, CREDENTIAL_TRANSFER_FILE_PATH)
+            importExportDir.mkdir()
+            val importExportFile = File(importExportDir, CREDENTIAL_TRANSFER_FILE_NAME)
+            val created = importExportFile.createNewFile()
+            if (!created) {
+                Log.d(TAG, "The file already exists")
+                // Could be a residual from previous session. Clean up.
+                importExportFile.delete()
+                return null
+            }
+            return importExportFile
         }
     }
 }

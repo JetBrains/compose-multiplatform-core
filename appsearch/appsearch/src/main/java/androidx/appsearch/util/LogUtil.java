@@ -16,6 +16,7 @@
 
 package androidx.appsearch.util;
 
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.RestrictTo;
@@ -31,10 +32,12 @@ import org.jspecify.annotations.Nullable;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class LogUtil {
-    /** Whether to log {@link Log#VERBOSE} and {@link Log#DEBUG} logs. */
-    // TODO(b/232285376): If it becomes possible to detect an eng build, turn this on by default
-    //  for eng builds.
-    public static final boolean DEBUG = false;
+    /**
+     * Whether to log {@link Log#VERBOSE} and {@link Log#DEBUG} logs.
+     *
+     * <p>This is enabled by default for eng builds only.
+     */
+    public static final boolean DEBUG = Build.TYPE.equals("eng");
     public static final boolean INFO = AppSearchEnvironmentFactory.getEnvironmentInstance()
             .isInfoLoggingEnabled();
 

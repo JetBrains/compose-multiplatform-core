@@ -20,7 +20,6 @@ import android.graphics.Color
 import android.view.View
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
@@ -29,7 +28,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -195,11 +193,12 @@ public fun Orbiter(
 
 @Composable
 private fun Orbiter(data: OrbiterData) {
+    // TODO(b/441560422): We should use movableContentOf here to maintain state between HSM and FSM.
     // We use movableContentOf here to avoid recreating this content when the spatial capabilities
     // changes. This allows us to use the same orbiter content both in an orbiter when spatial
     // capabilities are granted and inline in a non-spatial environment in a way that retains the
     // orbiter content's internal state.
-    val content = remember(data.content) { movableContentOf(data.content) }
+    val content = remember(data.content) { data.content }
     if (
         LocalSpatialCapabilities.current.isSpatialUiEnabled ||
             currentComposer.applier is SubspaceNodeApplier
@@ -246,56 +245,59 @@ internal fun PositionedOrbiter(data: OrbiterData, content: @Composable @UiCompos
     view.setContent {
         val constraints = Constraints(maxWidth = panelSize.width, maxHeight = panelSize.height)
 
-        CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
-            Layout(content = content) { measurables, _ ->
-                val placeables = measurables.fastMap { it.measure(constraints) }
-                val contentSize =
-                    placeables.fastFold(IntSize.Zero) { acc, placeable ->
-                        IntSize(
-                            acc.width.coerceAtLeast(placeable.width),
-                            acc.height.coerceAtLeast(placeable.height),
-                        )
-                    }
+        Box {
+            CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
+                Layout(content = content) { measurables, _ ->
+                    val placeables = measurables.fastMap { it.measure(constraints) }
+                    val contentSize =
+                        placeables.fastFold(IntSize.Zero) { acc, placeable ->
+                            IntSize(
+                                acc.width.coerceAtLeast(placeable.width),
+                                acc.height.coerceAtLeast(placeable.height),
+                            )
+                        }
 
-                layout(contentSize.width, contentSize.height) {
-                    placeables.fastForEach { it.place(0, 0) }
+                    layout(contentSize.width, contentSize.height) {
+                        placeables.fastForEach { it.place(0, 0) }
 
-                    panelEntity.size = IntVolumeSize(contentSize.width, contentSize.height, 0)
-                    val pose =
-                        calculatePose(
-                            data.calculateOffset(
+                        panelEntity.size = IntVolumeSize(contentSize.width, contentSize.height, 0)
+                        val pose =
+                            calculatePose(
+                                data.calculateOffset(
+                                    IntSize(constraints.maxWidth, constraints.maxHeight),
+                                    contentSize,
+                                    this@Layout,
+                                ),
                                 IntSize(constraints.maxWidth, constraints.maxHeight),
                                 contentSize,
                                 this@Layout,
-                            ),
-                            IntSize(constraints.maxWidth, constraints.maxHeight),
-                            contentSize,
-                            this@Layout,
-                            data.elevation,
-                        )
-                    panelEntity.poseInMeters = pose
-                    panelEntity.parent = parentEntity
-                    panelEntity.setShape(data.shape, this@Layout)
-                    panelEntity.enabled = true
+                                data.elevation,
+                            )
+                        panelEntity.poseInMeters = pose
+                        panelEntity.parent = parentEntity
+                        panelEntity.setShape(data.shape, this@Layout)
+                        panelEntity.enabled = true
+                    }
                 }
+                // The scrim needs to be after the content so that it can capture input.
+                PanelScrim(Modifier.matchParentSize())
             }
-
-            // The scrim needs to be after the content so that it can capture input.
-            PanelScrim()
         }
     }
 }
 
 @Composable
-private fun PanelScrim() {
+private fun PanelScrim(modifier: Modifier) {
     val view = LocalView.current
     val dialogManager = LocalDialogManager.current
     val isDialogActive = dialogManager.isSpatialDialogActive.value
     if (isDialogActive) {
         Box(
             modifier =
-                Modifier.fillMaxSize().pointerInput(Unit) {
-                    detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
+                modifier.pointerInput(Unit) {
+                    detectTapGestures {
+                        // Prevent clicks to compose
+                    }
                 }
         )
     }
@@ -356,6 +358,7 @@ public sealed interface ContentEdge {
         public companion object {
             /** Positioning constant to place an orbiter above the content's top edge. */
             public val Top: Horizontal = Horizontal("Top")
+
             /** Positioning constant to place an orbiter below the content's bottom edge. */
             public val Bottom: Horizontal = Horizontal("Bottom")
         }
@@ -373,6 +376,7 @@ public sealed interface ContentEdge {
              * Positioning constant to place an orbiter at the start of the content's starting edge.
              */
             public val Start: Vertical = Vertical("Start")
+
             /** Positioning constant to place an orbiter at the end of the content's ending edge. */
             public val End: Vertical = Vertical("End")
         }
@@ -386,10 +390,13 @@ public sealed interface ContentEdge {
     public companion object {
         /** The top edge. */
         public val Top: Horizontal = Horizontal.Top
+
         /** The bottom edge. */
         public val Bottom: Horizontal = Horizontal.Bottom
+
         /** The start edge. */
         public val Start: Vertical = Vertical.Start
+
         /** The end edge. */
         public val End: Vertical = Vertical.End
     }
@@ -401,6 +408,7 @@ public value class OrbiterOffsetType private constructor(private val value: Int)
     public companion object {
         /** The edge of the orbiter that is facing away from the content element. */
         public val OuterEdge: OrbiterOffsetType = OrbiterOffsetType(0)
+
         /** The edge of the orbiter that is directly facing the content element. */
         public val InnerEdge: OrbiterOffsetType = OrbiterOffsetType(1)
 

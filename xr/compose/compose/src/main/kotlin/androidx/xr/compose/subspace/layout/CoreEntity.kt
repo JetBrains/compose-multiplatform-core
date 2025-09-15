@@ -75,11 +75,20 @@ internal sealed class CoreEntity(protected val entity: Entity) : OpaqueEntity {
         get() = layout?.measurableLayout?.poseInParentEntity ?: Pose.Identity
 
     internal open var poseInMeters: Pose
-        get() = entity.getPose()
-        set(value) {
-            if (entity.getPose() != value) {
-                entity.setPose(value)
+        // TODO: b/440426914 - Avoid eating the IllegalStateException silently.
+        get() {
+            return try {
+                entity.getPose()
+            } catch (e: IllegalStateException) {
+                Pose.Identity
             }
+        }
+        set(value) {
+            try {
+                if (entity.getPose() != value) {
+                    entity.setPose(value)
+                }
+            } catch (e: IllegalStateException) {}
         }
 
     /** Get the [Entity] associated with this [CoreEntity] for testing purposes. */

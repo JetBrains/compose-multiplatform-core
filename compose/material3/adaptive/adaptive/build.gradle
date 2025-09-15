@@ -73,8 +73,8 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-                api("androidx.annotation:annotation-experimental:1.4.1")
+                api("androidx.annotation:annotation:1.9.1")
+                api("androidx.annotation:annotation-experimental:1.5.1")
                 api("androidx.window:window:1.4.0")
             }
         }

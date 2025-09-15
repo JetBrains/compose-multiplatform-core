@@ -36,12 +36,15 @@ dependencies {
     api(libs.kotlinStdlib)
     api(project(":xr:runtime:runtime"))
     api(project(":xr:scenecore:scenecore"))
+    implementation(project(":xr:arcore:arcore-openxr"))
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation(libs.androidx.core)
+    implementation libs.testRules
 
     testImplementation(libs.junit)
+    testImplementation(libs.testRules)
     testImplementation(libs.truth)
     testImplementation(libs.mockitoCore)
     testImplementation(libs.mockitoKotlin4)

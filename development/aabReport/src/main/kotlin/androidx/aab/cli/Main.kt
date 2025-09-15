@@ -41,6 +41,8 @@ internal abstract class PackageProcessor<T>(val typeLabel: String) {
 
     abstract fun printAnalysis(item: T)
 
+    abstract fun sortKey(item: T): String
+
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun process(files: List<File>, csvFile: File?) {
         println("Analyzing ${files.size} ${typeLabel}s...")
@@ -59,6 +61,7 @@ internal abstract class PackageProcessor<T>(val typeLabel: String) {
                         .flowOn(Dispatchers.IO)
                 }
                 .toList()
+                .sortedBy { sortKey(it) }
         if (csvFile != null) {
             println("$typeLabel parsing complete, constructing CSV...")
             csvFile.writeText(getCsvHeader() + "\n")
@@ -108,6 +111,7 @@ fun main(args: Array<String>) = runBlocking {
                 }
             }
             .filter { it.name != ".DS_Store" }
+            .sorted()
 
     val processor =
         if (files.any { it.name.endsWith(".apk") }) {
@@ -120,6 +124,8 @@ fun main(args: Array<String>) = runBlocking {
                     AnalyzedApkInfo(ApkInfo.from(file))
 
                 override fun printAnalysis(item: AnalyzedApkInfo) = item.printAnalysis()
+
+                override fun sortKey(item: AnalyzedApkInfo): String = item.apkInfo.path
             }
         } else {
             object : PackageProcessor<AnalyzedBundleInfo>("Bundle") {
@@ -131,6 +137,8 @@ fun main(args: Array<String>) = runBlocking {
                     AnalyzedBundleInfo(BundleInfo.from(file))
 
                 override fun printAnalysis(item: AnalyzedBundleInfo) = item.printAnalysis()
+
+                override fun sortKey(item: AnalyzedBundleInfo): String = item.bundleInfo.path
             }
         }
 

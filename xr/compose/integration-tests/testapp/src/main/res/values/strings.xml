@@ -25,10 +25,19 @@
     <string name="cuj_gltf_entity_input_test_case">GLTF entity input Test Case</string>
     <string name="cuj_gltf_animation_test_case">GLTF Animation Test Case</string>
     <string name="depthstacking_modifier_order_test_case">DepthStacking and ModifierOrder Layout Test Case</string>
-    <string name="nested_subspace_test_case">Nested Subspace Layout Test Case</string>
+    <string name="panel_embedded_subspace_test_case">Panel Embedded Subspace Layout Test Case</string>
     <string name="panel_volume_test_case">Panel Volume Layout Test Case</string>
     <string name="resizable_panel_test_case">Resizable Panel Test Case</string>
     <string name="spatial_alignment_usage_test_case">Spatial Alignment Usage Test Case</string>
+    <string name="spatial_arrangement_usage_test_case">Spatial Arrangement Usage Test Case</string>
+    <string name="hsm_focus_change_test">HSM Focus Change Test Case</string>
+    <string name="fsm_focus_change_test">FSM Focus Change Test Case</string>
+    <string name="space_mode_change_test">Space Mode Change Test Case</string>
+    <string name="spatial_panel_test">Spatial Panel Test Case</string>
+    <string name="lifecycle_open_close_test">Open Close Panel Test Case</string>
+    <string name="lifecycle_resize_test">Resizing Panel Test Case</string>
+    <string name="lifecycle_runtime_session_test">Runtime Session Test Case</string>
+
 
     <string name="hello_android_xr">Hello Android XR.</string>
     <string name="switch_to_home_space_mode">Switch to Home Space Mode</string>

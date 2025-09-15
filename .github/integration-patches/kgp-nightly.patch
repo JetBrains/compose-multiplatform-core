@@ -1,0 +1,12 @@
+diff --git a/benchmark/benchmark-darwin-gradle-plugin/src/main/kotlin/androidx/benchmark/darwin/gradle/DarwinBenchmarkPlugin.kt b/benchmark/benchmark-darwin-gradle-plugin/src/main/kotlin/androidx/benchmark/darwin/gradle/DarwinBenchmarkPlugin.kt
+index b9855a3ede2..0204c30c80b 100644
+--- a/benchmark/benchmark-darwin-gradle-plugin/src/main/kotlin/androidx/benchmark/darwin/gradle/DarwinBenchmarkPlugin.kt
++++ b/benchmark/benchmark-darwin-gradle-plugin/src/main/kotlin/androidx/benchmark/darwin/gradle/DarwinBenchmarkPlugin.kt
+@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+  * results in `json`.
+  */
+ class DarwinBenchmarkPlugin : Plugin<Project> {
++    @Suppress("UPPER_BOUND_VIOLATED_BASED_ON_JAVA_ANNOTATIONS")
+     override fun apply(project: Project) {
+         val extension =
+             project.extensions.create("darwinBenchmark", DarwinBenchmarkPluginExtension::class.java)

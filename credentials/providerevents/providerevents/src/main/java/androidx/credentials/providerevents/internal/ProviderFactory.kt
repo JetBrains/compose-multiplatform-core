@@ -16,8 +16,11 @@
 
 package androidx.credentials.providerevents.internal
 
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.util.Log
+import androidx.credentials.providerevents.ProviderEventsApiProvider
 
 internal interface ProviderFactory {
     fun getBestAvailableProvider(intent: Intent, key: String): Any? {
@@ -26,6 +29,59 @@ internal interface ProviderFactory {
             return instantiateClosedSourceProvider(className)
         }
         return null
+    }
+
+    fun getBestAvailableProvider(context: Context, key: String): ProviderEventsApiProvider? {
+        val classNames = getAllowedProvidersFromManifest(context, key)
+        return if (classNames.isEmpty()) {
+            null
+        } else {
+            instantiateClosedSourceProvider(classNames, context)
+        }
+    }
+
+    @Suppress("deprecation")
+    private fun getAllowedProvidersFromManifest(context: Context, key: String): List<String> {
+        val packageInfo =
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES,
+            )
+
+        val classNames = mutableListOf<String>()
+        if (packageInfo.services != null) {
+            for (serviceInfo in packageInfo.services!!) {
+                if (serviceInfo.metaData != null) {
+                    val className = serviceInfo.metaData.getString(key)
+                    if (className != null) {
+                        classNames.add(className)
+                    }
+                }
+            }
+        }
+        return classNames.toList()
+    }
+
+    private fun instantiateClosedSourceProvider(
+        classNames: List<String>,
+        context: Context,
+    ): ProviderEventsApiProvider? {
+        var provider: ProviderEventsApiProvider? = null
+        for (className in classNames) {
+            try {
+                val klass = Class.forName(className)
+                val p =
+                    klass.getConstructor(Context::class.java).newInstance(context)
+                        as ProviderEventsApiProvider
+                if (p.isAvailable()) {
+                    if (provider != null) { // Only one active OEM CredentialProvider allowed
+                        return null
+                    }
+                    provider = p
+                }
+            } catch (_: Throwable) {}
+        }
+        return provider
     }
 
     private fun instantiateClosedSourceProvider(className: String): Any? {

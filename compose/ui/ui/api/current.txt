@@ -146,13 +146,13 @@ package androidx.compose.ui {
     property public boolean isIgnoreInvalidPrevFocusRectEnabled;
     property public boolean isIndirectTouchNavigationGestureDetectorEnabled;
     property public boolean isInitialFocusOnFocusableAvailable;
-    property public boolean isNestedScrollDispatcherNodeFixEnabled;
     property public boolean isNestedScrollInteropIntegerPropagationEnabled;
     property @Deprecated public boolean isNoPinningInFocusRestorationEnabled;
     property public boolean isOutOfFrameDeactivationEnabled;
     property public boolean isPre26FocusFinderFixEnabled;
     property public boolean isRectTrackingEnabled;
     property @Deprecated public boolean isRemoveFocusedViewFixEnabled;
+    property public boolean isRequestFocusOnNonFocusableFocusTargetEnabled;
     property public boolean isSemanticAutofillEnabled;
     property public boolean isViewFocusFixEnabled;
     field public static final androidx.compose.ui.ComposeUiFlags INSTANCE;
@@ -167,13 +167,13 @@ package androidx.compose.ui {
     field public static boolean isIgnoreInvalidPrevFocusRectEnabled;
     field public static boolean isIndirectTouchNavigationGestureDetectorEnabled;
     field public static boolean isInitialFocusOnFocusableAvailable;
-    field public static boolean isNestedScrollDispatcherNodeFixEnabled;
     field public static boolean isNestedScrollInteropIntegerPropagationEnabled;
     field @Deprecated public static boolean isNoPinningInFocusRestorationEnabled;
     field public static boolean isOutOfFrameDeactivationEnabled;
     field public static boolean isPre26FocusFinderFixEnabled;
     field public static boolean isRectTrackingEnabled;
     field @Deprecated public static boolean isRemoveFocusedViewFixEnabled;
+    field public static boolean isRequestFocusOnNonFocusableFocusTargetEnabled;
     field public static boolean isSemanticAutofillEnabled;
     field public static boolean isViewFocusFixEnabled;
   }
@@ -467,10 +467,13 @@ package androidx.compose.ui.autofill {
 
   public interface FillableData {
     method public default Boolean? getBooleanValue();
+    method public default long getDateMillisOrDefault(long defaultValue);
+    method public default Long? getDateMillisValue();
     method public default int getListIndexOrDefault(int defaultValue);
     method public default Integer? getListIndexValue();
     method public default CharSequence? getTextValue();
     property public default Boolean? booleanValue;
+    property public default Long? dateMillisValue;
     property public default Integer? listIndexValue;
     property public default CharSequence? textValue;
   }
@@ -480,6 +483,7 @@ package androidx.compose.ui.autofill {
     method public static androidx.compose.ui.autofill.FillableData? FillableData(boolean booleanValue);
     method public static androidx.compose.ui.autofill.FillableData? FillableData(int listIndexValue);
     method public static androidx.compose.ui.autofill.FillableData? FillableData(CharSequence textValue);
+    method public static androidx.compose.ui.autofill.FillableData? FillableData(long dateMillisValue);
     method public static android.view.autofill.AutofillValue? toAutofillValue(androidx.compose.ui.autofill.FillableData);
   }
 
@@ -2583,11 +2587,8 @@ package androidx.compose.ui.input.pointer.util {
     method @KotlinOnly public static void addPointerInputChange(androidx.compose.ui.input.pointer.util.VelocityTracker, androidx.compose.ui.input.pointer.PointerInputChange event, androidx.compose.ui.geometry.Offset offset);
     method @BytecodeOnly public static void addPointerInputChange-0AR0LA0(androidx.compose.ui.input.pointer.util.VelocityTracker, androidx.compose.ui.input.pointer.PointerInputChange, long);
     method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean getVelocityTrackerAddPointsFix();
-    method @SuppressCompatibility @androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi public static boolean getVelocityTrackerStrategyUseImpulse();
     method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static void setVelocityTrackerAddPointsFix(boolean);
-    method @SuppressCompatibility @androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi public static void setVelocityTrackerStrategyUseImpulse(boolean);
     property @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean VelocityTrackerAddPointsFix;
-    property @SuppressCompatibility @androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi public static boolean VelocityTrackerStrategyUseImpulse;
   }
 
 }
@@ -4050,9 +4051,11 @@ package androidx.compose.ui.platform {
   }
 
   @androidx.compose.runtime.Stable public interface WindowInfo {
+    method @BytecodeOnly public default long getContainerDpSize-MYxV2XQ();
     method @BytecodeOnly public default long getContainerSize-YbymL2g();
     method @BytecodeOnly public default int getKeyboardModifiers-k7X9c1A();
     method public boolean isWindowFocused();
+    property public default androidx.compose.ui.unit.DpSize containerDpSize;
     property public default androidx.compose.ui.unit.IntSize containerSize;
     property public abstract boolean isWindowFocused;
     property public default androidx.compose.ui.input.pointer.PointerKeyboardModifiers keyboardModifiers;

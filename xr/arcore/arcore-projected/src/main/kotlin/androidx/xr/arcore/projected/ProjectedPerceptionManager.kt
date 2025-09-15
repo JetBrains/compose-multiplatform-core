@@ -17,20 +17,24 @@
 package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.Anchor
+import androidx.xr.arcore.internal.ArDevice
+import androidx.xr.arcore.internal.DepthMap
+import androidx.xr.arcore.internal.Earth
+import androidx.xr.arcore.internal.Face
+import androidx.xr.arcore.internal.Hand
+import androidx.xr.arcore.internal.HitResult
+import androidx.xr.arcore.internal.PerceptionManager
+import androidx.xr.arcore.internal.RenderViewpoint
+import androidx.xr.arcore.internal.Trackable
+import androidx.xr.runtime.VpsAvailabilityErrorInternal
 import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.internal.Anchor
-import androidx.xr.runtime.internal.ArDevice
-import androidx.xr.runtime.internal.DepthMap
-import androidx.xr.runtime.internal.Earth
-import androidx.xr.runtime.internal.Face
-import androidx.xr.runtime.internal.Hand
-import androidx.xr.runtime.internal.HitResult
-import androidx.xr.runtime.internal.PerceptionManager
-import androidx.xr.runtime.internal.RenderViewpoint
-import androidx.xr.runtime.internal.Trackable
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Implementation of the perception capabilities of a runtime using Projected.
@@ -40,8 +44,8 @@ import java.util.UUID
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedPerceptionManager
 internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionManager {
-
     private val xrResources = XrResources()
+    internal var service: IProjectedPerceptionService? = null
 
     /**
      * Creates an anchor in the scene.
@@ -111,10 +115,20 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
     override public suspend fun checkVpsAvailability(
         latitude: Double,
         longitude: Double,
-    ): VpsAvailabilityResult {
-        // Call the Stable AIDL interface to GlassesCore here. This should be wrapped in another
-        // class.
-        throw NotImplementedError("checkVpsAvailability is currently not supported by Projected.")
+    ): VpsAvailabilityResult = suspendCancellableCoroutine { continuation ->
+        val callback =
+            object : IVpsAvailabilityCallback.Stub() {
+                override fun onVpsAvailabilityChanged(vpsState: Int) {
+                    // TODO b/438071712 - map the vpsState to VpsResult
+                    val vpsResult = VpsAvailabilityErrorInternal()
+                    continuation.resume(vpsResult)
+                }
+            }
+        try {
+            this.service?.checkVpsAvailability(latitude, longitude, callback)
+        } catch (e: Exception) {
+            continuation.resumeWithException(e)
+        }
     }
 
     override val trackables: Collection<Trackable> = emptyList()
@@ -153,8 +167,16 @@ internal constructor(private val timeSource: ProjectedTimeSource) : PerceptionMa
     override val monoRenderViewpoint: RenderViewpoint
         get() = throw NotImplementedError("Not implemented on projected runtime.")
 
-    /** Returns a list of [DepthMap] objects. */
-    override val depthMaps: List<DepthMap>
+    /** Returns the left [DepthMap] object. */
+    override val leftDepthMap: DepthMap
+        get() = throw NotImplementedError("Not implemented on projected runtime.")
+
+    /** Returns the right [DepthMap] object. */
+    override val rightDepthMap: DepthMap
+        get() = throw NotImplementedError("Not implemented on projected runtime.")
+
+    /** Returns the mono [DepthMap] object. */
+    override val monoDepthMap: DepthMap
         get() = throw NotImplementedError("Not implemented on projected runtime.")
 
     /**

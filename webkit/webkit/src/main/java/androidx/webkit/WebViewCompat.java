@@ -1335,7 +1335,12 @@ public class WebViewCompat {
         }
 
         @Override
-        public List<BlockingStartUpLocation> getBlockingStartUpLocations() {
+        public List<StartUpLocation> getUiThreadBlockingStartUpLocations() {
+            return null;
+        }
+
+        @Override
+        public List<StartUpLocation> getNonUiThreadBlockingStartUpLocations() {
             return null;
         }
     }

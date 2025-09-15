@@ -49,6 +49,10 @@ internal class AndroidFillableData(internal val autofillValue: AutofillValue) : 
         }
         return defaultValue
     }
+
+    /** The Long data if the backing [AutofillValue] contains a date value, otherwise null. */
+    override val dateMillisValue: Long?
+        @Suppress("AutoBoxing") get() = if (autofillValue.isDate) autofillValue.dateValue else null
 }
 
 /**
@@ -98,6 +102,23 @@ actual fun FillableData(booleanValue: Boolean): FillableData? {
 actual fun FillableData(listIndexValue: Int): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         AndroidFillableData(AutofillValue.forList(listIndexValue))
+    } else null
+}
+
+/**
+ * Creates a [FillableData] instance from a [Long].
+ *
+ * This function is used to wrap a long value for autofill purposes, such as a date represented in
+ * milliseconds since the epoch. On Android, it creates an [AutofillValue] that represents a date.
+ *
+ * @param dateMillisValue The long data to be used for autofill, representing a date in
+ *   milliseconds.
+ * @return A [FillableData] object containing the long data, or `null` if the platform version is
+ *   lower than [Build.VERSION_CODES.O].
+ */
+actual fun FillableData(dateMillisValue: Long): FillableData? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        AndroidFillableData(AutofillValue.forDate(dateMillisValue))
     } else null
 }
 

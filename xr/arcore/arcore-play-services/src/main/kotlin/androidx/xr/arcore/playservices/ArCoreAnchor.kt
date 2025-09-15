@@ -17,14 +17,14 @@
 package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.Anchor
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.math.Pose
 import com.google.ar.core.Anchor as ARCore1xAnchor
 import java.util.UUID
 
 /**
- * Wraps the native [ARCore1xAnchor] with the [Anchor] interface.
+ * Wraps the native [ARCore1xAnchor] with the [androidx.xr.arcore.internal.Anchor] interface.
  *
  * @property arCoreAnchor The underlying [ARCore1xAnchor] instance.
  */

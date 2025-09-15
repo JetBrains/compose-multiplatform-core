@@ -16,7 +16,9 @@
 
 package androidx.tracing.benchmark.driver
 
+import androidx.benchmark.BlackHole
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
+import androidx.benchmark.ExperimentalBlackHoleApi
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -28,7 +30,10 @@ import androidx.tracing.driver.TraceContext
 import androidx.tracing.driver.wire.TraceSink
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertEquals
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import okio.blackholeSink
 import okio.buffer
 import org.junit.Rule
@@ -80,6 +85,37 @@ class TracingDriverBenchmark {
                 // instead, we reset after 8 begin/end pairs so we only measure
                 // producer write cost without sending to sink
                 process.resetFillCount()
+            }
+        }
+    }
+
+    @Test
+    fun beginEndCoroutine_writeOnly() = runTest {
+        benchmarkRule.measureRepeated {
+            runBlocking {
+                repeat(4) {
+                    repeat(8) { process.traceCoroutine(name = BASIC_STRING) {} }
+                    // 32 total events (or 16 begin/end pairs) will dispatch
+                    // instead, we reset after 8 begin/end pairs so we only measure
+                    // producer write cost without sending to sink
+                    runWithMeasurementDisabled { process.resetFillCount() }
+                }
+            }
+        }
+    }
+
+    // This benchmark is a reference benchmark for `beginEndCoroutine_writeOnly`. The goal is to
+    // get the numbers for `beginEndCoroutine_writeOnly` to get as close as possible to the
+    // benchmark below.
+    @OptIn(ExperimentalBlackHoleApi::class)
+    @Test
+    fun referenceForBeginEndCoroutine() = runTest {
+        val testThreadContextElement = TestThreadContextElement()
+        benchmarkRule.measureRepeated {
+            runBlocking {
+                withContext(coroutineContext + testThreadContextElement) {
+                    repeat(32) { BlackHole.consume(it) }
+                }
             }
         }
     }

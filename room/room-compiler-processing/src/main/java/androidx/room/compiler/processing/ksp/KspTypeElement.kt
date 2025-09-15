@@ -33,7 +33,7 @@ import androidx.room.compiler.processing.XTypeParameterElement
 import androidx.room.compiler.processing.collectAllMethods
 import androidx.room.compiler.processing.collectFieldsIncludingPrivateSupers
 import androidx.room.compiler.processing.filterMethodsByConfig
-import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.NO_USE_SITE
+import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.NO_USE_SITE
 import androidx.room.compiler.processing.ksp.synthetic.KspSyntheticConstructorElement
 import androidx.room.compiler.processing.ksp.synthetic.KspSyntheticPropertyMethodElement
 import androidx.room.compiler.processing.tryBox

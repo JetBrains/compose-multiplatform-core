@@ -17,6 +17,8 @@
 package androidx.pdf.selection
 
 import android.content.Context
+import androidx.pdf.selection.model.GoToLinkSelection
+import androidx.pdf.selection.model.HyperLinkSelection
 import androidx.pdf.selection.model.TextSelection
 
 /**
@@ -24,7 +26,7 @@ import androidx.pdf.selection.model.TextSelection
  * PDF viewer.
  *
  * This class serves as a centralized manager to provide context-specific menu options when a user
- * interacts with selected content. It currently optimizes for [TextSelection] by caching the
+ * interacts with selected content. It optimizes [ContextMenuComponent] list by caching the
  * previously generated menu items.
  *
  * @property context The [Context] used to initialize underlying menu providers, such as
@@ -33,30 +35,48 @@ import androidx.pdf.selection.model.TextSelection
 internal class SelectionMenuManager(private val context: Context) {
 
     /**
-     * Caches the most recent [TextSelection] and its generated [ContextMenuComponent] list.
+     * Caches the most recent [Selection] and its generated [ContextMenuComponent] list.
      *
-     * This optimization prevents redundant computations for identical text selections, especially
-     * during frequent UI updates like zooming, scrolling, or orientation changes.
+     * This optimization prevents redundant computations for identical selections, especially during
+     * frequent UI updates like zooming, scrolling, or orientation changes.
      */
     private data class SelectionCache(
-        val textSelection: TextSelection,
+        val selection: Selection,
         val menuItems: List<ContextMenuComponent>,
     )
 
     private var cachedSelection: SelectionCache? = null
+    private val goToLinkSelectionMenuProvider = GoToLinkSelectionMenuProvider(context)
+    private val hyperLinkSelectionMenuProvider = HyperLinkSelectionMenuProvider(context)
     private val textSelectionMenuProvider = TextSelectionMenuProvider(context)
 
     suspend fun getSelectionMenuItems(selection: Selection): List<ContextMenuComponent> {
+        // Check if the current selection is already cached
+        cachedSelection?.let { localCachedSelection ->
+            if (localCachedSelection.selection == selection) {
+                return localCachedSelection.menuItems
+            }
+        }
+        // If it's a new selection or no selection cached, compute and cache it
         return when (selection) {
             is TextSelection -> {
-                // Check if the current selection is already cached
-                cachedSelection?.let { localCachedSelection ->
-                    if (localCachedSelection.textSelection == selection) {
-                        return localCachedSelection.menuItems
-                    }
-                }
-                // If it's a new selection or no selection cached, compute and cache it
                 val newMenuItems = textSelectionMenuProvider.getMenuItems(selection)
+                cachedSelection = SelectionCache(selection, newMenuItems)
+                newMenuItems
+            }
+            is HyperLinkSelection -> {
+                val newMenuItems: MutableList<ContextMenuComponent> = mutableListOf()
+                // We use the TextSelectionMenuProvider here because it's already designed to
+                // generate smart action items using the TextClassifier API, which is ideal for
+                // creating relevant menu options for a hyperlink's URL.
+                newMenuItems +=
+                    textSelectionMenuProvider.getSmartMenuItems(selection.link.toString())
+                newMenuItems += hyperLinkSelectionMenuProvider.getMenuItems(selection)
+                cachedSelection = SelectionCache(selection, newMenuItems)
+                newMenuItems
+            }
+            is GoToLinkSelection -> {
+                val newMenuItems = goToLinkSelectionMenuProvider.getMenuItems(selection)
                 cachedSelection = SelectionCache(selection, newMenuItems)
                 newMenuItems
             }

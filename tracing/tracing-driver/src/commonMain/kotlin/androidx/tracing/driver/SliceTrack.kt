@@ -16,6 +16,8 @@
 
 package androidx.tracing.driver
 
+import androidx.tracing.driver.PlatformThreadContextElement.Companion.STATE_BEGIN
+import androidx.tracing.driver.PlatformThreadContextElement.Companion.STATE_END
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.withContext
 
@@ -142,16 +144,52 @@ public abstract class SliceTrack(
 
     /** [Track] scoped async trace slices. */
     @JvmOverloads
-    public suspend inline fun <T> traceFlow(
+    public suspend inline fun <T> traceCoroutine(
         name: String,
         flowId: Long = monotonicId(),
         crossinline metadataBlock: (TraceEventScope.() -> Unit) = {},
         crossinline block: suspend () -> T,
     ): T {
-        val element = obtainFlowContext()
-        val flowIds = if (element == null) listOf(flowId) else listOf(element.flowId, flowId)
-        val newElement = FlowContextElement(flowId)
-        return withContext(coroutineContext + newElement) {
+        val element = obtainPlatformThreadContextElement()
+        // Currently, Perfetto flows cannot fully represent fanouts and fanin's.
+        // Therefore we simply propagate a single flowId from the parent to the child
+        // and carry that throughout. This way, there is only 1 flow id that is used.
+        val flowIds = element?.flowIds ?: listOf(flowId)
+        val threadContextElement =
+            buildThreadContextElement(
+                name = name,
+                flowIds = flowIds,
+                // This method is called before a coroutine is resumed on a thread that
+                // belongs to a dispatcher. This can be called more than once. So avoid creating
+                // slices unless we transition to `STATE_END`.
+                updateThreadContextBlock = { context ->
+                    val element = context[PlatformThreadContextElement.KEY]
+                    if (
+                        element != null &&
+                            element.started.compareAndSet(
+                                expected = STATE_END,
+                                actual = STATE_BEGIN,
+                            )
+                    ) {
+                        beginSection(element.name, flowIds)
+                    }
+                },
+                // This method is called **after** a coroutine is suspend on the current thread.
+                // This method might be called more than once as well. So we want to be idempotent.
+                restoreThreadContextBlock = { context ->
+                    val element = context[PlatformThreadContextElement.KEY]
+                    if (
+                        element != null &&
+                            element.started.compareAndSet(
+                                expected = STATE_BEGIN,
+                                actual = STATE_END,
+                            )
+                    ) {
+                        endSection()
+                    }
+                },
+            )
+        return withContext(coroutineContext + threadContextElement) {
             beginSection(name = name, flowIds = flowIds, metadataBlock = metadataBlock)
             try {
                 block()

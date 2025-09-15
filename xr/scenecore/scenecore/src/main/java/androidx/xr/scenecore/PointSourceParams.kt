@@ -17,7 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.internal.PointSourceParams as RtPointSourceParams
 
 /**
  * Configures a sound source to be spatialized at a 3D location.
@@ -30,8 +30,15 @@ import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
 // TODO: b/430650745 - reevaluate the usefulness of this class prior to the beta release
 public class PointSourceParams(internal val entity: Entity) {
 
-    internal val rtPointSourceParams: RtPointSourceParams =
-        RtPointSourceParams((entity as BaseEntity<*>).rtEntity)
+    init {
+        (entity as BaseEntity<*>).checkNotDisposed()
+    }
+
+    internal val rtPointSourceParams: RtPointSourceParams
+        get() {
+            (entity as BaseEntity<*>).checkNotDisposed()
+            return RtPointSourceParams(entity.rtEntity!!)
+        }
 }
 
 internal fun RtPointSourceParams.toPointSourceParams(session: Session): PointSourceParams? {

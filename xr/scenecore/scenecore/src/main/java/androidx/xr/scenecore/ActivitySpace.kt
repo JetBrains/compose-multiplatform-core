@@ -19,11 +19,12 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executor
@@ -35,6 +36,8 @@ import java.util.function.Consumer
  * the system might update it in response to the User moving it or entering or exiting Full Space
  * Mode.
  */
+// TODO: b/440429756 - Define dispose policy for SceneCore singletons like main panel and system
+// spaces.
 public class ActivitySpace
 private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManager) :
     BaseEntity<RtActivitySpace>(rtActivitySpace, entityManager) {
@@ -64,9 +67,11 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
     }
 
     /** The current bounds of this ActivitySpace. */
-    public var bounds: FloatSize3d
-        get() = rtEntity.bounds.toFloatSize3d()
-        private set(value) {} // not used, but required by the compiler
+    public val bounds: FloatSize3d
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.bounds.toFloatSize3d()
+        }
 
     /**
      * Adds the given [Consumer] as a listener to be invoked when this ActivitySpace's current
@@ -94,12 +99,13 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
         callbackExecutor: Executor,
         listener: Consumer<FloatSize3d>,
     ) {
+        checkNotDisposed()
         val rtListener: RtActivitySpace.OnBoundsChangedListener =
             RtActivitySpace.OnBoundsChangedListener { rtDimensions ->
                 callbackExecutor.execute { listener.accept(rtDimensions.toFloatSize3d()) }
             }
         boundsListeners.compute(listener) { _, _ ->
-            rtEntity.addOnBoundsChangedListener(rtListener)
+            rtEntity!!.addOnBoundsChangedListener(rtListener)
             rtListener
         }
     }
@@ -111,8 +117,9 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @param listener The Consumer to be removed from receiving updates.
      */
     public fun removeOnBoundsChangedListener(listener: Consumer<FloatSize3d>) {
+        checkNotDisposed()
         boundsListeners.computeIfPresent(listener) { _, rtListener ->
-            rtEntity.removeOnBoundsChangedListener(rtListener)
+            rtEntity!!.removeOnBoundsChangedListener(rtListener)
             null // returning null from computeIfPresent removes this entry from the Map
         }
     }
@@ -131,10 +138,11 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @param executor The [Executor] on which to run the listener.
      */
     public fun addOnSpaceUpdatedListener(executor: Executor, listener: Runnable) {
+        checkNotDisposed()
         val addRtListener = spaceUpdatedListeners.isEmpty()
         spaceUpdatedListeners.put(listener, executor)
         if (addRtListener) {
-            rtEntity.setOnSpaceUpdatedListener(rtSpaceUpdatedListener, null)
+            rtEntity!!.setOnSpaceUpdatedListener(rtSpaceUpdatedListener, null)
         }
     }
 
@@ -157,9 +165,10 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
 
     /** Removes the previously-added listener. */
     public fun removeOnSpaceUpdatedListener(listener: Runnable) {
+        checkNotDisposed()
         spaceUpdatedListeners.remove(listener)
         if (spaceUpdatedListeners.isEmpty()) {
-            rtEntity.setOnSpaceUpdatedListener(null, null)
+            rtEntity!!.setOnSpaceUpdatedListener(null, null)
         }
     }
 
@@ -170,8 +179,11 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * ActivitySpace's transform. The dimensions are always in meters. This provides a
      * device-specific default volume that developers can use to size their content appropriately.
      */
-    public val recommendedContentBoxInFullSpace: BoundingBox =
-        rtEntity.recommendedContentBoxInFullSpace
+    public val recommendedContentBoxInFullSpace: BoundingBox
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.recommendedContentBoxInFullSpace
+        }
 
     /**
      * Throws [UnsupportedOperationException] if called.
@@ -185,6 +197,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
+        checkNotDisposed()
         throw UnsupportedOperationException("Cannot set 'pose' on an ActivitySpace.")
     }
 
@@ -198,6 +211,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      *   parents.
      */
     override fun getPose(@SpaceValue relativeTo: Int): Pose {
+        checkNotDisposed()
         return when (relativeTo) {
             Space.PARENT ->
                 throw IllegalArgumentException(
@@ -221,6 +235,22 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun setScale(scale: Float, @SpaceValue relativeTo: Int) {
+        checkNotDisposed()
+        throw UnsupportedOperationException("Cannot set 'scale' on an ActivitySpace.")
+    }
+
+    /**
+     * Throws [UnsupportedOperationException] if called.
+     *
+     * **Note:** The scale of the `ActivitySpace` is managed by the system. Applications should not
+     * call this method, as any changes may be overwritten by the system.
+     *
+     * @param scale The new scale to set.
+     * @param relativeTo The space in which the scale is defined.
+     * @throws UnsupportedOperationException if called.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun setScale(scale: Vector3, @SpaceValue relativeTo: Int) {
         throw UnsupportedOperationException("Cannot set 'scale' on an ActivitySpace.")
     }
 
@@ -234,6 +264,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      *   parents.
      */
     override fun getScale(@SpaceValue relativeTo: Int): Float {
+        checkNotDisposed()
         return when (relativeTo) {
             Space.PARENT ->
                 throw IllegalArgumentException(

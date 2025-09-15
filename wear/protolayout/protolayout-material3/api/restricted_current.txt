@@ -248,11 +248,14 @@ package androidx.wear.protolayout.material3 {
   }
 
   public final class IconKt {
+    method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement icon(androidx.wear.protolayout.material3.MaterialScope, androidx.wear.protolayout.ResourceBuilders.ImageResource resource, optional String? protoLayoutResourceId, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension width, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension height, optional androidx.wear.protolayout.types.LayoutColor tintColor);
     method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement icon(androidx.wear.protolayout.material3.MaterialScope, String protoLayoutResourceId, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension width, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension height, optional androidx.wear.protolayout.types.LayoutColor tintColor);
   }
 
   public final class ImageKt {
+    method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement avatarImage(androidx.wear.protolayout.material3.MaterialScope, androidx.wear.protolayout.ResourceBuilders.ImageResource resource, optional String? protoLayoutResourceId, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension width, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension height, optional androidx.wear.protolayout.modifiers.LayoutModifier modifier, optional int contentScaleMode);
     method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement avatarImage(androidx.wear.protolayout.material3.MaterialScope, String protoLayoutResourceId, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension width, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension height, optional androidx.wear.protolayout.modifiers.LayoutModifier modifier, optional int contentScaleMode);
+    method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement backgroundImage(androidx.wear.protolayout.material3.MaterialScope, androidx.wear.protolayout.ResourceBuilders.ImageResource resource, optional String? protoLayoutResourceId, optional androidx.wear.protolayout.modifiers.LayoutModifier modifier, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension width, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension height, optional androidx.wear.protolayout.types.LayoutColor? overlayColor, optional int contentScaleMode);
     method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement backgroundImage(androidx.wear.protolayout.material3.MaterialScope, String protoLayoutResourceId, optional androidx.wear.protolayout.modifiers.LayoutModifier modifier, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension width, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension height, optional androidx.wear.protolayout.types.LayoutColor? overlayColor, optional int contentScaleMode);
   }
 
@@ -260,15 +263,18 @@ package androidx.wear.protolayout.material3 {
     method public final androidx.wear.protolayout.material3.ColorScheme getColorScheme();
     method public final android.content.Context getContext();
     method public final androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters getDeviceConfiguration();
+    method public final androidx.wear.protolayout.ProtoLayoutScope? getProtoLayoutScope();
     method public final androidx.wear.protolayout.material3.Shapes getShapes();
     property public final androidx.wear.protolayout.material3.ColorScheme colorScheme;
     property public final android.content.Context context;
     property public final androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters deviceConfiguration;
+    property public final androidx.wear.protolayout.ProtoLayoutScope? protoLayoutScope;
     property public final androidx.wear.protolayout.material3.Shapes shapes;
   }
 
   public final class MaterialScopeKt {
     method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement materialScope(android.content.Context context, androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters deviceConfiguration, optional boolean allowDynamicTheme, optional androidx.wear.protolayout.material3.ColorScheme defaultColorScheme, kotlin.jvm.functions.Function1<? super androidx.wear.protolayout.material3.MaterialScope,? extends androidx.wear.protolayout.LayoutElementBuilders.LayoutElement> layout);
+    method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement materialScopeWithResources(android.content.Context context, androidx.wear.protolayout.ProtoLayoutScope protoLayoutScope, androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters deviceConfiguration, optional boolean allowDynamicTheme, optional androidx.wear.protolayout.material3.ColorScheme defaultColorScheme, kotlin.jvm.functions.Function1<? super androidx.wear.protolayout.material3.MaterialScope,? extends androidx.wear.protolayout.LayoutElementBuilders.LayoutElement> layout);
   }
 
   @kotlin.DslMarker public @interface MaterialScopeMarker {

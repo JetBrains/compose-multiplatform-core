@@ -55,7 +55,4 @@ dependencies {
 android {
     compileSdk = 36
     namespace = "androidx.test.uiautomator.testapp"
-    defaultConfig {
-        minSdk = 23
-    }
 }

@@ -86,6 +86,12 @@ tasks.named("multiplatformSourceJar").configure {
     dependsOn(tasks.named("generateCommonMainProtos"))
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.tracing.driver.DelicateTracingApi")
+    }
+}
+
 wire {
     kotlin {
         mutableTypes = true

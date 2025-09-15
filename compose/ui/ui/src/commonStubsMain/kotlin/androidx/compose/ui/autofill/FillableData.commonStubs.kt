@@ -21,8 +21,8 @@ import androidx.compose.ui.implementedInJetBrainsFork
 /**
  * Creates a [FillableData] object from a [CharSequence].
  *
- * This is a stub implementation and will throw an exception if called. Autofill is not supported on
- * this platform.
+ * This is a stub implementation and will throw an exception if called when Autofill is not
+ * supported on this platform.
  *
  * @param textValue The value to store in the [FillableData].
  */
@@ -33,8 +33,8 @@ actual fun FillableData(textValue: CharSequence): FillableData? {
 /**
  * Creates a [FillableData] object from a [Boolean].
  *
- * This is a stub implementation and will throw an exception if called. Autofill is not supported on
- * this platform.
+ * This is a stub implementation and will throw an exception if called when Autofill is not
+ * supported on this platform.
  *
  * @param booleanValue The value to store in the [FillableData].
  */
@@ -45,11 +45,23 @@ actual fun FillableData(booleanValue: Boolean): FillableData? {
 /**
  * Creates a [FillableData] object from an [Int].
  *
- * This is a stub implementation and will throw an exception if called. Autofill is not supported on
- * this platform.
+ * This is a stub implementation and will throw an exception if called when Autofill is not
+ * supported on this platform.
  *
  * @param listIndexValue The value to store in the [FillableData].
  */
 actual fun FillableData(listIndexValue: Int): FillableData? {
+    implementedInJetBrainsFork()
+}
+
+/**
+ * Creates a [FillableData] object from a [Long].
+ *
+ * This is a stub implementation and will throw an exception if called when Autofill is not
+ * supported on this platform.
+ *
+ * @param dateMillisValue The value to store in the [FillableData].
+ */
+actual fun FillableData(dateMillisValue: Long): FillableData? {
     implementedInJetBrainsFork()
 }

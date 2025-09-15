@@ -67,6 +67,9 @@ import androidx.pdf.selection.SelectionUiSignal
 import androidx.pdf.util.Accessibility
 import androidx.pdf.util.MathUtils
 import androidx.pdf.util.ZoomUtils
+import androidx.pdf.view.PdfView.Companion.GESTURE_STATE_IDLE
+import androidx.pdf.view.PdfView.Companion.GESTURE_STATE_INTERACTING
+import androidx.pdf.view.PdfView.Companion.GESTURE_STATE_SETTLING
 import androidx.pdf.view.fastscroll.FastScrollCalculator
 import androidx.pdf.view.fastscroll.FastScrollDrawer
 import androidx.pdf.view.fastscroll.FastScrollGestureDetector
@@ -776,13 +779,31 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * laid out yet.
      */
     public fun pdfToViewPoint(pdfPoint: PdfPoint): PointF? {
+        return pdfToViewPoint(pdfPoint, accountForScroll = true)
+    }
+
+    /**
+     * Returns the View coordinate location of [pdfPoint], or null if that PDF content has not been
+     * laid out yet.
+     *
+     * @param accountForScroll true to offset the final position by ([scrollX], [scrollY])
+     */
+    private fun pdfToViewPoint(pdfPoint: PdfPoint, accountForScroll: Boolean): PointF? {
         val pageLocation =
             pageMetadataLoader?.getPageLocation(pdfPoint.pageNum, getVisibleAreaInContentCoords())
                 ?: return null
         val ret =
             PointF(
-                toViewCoord(pageLocation.left + pdfPoint.x, zoom, scroll = scrollX),
-                toViewCoord(pageLocation.top + pdfPoint.y, zoom, scroll = scrollY),
+                toViewCoord(
+                    pageLocation.left + pdfPoint.x,
+                    zoom,
+                    scroll = if (accountForScroll) scrollX else 0,
+                ),
+                toViewCoord(
+                    pageLocation.top + pdfPoint.y,
+                    zoom,
+                    scroll = if (accountForScroll) scrollY else 0,
+                ),
             )
         return ret
     }
@@ -1648,14 +1669,17 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private fun reset() {
         // Stop any in progress fling when we open a new document
         scroller.forceFinished(true)
-        scrollTo(0, 0)
         pageManager?.cleanup()
-        zoom = DEFAULT_INIT_ZOOM
         pageManager = null
         pageMetadataLoader = null
         startedFetchingAllDimensions = false
         backgroundScope.coroutineContext.cancelChildren()
         stopCollectingData()
+
+        // Reset zoom and scroll after clearing pageMetadata loader, otherwise they can trigger
+        // onViewportChanged callback with outdated information.
+        scrollTo(0, 0)
+        zoom = DEFAULT_INIT_ZOOM
     }
 
     private fun maybeUpdatePageVisibility() {
@@ -2075,7 +2099,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     getVisibleAreaInContentCoords(),
                 ) ?: return super.onSingleTapConfirmed(e)
 
-            pageManager?.getLinkAtTapPoint(touchPoint)?.let { links ->
+            pageManager?.getPageLinks(touchPoint.pageNum)?.let { links ->
                 val touchPointOnPage = PointF(touchPoint.x, touchPoint.y)
                 if (handleGotoLinks(links, touchPointOnPage)) return true
                 if (handleExternalLinks(links, touchPointOnPage)) return true

@@ -1,0 +1,15 @@
+// Baseline format: 1.0
+HiddenSuperclass: androidx.xr.scenecore.internal.Entity:
+    Public class androidx.xr.scenecore.internal.Entity stripped of unavailable superclass androidx.xr.scenecore.internal.ActivityPose
+
+
+HiddenTypeParameter: androidx.xr.scenecore.SpatialUser#SpatialUser(androidx.xr.runtime.internal.LifecycleManager, androidx.xr.scenecore.internal.JxrPlatformAdapter) parameter #1:
+    Parameter runtime references hidden type androidx.xr.scenecore.internal.JxrPlatformAdapter.
+
+
+ReferencesHidden: androidx.xr.scenecore.BaseEntity:
+    Class androidx.xr.scenecore.internal.Entity is hidden but was referenced (as type parameter) from public class androidx.xr.scenecore.BaseEntity
+ReferencesHidden: androidx.xr.scenecore.BaseScenePose:
+    Class androidx.xr.scenecore.internal.ActivityPose is hidden but was referenced (as type parameter) from public class androidx.xr.scenecore.BaseScenePose
+ReferencesHidden: androidx.xr.scenecore.SpatialUser#SpatialUser(androidx.xr.runtime.internal.LifecycleManager, androidx.xr.scenecore.internal.JxrPlatformAdapter) parameter #1:
+    Class androidx.xr.scenecore.internal.JxrPlatformAdapter is hidden but was referenced (in parameter type) from public parameter runtime in androidx.xr.scenecore.SpatialUser(androidx.xr.runtime.internal.LifecycleManager lifecycleManager, androidx.xr.scenecore.internal.JxrPlatformAdapter runtime)

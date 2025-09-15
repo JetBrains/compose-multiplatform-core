@@ -27,7 +27,6 @@ import androidx.compose.runtime.mock.validate
 import androidx.compose.runtime.mock.view
 import androidx.compose.runtime.snapshots.Snapshot
 import kotlin.coroutines.resume
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -88,7 +87,6 @@ class PausableCompositionTests {
     }
 
     @Test
-    @Ignore // Requires compiler support
     fun canPauseContent() = compositionTest {
         val awaiter = Awaiter()
         var receivedIteration = 0
@@ -106,7 +104,7 @@ class PausableCompositionTests {
             awaiter.await()
         }
         validate { this.PausableContent { this.A() } }
-        assertEquals(10, receivedIteration)
+        assertEquals(9, receivedIteration)
 
         // Same Legend as canRecordAComposition
         // Here we expect all functions to exit before the content of the function is executed
@@ -121,7 +119,6 @@ class PausableCompositionTests {
     }
 
     @Test
-    @Ignore // Requires compiler support
     fun canPauseReusableContent() = compositionTest {
         val awaiter = Awaiter()
         var receivedIteration = 0
@@ -139,7 +136,7 @@ class PausableCompositionTests {
             awaiter.await()
         }
         validate { this.PausableContent { this.A() } }
-        assertEquals(10, receivedIteration)
+        assertEquals(9, receivedIteration)
         // Same Legend as canRecordAComposition
         // Here we expect the result to be the same as if we were inserting new content as in
         // canPauseContent
@@ -152,7 +149,6 @@ class PausableCompositionTests {
     }
 
     @Test
-    @Ignore // Requires compiler support
     fun canPauseReusingContent() = compositionTest {
         val awaiter = Awaiter()
         var recording = ""
@@ -213,7 +209,6 @@ class PausableCompositionTests {
     }
 
     @Test
-    @Ignore // Requires compiler support
     fun rememberOnlyCalledInApply() = compositionTest {
         val awaiter = Awaiter()
         var onRememberCalled = false

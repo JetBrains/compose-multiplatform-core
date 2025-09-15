@@ -69,15 +69,19 @@ internal class FakeEditablePdfDocument(
         TODO("Not yet implemented")
     }
 
+    override fun <T : PdfEdit> addPdfEditEntry(entry: PdfEditEntry<T>) {
+        TODO("Not yet implemented")
+    }
+
     override fun addEdit(edit: PdfEdit): EditId {
         TODO("Not yet implemented")
     }
 
-    override fun removeEdit(editId: EditId) {
+    override fun removeEdit(editId: EditId): PdfEdit {
         TODO("Not yet implemented")
     }
 
-    override fun updateEdit(editId: EditId, edit: PdfEdit) {
+    override fun updateEdit(editId: EditId, edit: PdfEdit): PdfEdit {
         TODO("Not yet implemented")
     }
 
@@ -86,6 +90,10 @@ internal class FakeEditablePdfDocument(
     }
 
     override fun getAllEdits(): PdfEdits {
+        TODO("Not yet implemented")
+    }
+
+    override fun clearUncommittedEdits() {
         TODO("Not yet implemented")
     }
 

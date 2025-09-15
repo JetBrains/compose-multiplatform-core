@@ -19,17 +19,17 @@ package androidx.xr.scenecore.impl;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.xr.runtime.internal.ActivitySpace;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.InputEventListener;
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose;
-import androidx.xr.runtime.internal.PointerCaptureComponent;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.internal.ActivitySpace;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.internal.InputEventListener;
+import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.internal.PointerCaptureComponent;
+import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.internal.SpaceValue;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;

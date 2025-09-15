@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.xr.compose.platform.LocalComposeXrOwners
 import androidx.xr.compose.platform.LocalCoreEntity
@@ -46,6 +45,7 @@ import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.platform.SpatialComposeScene
 import androidx.xr.compose.platform.disposableValueOf
+import androidx.xr.compose.platform.getActivity
 import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialBoxScope
@@ -107,7 +107,7 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
         // We are already in a Subspace, so we can just render the content directly
         SpatialBox(content = content)
     } else if (LocalIsInApplicationSubspace.current) {
-        NestedSubspace(content)
+        PanelEmbeddedSubspace(content)
     } else {
         ApplicationSubspace(content = content)
     }
@@ -210,7 +210,7 @@ private fun ApplicationSubspace(
         ) {
             it.dispose()
             subspaceRoot.dispose()
-            if (lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+            if (!context.getActivity().isDestroyed) {
                 session.scene.mainPanelEntity.setEnabled(true)
             }
         }
@@ -231,8 +231,14 @@ private fun ApplicationSubspace(
     }
 }
 
+/*
+ * Embedded Subspace whose parent is SpatialPanel.
+ * This Subspace is constrained by the parent's constraints in width and height.
+ */
 @Composable
-private fun NestedSubspace(content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit) {
+private fun PanelEmbeddedSubspace(
+    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit
+) {
     // If not in XR, do nothing
     if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
 

@@ -18,13 +18,13 @@ package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.ExrImageResource as RtExrImage
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.ExrImageResource as RtExrImage
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import java.nio.file.Paths
@@ -43,8 +43,9 @@ import org.robolectric.Robolectric
 @RunWith(AndroidJUnit4::class)
 class ExrImageTest {
 
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
+    private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+
     private val mockActivitySpace = mock<RtActivitySpace>()
     private val mockPanelEntityImpl = mock<RtPanelEntity>()
     private val activity =
@@ -69,7 +70,14 @@ class ExrImageTest {
                 .thenReturn(Futures.immediateFuture(mockRtExrImage))
         }
         val session =
-            Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        mFakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockPlatformAdapter,
+                    ),
+            )
 
         runBlocking {
             @Suppress("UNUSED_VARIABLE", "NewApi")
@@ -94,7 +102,14 @@ class ExrImageTest {
                 .thenReturn(Futures.immediateFuture(mockRtExrImage))
         }
         val session =
-            Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        mFakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockPlatformAdapter,
+                    ),
+            )
 
         runBlocking {
             @Suppress("UNUSED_VARIABLE", "NewApi")

@@ -18,7 +18,7 @@ package androidx.test.shell.command
 
 import androidx.test.shell.Shell
 
-/** Commands about applications. */
+/** Commands to be used on applications. */
 public class ApplicationCommands
 internal constructor(private val shell: Shell, private val packageName: String) {
 

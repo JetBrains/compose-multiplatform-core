@@ -19,9 +19,9 @@ package androidx.xr.scenecore.spatial.core;
 import android.app.Activity;
 
 import androidx.annotation.VisibleForTesting;
-import androidx.xr.runtime.internal.ExrImageResource;
-import androidx.xr.runtime.internal.GltfModelResource;
-import androidx.xr.runtime.internal.SpatialEnvironment;
+import androidx.xr.scenecore.internal.ExrImageResource;
+import androidx.xr.scenecore.internal.GltfModelResource;
+import androidx.xr.scenecore.internal.SpatialEnvironment;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;

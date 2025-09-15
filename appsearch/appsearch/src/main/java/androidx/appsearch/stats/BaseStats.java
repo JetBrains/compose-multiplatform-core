@@ -84,6 +84,10 @@ public class BaseStats {
             INTERNAL_CALL_TYPE_PRUNE_PACKAGE_DATA,
             INTERNAL_CALL_TYPE_CLOSE,
             INTERNAL_CALL_TYPE_PERSIST_TO_DISK_JOB,
+            INTERNAL_CALL_TYPE_ON_USER_UNLOCKING,
+            INTERNAL_CALL_TYPE_HANDLE_PACKAGE_REMOVED,
+            INTERNAL_CALL_TYPE_SCHEDULED_FLUSH,
+            CALL_TYPE_MANUALLY_SCHEDULE_FLUSH,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface CallType {
@@ -134,6 +138,18 @@ public class BaseStats {
     public static final int INTERNAL_CALL_TYPE_PRUNE_PACKAGE_DATA = 40;
     public static final int INTERNAL_CALL_TYPE_CLOSE = 41;
     public static final int INTERNAL_CALL_TYPE_PERSIST_TO_DISK_JOB = 42;
+    public static final int INTERNAL_CALL_TYPE_ON_USER_UNLOCKING = 43;
+    public static final int INTERNAL_CALL_TYPE_HANDLE_PACKAGE_REMOVED = 44;
+    // The flush API (i.e. {@link #CALL_TYPE_FLUSH}) was usually invoked manually by the client and
+    // the original behavior was flushing AppSearch data immediately, but we changed the behavior to
+    // schedule a delay job for it so we could somehow dedupe the heavy flushing operations and
+    // improve the performance. In order to avoid stats from old and new behaviors being mixed
+    // together, we add the following 2 new call types and report them for the new scheduled flush.
+    // - INTERNAL_CALL_TYPE_SCHEDULED_FLUSH: call type for the scheduled flushing job when it fires.
+    // - CALL_TYPE_MANUALLY_SCHEDULE_FLUSH: call type for the public flush API when the client
+    //   manually requests and schedules a flushing job.
+    public static final int INTERNAL_CALL_TYPE_SCHEDULED_FLUSH = 45;
+    public static final int CALL_TYPE_MANUALLY_SCHEDULE_FLUSH = 46;
 
     // These strings are for the subset of call types that correspond to an AppSearchManager API
     public static final String CALL_TYPE_STRING_INITIALIZE = "initialize";
@@ -179,6 +195,12 @@ public class BaseStats {
     public static final String INTERNAL_CALL_TYPE_STRING_PRUNE_PACKAGE_DATA = "prunePackageData";
     public static final String INTERNAL_CALL_TYPE_STRING_CLOSE = "close";
     public static final String INTERNAL_CALL_TYPE_STRING_PERSIST_TO_DISK_JOB = "persistToDiskJob";
+    public static final String INTERNAL_CALL_TYPE_STRING_ON_USER_UNLOCKING = "onUserUnlocking";
+    public static final String INTERNAL_CALL_TYPE_STRING_HANDLE_PACKAGE_REMOVED =
+            "handlePackageRemoved";
+    public static final String INTERNAL_CALL_TYPE_STRING_SCHEDULED_FLUSH = "scheduledFlush";
+    public static final String INTERNAL_CALL_TYPE_STRING_MANUALLY_SCHEDULE_FLUSH =
+            "manuallyScheduleFlush";
 
     // Enabled features bitmask with all features disabled.
     public static final long NO_FEATURES_ENABLED_BITMASK = 0;

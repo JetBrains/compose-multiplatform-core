@@ -59,9 +59,6 @@ private fun createBuildGradle(overrideExtendedBuildTypesForRelease: Boolean = fa
             anotherRelease {
                 initWith(release)
                 minifyEnabled true
-                postprocessing {
-                    proguardFile("proguard-rules1.pro")
-                }
             }
             myCustomRelease {
                 initWith(release)
@@ -103,7 +100,6 @@ private fun createBuildGradle(overrideExtendedBuildTypesForRelease: Boolean = fa
                 text += "debuggable=" + buildType.debuggable.toString() + "\n"
                 text += "profileable=" + buildType.profileable.toString() + "\n"
                 text += "proguardFiles=" + buildType.proguardFiles.toString() + "\n"
-                text += "postProcessingProguardFiles=" + buildType.postprocessing.getProguardFiles(EXPLICIT) + "\n"
                 t.text.set(text)
             }
             tasks.register(variant.name + "JavaSources", DisplaySourceSets) { t ->
@@ -256,7 +252,6 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
             val benchmarkBuildType: String,
             val baselineProfileBuildType: String,
             val expectedProguardFile: String?,
-            val expectedPostProcessingProguardFile: String?,
         )
 
         arrayOf(
@@ -264,19 +259,16 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
                     benchmarkBuildType = "benchmarkRelease",
                     baselineProfileBuildType = "nonMinifiedRelease",
                     expectedProguardFile = null,
-                    expectedPostProcessingProguardFile = null,
                 ),
                 TaskAndExpected(
                     benchmarkBuildType = "benchmarkAnotherRelease",
                     baselineProfileBuildType = "nonMinifiedAnotherRelease",
                     expectedProguardFile = null,
-                    expectedPostProcessingProguardFile = "proguard-rules1.pro",
                 ),
                 TaskAndExpected(
                     benchmarkBuildType = "benchmarkMyCustomRelease",
                     baselineProfileBuildType = "nonMinifiedMyCustomRelease",
                     expectedProguardFile = "proguard-rules2.pro",
-                    expectedPostProcessingProguardFile = null,
                 ),
             )
             .forEach {
@@ -293,16 +285,6 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
                             }]"
                         )
                     }
-                    if (it.expectedPostProcessingProguardFile != null) {
-                        containsMatch(
-                            "postProcessingProguardFiles=\\[[^,]+, ${
-                                File(
-                                    projectSetup.appTarget.rootDir.canonicalFile,
-                                    it.expectedPostProcessingProguardFile,
-                                )
-                            }"
-                        )
-                    }
                 }
                 projectSetup.appTarget.gradleRunner.buildAndAssertThatOutput(
                     "${it.baselineProfileBuildType}BuildProperties"
@@ -315,16 +297,6 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
                                     it.expectedProguardFile,
                                 )
                             }]"
-                        )
-                    }
-                    if (it.expectedPostProcessingProguardFile != null) {
-                        containsMatch(
-                            "postProcessingProguardFiles=\\[[^,]+, ${
-                                File(
-                                    projectSetup.appTarget.rootDir.canonicalFile,
-                                    it.expectedPostProcessingProguardFile,
-                                )
-                            }"
                         )
                     }
                 }

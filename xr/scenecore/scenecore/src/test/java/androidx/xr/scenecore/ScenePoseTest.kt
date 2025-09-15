@@ -17,16 +17,16 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilter as RtHitTestFilter
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.CameraViewActivityPose as RtCameraViewActivityPose
-import androidx.xr.runtime.internal.HeadActivityPose as RtHeadActivityPose
-import androidx.xr.runtime.internal.HitTestResult as RtHitTestResult
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ScenePose.HitTestFilter
+import androidx.xr.scenecore.internal.ActivityPose.HitTestFilter as RtHitTestFilter
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.CameraViewActivityPose as RtCameraViewActivityPose
+import androidx.xr.scenecore.internal.HeadActivityPose as RtHeadActivityPose
+import androidx.xr.scenecore.internal.HitTestResult as RtHitTestResult
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import kotlinx.coroutines.runBlocking

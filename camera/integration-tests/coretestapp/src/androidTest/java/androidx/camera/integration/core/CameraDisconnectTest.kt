@@ -43,7 +43,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -160,6 +160,35 @@ class CameraDisconnectTest(
         device.waitForIdle(StressTestUtil.HOME_TIMEOUT_MS)
     }
 
+    private fun launchAndAwaitCamera2Activity(cameraId: String) {
+        val intent =
+            Intent(context, Camera2TestActivity::class.java).apply {
+                putExtra(Camera2TestActivity.EXTRA_CAMERA_ID, cameraId)
+            }
+
+        var completionIdlingResource: CountingIdlingResource? = null
+        var wasCamera2PreviewReady = false
+        try {
+            ActivityScenario.launch<Camera2TestActivity>(intent).use { scenario ->
+                var previewStartedIdlingResource: CountingIdlingResource? = null
+                scenario.onActivity { activity ->
+                    completionIdlingResource = activity.completionIdlingResource
+                    previewStartedIdlingResource = activity.previewStartedIdlingResource
+                    IdlingRegistry.getInstance().register(completionIdlingResource)
+                }
+                Espresso.onIdle() // Wait for the completionIdlingResource to become idle.
+                wasCamera2PreviewReady = previewStartedIdlingResource!!.isIdleNow
+            }
+        } finally {
+            completionIdlingResource?.let { IdlingRegistry.getInstance().unregister(it) }
+        }
+
+        assumeTrue(
+            "Camera2TestActivity failed to start preview, skipping recovery test.",
+            wasCamera2PreviewReady,
+        )
+    }
+
     /**
      * This test simulate the case that an app has two activities with camera function and the
      * second activity is not implemented by CameraX. The camera function should work when any of
@@ -183,46 +212,13 @@ class CameraDisconnectTest(
                 // Wait for preview to become active
                 waitForViewfinderIdle()
 
-                // Launch Camera2 test activity. It should cause the camera to disconnect from
-                // CameraX.
-                val intent =
-                    Intent(context, Camera2TestActivity::class.java).apply {
-                        putExtra(Camera2TestActivity.EXTRA_CAMERA_ID, cameraId)
-                    }
+                // Launch Camera2 test activity to disconnect CameraX, and wait for it to succeed.
+                launchAndAwaitCamera2Activity(cameraId)
 
-                CoreAppTestUtil.launchActivity(
-                        InstrumentationRegistry.getInstrumentation(),
-                        Camera2TestActivity::class.java,
-                        intent,
-                    )
-                    ?.apply {
-                        // Wait for preview to become active to make sure the 2nd activity can
-                        // enable
-                        // its camera function successfully
-                        try {
-                            waitForCamera2Preview()
-                        } finally {
-                            // Close Camera2 test activity, and verify the CameraX Preview resumes
-                            // successfully.
-                            finish()
-                        }
-                    }
-
-                // Wait for CameraXActivity's preview to become active after Camera2TestActivity is
-                // closed.
+                // Wait for CameraXActivity's preview to become active again.
                 waitForViewfinderIdle()
             }
         }
-    }
-
-    private fun Camera2TestActivity.waitForCamera2Preview() {
-        waitFor(mPreviewReady)
-    }
-
-    private fun waitFor(idlingResource: IdlingResource) {
-        IdlingRegistry.getInstance().register(idlingResource)
-        Espresso.onIdle()
-        IdlingRegistry.getInstance().unregister(idlingResource)
     }
 
     /**

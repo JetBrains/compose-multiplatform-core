@@ -90,9 +90,6 @@ androidx {
 
 android {
     compileSdk = 35
-    defaultConfig {
-        minSdk = 23
-    }
     sourceSets.androidTest.assets.srcDir(prepareAssetsTaskProvider.map { it.outputDir })
     namespace = "androidx.profileinstaller.integration.profileverification"
 }

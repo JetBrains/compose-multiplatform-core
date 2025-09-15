@@ -24,12 +24,12 @@ import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.SurfaceEntity as RtSurfaceEntity
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SurfaceEntity as RtSurfaceEntity
 
 /**
  * SurfaceEntity is an [Entity] that hosts a [Surface], which will be texture mapped onto the
@@ -54,7 +54,6 @@ private constructor(
     rtEntity: RtSurfaceEntity,
     entityManager: EntityManager,
     shape: Shape,
-    private var disposed: Boolean = false, // TODO b/427314036: remove this
 ) : BaseEntity<RtSurfaceEntity>(rtEntity, entityManager) {
 
     /** Represents the shape of the Canvas that backs a SurfaceEntity. */
@@ -365,19 +364,6 @@ private constructor(
         }
     }
 
-    // TODO b/427314036: remove this once this is enforced within BaseEntity.
-    override fun dispose() {
-        super.dispose()
-        disposed = true
-    }
-
-    // TODO b/427314036: remove this once this is enforced within BaseEntity.
-    private fun checkDisposed() {
-        if (disposed) {
-            throw IllegalStateException("Entity is disposed.")
-        }
-    }
-
     public companion object {
         private fun getRtStereoMode(stereoMode: Int): Int {
             return when (stereoMode) {
@@ -488,7 +474,7 @@ private constructor(
             surfaceProtection: Int = SurfaceProtection.SURFACE_PROTECTION_NONE,
         ): SurfaceEntity =
             SurfaceEntity.create(
-                session.runtime.lifecycleManager,
+                session.perceptionRuntime.lifecycleManager,
                 session.platformAdapter,
                 session.scene.entityManager,
                 stereoMode,
@@ -510,13 +496,13 @@ private constructor(
     @StereoModeValue
     public var stereoMode: Int
         get() {
-            checkDisposed()
-            return rtEntity.stereoMode
+            checkNotDisposed()
+            return rtEntity!!.stereoMode
         }
         @MainThread
         set(value) {
-            checkDisposed()
-            rtEntity.stereoMode = getRtStereoMode(value)
+            checkNotDisposed()
+            rtEntity!!.stereoMode = getRtStereoMode(value)
         }
 
     /**
@@ -526,8 +512,8 @@ private constructor(
      */
     public val dimensions: FloatSize3d
         get() {
-            checkDisposed()
-            return rtEntity.dimensions.toFloatSize3d()
+            checkNotDisposed()
+            return rtEntity!!.dimensions.toFloatSize3d()
         }
 
     /**
@@ -540,7 +526,7 @@ private constructor(
     public var shape: Shape = shape
         @MainThread
         set(value) {
-            checkDisposed()
+            checkNotDisposed()
             val rtShape =
                 when (value) {
                     is Shape.Quad -> RtSurfaceEntity.Shape.Quad(value.extents)
@@ -548,7 +534,7 @@ private constructor(
                     is Shape.Hemisphere -> RtSurfaceEntity.Shape.Hemisphere(value.radius)
                     else -> throw IllegalArgumentException("Unsupported canvas shape: $value")
                 }
-            rtEntity.shape = rtShape
+            rtEntity!!.shape = rtShape
             field = value
         }
 
@@ -562,15 +548,15 @@ private constructor(
     public var primaryAlphaMaskTexture: Texture? = null
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         get() {
-            checkDisposed()
+            checkNotDisposed()
             return field
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         set(value) {
-            checkDisposed()
-            rtEntity.setPrimaryAlphaMaskTexture(value?.texture)
+            checkNotDisposed()
+            rtEntity!!.setPrimaryAlphaMaskTexture(value?.texture)
             field = value
         }
 
@@ -584,15 +570,15 @@ private constructor(
     public var auxiliaryAlphaMaskTexture: Texture? = null
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         get() {
-            checkDisposed()
+            checkNotDisposed()
             return field
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         set(value) {
-            checkDisposed()
-            rtEntity.setAuxiliaryAlphaMaskTexture(value?.texture)
+            checkNotDisposed()
+            rtEntity!!.setAuxiliaryAlphaMaskTexture(value?.texture)
             field = value
         }
 
@@ -604,12 +590,12 @@ private constructor(
      */
     public var edgeFeatheringParams: EdgeFeatheringParams = EdgeFeatheringParams.NoFeathering()
         get() {
-            checkDisposed()
+            checkNotDisposed()
             return field
         }
         @MainThread
         set(value) {
-            checkDisposed()
+            checkNotDisposed()
             val rtEdgeFeather =
                 when (value) {
                     is EdgeFeatheringParams.NoFeathering ->
@@ -621,7 +607,7 @@ private constructor(
                         )
                     else -> throw IllegalArgumentException("Unsupported edge feather: $value")
                 }
-            rtEntity.edgeFeather = rtEdgeFeather
+            rtEntity!!.edgeFeather = rtEdgeFeather
             field = value
         }
 
@@ -643,22 +629,27 @@ private constructor(
     public var contentColorMetadata: ContentColorMetadata? = null
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         get() {
-            checkDisposed()
-            return if (!rtEntity.contentColorMetadataSet) {
+            checkNotDisposed()
+            return if (!rtEntity!!.contentColorMetadataSet) {
                 null
             } else {
-                return field
+                ContentColorMetadata(
+                    colorSpace = rtEntity!!.colorSpace,
+                    colorTransfer = rtEntity!!.colorTransfer,
+                    colorRange = rtEntity!!.colorRange,
+                    maxContentLightLevel = rtEntity!!.maxContentLightLevel,
+                )
             }
         }
         @MainThread
         @SuppressLint("HiddenTypeParameter")
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         set(value) {
-            checkDisposed()
+            checkNotDisposed()
             if (value == null) {
-                rtEntity.resetContentColorMetadata()
+                rtEntity!!.resetContentColorMetadata()
             } else {
-                rtEntity.setContentColorMetadata(
+                rtEntity!!.setContentColorMetadata(
                     ContentColorMetadata.getRtColorSpace(value.colorSpace),
                     ContentColorMetadata.getRtColorTransfer(value.colorTransfer),
                     ContentColorMetadata.getRtColorRange(value.colorRange),
@@ -676,8 +667,8 @@ private constructor(
      */
     @MainThread
     public fun getSurface(): Surface {
-        checkDisposed()
-        return rtEntity.surface
+        checkNotDisposed()
+        return rtEntity!!.surface
     }
 
     /**
@@ -702,10 +693,10 @@ private constructor(
      * @see PerceivedResolutionResult
      */
     public fun getPerceivedResolution(): PerceivedResolutionResult {
-        checkDisposed()
+        checkNotDisposed()
         check(lifecycleManager.config.headTracking != Config.HeadTrackingMode.DISABLED) {
             "Config.HeadTrackingMode is set to Disabled."
         }
-        return rtEntity.getPerceivedResolution().toPerceivedResolutionResult()
+        return rtEntity!!.getPerceivedResolution().toPerceivedResolutionResult()
     }
 }

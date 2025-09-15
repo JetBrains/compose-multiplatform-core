@@ -25,15 +25,16 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.internal.utils.EndpointUtils
+import kotlinx.coroutines.channels.SendChannel
 
 /**
  * This class is responsible for getting [BluetoothProfile]s from the [BluetoothManager] pre-call
- * and emitting them to the [PreCallEndpointsUpdater] as [androidx.core.telecom.CallEndpointCompat]s
+ * and emitting them to the [EndpointStateHandler] as [androidx.core.telecom.CallEndpointCompat]s
  */
 @RequiresApi(Build.VERSION_CODES.O)
 internal class BluetoothProfileListener(
     context: Context,
-    private val mPreCallEndpointsUpdater: PreCallEndpointsUpdater,
+    private val mActionChannel: SendChannel<EndpointAction>,
     private val mUuidSessionId: Int,
 ) : BluetoothProfile.ServiceListener, AutoCloseable {
     /** Constants used for this class */
@@ -113,7 +114,7 @@ internal class BluetoothProfileListener(
         // populate internal map for profile
         mProfileToData[profile] = ProfileData(endpoints.toMutableList(), proxy)
         // update client
-        mPreCallEndpointsUpdater.endpointsAddedUpdate(endpoints)
+        mActionChannel.trySend(EndpointAction.Add(endpoints))
     }
 
     override fun onServiceDisconnected(profile: Int) {
@@ -122,7 +123,7 @@ internal class BluetoothProfileListener(
         // clear internal map for profile
         mProfileToData[profile] = ProfileData(mutableListOf(), null)
         // update the client
-        mPreCallEndpointsUpdater.endpointsRemovedUpdate(endpointsToRemove.toList())
+        mActionChannel.trySend(EndpointAction.Remove(endpointsToRemove.toList()))
     }
 
     /**

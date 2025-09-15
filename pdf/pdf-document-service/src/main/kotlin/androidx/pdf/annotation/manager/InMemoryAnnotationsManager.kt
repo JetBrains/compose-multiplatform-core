@@ -69,6 +69,9 @@ public class InMemoryAnnotationsManager(private val fetcher: PageAnnotationFetch
         return annotationEditsDraftState.getEdits(pageNum)
     }
 
+    override fun addAnnotationById(id: EditId, annotation: PdfAnnotation): Unit =
+        annotationEditsDraftState.addEditById(id, annotation)
+
     /**
      * Adds a new annotation to the draft state.
      *
@@ -106,4 +109,13 @@ public class InMemoryAnnotationsManager(private val fetcher: PageAnnotationFetch
      * @return An [PdfEdits] representing the current draft.
      */
     override fun getSnapshot(): PdfEdits = annotationEditsDraftState.toPdfEdits()
+
+    /** Clears uncommitted edits, restoring the draft state to the last saved state. */
+    override fun clearUncommittedEdits() {
+        annotationEditsDraftState.clear()
+
+        existingAnnotationsPerPage.forEach { (_, annotations) ->
+            annotations.forEach { annotationEditsDraftState.addEdit(it) }
+        }
+    }
 }

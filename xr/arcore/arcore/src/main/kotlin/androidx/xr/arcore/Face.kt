@@ -17,11 +17,10 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.Face as RuntimeFace
 import androidx.xr.runtime.Config.FaceTrackingMode
-import androidx.xr.runtime.FaceBlendShapeType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Face as RuntimeFace
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,6 +49,85 @@ public class Face internal constructor(internal val runtimeFace: RuntimeFace) : 
             }
             return perceptionStateExtender.xrResourcesManager.userFace
         }
+
+        internal val blendShapeMapKeys: List<FaceBlendShapeType> =
+            listOf(
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_BROW_LOWERER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_BROW_LOWERER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_PUFF_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_PUFF_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_RAISER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_RAISER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_SUCK_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHEEK_SUCK_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHIN_RAISER_BOTTOM,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHIN_RAISER_TOP,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_DIMPLER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_DIMPLER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_CLOSED_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_CLOSED_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_DOWN_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_DOWN_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_LEFT_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_LEFT_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_RIGHT_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_RIGHT_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_UP_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_LOOK_UP_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_INNER_BROW_RAISER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_INNER_BROW_RAISER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_DROP,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_SIDEWAYS_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_SIDEWAYS_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_THRUST,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LID_TIGHTENER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LID_TIGHTENER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_DEPRESSOR_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_DEPRESSOR_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_PULLER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_PULLER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_FUNNELER_LEFT_BOTTOM,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_FUNNELER_LEFT_TOP,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_FUNNELER_RIGHT_BOTTOM,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_FUNNELER_RIGHT_TOP,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PRESSOR_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PRESSOR_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PUCKER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PUCKER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_STRETCHER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_STRETCHER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_SUCK_LEFT_BOTTOM,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_SUCK_LEFT_TOP,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_SUCK_RIGHT_BOTTOM,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_SUCK_RIGHT_TOP,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_TIGHTENER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_TIGHTENER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIPS_TOWARD,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LOWER_LIP_DEPRESSOR_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LOWER_LIP_DEPRESSOR_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_MOUTH_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_MOUTH_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_NOSE_WRINKLER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_NOSE_WRINKLER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_OUTER_BROW_RAISER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_OUTER_BROW_RAISER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_UPPER_LID_RAISER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_UPPER_LID_RAISER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_UPPER_LIP_RAISER_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_UPPER_LIP_RAISER_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_OUT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_LEFT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_RIGHT,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_UP,
+                FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_DOWN,
+            )
+
+        internal val confidenceRegions: List<FaceConfidenceRegionType> =
+            listOf(
+                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LOWER,
+                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LEFT_UPPER,
+                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_RIGHT_UPPER,
+            )
     }
 
     /**
@@ -69,21 +147,25 @@ public class Face internal constructor(internal val runtimeFace: RuntimeFace) : 
          *
          * @return a map of [FaceBlendShapeType] to the corresponding blend shape value.
          */
-        // TODO: b/326655571 - Consider manually parsing the map for each entry rather than
-        // generating it for the entire map on each access.
-        public val blendShapes: Map<FaceBlendShapeType, Float>
-            get() = FaceBlendShapeType.values().zip(blendShapeValues.toList()).toMap()
+        public val blendShapes: Map<FaceBlendShapeType, Float> =
+            blendShapeMapKeys.zip(blendShapeValues.toList()).toMap()
 
         /**
          * Gets the confidence value of the face tracker at the specified region index.
          *
-         * @param regionIndex the index of the region to get the confidence value for.
-         * @return the confidence value of the face tracker at the specified region index. If the
-         *   region index does not exist, returns 0.
+         * @param [FaceConfidenceRegionType] the region to get the confidence value for.
+         * @return the confidence value of the face tracker at the specified region index.
+         * @throws IllegalArgumentException if the region does not exist.
          */
-        public fun getConfidence(regionIndex: Int): Float {
-            return if (regionIndex < confidenceValues.size) confidenceValues[regionIndex] else 0f
-        }
+        public fun getConfidence(region: FaceConfidenceRegionType): Float =
+            when (region) {
+                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LOWER -> confidenceValues[0]
+                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_LEFT_UPPER ->
+                    confidenceValues[1]
+                FaceConfidenceRegionType.FACE_CONFIDENCE_REGION_TYPE_RIGHT_UPPER ->
+                    confidenceValues[2]
+                else -> throw IllegalArgumentException("Unknown confidence for region ${region}.")
+            }
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true

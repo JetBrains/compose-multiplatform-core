@@ -26,7 +26,12 @@ import androidx.annotation.RestrictTo;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.MetadataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.PropertyAnnotation;
+import androidx.room.compiler.processing.XAnnotation;
+import androidx.room.compiler.processing.XAnnotationValue;
+import androidx.room.compiler.processing.XElement;
+import androidx.room.compiler.processing.XMethodElement;
 import androidx.room.compiler.processing.XProcessingEnv;
+import androidx.room.compiler.processing.XType;
 import androidx.room.compiler.processing.XTypeElement;
 
 import org.jspecify.annotations.NonNull;
@@ -41,10 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
 
 /**
  * Processes @Document annotations.
@@ -54,8 +56,6 @@ import javax.lang.model.element.TypeElement;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class DocumentModel {
-    private static final String CLASS_SUFFIX = ".class";
-
     private final IntrospectionHelper mHelper;
 
     private final XProcessingEnv mEnv;
@@ -83,12 +83,12 @@ class DocumentModel {
             @NonNull XProcessingEnv env,
             @NonNull XTypeElement clazz,
             @Nullable XTypeElement generatedAutoValueElement)
-            throws ProcessingException, XProcessingException {
+            throws XProcessingException {
         if (clazz.isPrivate()) {
             throw new XProcessingException("@Document annotated class is private", clazz);
         }
 
-        mHelper = new IntrospectionHelper(toJavac(env));
+        mHelper = new IntrospectionHelper(env);
         mEnv = env;
         mClass = clazz;
         mQualifiedDocumentClassName = generatedAutoValueElement != null
@@ -96,7 +96,7 @@ class DocumentModel {
                 : clazz.getQualifiedName();
         mParentTypes = getParentSchemaTypes(clazz);
 
-        List<TypeElement> classHierarchy = generateClassHierarchy(toJavac(clazz));
+        List<XTypeElement> classHierarchy = generateClassHierarchy(clazz);
         mSchemaName = computeSchemaName(classHierarchy);
         mAnnotatedGettersAndFields = scanAnnotatedGettersAndFields(classHierarchy);
 
@@ -111,21 +111,40 @@ class DocumentModel {
                 /* errorMessage= */"All @Document classes must have exactly one field annotated "
                         + "with @Namespace");
 
-        LinkedHashSet<ExecutableElement> allMethods =
-                mHelper.getAllMethods(toJavac(clazz));
+        List<XMethodElement> allMethods = mHelper.getAllMethods(clazz).stream()
+                .map(IntrospectionHelper.MethodTypeAndElement::getElement)
+                .toList();
         mAccessors = inferPropertyAccessors(mAnnotatedGettersAndFields, allMethods, mHelper);
         mDocumentClassCreationInfo = DocumentClassCreationInfo.infer(
-                toJavac(clazz), mAnnotatedGettersAndFields, mHelper);
+                clazz, mAnnotatedGettersAndFields, mHelper);
     }
 
     private LinkedHashSet<AnnotatedGetterOrField> scanAnnotatedGettersAndFields(
-            @NonNull List<TypeElement> hierarchy) throws ProcessingException {
+            @NonNull List<XTypeElement> hierarchy) throws XProcessingException {
+        /*
+         * XProcessing seems to change the order of enclosed elements, since getEnclosedElements is:
+         * mutableListOf<XElement>().apply {
+         *   addAll(getEnclosedTypeElements())
+         *   addAll(getDeclaredFields())
+         *   addAll(getConstructors())
+         *   addAll(getDeclaredMethods())
+         * }
+         *
+         * Thus, we will use the javac version of getEnclosedElements to manage the order.
+         */
+        Map<Element, XElement> javacElementToXElement = new LinkedHashMap<>();
+        for (XTypeElement type : hierarchy) {
+            for (XElement enclosedElement : type.getEnclosedElements()) {
+                javacElementToXElement.put(toJavac(enclosedElement), enclosedElement);
+            }
+        }
+
         AnnotatedGetterAndFieldAccumulator accumulator = new AnnotatedGetterAndFieldAccumulator();
-        for (TypeElement type : hierarchy) {
-            for (Element enclosedElement : type.getEnclosedElements()) {
+        for (XTypeElement type : hierarchy) {
+            for (Element enclosedElementJavac : toJavac(type).getEnclosedElements()) {
+                XElement enclosedElement = javacElementToXElement.get(enclosedElementJavac);
                 AnnotatedGetterOrField getterOrField =
-                        AnnotatedGetterOrField.tryCreateFor(
-                                enclosedElement, toJavac(mEnv));
+                        AnnotatedGetterOrField.tryCreateFor(enclosedElement, mEnv);
                 if (getterOrField == null) {
                     continue;
                 }
@@ -140,7 +159,7 @@ class DocumentModel {
      * annotated with the same metadata annotation e.g. it doesn't make sense for a document to
      * have two {@code @Document.Id}s.
      */
-    private void requireNoDuplicateMetadataProperties() throws ProcessingException {
+    private void requireNoDuplicateMetadataProperties() throws XProcessingException {
         Map<MetadataPropertyAnnotation, List<AnnotatedGetterOrField>> annotationToGettersAndFields =
                 mAnnotatedGettersAndFields.stream()
                         .filter(getterOrField ->
@@ -154,7 +173,7 @@ class DocumentModel {
             List<AnnotatedGetterOrField> gettersAndFields = entry.getValue();
             if (gettersAndFields.size() > 1) {
                 // Can show the error on any of the duplicates. Just pick the first first.
-                throw new ProcessingException(
+                throw new XProcessingException(
                         "Duplicate member annotated with @"
                                 + annotation.getClassName().simpleName(),
                         gettersAndFields.get(0).getElement());
@@ -181,11 +200,11 @@ class DocumentModel {
     /**
      * Tries to create an {@link DocumentModel} from the given {@link Element}.
      *
-     * @throws ProcessingException if the @{@code Document}-annotated class is invalid.
+     * @throws XProcessingException if the @{@code Document}-annotated class is invalid.
      */
     public static DocumentModel createPojoModel(
             @NonNull XProcessingEnv env, @NonNull XTypeElement clazz)
-            throws ProcessingException, XProcessingException {
+            throws XProcessingException {
         return new DocumentModel(env, clazz, null);
     }
 
@@ -193,13 +212,13 @@ class DocumentModel {
      * Tries to create an {@link DocumentModel} from the given AutoValue {@link Element} and
      * corresponding generated class.
      *
-     * @throws ProcessingException if the @{@code Document}-annotated class is invalid.
+     * @throws XProcessingException if the @{@code Document}-annotated class is invalid.
      */
     public static DocumentModel createAutoValueModel(
             @NonNull XProcessingEnv env,
             @NonNull XTypeElement clazz,
             @NonNull XTypeElement generatedAutoValueElement)
-            throws ProcessingException, XProcessingException {
+            throws XProcessingException {
         return new DocumentModel(env, clazz, generatedAutoValueElement);
     }
 
@@ -273,8 +292,8 @@ class DocumentModel {
      */
     private static @NonNull Map<AnnotatedGetterOrField, PropertyAccessor> inferPropertyAccessors(
             @NonNull Collection<AnnotatedGetterOrField> annotatedGettersAndFields,
-            @NonNull Collection<ExecutableElement> allMethods,
-            @NonNull IntrospectionHelper helper) throws ProcessingException {
+            @NonNull Collection<XMethodElement> allMethods,
+            @NonNull IntrospectionHelper helper) throws XProcessingException {
         Map<AnnotatedGetterOrField, PropertyAccessor> accessors = new HashMap<>();
         for (AnnotatedGetterOrField getterOrField : annotatedGettersAndFields) {
             accessors.put(
@@ -289,20 +308,23 @@ class DocumentModel {
      */
     private @NonNull LinkedHashSet<XTypeElement> getParentSchemaTypes(
             @NonNull XTypeElement documentClass) throws XProcessingException {
-        AnnotationMirror documentAnnotation = requireNonNull(
-                getDocumentAnnotation(toJavac(documentClass)));
-        Map<String, Object> params = mHelper.getAnnotationParams(documentAnnotation);
+        XAnnotation documentAnnotation = requireNonNull(getDocumentAnnotation(documentClass));
+        Map<String, XAnnotationValue> params = mHelper.getAnnotationParams(documentAnnotation);
         LinkedHashSet<XTypeElement> parentsSchemaTypes = new LinkedHashSet<>();
-        Object parentsParam = params.get("parent");
+        Object parentsParam = params.get("parent").getValue();
         if (parentsParam instanceof List) {
             for (Object parent : (List<?>) parentsParam) {
-                String parentClassName = parent.toString();
-                parentClassName = parentClassName.substring(0,
-                        parentClassName.length() - CLASS_SUFFIX.length());
+                String parentClassName;
+                if (parent instanceof String) {
+                    parentClassName = (String) parent;
+                } else {
+                    XType parentType = ((XAnnotationValue) parent).asType();
+                    parentClassName = parentType.getTypeElement().getQualifiedName();
+                }
                 parentsSchemaTypes.add(mEnv.findTypeElement(parentClassName));
             }
         }
-        if (!parentsSchemaTypes.isEmpty() && params.get("name").toString().isEmpty()) {
+        if (!parentsSchemaTypes.isEmpty() && params.get("name").asString().isEmpty()) {
             throw new XProcessingException(
                     "All @Document classes with a parent must explicitly provide a name",
                     mClass);
@@ -323,26 +345,26 @@ class DocumentModel {
      *                  beginning and the final class at the end
      * @return the final schema name for the class at the end of the hierarchy
      */
-    private @NonNull String computeSchemaName(List<TypeElement> hierarchy) {
+    private @NonNull String computeSchemaName(List<XTypeElement> hierarchy) {
         for (int i = hierarchy.size() - 1; i >= 0; i--) {
-            AnnotationMirror documentAnnotation = getDocumentAnnotation(hierarchy.get(i));
+            XAnnotation documentAnnotation = getDocumentAnnotation(hierarchy.get(i));
             if (documentAnnotation == null) {
                 continue;
             }
-            Map<String, Object> params = mHelper.getAnnotationParams(documentAnnotation);
-            String name = params.get("name").toString();
+            Map<String, XAnnotationValue> params = mHelper.getAnnotationParams(documentAnnotation);
+            String name = params.get("name").asString();
             if (!name.isEmpty()) {
                 return name;
             }
         }
         // Nobody had a name annotation -- use the class name of the root document in the hierarchy
-        TypeElement rootDocumentClass = hierarchy.get(0);
-        AnnotationMirror rootDocumentAnnotation = getDocumentAnnotation(rootDocumentClass);
+        XTypeElement rootDocumentClass = hierarchy.get(0);
+        XAnnotation rootDocumentAnnotation = getDocumentAnnotation(rootDocumentClass);
         if (rootDocumentAnnotation == null) {
             return mClass.getName();
         }
         // Documents don't need an explicit name annotation, can use the class name
-        return rootDocumentClass.getSimpleName().toString();
+        return rootDocumentClass.getName();
     }
 
     /**
@@ -447,7 +469,7 @@ class DocumentModel {
          * <p>Hence, this method should be called with {@link AnnotatedGetterOrField}s from the
          * least specific types to the most specific type.
          */
-        void add(@NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+        void add(@NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
             String jvmName = getterOrField.getJvmName();
             AnnotatedGetterOrField existingGetterOrField = mJvmNameToGetterOrField.get(jvmName);
 
@@ -490,7 +512,7 @@ class DocumentModel {
          * did so for the same getter/field and re-appeared likely because of overriding.
          */
         private void requireUniqueNormalizedName(
-                @NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+                @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
             AnnotatedGetterOrField existingGetterOrField =
                     mNormalizedNameToGetterOrField.get(getterOrField.getNormalizedName());
             if (existingGetterOrField == null) {
@@ -501,7 +523,7 @@ class DocumentModel {
                 // Same getter/field appeared again (likely because of overriding). Ok.
                 return;
             }
-            throw new ProcessingException(
+            throw new XProcessingException(
                     ("Normalized name \"%s\" is already taken up by pre-existing %s. "
                             + "Please rename this getter/field to something else.").formatted(
                             getterOrField.getNormalizedName(),
@@ -516,12 +538,12 @@ class DocumentModel {
          * <p>Assumes the getter/field is annotated with a {@link DataPropertyAnnotation}.
          */
         private void requireSerializedNameNeverSeenBefore(
-                @NonNull AnnotatedGetterOrField getterOrField) throws ProcessingException {
+                @NonNull AnnotatedGetterOrField getterOrField) throws XProcessingException {
             String serializedName = getSerializedName(getterOrField);
             AnnotatedGetterOrField existingGetterOrField =
                     mSerializedNameToGetterOrField.get(serializedName);
             if (existingGetterOrField != null) {
-                throw new ProcessingException(
+                throw new XProcessingException(
                         "Cannot give property the name '%s' because it is already used for %s"
                                 .formatted(serializedName, existingGetterOrField.getJvmName()),
                         getterOrField.getElement());
@@ -553,11 +575,11 @@ class DocumentModel {
         private static void requireAnnotationTypeIsConsistent(
                 @NonNull AnnotatedGetterOrField existingGetterOrField,
                 @NonNull AnnotatedGetterOrField overriddenGetterOfField)
-                throws ProcessingException {
+                throws XProcessingException {
             PropertyAnnotation existingAnnotation = existingGetterOrField.getAnnotation();
             PropertyAnnotation overriddenAnnotation = overriddenGetterOfField.getAnnotation();
             if (!existingAnnotation.getClassName().equals(overriddenAnnotation.getClassName())) {
-                throw new ProcessingException(
+                throw new XProcessingException(
                         ("Property type must stay consistent when overriding annotated members "
                                 + "but changed from @%s -> @%s").formatted(
                                 existingAnnotation.getClassName().simpleName(),
@@ -574,11 +596,11 @@ class DocumentModel {
         private static void requireSerializedNameIsConsistent(
                 @NonNull AnnotatedGetterOrField existingGetterOrField,
                 @NonNull AnnotatedGetterOrField overriddenGetterOrField)
-                throws ProcessingException {
+                throws XProcessingException {
             String existingSerializedName = getSerializedName(existingGetterOrField);
             String overriddenSerializedName = getSerializedName(overriddenGetterOrField);
             if (!existingSerializedName.equals(overriddenSerializedName)) {
-                throw new ProcessingException(
+                throw new XProcessingException(
                         ("Property name within the annotation must stay consistent when overriding "
                                 + "annotated members but changed from '%s' -> '%s'".formatted(
                                 existingSerializedName, overriddenSerializedName)),
@@ -590,7 +612,7 @@ class DocumentModel {
                 @NonNull AnnotatedGetterOrField getterOrField) {
             return getterOrField.getJvmType()
                     + " "
-                    + getterOrField.getElement().getEnclosingElement().getSimpleName()
+                    + getterOrField.getElement().getEnclosingElement().getName()
                     + "#"
                     + getterOrField.getJvmName()
                     + (getterOrField.isGetter() ? "()" : "");

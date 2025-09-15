@@ -22,9 +22,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.assertRotationInRootIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import org.junit.Rule
@@ -38,12 +38,10 @@ class RotateTest {
 
     @Test
     fun rotation_canApplySingleRotation() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel").rotate(90.0f, 0.0f, 0.0f)) {
-                        Text(text = "Panel")
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel").rotate(90.0f, 0.0f, 0.0f)) {
+                    Text(text = "Panel")
                 }
             }
         }
@@ -55,14 +53,12 @@ class RotateTest {
 
     @Test
     fun rotation_canRotationAcrossTwoAxis() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel").rotate(Vector3(0.0f, 1.0f, 1.0f), 90.0f)
-                    ) {
-                        Text(text = "Panel")
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").rotate(Vector3(0.0f, 1.0f, 1.0f), 90.0f)
+                ) {
+                    Text(text = "Panel")
                 }
             }
         }

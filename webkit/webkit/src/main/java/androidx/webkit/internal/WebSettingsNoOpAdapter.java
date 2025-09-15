@@ -321,4 +321,11 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
     public boolean getCookieAccessForShouldInterceptRequestEnabled() {
         return false;
     }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)}
+     */
+    @Override
+    public void setHyperlinkContextMenuItems(int hyperlinkMenuItems) {}
 }

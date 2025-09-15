@@ -22,6 +22,10 @@
     <application>
         <activity android:name="androidx.xr.compose.testing.SubspaceTestingActivity"
                   android:exported="true">
+            <meta-data
+                android:name="androidx.xr.compose.testing.USE_REAL_RUNTIME"
+                android:value="true" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -223,50 +223,6 @@ class BenchmarkPluginTest {
     }
 
     @Test
-    fun applyPluginOnAgp35() {
-        projectSetup.writeDefaultBuildGradle(
-            prefix = PLUGINS_HEADER,
-            suffix =
-                """
-            android {
-                namespace = "androidx.benchmark.gradle.test"
-                defaultConfig {
-                    testInstrumentationRunnerArguments.remove("additionalTestOutputDir")
-                }
-            }
-
-            dependencies {
-                androidTestImplementation "androidx.benchmark:benchmark:1.0.0-alpha01"
-            }
-
-            tasks.register("printInstrumentationArgs") {
-                println android.defaultConfig.testInstrumentationRunnerArguments
-            }
-
-            tasks.register("printTestBuildType") {
-                println android.testBuildType
-            }
-            """
-                    .trimIndent(),
-        )
-
-        versionPropertiesFile.writeText("buildVersion=3.5.0-rc03")
-
-        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
-        assertTrue { output.output.contains("lockClocks - ") }
-        assertTrue { output.output.contains("unlockClocks - ") }
-
-        // Should try to pull benchmark reports via legacy BenchmarkPlugin code path.
-        assertTrue { output.output.contains("benchmarkReport - ") }
-
-        val argsOutput = gradleRunner.withArguments("printInstrumentationArgs").build()
-        assertTrue { argsOutput.output.contains("no-isolated-storage:1") }
-
-        val testBuildTypeOutput = gradleRunner.withArguments("printTestBuildType").build()
-        assertTrue { testBuildTypeOutput.output.contains("release") }
-    }
-
-    @Test
     fun applyPluginDefaultAgpProperties() {
         projectSetup.writeDefaultBuildGradle(
             prefix = "import com.android.build.gradle.TestedExtension\n$PLUGINS_HEADER",

@@ -18,17 +18,17 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.content.Context;
 
-import androidx.xr.runtime.internal.ActivitySpace;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.InputEventListener;
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose;
-import androidx.xr.runtime.internal.PointerCaptureComponent;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.internal.ActivitySpace;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.internal.InputEventListener;
+import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.internal.PointerCaptureComponent;
+import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.internal.SpaceValue;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;
@@ -327,7 +327,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
         mPointerCaptureInputEventListener.ifPresent(
                 (listener) -> {
                     Executor executor = mPointerCaptureExecutor.orElse(mExecutor);
-                    androidx.xr.runtime.internal.InputEvent event =
+                    androidx.xr.scenecore.internal.InputEvent event =
                             RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager);
                     executor.execute(() -> listener.onInputEvent(event));
                 });
@@ -336,7 +336,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     /** Dispatches an event to all standard input listeners. */
     private void dispatchStandardEvent(InputEvent xrInputEvent) {
         // Convert the event once before dispatching to multiple listeners.
-        androidx.xr.runtime.internal.InputEvent event =
+        androidx.xr.scenecore.internal.InputEvent event =
                 RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager);
         mInputEventListenerMap.forEach(
                 (listener, executor) -> executor.execute(() -> listener.onInputEvent(event)));

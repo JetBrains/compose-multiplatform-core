@@ -19,11 +19,11 @@ package androidx.xr.scenecore.impl;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.GltfEntity;
-import androidx.xr.runtime.internal.MaterialResource;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.Material;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.GltfEntity;
+import androidx.xr.scenecore.internal.MaterialResource;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeTransaction;
@@ -45,8 +45,10 @@ import java.util.concurrent.ScheduledExecutorService;
 // TODO: b/375520647 - Add unit tests for this class.
 class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     private final ImpressApi mImpressApi;
+
     @SuppressWarnings("UnusedVariable")
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager;
+
     private final SubspaceNode mSubspace;
     private final int mModelImpressNode;
     private final int mSubspaceImpressNode;

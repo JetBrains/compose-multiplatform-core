@@ -22,10 +22,11 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.Anchor
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.Executor
@@ -51,6 +52,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
     /** The current tracking state for this AnchorEntity. */
     public var state: @StateValue Int = rtEntity.state.fromRtState()
         private set(value) {
+            // TODO: b/440191514 - On dispose, verify any pending anchor entity ops are cancelled.
             field = value
             onStateChangedExecutor.execute { onStateChangedListener?.accept(value) }
         }
@@ -100,7 +102,8 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      */
     // TODO(b/373711152) : Remove this method once the ARCore for XR API migration is done.
     public fun getAnchor(session: Session): Anchor {
-        return Anchor.loadFromNativePointer(session, rtEntity.nativePointer)
+        checkNotDisposed()
+        return Anchor.loadFromNativePointer(session, rtEntity!!.nativePointer)
     }
 
     public companion object {
@@ -278,6 +281,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      *   changes.
      */
     public fun setOnStateChangedListener(executor: Executor, listener: Consumer<@StateValue Int>?) {
+        checkNotDisposed()
         onStateChangedListener = listener
         onStateChangedExecutor = executor
         executor.execute { listener?.accept(state) }
@@ -295,7 +299,8 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      * @param listener The listener to register if non-null, else stops listening if null.
      */
     public fun setOnSpaceUpdatedListener(executor: Executor, listener: Runnable?) {
-        rtEntity.setOnSpaceUpdatedListener(listener, executor)
+        checkNotDisposed()
+        rtEntity!!.setOnSpaceUpdatedListener(listener, executor)
     }
 
     /**
@@ -308,8 +313,10 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      *
      * @param listener The listener to register if non-null, else stops listening if null.
      */
-    public fun setOnSpaceUpdatedListener(listener: Runnable?): Unit =
-        rtEntity.setOnSpaceUpdatedListener(listener, null)
+    public fun setOnSpaceUpdatedListener(listener: Runnable?) {
+        checkNotDisposed()
+        rtEntity!!.setOnSpaceUpdatedListener(listener, null)
+    }
 
     /**
      * Throws [UnsupportedOperationException] if called.
@@ -323,6 +330,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
+        checkNotDisposed()
         throw UnsupportedOperationException("Cannot set 'pose' on an AnchorEntity.")
     }
 
@@ -336,6 +344,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      *   parents.
      */
     override fun getPose(@SpaceValue relativeTo: Int): Pose {
+        checkNotDisposed()
         return when (relativeTo) {
             Space.PARENT ->
                 throw IllegalArgumentException(
@@ -359,6 +368,22 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun setScale(scale: Float, @SpaceValue relativeTo: Int) {
+        checkNotDisposed()
+        throw UnsupportedOperationException("Cannot set 'scale' on an AnchorEntity.")
+    }
+
+    /**
+     * Throws [UnsupportedOperationException] if called.
+     *
+     * **Note:** The scale of the `AnchorEntity` is managed by the system. Applications should not
+     * call this method, as any changes may be overwritten by the system.
+     *
+     * @param scale The new scale to set.
+     * @param relativeTo The space in which the scale is defined.
+     * @throws UnsupportedOperationException if called.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun setScale(scale: Vector3, @SpaceValue relativeTo: Int) {
         throw UnsupportedOperationException("Cannot set 'scale' on an AnchorEntity.")
     }
 
@@ -372,6 +397,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      *   parents.
      */
     override fun getScale(@SpaceValue relativeTo: Int): Float {
+        checkNotDisposed()
         return when (relativeTo) {
             Space.PARENT ->
                 throw IllegalArgumentException(

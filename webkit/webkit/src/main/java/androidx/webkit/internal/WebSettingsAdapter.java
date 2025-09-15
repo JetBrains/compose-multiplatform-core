@@ -306,4 +306,12 @@ public class WebSettingsAdapter {
     public boolean getCookieAccessForShouldInterceptRequestEnabled() {
         return mBoundaryInterface.getIncludeCookiesOnIntercept();
     }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)}
+     */
+    public void setHyperlinkContextMenuItems(int hyperlinkMenuItems) {
+        mBoundaryInterface.setHyperlinkContextMenuItems(hyperlinkMenuItems);
+    }
 }

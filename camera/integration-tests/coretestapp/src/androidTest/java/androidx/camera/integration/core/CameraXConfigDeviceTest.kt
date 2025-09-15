@@ -45,6 +45,7 @@ import androidx.camera.core.impl.Observable
 import androidx.camera.core.impl.QuirkSettings
 import androidx.camera.core.impl.QuirkSettingsHolder
 import androidx.camera.core.impl.UseCaseConfigFactory
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.camera.core.internal.compat.quirk.ImageCaptureRotationOptionQuirk
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -69,6 +70,7 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -389,6 +391,34 @@ class CameraXConfigDeviceTest(private val implName: String, private val baseConf
         val customConfig =
             CameraXConfig.Builder.fromConfig(baseConfig)
                 .setCameraExecutor(customCameraExecutor)
+                .setSchedulerHandler(customSchedulerHandler)
+                .build()
+
+        // Act
+        initializeProviderWithConfig(customConfig)
+
+        // Assert
+        bindPreviewAndVerify()
+
+        // Cleanup
+        cameraProvider?.shutdownAsync()?.get(10, TimeUnit.SECONDS)
+        handlerThread.quitSafely()
+    }
+
+    @Test
+    fun directExecutorAndCustomScheduler_canBindUseCase() {
+        // TODO(b/439976984): Enable this test for CameraPipe when the issue is resolved.
+        assumeFalse(
+            "CameraPipe fails with directExecutor (b/439976984)",
+            implName == CameraPipeConfig::class.simpleName,
+        )
+
+        // Arrange
+        val handlerThread = HandlerThread("CustomScheduler").apply { start() }
+        val customSchedulerHandler = Handler(handlerThread.looper)
+        val customConfig =
+            CameraXConfig.Builder.fromConfig(baseConfig)
+                .setCameraExecutor(CameraXExecutors.directExecutor())
                 .setSchedulerHandler(customSchedulerHandler)
                 .build()
 

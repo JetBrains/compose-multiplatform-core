@@ -17,13 +17,13 @@
 package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.Anchor
-import androidx.xr.runtime.internal.Earth
+import androidx.xr.arcore.internal.Anchor
+import androidx.xr.arcore.internal.Earth
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 
-/** Currently unimplemented implementation of [Earth] on Projected. */
+/** Currently unimplemented implementation of [androidx.xr.arcore.internal.Earth] on Projected. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedEarth internal constructor(private val xrResources: XrResources) : Earth {
 

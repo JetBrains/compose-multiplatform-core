@@ -20,7 +20,10 @@ import android.os.Build
 import androidx.annotation.RequiresExtension
 import androidx.pdf.adapter.PdfDocumentRenderer
 import androidx.pdf.annotation.converters.PdfAnnotationConvertersFactory
+import androidx.pdf.annotation.models.AddEditResult
 import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.ModifyEditResult
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 
@@ -33,6 +36,24 @@ internal class PdfRendererAnnotationsProcessor(private val renderer: PdfDocument
 
         val (success, failures) = annotations.partition { applyAnnotationData(data = it) }
         return AnnotationResult(success = success, failures = failures.map { it.annotation })
+    }
+
+    override fun processAddEdits(annotations: List<PdfAnnotationData>): AddEditResult {
+        // TODO: b/440914015 - Implements Add/Remove/Update Batch operations for PdfEdits in
+        // PdfRenderer
+        return AddEditResult(success = emptyList(), failures = emptyList())
+    }
+
+    override fun processUpdateEdits(annotations: List<PdfAnnotationData>): ModifyEditResult {
+        // TODO: b/440914015 - Implements Add/Remove/Update Batch operations for PdfEdits in
+        // PdfRenderer
+        return ModifyEditResult(success = emptyList(), failures = emptyList())
+    }
+
+    override fun processRemoveEdits(editIds: List<EditId>): ModifyEditResult {
+        // TODO: b/440914015 - Implements Add/Remove/Update Batch operations for PdfEdits in
+        // PdfRenderer
+        return ModifyEditResult(success = emptyList(), failures = emptyList())
     }
 
     // TODO: Revisit this code. We are losing exception info and generated annotation id

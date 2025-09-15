@@ -120,9 +120,6 @@ private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessin
             } catch (e: XProcessingException) {
                 // Prints error message.
                 e.printDiagnostic(env.messager)
-            } catch (e: ProcessingException) {
-                // Prints error message.
-                e.printDiagnostic(env.messager.toJavac())
             }
             classNames.add(document.qualifiedName)
             val packageName = document.packageElement.qualifiedName
@@ -191,7 +188,7 @@ private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessin
      * Process the document class by generating a factory class for it and properly update
      * [.mDocumentClassMap].
      */
-    @Throws(ProcessingException::class, MissingXTypeException::class)
+    @Throws(XProcessingException::class, MissingXTypeException::class)
     fun processDocument(element: XTypeElement) {
         if (!element.isClass() && !element.isInterface()) {
             throw XProcessingException(
@@ -201,7 +198,7 @@ private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessin
         }
 
         val model: DocumentModel =
-            if (element.getAnnotation(AutoValue::class) != null) {
+            if (element.hasAnnotation(AutoValue::class)) {
                 // Document class is annotated as AutoValue class. For processing the AutoValue
                 // class, we also need the generated class from AutoValue annotation processor.
                 val generatedElement: XTypeElement? =

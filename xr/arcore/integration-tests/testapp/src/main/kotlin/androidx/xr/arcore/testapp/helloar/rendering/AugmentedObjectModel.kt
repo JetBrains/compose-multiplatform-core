@@ -18,6 +18,7 @@ package androidx.xr.arcore.testapp.helloar.rendering
 
 import androidx.xr.arcore.AugmentedObject
 import androidx.xr.runtime.AugmentedObjectCategory
+import androidx.xr.scenecore.GltfModelEntity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 
@@ -25,6 +26,6 @@ internal class AugmentedObjectModel(
     val id: Int,
     val category: AugmentedObjectCategory,
     val stateFlow: StateFlow<AugmentedObject.State>,
-    internal val cubeEntity: AugmentedObjectRenderer.CubeEntity,
+    internal val modelEntity: GltfModelEntity,
     internal val renderJob: Job?,
 ) {}

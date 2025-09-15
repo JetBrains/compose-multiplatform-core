@@ -52,6 +52,7 @@ android {
     }
 
     namespace = "androidx.core.uwb.rxjava3"
+    compileSdk = 36
 }
 
 androidx {

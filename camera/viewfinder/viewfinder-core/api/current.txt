@@ -56,6 +56,12 @@ package androidx.camera.viewfinder.core {
     property public androidx.camera.viewfinder.core.TransformationInfo DEFAULT;
   }
 
+  public final class ViewfinderDefaults {
+    method public static androidx.camera.viewfinder.core.ImplementationMode getImplementationMode();
+    property public static androidx.camera.viewfinder.core.ImplementationMode implementationMode;
+    field public static final androidx.camera.viewfinder.core.ViewfinderDefaults INSTANCE;
+  }
+
   public final class ViewfinderSurfaceRequest {
     ctor public ViewfinderSurfaceRequest(int width, int height);
     ctor public ViewfinderSurfaceRequest(int width, int height, optional androidx.camera.viewfinder.core.ImplementationMode? implementationMode);

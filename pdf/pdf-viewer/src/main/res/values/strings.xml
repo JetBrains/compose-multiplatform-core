@@ -50,6 +50,9 @@
          the '%' sign instead of the word 'percent', use double percent, '%%'. [CHAR LIMIT=40] -->
     <string name="desc_zoom">zoom <xliff:g example="66" id="first">%1$d</xliff:g> percent</string>
 
+    <!-- Content description for a go-to within a document -->
+    <string name="desc_goto">Go to</string>
+
     <!-- Content description for a go-to within a document.
         The link destination is to another page within the document itself. [CHAR LIMIT=20] -->
     <string name="desc_goto_link">Go to page <xliff:g example="12" id="page_number">%1$d</xliff:g></string>

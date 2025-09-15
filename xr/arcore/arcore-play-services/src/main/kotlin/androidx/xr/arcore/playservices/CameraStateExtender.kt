@@ -18,10 +18,11 @@ package androidx.xr.arcore.playservices
 
 import android.os.Build
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.PerceptionRuntime
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Runtime
+import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Matrix4
 import com.google.ar.core.Coordinates2d
 import com.google.ar.core.TrackingState as ARCoreTrackingState
@@ -43,8 +44,10 @@ internal class CameraStateExtender : StateExtender {
 
     internal lateinit var perceptionManager: ArCorePerceptionManager
 
-    override fun initialize(runtime: Runtime) {
-        perceptionManager = runtime.perceptionManager as ArCorePerceptionManager
+    override fun initialize(runtimes: List<JxrRuntime>) {
+        perceptionManager =
+            runtimes.filterIsInstance<PerceptionRuntime>().first().perceptionManager
+                as ArCorePerceptionManager
     }
 
     override suspend fun extend(coreState: CoreState) {

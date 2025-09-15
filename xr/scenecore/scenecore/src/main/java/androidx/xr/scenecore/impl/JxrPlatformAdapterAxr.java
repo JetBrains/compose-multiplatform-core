@@ -30,46 +30,8 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Pair;
+import androidx.xr.arcore.internal.Anchor;
 import androidx.xr.runtime.SubspaceNodeHolder;
-import androidx.xr.runtime.internal.ActivityPanelEntity;
-import androidx.xr.runtime.internal.ActivitySpace;
-import androidx.xr.runtime.internal.Anchor;
-import androidx.xr.runtime.internal.AnchorEntity;
-import androidx.xr.runtime.internal.AnchorPlacement;
-import androidx.xr.runtime.internal.AudioTrackExtensionsWrapper;
-import androidx.xr.runtime.internal.CameraViewActivityPose;
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.ExrImageResource;
-import androidx.xr.runtime.internal.GltfEntity;
-import androidx.xr.runtime.internal.GltfModelResource;
-import androidx.xr.runtime.internal.HeadActivityPose;
-import androidx.xr.runtime.internal.InputEventListener;
-import androidx.xr.runtime.internal.InteractableComponent;
-import androidx.xr.runtime.internal.JxrPlatformAdapter;
-import androidx.xr.runtime.internal.KhronosPbrMaterialSpec;
-import androidx.xr.runtime.internal.LoggingEntity;
-import androidx.xr.runtime.internal.MaterialResource;
-import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper;
-import androidx.xr.runtime.internal.MovableComponent;
-import androidx.xr.runtime.internal.PanelEntity;
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose;
-import androidx.xr.runtime.internal.PixelDimensions;
-import androidx.xr.runtime.internal.PlaneSemantic;
-import androidx.xr.runtime.internal.PlaneType;
-import androidx.xr.runtime.internal.PointerCaptureComponent;
-import androidx.xr.runtime.internal.ResizableComponent;
-import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SpatialCapabilities;
-import androidx.xr.runtime.internal.SpatialEnvironment;
-import androidx.xr.runtime.internal.SpatialModeChangeListener;
-import androidx.xr.runtime.internal.SpatialPointerComponent;
-import androidx.xr.runtime.internal.SpatialVisibility;
-import androidx.xr.runtime.internal.SubspaceNodeEntity;
-import androidx.xr.runtime.internal.SurfaceEntity;
-import androidx.xr.runtime.internal.TextureResource;
-import androidx.xr.runtime.internal.TextureSampler;
 import androidx.xr.runtime.math.Matrix3;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
@@ -84,6 +46,44 @@ import androidx.xr.scenecore.impl.impress.WaterMaterial;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
+import androidx.xr.scenecore.internal.ActivityPanelEntity;
+import androidx.xr.scenecore.internal.ActivitySpace;
+import androidx.xr.scenecore.internal.AnchorEntity;
+import androidx.xr.scenecore.internal.AnchorPlacement;
+import androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper;
+import androidx.xr.scenecore.internal.CameraViewActivityPose;
+import androidx.xr.scenecore.internal.Dimensions;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.ExrImageResource;
+import androidx.xr.scenecore.internal.GltfEntity;
+import androidx.xr.scenecore.internal.GltfModelResource;
+import androidx.xr.scenecore.internal.HeadActivityPose;
+import androidx.xr.scenecore.internal.InputEventListener;
+import androidx.xr.scenecore.internal.InteractableComponent;
+import androidx.xr.scenecore.internal.JxrPlatformAdapter;
+import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec;
+import androidx.xr.scenecore.internal.LoggingEntity;
+import androidx.xr.scenecore.internal.MaterialResource;
+import androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper;
+import androidx.xr.scenecore.internal.MovableComponent;
+import androidx.xr.scenecore.internal.PanelEntity;
+import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.internal.PixelDimensions;
+import androidx.xr.scenecore.internal.PlaneSemantic;
+import androidx.xr.scenecore.internal.PlaneType;
+import androidx.xr.scenecore.internal.PointerCaptureComponent;
+import androidx.xr.scenecore.internal.ResizableComponent;
+import androidx.xr.scenecore.internal.SoundPoolExtensionsWrapper;
+import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.internal.SpatialCapabilities;
+import androidx.xr.scenecore.internal.SpatialEnvironment;
+import androidx.xr.scenecore.internal.SpatialModeChangeListener;
+import androidx.xr.scenecore.internal.SpatialPointerComponent;
+import androidx.xr.scenecore.internal.SpatialVisibility;
+import androidx.xr.scenecore.internal.SubspaceNodeEntity;
+import androidx.xr.scenecore.internal.SurfaceEntity;
+import androidx.xr.scenecore.internal.TextureResource;
+import androidx.xr.scenecore.internal.TextureSampler;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
@@ -534,6 +534,21 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                             }
                         },
                         mExecutor);
+    }
+
+    @Override
+    public void resume() {
+        startRenderer();
+    }
+
+    @Override
+    public void pause() {
+        stopRenderer();
+    }
+
+    @Override
+    public void destroy() {
+        dispose();
     }
 
     @Override

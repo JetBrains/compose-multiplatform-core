@@ -89,26 +89,42 @@ internal constructor(
             val selection = mergeSelection(currentSelection, newPageSelections)
             if (selection.selectedContents.isEmpty()) return null
 
-            // Finding the first selection bound of first page in the selection
-            val firstPage = selection.selectedContents.keyAt(0)
-            val firstBound: PointF =
-                selection.selectedContents[firstPage].firstOrNull()?.bounds?.firstOrNull()?.let {
-                    PointF(it.left, it.bottom)
-                } ?: PointF(0f, 0f)
-
-            // Finding the last selection bound of last page in the selection
-            val lastPage = selection.selectedContents.keyAt(selection.selectedContents.size() - 1)
-            val lastBound: PointF =
-                selection.selectedContents[lastPage].lastOrNull()?.bounds?.lastOrNull()?.let {
-                    PointF(it.right, it.bottom)
-                } ?: PointF(0f, 0f)
+            val selectionBounds = getSelectionBounds(selection)
 
             val isRtl = newPageSelections.firstOrNull()?.start?.isRtl ?: false
             return SelectionModel(
                 selection,
-                UiSelectionBoundary(PdfPoint(firstPage, firstBound), isRtl),
-                UiSelectionBoundary(PdfPoint(lastPage, lastBound), isRtl),
+                UiSelectionBoundary(selectionBounds.first, isRtl),
+                UiSelectionBoundary(selectionBounds.second, isRtl),
             )
+        }
+
+        /**
+         * Gets the start and end points of a selection.
+         *
+         * @param selection The document selection.
+         * @return A pair of [PdfPoint] objects representing the start and end of the selection.
+         */
+        fun getSelectionBounds(selection: DocumentSelection): Pair<PdfPoint, PdfPoint> {
+            // Finding the first selection bound of the first page
+            val firstPage = selection.selectedContents.keyAt(0)
+            val firstBound: PointF =
+                selection.selectedContents[firstPage]?.firstOrNull()?.bounds?.firstOrNull()?.let {
+                    PointF(it.left, it.bottom)
+                } ?: PointF(0f, 0f)
+
+            // Finding the last selection bound of the last page
+            val lastPage = selection.selectedContents.keyAt(selection.selectedContents.size() - 1)
+            val lastBound: PointF =
+                selection.selectedContents[lastPage]?.lastOrNull()?.bounds?.lastOrNull()?.let {
+                    PointF(it.right, it.bottom)
+                } ?: PointF(0f, 0f)
+
+            // Create PdfPoint objects
+            val firstPdfPoint = PdfPoint(firstPage, firstBound)
+            val lastPdfPoint = PdfPoint(lastPage, lastBound)
+
+            return Pair(firstPdfPoint, lastPdfPoint)
         }
 
         /**

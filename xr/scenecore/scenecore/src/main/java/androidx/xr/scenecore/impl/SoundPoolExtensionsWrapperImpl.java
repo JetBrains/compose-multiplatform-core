@@ -18,9 +18,9 @@ package androidx.xr.scenecore.impl;
 
 import android.media.SoundPool;
 
-import androidx.xr.runtime.internal.PointSourceParams;
-import androidx.xr.runtime.internal.SoundFieldAttributes;
-import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper;
+import androidx.xr.scenecore.internal.PointSourceParams;
+import androidx.xr.scenecore.internal.SoundFieldAttributes;
+import androidx.xr.scenecore.internal.SoundPoolExtensionsWrapper;
 
 import com.android.extensions.xr.media.SoundPoolExtensions;
 

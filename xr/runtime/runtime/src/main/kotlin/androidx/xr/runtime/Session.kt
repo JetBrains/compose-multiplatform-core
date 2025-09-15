@@ -28,14 +28,14 @@ import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
-import androidx.xr.runtime.internal.Runtime
-import androidx.xr.runtime.internal.RuntimeFactory
+import androidx.xr.runtime.internal.JxrRuntime
+import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.time.ComparableTimeMark
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -59,14 +59,14 @@ public class Session
 @JvmOverloads
 public constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val activity: Activity,
-    private val _runtime: Runtime?,
-    private val _platformAdapter: JxrPlatformAdapter?,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val stateExtenders: List<StateExtender> =
         loadProviders(StateExtender::class.java, STATE_EXTENDER_PROVIDERS),
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val sessionConnectors: List<SessionConnector> =
         loadProviders(SessionConnector::class.java, SESSION_CONNECTOR_PROVIDERS),
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val runtimes: List<JxrRuntime> = emptyList(),
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val coroutineScope: CoroutineScope = CoroutineScope(context = EmptyCoroutineContext),
 ) {
@@ -76,15 +76,11 @@ public constructor(
         }
         activitySessionMap[activity] = this
 
-        _runtime?.let {
-            for (stateExtender in stateExtenders) {
-                stateExtender.initialize(it)
-            }
+        for (stateExtender in stateExtenders) {
+            stateExtender.initialize(runtimes)
         }
-        _platformAdapter?.let {
-            for (sessionConnector in sessionConnectors) {
-                sessionConnector.initialize(_runtime!!.lifecycleManager, it)
-            }
+        for (sessionConnector in sessionConnectors) {
+            sessionConnector.initialize(runtimes)
         }
     }
 
@@ -190,9 +186,7 @@ public constructor(
         ): SessionCreateResult {
             check(activity is LifecycleOwner) { "Unsupported Activity type: ${activity.javaClass}" }
 
-            check(activity.isDestroyed == false) {
-                "Cannot create a new session on a destroyed activity."
-            }
+            check(!activity.isDestroyed) { "Cannot create a new session on a destroyed activity." }
 
             if (activitySessionMap.containsKey(activity)) {
                 return SessionCreateSuccess(activitySessionMap[activity]!!)
@@ -201,14 +195,17 @@ public constructor(
             val features = getDeviceFeatures(activity)
             println("Detected device features: $features")
 
-            val runtimeFactory: RuntimeFactory? =
+            val runtimes = mutableListOf<JxrRuntime>()
+
+            val perceptionRuntimeFactory: PerceptionRuntimeFactory? =
                 selectProvider(
-                    loadProviders(RuntimeFactory::class.java, RUNTIME_FACTORY_PROVIDERS),
+                    loadProviders(PerceptionRuntimeFactory::class.java, RUNTIME_FACTORY_PROVIDERS),
                     features,
                 )
-            val runtime = runtimeFactory?.createRuntime(activity, coroutineContext)
+            val perceptionRuntime =
+                perceptionRuntimeFactory?.createRuntime(activity, coroutineContext)
             try {
-                runtime?.lifecycleManager?.create()
+                perceptionRuntime?.initialize()
             } catch (e: ApkNotInstalledException) {
                 return SessionCreateApkRequired(e.requiredApk)
             } catch (e: UnsupportedDeviceException) {
@@ -218,6 +215,7 @@ public constructor(
             } catch (e: ApkCheckAvailabilityErrorException) {
                 return SessionCreateApkRequired(e.requiredApk)
             }
+            perceptionRuntime?.let { runtimes.add(it) }
 
             val jxrPlatformAdapterFactory =
                 selectProvider(
@@ -232,8 +230,9 @@ public constructor(
                     activity,
                     unscaledGravityAlignedActivitySpace,
                 )
+            jxrPlatformAdapter?.let { runtimes.add(it) }
 
-            check(runtime != null || jxrPlatformAdapter != null) {
+            check(runtimes.isNotEmpty()) {
                 "Neither ARCore nor SceneCore are available. Did you forget to add a dependency?"
             }
 
@@ -244,10 +243,9 @@ public constructor(
             val session =
                 Session(
                     activity,
-                    runtime,
-                    jxrPlatformAdapter,
                     stateExtenders,
                     sessionConnectors,
+                    runtimes,
                     CoroutineScope(context = coroutineContext),
                 )
 
@@ -270,19 +268,19 @@ public constructor(
         private val RUNTIME_FACTORY_PROVIDERS =
             listOf(
                 "androidx.xr.arcore.playservices.ArCoreRuntimeFactory",
-                "androidx.xr.runtime.openxr.OpenXrRuntimeFactory",
-                "androidx.xr.runtime.testing.FakeRuntimeFactory",
+                "androidx.xr.arcore.openxr.OpenXrRuntimeFactory",
+                "androidx.xr.arcore.testing.FakePerceptionRuntimeFactory",
             )
         private val JXR_PLATFORM_ADAPTER_FACTORY_PROVIDERS =
             listOf(
                 "androidx.xr.scenecore.impl.JxrPlatformAdapterFactoryAxr",
-                "androidx.xr.runtime.testing.FakeJxrPlatformAdapterFactory",
+                "androidx.xr.scenecore.testing.FakeJxrPlatformAdapterFactory",
             )
         private val STATE_EXTENDER_PROVIDERS =
             listOf(
                 "androidx.xr.arcore.PerceptionStateExtender",
                 "androidx.xr.arcore.playservices.CameraStateExtender",
-                "androidx.xr.runtime.testing.FakeStateExtender",
+                "androidx.xr.arcore.testing.FakeStateExtender",
             )
         private val SESSION_CONNECTOR_PROVIDERS =
             listOf(
@@ -295,31 +293,19 @@ public constructor(
     /** A [StateFlow] of the current state. */
     public val state: StateFlow<CoreState> = _state.asStateFlow()
 
-    /**
-     * The [Runtime] instance that is used to manage the session. Applications must NOT use this
-     * property directly; they should use ARCore for XR APIs instead.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public val runtime: Runtime by lazy {
-        checkNotNull(_runtime) { "ARCore is not available. Did you forget to add a dependency?" }
-    }
-
-    /**
-     * The [JxrPlatformAdapter] instance that is used to manage the session. Applications must NOT
-     * use this property directly; they should use SceneCore APIs instead.
-     */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public val platformAdapter: JxrPlatformAdapter by lazy {
-        checkNotNull(_platformAdapter) {
-            "SceneCore is not available. Did you forget to add a dependency?"
-        }
-    }
-
     private var updateJob: Job? = null
 
     /** The current state of the runtime configuration. */
-    public val config: Config
-        get() = runtime.lifecycleManager.config
+    public var config: Config =
+        Config(
+            Config.PlaneTrackingMode.DISABLED,
+            augmentedObjectCategories = listOf(),
+            Config.HandTrackingMode.DISABLED,
+            Config.DeviceTrackingMode.DISABLED,
+            Config.DepthEstimationMode.DISABLED,
+            Config.AnchorPersistenceMode.LOCAL,
+        )
+        private set
 
     private val lifecycleObserver = LifecycleEventObserver { _, event ->
         when (event) {
@@ -348,23 +334,24 @@ public constructor(
             "Session has been destroyed."
         }
         try {
-            runtime.lifecycleManager.configure(config)
+            for (runtime in runtimes) {
+                runtime.configure(config)
+            }
         } catch (e: ConfigurationNotSupportedException) {
             return SessionConfigureConfigurationNotSupported()
         } catch (e: FaceTrackingNotCalibratedException) {
             return SessionConfigureCalibrationRequired(RequiredCalibrationType.FACE_TRACKING)
         }
+        this.config = config
         return SessionConfigureSuccess()
     }
 
     /** Starts or resumes the session. */
     private fun resume() {
-        _runtime?.let {
-            it.lifecycleManager.resume()
-            // The update loop is only required when the runtime is present.
-            updateJob = coroutineScope.launch { updateLoop() }
+        for (runtime in runtimes) {
+            runtime.resume()
         }
-        _platformAdapter?.startRenderer()
+        updateJob = coroutineScope.launch { updateLoop() }
     }
 
     /**
@@ -374,8 +361,9 @@ public constructor(
      * Calling this method on an inactive session is a no-op.
      */
     private fun pause() {
-        _runtime?.lifecycleManager?.pause()
-        _platformAdapter?.stopRenderer()
+        for (runtime in runtimes) {
+            runtime.pause()
+        }
         updateJob?.cancel()
         updateJob = null
     }
@@ -389,14 +377,12 @@ public constructor(
      */
     private fun destroy() {
         activitySessionMap.remove(activity)
-        // TODO: b/422830134 - Remove this check once there are multiple OpenXrManagers.
-        if (activitySessionMap.isEmpty()) {
-            _runtime?.lifecycleManager?.stop()
+        for (runtime in runtimes) {
+            runtime.destroy()
         }
         for (sessionConnector in sessionConnectors) {
             sessionConnector.close()
         }
-        _platformAdapter?.dispose()
         coroutineScope.cancel()
     }
 
@@ -408,8 +394,12 @@ public constructor(
 
     /** Produces the latest [CoreState] so it can be emitted downstream. */
     private suspend fun update() {
-        val timeMark = runtime.lifecycleManager.update()
-        val state = CoreState(timeMark)
+        var timeMark: ComparableTimeMark? = null
+        for (runtime in runtimes) {
+            runtime.update()?.let { timeMark = it }
+        }
+        check(timeMark != null)
+        val state = CoreState(timeMark!!)
 
         for (stateExtender in stateExtenders) {
             stateExtender.extend(state)

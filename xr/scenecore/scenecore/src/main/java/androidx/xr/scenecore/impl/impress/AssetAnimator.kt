@@ -19,6 +19,11 @@ package androidx.xr.scenecore.impl.impress
 /**
  * Interface defining the callbacks that are triggered from the Native side when an asset is
  * animated.
+ *
+ * @UsedByNative("impress/apibindings/asset_animator.cc")
+ *
+ * TODO(b/440328311): Convert to real annotation to enable code minimization in the rest of
+ *   SceneCore.
  */
 internal interface AssetAnimator {
     /** Called when the asset is done animating. */

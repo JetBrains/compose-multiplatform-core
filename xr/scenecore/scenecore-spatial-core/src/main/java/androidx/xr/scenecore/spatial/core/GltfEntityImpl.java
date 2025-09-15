@@ -18,10 +18,10 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.content.Context;
 
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.GltfEntity;
-import androidx.xr.runtime.internal.GltfFeature;
-import androidx.xr.runtime.internal.MaterialResource;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.GltfEntity;
+import androidx.xr.scenecore.internal.GltfFeature;
+import androidx.xr.scenecore.internal.MaterialResource;
 
 import com.android.extensions.xr.XrExtensions;
 

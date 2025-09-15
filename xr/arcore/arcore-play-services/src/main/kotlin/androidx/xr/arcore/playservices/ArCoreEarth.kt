@@ -17,11 +17,11 @@
 package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
-import androidx.xr.runtime.internal.AnchorNotAuthorizedException
-import androidx.xr.runtime.internal.AnchorUnsupportedLocationException
-import androidx.xr.runtime.internal.Earth
-import androidx.xr.runtime.internal.GeospatialPoseNotTrackingException
+import androidx.xr.arcore.internal.Anchor as RuntimeAnchor
+import androidx.xr.arcore.internal.AnchorNotAuthorizedException
+import androidx.xr.arcore.internal.AnchorUnsupportedLocationException
+import androidx.xr.arcore.internal.Earth
+import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -40,7 +40,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-/** Wraps the native [ARCore1xEarth] with the [Earth] interface. */
+/** Wraps the native [ARCore1xEarth] with the [androidx.xr.arcore.internal.Earth] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArCoreEarth internal constructor(private val resources: XrResources) : Earth {
 

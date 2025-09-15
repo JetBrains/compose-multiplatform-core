@@ -22,9 +22,9 @@ import androidx.annotation.RestrictTo
 /** Factory for creating instances of JxrPlatformAdapter. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface JxrPlatformAdapterFactory : Service {
-    /** Creates a [JxrPlatformAdapter] instance */
+    /** Creates a [JxrRuntime] instance */
     public fun createPlatformAdapter(
         activity: Activity,
         unscaledGravityAlignedActivitySpace: Boolean = true,
-    ): JxrPlatformAdapter
+    ): JxrRuntime
 }

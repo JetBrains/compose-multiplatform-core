@@ -27,8 +27,8 @@ import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
 import com.google.common.truth.Truth.assertThat
@@ -45,17 +45,15 @@ class SubspaceLayoutNodeTest {
     fun subspaceLayoutNode_shouldParentNodesProperly() {
         var parentEntity: Entity? = null
 
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    val session = checkNotNull(LocalSession.current)
-                    parentEntity = GroupEntity.create(session, "ParentEntity")
-                    EntityLayout(entity = parentEntity!!) {
-                        EntityLayout(
-                            entity = GroupEntity.create(session, "ChildEntity"),
-                            modifier = SubspaceModifier.testTag("Child"),
-                        )
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                parentEntity = GroupEntity.create(session, "ParentEntity")
+                EntityLayout(entity = parentEntity) {
+                    EntityLayout(
+                        entity = GroupEntity.create(session, "ChildEntity"),
+                        modifier = SubspaceModifier.testTag("Child"),
+                    )
                 }
             }
         }

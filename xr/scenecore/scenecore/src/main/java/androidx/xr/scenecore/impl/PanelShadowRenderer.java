@@ -135,15 +135,18 @@ class PanelShadowRenderer {
     }
 
     void destroy() {
-        if (mSurfaceControlViewHost != null) {
-            mHandler.post(() -> mSurfaceControlViewHost.release());
-        }
-        if (mPanelShadowNode != null) {
-            try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
-                transaction.setParent(mPanelShadowNode, null).apply();
+        synchronized (this) {
+            mHandler.removeCallbacksAndMessages(null);
+            if (mSurfaceControlViewHost != null) {
+                mHandler.post(() -> mSurfaceControlViewHost.release());
             }
+            if (mPanelShadowNode != null) {
+                try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+                    transaction.setParent(mPanelShadowNode, null).apply();
+                }
+            }
+            mPanelShadowNode = null;
         }
-        mPanelShadowNode = null;
     }
 
     private void createPanelShadow(
@@ -172,35 +175,38 @@ class PanelShadowRenderer {
         // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
         mHandler.post(
                 () -> {
-                    mSurfaceControlViewHost =
-                            new SurfaceControlViewHost(
-                                    mActivity,
-                                    Objects.requireNonNull(mActivity.getDisplay()),
-                                    new Binder());
-                    mSurfaceControlViewHost.setView(view, (int) sizeX, (int) sizeZ);
-                    SurfacePackage surfacePackage =
-                            Objects.requireNonNull(mSurfaceControlViewHost.getSurfacePackage());
-                    try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
-                        transaction
-                                .setName(mPanelShadowNode, "PanelRenderer")
-                                .setSurfacePackage(mPanelShadowNode, surfacePackage)
-                                .setWindowBounds(surfacePackage, (int) sizeX, (int) sizeZ)
-                                .setVisibility(mPanelShadowNode, true)
-                                .setPosition(
-                                        mPanelShadowNode,
-                                        panelPoseInActivitySpace.getTranslation().getX(),
-                                        panelPoseInActivitySpace.getTranslation().getY(),
-                                        panelPoseInActivitySpace.getTranslation().getZ())
-                                .setOrientation(
-                                        mPanelShadowNode,
-                                        panelPoseInActivitySpace.getRotation().getX(),
-                                        panelPoseInActivitySpace.getRotation().getY(),
-                                        panelPoseInActivitySpace.getRotation().getZ(),
-                                        panelPoseInActivitySpace.getRotation().getW())
-                                .setParent(mPanelShadowNode, mActivitySpaceImpl.getNode())
-                                .apply();
+                    synchronized (this) {
+                        if (mPanelShadowNode == null) return;
+                        mSurfaceControlViewHost =
+                                new SurfaceControlViewHost(
+                                        mActivity,
+                                        Objects.requireNonNull(mActivity.getDisplay()),
+                                        new Binder());
+                        mSurfaceControlViewHost.setView(view, (int) sizeX, (int) sizeZ);
+                        SurfacePackage surfacePackage =
+                                Objects.requireNonNull(mSurfaceControlViewHost.getSurfacePackage());
+                        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+                            transaction
+                                    .setName(mPanelShadowNode, "PanelRenderer")
+                                    .setSurfacePackage(mPanelShadowNode, surfacePackage)
+                                    .setWindowBounds(surfacePackage, (int) sizeX, (int) sizeZ)
+                                    .setVisibility(mPanelShadowNode, true)
+                                    .setPosition(
+                                            mPanelShadowNode,
+                                            panelPoseInActivitySpace.getTranslation().getX(),
+                                            panelPoseInActivitySpace.getTranslation().getY(),
+                                            panelPoseInActivitySpace.getTranslation().getZ())
+                                    .setOrientation(
+                                            mPanelShadowNode,
+                                            panelPoseInActivitySpace.getRotation().getX(),
+                                            panelPoseInActivitySpace.getRotation().getY(),
+                                            panelPoseInActivitySpace.getRotation().getZ(),
+                                            panelPoseInActivitySpace.getRotation().getW())
+                                    .setParent(mPanelShadowNode, mActivitySpaceImpl.getNode())
+                                    .apply();
+                        }
+                        surfacePackage.release();
                     }
-                    surfacePackage.release();
                 });
         mIsVisible = true;
     }

@@ -104,7 +104,6 @@ import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
@@ -113,6 +112,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.SpatialMediaPlayer
 import androidx.xr.scenecore.SurfaceEntity
+import androidx.xr.scenecore.internal.Dimensions
 import androidx.xr.scenecore.scene
 import java.io.File
 import kotlin.math.roundToInt

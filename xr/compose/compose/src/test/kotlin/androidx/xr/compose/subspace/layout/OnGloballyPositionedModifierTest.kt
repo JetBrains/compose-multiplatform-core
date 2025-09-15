@@ -23,9 +23,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.testing.toDp
-import kotlin.test.assertEquals
+import androidx.xr.compose.unit.IntVolumeSize
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
 import org.junit.Rule
 import org.junit.Test
@@ -37,25 +38,42 @@ class OnGloballyPositionedModifierTest {
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
-    fun onGloballyPositioned_positionIsAlwaysSet() {
+    fun onGloballyPositioned_coordinates_positionIsSet() {
         var coordinates: SubspaceLayoutCoordinates? = null
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(
-                        SubspaceModifier.offset(20.dp, 20.dp, 20.dp).onGloballyPositioned {
-                            coordinates = it
-                            assertEquals(20.dp, coordinates?.poseInRoot?.translation?.x?.toDp())
-                            assertEquals(20.dp, coordinates?.poseInRoot?.translation?.y?.toDp())
-                            assertEquals(20.dp, coordinates?.poseInRoot?.translation?.z?.toDp())
-                        }
-                    ) {
-                        Text(text = "Panel")
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.offset(20.dp, 20.dp, 20.dp).onGloballyPositioned {
+                        coordinates = it
                     }
+                ) {
+                    Text(text = "Panel")
                 }
             }
         }
 
+        composeTestRule.waitForIdle()
         assertNotNull(coordinates)
+        assertThat(coordinates.poseInRoot.translation.x.toDp()).isEqualTo(20.dp)
+        assertThat(coordinates.poseInRoot.translation.y.toDp()).isEqualTo(20.dp)
+        assertThat(coordinates.poseInRoot.translation.z.toDp()).isEqualTo(20.dp)
+    }
+
+    @Test
+    fun onGloballyPositioned_coordinates_sizeIsSet() {
+        var coordinates: SubspaceLayoutCoordinates? = null
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.size(100.dp).onGloballyPositioned { coordinates = it }
+                ) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        assertNotNull(coordinates)
+        assertThat(coordinates.size).isEqualTo(IntVolumeSize(100, 100, 100))
     }
 }

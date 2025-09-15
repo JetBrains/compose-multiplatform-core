@@ -29,6 +29,7 @@ androidx {
     inceptionYear = "2025"
     description = "Compose player for RemoteCompose documents"
     doNotDocumentReason = "Not shipped externally"
+    addGoldenImageAssets()
 }
 
 android {
@@ -46,4 +47,16 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.compose.foundation:foundation:1.8.1")
     implementation("androidx.compose.ui:ui:1.8.1")
+
+    androidTestImplementation(project(":compose:remote:remote-creation"))
+    androidTestImplementation(project(":compose:remote:remote-frontend"))
+    androidTestImplementation(project(":compose:test-utils"))
+    androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinTest)
+    androidTestImplementation(libs.truth)
 }

@@ -24,8 +24,8 @@ import android.view.Surface;
 
 import androidx.annotation.RestrictTo;
 import androidx.concurrent.futures.ResolvableFuture;
-import androidx.xr.runtime.internal.KhronosPbrMaterialSpec;
-import androidx.xr.runtime.internal.TextureSampler;
+import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec;
+import androidx.xr.scenecore.internal.TextureSampler;
 
 import com.google.ar.imp.view.View;
 import com.google.common.util.concurrent.ListenableFuture;

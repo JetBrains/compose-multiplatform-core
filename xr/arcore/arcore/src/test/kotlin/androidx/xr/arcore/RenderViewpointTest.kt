@@ -19,6 +19,10 @@ package androidx.xr.arcore
 import android.Manifest
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.testing.FakeLifecycleManager
+import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.Session
@@ -26,10 +30,6 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakeLifecycleManager
-import androidx.xr.runtime.testing.FakePerceptionManager
-import androidx.xr.runtime.testing.FakeRuntimeFactory
-import androidx.xr.runtime.testing.FakeRuntimeRenderViewpoint
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -83,20 +83,21 @@ class RenderViewpointTest {
         FakeLifecycleManager.TestPermissions.forEach { permission ->
             shadowApplication.grantPermissions(permission)
         }
-        FakeRuntimeFactory.hasCreatePermission = true
+        FakePerceptionRuntimeFactory.hasCreatePermission = true
 
         activityController.create()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
         session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
-        xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
+        xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun left_returnsPoseAndFov() =
         runTest(testDispatcher) {
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager =
+                session.perceptionRuntime.perceptionManager as FakePerceptionManager
             val runtimeViewpoint = perceptionManager.leftRenderViewpoint
             val underTest = RenderViewpoint.left(session)!!
             check(underTest.state.value.localPose == Pose())
@@ -117,7 +118,8 @@ class RenderViewpointTest {
     @Test
     fun right_returnsPoseAndFov() =
         runTest(testDispatcher) {
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager =
+                session.perceptionRuntime.perceptionManager as FakePerceptionManager
             val runtimeViewpoint = perceptionManager.rightRenderViewpoint
             val underTest = RenderViewpoint.right(session)!!
             check(underTest.state.value.localPose == Pose())
@@ -138,7 +140,8 @@ class RenderViewpointTest {
     @Test
     fun mono_returnsPoseAndFov() =
         runTest(testDispatcher) {
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager =
+                session.perceptionRuntime.perceptionManager as FakePerceptionManager
             val runtimeViewpoint = perceptionManager.monoRenderViewpoint
             val underTest = RenderViewpoint.mono(session)!!
             check(underTest.state.value.localPose == Pose())
@@ -159,7 +162,8 @@ class RenderViewpointTest {
     @Test
     fun left_returnsPoseAndFovInPerceptionSpace() =
         runTest(testDispatcher) {
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager =
+                session.perceptionRuntime.perceptionManager as FakePerceptionManager
             val runtimeViewpoint = perceptionManager.leftRenderViewpoint
             val underTest = RenderViewpoint.left(session)!!
             check(underTest.state.value.localPose == Pose())
@@ -181,7 +185,8 @@ class RenderViewpointTest {
     @Test
     fun right_returnsPoseAndFovInPerceptionSpace() =
         runTest(testDispatcher) {
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager =
+                session.perceptionRuntime.perceptionManager as FakePerceptionManager
             val runtimeViewpoint = perceptionManager.rightRenderViewpoint
             val underTest = RenderViewpoint.right(session)!!
             check(underTest.state.value.localPose == Pose())
@@ -203,7 +208,8 @@ class RenderViewpointTest {
     @Test
     fun mono_returnsPoseAndFovInPerceptionSpace() =
         runTest(testDispatcher) {
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager =
+                session.perceptionRuntime.perceptionManager as FakePerceptionManager
             val runtimeViewpoint = perceptionManager.monoRenderViewpoint
             val underTest = RenderViewpoint.mono(session)!!
             check(underTest.state.value.localPose == Pose())
@@ -224,7 +230,7 @@ class RenderViewpointTest {
     @Test
     fun update_stateMatchesRuntimeRenderViewpoint() = runBlocking {
         val runtimeRenderViewpoint = FakeRuntimeRenderViewpoint()
-        val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val perceptionManager = session.perceptionRuntime.perceptionManager as FakePerceptionManager
         val runtimeArDevice = perceptionManager.arDevice
         val underTest = RenderViewpoint(runtimeRenderViewpoint, runtimeArDevice)
         check(underTest.state.value.pose == Pose())
@@ -242,7 +248,7 @@ class RenderViewpointTest {
     @Test
     fun update_stateMatchesRuntimeRenderViewpointInPerceptionSpace() = runBlocking {
         val runtimeRenderViewpoint = FakeRuntimeRenderViewpoint()
-        val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val perceptionManager = session.perceptionRuntime.perceptionManager as FakePerceptionManager
         val runtimeArDevice = perceptionManager.arDevice
         val underTest = RenderViewpoint(runtimeRenderViewpoint, runtimeArDevice)
         check(underTest.state.value.pose == Pose())

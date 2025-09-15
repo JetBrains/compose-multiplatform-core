@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.spatial.rendering;
 
-import androidx.xr.runtime.internal.TextureResource;
+import androidx.xr.scenecore.internal.TextureResource;
 
 /**
  * Implementation of a SceneCore TextureResource.

@@ -17,7 +17,7 @@
 package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.ArDevice
+import androidx.xr.arcore.internal.ArDevice
 import androidx.xr.runtime.math.Pose
 import com.google.ar.core.Frame
 

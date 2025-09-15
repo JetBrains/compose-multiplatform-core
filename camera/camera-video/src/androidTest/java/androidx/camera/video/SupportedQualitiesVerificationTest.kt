@@ -58,6 +58,7 @@ import androidx.camera.video.internal.compat.quirk.SizeCannotEncodeVideoQuirk
 import androidx.core.util.Consumer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -73,6 +74,7 @@ import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@SdkSuppress(minSdkVersion = 24) // b/441563673
 @LargeTest
 @RunWith(Parameterized::class)
 class SupportedQualitiesVerificationTest(

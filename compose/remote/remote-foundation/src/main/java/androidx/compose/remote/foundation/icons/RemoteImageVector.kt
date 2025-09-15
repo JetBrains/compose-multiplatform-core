@@ -58,8 +58,7 @@ import androidx.compose.ui.graphics.vector.DefaultStrokeLineWidth
  *   be before it is beveled. Used only when [paintingStyle] is [PaintingStyle.Stroke] and
  *   [strokeLineJoin] is [StrokeJoin.Miter].
  */
-abstract class RemoteImageVector
-internal constructor(
+abstract class RemoteImageVector(
     val intrinsicWidth: Float = DefaultIconSize,
     val intrinsicHeight: Float = DefaultIconSize,
     val tintBlendMode: BlendMode = BlendMode.SrcIn,

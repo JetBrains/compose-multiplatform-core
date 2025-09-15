@@ -24,6 +24,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.navigationevent.NavigationEvent
+import androidx.navigationevent.NavigationEventSwipeEdge
 
 /** Compat around the [BackEvent] class */
 class BackEventCompat
@@ -82,11 +83,17 @@ constructor(
     constructor(
         navigationEvent: NavigationEvent
     ) : this(
-        navigationEvent.touchX,
-        navigationEvent.touchY,
-        navigationEvent.progress,
-        navigationEvent.swipeEdge,
-        navigationEvent.frameTimeMillis,
+        touchX = navigationEvent.touchX,
+        touchY = navigationEvent.touchY,
+        progress = navigationEvent.progress,
+        swipeEdge =
+            when (navigationEvent.swipeEdge) {
+                NavigationEventSwipeEdge.Left -> BackEvent.EDGE_LEFT
+                NavigationEventSwipeEdge.Right -> BackEvent.EDGE_RIGHT
+                NavigationEventSwipeEdge.None -> BackEvent.EDGE_NONE
+                else -> error("Unexpected 'swipeEdge' value: ${navigationEvent.swipeEdge}")
+            },
+        frameTimeMillis = navigationEvent.frameTimeMillis,
     )
 
     /**  */
@@ -117,7 +124,19 @@ constructor(
      * @return A new [NavigationEvent] object populated with this [BackEventCompat] data.
      */
     fun toNavigationEvent(): NavigationEvent {
-        return NavigationEvent(touchX, touchY, progress, swipeEdge, frameTimeMillis)
+        return NavigationEvent(
+            touchX = touchX,
+            touchY = touchY,
+            progress = progress,
+            swipeEdge =
+                when (swipeEdge) {
+                    BackEvent.EDGE_LEFT -> NavigationEventSwipeEdge.Left
+                    BackEvent.EDGE_RIGHT -> NavigationEventSwipeEdge.Right
+                    BackEvent.EDGE_NONE -> NavigationEventSwipeEdge.None
+                    else -> error("Unexpected 'swipeEdge' value: $swipeEdge")
+                },
+            frameTimeMillis = frameTimeMillis,
+        )
     }
 
     override fun toString(): String {

@@ -376,7 +376,8 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
                     Log.warn { "Trying to get audio restriction after shutdown! Returning NONE" }
                     return AudioRestrictionMode.AUDIO_RESTRICTION_NONE
                 }
-                component.cameraAudioRestrictionController().globalAudioRestrictionMode
+                return component.cameraAudioRestrictionController().globalAudioRestrictionMode
+                    ?: AudioRestrictionMode.AUDIO_RESTRICTION_NONE
             }
         set(value) =
             synchronized(lock) {

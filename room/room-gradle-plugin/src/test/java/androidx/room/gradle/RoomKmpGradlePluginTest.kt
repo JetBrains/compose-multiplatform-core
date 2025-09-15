@@ -20,7 +20,6 @@ import androidx.kruth.assertThat
 import androidx.testutils.gradle.ProjectSetupRule
 import java.io.File
 import org.gradle.testkit.runner.TaskOutcome
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -108,7 +107,6 @@ class RoomKmpGradlePluginTest {
             )
     }
 
-    @Ignore("b/424472170")
     @Test
     fun `Test Workflow`() {
         setup()
@@ -138,7 +136,6 @@ class RoomKmpGradlePluginTest {
         assertThat(androidSchema.readText()).isNotEqualTo(nativeSchema.readText())
     }
 
-    @Ignore("b/424472170")
     @Test
     fun `Generate Java with Non-Android targets error`() {
         setup(generateKotlin = "false")

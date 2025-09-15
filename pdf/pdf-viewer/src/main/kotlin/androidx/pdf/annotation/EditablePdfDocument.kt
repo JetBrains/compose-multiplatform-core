@@ -60,6 +60,13 @@ public abstract class EditablePdfDocument : PdfDocument {
     public abstract suspend fun applyEdits(sourcePfd: ParcelFileDescriptor): AnnotationResult
 
     /**
+     * Creates a new [PdfEdit] onto to the document with the [EditId] provided.
+     *
+     * @param entry The [PdfEditEntry] to be added.
+     */
+    public abstract fun <T : PdfEdit> addPdfEditEntry(entry: PdfEditEntry<T>)
+
+    /**
      * Creates a new PdfEdit onto the PdfDocument.
      *
      * @param edit The [PdfEdit] to be added.
@@ -71,16 +78,18 @@ public abstract class EditablePdfDocument : PdfDocument {
      * Removes an existing PdfEdit from the PdfDocument.
      *
      * @param editId The [EditId] of the PdfEdit to be removed.
+     * @return The [PdfEdit] that was removed.
      */
-    public abstract fun removeEdit(editId: EditId)
+    public abstract fun removeEdit(editId: EditId): PdfEdit
 
     /**
      * Updates an existing PdfEdit in the PdfDocument.
      *
      * @param editId The [EditId] of the edit to be updated.
      * @param edit The [PdfEdit] to be updated.
+     * @return The old [PdfEdit] that was updated.
      */
-    public abstract fun updateEdit(editId: EditId, edit: PdfEdit)
+    public abstract fun updateEdit(editId: EditId, edit: PdfEdit): PdfEdit
 
     /** Commits all PdfEdits to the PDF document. */
     public abstract fun commitEdits(): EditsResult
@@ -91,4 +100,7 @@ public abstract class EditablePdfDocument : PdfDocument {
      * @return [PdfEdits] representing all [PdfEdit]s in the document.
      */
     public abstract fun getAllEdits(): PdfEdits
+
+    /** Discards all uncommitted edits. */
+    public abstract fun clearUncommittedEdits()
 }

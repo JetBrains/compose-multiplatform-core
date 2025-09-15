@@ -43,18 +43,18 @@ import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.JxrPlatformAdapter;
-import androidx.xr.runtime.internal.MoveEventListener;
-import androidx.xr.runtime.internal.PanelEntity;
-import androidx.xr.runtime.internal.ResizeEvent;
-import androidx.xr.runtime.internal.ResizeEventListener;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.internal.Dimensions;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.JxrPlatformAdapter;
+import androidx.xr.scenecore.internal.MoveEventListener;
+import androidx.xr.scenecore.internal.PanelEntity;
+import androidx.xr.scenecore.internal.ResizeEvent;
+import androidx.xr.scenecore.internal.ResizeEventListener;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;

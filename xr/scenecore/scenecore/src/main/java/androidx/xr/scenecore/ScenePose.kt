@@ -20,14 +20,14 @@ import android.util.Log
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.internal.ActivityPose as RtActivityPose
-import androidx.xr.runtime.internal.CameraViewActivityPose as RtCameraViewActivityPose
-import androidx.xr.runtime.internal.HeadActivityPose as RtHeadActivityPose
-import androidx.xr.runtime.internal.HitTestResult as RtHitTestResult
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.internal.ActivityPose as RtActivityPose
+import androidx.xr.scenecore.internal.CameraViewActivityPose as RtCameraViewActivityPose
+import androidx.xr.scenecore.internal.HeadActivityPose as RtHeadActivityPose
+import androidx.xr.scenecore.internal.HitTestResult as RtHitTestResult
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
 
 /**
  * A [Pose] in the Scene graph, which can be transformed into a Pose relative to another ScenePose.

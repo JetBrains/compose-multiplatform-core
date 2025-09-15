@@ -168,7 +168,9 @@ public fun ScrollIndicator(
  * @param modifier The modifier to be applied to the component
  * @param colors [ScrollIndicatorColors] that will be used to resolve the indicator and track colors
  *   for this [ScrollIndicator].
- * @param reverseDirection Reverses direction of ScrollIndicator if true
+ * @param reverseDirection Reverses direction of ScrollIndicator if true. The default value is
+ *   inferred from the `reverseLayout` property of the provided [ScalingLazyListState], ensuring the
+ *   indicator automatically matches the list's layout direction.
  * @param positionAnimationSpec [AnimationSpec] for position animation. The Position animation is
  *   used for animating changes to the scroll size and position. To disable this animation [snap]
  *   AnimationSpec should be passed instead.
@@ -178,7 +180,7 @@ public fun ScrollIndicator(
     state: ScalingLazyListState,
     modifier: Modifier = Modifier,
     colors: ScrollIndicatorColors = ScrollIndicatorDefaults.colors(),
-    reverseDirection: Boolean = false,
+    reverseDirection: Boolean = state.layoutInfo.reverseLayout,
     positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec,
 ) {
     val overscrollEffect = rememberOverscrollEffect()?.let { it as? OffsetOverscrollEffect }
@@ -281,7 +283,9 @@ public fun ScrollIndicator(
  * @param modifier The modifier to be applied to the component
  * @param colors [ScrollIndicatorColors] that will be used to resolve the indicator and track colors
  *   for this [ScrollIndicator].
- * @param reverseDirection Reverses direction of ScrollIndicator if true
+ * @param reverseDirection Reverses direction of ScrollIndicator if true. The default value is
+ *   inferred from the `reverseLayout` property of the provided [LazyListState], ensuring the
+ *   indicator automatically matches the list's layout direction.
  * @param positionAnimationSpec [AnimationSpec] for position animation. The Position animation is
  *   used for animating changes to the scroll size and position. To disable this animation [snap]
  *   AnimationSpec should be passed instead.
@@ -291,7 +295,7 @@ public fun ScrollIndicator(
     state: LazyListState,
     modifier: Modifier = Modifier,
     colors: ScrollIndicatorColors = ScrollIndicatorDefaults.colors(),
-    reverseDirection: Boolean = false,
+    reverseDirection: Boolean = state.layoutInfo.reverseLayout,
     positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec,
 ) {
     val overscrollEffect = rememberOverscrollEffect()?.let { it as? OffsetOverscrollEffect }

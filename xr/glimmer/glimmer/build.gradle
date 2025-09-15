@@ -54,11 +54,7 @@ dependencies {
 
 android {
     namespace = "androidx.xr.glimmer"
-
     compileSdk = 35
-    defaultConfig {
-        minSdk = 23
-    }
 }
 
 androidx {

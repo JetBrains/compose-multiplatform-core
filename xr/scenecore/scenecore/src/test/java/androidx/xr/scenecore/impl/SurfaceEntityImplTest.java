@@ -25,19 +25,19 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 
-import androidx.xr.runtime.internal.CameraViewActivityPose;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.PerceivedResolutionResult;
-import androidx.xr.runtime.internal.PixelDimensions;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SurfaceEntity;
-import androidx.xr.runtime.internal.SurfaceEntity.Shape;
 import androidx.xr.runtime.math.FloatSize2d;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
+import androidx.xr.scenecore.internal.CameraViewActivityPose;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.PerceivedResolutionResult;
+import androidx.xr.scenecore.internal.PixelDimensions;
+import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.internal.SurfaceEntity;
+import androidx.xr.scenecore.internal.SurfaceEntity.Shape;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -164,8 +164,7 @@ public final class SurfaceEntityImplTest {
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setShape_setsShape() {
-        SurfaceEntity.Shape expectedShape =
-                new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f));
+        SurfaceEntity.Shape expectedShape = new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f));
         mSurfaceEntity.setShape(expectedShape);
         SurfaceEntity.Shape shape = mSurfaceEntity.getShape();
 
@@ -212,7 +211,7 @@ public final class SurfaceEntityImplTest {
         // Note that we don't test that dispose prevents manipulating other properties because that
         // is enforced at the API level, rather than the implementation level.
         mSurfaceEntity.dispose();
-        mSurfaceEntity.dispose();  // shouldn't crash
+        mSurfaceEntity.dispose(); // shouldn't crash
     }
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface
@@ -221,15 +220,14 @@ public final class SurfaceEntityImplTest {
         float kFeatherRadiusX = 0.14f;
         float kFeatherRadiusY = 0.28f;
         SurfaceEntity.EdgeFeather expectedFeather =
-            new SurfaceEntity.EdgeFeather.RectangleFeather(kFeatherRadiusX, kFeatherRadiusY);
+                new SurfaceEntity.EdgeFeather.RectangleFeather(kFeatherRadiusX, kFeatherRadiusY);
         mSurfaceEntity.setEdgeFeather(expectedFeather);
         SurfaceEntity.EdgeFeather returnedFeather = mSurfaceEntity.getEdgeFeather();
         assertThat(returnedFeather).isEqualTo(expectedFeather);
 
         // Apply Fake Impress checks
         FakeImpressApiImpl.StereoSurfaceEntityData surfaceEntityData =
-            mImpressApi
-                .getStereoSurfaceEntities().get(mSurfaceEntity.getEntityImpressNode());
+                mImpressApi.getStereoSurfaceEntities().get(mSurfaceEntity.getEntityImpressNode());
         assertThat(surfaceEntityData.getFeatherRadiusX()).isEqualTo(kFeatherRadiusX);
         assertThat(surfaceEntityData.getFeatherRadiusY()).isEqualTo(kFeatherRadiusY);
 

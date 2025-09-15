@@ -20,6 +20,7 @@ import android.app.Activity
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 

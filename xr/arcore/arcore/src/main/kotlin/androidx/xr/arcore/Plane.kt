@@ -17,12 +17,12 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.Anchor as RuntimeAnchor
+import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
+import androidx.xr.arcore.internal.Plane as RuntimePlane
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
-import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
-import androidx.xr.runtime.internal.Plane as RuntimePlane
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
@@ -53,7 +53,10 @@ internal constructor(
          */
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<Plane>> {
-            check(session.config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
+            check(
+                session.perceptionRuntime.lifecycleManager.config.planeTracking !=
+                    Config.PlaneTrackingMode.DISABLED
+            ) {
                 "Config.PlaneTrackingMode is set to DISABLED."
             }
 

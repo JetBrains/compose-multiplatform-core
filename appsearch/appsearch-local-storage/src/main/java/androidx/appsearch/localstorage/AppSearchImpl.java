@@ -112,6 +112,7 @@ import com.google.android.icing.proto.GetResultSpecProto;
 import com.google.android.icing.proto.GetSchemaResultProto;
 import com.google.android.icing.proto.IcingSearchEngineOptions;
 import com.google.android.icing.proto.InitializeResultProto;
+import com.google.android.icing.proto.InitializeStatsProto;
 import com.google.android.icing.proto.LogSeverity;
 import com.google.android.icing.proto.NamespaceBlobStorageInfoProto;
 import com.google.android.icing.proto.NamespaceStorageInfoProto;
@@ -473,6 +474,9 @@ public final class AppSearchImpl implements Closeable {
                     }
                 }
                 checkSuccess(initializeResultProto.getStatus());
+                if (hasDatabaseStateChangedAfterInit(initializeResultProto)) {
+                    mNeedsPersistToDisk.set(true);
+                }
 
                 if (Flags.enableAppSearchManageBlobFiles() && !mBlobFilesDir.exists()
                         && !mBlobFilesDir.mkdirs()) {
@@ -5316,6 +5320,32 @@ public final class AppSearchImpl implements Closeable {
         }
     }
 
+    /**
+     * Returns whether the database is in a stable state after initialization. If not, then we may
+     * need flushing.
+     */
+    private boolean hasDatabaseStateChangedAfterInit(
+            @NonNull InitializeResultProto initializeResultProto) {
+        // TODO(b/417463182): add boolean field(s) into InitializeResultProto indicating whether
+        //   ground truths and derived files have changed or not, and we can have a simpler way here
+        //   to decide if persistToDisk is needed or not.
+        InitializeStatsProto initializeStatsProto = initializeResultProto.getInitializeStats();
+        return initializeStatsProto.getDocumentStoreDataStatus()
+                        != InitializeStatsProto.DocumentStoreDataStatus.NO_DATA_LOSS
+                || initializeStatsProto.getSchemaStoreRecoveryCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getDocumentStoreRecoveryCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getIndexRestorationCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getIntegerIndexRestorationCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getQualifiedIdJoinIndexRestorationCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getEmbeddingIndexRestorationCause()
+                        != InitializeStatsProto.RecoveryCause.NONE;
+    }
+
     /** Calls getSchema in a thread safe manner. */
     public @NonNull SchemaProto rawGetSchema() {
         mReadWriteLock.readLock().lock();
@@ -5343,6 +5373,20 @@ public final class AppSearchImpl implements Closeable {
         mReadWriteLock.readLock().lock();
         try {
             return mIcingSearchEngineLocked.getNextPage(nextPageToken);
+        } finally {
+            mReadWriteLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Calls getAllBlobInfos in a thread safe manner.
+     *
+     * <p>Currently this is only used and tested in PlatformStorage.
+     */
+    public @NonNull BlobProto rawGetAllBlobInfos() {
+        mReadWriteLock.readLock().lock();
+        try {
+            return mIcingSearchEngineLocked.getAllBlobInfos();
         } finally {
             mReadWriteLock.readLock().unlock();
         }

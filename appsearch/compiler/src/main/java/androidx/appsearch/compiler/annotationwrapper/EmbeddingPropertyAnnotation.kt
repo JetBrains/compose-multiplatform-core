@@ -16,9 +16,9 @@
 package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
-import androidx.appsearch.compiler.ProcessingException
+import androidx.room.compiler.processing.XAnnotationValue
+import androidx.room.compiler.processing.XType
 import com.squareup.javapoet.ClassName
-import javax.lang.model.type.TypeMirror
 
 /** An instance of the `@Document.EmbeddingProperty` annotation. */
 data class EmbeddingPropertyAnnotation(
@@ -49,19 +49,17 @@ data class EmbeddingPropertyAnnotation(
         /**
          * @param defaultName The name to use for the annotated property in case the annotation
          *   params do not mention an explicit name.
-         * @throws ProcessingException If the annotation points to an Illegal serializer class.
          */
-        @Throws(ProcessingException::class)
         fun parse(
-            annotationParams: Map<String, Any?>,
+            annotationParams: Map<String, XAnnotationValue>,
             defaultName: String,
         ): EmbeddingPropertyAnnotation {
-            val name = annotationParams["name"] as? String
+            val name = annotationParams["name"]?.value as? String
             return EmbeddingPropertyAnnotation(
                 name = if (name.isNullOrEmpty()) defaultName else name,
-                isRequired = annotationParams["required"] as Boolean,
-                indexingType = annotationParams["indexingType"] as Int,
-                quantizationType = annotationParams["quantizationType"] as Int,
+                isRequired = annotationParams.getValue("required").asBoolean(),
+                indexingType = annotationParams.getValue("indexingType").asInt(),
+                quantizationType = annotationParams.getValue("quantizationType").asInt(),
             )
         }
     }
@@ -69,6 +67,6 @@ data class EmbeddingPropertyAnnotation(
     override val dataPropertyKind
         get() = Kind.EMBEDDING_PROPERTY
 
-    override fun getUnderlyingTypeWithinGenericDoc(helper: IntrospectionHelper): TypeMirror =
+    override fun getUnderlyingTypeWithinGenericDoc(helper: IntrospectionHelper): XType =
         helper.embeddingType
 }

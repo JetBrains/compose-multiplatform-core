@@ -30,6 +30,7 @@ class AndroidFillableDataTest {
     private val testString = "TEST_STRING"
     private val testBoolean = true
     private val testInt = 123
+    private val testLong = 946684800000 // Jan 1, 2000 in milliseconds
 
     @Test
     fun textValue_whenValueIsText_returnsText() {
@@ -140,5 +141,76 @@ class AndroidFillableDataTest {
 
         // Act & Assert
         assertThat(fillableData.getListIndexOrDefault(defaultValue)).isEqualTo(defaultValue)
+    }
+
+    @Test
+    fun dateMillisValue_whenValueIsList_returnsNull() {
+        // Arrange
+        val autofillValue = AutofillValue.forList(testInt)
+        val fillableData: FillableData = AndroidFillableData(autofillValue)
+
+        // Act & Assert
+        assertThat(fillableData.dateMillisValue).isNull()
+    }
+
+    @Test
+    fun textValue_whenValueIsDate_returnsNull() {
+        // Arrange
+        val autofillValue = AutofillValue.forDate(testLong)
+        val fillableData: FillableData = AndroidFillableData(autofillValue)
+
+        // Act & Assert
+        assertThat(fillableData.textValue).isNull()
+    }
+
+    @Test
+    fun booleanValue_whenValueIsDate_returnsNull() {
+        // Arrange
+        val autofillValue = AutofillValue.forDate(testLong)
+        val fillableData: FillableData = AndroidFillableData(autofillValue)
+
+        // Act & Assert
+        assertThat(fillableData.booleanValue).isNull()
+    }
+
+    @Test
+    fun listIndexValue_whenValueIsDate_returnsNull() {
+        // Arrange
+        val autofillValue = AutofillValue.forDate(testLong)
+        val fillableData: FillableData = AndroidFillableData(autofillValue)
+
+        // Act & Assert
+        assertThat(fillableData.listIndexValue).isNull()
+    }
+
+    @Test
+    fun dateMillisValue_whenValueIsDate_returnsLong() {
+        // Arrange
+        val autofillValue = AutofillValue.forDate(testLong)
+        val fillableData: FillableData = AndroidFillableData(autofillValue)
+
+        // Act & Assert
+        assertThat(fillableData.dateMillisValue).isEqualTo(testLong)
+    }
+
+    @Test
+    fun getDateMillisOrDefault_whenValueIsDate_returnsLong() {
+        // Arrange
+        val autofillValue = AutofillValue.forDate(testLong)
+        val fillableData: FillableData = AndroidFillableData(autofillValue)
+
+        // Act & Assert
+        assertThat(fillableData.getDateMillisOrDefault(defaultValue = -1L)).isEqualTo(testLong)
+    }
+
+    @Test
+    fun getDateMillisOrDefault_whenValueIsText_returnsDefault() {
+        // Arrange
+        val autofillValue = AutofillValue.forText(testString)
+        val fillableData: FillableData = AndroidFillableData(autofillValue)
+        val defaultValue = -1L
+
+        // Act & Assert
+        assertThat(fillableData.getDateMillisOrDefault(defaultValue)).isEqualTo(defaultValue)
     }
 }

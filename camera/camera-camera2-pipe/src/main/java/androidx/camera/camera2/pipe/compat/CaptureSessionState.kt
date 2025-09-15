@@ -340,8 +340,8 @@ internal class CaptureSessionState(
             Log.debug { "$this Shutdown" }
 
             Debug.traceStart { "$this#shutdown" }
-            Debug.traceStart { "$graphListener#onGraphStopped" }
-            graphListener.onGraphStopped(graphProcessor)
+            Debug.traceStart { "$graphListener#onGraphStopping" }
+            graphListener.onGraphStopping()
             Debug.traceStop()
 
             // On newer API levels, aborting capture allows us to switch to a new capture session
@@ -390,6 +390,11 @@ internal class CaptureSessionState(
                         "Failed to close the capture session in ${CLOSE_SESSION_TIMEOUT_MS}ms"
                     }
             }
+
+            Debug.traceStart { "$graphListener#onGraphStopped" }
+            graphListener.onGraphStopped(graphProcessor)
+            Debug.traceStop()
+
             Debug.traceStop()
         } else {
             // We still need to indicate the stop signal because the graph state would transition to

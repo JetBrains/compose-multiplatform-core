@@ -28,6 +28,7 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("androidx.stableaidl")
+    id("com.squareup.wire")
 }
 
 dependencies {
@@ -36,9 +37,20 @@ dependencies {
     api("androidx.annotation:annotation:1.9.1")
     implementation("androidx.lifecycle:lifecycle-service:2.9.2")
 
+    testImplementation("androidx.core:core-ktx:1.17.0")
     testImplementation(libs.junit)
+    testImplementation(libs.mockitoKotlin4)
+    testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+}
+
+wire {
+    kotlin {}
+
+    sourcePath {
+        srcDir 'src/main/proto'
+    }
 }
 
 android {
@@ -59,7 +71,7 @@ android {
 
 androidx {
     name = "Glance Wear"
-    type = SoftwareType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2025"
     description = "Allows developers to build Widgets on Wear OS using Remote Compose."
     enableRobolectric()

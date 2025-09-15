@@ -17,8 +17,7 @@
 package androidx.navigationevent
 
 import androidx.annotation.FloatRange
-import androidx.annotation.IntDef
-import androidx.annotation.RestrictTo
+import kotlin.jvm.JvmName
 
 /**
  * Represents a system navigation event, such as a predictive back gesture or a back button press.
@@ -54,36 +53,16 @@ public class NavigationEvent(
     @FloatRange(from = 0.0, to = 1.0) public val progress: Float = 0.0F,
     /**
      * Indicates which screen edge a swipe-based navigation gesture originates from. For non-swipe
-     * events, this will be [EDGE_NONE].
+     * events, this will be [NavigationEventSwipeEdge.None].
      */
-    public val swipeEdge: @SwipeEdge Int = EDGE_NONE,
+    @get:JvmName("getSwipeEdge") // Disable name mangling for Java
+    public val swipeEdge: NavigationEventSwipeEdge = NavigationEventSwipeEdge.None,
     /**
      * The timestamp in milliseconds when this navigation event occurred. This is useful for
      * synchronizing animations or for debugging event sequences.
      */
     public val frameTimeMillis: Long = 0,
 ) {
-
-    /** Defines the possible screen edges from which a swipe gesture can originate. */
-    @Target(AnnotationTarget.TYPE)
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @Retention(AnnotationRetention.SOURCE)
-    @IntDef(EDGE_LEFT, EDGE_RIGHT, EDGE_NONE)
-    public annotation class SwipeEdge
-
-    public companion object {
-        /** Indicates the navigation gesture originates from the left edge of the screen. */
-        public const val EDGE_LEFT: Int = 0
-
-        /** Indicates the navigation gesture originates from the right edge of the screen. */
-        public const val EDGE_RIGHT: Int = 1
-
-        /**
-         * Indicates the navigation event was not caused by an edge swipe. This applies to actions
-         * like a 3-button navigation press or a hardware back button event.
-         */
-        public const val EDGE_NONE: Int = 2
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -104,7 +83,7 @@ public class NavigationEvent(
         var result = touchX.hashCode()
         result = 31 * result + touchY.hashCode()
         result = 31 * result + progress.hashCode()
-        result = 31 * result + swipeEdge
+        result = 31 * result + swipeEdge.hashCode()
         result = 31 * result + frameTimeMillis.hashCode()
         return result
     }

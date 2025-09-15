@@ -3,15 +3,20 @@ package androidx.navigationevent {
 
   public final class DirectNavigationEventInput extends androidx.navigationevent.NavigationEventInput {
     ctor public DirectNavigationEventInput();
-    method @MainThread public void cancel();
-    method @MainThread public void complete();
-    method @MainThread public void progress(androidx.navigationevent.NavigationEvent event);
-    method @MainThread public void start(androidx.navigationevent.NavigationEvent event);
+    method @MainThread public void backCancelled();
+    method @MainThread public void backCompleted();
+    method @MainThread public void backProgressed(androidx.navigationevent.NavigationEvent event);
+    method @MainThread public void backStarted(androidx.navigationevent.NavigationEvent event);
+    method @MainThread public void forwardCancelled();
+    method @MainThread public void forwardCompleted();
+    method @MainThread public void forwardProgressed(androidx.navigationevent.NavigationEvent event);
+    method @MainThread public void forwardStarted(androidx.navigationevent.NavigationEvent event);
   }
 
   public final class NavigationEvent {
     ctor public NavigationEvent();
-    ctor public NavigationEvent(optional @FloatRange(from=0.0) float touchX, optional @FloatRange(from=0.0) float touchY, optional @FloatRange(from=0.0, to=1.0) float progress, optional int swipeEdge, optional long frameTimeMillis);
+    ctor @KotlinOnly public NavigationEvent(optional @FloatRange(from=0.0) float touchX, optional @FloatRange(from=0.0) float touchY, optional @FloatRange(from=0.0, to=1.0) float progress, optional androidx.navigationevent.NavigationEventSwipeEdge swipeEdge, optional long frameTimeMillis);
+    ctor @BytecodeOnly public NavigationEvent(@FloatRange(from=0.0) float, @FloatRange(from=0.0) float, @FloatRange(from=0.0, to=1.0) float, int, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public long getFrameTimeMillis();
     method public float getProgress();
     method public int getSwipeEdge();
@@ -19,19 +24,9 @@ package androidx.navigationevent {
     method public float getTouchY();
     property public long frameTimeMillis;
     property public float progress;
-    property public int swipeEdge;
+    property public androidx.navigationevent.NavigationEventSwipeEdge swipeEdge;
     property public float touchX;
     property public float touchY;
-    field public static final androidx.navigationevent.NavigationEvent.Companion Companion;
-    field public static final int EDGE_LEFT = 0; // 0x0
-    field public static final int EDGE_NONE = 2; // 0x2
-    field public static final int EDGE_RIGHT = 1; // 0x1
-  }
-
-  public static final class NavigationEvent.Companion {
-    property public static int EDGE_LEFT;
-    property public static int EDGE_NONE;
-    property public static int EDGE_RIGHT;
   }
 
   public abstract class NavigationEventCallback<T extends androidx.navigationevent.NavigationEventInfo> {
@@ -52,7 +47,7 @@ package androidx.navigationevent {
     ctor public NavigationEventDispatcher(androidx.navigationevent.NavigationEventDispatcher parentDispatcher);
     ctor public NavigationEventDispatcher(optional kotlin.jvm.functions.Function0<kotlin.Unit>? fallbackOnBackPressed);
     method @KotlinOnly @MainThread public void addCallback(androidx.navigationevent.NavigationEventCallback<? extends java.lang.Object?> callback, optional androidx.navigationevent.NavigationEventPriority priority);
-    method @BytecodeOnly @MainThread public void addCallback-3owFMvg(androidx.navigationevent.NavigationEventCallback<? extends java.lang.Object!>, int);
+    method @MainThread public void addCallback(androidx.navigationevent.NavigationEventCallback<? extends java.lang.Object?> callback, optional int priority);
     method @MainThread public void addInput(androidx.navigationevent.NavigationEventInput input);
     method @MainThread public void dispose();
     method public kotlinx.coroutines.flow.StateFlow<androidx.navigationevent.NavigationEventState<androidx.navigationevent.NavigationEventInfo>> getState();
@@ -79,10 +74,14 @@ package androidx.navigationevent {
 
   public abstract class NavigationEventInput {
     ctor public NavigationEventInput();
-    method @MainThread protected final void dispatchOnCancelled();
-    method @MainThread protected final void dispatchOnCompleted();
-    method @MainThread protected final void dispatchOnProgressed(androidx.navigationevent.NavigationEvent event);
-    method @MainThread protected final void dispatchOnStarted(androidx.navigationevent.NavigationEvent event);
+    method @MainThread protected final void dispatchOnBackCancelled();
+    method @MainThread protected final void dispatchOnBackCompleted();
+    method @MainThread protected final void dispatchOnBackProgressed(androidx.navigationevent.NavigationEvent event);
+    method @MainThread protected final void dispatchOnBackStarted(androidx.navigationevent.NavigationEvent event);
+    method @MainThread protected final void dispatchOnForwardCancelled();
+    method @MainThread protected final void dispatchOnForwardCompleted();
+    method @MainThread protected final void dispatchOnForwardProgressed(androidx.navigationevent.NavigationEvent event);
+    method @MainThread protected final void dispatchOnForwardStarted(androidx.navigationevent.NavigationEvent event);
     method @EmptySuper @MainThread protected void onAdded(androidx.navigationevent.NavigationEventDispatcher dispatcher);
     method @EmptySuper @MainThread protected void onHasEnabledCallbacksChanged(boolean hasEnabledCallbacks);
     method @EmptySuper @MainThread protected void onRemoved();
@@ -95,8 +94,8 @@ package androidx.navigationevent {
   }
 
   public static final class NavigationEventPriority.Companion {
-    method @BytecodeOnly public int getDefault-b1THaJE();
-    method @BytecodeOnly public int getOverlay-b1THaJE();
+    method public int getDefault();
+    method public int getOverlay();
     property public androidx.navigationevent.NavigationEventPriority Default;
     property public androidx.navigationevent.NavigationEventPriority Overlay;
   }
@@ -123,11 +122,26 @@ package androidx.navigationevent {
     property public T? previousInfo;
   }
 
+  @kotlin.jvm.JvmInline public final value class NavigationEventSwipeEdge {
+    method @BytecodeOnly public static androidx.navigationevent.NavigationEventSwipeEdge! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.navigationevent.NavigationEventSwipeEdge.Companion Companion;
+  }
+
+  public static final class NavigationEventSwipeEdge.Companion {
+    method public int getLeft();
+    method public int getNone();
+    method public int getRight();
+    property public androidx.navigationevent.NavigationEventSwipeEdge Left;
+    property public androidx.navigationevent.NavigationEventSwipeEdge None;
+    property public androidx.navigationevent.NavigationEventSwipeEdge Right;
+  }
+
   @RequiresApi(33) public final class OnBackInvokedInput extends androidx.navigationevent.NavigationEventInput {
     ctor public OnBackInvokedInput(android.window.OnBackInvokedDispatcher onBackInvokedDispatcher);
   }
 
-  public final class ViewTreeNavigationEventDispatcherOwner_androidKt {
+  public final class ViewTreeNavigationEventDispatcherOwner {
     method public static androidx.navigationevent.NavigationEventDispatcherOwner? get(android.view.View);
     method public static void set(android.view.View, androidx.navigationevent.NavigationEventDispatcherOwner navigationEventDispatcherOwner);
   }

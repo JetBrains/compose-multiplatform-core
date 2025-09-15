@@ -18,6 +18,11 @@ package androidx.xr.scenecore.impl.impress
 
 /**
  * Interface defining the callbacks that are triggered from the Native side when an asset is loaded.
+ *
+ * @UsedByNative("impress/apibindings/asset_loader.cc")
+ *
+ * TODO(b/440328311): Convert to real annotation to enable code minimization in the rest of
+ *   SceneCore.
  */
 internal interface AssetLoader {
     /** Called when the asset is successfully loaded where the long value is the asset token. */

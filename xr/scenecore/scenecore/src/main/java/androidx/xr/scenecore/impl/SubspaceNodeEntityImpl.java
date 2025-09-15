@@ -19,12 +19,12 @@ package androidx.xr.scenecore.impl;
 import android.content.Context;
 
 import androidx.annotation.RestrictTo;
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SpaceValue;
-import androidx.xr.runtime.internal.SubspaceNodeEntity;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.internal.Dimensions;
+import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.internal.SpaceValue;
+import androidx.xr.scenecore.internal.SubspaceNodeEntity;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

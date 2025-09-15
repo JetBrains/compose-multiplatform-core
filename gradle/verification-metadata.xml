@@ -88,7 +88,6 @@
          <trusted-key id="0D8F8561AA7A5DD20BAE27043C0A8F4744F37328" group="com.github.ben-manes.caffeine"/>
          <trusted-key id="0EB9D7C468F97E44051D650AD73C68EE4152C255" group="com.google.dagger"/>
          <trusted-key id="0F06FF86BEEAF4E71866EE5232EE5355A6BC6E42">
-            <trusting group="^androidx\..*" regex="true"/>
             <trusting group="com.android"/>
             <trusting group="com.android.databinding"/>
             <trusting group="com.android.kotlin.multiplatform.library"/>
@@ -105,6 +104,7 @@
             <trusting group="com.android.tools.lint"/>
             <trusting group="com.android.tools.utp"/>
             <trusting group="com.google.android.gms"/>
+            <trusting group="^androidx\..*" regex="true"/>
          </trusted-key>
          <trusted-key id="0F07D1201BDDAB67CFB84EB479752DB6C966F0B8" group="com.google.android"/>
          <trusted-key id="10F3C7A02ECA55E502BADCF3991EFB94DB91127D" group="org.ow2"/>
@@ -129,6 +129,14 @@
          <trusted-key id="1BC86444BBD2A24C3A40904A438E9634A2319637" group="co.nstant.in"/>
          <trusted-key id="1CB7A3DBC99B562D69BFDFEDAE7AF7AE095EB290" group="net.saff.checkmark"/>
          <trusted-key id="1D0A8B5E77C678A7C724445ABF984B4145EA13F7" group="com.squareup"/>
+         <trusted-key id="1D217F8475EEE9F19AB8DD6B793FD5751A0F0780">
+            <trusting group="com.squareup"/>
+            <trusting group="com.squareup.leakcanary"/>
+            <trusting group="com.squareup.moshi"/>
+            <trusting group="com.squareup.okhttp3"/>
+            <trusting group="com.squareup.okio"/>
+            <trusting group="com.squareup.wire"/>
+         </trusted-key>
          <trusted-key id="1D9AA7F9E1E2824728B8CD1794B291AEF984A085">
             <trusting group="io.reactivex"/>
             <trusting group="io.reactivex.rxjava2"/>
@@ -263,7 +271,6 @@
          <trusted-key id="54A26BFDC7ECDD39BA4C123AC3BAB45F4AF71FAB" group="io.opencensus"/>
          <trusted-key id="54F6E594923EBD04F2B88606125A9EC9FAA91AE1" group="io.antmedia" name="rtmp-client"/>
          <trusted-key id="55E770230E69CC6DE143FB5B62C82E50836EB3EE" group="com.github.gundy"/>
-         <trusted-key id="D58760A74BFDE983E890B455005B27E7CA8E530D" group="jakarta.json"/>
          <trusted-key id="56B505DC8A29C69138A430B9429C8816DEA04CDB" group="org.xerial"/>
          <trusted-key id="5719E50EAC5A4B1DD390B72C2A742740E08E7F8D" group="org.antlr"/>
          <trusted-key id="5767F9CDE920750621875079A40E24B5B408DBD5" group="org.robolectric"/>
@@ -450,7 +457,14 @@
             <trusting group="com.android.tools.utp"/>
             <trusting group="^androidx\..*" regex="true"/>
          </trusted-key>
-         <trusted-key id="A6D6C97108B8585F91B158748671A8DF71296252" group="^com[.]squareup($|([.].*))" regex="true"/>
+         <trusted-key id="A6D6C97108B8585F91B158748671A8DF71296252">
+            <trusting group="com.squareup"/>
+            <trusting group="com.squareup.leakcanary"/>
+            <trusting group="com.squareup.moshi"/>
+            <trusting group="com.squareup.okhttp3"/>
+            <trusting group="com.squareup.okio"/>
+            <trusting group="com.squareup.wire"/>
+         </trusted-key>
          <trusted-key id="A7892505CF1A58076453E52D7999BEFBA1039E8B" group="net.bytebuddy"/>
          <trusted-key id="AA417737BD805456DB3CBDDE6601E5C08DCCBB96" group="info.picocli" name="picocli"/>
          <trusted-key id="AA70C7C433D501636392EC02153E7A3C2B4E5118" group="org.eclipse.ee4j"/>
@@ -531,6 +545,7 @@
          </trusted-key>
          <trusted-key id="D4C89EA4AAF455FD88B22087EFE8086F9E93774E" group="junit"/>
          <trusted-key id="D54A395B5CF3F86EB45F6E426B1B008864323B92" group="org.antlr"/>
+         <trusted-key id="D58760A74BFDE983E890B455005B27E7CA8E530D" group="jakarta.json"/>
          <trusted-key id="D5F46BC0B86AF5DC56DF58F05E975CB00C643DBF" group="com.google.inject"/>
          <trusted-key id="D6F1BC78607808EC8E9F69437A8860944FAD5F62">
             <trusting group="org.apache.commons"/>

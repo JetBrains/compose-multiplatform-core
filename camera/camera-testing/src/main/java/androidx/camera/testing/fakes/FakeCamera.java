@@ -492,6 +492,7 @@ public class FakeCamera implements CameraInternal {
         mConfiguredDeferrableSurfaces.clear();
     }
 
+    @SuppressWarnings("GetterSetterNullability")
     @Override
     public @NonNull CameraConfig getExtendedConfig() {
         return mCameraConfig;

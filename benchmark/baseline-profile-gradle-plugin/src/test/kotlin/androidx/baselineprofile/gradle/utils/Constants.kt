@@ -27,6 +27,8 @@ enum class TestAgpVersion(val versionString: String?) {
 
     fun isAtMost(version: TestAgpVersion) = this in TestAgpVersion.atMost(version)
 
+    fun shouldUseLegacyGradle() = isAtMost(TEST_AGP_VERSION_8_2_0)
+
     companion object {
         fun fromVersionString(versionString: String?) =
             TestAgpVersion.values().first { it.versionString == versionString }

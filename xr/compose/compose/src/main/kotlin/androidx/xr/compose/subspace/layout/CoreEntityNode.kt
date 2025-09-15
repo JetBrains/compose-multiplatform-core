@@ -24,7 +24,7 @@ package androidx.xr.compose.subspace.layout
  * scale will be the product of the individual scales. See the description of each property setter
  * for more details on the particular logic that is applied.
  */
-internal interface CoreEntityNode {
+internal interface CoreEntityNode : DelegatableSubspaceNode {
     /**
      * Called during the placement of the [CoreEntity] prior to when the size and position is
      * finally set on the node.

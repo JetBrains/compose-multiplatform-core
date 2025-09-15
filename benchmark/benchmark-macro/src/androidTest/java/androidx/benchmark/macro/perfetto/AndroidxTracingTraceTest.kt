@@ -16,6 +16,8 @@
 
 package androidx.benchmark.macro.perfetto
 
+import android.os.Build.VERSION.SDK_INT
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.macro.FileLinkingRule
 import androidx.benchmark.macro.Packages
 import androidx.benchmark.macro.runSingleSessionServer
@@ -58,6 +60,8 @@ class AndroidxTracingTraceTest {
     @LargeTest
     @Test
     fun captureAndValidateTrace() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(isAbiSupported())
 
         val traceFilePath = linkRule.createReportedTracePath(Packages.TEST)

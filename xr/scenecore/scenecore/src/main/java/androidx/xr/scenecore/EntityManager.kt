@@ -18,7 +18,7 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.internal.Entity as RtEntity
+import androidx.xr.scenecore.internal.Entity as RtEntity
 import java.util.concurrent.ConcurrentHashMap
 
 /** Manages the mapping between [RuntimeEntity] and [Entity] for a given SceneCore [Session]. */

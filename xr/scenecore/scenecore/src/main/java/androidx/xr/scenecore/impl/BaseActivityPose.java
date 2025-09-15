@@ -16,10 +16,10 @@
 
 package androidx.xr.scenecore.impl;
 
-import androidx.xr.runtime.internal.ActivityPose;
-import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.internal.ActivityPose;
+import androidx.xr.scenecore.internal.HitTestResult;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -91,16 +91,14 @@ abstract class BaseActivityPose implements ActivityPose {
         Pose destinationToLocal =
                 destinationToActivity.compose(
                         new Pose(
-                                activityToLocal.getTranslation()
-                                        .scale(inverseDestinationScale),
+                                activityToLocal.getTranslation().scale(inverseDestinationScale),
                                 activityToLocal.getRotation()));
 
         // Apply the transformation to the destination entity, from this entity, on the local pose.
         return destinationToLocal.compose(
                 new Pose(
                         pose.getTranslation()
-                                .scale(this.getActivitySpaceScale()
-                                        .scale(inverseDestinationScale)),
+                                .scale(this.getActivitySpaceScale().scale(inverseDestinationScale)),
                         pose.getRotation()));
     }
 }

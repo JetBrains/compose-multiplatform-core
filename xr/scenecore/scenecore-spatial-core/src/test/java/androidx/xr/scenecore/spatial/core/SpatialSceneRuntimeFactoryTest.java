@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.app.Activity;
 
-import androidx.xr.runtime.internal.SceneRuntime;
+import androidx.xr.scenecore.internal.SceneRuntime;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

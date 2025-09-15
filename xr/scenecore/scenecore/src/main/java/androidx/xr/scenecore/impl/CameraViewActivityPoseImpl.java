@@ -22,15 +22,15 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
-import androidx.xr.runtime.internal.CameraViewActivityPose;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.PixelDimensions;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjection;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
+import androidx.xr.scenecore.internal.CameraViewActivityPose;
+import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.internal.PixelDimensions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 

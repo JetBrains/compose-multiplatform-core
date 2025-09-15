@@ -61,6 +61,7 @@ public abstract class Track(
     @JvmField // avoid getter generation
     @PublishedApi
     internal var currentPacketArray: PooledTracePacketArray = pool.obtainTracePacketArray()
+
     @JvmField // we cache this separately to avoid having to query it with a function each time
     @PublishedApi
     internal var currentPacketArraySize: Int = currentPacketArray.packets.size
@@ -74,6 +75,8 @@ public abstract class Track(
 
     /** Emit is internal, but it must be sure to only access */
     @PublishedApi
+    // All usages of the API are also marked and tracked as experimental.
+    @Suppress("BanInlineOptIn")
     internal inline fun emitTraceEvent(
         immediateDispatch: Boolean = false,
         block: (TraceEvent) -> Unit,

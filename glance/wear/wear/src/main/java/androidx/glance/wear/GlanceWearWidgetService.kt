@@ -23,10 +23,25 @@ import androidx.glance.wear.data.WearWidgetProviderImpl
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 
-/** Service used for communication between the Host and a Widget Provider. */
+/**
+ * Service used for communication between the Host and a Widget Provider.
+ *
+ * This should be typically used as:
+ * ```
+ * class MyGlanceWearWidgetService : GlanceWearWidgetService() {
+ *     override val widget: GlanceWearWidget = MyGlanceWearWidget()
+ * }
+ * ```
+ */
 public abstract class GlanceWearWidgetService() : LifecycleService() {
 
-    private val provider: IWearWidgetProvider.Stub = WearWidgetProviderImpl(this, lifecycleScope)
+    /** Instance of [GlanceWearWidget] associated with this provider. */
+    public abstract val widget: GlanceWearWidget
+
+    private val provider: IWearWidgetProvider.Stub by
+        lazy(LazyThreadSafetyMode.PUBLICATION) {
+            WearWidgetProviderImpl(this, lifecycleScope, widget)
+        }
 
     final override fun onBind(intent: Intent): IBinder? {
         super.onBind(intent)

@@ -20,8 +20,6 @@ package androidx.compose.ui.node
 
 import androidx.collection.IntObjectMap
 import androidx.collection.intObjectMapOf
-import androidx.compose.runtime.ForgetfulRetainScope
-import androidx.compose.runtime.RetainScope
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
@@ -396,9 +394,6 @@ private class MockOwner(
 
     override val semanticsOwner: SemanticsOwner =
         SemanticsOwner(root, EmptySemanticsModifier(), intObjectMapOf())
-
-    override val retainScope: RetainScope
-        get() = ForgetfulRetainScope
 
     override val viewConfiguration: ViewConfiguration
         get() = TODO("Not yet implemented")

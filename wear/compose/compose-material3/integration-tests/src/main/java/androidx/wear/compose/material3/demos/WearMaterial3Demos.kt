@@ -35,6 +35,8 @@ import androidx.wear.compose.material3.samples.FadingExpandingLabelButtonSample
 import androidx.wear.compose.material3.samples.ImageCardSample
 import androidx.wear.compose.material3.samples.LevelIndicatorSample
 import androidx.wear.compose.material3.samples.ListHeaderSample
+import androidx.wear.compose.material3.samples.NonClickableImageCardSample
+import androidx.wear.compose.material3.samples.NonClickableTitleCardWithImageWithTimeAndTitleSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
 import androidx.wear.compose.material3.samples.SwipeToRevealNoPartialRevealWithScalingLazyColumnSample
@@ -140,8 +142,14 @@ val WearMaterial3Demos =
                         ComposableDemo("App Card") { AppCardDemo() },
                         ComposableDemo("Title Card") { TitleCardDemo() },
                         ComposableDemo("Base Image Card") { Centralize { ImageCardSample() } },
+                        ComposableDemo("Non Clickable Image Card") {
+                            Centralize { NonClickableImageCardSample() }
+                        },
                         ComposableDemo("Image Card") {
                             Centralize { TitleCardWithImageWithTimeAndTitleSample() }
+                        },
+                        ComposableDemo("Non Clickable Image Card") {
+                            Centralize { NonClickableTitleCardWithImageWithTimeAndTitleSample() }
                         },
                         ComposableDemo("Image Card Builder") { ImageCardBuilder() },
                     ),

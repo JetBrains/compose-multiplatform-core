@@ -57,6 +57,8 @@ internal class KspProcessingEnv(
     override val options = delegate.options
     private val logger = delegate.logger
     private val codeGenerator = delegate.codeGenerator
+    override val messager: XMessager = KspMessager(logger)
+    override val filer: XFiler = KspFiler(codeGenerator, messager)
 
     private val jvmPlatformInfo by lazy {
         delegate.platforms.filterIsInstance<JvmPlatformInfo>().firstOrNull()
@@ -87,21 +89,118 @@ internal class KspProcessingEnv(
 
     internal val isKsp2 by lazy { delegate.kspVersion >= KotlinVersion(2, 0) }
 
+    val jvmDefaultMode by lazy {
+        jvmPlatformInfo?.let { JvmDefaultMode.fromStringOrNull(it.jvmDefaultMode) }
+    }
+
+    private var nullableKspResolver: KspResolver? = null
+
+    private val kspResolver: KspResolver
+        get() = nullableKspResolver!!
+
+    fun setResolver(resolver: Resolver) {
+        nullableKspResolver = KspResolver(this, resolver)
+    }
+
+    val resolver: Resolver
+        get() = kspResolver.resolver
+
+    val voidType: KspType
+        get() = kspResolver.voidType
+
+    override fun findTypeElement(qName: String): KspTypeElement? =
+        kspResolver.findTypeElement(qName)
+
+    override fun findType(qName: String) = kspResolver.findType(qName)
+
+    override fun findGeneratedAnnotation() = kspResolver.findGeneratedAnnotation()
+
+    override fun getDeclaredType(type: XTypeElement, vararg types: XType) =
+        kspResolver.getDeclaredType(type, *types)
+
+    override fun getWildcardType(consumerSuper: XType?, producerExtends: XType?) =
+        kspResolver.getWildcardType(consumerSuper, producerExtends)
+
+    override fun getArrayType(type: XType) = kspResolver.getArrayType(type)
+
+    override fun getTypeElementsFromPackage(packageName: String) =
+        kspResolver.getTypeElementsFromPackage(packageName)
+
+    override fun getElementsFromPackage(packageName: String) =
+        kspResolver.getElementsFromPackage(packageName)
+
+    fun wrapFunctionDeclaration(ksFunction: KSFunctionDeclaration) =
+        kspResolver.wrapFunctionDeclaration(ksFunction)
+
+    /**
+     * Wraps the given `ksType`.
+     *
+     * The [originatingReference] is used to calculate whether the given [ksType] can be a primitive
+     * or not.
+     */
+    fun wrap(originatingReference: KSTypeReference, ksType: KSType): KspType =
+        kspResolver.wrap(originatingReference, ksType)
+
+    /** Wraps the given [typeReference] in to a [KspType]. */
+    fun wrap(typeReference: KSTypeReference): KspType = kspResolver.wrap(typeReference)
+
+    /** Wraps the given [ksTypeArgument] in to a [KspType]. */
+    fun wrap(ksTypeArgument: KSTypeArgument): KspType = kspResolver.wrap(ksTypeArgument)
+
+    /**
+     * Wraps the given KSType into a KspType.
+     *
+     * Certain Kotlin types might be primitives in Java but such information cannot be derived just
+     * by looking at the type itself. Instead, it is passed in an argument to this function and
+     * public wrap functions make that decision.
+     */
+    fun wrap(ksType: KSType, allowPrimitives: Boolean): KspType =
+        kspResolver.wrap(ksType, allowPrimitives)
+
+    fun wrap(
+        originalAnnotations: Sequence<KSAnnotation>,
+        ksType: KSType,
+        allowPrimitives: Boolean,
+    ): KspType = kspResolver.wrap(originalAnnotations, ksType, allowPrimitives)
+
+    fun wrapClassDeclaration(declaration: KSClassDeclaration): KspTypeElement =
+        kspResolver.wrapClassDeclaration(declaration)
+
+    fun wrapKSFile(file: KSFile): KspMemberContainer = kspResolver.wrapKSFile(file)
+
+    /** Resolves the wildcards for the given ksType. See [KSTypeVarianceResolver] for details. */
+    fun resolveWildcards(ksType: KSType, scope: KSTypeVarianceResolverScope?): KSType =
+        kspResolver.resolveWildcards(ksType, scope)
+
+    fun clearCache() = kspResolver.clearCache()
+
+    fun isSameType(type1: XExecutableType, type2: XExecutableType): Boolean =
+        kspResolver.isSameType(type1, type2)
+
+    enum class JvmDefaultMode(val option: String) {
+        DISABLE("disable"),
+        ALL_COMPATIBILITY("all-compatibility"),
+        ALL_INCOMPATIBLE("all");
+
+        companion object {
+            fun fromStringOrNull(string: String?): JvmDefaultMode? =
+                when (string) {
+                    DISABLE.option -> DISABLE
+                    ALL_COMPATIBILITY.option -> ALL_COMPATIBILITY
+                    ALL_INCOMPATIBLE.option -> ALL_INCOMPATIBLE
+                    else -> null
+                }
+        }
+    }
+}
+
+private class KspResolver(val env: KspProcessingEnv, val resolver: Resolver) {
     private val ksFileMemberContainers = mutableMapOf<KSFile, KspFileMemberContainer>()
 
     /**
      * Variance resolver to find JVM types of KSType. See [KSTypeVarianceResolver] docs for details.
      */
-    private val ksTypeVarianceResolver
-        get() = KSTypeVarianceResolver(resolver)
-
-    private var _resolver: Resolver? = null
-
-    var resolver
-        get() = _resolver!!
-        internal set(value) {
-            _resolver = value
-        }
+    private val ksTypeVarianceResolver by lazy { KSTypeVarianceResolver(resolver) }
 
     private val typeElementStore =
         XTypeElementStore(
@@ -111,31 +210,23 @@ internal class KspProcessingEnv(
                 // it is best to just not cache them
                 it.qualifiedName?.asString()
             },
-            wrap = { classDeclaration -> KspTypeElement.create(this, classDeclaration) },
+            wrap = { classDeclaration -> KspTypeElement.create(env, classDeclaration) },
         )
 
     private val executableElementStore =
         XExecutableElementStore(
             wrap = { functionDeclaration: KSFunctionDeclaration ->
-                KspExecutableElement.create(this, functionDeclaration)
+                KspExecutableElement.create(env, functionDeclaration)
             }
         )
 
-    override val messager: XMessager = KspMessager(logger)
+    private val arrayTypeFactory by lazy { KspArrayType.Factory(env) }
 
-    private val arrayTypeFactory
-        get() = KspArrayType.Factory(this)
-
-    override val filer: XFiler = KspFiler(codeGenerator, messager)
-
-    val voidType
-        get() = KspVoidType(env = this, ksType = resolver.builtIns.unitType, boxed = false)
-
-    internal val jvmDefaultMode by lazy {
-        jvmPlatformInfo?.let { JvmDefaultMode.fromStringOrNull(it.jvmDefaultMode) }
+    val voidType: KspType by lazy {
+        KspVoidType(env = env, ksType = resolver.builtIns.unitType, boxed = false)
     }
 
-    override fun findTypeElement(qName: String): KspTypeElement? {
+    fun findTypeElement(qName: String): KspTypeElement? {
         return typeElementStore[KspTypeMapper.swapWithKotlinType(qName)]
     }
 
@@ -144,7 +235,7 @@ internal class KspProcessingEnv(
     }
 
     @OptIn(KspExperimental::class)
-    override fun getTypeElementsFromPackage(packageName: String): List<XTypeElement> {
+    fun getTypeElementsFromPackage(packageName: String): List<XTypeElement> {
         return resolver
             .getDeclarationsFromPackage(packageName)
             .filterIsInstance<KSClassDeclaration>()
@@ -153,7 +244,7 @@ internal class KspProcessingEnv(
             .toList()
     }
 
-    override fun findType(qName: String): XType? {
+    fun findType(qName: String): XType? {
         val kotlinTypeName = KspTypeMapper.swapWithKotlinType(qName)
         return resolver.findClass(kotlinTypeName)?.let {
             wrap(
@@ -163,9 +254,9 @@ internal class KspProcessingEnv(
         }
     }
 
-    override fun findGeneratedAnnotation(): XTypeElement? {
+    fun findGeneratedAnnotation(): XTypeElement? {
         val jvmPlatform =
-            delegate.platforms.filterIsInstance<JvmPlatformInfo>().singleOrNull() ?: return null
+            env.delegate.platforms.filterIsInstance<JvmPlatformInfo>().singleOrNull() ?: return null
         val jvmTarget =
             try {
                 jvmPlatform.jvmTarget.toInt()
@@ -179,7 +270,7 @@ internal class KspProcessingEnv(
         }
     }
 
-    override fun getDeclaredType(type: XTypeElement, vararg types: XType): KspType {
+    fun getDeclaredType(type: XTypeElement, vararg types: XType): KspType {
         check(type is KspTypeElement) { "Unexpected type element type: $type" }
         val typeArguments =
             types.map { argType ->
@@ -197,7 +288,7 @@ internal class KspProcessingEnv(
         return wrap(ksType = type.declaration.asType(typeArguments), allowPrimitives = false)
     }
 
-    override fun getWildcardType(consumerSuper: XType?, producerExtends: XType?): XType {
+    fun getWildcardType(consumerSuper: XType?, producerExtends: XType?): XType {
         check(consumerSuper == null || producerExtends == null) {
             "Cannot supply both super and extends bounds."
         }
@@ -223,20 +314,20 @@ internal class KspProcessingEnv(
         )
     }
 
-    override fun getArrayType(type: XType): KspArrayType {
+    fun getArrayType(type: XType): KspArrayType {
         check(type is KspType)
         return arrayTypeFactory.createWithComponentType(type)
     }
 
     @OptIn(KspExperimental::class)
-    override fun getElementsFromPackage(packageName: String): List<XElement> {
+    fun getElementsFromPackage(packageName: String): List<XElement> {
         return resolver
             .getDeclarationsFromPackage(packageName)
             .map {
                 when (it) {
                     is KSClassDeclaration -> wrapClassDeclaration(it)
-                    is KSPropertyDeclaration -> KspFieldElement.create(this, it)
-                    is KSFunctionDeclaration -> KspMethodElement.create(this, it)
+                    is KSPropertyDeclaration -> KspFieldElement.create(env, it)
+                    is KSFunctionDeclaration -> KspMethodElement.create(env, it)
                     else -> error("Unknown element type")
                 }
             }
@@ -268,7 +359,7 @@ internal class KspProcessingEnv(
             // inline classes can't be non-invariant.
             if (declaration.isValueClass()) {
                 return KspValueClassArgumentType(
-                    env = this,
+                    env = env,
                     typeArg = ksTypeArgument,
                     originalKSAnnotations = ksTypeArgument.annotations,
                 )
@@ -282,9 +373,9 @@ internal class KspProcessingEnv(
             )
         }
         return if (ksTypeArgument.variance == Variance.STAR) {
-            KspStarTypeArgumentType(env = this, typeArg = ksTypeArgument)
+            KspStarTypeArgumentType(env = env, typeArg = ksTypeArgument)
         } else {
-            KspTypeArgumentType(env = this, typeArg = ksTypeArgument)
+            KspTypeArgumentType(env = env, typeArg = ksTypeArgument)
         }
     }
 
@@ -315,17 +406,17 @@ internal class KspProcessingEnv(
         }
         val qName = ksType.declaration.qualifiedName?.asString()
         if (declaration is KSTypeParameter) {
-            return KspTypeVariableType(this, declaration, ksType, originalAnnotations)
+            return KspTypeVariableType(env, declaration, ksType, originalAnnotations)
         }
         if (allowPrimitives && qName != null && ksType.nullability == Nullability.NOT_NULL) {
             // check for primitives
             val javaPrimitive = KspTypeMapper.getPrimitiveJavaTypeName(qName)
             if (javaPrimitive != null) {
-                return KspPrimitiveType(this, ksType, originalAnnotations)
+                return KspPrimitiveType(env, ksType, originalAnnotations)
             }
         }
         return arrayTypeFactory.createIfArray(ksType)
-            ?: DefaultKspType(this, ksType, originalAnnotations)
+            ?: DefaultKspType(env, ksType, originalAnnotations)
     }
 
     fun wrapClassDeclaration(declaration: KSClassDeclaration): KspTypeElement {
@@ -334,7 +425,7 @@ internal class KspProcessingEnv(
 
     fun wrapKSFile(file: KSFile): KspMemberContainer {
         return ksFileMemberContainers.getOrPut(file) {
-            KspFileMemberContainer(env = this, ksFile = file)
+            KspFileMemberContainer(env = env, ksFile = file)
         }
     }
 
@@ -366,21 +457,5 @@ internal class KspProcessingEnv(
             }
         }
         return returnType(type1).isSameType(returnType(type2))
-    }
-
-    internal enum class JvmDefaultMode(val option: String) {
-        DISABLE("disable"),
-        ALL_COMPATIBILITY("all-compatibility"),
-        ALL_INCOMPATIBLE("all");
-
-        companion object {
-            fun fromStringOrNull(string: String?): JvmDefaultMode? =
-                when (string) {
-                    DISABLE.option -> DISABLE
-                    ALL_COMPATIBILITY.option -> ALL_COMPATIBILITY
-                    ALL_INCOMPATIBLE.option -> ALL_INCOMPATIBLE
-                    else -> null
-                }
-        }
     }
 }

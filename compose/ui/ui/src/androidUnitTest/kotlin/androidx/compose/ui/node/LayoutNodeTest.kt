@@ -19,7 +19,6 @@ package androidx.compose.ui.node
 
 import androidx.collection.IntObjectMap
 import androidx.collection.intObjectMapOf
-import androidx.compose.runtime.RetainScope
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -72,7 +71,6 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsModifier
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -1430,15 +1428,11 @@ class LayoutNodeTest {
     fun hitTestSemantics_pointerInMinimumTouchTarget_closestHit() {
         val semanticsNode1 =
             object : SemanticsModifierNode, Modifier.Node() {
-                override fun SemanticsPropertyReceiver.applySemantics() {
-                    this.contentDescription = "node1"
-                }
+                override fun SemanticsPropertyReceiver.applySemantics() {}
             }
         val semanticsNode2 =
             object : SemanticsModifierNode, Modifier.Node() {
-                override fun SemanticsPropertyReceiver.applySemantics() {
-                    this.contentDescription = "node2"
-                }
+                override fun SemanticsPropertyReceiver.applySemantics() {}
             }
         data class TestSemanticsElement(private val node: Modifier.Node) :
             ModifierNodeElement<Modifier.Node>() {
@@ -1502,7 +1496,6 @@ class LayoutNodeTest {
     @Test
     fun hitTestSemantics_pointerInMinimumTouchTarget_closestHitWithOverlap() {
         val semanticsConfiguration = SemanticsConfiguration()
-        semanticsConfiguration.contentDescription = "test"
         val semanticsModifier1 =
             object : SemanticsModifier {
                 override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
@@ -2382,9 +2375,6 @@ internal class MockOwner(
         get() = TODO("Not yet implemented")
 
     override val focusOwner: FocusOwner
-        get() = TODO("Not yet implemented")
-
-    override val retainScope: RetainScope
         get() = TODO("Not yet implemented")
 
     override val windowInfo: WindowInfo

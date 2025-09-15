@@ -31,9 +31,6 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     testOptions.managedDevices.allDevices {
         pixel6Api31(ManagedVirtualDevice) {
             device = "Pixel 6"

@@ -291,14 +291,12 @@ package androidx.test.uiautomator {
     method public final boolean pressHome();
     method public final void startActivity(Class<? extends java.lang.Object?> clazz);
     method public final void startActivity(String packageName, String activityName);
-    method public final void startApp();
+    method public void startActivityIntent(android.content.Intent intent);
     method public final void startApp(String packageName);
-    method public final void startIntent(android.content.Intent intent);
     method public final void type(String text);
     method public final void unregisterWatchers();
-    method public final boolean waitForAppToBeVisible();
-    method public final boolean waitForAppToBeVisible(optional String appPackageName);
-    method public final boolean waitForAppToBeVisible(optional String appPackageName, optional long timeoutMs);
+    method public final boolean waitForAppToBeVisible(String appPackageName);
+    method public final boolean waitForAppToBeVisible(String appPackageName, optional long timeoutMs);
     method public final androidx.test.uiautomator.StableResult waitForStableInActiveWindow();
     method public final androidx.test.uiautomator.StableResult waitForStableInActiveWindow(optional long stableTimeoutMs);
     method public final androidx.test.uiautomator.StableResult waitForStableInActiveWindow(optional long stableTimeoutMs, optional long stableIntervalMs);

@@ -18,6 +18,16 @@ package androidx.xr.arcore.playservices
 
 import android.view.Surface
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.Anchor
+import androidx.xr.arcore.internal.AnchorNotTrackingException
+import androidx.xr.arcore.internal.ArDevice
+import androidx.xr.arcore.internal.DepthMap
+import androidx.xr.arcore.internal.Face
+import androidx.xr.arcore.internal.Hand
+import androidx.xr.arcore.internal.HitResult
+import androidx.xr.arcore.internal.PerceptionManager
+import androidx.xr.arcore.internal.RenderViewpoint
+import androidx.xr.arcore.internal.Trackable
 import androidx.xr.runtime.VpsAvailabilityAvailable
 import androidx.xr.runtime.VpsAvailabilityErrorInternal
 import androidx.xr.runtime.VpsAvailabilityNetworkError
@@ -25,16 +35,6 @@ import androidx.xr.runtime.VpsAvailabilityNotAuthorized
 import androidx.xr.runtime.VpsAvailabilityResourceExhausted
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.VpsAvailabilityUnavailable
-import androidx.xr.runtime.internal.Anchor
-import androidx.xr.runtime.internal.AnchorNotTrackingException
-import androidx.xr.runtime.internal.ArDevice
-import androidx.xr.runtime.internal.DepthMap
-import androidx.xr.runtime.internal.Face
-import androidx.xr.runtime.internal.Hand
-import androidx.xr.runtime.internal.HitResult
-import androidx.xr.runtime.internal.PerceptionManager
-import androidx.xr.runtime.internal.RenderViewpoint
-import androidx.xr.runtime.internal.Trackable
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import com.google.ar.core.Frame
@@ -251,12 +251,25 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val monoRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns a list of [DepthMap] objects.
+     * Returns the left [DepthMap] object.
      *
-     * This is not currently implemented in ARCore, so this property will always be an empty list.
+     * This is not available in ARCore.
      */
-    override val depthMaps: List<DepthMap>
-        get() = emptyList()
+    override val leftDepthMap: DepthMap? = null
+
+    /**
+     * Returns the right [DepthMap] object.
+     *
+     * This is not available in ARCore.
+     */
+    override val rightDepthMap: DepthMap? = null
+
+    /**
+     * Returns the mono [DepthMap] object.
+     *
+     * This is not available in ARCore.
+     */
+    override val monoDepthMap: DepthMap? = null
 
     /**
      * Updates the perception manager.

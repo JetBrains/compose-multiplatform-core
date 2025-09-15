@@ -1382,6 +1382,15 @@ package androidx.compose.foundation.lazy.layout {
     property @IntRange(from=0L) public abstract int itemCount;
   }
 
+  public interface LazyLayoutKeyIndexMap {
+    method public int getIndex(Object key);
+    method public Object? getKey(int index);
+  }
+
+  public final class LazyLayoutKeyIndexMapKt {
+    method public static androidx.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap LazyLayoutKeyIndexMap(kotlin.ranges.IntRange itemIndexRange, androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent<? extends java.lang.Object?> intervalContent);
+  }
+
   public final class LazyLayoutKt {
     method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void LazyLayout(kotlin.jvm.functions.Function0!, androidx.compose.ui.Modifier!, androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState!, kotlin.jvm.functions.Function2!, androidx.compose.runtime.Composer!, int, int);
     method @androidx.compose.runtime.Composable public static void LazyLayout(kotlin.jvm.functions.Function0<? extends androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider> itemProvider, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState? prefetchState, androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy measurePolicy);

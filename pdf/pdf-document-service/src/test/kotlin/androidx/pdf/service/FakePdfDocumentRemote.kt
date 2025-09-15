@@ -29,7 +29,11 @@ import android.graphics.pdf.models.selection.PageSelection
 import android.graphics.pdf.models.selection.SelectionBoundary
 import android.os.ParcelFileDescriptor
 import androidx.pdf.PdfDocumentRemote
+import androidx.pdf.annotation.models.AddEditResult
 import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.JetpackAospIdPair
+import androidx.pdf.annotation.models.ModifyEditResult
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.models.Dimensions
@@ -134,5 +138,23 @@ class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
     override fun applyEdits(annots: List<PdfAnnotationData>): AnnotationResult {
         val (success, failures) = annots.partition { it.editId.pageNum >= 0 }
         return AnnotationResult(success, failures.map { it.annotation })
+    }
+
+    override fun addEdit(annots: List<PdfAnnotationData>): AddEditResult {
+        val (success, failures) = annots.partition { it.editId.pageNum >= 0 }
+        return AddEditResult(
+            success.map { JetpackAospIdPair(it.editId, it.editId) },
+            failures.map { it.editId },
+        )
+    }
+
+    override fun updateEdit(annots: List<PdfAnnotationData>): ModifyEditResult {
+        val (success, failures) = annots.partition { it.editId.pageNum >= 0 }
+        return ModifyEditResult(success.map { it.editId }, failures.map { it.editId })
+    }
+
+    override fun removeEdit(editIds: List<EditId>): ModifyEditResult {
+        val (success, failures) = editIds.partition { it.pageNum >= 0 }
+        return ModifyEditResult(success.map { it }, failures.map { it })
     }
 }

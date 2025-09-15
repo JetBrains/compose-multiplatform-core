@@ -322,48 +322,6 @@ abstract class RemoteFloat internal constructor(override val hasConstantValue: B
         }
 
     /**
-     * Array access operator for [RemoteFloat] with a [RemoteFloat] index. Performs a dereference
-     * operation on a remote float array.
-     */
-    operator fun get(v: RemoteFloat): RemoteFloat {
-        return RemoteFloatExpression(hasConstantValue) { creationState ->
-            floatArrayOf(
-                *arrayForCreationState(creationState),
-                *v.arrayForCreationState(creationState),
-                AnimatedFloatExpression.A_DEREF,
-            )
-        }
-    }
-
-    /**
-     * Array access operator for [RemoteFloat] with an [Int] index. Performs a dereference operation
-     * on a remote loat array.
-     */
-    operator fun get(v: Int): RemoteFloat {
-        return RemoteFloatExpression(hasConstantValue) { creationState ->
-            floatArrayOf(
-                *arrayForCreationState(creationState),
-                v.toFloat(),
-                AnimatedFloatExpression.A_DEREF,
-            )
-        }
-    }
-
-    /**
-     * Array access operator for [RemoteFloat] with a [RemoteInt] index. Performs a dereference
-     * operation on a remote float array.
-     */
-    operator fun get(v: RemoteInt): RemoteFloat {
-        return RemoteFloatExpression(hasConstantValue && v.hasConstantValue) { creationState ->
-            floatArrayOf(
-                *arrayForCreationState(creationState),
-                v.getFloatIdForCreationState(creationState),
-                AnimatedFloatExpression.A_DEREF,
-            )
-        }
-    }
-
-    /**
      * Returns a [RemoteBoolean] that evaluates to `true` if [b] is equal to the value of this
      * [RemoteFloat] or `false` otherwise.
      */

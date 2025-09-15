@@ -1467,7 +1467,7 @@ private class TestNavigationEventInput(
      */
     @MainThread
     fun start(event: NavigationEvent = NavigationEvent()) {
-        dispatchOnStarted(event)
+        dispatchOnBackStarted(event)
     }
 
     /**
@@ -1479,7 +1479,7 @@ private class TestNavigationEventInput(
      */
     @MainThread
     fun progress(event: NavigationEvent = NavigationEvent()) {
-        dispatchOnProgressed(event)
+        dispatchOnBackProgressed(event)
     }
 
     /**
@@ -1489,7 +1489,7 @@ private class TestNavigationEventInput(
      */
     @MainThread
     fun complete() {
-        dispatchOnCompleted()
+        dispatchOnBackCompleted()
     }
 
     /**
@@ -1499,7 +1499,7 @@ private class TestNavigationEventInput(
      */
     @MainThread
     fun cancel() {
-        dispatchOnCancelled()
+        dispatchOnBackCancelled()
     }
 
     override fun onAdded(dispatcher: NavigationEventDispatcher) {

@@ -101,13 +101,27 @@ internal class FocusTargetNode(
 
     override fun requestFocus(focusDirection: FocusDirection): Boolean {
         trace("FocusTransactions:requestFocus") {
-            if (!fetchFocusProperties().canFocus) return false
-            return when (performCustomRequestFocus(focusDirection)) {
-                None -> performRequestFocus()
-                Redirected -> true
-                Cancelled,
-                RedirectCancelled -> false
+            @OptIn(ExperimentalComposeUiApi::class)
+            return if (ComposeUiFlags.isRequestFocusOnNonFocusableFocusTargetEnabled) {
+                if (fetchFocusProperties().canFocus) {
+                    assignFocus(focusDirection)
+                } else {
+                    findChildCorrespondingToFocusEnter(focusDirection) {
+                        it.assignFocus(focusDirection)
+                    }
+                }
+            } else {
+                fetchFocusProperties().canFocus && assignFocus(focusDirection)
             }
+        }
+    }
+
+    private fun assignFocus(focusDirection: FocusDirection): Boolean {
+        return when (performCustomRequestFocus(focusDirection)) {
+            None -> performRequestFocus()
+            Redirected -> true
+            Cancelled,
+            RedirectCancelled -> false
         }
     }
 

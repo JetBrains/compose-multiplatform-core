@@ -2611,6 +2611,7 @@ public class AppSearchCompilerTest {
                         + "collection of java.lang.String");
     }
 
+    @Test
     public void testCyclicalSchema() throws Exception {
         Compilation compilation = compile(
                 "@Document\n"

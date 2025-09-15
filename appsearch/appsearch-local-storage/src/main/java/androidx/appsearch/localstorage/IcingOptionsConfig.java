@@ -356,6 +356,8 @@ public interface IcingOptionsConfig {
                         Flags.enableEmbeddingIteratorV2() || isVMEnabled)
                 .setEnableReusableDecompressionBuffer(
                         Flags.enableReusableDecompressionBuffer() || isVMEnabled)
+                .setEnableSchemaTypeIdOptimization(
+                        Flags.enableSchemaTypeIdOptimization() || isVMEnabled)
                 .build();
     }
 }

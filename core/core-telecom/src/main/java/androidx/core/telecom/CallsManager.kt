@@ -48,8 +48,9 @@ import androidx.core.telecom.internal.CallEndpointUuidTracker
 import androidx.core.telecom.internal.CallSession
 import androidx.core.telecom.internal.CallSessionLegacy
 import androidx.core.telecom.internal.CallStateEvent
+import androidx.core.telecom.internal.EndpointAction
+import androidx.core.telecom.internal.EndpointStateHandler
 import androidx.core.telecom.internal.JetpackConnectionService
-import androidx.core.telecom.internal.PreCallEndpointsUpdater
 import androidx.core.telecom.internal.ProductionBluetoothDeviceChecker
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.internal.utils.Utils.Companion.hasBluetoothPermissions
@@ -61,6 +62,7 @@ import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -381,17 +383,28 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
      */
     public fun getAvailableStartingCallEndpoints(): Flow<List<CallEndpointCompat>> = callbackFlow {
         val id: Int = CallEndpointUuidTracker.startSession()
-        // The emitted endpoints need to be tracked so that when the device list changes,
-        // the added or removed endpoints can be re-emitted as a whole list.  Otherwise, only
-        // the added or removed endpoints will be emitted.
-        val callEndpointsUpdater = PreCallEndpointsUpdater(sendChannel = this.channel)
+        val actionChannel = Channel<EndpointAction>(Channel.UNLIMITED)
+        val stateHandler = EndpointStateHandler()
+        launch {
+            for (action in actionChannel) {
+                val stateChanged =
+                    when (action) {
+                        is EndpointAction.Add -> stateHandler.add(action.endpoints)
+                        is EndpointAction.Remove -> stateHandler.remove(action.endpoints)
+                    }
+                // Only send an update if the state actually changed
+                if (stateChanged) {
+                    send(stateHandler.getSortedEndpoints())
+                }
+            }
+        }
         // register an audio callback that will listen for updates
-        val audioDeviceListener = AudioDeviceListener(mContext, callEndpointsUpdater, id)
+        val audioDeviceListener = AudioDeviceListener(mContext, actionChannel, id)
         // register a bluetooth listener to surface connected bluetooth devices instead of just
         // the active bluetooth device
         var bluetoothProfileListener =
             if (hasBluetoothPermissions(mContext)) {
-                BluetoothProfileListener(mContext, callEndpointsUpdater, id)
+                BluetoothProfileListener(mContext, actionChannel, id)
             } else {
                 null
             }

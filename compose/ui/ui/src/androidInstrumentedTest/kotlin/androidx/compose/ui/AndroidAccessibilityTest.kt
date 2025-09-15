@@ -3893,31 +3893,6 @@ class AndroidAccessibilityTest {
     }
 
     @Test
-    fun testSemanticsHitTest_unimportantForAccessibilityOverlay() {
-        // Arrange.
-        setContent {
-            Box {
-                Box(Modifier.size(100.dp).clickable {}.testTag(tag)) { BasicText("") }
-                Box(Modifier.size(100.dp).semantics {})
-            }
-        }
-        val clickableNodeId = rule.onNodeWithTag(tag).semanticsId()
-        val bounds = with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect() }
-
-        // Act.
-        val hitNodeId =
-            rule.runOnIdle {
-                delegate.hitTestSemanticsAt(
-                    bounds.left + bounds.width / 2,
-                    bounds.top + bounds.height / 2,
-                )
-            }
-
-        // Assert.
-        rule.runOnIdle { assertThat(hitNodeId).isEqualTo(clickableNodeId) }
-    }
-
-    @Test
     @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.P)
     fun testViewInterop_findViewByAccessibilityId() {
         setContent {

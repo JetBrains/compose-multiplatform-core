@@ -180,6 +180,7 @@ internal open class UwbClientSessionScopeImpl(
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 try {
                     uwbClient.stopRanging(callback).await()
+                    sessionStarted = false
                 } catch (e: ApiException) {
                     handleApiException(e)
                 }

@@ -48,7 +48,7 @@ import java.util.stream.Stream
  * @param text The text to render.
  * @param fontStyle The style of font to use (size, bold etc). If not specified, defaults to the
  *   platform's default body font.
- * @param modifier Modifiers to set to this element..
+ * @param modifier Modifiers to set to this element.
  * @param maxLines The maximum number of lines that can be represented by the [Text] element. If not
  *   defined, the [Text] element will be treated as a single-line element.
  * @param alignment Alignment of the text within its bounds. Note that a [Text] element will size

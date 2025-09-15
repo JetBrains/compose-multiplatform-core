@@ -39,6 +39,16 @@ interface FillableData {
 
     /** Returns the list index value if it is available, otherwise returns the [defaultValue]. */
     fun getListIndexOrDefault(defaultValue: Int): Int = listIndexValue ?: defaultValue
+
+    /** The date in milliseconds since epoch, or `null` if none is available. */
+    val dateMillisValue: Long?
+        @Suppress("AutoBoxing") get() = null
+
+    /**
+     * Returns the date in milliseconds value if it is available, otherwise returns the
+     * [defaultValue].
+     */
+    fun getDateMillisOrDefault(defaultValue: Long): Long = dateMillisValue ?: defaultValue
 }
 
 /**
@@ -76,3 +86,16 @@ expect fun FillableData(textValue: CharSequence): FillableData?
  *   support autofill.
  */
 expect fun FillableData(listIndexValue: Int): FillableData?
+
+/**
+ * Creates a [FillableData] instance from a [Long].
+ *
+ * This function is used to wrap a long value for autofill purposes, such as a date represented in
+ * milliseconds since the epoch.
+ *
+ * @param dateMillisValue The long data to be used for autofill, representing a date in milliseconds
+ *   since the epoch.
+ * @return A [FillableData] object containing the long data, or `null` if the platform does not
+ *   support autofill.
+ */
+expect fun FillableData(dateMillisValue: Long): FillableData?

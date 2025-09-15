@@ -20,15 +20,16 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.PerceptionRuntime
 import androidx.xr.runtime.SessionConnector
-import androidx.xr.runtime.internal.Entity as RtEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.internal.SpatialModeChangeListener as RtSpatialModeChangeListener
-import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.internal.Entity as RtEntity
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.internal.SpatialModeChangeListener as RtSpatialModeChangeListener
+import androidx.xr.scenecore.internal.SpatialVisibility as RtSpatialVisibility
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executor
@@ -159,16 +160,19 @@ public class Scene : SessionConnector {
         ConcurrentHashMap()
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override fun initialize(
-        lifecycleManager: LifecycleManager,
-        platformAdapter: JxrPlatformAdapter,
-    ): Unit {
-        this.platformAdapter = platformAdapter
+    override fun initialize(runtimes: List<JxrRuntime>): Unit {
+        this.platformAdapter = runtimes.filterIsInstance<JxrPlatformAdapter>().first()
         spatialEnvironment = SpatialEnvironment(platformAdapter)
         perceptionSpace = PerceptionSpace.create(platformAdapter)
         activitySpace = ActivitySpace.create(platformAdapter, entityManager)
-        spatialUser = SpatialUser.create(lifecycleManager, platformAdapter)
-        mainPanelEntity = MainPanelEntity.create(lifecycleManager, platformAdapter, entityManager)
+        val perceptionRuntime = runtimes.filterIsInstance<PerceptionRuntime>().first()
+        spatialUser = SpatialUser.create(perceptionRuntime.lifecycleManager, platformAdapter)
+        mainPanelEntity =
+            MainPanelEntity.create(
+                perceptionRuntime.lifecycleManager,
+                platformAdapter,
+                entityManager,
+            )
         platformAdapter.spatialModeChangeListener =
             object : RtSpatialModeChangeListener {
                 override fun onSpatialModeChanged(

@@ -19,16 +19,16 @@ package androidx.xr.runtime
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.testing.AnotherFakeStateExtender
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeStateExtender
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
-import androidx.xr.runtime.internal.RuntimeFactory
+import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import androidx.xr.runtime.internal.Service
 import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
 import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
-import androidx.xr.runtime.testing.AnotherFakeStateExtender
-import androidx.xr.runtime.testing.FakeJxrPlatformAdapterFactory
-import androidx.xr.runtime.testing.FakeRuntimeFactory
-import androidx.xr.runtime.testing.FakeStateExtender
+import androidx.xr.scenecore.testing.FakeJxrPlatformAdapterFactory
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,15 +39,16 @@ import org.robolectric.shadows.ShadowBuild
 class ServiceLoaderExtTest {
 
     @Test
+    // TODO(b/440615454) - Move this test to scenecore-testing/arcore-testing.
     fun loadProviders_loadsProviders() {
         assertThat(
                 loadProviders(
-                        RuntimeFactory::class.java,
-                        listOf(FakeRuntimeFactory::class.java.name),
+                        PerceptionRuntimeFactory::class.java,
+                        listOf(FakePerceptionRuntimeFactory::class.java.name),
                     )
                     .single()
             )
-            .isInstanceOf(FakeRuntimeFactory::class.java)
+            .isInstanceOf(FakePerceptionRuntimeFactory::class.java)
         assertThat(
                 loadProviders(
                         JxrPlatformAdapterFactory::class.java,
@@ -69,10 +70,12 @@ class ServiceLoaderExtTest {
         val stateExtenders =
             loadProviders(StateExtender::class.java, listOf(FakeStateExtender::class.java.name))
 
-        assertThat(stateExtenders.size).isEqualTo(1)
-        for (stateExtender in stateExtenders) {
-            assert(stateExtender is FakeStateExtender || stateExtender is AnotherFakeStateExtender)
-        }
+        assertThat(stateExtenders.size).isEqualTo(2)
+
+        // TODO(b/436933956) - temp. dependency on arcore package is pulling in
+        // PerceptionStateExtender
+        assertThat(stateExtenders.any { it is FakeStateExtender || it is AnotherFakeStateExtender })
+            .isTrue()
     }
 
     @Test

@@ -135,7 +135,7 @@ public class CameraExecutor implements Executor {
                 DEFAULT_MAX_THREADS, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
                 THREAD_FACTORY);
 
-        threadPoolExecutor.setRejectedExecutionHandler((runnable, executor) -> Logger.e(TAG,
+        threadPoolExecutor.setRejectedExecutionHandler((runnable, executor) -> Logger.w(TAG,
                 "A rejected execution occurred in CameraExecutor!"));
 
         return threadPoolExecutor;

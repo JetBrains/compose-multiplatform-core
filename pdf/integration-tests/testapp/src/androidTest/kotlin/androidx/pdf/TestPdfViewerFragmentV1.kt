@@ -23,6 +23,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.RequiresExtension
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.pdf.idlingresource.PdfIdlingResource
@@ -46,7 +47,7 @@ internal class TestPdfViewerFragmentV1 : PdfViewerFragmentV1 {
 
     constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
 
-    private var hostView: FrameLayout? = null
+    private var hostView: ConstraintLayout? = null
     private var search: FloatingActionButton? = null
     val pdfLoadingIdlingResource = PdfIdlingResource(PDF_LOAD_RESOURCE_NAME)
 
@@ -72,7 +73,7 @@ internal class TestPdfViewerFragmentV1 : PdfViewerFragmentV1 {
         val view = super.onCreateView(inflater, container, savedInstanceState) as FrameLayout
 
         // Inflate the custom layout for this fragment
-        hostView = inflater.inflate(R.layout.fragment_host, container, false) as FrameLayout
+        hostView = inflater.inflate(R.layout.fragment_host, container, false) as ConstraintLayout
         search = hostView?.findViewById(R.id.host_Search)
 
         hostView?.let { hostView -> handleInsets(hostView) }

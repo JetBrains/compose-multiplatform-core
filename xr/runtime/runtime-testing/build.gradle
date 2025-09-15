@@ -39,23 +39,20 @@ dependencies {
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation(libs.truth)
-    implementation("com.google.ar:impress:0.0.6")
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(project(":kruth:kruth"))
-    testImplementation("androidx.appcompat:appcompat:1.2.0")
-
-    testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     namespace = "androidx.xr.runtime.testing"
+    defaultConfig {
+        // TODO: b/409058039 - Drop back to 23 (default) once dependency on scenecore is removed.
+        minSdk = 24
+    }
 }
 
 androidx {

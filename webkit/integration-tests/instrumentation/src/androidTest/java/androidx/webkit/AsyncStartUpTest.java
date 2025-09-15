@@ -18,26 +18,29 @@ package androidx.webkit;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.webkit.WebSettings;
 
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.webkit.internal.StartupFeatures;
+import androidx.webkit.internal.WebViewFeatureInternal;
 import androidx.webkit.internal.WebViewGlueCommunicator;
 import androidx.webkit.test.common.WebViewOnUiThread;
 import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests for behaviours related to
@@ -58,7 +61,6 @@ public class AsyncStartUpTest {
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
     public void testAsyncStartUp_onSuccessLoadsWebView() throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
@@ -81,7 +83,6 @@ public class AsyncStartUpTest {
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
     public void testAsyncStartUp_onSuccessReturnsTimingInfo() throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
@@ -102,12 +103,11 @@ public class AsyncStartUpTest {
     /**
      * Tests that
      * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
-     * returns NO blocking startup location if WebView is started up by calling `startUpWebView()`.
+     * returns NO startup locations if WebView is started up by calling `startUpWebView()`.
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
-    public void testAsyncStartUp_onSuccessReturnsNoBlockingLocationWithoutBlockingInit()
+    public void testAsyncStartUp_onSuccessReturnsNoStartupLocationWithStartUpApi()
             throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
@@ -122,18 +122,24 @@ public class AsyncStartUpTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(0,
-                Objects.requireNonNull(result.getBlockingStartUpLocations()).size());
+                Objects.requireNonNull(result.getUiThreadBlockingStartUpLocations()).size());
+        if (WebViewFeatureInternal
+                .ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS.isSupportedByWebView()) {
+            Assert.assertEquals(0,
+                    Objects.requireNonNull(result.getNonUiThreadBlockingStartUpLocations()).size());
+        } else {
+            Assert.assertNull(result.getNonUiThreadBlockingStartUpLocations());
+        }
     }
 
     /**
      * Tests that
      * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
-     * returns a blocking startup location if provider init is triggered on the main looper.
+     * returns appropriate startup locations if provider init is triggered on the main looper.
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
-    public void testAsyncStartUp_returnsSingleBlockingLocationWithProviderInitOnMainLooper()
+    public void testAsyncStartUp_returnsAppropriateStartupLocationWithProviderInitOnMainLooper()
             throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
@@ -149,20 +155,26 @@ public class AsyncStartUpTest {
         WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
         Assert.assertNotNull(result);
         Assert.assertEquals(1,
-                Objects.requireNonNull(result.getBlockingStartUpLocations()).size());
-        Assert.assertTrue(result.getBlockingStartUpLocations().get(0).getStackInformation()
+                Objects.requireNonNull(result.getUiThreadBlockingStartUpLocations()).size());
+        Assert.assertTrue(result.getUiThreadBlockingStartUpLocations().get(0).getStackInformation()
                 .contains("Provider init"));
+        if (WebViewFeatureInternal
+                .ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS.isSupportedByWebView()) {
+            Assert.assertEquals(0,
+                    Objects.requireNonNull(result.getNonUiThreadBlockingStartUpLocations()).size());
+        } else {
+            Assert.assertNull(result.getNonUiThreadBlockingStartUpLocations());
+        }
     }
 
     /**
      * Tests that
      * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
-     * returns a blocking startup location if Chromium init blocks the UI thread.
+     * returns appropriate startups location if Chromium init blocks the UI thread.
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
-    public void testAsyncStartUp_returnsSingleBlockingLocationWithChromiumInitOnUiThread()
+    public void testAsyncStartUp_returnsAppropriateStartupLocationWithChromiumInitOnUiThread()
             throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
@@ -179,22 +191,30 @@ public class AsyncStartUpTest {
 
             Assert.assertNotNull(result);
             Assert.assertEquals(1,
-                    Objects.requireNonNull(result.getBlockingStartUpLocations()).size());
-            Assert.assertTrue(result.getBlockingStartUpLocations().get(0).getStackInformation()
+                    Objects.requireNonNull(result.getUiThreadBlockingStartUpLocations()).size());
+            Assert.assertTrue(
+                    result.getUiThreadBlockingStartUpLocations().get(0).getStackInformation()
                     .contains("Chromium init"));
+            if (WebViewFeatureInternal
+                    .ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS.isSupportedByWebView()) {
+                Assert.assertEquals(0,
+                        Objects.requireNonNull(
+                                result.getNonUiThreadBlockingStartUpLocations()).size());
+            } else {
+                Assert.assertNull(result.getNonUiThreadBlockingStartUpLocations());
+            }
         }
     }
 
     /**
      * Tests that
      * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
-     * returns two blocking startup locations if provider init happens on the main looper and
+     * returns appropriate startup locations if provider init happens on the main looper and
      * Chromium init blocks the UI thread.
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
-    public void testAsyncStartUp_returnsBlockingLocationsWithWebViewInitOnUiThread()
+    public void testAsyncStartUp_returnsAppropriateStartupLocationWithWebViewInitOnUiThread()
             throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
@@ -209,11 +229,21 @@ public class AsyncStartUpTest {
 
             Assert.assertNotNull(result);
             Assert.assertEquals(2,
-                    Objects.requireNonNull(result.getBlockingStartUpLocations()).size());
-            Assert.assertTrue(result.getBlockingStartUpLocations().get(0).getStackInformation()
+                    Objects.requireNonNull(result.getUiThreadBlockingStartUpLocations()).size());
+            Assert.assertTrue(
+                    result.getUiThreadBlockingStartUpLocations().get(0).getStackInformation()
                     .contains("Chromium init"));
-            Assert.assertTrue(result.getBlockingStartUpLocations().get(1).getStackInformation()
+            Assert.assertTrue(
+                    result.getUiThreadBlockingStartUpLocations().get(1).getStackInformation()
                     .contains("Provider init"));
+            if (WebViewFeatureInternal
+                    .ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS.isSupportedByWebView()) {
+                Assert.assertEquals(0,
+                        Objects.requireNonNull(
+                                result.getNonUiThreadBlockingStartUpLocations()).size());
+            } else {
+                Assert.assertNull(result.getNonUiThreadBlockingStartUpLocations());
+            }
         }
     }
 
@@ -224,7 +254,6 @@ public class AsyncStartUpTest {
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
     public void testAsyncStartUp_returnsSameInfoForMultipleCalls() throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
@@ -257,10 +286,31 @@ public class AsyncStartUpTest {
                 result2.getMaxTimePerTaskInUiThreadMillis());
         Assert.assertEquals(result2.getMaxTimePerTaskInUiThreadMillis(),
                 result3.getMaxTimePerTaskInUiThreadMillis());
-        Assert.assertEquals(Objects.requireNonNull(result1.getBlockingStartUpLocations()).size(),
-                Objects.requireNonNull(result2.getBlockingStartUpLocations()).size());
-        Assert.assertEquals(Objects.requireNonNull(result2.getBlockingStartUpLocations()).size(),
-                Objects.requireNonNull(result3.getBlockingStartUpLocations()).size());
+        Assert.assertEquals(
+                Objects.requireNonNull(result1.getUiThreadBlockingStartUpLocations()).size(),
+                Objects.requireNonNull(result2.getUiThreadBlockingStartUpLocations()).size());
+        Assert.assertEquals(
+                Objects.requireNonNull(result2.getUiThreadBlockingStartUpLocations()).size(),
+                Objects.requireNonNull(result3.getUiThreadBlockingStartUpLocations()).size());
+        if (WebViewFeatureInternal
+                .ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS.isSupportedByWebView()) {
+            Assert.assertEquals(
+                    0,
+                    Objects.requireNonNull(
+                            result1.getNonUiThreadBlockingStartUpLocations()).size());
+            Assert.assertEquals(
+                    0,
+                    Objects.requireNonNull(
+                            result2.getNonUiThreadBlockingStartUpLocations()).size());
+            Assert.assertEquals(
+                    0,
+                    Objects.requireNonNull(
+                            result3.getNonUiThreadBlockingStartUpLocations()).size());
+        } else {
+            Assert.assertNull(result1.getNonUiThreadBlockingStartUpLocations());
+            Assert.assertNull(result2.getNonUiThreadBlockingStartUpLocations());
+            Assert.assertNull(result3.getNonUiThreadBlockingStartUpLocations());
+        }
     }
 
     /**
@@ -272,7 +322,6 @@ public class AsyncStartUpTest {
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
     public void
     testAsyncStartUp_withoutRunningUiThreadStartUpLoadsWebViewWithoutStartingChromium()
             throws Throwable {
@@ -301,7 +350,6 @@ public class AsyncStartUpTest {
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
     public void testAsyncStartUp_withCreatingCustomProfile_createsRequestedProfiles() {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebkitUtils.checkStartupFeature(ApplicationProvider.getApplicationContext(),
@@ -333,7 +381,6 @@ public class AsyncStartUpTest {
      */
     @Test
     @MediumTest
-    @Ignore("b/376656739")
     public void
     testAsyncStartUp_withoutRunningUiThreadStartUpReturnsBlockingLocationWithProviderInit()
             throws Throwable {
@@ -355,9 +402,47 @@ public class AsyncStartUpTest {
         Assert.assertNull(result.getMaxTimePerTaskInUiThreadMillis());
         Assert.assertNotNull(result);
         Assert.assertEquals(1,
-                Objects.requireNonNull(result.getBlockingStartUpLocations()).size());
-        Assert.assertTrue(result.getBlockingStartUpLocations().get(0).getStackInformation()
+                Objects.requireNonNull(result.getUiThreadBlockingStartUpLocations()).size());
+        Assert.assertTrue(result.getUiThreadBlockingStartUpLocations().get(0).getStackInformation()
                 .contains("Provider init"));
+    }
+
+    /**
+     * Tests that
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * returns async startup locations if started up asynchronously.
+     */
+    @Test
+    @MediumTest
+    public void testAsyncStartUp_returnsAsyncLocationsWhenInitializedAsync()
+            throws Throwable {
+        Assume.assumeFalse(webViewCurrentlyLoaded());
+        Assume.assumeTrue(WebViewFeatureInternal
+                .ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS.isSupportedByWebView());
+        CountDownLatch latch = new CountDownLatch(1);
+        Executors.newSingleThreadExecutor().execute(() -> {
+                    WebSettings.getDefaultUserAgent(ApplicationProvider.getApplicationContext());
+                    latch.countDown();
+                }
+        );
+        WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
+                Executors.newSingleThreadExecutor()).build();
+        final ResolvableFuture<WebViewStartUpResult> startUpFinishedFuture =
+                ResolvableFuture.create();
+        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        WebViewCompat.startUpWebView(ApplicationProvider.getApplicationContext(), config,
+                startUpFinishedFuture::set);
+        // Wait until the callback has triggered.
+        WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getTotalTimeInUiThreadMillis());
+        Assert.assertNotNull(result.getMaxTimePerTaskInUiThreadMillis());
+        Assert.assertNotNull(result.getNonUiThreadBlockingStartUpLocations());
+        Assert.assertEquals(1, result.getNonUiThreadBlockingStartUpLocations().size());
+        Assert.assertTrue(
+                result.getNonUiThreadBlockingStartUpLocations().get(0).getStackInformation()
+                .contains("Chromium init"));
     }
 
     /**

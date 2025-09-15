@@ -18,7 +18,7 @@ package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.SpatializerConstants as RtSpatializerConstants
+import androidx.xr.scenecore.internal.SpatializerConstants as RtSpatializerConstants
 
 /** Constants for spatialized audio. */
 public interface SpatializerConstants {

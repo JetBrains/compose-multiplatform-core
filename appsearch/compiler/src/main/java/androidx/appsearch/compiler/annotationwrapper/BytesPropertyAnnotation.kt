@@ -16,8 +16,9 @@
 package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
+import androidx.room.compiler.processing.XAnnotationValue
+import androidx.room.compiler.processing.XType
 import com.squareup.javapoet.ClassName
-import javax.lang.model.type.TypeMirror
 
 /** An instance of the `@Document.BytesProperty` annotation. */
 data class BytesPropertyAnnotation(override val name: String, override val isRequired: Boolean) :
@@ -40,13 +41,13 @@ data class BytesPropertyAnnotation(override val name: String, override val isReq
          *   params do not mention an explicit name.
          */
         fun parse(
-            annotationParams: Map<String, Any?>,
+            annotationParams: Map<String, XAnnotationValue>,
             defaultName: String,
         ): BytesPropertyAnnotation {
-            val name = annotationParams["name"] as? String
+            val name = annotationParams["name"]?.value as? String
             return BytesPropertyAnnotation(
                 name = if (name.isNullOrEmpty()) defaultName else name,
-                isRequired = annotationParams["required"] as Boolean,
+                isRequired = annotationParams.getValue("required").asBoolean(),
             )
         }
     }
@@ -54,6 +55,6 @@ data class BytesPropertyAnnotation(override val name: String, override val isReq
     override val dataPropertyKind
         get() = Kind.BYTES_PROPERTY
 
-    override fun getUnderlyingTypeWithinGenericDoc(helper: IntrospectionHelper): TypeMirror =
+    override fun getUnderlyingTypeWithinGenericDoc(helper: IntrospectionHelper): XType =
         helper.bytePrimitiveArrayType
 }

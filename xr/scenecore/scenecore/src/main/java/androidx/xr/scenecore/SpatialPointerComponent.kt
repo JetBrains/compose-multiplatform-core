@@ -17,7 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
 
 /**
  * [Component] that modifies the pointer icon that is rendered on the component's [Entity]. If this
@@ -44,7 +44,7 @@ private constructor(private val platformAdapter: JxrPlatformAdapter) : Component
         if (this.entity != null) {
             return false
         }
-        if ((entity as BaseEntity<*>).rtEntity.addComponent(rtComponent)) {
+        if ((entity as BaseEntity<*>).rtEntity!!.addComponent(rtComponent)) {
             this.entity = entity
             spatialPointerIcon = SpatialPointerIcon.DEFAULT
             return true
@@ -55,7 +55,7 @@ private constructor(private val platformAdapter: JxrPlatformAdapter) : Component
 
     override fun onDetach(entity: Entity) {
         spatialPointerIcon = SpatialPointerIcon.DEFAULT
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtComponent)
+        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtComponent)
         this.entity = null
     }
 

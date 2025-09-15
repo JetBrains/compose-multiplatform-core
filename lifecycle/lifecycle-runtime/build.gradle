@@ -167,6 +167,16 @@ androidXMultiplatform {
 
 dependencies {
     lintPublish(project(":lifecycle:lifecycle-runtime-lint"))
+
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 2.9.2, this module is published as empty artifact with dependency
+        // to this androidx module.
+        // TODO: update this constrain to 2.9.3 once out due to https://youtrack.jetbrains.com/issue/CMP-8765
+        commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime:2.9.2") {
+            because "prevents symbols duplication"
+        }
+    }
 }
 
 androidx {

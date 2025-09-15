@@ -17,13 +17,13 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.Anchor as RuntimeAnchor
+import androidx.xr.arcore.internal.AnchorInvalidUuidException
+import androidx.xr.arcore.internal.AnchorNotTrackingException
+import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
-import androidx.xr.runtime.internal.AnchorInvalidUuidException
-import androidx.xr.runtime.internal.AnchorNotTrackingException
-import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 import kotlin.coroutines.Continuation
@@ -59,7 +59,7 @@ internal constructor(
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val runtimeAnchor: RuntimeAnchor
             try {
-                runtimeAnchor = session.runtime.perceptionManager.createAnchor(pose)
+                runtimeAnchor = session.perceptionRuntime.perceptionManager.createAnchor(pose)
             } catch (e: AnchorResourcesExhaustedException) {
                 return AnchorCreateResourcesExhausted()
             } catch (e: AnchorNotTrackingException) {
@@ -80,7 +80,7 @@ internal constructor(
             check(session.config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
                 "Config.AnchorPersistenceMode is set to DISABLED."
             }
-            return session.runtime.perceptionManager.getPersistedAnchorUuids()
+            return session.perceptionRuntime.perceptionManager.getPersistedAnchorUuids()
         }
 
         /**
@@ -100,7 +100,7 @@ internal constructor(
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val runtimeAnchor: RuntimeAnchor
             try {
-                runtimeAnchor = session.runtime.perceptionManager.loadAnchor(uuid)
+                runtimeAnchor = session.perceptionRuntime.perceptionManager.loadAnchor(uuid)
             } catch (e: AnchorInvalidUuidException) {
                 return AnchorLoadInvalidUuid()
             } catch (e: AnchorResourcesExhaustedException) {
@@ -116,7 +116,9 @@ internal constructor(
         public fun loadFromNativePointer(session: Session, nativePointer: Long): Anchor {
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val runtimeAnchor =
-                session.runtime.perceptionManager.loadAnchorFromNativePointer(nativePointer)
+                session.perceptionRuntime.perceptionManager.loadAnchorFromNativePointer(
+                    nativePointer
+                )
             return Anchor(runtimeAnchor, perceptionStateExtender.xrResourcesManager)
         }
 
@@ -131,7 +133,7 @@ internal constructor(
             check(session.config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
                 "Config.AnchorPersistenceMode is set to DISABLED."
             }
-            session.runtime.perceptionManager.unpersistAnchor(uuid)
+            session.perceptionRuntime.perceptionManager.unpersistAnchor(uuid)
         }
 
         private fun getPerceptionStateExtender(session: Session): PerceptionStateExtender {

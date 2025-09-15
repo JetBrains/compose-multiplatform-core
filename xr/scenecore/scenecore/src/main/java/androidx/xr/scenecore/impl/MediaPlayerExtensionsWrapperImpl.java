@@ -18,9 +18,9 @@ package androidx.xr.scenecore.impl;
 
 import android.media.MediaPlayer;
 
-import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper;
-import androidx.xr.runtime.internal.PointSourceParams;
-import androidx.xr.runtime.internal.SoundFieldAttributes;
+import androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper;
+import androidx.xr.scenecore.internal.PointSourceParams;
+import androidx.xr.scenecore.internal.SoundFieldAttributes;
 
 import com.android.extensions.xr.media.MediaPlayerExtensions;
 

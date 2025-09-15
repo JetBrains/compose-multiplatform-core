@@ -92,9 +92,9 @@ package androidx.test.shell.command {
 
   public final class RecorderCommands {
     method public androidx.test.shell.command.Recording start(java.io.File outputFile);
-    method public androidx.test.shell.command.Recording start(java.io.File outputFile, optional String? screenSizePixel);
-    method public androidx.test.shell.command.Recording start(java.io.File outputFile, optional String? screenSizePixel, optional @IntRange(from=0L) int bitRateMb);
-    method public androidx.test.shell.command.Recording start(java.io.File outputFile, optional String? screenSizePixel, optional @IntRange(from=0L) int bitRateMb, optional @IntRange(from=0L) long timeLimitSeconds);
+    method public androidx.test.shell.command.Recording start(java.io.File outputFile, optional android.graphics.Point? screenSizeInPixel);
+    method public androidx.test.shell.command.Recording start(java.io.File outputFile, optional android.graphics.Point? screenSizeInPixel, optional @IntRange(from=0L) int bitRateMb);
+    method public androidx.test.shell.command.Recording start(java.io.File outputFile, optional android.graphics.Point? screenSizeInPixel, optional @IntRange(from=0L) int bitRateMb, optional @IntRange(from=0L) long timeLimitSeconds);
   }
 
   public final class Recording implements java.lang.AutoCloseable {

@@ -24,7 +24,6 @@ import android.view.View.MeasureSpec
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
@@ -329,11 +328,12 @@ public fun <T : View> SpatialAndroidViewPanel(
         modifier = finalModifier,
         update = { view ->
             if (dialogManager.isSpatialDialogActive.value) {
-                view.foreground = DEFAULT_SCRIM_ALPHA.toDrawable()
-                view.setOnClickListener { dialogManager.isSpatialDialogActive.value = false }
-            } else {
-                view.foreground = Color.TRANSPARENT.toDrawable()
                 view.setOnClickListener(null)
+                view.foreground = DEFAULT_SCRIM_ALPHA.toDrawable()
+            } else {
+                // Re-enable clicks without any action
+                view.setOnClickListener {}
+                view.foreground = Color.TRANSPARENT.toDrawable()
             }
             update(view)
         },
@@ -451,16 +451,27 @@ public fun SpatialPanel(
         val dialogManager = LocalDialogManager.current
         val isDialogActive = dialogManager.isSpatialDialogActive.value
 
-        CompositionLocalProvider(LocalOpaqueEntity provides corePanelEntity, content = content)
+        // The root is a Box. Its size is determined by its content.
+        Box {
+            // The user's content is the first child. It determines the size of the parent Box.
+            CompositionLocalProvider(LocalOpaqueEntity provides corePanelEntity, content = content)
 
-        if (isDialogActive) {
-            Box(
-                modifier =
-                    Modifier.fillMaxSize().pointerInput(Unit) {
-                        detectTapGestures { dialogManager.isSpatialDialogActive.value = false }
-                    }
-            ) {}
+            // The scrim for input handling. It uses matchParentSize to avoid affecting
+            // the measurement of the parent Box.
+            if (isDialogActive) {
+                Box(
+                    modifier =
+                        Modifier.matchParentSize() // This sizes the overlay without affecting the
+                            // parent's size.
+                            .pointerInput(Unit) {
+                                detectTapGestures {
+                                    // Prevent clicks to compose
+                                }
+                            }
+                )
+            }
         }
+
         SideEffect {
             view.foreground =
                 if (isDialogActive) {
@@ -599,10 +610,7 @@ public fun SpatialActivityPanel(
             val localContext = LocalContext.current
             val scrimView =
                 remember(localContext) {
-                    View(localContext).apply {
-                        foreground = DEFAULT_SCRIM_ALPHA.toDrawable()
-                        setOnClickListener { dialogManager.isSpatialDialogActive.value = false }
-                    }
+                    View(localContext).apply { foreground = DEFAULT_SCRIM_ALPHA.toDrawable() }
                 }
 
             val scrimPanelEntity by
@@ -694,6 +702,7 @@ internal fun buildSpatialPanelModifier(
                     anchorPlaneOrientations = dragPolicy.anchorPlaneOrientations,
                     anchorPlaneSemantics = dragPolicy.anchorPlaneSemantics,
                 )
+
             is MovePolicy ->
                 baseModifier.movable(
                     enabled = dragPolicy.isEnabled,
@@ -703,6 +712,7 @@ internal fun buildSpatialPanelModifier(
                     onMoveEnd = dragPolicy.onMoveEnd,
                     onMove = dragPolicy.onMove,
                 )
+
             else -> {
                 baseModifier
             }

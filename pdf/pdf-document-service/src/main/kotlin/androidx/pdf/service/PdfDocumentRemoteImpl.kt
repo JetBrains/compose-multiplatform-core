@@ -39,7 +39,10 @@ import androidx.pdf.adapter.PdfDocumentRenderer
 import androidx.pdf.adapter.PdfDocumentRendererFactory
 import androidx.pdf.adapter.PdfDocumentRendererFactoryImpl
 import androidx.pdf.annotation.converters.PdfAnnotationConvertersFactory
+import androidx.pdf.annotation.models.AddEditResult
 import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.ModifyEditResult
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.annotation.processor.PdfRendererAnnotationsProcessor
@@ -185,10 +188,16 @@ internal class PdfDocumentRemoteImpl(
             val pdfAnnotations = mutableListOf<PdfAnnotation>()
             for (aospAnnotation in aospAnnotations) {
                 val unused = aospAnnotation.first // <-- AOSP ID
-                val converter =
-                    PdfAnnotationConvertersFactory.create<AospPdfAnnotation>(aospAnnotation.second)
-                converter.convert(aospAnnotation.second, pageNum).let { pfdAnnotation ->
-                    pdfAnnotations.add(pfdAnnotation)
+                try {
+                    val converter =
+                        PdfAnnotationConvertersFactory.create<AospPdfAnnotation>(
+                            aospAnnotation.second
+                        )
+                    converter.convert(aospAnnotation.second, pageNum).let { pfdAnnotation ->
+                        pdfAnnotations.add(pfdAnnotation)
+                    }
+                } catch (e: UnsupportedOperationException) {
+                    // TODO: b/440966572 - Handle Unsupported Annotation like FreeTextAnnotation
                 }
             }
             pdfAnnotations
@@ -198,6 +207,21 @@ internal class PdfDocumentRemoteImpl(
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun applyEdits(annots: List<PdfAnnotationData>): AnnotationResult =
         annotationsProcessor.process(annots)
+
+    override fun addEdit(annots: List<PdfAnnotationData>): AddEditResult {
+        // TODO: b/440759826 - Add/Remove/Update PdfEdits from batches in PdfRenderer
+        return AddEditResult(listOf(), listOf())
+    }
+
+    override fun updateEdit(annots: List<PdfAnnotationData>): ModifyEditResult {
+        // TODO: b/440759826 - Add/Remove/Update PdfEdits from batches in PdfRenderer
+        return ModifyEditResult(listOf(), listOf())
+    }
+
+    override fun removeEdit(editIds: List<EditId>): ModifyEditResult {
+        // TODO: b/440759826 - Add/Remove/Update PdfEdits from batches in PdfRenderer
+        return ModifyEditResult(listOf(), listOf())
+    }
 
     override fun isPdfLinearized(): Boolean {
         return rendererAdapter.isLinearized

@@ -67,7 +67,6 @@ public object SpatialExternalSurfaceDefaults {
  * [SpatialExternalSurfaceScope] is a scoped environment that provides the [Surface] associated with
  * a [SpatialExternalSurface]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialExternalSurfaceScope {
     /**
      * Invoked only one time when the Surface is created. This will execute before any layout or
@@ -124,10 +123,13 @@ private class SpatialExternalSphereSurfaceScopeInstance(
     }
 }
 
-/** Mode for SpatialExternalSurface display. */
+/**
+ * Mode for [SpatialExternalSurface] display.
+ *
+ * @see [SpatialExternalSurface]
+ */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public value class StereoMode private constructor(public val value: Int) {
+public value class StereoMode private constructor(internal val value: Int) {
     public companion object {
         /** Each eye will see the entire surface (no separation). */
         public val Mono: StereoMode = StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_MONO)
@@ -152,18 +154,28 @@ public value class StereoMode private constructor(public val value: Int) {
     }
 }
 
-/** Protection levels for the Surface content. */
+/**
+ * Specifies if the Surface should be backed by [android.hardware.HardwareBuffer]s with the
+ * USAGE_PROTECTED_CONTENT flag set. These buffers support hardware paths for decoding protected
+ * content.
+ *
+ * @see [SpatialExternalSurface]
+ * @see https://developer.android.com/reference/android/media/MediaDrm
+ */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public value class SurfaceProtection private constructor(public val value: Int) {
+public value class SurfaceProtection private constructor(internal val value: Int) {
     public companion object {
-        /** No security is applied. */
+        /**
+         * The Surface content is not protected. Non-protected content can be decoded into this
+         * surface. Protected content can not be decoded into this Surface. Screen captures of the
+         * [SpatialExternalSurface] will show the Surface content.
+         */
         public val None: SurfaceProtection =
             SurfaceProtection(SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE)
         /**
-         * Sets the underlying Surface to set the
-         * [android.hardware.HardwareBuffer.USAGE_PROTECTED_CONTENT] flag. This is mainly used to
-         * protect DRM video content.
+         * The Surface content is protected. Non-protected content can be decoded into this surface.
+         * Protected content can be decoded into this Surface. Screen captures of the
+         * [SpatialExternalSurface] will redact the Surface content.
          */
         public val Protected: SurfaceProtection =
             SurfaceProtection(SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED)
@@ -190,7 +202,9 @@ public value class SurfaceProtection private constructor(public val value: Int) 
  *   user's eyes. This will affect how the content is interpreted and displayed on the surface.
  * @param featheringEffect A [SpatialFeatheringEffect] to apply to to canvas of the surface exposed
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated].
- * @param surfaceProtection Sets the Surface's protection from CPU access.
+ * @param surfaceProtection Sets the Surface's content protection. Use this to redact content in
+ *   screen recordings. Setting this to [SurfaceProtection.Protected] is required if decoding DRM
+ *   media content.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
  *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
  *   anchoring to real-world surfaces. If a policy is provided, draggable UI controls will be shown,
@@ -205,8 +219,6 @@ public value class SurfaceProtection private constructor(public val value: Int) 
  */
 @Composable
 @SubspaceComposable
-@ExperimentalComposeApi
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialExternalSurface(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,

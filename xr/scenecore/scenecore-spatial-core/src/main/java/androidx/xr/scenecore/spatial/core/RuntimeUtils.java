@@ -17,26 +17,26 @@
 package androidx.xr.scenecore.spatial.core;
 
 import androidx.annotation.VisibleForTesting;
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
-import androidx.xr.runtime.internal.CameraViewActivityPose.Fov;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.InputEvent;
-import androidx.xr.runtime.internal.InputEvent.HitInfo;
-import androidx.xr.runtime.internal.PixelDimensions;
-import androidx.xr.runtime.internal.PlaneSemantic;
-import androidx.xr.runtime.internal.PlaneType;
-import androidx.xr.runtime.internal.ResizeEvent;
-import androidx.xr.runtime.internal.SpatialCapabilities;
-import androidx.xr.runtime.internal.SpatialPointerIcon;
-import androidx.xr.runtime.internal.SpatialPointerIconType;
-import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.Plane;
+import androidx.xr.scenecore.internal.ActivityPose.HitTestFilter;
+import androidx.xr.scenecore.internal.ActivityPose.HitTestFilterValue;
+import androidx.xr.scenecore.internal.CameraViewActivityPose.Fov;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.internal.InputEvent;
+import androidx.xr.scenecore.internal.InputEvent.HitInfo;
+import androidx.xr.scenecore.internal.PixelDimensions;
+import androidx.xr.scenecore.internal.PlaneSemantic;
+import androidx.xr.scenecore.internal.PlaneType;
+import androidx.xr.scenecore.internal.ResizeEvent;
+import androidx.xr.scenecore.internal.SpatialCapabilities;
+import androidx.xr.scenecore.internal.SpatialPointerIcon;
+import androidx.xr.scenecore.internal.SpatialPointerIconType;
+import androidx.xr.scenecore.internal.SpatialVisibility;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;
@@ -146,8 +146,7 @@ final class RuntimeUtils {
      * @param xrInputEvent an {@link com.android.extensions.xr.node.InputEvent} instance to be
      *     converted.
      * @param entityManager an {@link EntityManager} instance to look up entities.
-     * @return a {@link androidx.xr.runtime.internal.InputEvent} instance representing the input
-     *     event.
+     * @return a {@link InputEvent} instance representing the input event.
      */
     static InputEvent getInputEvent(
             com.android.extensions.xr.node.@NonNull InputEvent xrInputEvent,

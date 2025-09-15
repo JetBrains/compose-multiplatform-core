@@ -18,14 +18,15 @@ package androidx.xr.scenecore.spatial.rendering
 
 import android.app.Activity
 import androidx.xr.runtime.internal.Feature
-import androidx.xr.runtime.internal.RenderingRuntime
+import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.internal.RenderingRuntimeFactory
-import androidx.xr.runtime.internal.SceneRuntime
+import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.internal.SceneRuntime
 
-/** Factory for creating instances of [RenderingRuntime] for Android XR devices. */
+/** Factory for creating instances of [SpatialRenderingRuntime] for Android XR devices. */
 internal class SpatialRenderingRuntimeFactory() : RenderingRuntimeFactory {
     override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.SPATIAL)
 
-    override fun create(sceneRuntime: SceneRuntime, activity: Activity): RenderingRuntime =
-        SpatialRenderingRuntime.create(sceneRuntime, activity)
+    override fun create(runtimes: List<JxrRuntime>, activity: Activity): RenderingRuntime =
+        SpatialRenderingRuntime.create(runtimes.filterIsInstance<SceneRuntime>().first(), activity)
 }

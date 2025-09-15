@@ -17,10 +17,10 @@
 package androidx.xr.arcore.playservices
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.runtime.internal.AnchorNotAuthorizedException
-import androidx.xr.runtime.internal.AnchorUnsupportedLocationException
-import androidx.xr.runtime.internal.Earth
-import androidx.xr.runtime.internal.GeospatialPoseNotTrackingException
+import androidx.xr.arcore.internal.AnchorNotAuthorizedException
+import androidx.xr.arcore.internal.AnchorUnsupportedLocationException
+import androidx.xr.arcore.internal.Earth
+import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion

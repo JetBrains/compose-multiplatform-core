@@ -19,9 +19,9 @@ package androidx.xr.scenecore
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.InputEventListener as RtInputEventListener
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PointerCaptureComponent as RtPointerCaptureComponent
+import androidx.xr.scenecore.internal.InputEventListener as RtInputEventListener
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.PointerCaptureComponent as RtPointerCaptureComponent
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -118,14 +118,14 @@ private constructor(
         }
         attachedEntity = entity
 
-        return (entity as BaseEntity<*>).rtEntity.addComponent(rtComponent)
+        return (entity as BaseEntity<*>).rtEntity!!.addComponent(rtComponent)
     }
 
     override fun onDetach(entity: Entity) {
         if (entity != attachedEntity) {
             return
         }
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtComponent)
+        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtComponent)
         attachedEntity = null
     }
 

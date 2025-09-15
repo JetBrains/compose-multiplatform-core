@@ -21,6 +21,7 @@ import androidx.navigationevent.NavigationEventPriority.Companion.Default
 import androidx.navigationevent.NavigationEventPriority.Companion.Overlay
 import androidx.navigationevent.NavigationEventState.Idle
 import androidx.navigationevent.NavigationEventState.InProgress
+import kotlin.jvm.JvmName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -265,6 +266,7 @@ private constructor(
      * @throws IllegalStateException if the dispatcher has already been disposed.
      */
     @Suppress("PairedRegistration") // Callback is removed via `NavigationEventCallback.remove()`
+    @JvmName("addCallback") // Disable name mangling for Java
     @MainThread
     public fun addCallback(
         callback: NavigationEventCallback<*>,

@@ -20,14 +20,14 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.app.Activity;
 
-import androidx.xr.runtime.internal.ExrImageResource;
-import androidx.xr.runtime.internal.GltfModelResource;
-import androidx.xr.runtime.internal.MaterialResource;
-import androidx.xr.runtime.internal.SceneRuntime;
 import androidx.xr.runtime.internal.SceneRuntimeFactory;
-import androidx.xr.runtime.testing.FakeSceneRuntimeFactory;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
+import androidx.xr.scenecore.internal.ExrImageResource;
+import androidx.xr.scenecore.internal.GltfModelResource;
+import androidx.xr.scenecore.internal.MaterialResource;
+import androidx.xr.scenecore.internal.SceneRuntime;
+import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -70,7 +70,7 @@ public class SpatialRenderingRuntimeTest {
         ShadowXrExtensions.extract(mXrExtensions)
                 .setOpenXrWorldSpaceType(OPEN_XR_REFERENCE_SPACE_TYPE);
         SceneRuntimeFactory sceneFactory = new FakeSceneRuntimeFactory();
-        mSceneRuntime = sceneFactory.create(mActivity);
+        mSceneRuntime = (SceneRuntime) sceneFactory.create(mActivity);
         mRuntime =
                 SpatialRenderingRuntime.create(
                         mSceneRuntime,

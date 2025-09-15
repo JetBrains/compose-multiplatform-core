@@ -16,17 +16,15 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
+import androidx.xr.arcore.internal.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** Contains the information of the device that locates it with respect to the real world. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArDevice internal constructor(internal val runtimeArDevice: RuntimeArDevice) :
     Updatable {
 
@@ -59,7 +57,7 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
     /**
      * Contains the current state of the AR Device tracking.
      *
-     * @property devicePose The current pose of the device.
+     * @property devicePose The current [Pose] of the device.
      */
     public class State(public val devicePose: Pose) {
         override fun equals(other: Any?): Boolean {

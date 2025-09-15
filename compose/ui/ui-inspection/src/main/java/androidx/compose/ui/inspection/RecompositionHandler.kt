@@ -64,20 +64,22 @@ class RecompositionHandler(private val artTooling: ArtTooling) {
         }
     }
 
-    private fun composerImplementationClass(): Class<*>? {
+    private fun composerImplementationClasses(): List<Class<*>> {
         val baseName = Composer::class.java.name.let { it.substring(0..it.lastIndexOf('.')) }
+        val classes = mutableListOf<Class<*>>()
         try {
-            return Class.forName(baseName + "ComposerImpl")
-        } catch (ex: Throwable) {}
+            classes.add(Class.forName(baseName + "ComposerImpl"))
+        } catch (_: Throwable) {}
         try {
-            return Class.forName(baseName + "GapComposer")
-        } catch (ex: Throwable) {}
+            classes.add(Class.forName(baseName + "GapComposer"))
+        } catch (_: Throwable) {}
         try {
-            return Class.forName(baseName + "LinkComposer")
-        } catch (ex: Throwable) {
-            Log.w(LOG_TAG, "Could not install recomposition hooks", ex)
+            classes.add(Class.forName(baseName + "LinkComposer"))
+        } catch (_: Throwable) {}
+        if (classes.isEmpty()) {
+            Log.w(LOG_TAG, "Could not install recomposition hooks")
         }
-        return null
+        return classes
     }
 
     /**
@@ -87,32 +89,33 @@ class RecompositionHandler(private val artTooling: ArtTooling) {
      * - entry hook for ComposerImpl.skipToGroupEnd converts a recompose count to a skip count.
      */
     private fun installHooks() {
-        val composerImpl = composerImplementationClass() ?: return
+        composerImplementationClasses().forEach { composerImpl ->
+            artTooling.registerEntryHook(composerImpl, START_RESTART_GROUP) { _, args ->
+                synchronized(lock) { lastMethodKey = args[0] as Int }
+            }
 
-        artTooling.registerEntryHook(composerImpl, START_RESTART_GROUP) { _, args ->
-            synchronized(lock) { lastMethodKey = args[0] as Int }
-        }
-
-        artTooling.registerExitHook(composerImpl, START_RESTART_GROUP) { composer: Composer ->
-            synchronized(lock) {
-                if (currentlyCollecting) {
-                    composer.recomposeScopeIdentity?.hashCode()?.let { anchor ->
-                        val data = counts.getOrPut(MethodKey(lastMethodKey, anchor)) { Data(0, 0) }
-                        data.count++
+            artTooling.registerExitHook(composerImpl, START_RESTART_GROUP) { composer: Composer ->
+                synchronized(lock) {
+                    if (currentlyCollecting) {
+                        composer.recomposeScopeIdentity?.hashCode()?.let { anchor ->
+                            val data =
+                                counts.getOrPut(MethodKey(lastMethodKey, anchor)) { Data(0, 0) }
+                            data.count++
+                        }
                     }
                 }
+                composer
             }
-            composer
-        }
 
-        artTooling.registerEntryHook(composerImpl, SKIP_TO_GROUP_END) { obj, _ ->
-            synchronized(lock) {
-                if (currentlyCollecting) {
-                    val composer = obj as? Composer
-                    composer?.recomposeScopeIdentity?.hashCode()?.let { anchor ->
-                        counts[MethodKey(lastMethodKey, anchor)]?.let {
-                            it.count--
-                            it.skips++
+            artTooling.registerEntryHook(composerImpl, SKIP_TO_GROUP_END) { obj, _ ->
+                synchronized(lock) {
+                    if (currentlyCollecting) {
+                        val composer = obj as? Composer
+                        composer?.recomposeScopeIdentity?.hashCode()?.let { anchor ->
+                            counts[MethodKey(lastMethodKey, anchor)]?.let {
+                                it.count--
+                                it.skips++
+                            }
                         }
                     }
                 }

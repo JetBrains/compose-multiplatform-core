@@ -27,12 +27,12 @@ import static com.android.extensions.xr.node.Node.POINTER_CAPTURE_STATE_STOPPED;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.InputEvent;
-import androidx.xr.runtime.internal.InputEventListener;
-import androidx.xr.runtime.internal.PointerCaptureComponent;
-import androidx.xr.runtime.internal.PointerCaptureComponent.StateListener;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.InputEvent;
+import androidx.xr.scenecore.internal.InputEventListener;
+import androidx.xr.scenecore.internal.PointerCaptureComponent;
+import androidx.xr.scenecore.internal.PointerCaptureComponent.StateListener;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;

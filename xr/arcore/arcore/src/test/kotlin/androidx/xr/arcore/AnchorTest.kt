@@ -20,19 +20,19 @@ import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import androidx.xr.arcore.internal.Anchor as RuntimeAnchor
+import androidx.xr.arcore.internal.AnchorInvalidUuidException
+import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakeRuntimeAnchor
+import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.AnchorPersistenceMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
-import androidx.xr.runtime.internal.AnchorInvalidUuidException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakePerceptionManager
-import androidx.xr.runtime.testing.FakeRuntimeAnchor
-import androidx.xr.runtime.testing.FakeRuntimePlane
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
 import kotlin.test.assertFailsWith
@@ -80,7 +80,7 @@ class AnchorTest {
 
     @Test
     fun create_notTracking_returnsAnchorNotTracking() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         fakePerceptionManager.isTrackingAvailable = false
 
         assertThat(Anchor.create(session, Pose()))
@@ -89,7 +89,7 @@ class AnchorTest {
 
     @Test
     fun detach_removeAnchorFromActiveAnchorManager() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
         val underTest = Anchor(runtimeAnchor, xrResourcesManager)
         xrResourcesManager.addUpdatable(underTest)
@@ -119,7 +119,7 @@ class AnchorTest {
     @Test
     fun update_trackingStateMatchesRuntimeTrackingState() = createTestSessionAndRunTest {
         runBlocking {
-            val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val fakePerceptionManager = getFakePerceptionManager()
             val runtimeAnchor = fakePerceptionManager.createAnchor(Pose()) as FakeRuntimeAnchor
             runtimeAnchor.trackingState = TrackingState.PAUSED
             val underTest = Anchor(runtimeAnchor, xrResourcesManager)
@@ -135,7 +135,7 @@ class AnchorTest {
     @Test
     fun update_poseMatchesRuntimePose() = createTestSessionAndRunTest {
         runBlocking {
-            val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val fakePerceptionManager = getFakePerceptionManager()
             val runtimeAnchor = fakePerceptionManager.createAnchor(Pose()) as FakeRuntimeAnchor
             val underTest = Anchor(runtimeAnchor, xrResourcesManager)
             check(
@@ -155,7 +155,7 @@ class AnchorTest {
     @Test
     fun persist_runtimeAnchorIsPersisted() = createTestSessionAndRunTest {
         runTest {
-            val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val fakePerceptionManager = getFakePerceptionManager()
             val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
             val underTest = Anchor(runtimeAnchor, xrResourcesManager)
             check(runtimeAnchor.persistenceState == RuntimeAnchor.PersistenceState.NOT_PERSISTED)
@@ -176,8 +176,7 @@ class AnchorTest {
     fun persist_anchorPersistenceDisabled_throwsIllegalStateException() =
         createTestSessionAndRunTest {
             runTest {
-                val fakePerceptionManager =
-                    session.runtime.perceptionManager as FakePerceptionManager
+                val fakePerceptionManager = getFakePerceptionManager()
                 val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
                 val underTest = Anchor(runtimeAnchor, xrResourcesManager)
                 session.configure(Config(anchorPersistence = AnchorPersistenceMode.DISABLED))
@@ -190,8 +189,7 @@ class AnchorTest {
     fun getPersistedAnchorUuids_previouslyPersistedAnchor_returnsPersistedAnchorUuid() =
         createTestSessionAndRunTest {
             runTest {
-                val fakePerceptionManager =
-                    session.runtime.perceptionManager as FakePerceptionManager
+                val fakePerceptionManager = getFakePerceptionManager()
                 val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
                 val underTest = Anchor(runtimeAnchor, xrResourcesManager)
                 var uuid: UUID? = null
@@ -223,7 +221,7 @@ class AnchorTest {
     @Test
     fun load_previouslyPersistedAnchor_returnsAnchorCreateSuccess() = createTestSessionAndRunTest {
         runTest {
-            val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val fakePerceptionManager = getFakePerceptionManager()
             val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
             val underTest = Anchor(runtimeAnchor, xrResourcesManager)
             var uuid: UUID? = null
@@ -279,7 +277,7 @@ class AnchorTest {
     @Test
     fun unpersist_removesAnchorFromStorage() = createTestSessionAndRunTest {
         runTest {
-            val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val fakePerceptionManager = getFakePerceptionManager()
             val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
             val underTest = Anchor(runtimeAnchor, xrResourcesManager)
             var uuid: UUID? = null
@@ -318,7 +316,7 @@ class AnchorTest {
 
     @Test
     fun equals_sameObject_returnsTrue() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
         val underTest = Anchor(runtimeAnchor, xrResourcesManager)
 
@@ -327,7 +325,7 @@ class AnchorTest {
 
     @Test
     fun equals_differentObjectsSameValues_returnsTrue() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
         val underTest1 = Anchor(runtimeAnchor, xrResourcesManager)
         val underTest2 = Anchor(runtimeAnchor, xrResourcesManager)
@@ -337,7 +335,7 @@ class AnchorTest {
 
     @Test
     fun equals_differentObjectsDifferentValues_returnsFalse() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val underTest1 =
             Anchor(
                 fakePerceptionManager.createAnchor(Pose(Vector3.Up, Quaternion.Identity)),
@@ -354,7 +352,7 @@ class AnchorTest {
 
     @Test
     fun hashCode_differentObjectsSameValues_returnsSameHashCode() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
         val underTest1 = Anchor(runtimeAnchor, xrResourcesManager)
         val underTest2 = Anchor(runtimeAnchor, xrResourcesManager)
@@ -365,7 +363,7 @@ class AnchorTest {
     @Test
     fun hashCode_differentObjectsDifferentValues_returnsDifferentHashCodes() =
         createTestSessionAndRunTest {
-            val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val fakePerceptionManager = getFakePerceptionManager()
             val underTest1 =
                 Anchor(
                     fakePerceptionManager.createAnchor(Pose(Vector3.Up, Quaternion.Identity)),
@@ -380,13 +378,17 @@ class AnchorTest {
             assertThat(underTest1.hashCode()).isNotEqualTo(underTest2.hashCode())
         }
 
+    private fun getFakePerceptionManager(): FakePerceptionManager {
+        return session.perceptionRuntime.perceptionManager as FakePerceptionManager
+    }
+
     private fun createTestSessionAndRunTest(testBody: () -> Unit) {
         ActivityScenario.launch(ComponentActivity::class.java).use {
             it.onActivity { activity ->
                 session =
                     (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)
                         .session
-                xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
+                xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
 
                 testBody()
             }

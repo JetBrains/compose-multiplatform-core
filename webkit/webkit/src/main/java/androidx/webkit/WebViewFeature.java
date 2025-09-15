@@ -129,6 +129,7 @@ public class WebViewFeature {
             WEBVIEW_BUILDER,
             WARM_UP_RENDERER_PROCESS,
             PRECONNECT,
+            HYPERLINK_CONTEXT_MENU_ITEMS,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -787,6 +788,12 @@ public class WebViewFeature {
      * This feature covers {@link Profile#preconnect(String)}
      */
     public static final String PRECONNECT = "PRECONNECT";
+
+    /**
+     * This feature covers
+     * {@link WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)},
+     */
+    public static final String HYPERLINK_CONTEXT_MENU_ITEMS = "HYPERLINK_CONTEXT_MENU_ITEMS";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

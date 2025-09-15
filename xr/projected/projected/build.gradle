@@ -57,9 +57,6 @@ android {
         resValues = true
         aidl = true
     }
-    defaultConfig {
-        minSdk = 23
-    }
     buildTypes.configureEach {
         stableAidl {
             version = 1

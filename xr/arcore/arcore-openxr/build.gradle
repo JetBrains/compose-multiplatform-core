@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+import androidx.build.AndroidXConfig
 import androidx.build.SoftwareType
 
 plugins {
@@ -31,16 +32,50 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
+    api(libs.kotlinCoroutinesCore)
+    api(project(":xr:arcore:arcore"))
+
+    implementation("androidx.annotation:annotation:1.8.1")
+    implementation("androidx.core:core-ktx:1.12.0")
+
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(libs.junit)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
+    testImplementation(project(":kruth:kruth"))
+    testImplementation(project(":xr:arcore:arcore-testing"))
+    testImplementation("androidx.appcompat:appcompat:1.2.0")
+
+    androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(project(":kruth:kruth"))
+    androidTestImplementation(project(":xr:arcore:arcore-testing"))
+    androidTestImplementation("androidx.appcompat:appcompat:1.2.0")
 }
 
 android {
     namespace = "androidx.xr.arcore.openxr"
+    sourceSets.main {
+        jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/android")
+    }
+    defaultConfig {
+        consumerProguardFiles 'proguard-rules.pro'
+        // TODO: b/409058039 - Drop back to 23 (default) once dependency on scenecore is removed.
+        minSdk = 24
+    }
+    sourceSets.androidTest {
+        jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")
+    }
 }
 
 androidx {
     name = "XR ARCore OpenXR"
-    // TODO: Switch to PUBLISHED_LIBRARY once code has been migrated from runtime-openxr.
-    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_WITH_API_TASKS
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "OpenXR runtime implementation of ARCore for Jetpack XR."
+    enableRobolectric()
 }

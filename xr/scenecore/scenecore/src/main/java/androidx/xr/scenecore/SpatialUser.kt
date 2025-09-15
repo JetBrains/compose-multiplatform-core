@@ -17,8 +17,8 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.Config.HeadTrackingMode
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.LifecycleManager
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
 
 /** SpatialUser represents the user in a spatialized Activity. */
 public class SpatialUser(

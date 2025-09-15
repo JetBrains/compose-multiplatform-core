@@ -19,9 +19,9 @@ package androidx.tracing.driver
 /** [Track] representing a numerical value that can change over the duration of the trace. */
 public open class CounterTrack(
     /** The name of the counter track */
-    private val name: String,
+    public val name: String,
     /** The parent track the counter belongs to. */
-    private val parent: Track,
+    public val parent: Track,
 ) : Track(context = parent.context, uuid = monotonicId()) {
     internal val packetLock = Any()
 

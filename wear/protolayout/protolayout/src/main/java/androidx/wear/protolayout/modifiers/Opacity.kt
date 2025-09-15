@@ -19,7 +19,9 @@ package androidx.wear.protolayout.modifiers
 import android.annotation.SuppressLint
 import androidx.annotation.FloatRange
 import androidx.wear.protolayout.TypeBuilders.FloatProp
+import androidx.wear.protolayout.expression.AnimationParameterBuilders
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
+import androidx.wear.protolayout.expression.PlatformEventSources
 import androidx.wear.protolayout.expression.RequiresSchemaVersion
 
 /**
@@ -37,6 +39,37 @@ fun LayoutModifier.opacity(
     @FloatRange(from = 0.0, to = 1.0) staticValue: Float,
     dynamicValue: DynamicFloat? = null,
 ): LayoutModifier = this then BaseOpacityElement(staticValue, dynamicValue)
+
+/**
+ * The recommended opacity modifier for Lottie animation or any other element that should appear as
+ * the layout is swiped to.
+ *
+ * It is recommended to be used when Lottie animation is infinite, so that Lottie animation first
+ * becomes visible with fading in, followed by animation show, to avoid showing static state while
+ * user swipes to the layout.
+ *
+ * @sample androidx.wear.protolayout.material3.samples.lottieWithFadeIn
+ */
+@RequiresSchemaVersion(major = 1, minor = 500)
+fun LayoutModifier.fadeInOnVisibleModifier(
+    animationSpec: AnimationParameterBuilders.AnimationSpec =
+        AnimationParameterBuilders.AnimationSpec.Builder()
+            .setAnimationParameters(
+                AnimationParameterBuilders.AnimationParameters.Builder()
+                    .setDurationMillis(150)
+                    .build()
+            )
+            .build()
+): LayoutModifier =
+    this then
+        LayoutModifier.opacity(
+            staticValue = 1F,
+            dynamicValue =
+                DynamicFloat.onCondition(PlatformEventSources.isLayoutVisible())
+                    .use(1F)
+                    .elseUse(0F)
+                    .animate(animationSpec),
+        )
 
 @RequiresSchemaVersion(major = 1, minor = 400)
 internal class BaseOpacityElement(val staticValue: Float, val dynamicValue: DynamicFloat? = null) :

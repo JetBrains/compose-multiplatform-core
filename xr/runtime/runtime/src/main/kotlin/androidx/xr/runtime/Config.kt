@@ -213,19 +213,19 @@ constructor(
     }
 
     /**
-     * Feature that allows tracking of the device.
+     * Feature that allows tracking of the AR device.
      *
      * This feature does not require any additional application permissions.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public class DeviceTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
     ) {
         public companion object {
             /**
-             * The device pose will not be tracked. In this mode, [androidx.xr.arcore.ViewCamera]
-             * will not emit updates to [androidx.xr.arcore.ViewCamera.State.pose].
+             * The device pose will not be tracked. In this mode,
+             * [androidx.xr.arcore.RenderViewpoint] will not emit updates to
+             * [androidx.xr.arcore.RenderViewpoint.State.pose].
              */
             @JvmField public val DISABLED: DeviceTrackingMode = DeviceTrackingMode(0)
             /**
@@ -236,6 +236,7 @@ constructor(
             @JvmField public val LAST_KNOWN: DeviceTrackingMode = DeviceTrackingMode(1)
         }
 
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         public fun toHeadTrackingMode(): HeadTrackingMode {
             return if (mode == 0) HeadTrackingMode.DISABLED else HeadTrackingMode.LAST_KNOWN
         }

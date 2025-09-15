@@ -23,8 +23,8 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.xr.runtime.internal.ActivityPanelEntity;
-import androidx.xr.runtime.internal.PixelDimensions;
+import androidx.xr.scenecore.internal.ActivityPanelEntity;
+import androidx.xr.scenecore.internal.PixelDimensions;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

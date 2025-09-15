@@ -242,8 +242,8 @@ internal class PageManager(
         }
     }
 
-    fun getLinkAtTapPoint(pdfPoint: PdfPoint): PdfDocument.PdfPageLinks? {
-        return pages[pdfPoint.pageNum]?.links
+    fun getPageLinks(pageNum: Int): PdfDocument.PdfPageLinks? {
+        return pages[pageNum]?.links
     }
 
     fun getWidgetAtTapPoint(pdfPoint: PdfPoint): List<FormWidgetInfo>? {

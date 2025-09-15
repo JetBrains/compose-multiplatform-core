@@ -540,6 +540,7 @@ package androidx.paging {
 
   public final class PagingState<Key, Value> {
     ctor public PagingState(java.util.List<androidx.paging.PagingSource.LoadResult.Page<Key,Value>> pages, Integer? anchorPosition, androidx.paging.PagingConfig config, @IntRange(from=0L) int leadingPlaceholderCount);
+    method public Value? closestItemAroundPosition(int anchorPosition, kotlin.jvm.functions.Function1<? super Value,java.lang.Boolean> predicate);
     method public Value? closestItemToPosition(int anchorPosition);
     method public androidx.paging.PagingSource.LoadResult.Page<Key,Value>? closestPageToPosition(int anchorPosition);
     method public Value? firstItemOrNull();

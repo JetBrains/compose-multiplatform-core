@@ -20,9 +20,9 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Rect;
 
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.PanelEntity;
-import androidx.xr.runtime.internal.PixelDimensions;
+import androidx.xr.scenecore.internal.Dimensions;
+import androidx.xr.scenecore.internal.PanelEntity;
+import androidx.xr.scenecore.internal.PixelDimensions;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

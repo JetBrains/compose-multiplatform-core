@@ -18,15 +18,15 @@ package androidx.xr.scenecore
 
 import android.media.MediaPlayer
 import androidx.activity.ComponentActivity
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.Entity as RtEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper as RtMediaPlayerExtensionsWrapper
-import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
-import androidx.xr.runtime.internal.SoundFieldAttributes as RtSoundFieldAttributes
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.Entity as RtEntity
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper as RtMediaPlayerExtensionsWrapper
+import androidx.xr.scenecore.internal.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.internal.SoundFieldAttributes as RtSoundFieldAttributes
+import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,8 +44,9 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SpatialMediaPlayerTest {
 
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private var mockRuntime: JxrPlatformAdapter = mock()
+    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
+    private var mockPlatformAdapter: JxrPlatformAdapter = mock()
+
     private var mockRtMediaPlayerExtensions: RtMediaPlayerExtensionsWrapper = mock()
 
     private val mockGroupEntity = mock<RtEntity>()
@@ -57,7 +58,7 @@ class SpatialMediaPlayerTest {
 
     @Before
     fun setUp() {
-        mockRuntime.stub {
+        mockPlatformAdapter.stub {
             on { spatialEnvironment } doReturn mock()
             on { activitySpace } doReturn mockActivitySpace
             on { activitySpaceRootImpl } doReturn mockActivitySpace
@@ -69,8 +70,17 @@ class SpatialMediaPlayerTest {
         }
 
         mockRtMediaPlayerExtensions = mock()
-        whenever(mockRuntime.mediaPlayerExtensionsWrapper).thenReturn(mockRtMediaPlayerExtensions)
-        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
+        whenever(mockPlatformAdapter.mediaPlayerExtensionsWrapper)
+            .thenReturn(mockRtMediaPlayerExtensions)
+        session =
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        fakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockPlatformAdapter,
+                    ),
+            )
     }
 
     @Test

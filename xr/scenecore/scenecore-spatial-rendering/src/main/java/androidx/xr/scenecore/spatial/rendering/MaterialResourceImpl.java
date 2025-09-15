@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.spatial.rendering;
 
-import androidx.xr.runtime.internal.MaterialResource;
+import androidx.xr.scenecore.internal.MaterialResource;
 
 /** Implementation of a SceneCore MaterialResource. */
 final class MaterialResourceImpl implements MaterialResource {

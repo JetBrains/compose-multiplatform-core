@@ -21,7 +21,7 @@ import androidx.room.compiler.processing.XAnnotated
 import androidx.room.compiler.processing.XMemberContainer
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeParameterElement
-import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.NO_USE_SITE_OR_FIELD
+import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.NO_USE_SITE_OR_FIELD
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.squareup.javapoet.TypeVariableName
 

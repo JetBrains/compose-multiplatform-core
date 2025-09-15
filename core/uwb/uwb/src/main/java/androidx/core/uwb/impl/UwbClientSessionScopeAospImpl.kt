@@ -175,6 +175,7 @@ internal open class UwbClientSessionScopeAospImpl(
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 try {
                     uwbClient.stopRanging(callback)
+                    sessionStarted = false
                 } catch (e: Exception) {
                     throw (e)
                 }

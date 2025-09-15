@@ -21,11 +21,11 @@ import static com.google.common.truth.Truth.assertThat;
 import android.app.Activity;
 
 import androidx.concurrent.futures.ResolvableFuture;
-import androidx.xr.runtime.internal.GltfEntity;
-import androidx.xr.runtime.internal.MaterialResource;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.WaterMaterial;
+import androidx.xr.scenecore.internal.GltfEntity;
+import androidx.xr.scenecore.internal.MaterialResource;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;

@@ -29,9 +29,6 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.Context;
 
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
@@ -41,6 +38,9 @@ import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.PerceptionLibraryConstants;
 import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.internal.ActivityPose.HitTestFilter;
+import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.internal.Space;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -237,8 +237,7 @@ public final class EntityTest {
         mEntity.setScale(scale, Space.PARENT);
 
         assertVector3(
-                mEntity.getScale(Space.REAL_WORLD),
-                scale.scale(activitySpace.mWorldSpaceScale));
+                mEntity.getScale(Space.REAL_WORLD), scale.scale(activitySpace.mWorldSpaceScale));
     }
 
     @Test
@@ -281,14 +280,11 @@ public final class EntityTest {
                         mEntityManager,
                         mFakeScheduledExecutorService);
         child.setParent(mEntity);
-        child.setScale(scale
-                .scale(scale.scale(activitySpace.mWorldSpaceScale)),
-                Space.REAL_WORLD);
+        child.setScale(scale.scale(scale.scale(activitySpace.mWorldSpaceScale)), Space.REAL_WORLD);
 
         assertVector3(
                 child.getScale(Space.REAL_WORLD),
-                scale.scale(
-                        scale.scale(activitySpace.mWorldSpaceScale)));
+                scale.scale(scale.scale(activitySpace.mWorldSpaceScale)));
     }
 
     @Test

@@ -60,7 +60,9 @@ internal class NavigationEventHandlerTest {
                     progress.collect()
                 }
 
-                Button(onClick = { input.start(NavigationEvent()) }) { Text(text = "backPress") }
+                Button(onClick = { input.backStarted(NavigationEvent()) }) {
+                    Text(text = "backPress")
+                }
             }
         }
 
@@ -78,12 +80,14 @@ internal class NavigationEventHandlerTest {
                     progress.collect()
                     counter++
                 }
-                Button(onClick = { input.start(NavigationEvent()) }) { Text(text = "backPress") }
+                Button(onClick = { input.backStarted(NavigationEvent()) }) {
+                    Text(text = "backPress")
+                }
             }
         }
 
         rule.onNodeWithText("backPress").performClick()
-        input.complete()
+        input.backCompleted()
 
         rule.runOnIdle { assertThat(counter).isEqualTo(1) }
     }
@@ -100,8 +104,8 @@ internal class NavigationEventHandlerTest {
                 }
                 Button(
                     onClick = {
-                        input.start(NavigationEvent())
-                        input.complete()
+                        input.backStarted(NavigationEvent())
+                        input.backCompleted()
                     }
                 ) {
                     Text(text = "backPress")
@@ -135,8 +139,8 @@ internal class NavigationEventHandlerTest {
 
         // Phase 1: Test when enabled
         // The handler should be called.
-        input.start(NavigationEvent())
-        input.complete()
+        input.backStarted(NavigationEvent())
+        input.backCompleted()
         rule.runOnIdle {
             assertThat(result).isEqualTo(listOf("onBack"))
             assertThat(owner.fallbackOnBackPressedInvocations).isEqualTo(0)
@@ -146,8 +150,8 @@ internal class NavigationEventHandlerTest {
         // The fallback should be invoked instead of the handler.
         enabled = false
         rule.runOnIdle {
-            input.start(NavigationEvent())
-            input.complete()
+            input.backStarted(NavigationEvent())
+            input.backCompleted()
             assertThat(result).isEqualTo(listOf("onBack")) // Unchanged
             assertThat(owner.fallbackOnBackPressedInvocations).isEqualTo(1)
         }
@@ -156,8 +160,8 @@ internal class NavigationEventHandlerTest {
         // The handler should work again.
         enabled = true
         rule.runOnIdle {
-            input.start(NavigationEvent())
-            input.complete()
+            input.backStarted(NavigationEvent())
+            input.backCompleted()
             assertThat(result).isEqualTo(listOf("onBack", "onBack"))
         }
     }
@@ -196,12 +200,12 @@ internal class NavigationEventHandlerTest {
         // The 'enabled' check happens inside the callback. Disabling right before the
         // dispatch means the handler will start but see that it's disabled.
         count = 1
-        input.start(NavigationEvent())
+        input.backStarted(NavigationEvent())
 
         // The launched effect for the handler might still run, but it should not prevent
         // the gesture from completing normally.
         rule.runOnIdle { assertThat(wasStartedWhenDisabled).isTrue() }
-        input.complete()
+        input.backCompleted()
         rule.runOnIdle { assertThat(result).isEqualTo(listOf("onBack")) }
 
         // It should not be cancelled because the gesture completes successfully.
@@ -226,13 +230,13 @@ internal class NavigationEventHandlerTest {
             }
         }
 
-        input.start(NavigationEvent())
+        input.backStarted(NavigationEvent())
         // Disable after the gesture has already started. The `enabled` check has already passed,
         // so the gesture should continue to be handled.
         count = 1
 
         rule.runOnIdle { assertThat(wasStartedWhenDisabled).isFalse() }
-        input.complete()
+        input.backCompleted()
         rule.runOnIdle { assertThat(result).isEqualTo(listOf("onBack")) }
     }
 
@@ -254,10 +258,10 @@ internal class NavigationEventHandlerTest {
             }
         }
 
-        input.start(NavigationEvent())
+        input.backStarted(NavigationEvent())
         // The exception is thrown on completion because the handler's coroutine finishes
         // prematurely without having suspended for the gesture's result.
-        input.complete()
+        input.backCompleted()
 
         rule.waitUntil(1000) { result.size >= 3 }
         rule.runOnIdle { assertThat(result).isEqualTo(listOf("start", "async", "complete")) }
@@ -280,14 +284,14 @@ internal class NavigationEventHandlerTest {
             }
         }
 
-        input.start(NavigationEvent())
-        input.complete()
+        input.backStarted(NavigationEvent())
+        input.backCompleted()
         rule.waitUntil { asyncStarted } // failing
 
         // Start a new gesture. This should cancel the scope of the previous handler,
         // including the async job it launched.
-        input.start(NavigationEvent())
-        input.complete()
+        input.backStarted(NavigationEvent())
+        input.backCompleted()
         rule.waitUntil(1000) { result.size >= 3 }
 
         rule.runOnIdle {
@@ -305,7 +309,7 @@ internal class NavigationEventHandlerTest {
                     result += "parent"
                     progress.collect()
                 }
-                Button(onClick = { input.start(NavigationEvent()) }) {
+                Button(onClick = { input.backStarted(NavigationEvent()) }) {
                     // When handlers are nested, only the deepest, last-composed handler is active.
                     NavigationEventHandler { progress ->
                         result += "child"
@@ -330,7 +334,7 @@ internal class NavigationEventHandlerTest {
                     result += "parent"
                     progress.collect()
                 }
-                Button(onClick = { input.start(NavigationEvent()) }) {
+                Button(onClick = { input.backStarted(NavigationEvent()) }) {
                     NavigationEventHandler(enabled = false) { progress ->
                         result += "child"
                         progress.collect()
@@ -358,7 +362,9 @@ internal class NavigationEventHandlerTest {
                     result += "second"
                     progress.collect()
                 }
-                Button(onClick = { input.start(NavigationEvent()) }) { Text(text = "backPress") }
+                Button(onClick = { input.backStarted(NavigationEvent()) }) {
+                    Text(text = "backPress")
+                }
             }
         }
 
@@ -380,7 +386,9 @@ internal class NavigationEventHandlerTest {
                     result += "second"
                     progress.collect()
                 }
-                Button(onClick = { input.start(NavigationEvent()) }) { Text(text = "backPress") }
+                Button(onClick = { input.backStarted(NavigationEvent()) }) {
+                    Text(text = "backPress")
+                }
             }
         }
 
@@ -402,7 +410,9 @@ internal class NavigationEventHandlerTest {
                 // The key of the handler is its `onEvent` lambda. Changing it should
                 // correctly replace the old handler with the new one.
                 NavigationEventHandler(onEvent = handler)
-                Button(onClick = { input.start(NavigationEvent()) }) { Text(text = "backPress") }
+                Button(onClick = { input.backStarted(NavigationEvent()) }) {
+                    Text(text = "backPress")
+                }
             }
         }
         rule.onNodeWithText("backPress").performClick()
@@ -430,10 +440,10 @@ internal class NavigationEventHandlerTest {
             }
         }
 
-        input.start(NavigationEvent())
-        input.progress(NavigationEvent())
-        input.progress(NavigationEvent())
-        input.progress(NavigationEvent())
+        input.backStarted(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+        input.backProgressed(NavigationEvent())
 
         rule.waitForIdle()
         assertThat(result).isEqualTo(listOf(0, 1, 2))
@@ -459,9 +469,9 @@ internal class NavigationEventHandlerTest {
             }
         }
 
-        input.start(NavigationEvent())
-        input.progress(NavigationEvent())
-        input.cancel()
+        input.backStarted(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+        input.backCancelled()
 
         rule.runOnIdle {
             assertThat(result).isEqualTo(listOf("start", "progress", "navEvent cancelled"))
@@ -484,9 +494,9 @@ internal class NavigationEventHandlerTest {
             }
         }
 
-        input.start(NavigationEvent())
-        input.progress(NavigationEvent())
-        input.cancel()
+        input.backStarted(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+        input.backCancelled()
 
         rule.runOnIdle { assertThat(result).isEqualTo(listOf("start", "progress")) }
     }
@@ -509,9 +519,9 @@ internal class NavigationEventHandlerTest {
         }
 
         // Simulate a cancelled gesture
-        input.start(NavigationEvent())
-        input.progress(NavigationEvent())
-        input.cancel()
+        input.backStarted(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+        input.backCancelled()
 
         rule.runOnIdle {
             assertThat(result).isEqualTo(listOf("progress", "navEvent cancelled"))
@@ -519,10 +529,10 @@ internal class NavigationEventHandlerTest {
         }
 
         // The handler should reset and be ready for a new gesture.
-        input.start(NavigationEvent())
-        input.progress(NavigationEvent())
-        input.progress(NavigationEvent())
-        input.complete()
+        input.backStarted(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+        input.backCompleted()
         rule.runOnIdle { assertThat(result).isEqualTo(listOf("progress", "progress", "complete")) }
     }
 
@@ -543,11 +553,11 @@ internal class NavigationEventHandlerTest {
             }
         }
 
-        input.start(NavigationEvent())
+        input.backStarted(NavigationEvent())
         rule.waitUntil { asyncStarted }
         // Cancelling the gesture should cancel the handler's scope, which in turn
         // cancels the async job.
-        input.cancel()
+        input.backCancelled()
 
         rule.runOnIdle {
             runBlocking { delay(700) } // allow time for the cancelled async job to not complete
@@ -578,7 +588,7 @@ internal class NavigationEventHandlerTest {
         }
 
         // 1. Start the back gesture. The handler's coroutine is now running.
-        input.start(NavigationEvent())
+        input.backStarted(NavigationEvent())
         rule.runOnIdle { assertThat(result).isEqualTo(listOf("start")) }
 
         // 2. Remove the handler from the composition.
@@ -589,7 +599,7 @@ internal class NavigationEventHandlerTest {
 
         // 3. Attempt to complete the original gesture.
         // Since the handler was removed, it should not receive this event.
-        input.complete()
+        input.backCompleted()
 
         // The handler should have been cancelled when it was disposed.
         // It should not have completed.

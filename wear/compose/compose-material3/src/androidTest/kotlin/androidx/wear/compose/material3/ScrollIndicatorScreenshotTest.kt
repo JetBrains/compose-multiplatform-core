@@ -19,10 +19,13 @@ package androidx.wear.compose.material3
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -127,26 +130,59 @@ class ScrollIndicatorScreenshotTest {
 
     @Test
     fun position_indicator_round_with_slcAndContentPadding() {
-        val screenSizeDp = 250
-
         rule.setContentWithTheme {
-            val currentConfig = LocalConfiguration.current
-            val updatedConfig =
-                Configuration().apply {
-                    setTo(currentConfig)
-                    screenWidthDp = screenSizeDp
-                    screenHeightDp = screenSizeDp
-                    screenLayout = Configuration.SCREENLAYOUT_ROUND_YES
-                }
-            CompositionLocalProvider(LocalConfiguration provides updatedConfig) {
+            ScreenConfiguration(SCREEN_SIZE_LARGE, isRound = true) {
                 val state = rememberScalingLazyListState()
                 ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
                     state = state,
                     contentPadding = PaddingValues(100.dp),
                     autoCentering = null,
-                    modifier = Modifier.size(screenSizeDp.dp).background(Color.Black),
                 ) {
                     items(6) { Text("item $it", modifier = Modifier.height(70.dp)) }
+                }
+                ScrollIndicator(state = state, modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.waitForIdle()
+
+        rule.verifyScreenshot(testName, screenshotRule)
+    }
+
+    @Test
+    fun position_indicator_round_with_slc_reverseLayout() {
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_LARGE, isRound = true) {
+                val state = rememberScalingLazyListState()
+                ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    reverseLayout = true,
+                ) {
+                    items(20) { Text("item $it", modifier = Modifier.height(50.dp)) }
+                }
+                ScrollIndicator(state = state, modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.waitForIdle()
+
+        rule.verifyScreenshot(testName, screenshotRule)
+    }
+
+    @Test
+    fun position_indicator_round_with_lc_reverseLayout() {
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_LARGE, isRound = true) {
+                val state = rememberLazyListState()
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    reverseLayout = true,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    items(20) { Text("item $it", modifier = Modifier.height(50.dp)) }
                 }
                 ScrollIndicator(state = state, modifier = Modifier.testTag(TEST_TAG))
             }

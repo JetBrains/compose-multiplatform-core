@@ -52,7 +52,7 @@ constructor(
         get() = xEnv
 
     final override fun process(resolver: Resolver): List<KSAnnotated> {
-        xEnv.resolver = resolver // Set the resolver at the beginning of each round
+        xEnv.setResolver(resolver) // Set the resolver at the beginning of each round
         if (!initialized) {
             initialize(xEnv)
             initialized = true

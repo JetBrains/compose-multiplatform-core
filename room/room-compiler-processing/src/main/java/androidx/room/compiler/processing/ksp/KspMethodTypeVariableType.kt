@@ -23,7 +23,6 @@ import androidx.room.compiler.processing.XRawType
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.XTypeVariableType
-import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.squareup.javapoet.TypeName
 import kotlin.reflect.KClass
@@ -53,9 +52,7 @@ internal class KspMethodTypeVariableType(
 
     override val upperBounds: List<XType> = ksTypeVariable.bounds.map(env::wrap).toList()
 
-    override fun annotations(): Sequence<KSAnnotation> {
-        return ksTypeVariable.annotations
-    }
+    override val ksAnnotations by lazy { ksTypeVariable.annotations }
 
     override val rawType: XRawType by lazy {
         object : XRawType {

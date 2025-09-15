@@ -20,15 +20,15 @@ import android.content.ContentResolver
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import androidx.xr.arcore.testing.FakeLifecycleManager
+import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeRuntimeFace
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.FaceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.testing.FakeLifecycleManager
-import androidx.xr.runtime.testing.FakePerceptionManager
-import androidx.xr.runtime.testing.FakeRuntimeFace
-import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -77,13 +77,13 @@ class FaceTest {
             shadowApplication.grantPermissions(permission)
         }
 
-        FakeRuntimeFactory.hasCreatePermission = true
+        FakePerceptionRuntimeFactory.hasCreatePermission = true
 
         activityController.create()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
         session.configure(Config(faceTracking = FaceTrackingMode.USER))
-        xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
+        xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
     }
 
     @After
@@ -95,7 +95,7 @@ class FaceTest {
     @Test
     fun userFace_returnsFaceWithUpdatedTrackingStateAndBlendShapes() {
         runTest(testDispatcher) {
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager = getFakePerceptionManager()
             val userFace = Face.getUserFace(session)
             check(userFace != null)
             check(userFace.state.value.trackingState != TrackingState.TRACKING)
@@ -148,5 +148,9 @@ class FaceTest {
             .isEqualTo(expectedBlendShapeValues.size)
         assertThat(underTest.state.value.blendShapes.values.size)
             .isEqualTo(expectedBlendShapeValues.size)
+    }
+
+    private fun getFakePerceptionManager(): FakePerceptionManager {
+        return session.perceptionRuntime.perceptionManager as FakePerceptionManager
     }
 }

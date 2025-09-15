@@ -39,15 +39,21 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.test.screenshot.matchers.BitmapMatcher
 import org.junit.rules.RuleChain
 import org.junit.rules.TestName
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
-/** A [TestRule] that takes screenshots of remote composable functions using devices. */
+/**
+ * A [TestRule] that takes screenshots of remote composable functions using devices.
+ *
+ * @param matcher The algorithm to be used to perform the matching. If null, it will let
+ *   [assertAgainstGolden] use its default.
+ */
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
-class RemoteComposeScreenshotTestRule() : TestRule {
+class RemoteComposeScreenshotTestRule(private val matcher: BitmapMatcher? = null) : TestRule {
     val composeTestRule = createComposeRule()
     val testName = TestName()
     val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_REMOTE_COMPOSE)
@@ -77,20 +83,27 @@ class RemoteComposeScreenshotTestRule() : TestRule {
     fun runScreenshotTest(
         screenshotName: TestName = testName,
         size: Size = displaySize(),
+        backgroundColor: Color? = Color.Black,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
-        setContent(size = size) { content() }
+        setContent(size = size, backgroundColor = backgroundColor) { content() }
         composeTestRule.verifyScreenshot(screenshotName, screenshotRule)
     }
 
     fun runScreenshotTest(
         screenshotName: TestName = testName,
         size: Size = displaySize(),
+        backgroundColor: Color? = Color.Black,
         document: CoreDocument,
         outerContent: (@Composable (content: @Composable @RemoteComposable () -> Unit) -> Unit)? =
             null,
     ) {
-        setContent(size) {
+        val boxModifier =
+            Modifier.width(size.width.dp)
+                .height(size.height.dp)
+                .also { if (backgroundColor != null) it.background(backgroundColor) }
+                .testTag("playerRoot")
+        composeTestRule.setContent {
             val content: @Composable @RemoteComposable () -> Unit = {
                 RemoteDocumentPlayer(
                     document,
@@ -99,24 +112,29 @@ class RemoteComposeScreenshotTestRule() : TestRule {
                     debugMode = 1,
                 )
             }
-            if (outerContent != null) {
-                outerContent { content() }
-            } else {
-                content()
+            Box(modifier = boxModifier) {
+                if (outerContent != null) {
+                    outerContent { content() }
+                } else {
+                    content()
+                }
             }
         }
         composeTestRule.verifyScreenshot(screenshotName, screenshotRule)
     }
 
-    private fun setContent(size: Size, content: @Composable @RemoteComposable () -> Unit) {
+    private fun setContent(
+        size: Size,
+        backgroundColor: Color?,
+        content: @Composable @RemoteComposable () -> Unit,
+    ) {
+        val boxModifier =
+            Modifier.width(size.width.dp)
+                .height(size.height.dp)
+                .also { if (backgroundColor != null) it.background(backgroundColor) }
+                .testTag("playerRoot")
         composeTestRule.setContent {
-            Box(
-                modifier =
-                    Modifier.width(size.width.dp)
-                        .height(size.height.dp)
-                        .background(Color.Black)
-                        .testTag("playerRoot")
-            ) {
+            Box(modifier = boxModifier) {
                 val document: CoreDocument? by rememberRemoteDocument { content() }
                 document?.let {
                     RemoteDocumentPlayer(it, size.width.toInt(), size.height.toInt(), 1)
@@ -131,7 +149,11 @@ class RemoteComposeScreenshotTestRule() : TestRule {
     ) {
         val goldenScreenshotName = testName.goldenIdentifier()
         val screenshot = onRoot().captureToImage()
-        screenshot.assertAgainstGolden(screenshotRule, goldenScreenshotName)
+        if (matcher != null) {
+            screenshot.assertAgainstGolden(screenshotRule, goldenScreenshotName, matcher)
+        } else {
+            screenshot.assertAgainstGolden(screenshotRule, goldenScreenshotName)
+        }
     }
 
     /**

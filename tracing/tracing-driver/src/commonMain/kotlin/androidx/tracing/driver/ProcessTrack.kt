@@ -23,9 +23,9 @@ public open class ProcessTrack(
     /** The tracing context. */
     context: TraceContext,
     /** The process id */
-    internal val id: Int,
+    public val id: Int,
     /** The name of the process. */
-    internal val name: String,
+    public val name: String,
 ) : SliceTrack(context = context, uuid = monotonicId()) {
     internal val threads = mutableScatterMapOf<String, ThreadTrack>()
     internal val counters = mutableScatterMapOf<String, CounterTrack>()
@@ -55,21 +55,18 @@ public open class ProcessTrack(
         // Thread ids are only unique for lifetime of the thread and can be potentially reused.
         // Therefore we end up combining the `name` of the thread and its `id` as a key.
         val key = "$id/$name"
-        return threads[key]
-            ?: synchronized(threads) {
-                val track =
-                    threads.getOrPut(key) { ThreadTrack(id = id, name = name, process = this) }
-                check(track.name == name)
-                track
-            }
+        return synchronized(threads) {
+            val track = threads.getOrPut(key) { ThreadTrack(id = id, name = name, process = this) }
+            check(track.name == name)
+            track
+        }
     }
 
     /** @return A [CounterTrack] for a given [ProcessTrack] and the provided counter [name]. */
     public open fun getOrCreateCounterTrack(name: String): CounterTrack {
-        return counters[name]
-            ?: synchronized(counters) {
-                counters.getOrPut(name) { CounterTrack(name = name, parent = this) }
-            }
+        return synchronized(counters) {
+            counters.getOrPut(name) { CounterTrack(name = name, parent = this) }
+        }
     }
 }
 

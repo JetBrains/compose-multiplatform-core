@@ -17,13 +17,15 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.Earth.State.Companion.ERROR_APP_PREEMPTED
+import androidx.xr.arcore.Earth.State.Companion.RUNNING
+import androidx.xr.arcore.internal.AnchorNotAuthorizedException
+import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
+import androidx.xr.arcore.internal.AnchorUnsupportedLocationException
+import androidx.xr.arcore.internal.Earth as RuntimeEarth
+import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.internal.AnchorNotAuthorizedException
-import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
-import androidx.xr.runtime.internal.AnchorUnsupportedLocationException
-import androidx.xr.runtime.internal.Earth as RuntimeEarth
-import androidx.xr.runtime.internal.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -87,7 +89,10 @@ internal constructor(
             latitude: Double,
             longitude: Double,
         ): VpsAvailabilityResult {
-            return session.runtime.perceptionManager.checkVpsAvailability(latitude, longitude)
+            return session.perceptionRuntime.perceptionManager.checkVpsAvailability(
+                latitude,
+                longitude,
+            )
         }
     }
 

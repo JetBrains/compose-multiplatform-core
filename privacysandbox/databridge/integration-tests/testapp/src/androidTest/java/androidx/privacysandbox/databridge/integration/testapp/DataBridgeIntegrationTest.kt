@@ -16,14 +16,20 @@
 
 package androidx.privacysandbox.databridge.integration.testapp
 
+import androidx.preference.PreferenceManager
+import androidx.privacysandbox.databridge.client.SyncCallback
+import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ErrorCode
 import androidx.privacysandbox.databridge.core.Key
 import androidx.privacysandbox.databridge.integration.testutils.KeyUpdateCallbackImpl
+import androidx.privacysandbox.databridge.integration.testutils.SharedPreferenceChangeListener
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Expect
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -337,6 +343,126 @@ class DataBridgeIntegrationTest {
         val unused = callback.getValueForKey(intKey)
     }
 
+    @Test
+    fun testAddKeysForSynchronizationDataBridgeClient() = runTest {
+        var result = getActivity().getValuesFromApp(setOf(intKey, stringKey))
+        verifySuccessfulResult(result[intKey]!!, null)
+        verifySuccessfulResult(result[stringKey]!!, null)
+
+        val keyUpdateCallback = KeyUpdateCallbackImpl()
+        getActivity()
+            .registerKeyUpdateCallbackFromApp(
+                setOf(intKey, stringKey),
+                currentThreadExecutor,
+                keyUpdateCallback,
+            )
+        keyUpdateCallback.initializeLatch(listOf(intKey, stringKey))
+
+        getActivity().addKeysForSynchronization(mapOf(intKey to 1, stringKey to "stringValue"))
+
+        // Wait for the KeyUpdateCallback to receive updates
+        verifyCountAndValue(keyUpdateCallback, intKey, 1, 1)
+        verifyCountAndValue(keyUpdateCallback, stringKey, 1, "stringValue")
+
+        // Ensures values for intKey and stringKey are updated in DataBridgeClient
+        result = getActivity().getValuesFromApp(setOf(intKey, stringKey))
+        verifySuccessfulResult(result[intKey]!!, 1)
+        verifySuccessfulResult(result[stringKey]!!, "stringValue")
+
+        getActivity().unregisterKeyUpdateCallbackFromApp(keyUpdateCallback)
+    }
+
+    @Test
+    fun testAddKeysForSynchronizationSharedPreference() = runTest {
+        val sharedPreference = PreferenceManager.getDefaultSharedPreferences(getActivity())
+        sharedPreference.edit().clear().commit()
+
+        expect.that(sharedPreference.all.containsKey(intKey.name)).isFalse()
+        expect.that(sharedPreference.all.containsKey(stringKey.name)).isFalse()
+
+        val sharedPreferenceListener = SharedPreferenceChangeListener()
+        sharedPreferenceListener.initializeLatch(setOf(intKey.name, stringKey.name))
+        sharedPreference.registerOnSharedPreferenceChangeListener(sharedPreferenceListener)
+
+        getActivity().addKeysForSynchronization(mapOf(intKey to 1, stringKey to "stringValue"))
+
+        // Ensures values for intKey and stringKey are updated in SharedPreference
+        sharedPreferenceListener.getValue(intKey.name)
+        sharedPreferenceListener.getValue(stringKey.name)
+
+        expect.that(sharedPreference.all[intKey.name]).isEqualTo(1)
+        expect.that(sharedPreference.all[stringKey.name]).isEqualTo("stringValue")
+
+        sharedPreference.unregisterOnSharedPreferenceChangeListener(sharedPreferenceListener)
+        sharedPreference.edit().clear().commit()
+    }
+
+    @Test
+    fun testGetSyncedKey() = runTest {
+        getActivity().addKeysForSynchronization(mapOf(intKey to 1, stringKey to "stringValue"))
+        val syncedKeys = getActivity().getSyncedKeys()
+        expect.that(syncedKeys.size).isEqualTo(2)
+        expect.that(syncedKeys).containsExactly(intKey, stringKey)
+    }
+
+    @Test
+    fun testGetSyncedKeySameKeyAddedMultipleTimes() = runTest {
+        getActivity().addKeysForSynchronization(mapOf(intKey to 1, stringKey to "stringValue"))
+        var syncedKeys = getActivity().getSyncedKeys()
+        expect.that(syncedKeys.size).isEqualTo(2)
+        expect.that(syncedKeys).containsExactly(intKey, stringKey)
+
+        getActivity().addKeysForSynchronization(mapOf(intKey to 1))
+        syncedKeys = getActivity().getSyncedKeys()
+        expect.that(syncedKeys.size).isEqualTo(2)
+        expect.that(syncedKeys).containsExactly(intKey, stringKey)
+    }
+
+    @Test
+    fun testGetSyncedKeySameKeyAddedMultipleTimesDifferentType() = runTest {
+        getActivity().addKeysForSynchronization(mapOf(intKey to 1, stringKey to "stringValue"))
+        var syncedKeys = getActivity().getSyncedKeys()
+        expect.that(syncedKeys.size).isEqualTo(2)
+        expect.that(syncedKeys).containsExactly(intKey, stringKey)
+
+        val intKeyChangedToString = Key.createStringKey(intKey.name)
+        getActivity().addKeysForSynchronization(mapOf(intKeyChangedToString to "intValue"))
+        syncedKeys = getActivity().getSyncedKeys()
+        expect.that(syncedKeys.size).isEqualTo(2)
+        expect.that(syncedKeys).containsExactly(intKeyChangedToString, stringKey)
+    }
+
+    @Test
+    fun testAddDataSyncCallback() = runTest {
+        val syncCallback = SyncCallbackImpl()
+        getActivity().addDataSyncCallback(currentThreadExecutor, syncCallback)
+
+        syncCallback.initializeLatch(setOf(intKey))
+        getActivity().addKeysForSynchronization(mapOf(intKey to "intValue"))
+
+        val valErrorData = syncCallback.getValueDataList(intKey)
+        expect.that(valErrorData.size).isEqualTo(2)
+    }
+
+    @Test(expected = TimeoutException::class)
+    fun testRemoveDataSyncCallback() = runTest {
+        val syncCallback = SyncCallbackImpl()
+        getActivity().addDataSyncCallback(currentThreadExecutor, syncCallback)
+
+        syncCallback.initializeLatch(setOf(intKey))
+        getActivity().addKeysForSynchronization(mapOf(intKey to "intValue"))
+
+        val valErrorData = syncCallback.getValueDataList(intKey)
+        expect.that(valErrorData.size).isEqualTo(2)
+
+        getActivity().removeDataSyncCallback(syncCallback)
+        syncCallback.initializeLatch(setOf(intKey))
+        getActivity().addKeysForSynchronization(mapOf(intKey to "intValue"))
+        // This throws a TimeoutException exception because it CountDownLatch.awaits returns a
+        // boolean as the callback has been unregistered
+        val unused = syncCallback.getValueDataList(intKey)
+    }
+
     private fun verifySuccessfulResult(result: Result<Any?>, expectedVal: Any?) {
         expect.that(result.isSuccess).isTrue()
         expect.that(result.getOrNull()).isEqualTo(expectedVal)
@@ -359,5 +485,42 @@ class DataBridgeIntegrationTest {
 
     private suspend fun getActivity(): MainActivity = suspendCancellableCoroutine {
         activityScenarioRule.scenario.onActivity { activity -> it.resume(activity) }
+    }
+
+    data class ValueErrorData(
+        val value: Any?,
+        @ErrorCode val errorCode: Int,
+        val errorMessage: String,
+    )
+
+    class SyncCallbackImpl : SyncCallback {
+        private val latchMap = mutableMapOf<Key, CountDownLatch>()
+        private val keyValueErrorData = mutableMapOf<Key, MutableList<ValueErrorData>>()
+
+        override fun onSyncFailure(
+            keyValueMap: Map<Key, Any?>,
+            @ErrorCode errorCode: Int,
+            errorMessage: String,
+        ) {
+            keyValueMap.forEach { (key, value) ->
+                val keyValueErrorDataForKey = keyValueErrorData.getOrPut(key) { mutableListOf() }
+                keyValueErrorDataForKey.add(ValueErrorData(value, errorCode, errorMessage))
+                latchMap[key]?.countDown()
+            }
+        }
+
+        fun initializeLatch(keys: Set<Key>) {
+            keys.forEach { key -> latchMap[key] = CountDownLatch(2) }
+        }
+
+        fun getValueDataList(key: Key): List<ValueErrorData> {
+            val res = latchMap[key]?.await(5, TimeUnit.SECONDS)
+            res?.let {
+                if (!it) {
+                    throw TimeoutException()
+                }
+            }
+            return keyValueErrorData[key]!!.toList()
+        }
     }
 }

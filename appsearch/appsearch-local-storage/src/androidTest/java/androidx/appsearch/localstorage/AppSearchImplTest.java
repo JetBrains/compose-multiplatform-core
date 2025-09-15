@@ -11547,6 +11547,186 @@ public class AppSearchImplTest {
     }
 
     @Test
+    public void testGetAndResetNeedPersistToDisk_returnsFalseForInitializationWithoutRecovery()
+            throws Exception {
+        // Set schema
+        List<AppSearchSchema> schemas =
+                Collections.singletonList(
+                        new AppSearchSchema.Builder("Type")
+                                .addProperty(
+                                        new AppSearchSchema.StringPropertyConfig.Builder("body")
+                                                .setCardinality(
+                                                        AppSearchSchema.PropertyConfig
+                                                                .CARDINALITY_OPTIONAL)
+                                                .setIndexingType(
+                                                        AppSearchSchema.StringPropertyConfig
+                                                                .INDEXING_TYPE_NONE)
+                                                .setTokenizerType(
+                                                        AppSearchSchema.StringPropertyConfig
+                                                                .TOKENIZER_TYPE_NONE)
+                                                .build())
+                                .build());
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        schemas,
+                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // Put a document. Need persistToDisk.
+        GenericDocument document =
+                new GenericDocument.Builder<>("namespace", "id", "Type")
+                        .setPropertyString("body", "foo bar baz")
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Call persistToDisk.
+        mAppSearchImpl.persistToDisk(
+                "package",
+                BaseStats.CALL_TYPE_PUT_DOCUMENT,
+                PersistType.Code.RECOVERY_PROOF,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Re-initialize the instance again.
+        InitializeStats.Builder initStatsBuilder = new InitializeStats.Builder();
+        AppSearchImpl anotherAppSearchImpl =
+                AppSearchImpl.create(
+                        mAppSearchDir,
+                        mUnlimitedConfig,
+                        initStatsBuilder,
+                        /* callStatsBuilder= */ null,
+                        /* visibilityChecker= */ null,
+                        /* revocableFileDescriptorStore= */ null,
+                        /* icingSearchEngine= */ null,
+                        ALWAYS_OPTIMIZE);
+        // Sanity check for initStats.
+        InitializeStats initStats = initStatsBuilder.build();
+        assertThat(initStats.getNativeSchemaStoreRecoveryCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeDocumentStoreDataStatus())
+                .isEqualTo(InitializeStats.DOCUMENT_STORE_DATA_STATUS_NO_DATA_LOSS);
+        assertThat(initStats.getNativeDocumentStoreRecoveryCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeIntegerIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeQualifiedIdJoinIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeEmbeddingIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+
+        assertThat(anotherAppSearchImpl.getAndResetNeedPersistToDisk()).isFalse();
+    }
+
+    @Test
+    public void testGetAndResetNeedPersistToDisk_returnsTrueForInitializationWithRecovery()
+            throws Exception {
+        // Set schema
+        List<AppSearchSchema> schemas =
+                Collections.singletonList(
+                        new AppSearchSchema.Builder("Type")
+                                .addProperty(
+                                        new AppSearchSchema.StringPropertyConfig.Builder("body")
+                                                .setCardinality(
+                                                        AppSearchSchema.PropertyConfig
+                                                                .CARDINALITY_OPTIONAL)
+                                                .setIndexingType(
+                                                        AppSearchSchema.StringPropertyConfig
+                                                                .INDEXING_TYPE_EXACT_TERMS)
+                                                .setTokenizerType(
+                                                        AppSearchSchema.StringPropertyConfig
+                                                                .TOKENIZER_TYPE_PLAIN)
+                                                .build())
+                                .build());
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        schemas,
+                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // Put a document.
+        GenericDocument document1 =
+                new GenericDocument.Builder<>("namespace", "id1", "Type")
+                        .setPropertyString("body", "foo bar baz")
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document1,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Call persistToDisk.
+        mAppSearchImpl.persistToDisk(
+                "package",
+                BaseStats.CALL_TYPE_PUT_DOCUMENT,
+                PersistType.Code.RECOVERY_PROOF,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Put another document without calling persistToDisk.
+        GenericDocument document2 =
+                new GenericDocument.Builder<>("namespace", "id2", "Type")
+                        .setPropertyString("body", "hello world")
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document2,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Re-initialize the instance again with dirty state. Recovery should be done and
+        // needPersistToDisk should be set to true
+        InitializeStats.Builder initStatsBuilder = new InitializeStats.Builder();
+        AppSearchImpl anotherAppSearchImpl =
+                AppSearchImpl.create(
+                        mAppSearchDir,
+                        mUnlimitedConfig,
+                        initStatsBuilder,
+                        /* callStatsBuilder= */ null,
+                        /* visibilityChecker= */ null,
+                        /* revocableFileDescriptorStore= */ null,
+                        /* icingSearchEngine= */ null,
+                        ALWAYS_OPTIMIZE);
+        // Sanity check for initStats.
+        InitializeStats initStats = initStatsBuilder.build();
+        assertThat(initStats.getNativeSchemaStoreRecoveryCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_IO_ERROR);
+        assertThat(initStats.getNativeIntegerIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_IO_ERROR);
+        assertThat(initStats.getNativeQualifiedIdJoinIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_IO_ERROR);
+        assertThat(initStats.getNativeEmbeddingIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_IO_ERROR);
+
+        assertThat(anotherAppSearchImpl.getAndResetNeedPersistToDisk()).isTrue();
+    }
+
+    @Test
     public void testGetAndResetNeedPersistToDisk_returnsTrueForNewSetSchema() throws Exception {
         // Set schema
         List<AppSearchSchema> schemas = Collections.singletonList(

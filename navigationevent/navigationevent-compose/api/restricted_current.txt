@@ -21,5 +21,9 @@ package androidx.navigationevent.compose {
     method @BytecodeOnly @androidx.compose.runtime.Composable public static <T extends androidx.navigationevent.NavigationEventInfo> void NavigationEventHandler(T, T?, boolean, kotlin.jvm.functions.Function2<? super kotlinx.coroutines.flow.Flow<androidx.navigationevent.NavigationEvent!>!,? super kotlin.coroutines.Continuation<? super kotlin.Unit!>!,? extends java.lang.Object!>, androidx.compose.runtime.Composer?, int, int);
   }
 
+  public final class RememberNavigationEventStateKt {
+    method @KotlinOnly @androidx.compose.runtime.Composable public static inline <reified T extends androidx.navigationevent.NavigationEventInfo> androidx.navigationevent.NavigationEventState<T> rememberNavigationEventState(T initialInfo);
+  }
+
 }
 

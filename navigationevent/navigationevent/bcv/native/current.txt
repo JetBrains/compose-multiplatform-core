@@ -33,10 +33,14 @@ abstract class <#A: androidx.navigationevent/NavigationEventInfo> androidx.navig
 abstract class androidx.navigationevent/NavigationEventInput { // androidx.navigationevent/NavigationEventInput|null[0]
     constructor <init>() // androidx.navigationevent/NavigationEventInput.<init>|<init>(){}[0]
 
-    final fun dispatchOnCancelled() // androidx.navigationevent/NavigationEventInput.dispatchOnCancelled|dispatchOnCancelled(){}[0]
-    final fun dispatchOnCompleted() // androidx.navigationevent/NavigationEventInput.dispatchOnCompleted|dispatchOnCompleted(){}[0]
-    final fun dispatchOnProgressed(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/NavigationEventInput.dispatchOnProgressed|dispatchOnProgressed(androidx.navigationevent.NavigationEvent){}[0]
-    final fun dispatchOnStarted(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/NavigationEventInput.dispatchOnStarted|dispatchOnStarted(androidx.navigationevent.NavigationEvent){}[0]
+    final fun dispatchOnBackCancelled() // androidx.navigationevent/NavigationEventInput.dispatchOnBackCancelled|dispatchOnBackCancelled(){}[0]
+    final fun dispatchOnBackCompleted() // androidx.navigationevent/NavigationEventInput.dispatchOnBackCompleted|dispatchOnBackCompleted(){}[0]
+    final fun dispatchOnBackProgressed(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/NavigationEventInput.dispatchOnBackProgressed|dispatchOnBackProgressed(androidx.navigationevent.NavigationEvent){}[0]
+    final fun dispatchOnBackStarted(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/NavigationEventInput.dispatchOnBackStarted|dispatchOnBackStarted(androidx.navigationevent.NavigationEvent){}[0]
+    final fun dispatchOnForwardCancelled() // androidx.navigationevent/NavigationEventInput.dispatchOnForwardCancelled|dispatchOnForwardCancelled(){}[0]
+    final fun dispatchOnForwardCompleted() // androidx.navigationevent/NavigationEventInput.dispatchOnForwardCompleted|dispatchOnForwardCompleted(){}[0]
+    final fun dispatchOnForwardProgressed(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/NavigationEventInput.dispatchOnForwardProgressed|dispatchOnForwardProgressed(androidx.navigationevent.NavigationEvent){}[0]
+    final fun dispatchOnForwardStarted(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/NavigationEventInput.dispatchOnForwardStarted|dispatchOnForwardStarted(androidx.navigationevent.NavigationEvent){}[0]
     open fun onAdded(androidx.navigationevent/NavigationEventDispatcher) // androidx.navigationevent/NavigationEventInput.onAdded|onAdded(androidx.navigationevent.NavigationEventDispatcher){}[0]
     open fun onHasEnabledCallbacksChanged(kotlin/Boolean) // androidx.navigationevent/NavigationEventInput.onHasEnabledCallbacksChanged|onHasEnabledCallbacksChanged(kotlin.Boolean){}[0]
     open fun onRemoved() // androidx.navigationevent/NavigationEventInput.onRemoved|onRemoved(){}[0]
@@ -45,21 +49,25 @@ abstract class androidx.navigationevent/NavigationEventInput { // androidx.navig
 final class androidx.navigationevent/DirectNavigationEventInput : androidx.navigationevent/NavigationEventInput { // androidx.navigationevent/DirectNavigationEventInput|null[0]
     constructor <init>() // androidx.navigationevent/DirectNavigationEventInput.<init>|<init>(){}[0]
 
-    final fun cancel() // androidx.navigationevent/DirectNavigationEventInput.cancel|cancel(){}[0]
-    final fun complete() // androidx.navigationevent/DirectNavigationEventInput.complete|complete(){}[0]
-    final fun progress(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/DirectNavigationEventInput.progress|progress(androidx.navigationevent.NavigationEvent){}[0]
-    final fun start(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/DirectNavigationEventInput.start|start(androidx.navigationevent.NavigationEvent){}[0]
+    final fun backCancelled() // androidx.navigationevent/DirectNavigationEventInput.backCancelled|backCancelled(){}[0]
+    final fun backCompleted() // androidx.navigationevent/DirectNavigationEventInput.backCompleted|backCompleted(){}[0]
+    final fun backProgressed(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/DirectNavigationEventInput.backProgressed|backProgressed(androidx.navigationevent.NavigationEvent){}[0]
+    final fun backStarted(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/DirectNavigationEventInput.backStarted|backStarted(androidx.navigationevent.NavigationEvent){}[0]
+    final fun forwardCancelled() // androidx.navigationevent/DirectNavigationEventInput.forwardCancelled|forwardCancelled(){}[0]
+    final fun forwardCompleted() // androidx.navigationevent/DirectNavigationEventInput.forwardCompleted|forwardCompleted(){}[0]
+    final fun forwardProgressed(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/DirectNavigationEventInput.forwardProgressed|forwardProgressed(androidx.navigationevent.NavigationEvent){}[0]
+    final fun forwardStarted(androidx.navigationevent/NavigationEvent) // androidx.navigationevent/DirectNavigationEventInput.forwardStarted|forwardStarted(androidx.navigationevent.NavigationEvent){}[0]
 }
 
 final class androidx.navigationevent/NavigationEvent { // androidx.navigationevent/NavigationEvent|null[0]
-    constructor <init>(kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Int = ..., kotlin/Long = ...) // androidx.navigationevent/NavigationEvent.<init>|<init>(kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Int;kotlin.Long){}[0]
+    constructor <init>(kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., androidx.navigationevent/NavigationEventSwipeEdge = ..., kotlin/Long = ...) // androidx.navigationevent/NavigationEvent.<init>|<init>(kotlin.Float;kotlin.Float;kotlin.Float;androidx.navigationevent.NavigationEventSwipeEdge;kotlin.Long){}[0]
 
     final val frameTimeMillis // androidx.navigationevent/NavigationEvent.frameTimeMillis|{}frameTimeMillis[0]
         final fun <get-frameTimeMillis>(): kotlin/Long // androidx.navigationevent/NavigationEvent.frameTimeMillis.<get-frameTimeMillis>|<get-frameTimeMillis>(){}[0]
     final val progress // androidx.navigationevent/NavigationEvent.progress|{}progress[0]
         final fun <get-progress>(): kotlin/Float // androidx.navigationevent/NavigationEvent.progress.<get-progress>|<get-progress>(){}[0]
     final val swipeEdge // androidx.navigationevent/NavigationEvent.swipeEdge|{}swipeEdge[0]
-        final fun <get-swipeEdge>(): kotlin/Int // androidx.navigationevent/NavigationEvent.swipeEdge.<get-swipeEdge>|<get-swipeEdge>(){}[0]
+        final fun <get-swipeEdge>(): androidx.navigationevent/NavigationEventSwipeEdge // androidx.navigationevent/NavigationEvent.swipeEdge.<get-swipeEdge>|<get-swipeEdge>(){}[0]
     final val touchX // androidx.navigationevent/NavigationEvent.touchX|{}touchX[0]
         final fun <get-touchX>(): kotlin/Float // androidx.navigationevent/NavigationEvent.touchX.<get-touchX>|<get-touchX>(){}[0]
     final val touchY // androidx.navigationevent/NavigationEvent.touchY|{}touchY[0]
@@ -68,19 +76,6 @@ final class androidx.navigationevent/NavigationEvent { // androidx.navigationeve
     final fun equals(kotlin/Any?): kotlin/Boolean // androidx.navigationevent/NavigationEvent.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // androidx.navigationevent/NavigationEvent.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // androidx.navigationevent/NavigationEvent.toString|toString(){}[0]
-
-    open annotation class SwipeEdge : kotlin/Annotation { // androidx.navigationevent/NavigationEvent.SwipeEdge|null[0]
-        constructor <init>() // androidx.navigationevent/NavigationEvent.SwipeEdge.<init>|<init>(){}[0]
-    }
-
-    final object Companion { // androidx.navigationevent/NavigationEvent.Companion|null[0]
-        final const val EDGE_LEFT // androidx.navigationevent/NavigationEvent.Companion.EDGE_LEFT|{}EDGE_LEFT[0]
-            final fun <get-EDGE_LEFT>(): kotlin/Int // androidx.navigationevent/NavigationEvent.Companion.EDGE_LEFT.<get-EDGE_LEFT>|<get-EDGE_LEFT>(){}[0]
-        final const val EDGE_NONE // androidx.navigationevent/NavigationEvent.Companion.EDGE_NONE|{}EDGE_NONE[0]
-            final fun <get-EDGE_NONE>(): kotlin/Int // androidx.navigationevent/NavigationEvent.Companion.EDGE_NONE.<get-EDGE_NONE>|<get-EDGE_NONE>(){}[0]
-        final const val EDGE_RIGHT // androidx.navigationevent/NavigationEvent.Companion.EDGE_RIGHT|{}EDGE_RIGHT[0]
-            final fun <get-EDGE_RIGHT>(): kotlin/Int // androidx.navigationevent/NavigationEvent.Companion.EDGE_RIGHT.<get-EDGE_RIGHT>|<get-EDGE_RIGHT>(){}[0]
-    }
 }
 
 final class androidx.navigationevent/NavigationEventDispatcher { // androidx.navigationevent/NavigationEventDispatcher|null[0]
@@ -112,6 +107,21 @@ final value class androidx.navigationevent/NavigationEventPriority { // androidx
             final fun <get-Default>(): androidx.navigationevent/NavigationEventPriority // androidx.navigationevent/NavigationEventPriority.Companion.Default.<get-Default>|<get-Default>(){}[0]
         final val Overlay // androidx.navigationevent/NavigationEventPriority.Companion.Overlay|{}Overlay[0]
             final fun <get-Overlay>(): androidx.navigationevent/NavigationEventPriority // androidx.navigationevent/NavigationEventPriority.Companion.Overlay.<get-Overlay>|<get-Overlay>(){}[0]
+    }
+}
+
+final value class androidx.navigationevent/NavigationEventSwipeEdge { // androidx.navigationevent/NavigationEventSwipeEdge|null[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.navigationevent/NavigationEventSwipeEdge.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.navigationevent/NavigationEventSwipeEdge.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // androidx.navigationevent/NavigationEventSwipeEdge.toString|toString(){}[0]
+
+    final object Companion { // androidx.navigationevent/NavigationEventSwipeEdge.Companion|null[0]
+        final val Left // androidx.navigationevent/NavigationEventSwipeEdge.Companion.Left|{}Left[0]
+            final fun <get-Left>(): androidx.navigationevent/NavigationEventSwipeEdge // androidx.navigationevent/NavigationEventSwipeEdge.Companion.Left.<get-Left>|<get-Left>(){}[0]
+        final val None // androidx.navigationevent/NavigationEventSwipeEdge.Companion.None|{}None[0]
+            final fun <get-None>(): androidx.navigationevent/NavigationEventSwipeEdge // androidx.navigationevent/NavigationEventSwipeEdge.Companion.None.<get-None>|<get-None>(){}[0]
+        final val Right // androidx.navigationevent/NavigationEventSwipeEdge.Companion.Right|{}Right[0]
+            final fun <get-Right>(): androidx.navigationevent/NavigationEventSwipeEdge // androidx.navigationevent/NavigationEventSwipeEdge.Companion.Right.<get-Right>|<get-Right>(){}[0]
     }
 }
 

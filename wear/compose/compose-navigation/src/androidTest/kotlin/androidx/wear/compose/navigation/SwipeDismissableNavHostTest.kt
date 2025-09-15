@@ -148,6 +148,29 @@ class SwipeDismissableNavHostTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 36)
+    fun navigates_back_to_previous_level_with_back_button_previous_state_destroyed() {
+        lateinit var navController: NavHostController
+
+        rule.setContentWithBackPressedDispatcher {
+            navController = rememberSwipeDismissableNavController()
+            SwipeDismissWithNavigation(navController)
+        }
+        // Move to next destination.
+        rule.onNodeWithText(START).performClick()
+
+        val nextEntry = navController.getBackStackEntry(NEXT)
+
+        // Now trigger the back button
+        rule.runOnIdle { backPressedDispatcher.onBackPressed() }
+        rule.waitForIdle()
+
+        // Should now display "start".
+        rule.onNodeWithText(START).assertExists()
+        assertThat(nextEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.DESTROYED)
+    }
+
+    @Test
     fun hides_previous_level_when_not_swiping() {
         rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 

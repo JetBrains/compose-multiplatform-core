@@ -22,7 +22,6 @@ import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LocalRetainScope
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -229,7 +228,6 @@ internal fun ProvideCommonCompositionLocals(
         LocalHapticFeedback provides owner.hapticFeedBack,
         LocalInputModeManager provides owner.inputModeManager,
         LocalLayoutDirection provides owner.layoutDirection,
-        LocalRetainScope provides owner.retainScope,
         LocalTextInputService provides owner.textInputService,
         LocalSoftwareKeyboardController provides owner.softwareKeyboardController,
         LocalTextToolbar provides owner.textToolbar,

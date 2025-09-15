@@ -53,6 +53,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -70,17 +72,26 @@ import androidx.xr.compose.testapp.accessibility.AccessibilityActivity
 import androidx.xr.compose.testapp.animation.Animation
 import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
 import androidx.xr.compose.testapp.depthstacking.DepthStacking
+import androidx.xr.compose.testapp.focuschange.FSMFocusChangeActivity
+import androidx.xr.compose.testapp.focuschange.HSMFocusChangeActivity
+import androidx.xr.compose.testapp.lifecycle.LifecycleDataStore
+import androidx.xr.compose.testapp.lifecycle.OpenCloseActivity
+import androidx.xr.compose.testapp.lifecycle.ResizeActivity
+import androidx.xr.compose.testapp.lifecycle.RuntimeSessionActivity
 import androidx.xr.compose.testapp.modechange.ModeChange
 import androidx.xr.compose.testapp.movable.MovableActivity
 import androidx.xr.compose.testapp.movablescalable.MovableScalable
-import androidx.xr.compose.testapp.nestedsubspace.NestedSubspace
+import androidx.xr.compose.testapp.panelembeddedsubspace.PanelEmbeddedSubspace
 import androidx.xr.compose.testapp.panelvolume.PanelVolume
 import androidx.xr.compose.testapp.permissionsdialog.PermissionsDialog
 import androidx.xr.compose.testapp.resizablepanel.ResizablePanel
 import androidx.xr.compose.testapp.rotation.Rotation
+import androidx.xr.compose.testapp.spacemodechange.SpaceModeActivity
 import androidx.xr.compose.testapp.spatialalignmentusage.SpatialAlignmentUsageActivity
+import androidx.xr.compose.testapp.spatialarrangementusage.SpatialArrangementUsageActivity
 import androidx.xr.compose.testapp.spatialcompose.SpatialCompose
 import androidx.xr.compose.testapp.spatialelevation.SpatialElevation
+import androidx.xr.compose.testapp.spatialpanel.SpatialPanelActivity
 import androidx.xr.compose.testapp.splitengine.SplitEngine
 import androidx.xr.compose.testapp.ui.components.FpsCounterScreen
 import androidx.xr.compose.testapp.ui.components.TestCaseButton
@@ -110,7 +121,9 @@ class MainActivity : ComponentActivity() {
                         val scrollBehavior =
                             TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
                         Scaffold(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier =
+                                Modifier.fillMaxSize()
+                                    .nestedScroll(scrollBehavior.nestedScrollConnection),
                             topBar = { TopBar(scrollBehavior) },
                             bottomBar = { BottomBar() },
                         ) { innerPadding ->
@@ -139,6 +152,7 @@ class MainActivity : ComponentActivity() {
                 SCENE_UNDERSTANDING_PERMISSION,
                 HAND_TRACKING_PERMISSION,
                 READ_MEDIA_VIDEO_PERMISSION,
+                POST_NOTIFICATIONS_PERMISSION,
             )
         )
     }
@@ -147,6 +161,7 @@ class MainActivity : ComponentActivity() {
         const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
         const val SCENE_UNDERSTANDING_PERMISSION = "android.permission.SCENE_UNDERSTANDING_COARSE"
         const val READ_MEDIA_VIDEO_PERMISSION = "android.permission.READ_MEDIA_VIDEO"
+        const val POST_NOTIFICATIONS_PERMISSION = "android.permission.POST_NOTIFICATIONS"
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -228,6 +243,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun TestCases() {
+        val context = LocalContext.current
 
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -295,8 +311,8 @@ class MainActivity : ComponentActivity() {
                     ) {
                         startTest<DepthStacking>()
                     }
-                    TestCaseColumnRowItem(getString(R.string.nested_subspace_test_case)) {
-                        startTest<NestedSubspace>()
+                    TestCaseColumnRowItem(getString(R.string.panel_embedded_subspace_test_case)) {
+                        startTest<PanelEmbeddedSubspace>()
                     }
                     TestCaseColumnRowItem(getString(R.string.panel_volume_test_case)) {
                         startTest<PanelVolume>()
@@ -306,6 +322,33 @@ class MainActivity : ComponentActivity() {
                     }
                     TestCaseColumnRowItem(getString(R.string.spatial_alignment_usage_test_case)) {
                         startTest<SpatialAlignmentUsageActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.spatial_arrangement_usage_test_case)) {
+                        startTest<SpatialArrangementUsageActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.space_mode_change_test)) {
+                        startTest<SpaceModeActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.spatial_panel_test)) {
+                        startTest<SpatialPanelActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.hsm_focus_change_test)) {
+                        startTest<HSMFocusChangeActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.fsm_focus_change_test)) {
+                        startTest<FSMFocusChangeActivity>()
+                    }
+                    TestCaseBlankRow("THE FOLLOWING ARE LIFECYCLE TESTS")
+                    TestCaseColumnRowItem(getString(R.string.lifecycle_open_close_test)) {
+                        LifecycleDataStore.clearAllData(context)
+                        startTest<OpenCloseActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.lifecycle_resize_test)) {
+                        LifecycleDataStore.clearAllData(context)
+                        startTest<ResizeActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.lifecycle_runtime_session_test)) {
+                        startTest<RuntimeSessionActivity>()
                     }
                 }
             }

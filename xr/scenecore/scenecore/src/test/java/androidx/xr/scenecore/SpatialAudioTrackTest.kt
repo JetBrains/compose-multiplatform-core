@@ -18,16 +18,16 @@ package androidx.xr.scenecore
 
 import android.media.AudioTrack
 import androidx.activity.ComponentActivity
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.AudioTrackExtensionsWrapper as RtAudioTrackExtensionsWrapper
-import androidx.xr.runtime.internal.Entity as RtEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
-import androidx.xr.runtime.internal.SoundFieldAttributes as RtSoundFieldAttributes
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.internal.SpatializerConstants as RtSpatializerConstants
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper as RtAudioTrackExtensionsWrapper
+import androidx.xr.scenecore.internal.Entity as RtEntity
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.internal.SoundFieldAttributes as RtSoundFieldAttributes
+import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.internal.SpatializerConstants as RtSpatializerConstants
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -46,8 +46,9 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SpatialAudioTrackTest {
 
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private var mockRuntime: JxrPlatformAdapter = mock()
+    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
+    private var mockPlatformAdapter: JxrPlatformAdapter = mock()
+
     private var mockRtAudioTrackExtensions: RtAudioTrackExtensionsWrapper = mock()
 
     private val mockGroupEntity = mock<RtEntity>()
@@ -59,7 +60,7 @@ class SpatialAudioTrackTest {
 
     @Before
     fun setUp() {
-        mockRuntime.stub {
+        mockPlatformAdapter.stub {
             on { spatialEnvironment } doReturn mock()
             on { activitySpace } doReturn mockActivitySpace
             on { activitySpaceRootImpl } doReturn mockActivitySpace
@@ -71,8 +72,17 @@ class SpatialAudioTrackTest {
         }
 
         mockRtAudioTrackExtensions = mock()
-        whenever(mockRuntime.audioTrackExtensionsWrapper).thenReturn(mockRtAudioTrackExtensions)
-        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
+        whenever(mockPlatformAdapter.audioTrackExtensionsWrapper)
+            .thenReturn(mockRtAudioTrackExtensions)
+        session =
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        fakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockPlatformAdapter,
+                    ),
+            )
     }
 
     @Test
@@ -180,7 +190,7 @@ class SpatialAudioTrackTest {
         val entity = GroupEntity.create(session, "test")
 
         val temp: BaseEntity<*> = entity as BaseEntity<*>
-        val rtEntity = temp.rtEntity
+        val rtEntity = temp.rtEntity!!
         val rtPointSourceParams = RtPointSourceParams(rtEntity)
 
         whenever(mockRtAudioTrackExtensions.getPointSourceParams(eq(audioTrack)))

@@ -43,6 +43,7 @@ import androidx.annotation.RestrictTo
  */
 // False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
 @Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+@DelicateTracingApi
 public class TraceEvent
 internal constructor(
     /**

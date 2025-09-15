@@ -415,6 +415,14 @@ public class SandboxedPdfDocument(
         return AnnotationResult(listOf(), listOf())
     }
 
+    override fun <T : PdfEdit> addPdfEditEntry(entry: PdfEditEntry<T>) {
+        when (entry) {
+            is PdfAnnotationData -> annotationsManager.addAnnotationById(entry.id, entry.annotation)
+            else ->
+                throw UnsupportedOperationException("Unsupported edit type: ${entry.edit::class}")
+        }
+    }
+
     override fun addEdit(edit: PdfEdit): EditId {
         return when (edit) {
             is PdfAnnotation -> annotationsManager.addAnnotation(edit)
@@ -422,15 +430,17 @@ public class SandboxedPdfDocument(
         }
     }
 
-    override fun removeEdit(editId: EditId) {
-        annotationsManager.removeAnnotation(editId)
-    }
+    override fun removeEdit(editId: EditId): PdfEdit = annotationsManager.removeAnnotation(editId)
 
-    override fun updateEdit(editId: EditId, edit: PdfEdit) {
-        when (edit) {
+    override fun updateEdit(editId: EditId, edit: PdfEdit): PdfEdit {
+        return when (edit) {
             is PdfAnnotation -> annotationsManager.updateAnnotation(editId, edit)
             else -> throw UnsupportedOperationException("Unsupported edit type: ${edit::class}")
         }
+    }
+
+    override fun clearUncommittedEdits() {
+        return annotationsManager.clearUncommittedEdits()
     }
 
     // TODO: b/438309514 - Remove GetAnnotationsFromDraftState from SandboxPdfDocument

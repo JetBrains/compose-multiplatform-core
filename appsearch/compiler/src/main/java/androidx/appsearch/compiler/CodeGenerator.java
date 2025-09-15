@@ -20,21 +20,20 @@ import static androidx.appsearch.compiler.IntrospectionHelper.DOCUMENT_CLASS_FAC
 import static androidx.appsearch.compiler.IntrospectionHelper.RESTRICT_TO_ANNOTATION_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.RESTRICT_TO_SCOPE_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.getDocumentClassFactoryForClass;
+import static androidx.room.compiler.codegen.XTypeNameKt.toJavaPoet;
 import static androidx.room.compiler.processing.compat.XConverters.toJavac;
 
+import androidx.room.compiler.codegen.XClassName;
 import androidx.room.compiler.processing.XProcessingEnv;
 
 import com.google.auto.common.GeneratedAnnotationSpecs;
 import com.squareup.javapoet.AnnotationSpec;
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import org.jspecify.annotations.NonNull;
-
-import java.io.IOException;
 
 import javax.lang.model.element.Modifier;
 
@@ -64,7 +63,7 @@ class CodeGenerator {
         mOutputPackage = mModel.getClassElement().getPackageName();
     }
 
-    public JavaFile createJavaFile() throws IOException, ProcessingException {
+    public JavaFile createJavaFile() throws XProcessingException {
         TypeSpec outputClass = createClass();
         return JavaFile.builder(mOutputPackage, outputClass).build();
     }
@@ -79,18 +78,18 @@ class CodeGenerator {
      * For an inner class Foo.Bar annotated with @Document, we will generated a
      * $$__AppSearch__Foo$$__Bar.class under the output package.
      */
-    private TypeSpec createClass() throws ProcessingException {
+    private TypeSpec createClass() throws XProcessingException {
         // Gets the full name of target class.
         String qualifiedName = mModel.getQualifiedDocumentClassName();
         String className = qualifiedName.substring(mOutputPackage.length() + 1);
-        ClassName genClassName = getDocumentClassFactoryForClass(mOutputPackage, className);
+        XClassName genClassName = getDocumentClassFactoryForClass(mOutputPackage, className);
 
         TypeName genClassType = mModel.getClassElement().getType().getTypeName();
         TypeName factoryType =
                 ParameterizedTypeName.get(DOCUMENT_CLASS_FACTORY_CLASS, genClassType);
 
         TypeSpec.Builder genClass = TypeSpec
-                .classBuilder(genClassName)
+                .classBuilder(toJavaPoet(genClassName))
                 .addOriginatingElement(toJavac(mModel.getClassElement()))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addSuperinterface(factoryType);
@@ -111,8 +110,8 @@ class CodeGenerator {
         }
 
         SchemaCodeGenerator.generate(mEnv, mModel, genClass);
-        ToGenericDocumentCodeGenerator.generate(toJavac(mEnv), mModel, genClass);
-        FromGenericDocumentCodeGenerator.generate(toJavac(mEnv), mModel, genClass);
+        ToGenericDocumentCodeGenerator.generate(mEnv, mModel, genClass);
+        FromGenericDocumentCodeGenerator.generate(mEnv, mModel, genClass);
         return genClass.build();
     }
 }

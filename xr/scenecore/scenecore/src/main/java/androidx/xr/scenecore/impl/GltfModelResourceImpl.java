@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
-import androidx.xr.runtime.internal.GltfModelResource;
+import androidx.xr.scenecore.internal.GltfModelResource;
 
 /**
  * Implementation of a SceneCore GltfModelResource.

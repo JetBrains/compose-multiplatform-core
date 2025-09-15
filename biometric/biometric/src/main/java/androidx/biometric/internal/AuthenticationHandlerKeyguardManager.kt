@@ -17,7 +17,6 @@
 package androidx.biometric.internal
 
 import android.app.Activity
-import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -25,7 +24,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.DoNotInline
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.biometric.BiometricPrompt
@@ -253,6 +251,7 @@ public class ConfirmCredentialCallerFragment : Fragment() {
     }
 }
 
+@Suppress("deprecation")
 private fun Context.getConfirmCredentialIntent(viewModelStoreOwner: ViewModelStoreOwner): Intent? {
     val viewModel: BiometricViewModel =
         ViewModelProvider(viewModelStoreOwner)[BiometricViewModel::class.java]
@@ -274,11 +273,7 @@ private fun Context.getConfirmCredentialIntent(viewModelStoreOwner: ViewModelSto
     val credentialDescription = subtitle ?: description
 
     val credentialIntent =
-        Api21ImplForKM.createConfirmDeviceCredentialIntent(
-            keyguardManager,
-            title,
-            credentialDescription,
-        )
+        keyguardManager.createConfirmDeviceCredentialIntent(title, credentialDescription)
 
     // A null intent from KeyguardManager means that the device is not secure.
     if (credentialIntent == null) {
@@ -355,25 +350,4 @@ private fun Fragment.getViewModel(hostedInActivity: Boolean): BiometricViewModel
     }
     checkNotNull(owner) { "view model not found" }
     return ViewModelProvider(owner)[BiometricViewModel::class.java]
-}
-
-/** Nested class to avoid verification errors for methods introduced in Android 5.0 (API 21). */
-private object Api21ImplForKM {
-    /**
-     * Calls [KeyguardManager.createConfirmDeviceCredentialIntent] for the given keyguard manager.
-     *
-     * @param keyguardManager An instance of [KeyguardManager].
-     * @param title The title for the confirm device credential activity.
-     * @param description The description for the confirm device credential activity.
-     * @return An intent that can be used to launch the confirm device credential activity.
-     */
-    @Suppress("deprecation")
-    @DoNotInline
-    fun createConfirmDeviceCredentialIntent(
-        keyguardManager: KeyguardManager,
-        title: CharSequence?,
-        description: CharSequence?,
-    ): Intent? {
-        return keyguardManager.createConfirmDeviceCredentialIntent(title, description)
-    }
 }

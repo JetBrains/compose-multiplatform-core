@@ -20,7 +20,7 @@ import androidx.build.AndroidXPlaygroundRootImplPlugin
 import androidx.build.BundleInsideHelper
 import androidx.build.ProjectLayoutType
 import androidx.build.addToBuildOnServer
-import androidx.build.getDistributionDirectoryProperty
+import androidx.build.getDistributionDirectory
 import androidx.build.getPrebuiltsRoot
 import androidx.build.getSupportRootFolder
 import androidx.build.gitclient.getHeadShaProvider
@@ -314,7 +314,7 @@ private fun getGitRemoteUrl(dir: File, supportRootDir: File): String {
 private fun Project.getSbomPublishDir(): Provider<Directory> {
     val groupPath = group.toString().replace(".", "/")
     val fullPath = "sboms/$groupPath/$name/$version"
-    return getDistributionDirectoryProperty().dir(fullPath)
+    return getDistributionDirectory().dir(fullPath)
 }
 
 private const val MAVEN_CENTRAL_REPO_URL = "https://repo.maven.apache.org/maven2"

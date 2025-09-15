@@ -25,7 +25,7 @@ import androidx.build.checkapi.getBcvFileDirectory
 import androidx.build.checkapi.getBuiltBcvFileDirectory
 import androidx.build.checkapi.getRequiredCompatibilityApiFileFromDir
 import androidx.build.checkapi.shouldWriteVersionedApiFile
-import androidx.build.getDistributionDirectoryProperty
+import androidx.build.getDistributionDirectory
 import androidx.build.getLibraryByName
 import androidx.build.getSupportRootFolder
 import androidx.build.isWriteVersionedApiFilesEnabled
@@ -169,7 +169,7 @@ class BinaryCompatibilityValidation(
                 project.projectDir.path.removePrefix(project.getSupportRootFolder().path + "/")
 
             it.debugOutFile.set(
-                project.getDistributionDirectoryProperty().map { outDir ->
+                project.getDistributionDirectory().map { outDir ->
                     // e.g. out/bcv/foo/bar/bar
                     outDir.dir("bcv").dir(projectDirPath).file("actual_current.txt")
                 }

@@ -20,9 +20,9 @@ package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.ResizeEventListener as RtResizeEventListener
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.ResizeEventListener as RtResizeEventListener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 import java.util.function.Consumer
@@ -107,11 +107,10 @@ private constructor(
         }
 
     /**
-     * Whether the content of the [Entity], and all child Entities, should be automatically hidden
+     * Whether the content of the [Entity], and all child Entities, will be automatically hidden
      * while it is being resized.
      */
-    @get:JvmName("shouldAutoHideContent")
-    public var shouldAutoHideContent: Boolean = true
+    public var isAutoHideContentWhileResizingEnabled: Boolean = true
         set(value) {
             if (field != value) {
                 field = value
@@ -134,12 +133,11 @@ private constructor(
         }
 
     /**
-     * Whether a resize overlay should be shown even if the entity is not being resized.
+     * Whether a resize overlay will be shown even if the entity is not being resized.
      *
      * This is useful for resizing multiple panels at once.
      */
-    @get:JvmName("shouldAlwaysShowOverlay")
-    public var shouldAlwaysShowOverlay: Boolean = false
+    public var isAlwaysShowOverlayEnabled: Boolean = false
         set(value) {
             if (field != value) {
                 field = value
@@ -164,7 +162,7 @@ private constructor(
             return false
         }
         this.entity = entity
-        val attached = (entity as BaseEntity<*>).rtEntity.addComponent(rtResizableComponent)
+        val attached = (entity as BaseEntity<*>).rtEntity!!.addComponent(rtResizableComponent)
         if (!attached) {
             return false
         }
@@ -174,7 +172,7 @@ private constructor(
     }
 
     override fun onDetach(entity: Entity) {
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtResizableComponent)
+        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtResizableComponent)
         this.entity = null
     }
 

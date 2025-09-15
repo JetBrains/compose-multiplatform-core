@@ -20,20 +20,20 @@ import android.app.Activity;
 import android.util.Log;
 
 import androidx.concurrent.futures.ResolvableFuture;
-import androidx.xr.runtime.internal.ActivityPose;
-import androidx.xr.runtime.internal.ActivitySpace;
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SpaceValue;
-import androidx.xr.runtime.internal.SpatialModeChangeListener;
 import androidx.xr.runtime.math.BoundingBox;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.internal.ActivityPose;
+import androidx.xr.scenecore.internal.ActivitySpace;
+import androidx.xr.scenecore.internal.Dimensions;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.internal.SpaceValue;
+import androidx.xr.scenecore.internal.SpatialModeChangeListener;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Box3;
@@ -78,6 +78,7 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     private SpatialModeChangeListener mSpatialModeChangeListener;
     private final AtomicReference<BoundingBox> mCachedRecommendedContentBox =
             new AtomicReference<>(null);
+
     @SuppressWarnings("HidingField") // super class AndroidXrEntity has mEntityManager
     private final EntityManager mEntityManager;
 

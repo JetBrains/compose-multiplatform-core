@@ -19,19 +19,19 @@ package androidx.xr.arcore
 import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.internal.AnchorNotAuthorizedException
+import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
+import androidx.xr.arcore.internal.AnchorUnsupportedLocationException
+import androidx.xr.arcore.internal.Earth as RuntimeEarth
+import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
+import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakeRuntimeEarth
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.internal.AnchorNotAuthorizedException
-import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
-import androidx.xr.runtime.internal.AnchorUnsupportedLocationException
-import androidx.xr.runtime.internal.Earth as RuntimeEarth
-import androidx.xr.runtime.internal.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakePerceptionManager
-import androidx.xr.runtime.testing.FakeRuntimeEarth
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.CoroutineDispatcher
@@ -87,7 +87,7 @@ class EarthTest {
             scenario.onActivity { activity ->
                 session =
                     (Session.create(activity, coroutineDispatcher) as SessionCreateSuccess).session
-                xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
+                xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
 
                 testBody()
             }
@@ -203,7 +203,7 @@ class EarthTest {
     @Test
     fun createAnchor_success_returnsSuccessResultWithAnchor() = createTestSessionAndRunTest {
         val underTest = Earth(runtimeEarth, xrResourcesManager)
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val fakeAnchor = fakePerceptionManager.createAnchor(Pose.Identity)
         runtimeEarth.nextAnchor = fakeAnchor
 
@@ -251,8 +251,7 @@ class EarthTest {
         createTestSessionAndRunTest {
             doBlocking {
                 val underTest = Earth(runtimeEarth, xrResourcesManager)
-                val fakePerceptionManager =
-                    session.runtime.perceptionManager as FakePerceptionManager
+                val fakePerceptionManager = getFakePerceptionManager()
                 val fakeAnchor = fakePerceptionManager.createAnchor(Pose.Identity)
                 runtimeEarth.nextAnchor = fakeAnchor
 
@@ -355,5 +354,9 @@ class EarthTest {
                 Earth.Surface.TERRAIN,
             )
         }
+    }
+
+    private fun getFakePerceptionManager(): FakePerceptionManager {
+        return session.perceptionRuntime.perceptionManager as FakePerceptionManager
     }
 }

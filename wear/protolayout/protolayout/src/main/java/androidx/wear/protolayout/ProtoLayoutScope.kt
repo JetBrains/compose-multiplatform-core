@@ -112,7 +112,7 @@ public class ProtoLayoutScope() {
     public fun collectPendingIntents(): Bundle = pendingIntents.clone() as Bundle
 
     /**
-     * Clears all collected mappings from the scope, such as mappings for resources and pending
+     * Clears all collected mappings from the scope, including mappings for resources and pending
      * intents.
      *
      * This should only be used by the system, otherwise tile can have unexpected behaviour, such as

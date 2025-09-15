@@ -19,19 +19,20 @@
 package androidx.xr.arcore.playservices
 
 import android.annotation.SuppressLint
-import androidx.xr.runtime.internal.Trackable
+import androidx.xr.arcore.internal.Trackable
 import com.google.ar.core.Trackable as ArCoreTrackable
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Object that holds shared resources that are used in the ARCore runtime implementation.
  *
- * Currently, the only resource is a map of [ArCoreTrackable] to [Trackable]. This map is used to
- * find the corresponding [Trackable] for a given [ArCoreTrackable].
+ * Currently, the only resource is a map of [ArCoreTrackable] to
+ * [androidx.xr.arcore.internal.Trackable]. This map is used to find the corresponding
+ * [androidx.xr.arcore.internal.Trackable] for a given [ArCoreTrackable].
  */
 internal class XrResources() {
 
-    /** Map of [ArCoreTrackable] to [Trackable]. */
+    /** Map of [ArCoreTrackable] to [androidx.xr.arcore.internal.Trackable]. */
     @SuppressLint("BanConcurrentHashMap")
     private val _trackables = ConcurrentHashMap<ArCoreTrackable, Trackable>()
     internal val trackables: Map<ArCoreTrackable, Trackable> = _trackables
@@ -39,23 +40,25 @@ internal class XrResources() {
     internal val arDevice: ArCoreDevice = ArCoreDevice()
 
     /**
-     * Adds a [Trackable] to the map.
+     * Adds a [androidx.xr.arcore.internal.Trackable] to the map.
      *
-     * This method checks if the map already contains a [Trackable] for the given [ArCoreTrackable].
-     * If it does, it does nothing. Otherwise, it adds the [Trackable] to the map.
+     * This method checks if the map already contains a [androidx.xr.arcore.internal.Trackable] for
+     * the given [ArCoreTrackable]. If it does, it does nothing. Otherwise, it adds the
+     * [androidx.xr.arcore.internal.Trackable] to the map.
      *
      * @param arCoreTrackable The [ArCoreTrackable] to add.
-     * @param trackable The [Trackable] to add.
+     * @param trackable The [androidx.xr.arcore.internal.Trackable] to add.
      */
     internal fun addTrackable(arCoreTrackable: ArCoreTrackable, trackable: Trackable) {
         _trackables.putIfAbsent(arCoreTrackable, trackable)
     }
 
     /**
-     * Removes a [Trackable] from the map.
+     * Removes a [androidx.xr.arcore.internal.Trackable] from the map.
      *
      * This method checks if the map contains an [ArCoreTrackable]. If it does, it removes the
-     * corresponding [Trackable] from the map. Otherwise, it does nothing.
+     * corresponding [androidx.xr.arcore.internal.Trackable] from the map. Otherwise, it does
+     * nothing.
      *
      * @param arCoreTrackable The [ArCoreTrackable] to remove.
      */

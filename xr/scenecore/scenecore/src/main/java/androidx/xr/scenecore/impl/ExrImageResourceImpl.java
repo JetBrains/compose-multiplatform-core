@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
-import androidx.xr.runtime.internal.ExrImageResource;
+import androidx.xr.scenecore.internal.ExrImageResource;
 
 /**
  * Implementation of a SceneCore ExrImageResource for the Split Engine.

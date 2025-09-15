@@ -16,12 +16,12 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,9 +34,9 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class LaunchUtilsTest {
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val activityController = Robolectric.buildActivity(Activity::class.java)
-    private val activity: Activity = activityController.create().start().get()
+    private val fakeRuntimeFactory = FakePerceptionRuntimeFactory()
+    private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
+    private val activity: ComponentActivity = activityController.create().start().get()
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
     private lateinit var session: Session
 
@@ -50,7 +50,11 @@ class LaunchUtilsTest {
         whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
         whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
         whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
-        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+        session =
+            Session(
+                activity,
+                runtimes = listOf(fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter),
+            )
     }
 
     @Test

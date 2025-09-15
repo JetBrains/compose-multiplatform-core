@@ -19,7 +19,7 @@ package androidx.xr.scenecore.impl.impress;
 import android.util.Log;
 
 import androidx.annotation.RestrictTo;
-import androidx.xr.runtime.internal.MaterialResource;
+import androidx.xr.scenecore.internal.MaterialResource;
 
 import org.jspecify.annotations.NonNull;
 

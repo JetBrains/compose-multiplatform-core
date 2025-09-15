@@ -1138,7 +1138,8 @@ public final class ResourceBuilders {
         }
 
         /** Get the protocol buffer representation of this object. */
-        abstract ResourceProto.@NonNull LottieProperty toLottiePropertyProto();
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public abstract ResourceProto.@NonNull LottieProperty toLottiePropertyProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         abstract @Nullable Fingerprint getFingerprint();

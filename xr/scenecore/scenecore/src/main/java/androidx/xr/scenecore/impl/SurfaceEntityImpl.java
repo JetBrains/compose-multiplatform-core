@@ -20,17 +20,17 @@ import android.content.Context;
 import android.util.Log;
 import android.view.Surface;
 
-import androidx.xr.runtime.internal.CameraViewActivityPose;
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.PerceivedResolutionResult;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SurfaceEntity;
-import androidx.xr.runtime.internal.SurfaceEntity.Shape;
-import androidx.xr.runtime.internal.TextureResource;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.Texture;
+import androidx.xr.scenecore.internal.CameraViewActivityPose;
+import androidx.xr.scenecore.internal.Dimensions;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.PerceivedResolutionResult;
+import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.internal.SurfaceEntity;
+import androidx.xr.scenecore.internal.SurfaceEntity.Shape;
+import androidx.xr.scenecore.internal.TextureResource;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeTransaction;
@@ -57,8 +57,7 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     private final int mSubspaceImpressNode;
     @StereoMode private int mStereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE;
 
-    @SurfaceProtection
-    private int mSurfaceProtection = SurfaceEntity.SurfaceProtection.NONE;
+    @SurfaceProtection private int mSurfaceProtection = SurfaceEntity.SurfaceProtection.NONE;
 
     @SuperSampling private int mSuperSampling = SurfaceEntity.SuperSampling.DEFAULT;
 
@@ -74,8 +73,7 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     private SubspaceNode mSubspace = null;
 
     // Converts SurfaceEntity's SurfaceProtection to an Impress ContentSecurityLevel.
-    private static int toImpressContentSecurityLevel(
-            @SurfaceProtection int surfaceProtection) {
+    private static int toImpressContentSecurityLevel(@SurfaceProtection int surfaceProtection) {
         switch (surfaceProtection) {
             case SurfaceProtection.NONE:
                 return ImpressApi.ContentSecurityLevel.NONE;

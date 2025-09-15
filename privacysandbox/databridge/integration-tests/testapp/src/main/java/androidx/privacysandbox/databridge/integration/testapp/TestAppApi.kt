@@ -19,6 +19,8 @@ package androidx.privacysandbox.databridge.integration.testapp
 import android.content.Context
 import android.os.Bundle
 import androidx.privacysandbox.databridge.client.DataBridgeClient
+import androidx.privacysandbox.databridge.client.DataSynchronizationManager
+import androidx.privacysandbox.databridge.client.SyncCallback
 import androidx.privacysandbox.databridge.core.Key
 import androidx.privacysandbox.databridge.core.KeyUpdateCallback
 import androidx.privacysandbox.databridge.integration.testsdk.TestSdk
@@ -33,6 +35,7 @@ class TestAppApi(appContext: Context) {
 
     private val sdkSandboxManager = SdkSandboxManagerCompat.from(appContext)
     private val dataBridgeClient = DataBridgeClient.getInstance(appContext)
+    private val dataSynchronizationManager = DataSynchronizationManager.getInstance(appContext)
     internal var sdk: TestSdk? = null
 
     suspend fun loadTestSdk() {
@@ -61,5 +64,21 @@ class TestAppApi(appContext: Context) {
 
     fun unregisterKeyUpdateCallback(callback: KeyUpdateCallback) {
         dataBridgeClient.unregisterKeyUpdateCallback(callback)
+    }
+
+    fun addKeysForSynchronization(keyValueMap: Map<Key, Any?>) {
+        dataSynchronizationManager.addKeys(keyValueMap)
+    }
+
+    fun getSyncedKeys(): Set<Key> {
+        return dataSynchronizationManager.getKeys()
+    }
+
+    fun addDataSyncCallback(executor: Executor, syncCallback: SyncCallback) {
+        dataSynchronizationManager.addSyncCallback(executor, syncCallback)
+    }
+
+    fun removeDataSyncCallback(syncCallback: SyncCallback) {
+        dataSynchronizationManager.removeSyncCallback(syncCallback)
     }
 }

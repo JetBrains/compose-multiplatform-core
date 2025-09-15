@@ -301,6 +301,25 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     }
 
     @Test
+    fun renderFullscreenContentOnTopOfList_hasNoBackwardScrolling() {
+        val result = strategy.measure(listOf(screenHeight, screenHeight, screenHeight))
+
+        assertThat(result.canScrollForward).isTrue()
+        assertThat(result.canScrollBackward).isFalse()
+        assertThat(result.visibleItems.size).isEqualTo(1)
+    }
+
+    @Test
+    fun renderFullscreenContentOnBottomOfList_hasNoForwardScrolling() {
+        val result =
+            strategy.measure(listOf(screenHeight, screenHeight, screenHeight), anchorItemIndex = 2)
+
+        assertThat(result.canScrollForward).isFalse()
+        assertThat(result.canScrollBackward).isTrue()
+        assertThat(result.visibleItems.size).isEqualTo(1)
+    }
+
+    @Test
     fun dynamicHeightItems_measuredWithCorrectOffsets() {
         val result =
             strategy.measure(

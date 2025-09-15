@@ -249,7 +249,7 @@ interface XProcessingEnv {
             config: XProcessingEnvConfig = XProcessingEnvConfig.DEFAULT,
         ): XProcessingEnv =
             KspProcessingEnv(delegate = symbolProcessorEnvironment, config = config).also {
-                it.resolver = resolver
+                it.setResolver(resolver)
             }
     }
 

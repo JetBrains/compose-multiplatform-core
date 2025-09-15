@@ -20,7 +20,6 @@ import androidx.room.compiler.processing.XElement
 import androidx.room.compiler.processing.XMemberContainer
 import androidx.room.compiler.processing.XPackageElement
 import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.symbol.KSAnnotation
 import java.lang.UnsupportedOperationException
 
 // This is not a KspElement as we don't have a backing model in KSP.
@@ -41,6 +40,7 @@ internal class KspPackageElement(env: KspProcessingEnv, private val packageName:
     override fun validate(): Boolean = true
 
     override val enclosingElement: XElement? = null
+
     override val closestMemberContainer: XMemberContainer
         get() =
             throw UnsupportedOperationException(
@@ -49,7 +49,5 @@ internal class KspPackageElement(env: KspProcessingEnv, private val packageName:
             )
 
     @OptIn(KspExperimental::class)
-    override fun annotations(): Sequence<KSAnnotation> {
-        return env.resolver.getPackageAnnotations(qualifiedName)
-    }
+    override val ksAnnotations by lazy { env.resolver.getPackageAnnotations(qualifiedName) }
 }

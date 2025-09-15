@@ -70,8 +70,9 @@ final class OpenXrActivityPoseHelper {
         // Apply the inverse of the ActivitySpace scale to the OpenXR pose.
         final Pose scaledOpenXrToPose =
                 new Pose(
-                        openXrToPose.getTranslation()
-                        .scale(mActivitySpace.getWorldSpaceScale().inverse()),
+                        openXrToPose
+                                .getTranslation()
+                                .scale(mActivitySpace.getWorldSpaceScale().inverse()),
                         openXrToPose.getRotation());
         return scaledActivitySpacetoOpenXr.compose(scaledOpenXrToPose);
     }

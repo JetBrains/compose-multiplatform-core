@@ -734,7 +734,7 @@ package androidx.wear.protolayout {
   }
 
   public static final class LayoutElementBuilders.Image.Builder {
-    ctor public LayoutElementBuilders.Image.Builder();
+    ctor @Deprecated public LayoutElementBuilders.Image.Builder();
     ctor public LayoutElementBuilders.Image.Builder(androidx.wear.protolayout.ProtoLayoutScope);
     method public androidx.wear.protolayout.LayoutElementBuilders.Image build();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setColorFilter(androidx.wear.protolayout.LayoutElementBuilders.ColorFilter);
@@ -744,8 +744,8 @@ package androidx.wear.protolayout {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setImageResource(androidx.wear.protolayout.ResourceBuilders.ImageResource);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setImageResource(androidx.wear.protolayout.ResourceBuilders.ImageResource, String);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setModifiers(androidx.wear.protolayout.ModifiersBuilders.Modifiers);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setResourceId(androidx.wear.protolayout.TypeBuilders.StringProp);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setResourceId(String);
+    method @Deprecated @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setResourceId(androidx.wear.protolayout.TypeBuilders.StringProp);
+    method @Deprecated @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setResourceId(String);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.Image.Builder setWidth(androidx.wear.protolayout.DimensionBuilders.ImageDimension);
   }
 
@@ -1556,6 +1556,16 @@ package androidx.wear.protolayout {
 
 package androidx.wear.protolayout.layout {
 
+  public final class ImageKt {
+    method public static androidx.wear.protolayout.ResourceBuilders.AndroidImageResourceByResId androidImageResource(@DrawableRes int resourceId);
+    method public static androidx.wear.protolayout.LayoutElementBuilders.Image basicImage(androidx.wear.protolayout.ProtoLayoutScope, androidx.wear.protolayout.ResourceBuilders.ImageResource resource, androidx.wear.protolayout.DimensionBuilders.ImageDimension width, androidx.wear.protolayout.DimensionBuilders.ImageDimension height, optional String? protoLayoutResourceId, optional androidx.wear.protolayout.modifiers.LayoutModifier? modifier, optional int contentScaleMode, optional androidx.wear.protolayout.types.LayoutColor? tintColor);
+    method public static androidx.wear.protolayout.ResourceBuilders.ImageResource imageResource(optional androidx.wear.protolayout.ResourceBuilders.AndroidImageResourceByResId? androidImage, optional androidx.wear.protolayout.ResourceBuilders.InlineImageResource? inlineImage, optional androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId? lottie);
+    method public static androidx.wear.protolayout.ResourceBuilders.InlineImageResource inlineImageResource(byte[] compressedBytes, @Dimension(unit=androidx.annotation.Dimension.Companion.PX) int widthPx, @Dimension(unit=androidx.annotation.Dimension.Companion.PX) int heightPx);
+    method public static androidx.wear.protolayout.ResourceBuilders.InlineImageResource inlineImageResource(byte[] pixelBuffer, int format, @Dimension(unit=androidx.annotation.Dimension.Companion.PX) int widthPx, @Dimension(unit=androidx.annotation.Dimension.Companion.PX) int heightPx);
+    method public static androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId lottieResource(@RawRes int rawResourceId, androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat progress, optional java.util.List<? extends androidx.wear.protolayout.ResourceBuilders.LottieProperty> properties);
+    method public static androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId lottieResource(@RawRes int rawResourceId, optional androidx.wear.protolayout.TriggerBuilders.Trigger? startTrigger, optional java.util.List<? extends androidx.wear.protolayout.ResourceBuilders.LottieProperty> properties);
+  }
+
   public final class TextKt {
     method public static androidx.wear.protolayout.LayoutElementBuilders.Text basicText(androidx.wear.protolayout.types.LayoutString text, optional androidx.wear.protolayout.LayoutElementBuilders.FontStyle? fontStyle, optional androidx.wear.protolayout.modifiers.LayoutModifier? modifier, optional int maxLines, optional int alignment, optional int overflow, optional @Dimension(unit=androidx.annotation.Dimension.Companion.SP) float lineHeight);
     method public static androidx.wear.protolayout.LayoutElementBuilders.FontStyle fontStyle(optional @Dimension(unit=androidx.annotation.Dimension.Companion.SP) float size, optional boolean italic, optional boolean underline, optional androidx.wear.protolayout.types.LayoutColor? color, optional int weight, optional float letterSpacingEm, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) java.util.List<java.lang.Float> additionalSizesSp, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) java.util.List<? extends androidx.wear.protolayout.LayoutElementBuilders.FontSetting> settings, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) java.util.List<java.lang.String> preferredFontFamilies);
@@ -1615,6 +1625,7 @@ package androidx.wear.protolayout.modifiers {
   }
 
   public final class OpacityKt {
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public static androidx.wear.protolayout.modifiers.LayoutModifier fadeInOnVisibleModifier(androidx.wear.protolayout.modifiers.LayoutModifier, optional androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec animationSpec);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=400) public static androidx.wear.protolayout.modifiers.LayoutModifier opacity(androidx.wear.protolayout.modifiers.LayoutModifier, @FloatRange(from=0.0, to=1.0) float staticValue, optional androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat? dynamicValue);
   }
 

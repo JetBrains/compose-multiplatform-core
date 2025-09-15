@@ -296,7 +296,7 @@ private class TransformingLazyColumnStateScrollInfoProvider(
                     return@let Float.NaN
                 }
                 val newOffset = item.offset.toFloat()
-                if (initialStartOffset.isNaN()) {
+                if (initialStartOffset.isNaN() || newOffset > initialStartOffset) {
                     initialStartOffset = newOffset
                 }
                 initialStartOffset - newOffset

@@ -16,25 +16,6 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilter as RtHitTestFilter
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.AnchorPlacement as RtAnchorPlacement
-import androidx.xr.runtime.internal.Dimensions as RuntimeDimensions
-import androidx.xr.runtime.internal.Entity as RuntimeEntity
-import androidx.xr.runtime.internal.HitTestResult as RuntimeHitTestResult
-import androidx.xr.runtime.internal.InputEvent as RuntimeInputEvent
-import androidx.xr.runtime.internal.InputEvent.HitInfo as RuntimeHitInfo
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.MoveEvent as RuntimeMoveEvent
-import androidx.xr.runtime.internal.PerceivedResolutionResult as RuntimePerceivedResolutionResult
-import androidx.xr.runtime.internal.PixelDimensions as RuntimePixelDimensions
-import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
-import androidx.xr.runtime.internal.PlaneType as RtPlaneType
-import androidx.xr.runtime.internal.ResizeEvent as RuntimeResizeEvent
-import androidx.xr.runtime.internal.SpatialCapabilities as RuntimeSpatialCapabilities
-import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
-import androidx.xr.runtime.internal.SpatialVisibility as RuntimeSpatialVisibility
-import androidx.xr.runtime.internal.TextureSampler as RuntimeTextureSampler
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Matrix4
@@ -43,6 +24,25 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ScenePose.HitTestFilter
+import androidx.xr.scenecore.internal.ActivityPose.HitTestFilter as RtHitTestFilter
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.AnchorPlacement as RtAnchorPlacement
+import androidx.xr.scenecore.internal.Dimensions as RuntimeDimensions
+import androidx.xr.scenecore.internal.Entity as RuntimeEntity
+import androidx.xr.scenecore.internal.HitTestResult as RuntimeHitTestResult
+import androidx.xr.scenecore.internal.InputEvent as RuntimeInputEvent
+import androidx.xr.scenecore.internal.InputEvent.HitInfo as RuntimeHitInfo
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.MoveEvent as RuntimeMoveEvent
+import androidx.xr.scenecore.internal.PerceivedResolutionResult as RuntimePerceivedResolutionResult
+import androidx.xr.scenecore.internal.PixelDimensions as RuntimePixelDimensions
+import androidx.xr.scenecore.internal.PlaneSemantic as RtPlaneSemantic
+import androidx.xr.scenecore.internal.PlaneType as RtPlaneType
+import androidx.xr.scenecore.internal.ResizeEvent as RuntimeResizeEvent
+import androidx.xr.scenecore.internal.SpatialCapabilities as RuntimeSpatialCapabilities
+import androidx.xr.scenecore.internal.SpatialPointerIcon as RtSpatialPointerIcon
+import androidx.xr.scenecore.internal.SpatialVisibility as RuntimeSpatialVisibility
+import androidx.xr.scenecore.internal.TextureSampler as RuntimeTextureSampler
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test

@@ -27,6 +27,7 @@ import androidx.xr.runtime.NodeHolder
  * requires rendering API support.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+// TODO(b/3725226) - Move this into scenecore module.
 public interface RenderingFeature {
     /** Holds the underlying extension Node for the corresponding entity's creation. */
     public val nodeHolder: NodeHolder<*>

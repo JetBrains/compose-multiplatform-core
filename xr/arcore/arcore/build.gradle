@@ -45,15 +45,20 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))
     testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(project(":xr:arcore:arcore-testing"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
     testImplementation(libs.testRules)
 }
 
 android {
+    // TODO: b/409058039 - Drop back to 23 (default) once dependency on scenecore is removed.
     defaultConfig {
-        minSdk = 23
+        minSdk = 24
     }
     namespace = "androidx.xr.arcore"
+    defaultConfig {
+        consumerProguardFiles 'proguard-rules.pro'
+    }
 }
 
 androidx {

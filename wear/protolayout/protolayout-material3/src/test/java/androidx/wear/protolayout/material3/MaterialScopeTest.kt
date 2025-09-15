@@ -19,6 +19,7 @@ import android.graphics.Color
 import android.os.Build.VERSION_CODES
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.protolayout.material3.tokens.ColorTokens
 import androidx.wear.protolayout.testing.LayoutElementAssertionsProvider
 import androidx.wear.protolayout.testing.hasColor
@@ -63,6 +64,7 @@ class MaterialScopeTest {
                 defaultAvatarImageStyle = AvatarImageStyle(),
                 layoutSlotsPresence = LayoutSlotsPresence(),
                 defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
+                protoLayoutScope = ProtoLayoutScope(),
             )
 
         assertThat(scopeWithDefaultTheme.deviceConfiguration).isEqualTo(DEVICE_PARAMETERS)
@@ -97,6 +99,7 @@ class MaterialScopeTest {
                 defaultAvatarImageStyle = AvatarImageStyle(),
                 layoutSlotsPresence = LayoutSlotsPresence(),
                 defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
+                protoLayoutScope = ProtoLayoutScope(),
             )
 
         assertThat(materialScope.deviceConfiguration).isEqualTo(DEVICE_PARAMETERS)
@@ -135,6 +138,7 @@ class MaterialScopeTest {
                 defaultAvatarImageStyle = AvatarImageStyle(),
                 layoutSlotsPresence = LayoutSlotsPresence(),
                 defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
+                protoLayoutScope = ProtoLayoutScope(),
             )
 
         assertThat(isDynamicColorSchemeEnabled(materialScope.context)).isFalse()

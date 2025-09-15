@@ -1345,6 +1345,59 @@ public class WebSettingsCompat {
         return getAdapter(settings).getCookieAccessForShouldInterceptRequestEnabled();
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @IntDef(
+            flag = true,
+            value = {
+                    HyperlinkContextMenuItems.DISABLED,
+                    HyperlinkContextMenuItems.COPY_LINK_ADDRESS,
+                    HyperlinkContextMenuItems.COPY_LINK_TEXT,
+                    HyperlinkContextMenuItems.OPEN_LINK
+            })
+    @Retention(RetentionPolicy.SOURCE)
+    @Target({ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD,
+            ElementType.LOCAL_VARIABLE})
+    public @interface HyperlinkContextMenuItems {
+        int DISABLED = 0;
+        int COPY_LINK_ADDRESS = 1; // 2^0
+        int COPY_LINK_TEXT = 1 << 1; // 2^1
+        int OPEN_LINK = 1 << 2; // 2^2
+    }
+
+    /**
+     * Sets which items appear in the context menu when a user long-presses a hyperlink.
+     * The default value is HyperlinkContextMenuItems.DISABLED which means no menu is shown.
+     *
+     * <p>The items are specified using bitwise flags. You can combine multiple items using
+     * the bitwise OR operator (`|`). For example:
+     *
+     * <pre>{@code
+     * // Show only "Copy link address" and "Open link".
+     * webSettings.setHyperlinkContextMenuItems(
+     *     WebSettingsCompat.HyperlinkContextMenuItems.COPY_LINK_ADDRESS |
+     *         WebSettingsCompat.HyperlinkContextMenuItems.OPEN_LINK);
+     * }</pre>
+     *
+     * @param settings The {@link WebSettings} instance to apply the items to.
+     * @param hyperlinkMenuItems A bitwise combination of the following flags:
+     *     <ul>
+     *       <li>{@link HyperlinkContextMenuItems#COPY_LINK_ADDRESS}</li>
+     *       <li>{@link HyperlinkContextMenuItems#COPY_LINK_TEXT}</li>
+     *       <li>{@link HyperlinkContextMenuItems#OPEN_LINK}</li>
+     *     </ul>
+     */
+    @RequiresFeature(name = WebViewFeature.HYPERLINK_CONTEXT_MENU_ITEMS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setHyperlinkContextMenuItems(@NonNull WebSettings settings,
+            @HyperlinkContextMenuItems int hyperlinkMenuItems) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.HYPERLINK_CONTEXT_MENU_ITEMS;
+        if (!feature.isSupportedByWebView()) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        getAdapter(settings).setHyperlinkContextMenuItems(hyperlinkMenuItems);
+    }
+
     private static WebSettingsAdapter getAdapter(WebSettings settings) {
         try {
             return WebViewGlueCommunicator.getCompatConverter().convertSettings(settings);

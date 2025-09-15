@@ -35,16 +35,17 @@ import androidx.xr.arcore.AnchorCreateResult;
 import androidx.xr.arcore.AnchorCreateSuccess;
 import androidx.xr.arcore.AnchorCreateUnsupportedLocation;
 import androidx.xr.arcore.Earth;
+import androidx.xr.arcore.SessionExtKt;
 import androidx.xr.arcore.XrResourcesManager;
+import androidx.xr.arcore.internal.AnchorNotAuthorizedException;
+import androidx.xr.arcore.internal.AnchorResourcesExhaustedException;
+import androidx.xr.arcore.internal.AnchorUnsupportedLocationException;
+import androidx.xr.arcore.testing.FakePerceptionManager;
+import androidx.xr.arcore.testing.FakeRuntimeEarth;
 import androidx.xr.runtime.Session;
 import androidx.xr.runtime.SessionCreateSuccess;
-import androidx.xr.runtime.internal.AnchorNotAuthorizedException;
-import androidx.xr.runtime.internal.AnchorResourcesExhaustedException;
-import androidx.xr.runtime.internal.AnchorUnsupportedLocationException;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
-import androidx.xr.runtime.testing.FakePerceptionManager;
-import androidx.xr.runtime.testing.FakeRuntimeEarth;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -70,181 +71,208 @@ public class EarthGuavaTest {
     @Before
     public void setUp() {
         mXrResourcesManager = new XrResourcesManager();
-        mRuntimeEarth = new FakeRuntimeEarth(androidx.xr.runtime.internal.Earth.State.STOPPED);
+        mRuntimeEarth = new FakeRuntimeEarth(androidx.xr.arcore.internal.Earth.State.STOPPED);
     }
 
     @Test
     public void createAnchorOnSurface_success_returnsSuccessResultWithAnchor() {
-        createTestSessionAndRunTest(() -> {
-            Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-            FakePerceptionManager fakePerceptionManager =
-                    (FakePerceptionManager) mSession.getRuntime().getPerceptionManager();
-            androidx.xr.runtime.internal.Anchor fakeAnchor =
-                    fakePerceptionManager.createAnchor(Pose.Identity);
-            mRuntimeEarth.setNextAnchor(fakeAnchor);
+        createTestSessionAndRunTest(
+                () -> {
+                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
+                    FakePerceptionManager fakePerceptionManager = getFakePerceptionManager();
+                    androidx.xr.arcore.internal.Anchor fakeAnchor =
+                            fakePerceptionManager.createAnchor(Pose.Identity);
+                    mRuntimeEarth.setNextAnchor(fakeAnchor);
 
-            ListenableFuture<AnchorCreateResult> resultFuture =
-                    createAnchorOnSurfaceAsync(underTest, mSession,
-                            LATITUDE,
-                            LONGITUDE,
-                            ALTITUDE_ABOVE_SURFACE,
-                            EUS_QUATERNION,
-                            Earth.Surface.TERRAIN);
-            mTestDispatcher.getScheduler().advanceUntilIdle();
-            try {
-                AnchorCreateResult result = resultFuture.get();
-                assertThat(result).isInstanceOf(AnchorCreateSuccess.class);
+                    ListenableFuture<AnchorCreateResult> resultFuture =
+                            createAnchorOnSurfaceAsync(
+                                    underTest,
+                                    mSession,
+                                    LATITUDE,
+                                    LONGITUDE,
+                                    ALTITUDE_ABOVE_SURFACE,
+                                    EUS_QUATERNION,
+                                    Earth.Surface.TERRAIN);
+                    mTestDispatcher.getScheduler().advanceUntilIdle();
+                    try {
+                        AnchorCreateResult result = resultFuture.get();
+                        assertThat(result).isInstanceOf(AnchorCreateSuccess.class);
 
-                AnchorCreateSuccess successResult = (AnchorCreateSuccess) result;
-                assertThat(successResult.getAnchor().getRuntimeAnchor()).isEqualTo(fakeAnchor);
+                        AnchorCreateSuccess successResult = (AnchorCreateSuccess) result;
+                        assertThat(successResult.getAnchor().getRuntimeAnchor())
+                                .isEqualTo(fakeAnchor);
 
-                Anchor firstAnchor = (Anchor) mXrResourcesManager.getUpdatables().get(0);
-                assertThat(firstAnchor.getRuntimeAnchor()).isEqualTo(fakeAnchor);
-            } catch (Exception e) {
-                throw new RuntimeException();
-            }
-        });
+                        Anchor firstAnchor = (Anchor) mXrResourcesManager.getUpdatables().get(0);
+                        assertThat(firstAnchor.getRuntimeAnchor()).isEqualTo(fakeAnchor);
+                    } catch (Exception e) {
+                        throw new RuntimeException();
+                    }
+                });
     }
 
     @Test
     public void createAnchorOnSurfaceAsync_illegalState_returnsIllegalStateResult() {
-        createTestSessionAndRunTest(() -> {
-            Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
+        createTestSessionAndRunTest(
+                () -> {
+                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
 
-            ListenableFuture<AnchorCreateResult> resultFuture =
-                    createAnchorOnSurfaceAsync(underTest, mSession,
-                            LATITUDE,
-                            LONGITUDE,
-                            ALTITUDE_ABOVE_SURFACE,
-                            EUS_QUATERNION,
-                            Earth.Surface.TERRAIN);
-            mTestDispatcher.getScheduler().advanceUntilIdle();
-            try {
-                AnchorCreateResult result = resultFuture.get();
+                    ListenableFuture<AnchorCreateResult> resultFuture =
+                            createAnchorOnSurfaceAsync(
+                                    underTest,
+                                    mSession,
+                                    LATITUDE,
+                                    LONGITUDE,
+                                    ALTITUDE_ABOVE_SURFACE,
+                                    EUS_QUATERNION,
+                                    Earth.Surface.TERRAIN);
+                    mTestDispatcher.getScheduler().advanceUntilIdle();
+                    try {
+                        AnchorCreateResult result = resultFuture.get();
 
-                assertThat(result).isInstanceOf(AnchorCreateIllegalState.class);
-            } catch (Exception e) {
-                throw new RuntimeException();
-            }
-        });
+                        assertThat(result).isInstanceOf(AnchorCreateIllegalState.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException();
+                    }
+                });
     }
 
     @Test
     public void createAnchorOnSurfaceAsync_resourceExhausted_returnsResourcesExhaustedResult() {
-        createTestSessionAndRunTest(() -> {
-            Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-            mRuntimeEarth.setNextException(new AnchorResourcesExhaustedException());
+        createTestSessionAndRunTest(
+                () -> {
+                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
+                    mRuntimeEarth.setNextException(new AnchorResourcesExhaustedException());
 
-            ListenableFuture<AnchorCreateResult> resultFuture =
-                    createAnchorOnSurfaceAsync(underTest, mSession,
-                            LATITUDE,
-                            LONGITUDE,
-                            ALTITUDE_ABOVE_SURFACE,
-                            EUS_QUATERNION,
-                            Earth.Surface.TERRAIN);
-            mTestDispatcher.getScheduler().advanceUntilIdle();
-            try {
-                AnchorCreateResult result = resultFuture.get();
+                    ListenableFuture<AnchorCreateResult> resultFuture =
+                            createAnchorOnSurfaceAsync(
+                                    underTest,
+                                    mSession,
+                                    LATITUDE,
+                                    LONGITUDE,
+                                    ALTITUDE_ABOVE_SURFACE,
+                                    EUS_QUATERNION,
+                                    Earth.Surface.TERRAIN);
+                    mTestDispatcher.getScheduler().advanceUntilIdle();
+                    try {
+                        AnchorCreateResult result = resultFuture.get();
 
-                assertThat(result).isInstanceOf(AnchorCreateResourcesExhausted.class);
-            } catch (Exception e) {
-                throw new RuntimeException();
-            }
-        });
+                        assertThat(result).isInstanceOf(AnchorCreateResourcesExhausted.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException();
+                    }
+                });
     }
 
     @Test
     public void createAnchorOnSurfaceAsync_notAuthorized_returnsNotAuthorizedResult() {
-        createTestSessionAndRunTest(() -> {
-            Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-            mRuntimeEarth.setNextException(new AnchorNotAuthorizedException());
+        createTestSessionAndRunTest(
+                () -> {
+                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
+                    mRuntimeEarth.setNextException(new AnchorNotAuthorizedException());
 
-            ListenableFuture<AnchorCreateResult> resultFuture =
-                    createAnchorOnSurfaceAsync(underTest, mSession,
-                            LATITUDE,
-                            LONGITUDE,
-                            ALTITUDE_ABOVE_SURFACE,
-                            EUS_QUATERNION,
-                            Earth.Surface.TERRAIN);
-            mTestDispatcher.getScheduler().advanceUntilIdle();
-            try {
-                AnchorCreateResult result = resultFuture.get();
+                    ListenableFuture<AnchorCreateResult> resultFuture =
+                            createAnchorOnSurfaceAsync(
+                                    underTest,
+                                    mSession,
+                                    LATITUDE,
+                                    LONGITUDE,
+                                    ALTITUDE_ABOVE_SURFACE,
+                                    EUS_QUATERNION,
+                                    Earth.Surface.TERRAIN);
+                    mTestDispatcher.getScheduler().advanceUntilIdle();
+                    try {
+                        AnchorCreateResult result = resultFuture.get();
 
-                assertThat(result).isInstanceOf(AnchorCreateNotAuthorized.class);
-            } catch (Exception e) {
-                throw new RuntimeException();
-            }
-        });
+                        assertThat(result).isInstanceOf(AnchorCreateNotAuthorized.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException();
+                    }
+                });
     }
 
     @Test
     public void createAnchorOnSurfaceAsync_unsupportedLocation_returnsUnsupportedLocationResult() {
-        createTestSessionAndRunTest(() -> {
-            Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-            mRuntimeEarth.setNextException(new AnchorUnsupportedLocationException());
+        createTestSessionAndRunTest(
+                () -> {
+                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
+                    mRuntimeEarth.setNextException(new AnchorUnsupportedLocationException());
 
-            ListenableFuture<AnchorCreateResult> resultFuture =
-                    createAnchorOnSurfaceAsync(underTest, mSession,
-                            LATITUDE,
-                            LONGITUDE,
-                            ALTITUDE_ABOVE_SURFACE,
-                            EUS_QUATERNION,
-                            Earth.Surface.TERRAIN);
-            mTestDispatcher.getScheduler().advanceUntilIdle();
-            try {
-                AnchorCreateResult result = resultFuture.get();
+                    ListenableFuture<AnchorCreateResult> resultFuture =
+                            createAnchorOnSurfaceAsync(
+                                    underTest,
+                                    mSession,
+                                    LATITUDE,
+                                    LONGITUDE,
+                                    ALTITUDE_ABOVE_SURFACE,
+                                    EUS_QUATERNION,
+                                    Earth.Surface.TERRAIN);
+                    mTestDispatcher.getScheduler().advanceUntilIdle();
+                    try {
+                        AnchorCreateResult result = resultFuture.get();
 
-                assertThat(result).isInstanceOf(AnchorCreateUnsupportedLocation.class);
-            } catch (Exception e) {
-                throw new RuntimeException();
-            }
-        });
+                        assertThat(result).isInstanceOf(AnchorCreateUnsupportedLocation.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException();
+                    }
+                });
     }
 
     @Test
     public void createAnchorOnSurfaceAsync_invalidLatitude_throwsIllegalArgumentException() {
-        createTestSessionAndRunTest(() -> {
-            Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-            mRuntimeEarth.setNextException(
-                    new IllegalArgumentException("Invalid latitude provided."));
+        createTestSessionAndRunTest(
+                () -> {
+                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
+                    mRuntimeEarth.setNextException(
+                            new IllegalArgumentException("Invalid latitude provided."));
 
-            ExecutionException outerException = null;
-            try {
-                ListenableFuture<AnchorCreateResult> resultFuture = createAnchorOnSurfaceAsync(
-                        underTest, mSession, 90.0, LONGITUDE,
-                        ALTITUDE_ABOVE_SURFACE,
-                        EUS_QUATERNION,
-                        Earth.Surface.TERRAIN);
-                mTestDispatcher.getScheduler().advanceUntilIdle();
-                resultFuture.get();
-                fail("Invalid latitude provided.");
-            } catch (ExecutionException e) {
-                outerException = e;
-            } catch (Exception e) {
-                throw new RuntimeException();
-            }
+                    ExecutionException outerException = null;
+                    try {
+                        ListenableFuture<AnchorCreateResult> resultFuture =
+                                createAnchorOnSurfaceAsync(
+                                        underTest,
+                                        mSession,
+                                        90.0,
+                                        LONGITUDE,
+                                        ALTITUDE_ABOVE_SURFACE,
+                                        EUS_QUATERNION,
+                                        Earth.Surface.TERRAIN);
+                        mTestDispatcher.getScheduler().advanceUntilIdle();
+                        resultFuture.get();
+                        fail("Invalid latitude provided.");
+                    } catch (ExecutionException e) {
+                        outerException = e;
+                    } catch (Exception e) {
+                        throw new RuntimeException();
+                    }
 
-            assertThat(outerException).isNotNull();
-            assertThat(outerException.getCause())
-                    .isInstanceOf(IllegalArgumentException.class);
-        });
+                    assertThat(outerException).isNotNull();
+                    assertThat(outerException.getCause())
+                            .isInstanceOf(IllegalArgumentException.class);
+                });
     }
 
     private void createTestSessionAndRunTest(Runnable testBody) {
-        try (ActivityScenario<ComponentActivity> scenario = ActivityScenario.launch(
-                ComponentActivity.class)) {
-            scenario.onActivity(activity -> {
-                mTestDispatcher = StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
-                mSession = ((SessionCreateSuccess) Session.create(activity,
-                        mTestDispatcher)).getSession();
+        try (ActivityScenario<ComponentActivity> scenario =
+                ActivityScenario.launch(ComponentActivity.class)) {
+            scenario.onActivity(
+                    activity -> {
+                        mTestDispatcher =
+                                StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
+                        mSession =
+                                ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
+                                        .getSession();
 
-                try {
-                    testBody.run();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+                        try {
+                            testBody.run();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
         }
     }
-}
 
+    private FakePerceptionManager getFakePerceptionManager() {
+        return (FakePerceptionManager)
+                SessionExtKt.getPerceptionRuntime(mSession).getPerceptionManager();
+    }
+}

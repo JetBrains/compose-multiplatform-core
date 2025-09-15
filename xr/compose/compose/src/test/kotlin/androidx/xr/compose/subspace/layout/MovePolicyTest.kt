@@ -33,8 +33,8 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.MovableComponent
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -51,12 +51,8 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_noComponentByDefault() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) { Text(text = "Panel") }
-                }
-            }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) { Text(text = "Panel") } }
         }
         assertTrue(
             composeTestRule
@@ -69,12 +65,10 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_componentIsNotNullAndOnlyContainsSingleMovable() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel"), dragPolicy = MovePolicy()) {
-                        Text(text = "Panel")
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel"), dragPolicy = MovePolicy()) {
+                    Text(text = "Panel")
                 }
             }
         }
@@ -83,15 +77,10 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierIsDisabledAndComponentDoesNotExist() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy = MovePolicy(false),
-                    ) {
-                        Text(text = "Panel")
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel"), dragPolicy = MovePolicy(false)) {
+                    Text(text = "Panel")
                 }
             }
         }
@@ -100,20 +89,18 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierDoesNotChangeAndOnlyOneComponentExist() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var panelWidth by remember { mutableStateOf(50.dp) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel").width(panelWidth),
-                        dragPolicy = MovePolicy(isEnabled = true),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var panelWidth by remember { mutableStateOf(50.dp) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").width(panelWidth),
+                    dragPolicy = MovePolicy(isEnabled = true),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = { panelWidth += 50.dp },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = { panelWidth += 50.dp },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }
@@ -126,20 +113,18 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierEnabledToDisabledAndComponentUpdates() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var movableEnabled by remember { mutableStateOf(true) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy = MovePolicy(isEnabled = movableEnabled),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var movableEnabled by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel"),
+                    dragPolicy = MovePolicy(isEnabled = movableEnabled),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = { movableEnabled = !movableEnabled },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = { movableEnabled = !movableEnabled },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }
@@ -152,20 +137,18 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierOnPoseChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var onPoseReturnValue by remember { mutableStateOf(true) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy = MovePolicy(isEnabled = true, onMove = { onPoseReturnValue }),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var onPoseReturnValue by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel"),
+                    dragPolicy = MovePolicy(isEnabled = true, onMove = { onPoseReturnValue }),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = { onPoseReturnValue = !onPoseReturnValue },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = { onPoseReturnValue = !onPoseReturnValue },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }
@@ -179,25 +162,23 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierDisableWithOnPoseChangeUpdateAndComponentRemoved() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var movableEnabled by remember { mutableStateOf(true) }
-                    var onPoseReturnValue by remember { mutableStateOf(true) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy =
-                            MovePolicy(isEnabled = movableEnabled, onMove = { onPoseReturnValue }),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var movableEnabled by remember { mutableStateOf(true) }
+                var onPoseReturnValue by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel"),
+                    dragPolicy =
+                        MovePolicy(isEnabled = movableEnabled, onMove = { onPoseReturnValue }),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = {
+                            movableEnabled = !movableEnabled
+                            onPoseReturnValue = !onPoseReturnValue
+                        },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = {
-                                movableEnabled = !movableEnabled
-                                onPoseReturnValue = !onPoseReturnValue
-                            },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }
@@ -210,25 +191,23 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierEnabledWithOnPoseChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var movableEnabled by remember { mutableStateOf(false) }
-                    var onPoseReturnValue by remember { mutableStateOf(true) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy =
-                            MovePolicy(isEnabled = movableEnabled, onMove = { onPoseReturnValue }),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var movableEnabled by remember { mutableStateOf(false) }
+                var onPoseReturnValue by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel"),
+                    dragPolicy =
+                        MovePolicy(isEnabled = movableEnabled, onMove = { onPoseReturnValue }),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = {
+                            movableEnabled = !movableEnabled
+                            onPoseReturnValue = !onPoseReturnValue
+                        },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = {
-                                movableEnabled = !movableEnabled
-                                onPoseReturnValue = !onPoseReturnValue
-                            },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }
@@ -241,20 +220,18 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierDisabledThenEnabledAndComponentUpdates() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var movableEnabled by remember { mutableStateOf(true) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy = MovePolicy(isEnabled = movableEnabled),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var movableEnabled by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel"),
+                    dragPolicy = MovePolicy(isEnabled = movableEnabled),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = { movableEnabled = !movableEnabled },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = { movableEnabled = !movableEnabled },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }
@@ -270,20 +247,18 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierOnPoseChangeTwiceUpdateAndComponentUpdates() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var onPoseReturnValue by remember { mutableStateOf(true) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy = MovePolicy(isEnabled = true, onMove = { onPoseReturnValue }),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var onPoseReturnValue by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel"),
+                    dragPolicy = MovePolicy(isEnabled = true, onMove = { onPoseReturnValue }),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = { onPoseReturnValue = !onPoseReturnValue },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = { onPoseReturnValue = !onPoseReturnValue },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }
@@ -301,25 +276,23 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierDisabledThenEnabledWithOnPoseChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var movableEnabled by remember { mutableStateOf(true) }
-                    var onPoseReturnValue by remember { mutableStateOf(true) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy =
-                            MovePolicy(isEnabled = movableEnabled, onMove = { onPoseReturnValue }),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var movableEnabled by remember { mutableStateOf(true) }
+                var onPoseReturnValue by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel"),
+                    dragPolicy =
+                        MovePolicy(isEnabled = movableEnabled, onMove = { onPoseReturnValue }),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = {
+                            movableEnabled = !movableEnabled
+                            onPoseReturnValue = !onPoseReturnValue
+                        },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = {
-                                movableEnabled = !movableEnabled
-                                onPoseReturnValue = !onPoseReturnValue
-                            },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }
@@ -337,25 +310,23 @@ class MovePolicyTest {
 
     @Test
     fun movePolicy_modifierEnabledThenDisabledWithOnPoseChangeUpdateAndComponentUpdates() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    var movableEnabled by remember { mutableStateOf(false) }
-                    var onPoseReturnValue by remember { mutableStateOf(true) }
-                    SpatialPanel(
-                        SubspaceModifier.testTag("panel"),
-                        dragPolicy =
-                            MovePolicy(isEnabled = movableEnabled, onMove = { onPoseReturnValue }),
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var movableEnabled by remember { mutableStateOf(false) }
+                var onPoseReturnValue by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel"),
+                    dragPolicy =
+                        MovePolicy(isEnabled = movableEnabled, onMove = { onPoseReturnValue }),
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = {
+                            movableEnabled = !movableEnabled
+                            onPoseReturnValue = !onPoseReturnValue
+                        },
                     ) {
-                        Button(
-                            modifier = Modifier.testTag("button"),
-                            onClick = {
-                                movableEnabled = !movableEnabled
-                                onPoseReturnValue = !onPoseReturnValue
-                            },
-                        ) {
-                            Text(text = "Sample button for testing")
-                        }
+                        Text(text = "Sample button for testing")
                     }
                 }
             }

@@ -76,7 +76,7 @@ class PaneExpansionStateTest {
             paneExpansionState =
                 rememberPaneExpansionState(
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value,
+                    initialAnchoredIndex = initialAnchoredIndexState.intValue,
                 )
         }
 
@@ -84,7 +84,7 @@ class PaneExpansionStateTest {
             assertThat(paneExpansionState!!.currentAnchor).isEqualTo(MockAnchor3)
 
             // Changes initial index should not affect the current anchor
-            initialAnchoredIndexState.value = 0
+            initialAnchoredIndexState.intValue = 0
         }
 
         rule.waitForIdle()
@@ -102,7 +102,7 @@ class PaneExpansionStateTest {
             paneExpansionState =
                 rememberPaneExpansionState(
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value,
+                    initialAnchoredIndex = initialAnchoredIndexState.intValue,
                 )
         }
 
@@ -128,7 +128,7 @@ class PaneExpansionStateTest {
             paneExpansionState =
                 rememberPaneExpansionState(
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value,
+                    initialAnchoredIndex = initialAnchoredIndexState.intValue,
                 )
         }
 
@@ -136,7 +136,7 @@ class PaneExpansionStateTest {
             assertThat(paneExpansionState!!.currentAnchor).isEqualTo(MockAnchor3)
 
             // Changes initial index should not affect the current anchor
-            initialAnchoredIndexState.value = 0
+            initialAnchoredIndexState.intValue = 0
 
             // Null it to ensure recomposition happened
             paneExpansionState = null
@@ -150,7 +150,7 @@ class PaneExpansionStateTest {
     }
 
     @Test
-    fun rememberPaneExpansionState_removeCurrentAnchorFromAnchors_clearCurrentAnchor() {
+    fun rememberPaneExpansionState_removeCurrentAnchorFromAnchors_useNewInitialAnchor() {
         var paneExpansionState: PaneExpansionState? = null
         val anchorsState =
             mutableStateListOf(MockAnchor0, MockAnchor1, MockAnchor2, MockAnchor3, MockAnchor4)
@@ -160,19 +160,45 @@ class PaneExpansionStateTest {
             paneExpansionState =
                 rememberPaneExpansionState(
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value,
+                    initialAnchoredIndex = initialAnchoredIndexState.intValue,
                 )
         }
 
         rule.runOnUiThread {
             assertThat(paneExpansionState!!.currentAnchor).isEqualTo(MockAnchor3)
 
-            // Removing the current anchor should clear the current anchor
-            anchorsState.removeAt(initialAnchoredIndexState.value)
+            anchorsState.removeAt(initialAnchoredIndexState.intValue)
         }
 
         rule.waitForIdle()
-        rule.runOnUiThread { assertThat(paneExpansionState!!.currentAnchor).isNull() }
+        rule.runOnUiThread { assertThat(paneExpansionState!!.currentAnchor).isEqualTo(MockAnchor4) }
+    }
+
+    @Test
+    fun rememberPaneExpansionState_updateAnchors_useNewInitialAnchor() {
+        var paneExpansionState: PaneExpansionState? = null
+        val anchorsState = mutableStateListOf(MockAnchor0, MockAnchor1, MockAnchor2)
+        val initialAnchoredIndexState = mutableIntStateOf(2)
+
+        rule.setContent {
+            paneExpansionState =
+                rememberPaneExpansionState(
+                    anchors = anchorsState.toList(),
+                    initialAnchoredIndex = initialAnchoredIndexState.intValue,
+                )
+        }
+
+        rule.runOnUiThread {
+            assertThat(paneExpansionState!!.currentAnchor).isEqualTo(MockAnchor2)
+
+            // Removing the current anchor should clear the current anchor
+            anchorsState.clear()
+            anchorsState.addAll(listOf(MockAnchor3, MockAnchor4))
+            initialAnchoredIndexState.intValue = 1
+        }
+
+        rule.waitForIdle()
+        rule.runOnUiThread { assertThat(paneExpansionState!!.currentAnchor).isEqualTo(MockAnchor4) }
     }
 
     @Test
@@ -200,7 +226,7 @@ class PaneExpansionStateTest {
                 rememberPaneExpansionState(
                     keyProvider = keyProviderState.value,
                     anchors = anchorsState.toList(),
-                    initialAnchoredIndex = initialAnchoredIndexState.value,
+                    initialAnchoredIndex = initialAnchoredIndexState.intValue,
                 )
         }
 
@@ -209,7 +235,7 @@ class PaneExpansionStateTest {
 
             // Changing the current key and the initial anchored index
             keyProviderState.value = mockThreePaneScaffoldValue2
-            initialAnchoredIndexState.value = 1
+            initialAnchoredIndexState.intValue = 1
         }
 
         rule.waitForIdle()

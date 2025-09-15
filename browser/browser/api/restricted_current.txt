@@ -630,8 +630,8 @@ package androidx.browser.trusted {
     method public android.os.Bundle toBundle();
   }
 
-  public static final class TrustedWebActivityDisplayMode.WindowControlsOverlay implements androidx.browser.trusted.TrustedWebActivityDisplayMode {
-    ctor public TrustedWebActivityDisplayMode.WindowControlsOverlay();
+  public static final class TrustedWebActivityDisplayMode.WindowControlsOverlayMode implements androidx.browser.trusted.TrustedWebActivityDisplayMode {
+    ctor public TrustedWebActivityDisplayMode.WindowControlsOverlayMode();
     method public android.os.Bundle toBundle();
   }
 

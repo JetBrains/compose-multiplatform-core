@@ -17,11 +17,22 @@
 package androidx.glance.wear.data
 
 import android.content.Context
+import androidx.glance.wear.GlanceWearWidget
+import androidx.glance.wear.WearWidgetRequest
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
+/**
+ * Implementation of the [IWearWidgetProvider] Stub.
+ *
+ * @property context The Context of the service that communicates using this Stub
+ * @property mainScope A main-thread scope
+ * @property widget The widget used to receive the calls to this stub
+ */
 internal class WearWidgetProviderImpl(
     private val context: Context,
-    private val scope: CoroutineScope,
+    private val mainScope: CoroutineScope,
+    private val widget: GlanceWearWidget,
 ) : IWearWidgetProvider.Stub() {
 
     override fun getApiVersion(): Int = API_VERSION
@@ -30,6 +41,14 @@ internal class WearWidgetProviderImpl(
         requestData: WearWidgetRequestData?,
         callback: IWearWidgetCallback?,
     ) {
-        TODO("Not yet implemented")
+        requireNotNull(requestData) { "Invalid widget request." }
+        requireNotNull(callback) { "Invalid widget callback." }
+        mainScope.launch {
+            val request = WearWidgetRequest.fromData(requestData)
+            request?.let {
+                val widgetContentData = widget.provideWidgetContent(context, request)
+                callback.updateWidgetContent(widgetContentData.toData())
+            }
+        }
     }
 }

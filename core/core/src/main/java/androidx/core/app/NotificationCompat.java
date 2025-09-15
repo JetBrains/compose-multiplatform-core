@@ -2107,6 +2107,7 @@ public class NotificationCompat {
          *
          * @see Notification#extras
          */
+        @SuppressWarnings("GetterSetterNullability")
         public @NonNull Bundle getExtras() {
             if (mExtras == null) {
                 mExtras = new Bundle();

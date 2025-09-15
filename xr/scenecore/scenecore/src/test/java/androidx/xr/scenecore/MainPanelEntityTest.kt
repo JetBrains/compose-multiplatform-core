@@ -17,12 +17,12 @@
 package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
@@ -42,10 +42,11 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class MainPanelEntityTest {
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
+    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
     private val activity = activityController.create().start().get()
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+
     lateinit var session: Session
 
     @Before
@@ -57,7 +58,15 @@ class MainPanelEntityTest {
         whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
         whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
-        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+        session =
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        fakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockPlatformAdapter,
+                    ),
+            )
     }
 
     @Test

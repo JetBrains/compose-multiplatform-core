@@ -50,65 +50,75 @@ public class GuavaExrImageTest {
 
     @Test
     public void exrImage_createExrImageFromZipAsync_failsForExrFile() {
-        createTestSessionAndRunTest(() -> {
-            ListenableFuture<ExrImage> exrImageFuture = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                exrImageFuture = createExrImageFromZipAsync(mSession, Paths.get("test.exr"));
-            }
-            mTestDispatcher.getScheduler().advanceUntilIdle();
-            ExecutionException outerException = null;
+        createTestSessionAndRunTest(
+                () -> {
+                    ListenableFuture<ExrImage> exrImageFuture = null;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        exrImageFuture =
+                                createExrImageFromZipAsync(mSession, Paths.get("test.exr"));
+                    }
+                    mTestDispatcher.getScheduler().advanceUntilIdle();
+                    ExecutionException outerException = null;
 
-            try {
-                exrImageFuture.get();
-                fail("Expected ExecutionException to be thrown");
-            } catch (ExecutionException e) {
-                outerException = e;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+                    try {
+                        exrImageFuture.get();
+                        fail("Expected ExecutionException to be thrown");
+                    } catch (ExecutionException e) {
+                        outerException = e;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
 
-            assertThat(outerException).isNotNull();
-            assertThat(outerException.getCause()).isInstanceOf(IllegalArgumentException.class);
-            assertThat(outerException.getCause().getMessage()).contains(
-                    "Only preprocessed skybox files with the .zip extension are supported" + ".");
-        });
+                    assertThat(outerException).isNotNull();
+                    assertThat(outerException.getCause())
+                            .isInstanceOf(IllegalArgumentException.class);
+                    assertThat(outerException.getCause().getMessage())
+                            .contains(
+                                    "Only preprocessed skybox files with the .zip extension are"
+                                            + " supported.");
+                });
     }
 
     @Test
     public void exrImage_createExrImageFromZipAsync_withZipExtension_passes() {
-        createTestSessionAndRunTest(() -> {
-            // TODO: b/424171690 - update once JxrPlatformAdapter.loadExrImageByByteArray
-            //  is more robust
-            ListenableFuture<ExrImage> exrImageFuture = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                exrImageFuture = createExrImageFromZipAsync(mSession, Paths.get("test.zip"));
-            }
+        createTestSessionAndRunTest(
+                () -> {
+                    // TODO: b/424171690 - update once JxrPlatformAdapter.loadExrImageByByteArray
+                    //  is more robust
+                    ListenableFuture<ExrImage> exrImageFuture = null;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        exrImageFuture =
+                                createExrImageFromZipAsync(mSession, Paths.get("test.zip"));
+                    }
 
-            mTestDispatcher.getScheduler().advanceUntilIdle();
-            try {
-                ExrImage exrImageResult = exrImageFuture.get();
+                    mTestDispatcher.getScheduler().advanceUntilIdle();
+                    try {
+                        ExrImage exrImageResult = exrImageFuture.get();
 
-                assertThat(exrImageResult).isInstanceOf(ExrImage.class);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+                        assertThat(exrImageResult).isInstanceOf(ExrImage.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     private void createTestSessionAndRunTest(Runnable testBody) {
-        try (ActivityScenario<ComponentActivity> scenario = ActivityScenario.launch(
-                ComponentActivity.class)) {
-            scenario.onActivity(activity -> {
-                mTestDispatcher = StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
-                mSession = ((SessionCreateSuccess) Session.create(activity,
-                        mTestDispatcher)).getSession();
+        try (ActivityScenario<ComponentActivity> scenario =
+                ActivityScenario.launch(ComponentActivity.class)) {
+            scenario.onActivity(
+                    activity -> {
+                        mTestDispatcher =
+                                StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
+                        mSession =
+                                ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
+                                        .getSession();
 
-                try {
-                    testBody.run();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
+                        try {
+                            testBody.run();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
         }
     }
 }

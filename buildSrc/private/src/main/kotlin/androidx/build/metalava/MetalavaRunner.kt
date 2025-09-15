@@ -80,6 +80,10 @@ fun runMetalavaWithArgs(
                 // internal annotation, includes debug information and values are not constant
                 "--exclude-annotation",
                 "androidx.compose.runtime.internal.FunctionKeyMeta",
+
+                // This issue is important for stubs generation, which we don't do here.
+                "--hide",
+                "InheritChangesSignature",
             )
     val workQueue = workerExecutor.processIsolation()
     workQueue.submit(MetalavaWorkAction::class.java) { parameters ->

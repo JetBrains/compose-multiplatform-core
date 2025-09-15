@@ -46,6 +46,9 @@
         <ignore path="**/.gradle/**/transforms*/**/transformed/**" />
     </issue>
     <issue id="AndroidXFlaggedApi">
-        <option name="allowlist" value="androidx.lint-checks,androidx.mediarouter" />
+        <!-- Comma-delimited list of libraries which are allowed to call flagged APIs, where
+             `groupId:artifactId` represents a single module and `groupId` represents an entire
+             group of modules. -->
+        <option name="allowlist" value="androidx.lint-checks,androidx.mediarouter,androidx.core:core,androidx.core.pip" />
     </issue>
 </lint>

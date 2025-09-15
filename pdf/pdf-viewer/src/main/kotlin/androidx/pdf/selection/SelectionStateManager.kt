@@ -149,22 +149,29 @@ internal class SelectionStateManager(
      */
     fun getSelectionHandleBounds(currentZoom: Float): Pair<RectF, RectF>? {
         val currentSelection = selectionModel.value ?: return null
-        val touchTargetContentSize = handleTouchTargetSizePx / currentZoom
 
-        val start = currentSelection.startBoundary.location
-        val startTarget =
-            RectF(
-                start.x - touchTargetContentSize,
-                start.y,
-                start.x,
-                start.y + touchTargetContentSize,
-            )
+        // TODO(b/441196273): Drag handles for modifying a selection are currently only supported
+        // for selections that consist exclusively of text. For mixed-content or non-text
+        // selections, the handles are disabled as this functionality is not yet supported.
+        if (currentSelection.documentSelection.containsOnlyTextSelections) {
+            val touchTargetContentSize = handleTouchTargetSizePx / currentZoom
 
-        val end = currentSelection.endBoundary.location
-        val endTarget =
-            RectF(end.x, end.y, end.x + touchTargetContentSize, end.y + touchTargetContentSize)
+            val start = currentSelection.startBoundary.location
+            val startTarget =
+                RectF(
+                    start.x - touchTargetContentSize,
+                    start.y,
+                    start.x,
+                    start.y + touchTargetContentSize,
+                )
 
-        return Pair(startTarget, endTarget)
+            val end = currentSelection.endBoundary.location
+            val endTarget =
+                RectF(end.x, end.y, end.x + touchTargetContentSize, end.y + touchTargetContentSize)
+
+            return Pair(startTarget, endTarget)
+        }
+        return null
     }
 
     @HandlePositionDef
@@ -273,11 +280,14 @@ internal class SelectionStateManager(
     }
 
     private fun updateAllSelectionAsync(pageNum: Int) {
-        updateSelectionAsync(
-            pageNum..pageNum,
-            selectionModel.value?.documentSelection ?: DocumentSelection(SparseArray()),
-        ) {
-            listOf(pdfDocument.getSelectAllSelectionBounds(pageNum))
+        updateSelectionAsync(pageNum..pageNum) {
+            val newPageSelection =
+                pdfDocument.getSelectAllSelectionBounds(pageNum) ?: return@updateSelectionAsync null
+
+            SelectionModel.getCombinedSelectionModel(
+                selectionModel.value?.documentSelection ?: DocumentSelection(SparseArray()),
+                listOf(newPageSelection),
+            )
         }
     }
 
@@ -296,19 +306,22 @@ internal class SelectionStateManager(
         val pageRange =
             if (draggedPoint.pageNum < fixedPoint.pageNum) draggedPoint.pageNum..fixedPoint.pageNum
             else fixedPoint.pageNum..draggedPoint.pageNum
-        return updateSelectionAsync(
-            pageRange,
-            getOldSelectionBetweenPageRange(prevSelectionModel, pageRange),
-            {
+        updateSelectionAsync(pageRange) {
+            val newPageSelections =
                 if (draggedPoint.pageNum < fixedPoint.pageNum) {
-                    // Extending selection in the upwards direction
-                    getBoundsExtendingUpwards(draggedPoint, prevStart, prevEnd)
-                } else {
-                    // Extending selection in the downwards direction
-                    getBoundsExtendingDownwards(draggedPoint, prevStart, prevEnd)
-                }
-            },
-        )
+                        // Extending selection in the upwards direction
+                        getBoundsExtendingUpwards(draggedPoint, prevStart, prevEnd)
+                    } else {
+                        // Extending selection in the downwards direction
+                        getBoundsExtendingDownwards(draggedPoint, prevStart, prevEnd)
+                    }
+                    .takeIf { it.isNotEmpty() } ?: return@updateSelectionAsync null
+
+            SelectionModel.getCombinedSelectionModel(
+                getOldSelectionBetweenPageRange(prevSelectionModel, pageRange),
+                newPageSelections,
+            )
+        }
     }
 
     private suspend fun getBoundsExtendingUpwards(
@@ -405,16 +418,17 @@ internal class SelectionStateManager(
     }
 
     private fun updateSinglePageSelection(startPoint: PdfPoint, endPoint: PdfPoint) {
-        updateSelectionAsync(
-            startPoint.pageNum..endPoint.pageNum,
-            DocumentSelection(SparseArray()),
-        ) {
-            listOf(
+        updateSelectionAsync(startPoint.pageNum..endPoint.pageNum) {
+            val newPageSelection =
                 pdfDocument.getSelectionBounds(
                     endPoint.pageNum,
                     PointF(startPoint.x, startPoint.y),
                     PointF(endPoint.x, endPoint.y),
-                )
+                ) ?: return@updateSelectionAsync null
+
+            SelectionModel.getCombinedSelectionModel(
+                DocumentSelection(SparseArray()),
+                listOf(newPageSelection),
             )
         }
     }
@@ -437,8 +451,7 @@ internal class SelectionStateManager(
 
     private fun updateSelectionAsync(
         pageRange: IntRange,
-        oldSelection: DocumentSelection,
-        getNewPageSelections: suspend () -> List<PageSelection?>,
+        getNewSelectionModel: suspend () -> SelectionModel?,
     ) {
         val prevJob = setSelectionJob
         setSelectionJob =
@@ -446,22 +459,15 @@ internal class SelectionStateManager(
                 .launch {
                     prevJob?.cancelAndJoin()
                     try {
-                        val newPageSelections = getNewPageSelections()
-                        if (newPageSelections.isNotEmpty()) {
+                        val newSelectionModel = getNewSelectionModel() ?: return@launch
 
-                            _selectionModel.update {
-                                SelectionModel.getCombinedSelectionModel(
-                                    oldSelection,
-                                    newPageSelections,
-                                )
-                            }
-                            _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
-                            // Show the action mode if the user is not actively dragging the handles
-                            if (draggingState == null) {
-                                _selectionUiSignalBus.emit(
-                                    SelectionUiSignal.ToggleActionMode(show = true)
-                                )
-                            }
+                        _selectionModel.update { newSelectionModel }
+                        _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
+                        // Show the action mode if the user is not actively dragging the handles
+                        if (draggingState == null) {
+                            _selectionUiSignalBus.emit(
+                                SelectionUiSignal.ToggleActionMode(show = true)
+                            )
                         }
                     } catch (e: DeadObjectException) {
                         val exception =

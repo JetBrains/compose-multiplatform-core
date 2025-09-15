@@ -17,10 +17,10 @@
 package androidx.xr.scenecore
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
@@ -129,10 +129,18 @@ class AnchorEntityTest {
     }
 
     @Test
-    fun setScale_throwsUnsupportedOperationException() {
+    fun setScale_float_throwsUnsupportedOperationException() {
         val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
         assertThrows(UnsupportedOperationException::class.java) {
             anchorEntity.setScale(1f, Space.PARENT)
+        }
+    }
+
+    @Test
+    fun setScale_vector_throwsUnsupportedOperationException() {
+        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+        assertThrows(UnsupportedOperationException::class.java) {
+            anchorEntity.setScale(Vector3.One, Space.PARENT)
         }
     }
 }

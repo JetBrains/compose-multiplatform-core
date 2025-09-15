@@ -74,14 +74,13 @@ data class R8Analysis(
         }
     }
 
-    fun csvEntries(): List<String> {
-        return listOf(
+    fun csvEntries() =
+        listOf(
             (r8JsonFileInfo?.getScore()).toString(),
             compilerMarker.toString(),
             compilerJson.toString(),
             getDexMatchRatio().toString(),
         )
-    }
 
     companion object {
         val CSV_TITLES =

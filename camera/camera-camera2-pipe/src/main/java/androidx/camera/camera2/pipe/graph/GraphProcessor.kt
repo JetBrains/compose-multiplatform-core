@@ -177,6 +177,7 @@ constructor(
     override fun onGraphStopping() {
         debug { "$this onGraphStopping" }
         _graphState.value = GraphStateStopping
+        graphLoop.requestProcessor = null
     }
 
     override fun onGraphStopped(requestProcessor: GraphRequestProcessor?) {

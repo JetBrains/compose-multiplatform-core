@@ -22,12 +22,12 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.VisibleForTesting;
-import androidx.xr.runtime.internal.ExrImageResource;
-import androidx.xr.runtime.internal.GltfModelResource;
-import androidx.xr.runtime.internal.MaterialResource;
-import androidx.xr.runtime.internal.SpatialEnvironment;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.Material;
+import androidx.xr.scenecore.internal.ExrImageResource;
+import androidx.xr.scenecore.internal.GltfModelResource;
+import androidx.xr.scenecore.internal.MaterialResource;
+import androidx.xr.scenecore.internal.SpatialEnvironment;
 
 import com.android.extensions.xr.XrExtensionResult;
 import com.android.extensions.xr.XrExtensions;

@@ -19,11 +19,11 @@ package androidx.xr.scenecore
 import android.app.Activity
 import android.content.Intent
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.internal.ActivityPanelEntity as RtActivityPanelEntity
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
 
 /**
  * ActivityPanelEntity creates a spatial panel for embedding an [Activity] in Android XR. Users can
@@ -103,7 +103,7 @@ private constructor(
             pose: Pose = Pose.Identity,
         ): ActivityPanelEntity =
             ActivityPanelEntity.create(
-                session.runtime.lifecycleManager,
+                session.perceptionRuntime.lifecycleManager,
                 session.platformAdapter,
                 session.scene.entityManager,
                 pixelDimensions,

@@ -10,9 +10,6 @@ android {
 // The dependency list should only be changed when a new project is registered or a project's source is removed. Samples should never be added.
 
 dependencies {
-    // If there is not at least one samples dependency, DocsImplPlugin breaks. b/332262321
-    samples("androidx.window:window-samples:1.3.0")
-
     docs(project(":activity:activity"))
     docs(project(":activity:activity-compose"))
     docs(project(":activity:activity-ktx"))
@@ -430,6 +427,7 @@ dependencies {
     docs(project(":xr:arcore:arcore-play-services"))
     docs(project(":xr:arcore:arcore-rxjava3"))
     docs(project(":xr:arcore:arcore-projected"))
+    docs(project(":xr:arcore:arcore-testing"))
     docs(project(":xr:compose:compose"))
     docs(project(":xr:compose:compose-testing"))
     docs(project(":xr:compose:material3:material3"))

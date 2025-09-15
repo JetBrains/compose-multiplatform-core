@@ -16,12 +16,11 @@
 package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
-import androidx.appsearch.compiler.ProcessingException
-import com.google.auto.common.MoreTypes
+import androidx.appsearch.compiler.XProcessingException
+import androidx.room.compiler.processing.XAnnotationValue
+import androidx.room.compiler.processing.XType
+import androidx.room.compiler.processing.XTypeElement
 import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.TypeName
-import javax.lang.model.element.TypeElement
-import javax.lang.model.type.TypeMirror
 
 /** An instance of the `@Document.StringProperty` annotation. */
 data class StringPropertyAnnotation(
@@ -68,31 +67,31 @@ data class StringPropertyAnnotation(
         /**
          * @param defaultName The name to use for the annotated property in case the annotation
          *   params do not mention an explicit name.
-         * @throws ProcessingException If the annotation points to an Illegal serializer class.
+         * @throws XProcessingException If the annotation points to an Illegal serializer class.
          */
-        @Throws(ProcessingException::class)
+        @Throws(XProcessingException::class)
         fun parse(
-            annotationParams: Map<String, Any?>,
+            annotationParams: Map<String, XAnnotationValue>,
             defaultName: String,
         ): StringPropertyAnnotation {
-            val name = annotationParams["name"] as? String
-            val serializerInAnnotation = annotationParams["serializer"] as TypeMirror
-            val typeName = TypeName.get(serializerInAnnotation).toString()
+            val name = annotationParams["name"]?.value as? String
+            val serializerInAnnotation = annotationParams.getValue("serializer").asType()
+            val typeName = serializerInAnnotation.toString()
             val customSerializer: SerializerClass? =
                 if (typeName == DEFAULT_SERIALIZER_CLASS.canonicalName()) {
                     null
                 } else {
                     SerializerClass.create(
-                        MoreTypes.asElement(serializerInAnnotation) as TypeElement,
+                        serializerInAnnotation.typeElement as XTypeElement,
                         SerializerClass.Kind.STRING_SERIALIZER,
                     )
                 }
             return StringPropertyAnnotation(
                 name = if (name.isNullOrEmpty()) defaultName else name,
-                isRequired = annotationParams["required"] as Boolean,
-                tokenizerType = annotationParams["tokenizerType"] as Int,
-                indexingType = annotationParams["indexingType"] as Int,
-                joinableValueType = annotationParams["joinableValueType"] as Int,
+                isRequired = annotationParams.getValue("required").asBoolean(),
+                tokenizerType = annotationParams.getValue("tokenizerType").asInt(),
+                indexingType = annotationParams.getValue("indexingType").asInt(),
+                joinableValueType = annotationParams.getValue("joinableValueType").asInt(),
                 customSerializer = customSerializer,
             )
         }
@@ -101,6 +100,6 @@ data class StringPropertyAnnotation(
     override val dataPropertyKind
         get() = Kind.STRING_PROPERTY
 
-    override fun getUnderlyingTypeWithinGenericDoc(helper: IntrospectionHelper): TypeMirror =
+    override fun getUnderlyingTypeWithinGenericDoc(helper: IntrospectionHelper): XType =
         helper.stringType
 }

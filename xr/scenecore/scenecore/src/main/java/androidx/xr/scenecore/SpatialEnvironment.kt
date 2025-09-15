@@ -19,9 +19,9 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.SpatialEnvironment as RtSpatialEnvironment
-import androidx.xr.runtime.internal.SpatialEnvironment.SpatialEnvironmentPreference as RtSpatialEnvironmentPreference
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SpatialEnvironment as RtSpatialEnvironment
+import androidx.xr.scenecore.internal.SpatialEnvironment.SpatialEnvironmentPreference as RtSpatialEnvironmentPreference
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 

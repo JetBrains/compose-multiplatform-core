@@ -18,10 +18,10 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.content.Context;
 
-import androidx.xr.runtime.internal.SystemSpaceEntity;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.internal.SystemSpaceEntity;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

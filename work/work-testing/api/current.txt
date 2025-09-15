@@ -10,6 +10,7 @@ package androidx.work.testing {
     method public void setAllConstraintsMet(java.util.UUID);
     method public void setInitialDelayMet(java.util.UUID);
     method public void setPeriodDelayMet(java.util.UUID);
+    method public default void stopRunningWorkWithReason(java.util.UUID, @androidx.work.StopReason int);
   }
 
   public class TestListenableWorkerBuilder<W extends androidx.work.ListenableWorker> {

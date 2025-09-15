@@ -37,7 +37,11 @@ data class LibraryAnalysis(val hasDotVersionFiles: Boolean, val hasAppBundleDepe
         )
     }
 
+    fun csvEntries() = listOf(hasDotVersionFiles.toString(), hasAppBundleDependencies.toString())
+
     companion object {
+        val CSV_TITLES = listOf("libraries_hasDot", "libraries_hasProto")
+
         fun ApkInfo.getLibraryAnalysis(): LibraryAnalysis {
             return LibraryAnalysis(
                 hasDotVersionFiles = dotVersionFiles.isNotEmpty(),

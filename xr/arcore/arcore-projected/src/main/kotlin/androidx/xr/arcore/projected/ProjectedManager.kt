@@ -16,11 +16,18 @@
 package androidx.xr.arcore.projected
 
 import android.app.Activity
+import android.content.ComponentName
+import android.content.ServiceConnection
+import android.os.IBinder
 import androidx.annotation.RestrictTo
+import androidx.xr.projected.ProjectedServiceBinding
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.LifecycleManager
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.ComparableTimeMark
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 /**
  * Manages the lifecycle of a Projected session.
@@ -29,6 +36,7 @@ import kotlin.time.ComparableTimeMark
  * @property perceptionManager The [ProjectedPerceptionManager] instance.
  * @property timeSource The [ProjectedTimeSource] instance.
  * @property coroutineContext The [CoroutineContext] for this manager.
+ * @property testPerceptionService An optional [IProjectedPerceptionService] for testing
  */
 @Suppress("NotCloseable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -38,19 +46,47 @@ internal constructor(
     internal val perceptionManager: ProjectedPerceptionManager,
     internal val timeSource: ProjectedTimeSource,
     private val coroutineContext: CoroutineContext,
+    private val testPerceptionService: IProjectedPerceptionService? = null,
 ) : LifecycleManager {
     override val config: Config = Config()
     // TODO(b/411154789): Remove once Session runtime invocations are forced to run sequentially.
     internal var running: Boolean = false
+    private val serviceDeferred = CompletableDeferred<IProjectedPerceptionService>()
+    private val serviceConnection =
+        object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+                val service = IProjectedPerceptionService.Stub.asInterface(binder)
+                serviceDeferred.complete(service)
+                perceptionManager.service = service
+            }
+
+            override fun onServiceDisconnected(name: ComponentName?) {
+                perceptionManager.service = null
+            }
+        }
 
     /**
      * This method implements the [LifecycleManager.create] method.
      *
      * This method must be called before any operations can be performed by the
-     * [ArCorePerceptionManager].
+     * [ProjectedPerceptionManager].
      */
     override fun create() {
-        throw NotImplementedError("create is currently not supported by Projected.")
+        checkProjectedSupportedAndUpToDate(activity)
+        // Other create's are blocking and this makes testing easier.
+        runBlocking(coroutineContext) {
+            if (testPerceptionService != null) {
+                perceptionManager.service = testPerceptionService
+                return@runBlocking
+            }
+
+            val isBindingPermitted =
+                ProjectedServiceBinding.bindPerception(activity, serviceConnection)
+            check(isBindingPermitted) {
+                "Projected perception service not found or binding was not permitted."
+            }
+            withTimeout(SERVICE_CONNECTION_TIMEOUT_MS) { serviceDeferred.await() }
+        }
     }
 
     override fun configure(config: Config) {
@@ -70,13 +106,20 @@ internal constructor(
     }
 
     override fun stop() {
-        throw NotImplementedError("stop is currently not supported by Projected.")
+        if (testPerceptionService == null) {
+            activity.unbindService(serviceConnection)
+        }
+        perceptionManager.service = null
     }
 
     // Verify that Projected is installed and using the current version.
     internal fun checkProjectedSupportedAndUpToDate(activity: Activity) {}
 
     private companion object {
-        const private val PROJECTED_PACKAGE_NAME = "com.google.android.glasses.core"
+        /**
+         * Timeout for binding to the projected service. 2 sec is what we hope the 95%ile is for
+         * binding to the service is.
+         */
+        private const val SERVICE_CONNECTION_TIMEOUT_MS = 2000L
     }
 }

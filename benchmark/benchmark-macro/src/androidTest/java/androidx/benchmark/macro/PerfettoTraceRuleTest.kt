@@ -16,6 +16,8 @@
 
 package androidx.benchmark.macro
 
+import android.os.Build.VERSION.SDK_INT
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.inMemoryTrace
 import androidx.benchmark.junit4.PerfettoTraceRule
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
@@ -56,7 +58,8 @@ class PerfettoTraceRuleTest {
                 object : Statement() {
                     override fun evaluate() {
                         base.evaluate()
-                        if (PerfettoHelper.isAbiSupported()) {
+                        // Our API 23 emulators seem to be misconfigured b/438214932
+                        if (PerfettoHelper.isAbiSupported() && (!isEmulator || SDK_INT != 23)) {
                             assertNotNull(trace)
                             val sliceNameInstances =
                                 TraceProcessor.runSingleSessionServer(trace!!.path) {

@@ -26,8 +26,8 @@ import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.unit.VolumeConstraints
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule

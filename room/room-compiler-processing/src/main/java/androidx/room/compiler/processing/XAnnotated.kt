@@ -33,9 +33,7 @@ interface XAnnotated {
      * @see [hasAnnotation]
      * @see [hasAnnotationWithPackage]
      */
-    fun getAnnotations(annotationName: ClassName): List<XAnnotation> {
-        return getAllAnnotations().filter { annotationName.canonicalName() == it.qualifiedName }
-    }
+    fun getAnnotations(annotationName: ClassName) = getAnnotations(annotationName.canonicalName())
 
     /**
      * Returns the list of [XAnnotation] elements that have the same qualified name as the given
@@ -48,9 +46,21 @@ interface XAnnotated {
      * @see [hasAnnotation]
      * @see [hasAnnotationWithPackage]
      */
-    fun getAnnotations(annotationName: XClassName): List<XAnnotation> {
-        return getAllAnnotations().filter { annotationName.canonicalName == it.qualifiedName }
-    }
+    fun getAnnotations(annotationName: XClassName) = getAnnotations(annotationName.canonicalName)
+
+    /**
+     * Returns the list of [XAnnotation] elements that have the same qualified name as the given
+     * [annotationName]. Otherwise, returns an empty list.
+     *
+     * For repeated annotations declared in Java code, please use the repeated annotation type, not
+     * the container. Calling this method with a container annotation will have inconsistent
+     * behaviour between Java AP and KSP.
+     *
+     * @see [hasAnnotation]
+     * @see [hasAnnotationWithPackage]
+     */
+    fun getAnnotations(annotationName: String): List<XAnnotation> =
+        getAllAnnotations().filter { it.qualifiedName == annotationName }
 
     /**
      * Gets the list of annotations with the given type.
@@ -90,9 +100,7 @@ interface XAnnotated {
      *
      * @see [hasAnyAnnotation]
      */
-    fun hasAnnotation(annotationName: ClassName): Boolean {
-        return getAnnotations(annotationName).isNotEmpty()
-    }
+    fun hasAnnotation(annotationName: ClassName) = hasAnnotation(annotationName.canonicalName())
 
     /**
      * Returns `true` if this element is annotated with an [XAnnotation] that has the same qualified
@@ -100,9 +108,15 @@ interface XAnnotated {
      *
      * @see [hasAnyAnnotation]
      */
-    fun hasAnnotation(annotationName: XClassName): Boolean {
-        return getAnnotations(annotationName).isNotEmpty()
-    }
+    fun hasAnnotation(annotationName: XClassName) = hasAnnotation(annotationName.canonicalName)
+
+    /**
+     * Returns `true` if this element is annotated with an [XAnnotation] that has the same qualified
+     * name as the given [annotationName].
+     *
+     * @see [hasAnyAnnotation]
+     */
+    fun hasAnnotation(annotationName: String) = getAnnotation(annotationName) != null
 
     /**
      * Returns `true` if this element has an annotation that is declared in the given package.
@@ -158,9 +172,7 @@ interface XAnnotated {
      * @see [getAnnotations]
      * @see [hasAnnotationWithPackage]
      */
-    fun getAnnotation(annotationName: ClassName): XAnnotation? {
-        return getAnnotations(annotationName).firstOrNull()
-    }
+    fun getAnnotation(annotationName: ClassName) = getAnnotation(annotationName.canonicalName())
 
     /**
      * Returns the [XAnnotation] that has the same qualified name as [annotationName]. Otherwise,
@@ -170,9 +182,18 @@ interface XAnnotated {
      * @see [getAnnotations]
      * @see [hasAnnotationWithPackage]
      */
-    fun getAnnotation(annotationName: XClassName): XAnnotation? {
-        return getAnnotations(annotationName).firstOrNull()
-    }
+    fun getAnnotation(annotationName: XClassName) = getAnnotation(annotationName.canonicalName)
+
+    /**
+     * Returns the [XAnnotation] that has the same qualified name as [annotationName]. Otherwise,
+     * `null` value is returned.
+     *
+     * @see [hasAnnotation]
+     * @see [getAnnotations]
+     * @see [hasAnnotationWithPackage]
+     */
+    fun getAnnotation(annotationName: String): XAnnotation? =
+        getAnnotations(annotationName).firstOrNull()
 
     /** Returns the [Annotation]s that are annotated with [annotationName] */
     fun getAnnotationsAnnotatedWith(annotationName: ClassName): Set<XAnnotation> {

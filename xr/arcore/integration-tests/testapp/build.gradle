@@ -58,6 +58,7 @@ androidx {
 
 dependencies {
     implementation(project(":xr:arcore:arcore"))
+    implementation(project(":xr:arcore:arcore-openxr"))
     implementation(project(":xr:assets"))
     implementation(project(":xr:compose:compose"))
     implementation(project(":xr:scenecore:scenecore"))

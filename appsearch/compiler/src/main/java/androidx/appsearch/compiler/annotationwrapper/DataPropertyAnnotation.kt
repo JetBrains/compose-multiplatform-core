@@ -16,9 +16,9 @@
 package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
-import androidx.appsearch.compiler.ProcessingException
+import androidx.appsearch.compiler.XProcessingException
+import androidx.room.compiler.processing.XAnnotation
 import com.squareup.javapoet.ClassName
-import javax.lang.model.element.AnnotationMirror
 
 /**
  * An instance of an annotation for a data property e.g. `@Document.StringProperty`.
@@ -68,22 +68,22 @@ protected constructor(
 
     companion object {
         /**
-         * Attempts to parse an [AnnotationMirror] into a [DataPropertyAnnotation], or null.
+         * Attempts to parse an [XAnnotation] into a [DataPropertyAnnotation], or null.
          *
          * @param defaultName The name to use for the annotated property in case the annotation
          *   params do not mention an explicit name.
-         * @throws ProcessingException If the [AnnotationMirror] is a valid [DataPropertyAnnotation]
-         *   but its params are malformed e.g. point to an illegal serializer class etc.
+         * @throws XProcessingException If the [XAnnotation] is a valid [DataPropertyAnnotation] but
+         *   its params are malformed e.g. point to an illegal serializer class etc.
          */
-        @Throws(ProcessingException::class)
+        @Throws(XProcessingException::class)
         @JvmStatic
         fun tryParse(
-            annotation: AnnotationMirror,
+            annotation: XAnnotation,
             defaultName: String,
             helper: IntrospectionHelper,
         ): DataPropertyAnnotation? {
             val annotationParams = helper.getAnnotationParams(annotation)
-            val qualifiedClassName = annotation.annotationType.toString()
+            val qualifiedClassName = annotation.qualifiedName
             return when (qualifiedClassName) {
                 BooleanPropertyAnnotation.CLASS_NAME.canonicalName() ->
                     BooleanPropertyAnnotation.parse(annotationParams, defaultName)

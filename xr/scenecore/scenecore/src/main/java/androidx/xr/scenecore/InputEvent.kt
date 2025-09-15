@@ -20,7 +20,6 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Vector3
-import kotlin.annotation.Retention
 
 /**
  * Defines input events for SceneCore.

@@ -60,7 +60,7 @@ internal class NavigationEventDispatcherOwnerTest {
         childOwner.navigationEventDispatcher.addCallback(callback)
         val input = DirectNavigationEventInput()
         childOwner.navigationEventDispatcher.addInput(input)
-        input.complete()
+        input.backCompleted()
 
         // Verify that the child created its own, separate owner and dispatcher.
         assertThat(childOwner).isNotEqualTo(parentOwner)
@@ -133,7 +133,7 @@ internal class NavigationEventDispatcherOwnerTest {
         childOwner.navigationEventDispatcher.addCallback(callback)
         val input = DirectNavigationEventInput()
         childOwner.navigationEventDispatcher.addInput(input)
-        input.complete()
+        input.backCompleted()
 
         assertThat(childOwner).isNotEqualTo(parentOwner)
         assertThat(childOwner.navigationEventDispatcher.isEnabled).isFalse()
@@ -164,7 +164,7 @@ internal class NavigationEventDispatcherOwnerTest {
         rootOwner.navigationEventDispatcher.addCallback(callback)
         val input = DirectNavigationEventInput()
         rootOwner.navigationEventDispatcher.addInput(input)
-        input.complete()
+        input.backCompleted()
 
         assertThat(rootOwner.navigationEventDispatcher.isEnabled).isTrue()
 
@@ -225,7 +225,7 @@ internal class NavigationEventDispatcherOwnerTest {
         rootOwner.navigationEventDispatcher.addCallback(callback)
         val input = DirectNavigationEventInput()
         rootOwner.navigationEventDispatcher.addInput(input)
-        input.complete()
+        input.backCompleted()
 
         assertThat(rootOwner.navigationEventDispatcher.isEnabled).isFalse()
 

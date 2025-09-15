@@ -56,14 +56,14 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         var itemsCount: Int,
         var maxHeight: Int,
     ) {
-        val overscrolledBackwards: Boolean
-            get() = with(visibleItems.first()) { index == 0 && offset > beforeContentPadding }
+        val isAtTopOrOverscrolledBackwards: Boolean
+            get() = with(visibleItems.first()) { index == 0 && offset >= beforeContentPadding }
 
-        val overscrolledForward: Boolean
+        val isAtBottomOrOverscrolledForward: Boolean
             get() =
                 with(visibleItems.last()) {
                     index == itemsCount - 1 &&
-                        offset + transformedHeight <
+                        offset + transformedHeight <=
                             containerConstraints.maxHeight - afterContentPadding
                 }
 
@@ -297,12 +297,14 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 restoreLayoutTopToBottom()
                 canScrollBackward = false
                 canScrollForward = false
-            } else if (overscrolledBackwards) { // Top item moved where it is not supposed to be.
+            } else if (isAtTopOrOverscrolledBackwards) {
+                // Top item moved where it is not supposed to be.
                 // Pinning top item to the top most position.
                 restoreLayoutTopToBottom()
                 addVisibleItemsAfter(measuredItemProvider)
                 canScrollBackward = false
-            } else if (overscrolledForward) { // Bottom item moved where it is not supposed to be.
+            } else if (isAtBottomOrOverscrolledForward) {
+                // Bottom item moved where it is not supposed to be.
                 // Pinning top item to the bottom most position.
                 restoreLayoutBottomToTop()
                 addVisibleItemsBefore(measuredItemProvider)
@@ -332,10 +334,10 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 if (fitsScreen()) {
                     canScrollBackward = false
                     canScrollForward = false
-                } else if (overscrolledBackwards) {
+                } else if (isAtTopOrOverscrolledBackwards) {
                     restoreLayoutTopToBottom()
                     canScrollBackward = false
-                } else if (overscrolledForward) {
+                } else if (isAtBottomOrOverscrolledForward) {
                     restoreLayoutBottomToTop()
                     canScrollForward = false
                 }

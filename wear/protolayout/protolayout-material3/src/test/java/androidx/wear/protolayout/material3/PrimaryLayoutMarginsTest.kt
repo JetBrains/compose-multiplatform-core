@@ -18,6 +18,7 @@ package androidx.wear.protolayout.material3
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.protolayout.material3.PrimaryLayoutMargins.Companion.customizedPrimaryLayoutMargin
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.ceil
@@ -74,6 +75,7 @@ class PrimaryLayoutMarginsTest {
                 defaultAvatarImageStyle = AvatarImageStyle(),
                 layoutSlotsPresence = LayoutSlotsPresence(),
                 defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
+                protoLayoutScope = ProtoLayoutScope(),
             )
     }
 }

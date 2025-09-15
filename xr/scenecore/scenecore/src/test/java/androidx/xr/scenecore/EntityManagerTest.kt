@@ -21,20 +21,20 @@ import android.os.Build
 import android.view.View
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
-import androidx.xr.runtime.internal.Entity as RtEntity
-import androidx.xr.runtime.internal.GltfEntity as RtGltfEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
-import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.internal.ActivityPanelEntity as RtActivityPanelEntity
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
+import androidx.xr.scenecore.internal.Entity as RtEntity
+import androidx.xr.scenecore.internal.GltfEntity as RtGltfEntity
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import java.nio.file.Paths
@@ -53,10 +53,11 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class EntityManagerTest {
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
+    private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+
     private val mockActivitySpace = mock<RtActivitySpace>()
     private val mockGltfModelEntityImpl = mock<RtGltfEntity>()
     private val mockPanelEntityImpl = mock<RtPanelEntity>()
@@ -104,7 +105,15 @@ class EntityManagerTest {
         whenever(mockPlatformAdapter.createGroupEntity(any(), any(), any()))
             .thenReturn(mockGroupEntity)
         whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mockPanelEntityImpl)
-        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+        session =
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        mFakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockPlatformAdapter,
+                    ),
+            )
         activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
     }
 
@@ -249,7 +258,7 @@ class EntityManagerTest {
     private fun createPanelEntity() {
         panelEntity =
             PanelEntity.create(
-                session.runtime.lifecycleManager,
+                session.perceptionRuntime.lifecycleManager,
                 activity,
                 mockPlatformAdapter,
                 entityManager,
@@ -281,7 +290,7 @@ class EntityManagerTest {
     private fun createActivityPanelEntity() {
         activityPanelEntity =
             ActivityPanelEntity.create(
-                session.runtime.lifecycleManager,
+                session.perceptionRuntime.lifecycleManager,
                 mockPlatformAdapter,
                 entityManager,
                 IntSize2d(640, 480),

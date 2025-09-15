@@ -19,8 +19,8 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SubspaceNodeHolder
-import androidx.xr.runtime.internal.SubspaceNodeEntity as RtSubspaceNodeEntity
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.scenecore.internal.SubspaceNodeEntity as RtSubspaceNodeEntity
 import com.google.androidxr.splitengine.SubspaceNode
 
 /**
@@ -37,9 +37,13 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
 
     /** The size of the [SubspaceNodeEntity] in meters, in unscaled local space. */
     public var size: FloatSize3d
-        get() = rtEntity.size.toFloatSize3d()
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.size.toFloatSize3d()
+        }
         set(value) {
-            rtEntity.size = value.toRtDimensions()
+            checkNotDisposed()
+            rtEntity!!.size = value.toRtDimensions()
         }
 
     public companion object {

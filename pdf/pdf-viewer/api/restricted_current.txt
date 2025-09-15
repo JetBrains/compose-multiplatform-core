@@ -182,6 +182,11 @@ package androidx.pdf.selection {
     property public final Object key;
   }
 
+  public interface LinkSelection extends androidx.pdf.selection.Selection {
+    method public CharSequence getLinkText();
+    property public abstract CharSequence linkText;
+  }
+
   public final class PdfSelectionMenuKeys {
     property public Object CopyKey;
     property public Object SelectAllKey;
@@ -214,6 +219,38 @@ package androidx.pdf.selection {
 }
 
 package androidx.pdf.selection.model {
+
+  public final class GoToLinkSelection implements androidx.pdf.selection.LinkSelection {
+    ctor public GoToLinkSelection(androidx.pdf.selection.model.GoToLinkSelection.Destination destination, CharSequence linkText, java.util.List<androidx.pdf.PdfRect> bounds);
+    method public java.util.List<androidx.pdf.PdfRect> getBounds();
+    method public androidx.pdf.selection.model.GoToLinkSelection.Destination getDestination();
+    method public CharSequence getLinkText();
+    property public java.util.List<androidx.pdf.PdfRect> bounds;
+    property public androidx.pdf.selection.model.GoToLinkSelection.Destination destination;
+    property public CharSequence linkText;
+  }
+
+  public static final class GoToLinkSelection.Destination {
+    ctor public GoToLinkSelection.Destination(int pageNumber, float xCoordinate, float yCoordinate, float zoom);
+    method public int getPageNumber();
+    method public float getXCoordinate();
+    method public float getYCoordinate();
+    method public float getZoom();
+    property public int pageNumber;
+    property public float xCoordinate;
+    property public float yCoordinate;
+    property public float zoom;
+  }
+
+  public final class HyperLinkSelection implements androidx.pdf.selection.LinkSelection {
+    ctor public HyperLinkSelection(android.net.Uri link, CharSequence linkText, java.util.List<androidx.pdf.PdfRect> bounds);
+    method public java.util.List<androidx.pdf.PdfRect> getBounds();
+    method public android.net.Uri getLink();
+    method public CharSequence getLinkText();
+    property public java.util.List<androidx.pdf.PdfRect> bounds;
+    property public android.net.Uri link;
+    property public CharSequence linkText;
+  }
 
   public final class TextSelection implements androidx.pdf.selection.Selection {
     ctor public TextSelection(CharSequence text, java.util.List<androidx.pdf.PdfRect> bounds);

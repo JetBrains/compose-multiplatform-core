@@ -18,11 +18,11 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.ResizableComponent;
-import androidx.xr.runtime.internal.ResizeEvent;
-import androidx.xr.runtime.internal.ResizeEventListener;
+import androidx.xr.scenecore.internal.Dimensions;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.ResizableComponent;
+import androidx.xr.scenecore.internal.ResizeEvent;
+import androidx.xr.scenecore.internal.ResizeEventListener;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;

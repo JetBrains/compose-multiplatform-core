@@ -55,6 +55,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.1")
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.testCoreKtx)
     testImplementation(libs.testRules)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRules)

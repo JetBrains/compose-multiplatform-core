@@ -20,14 +20,14 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.concurrent.futures.ResolvableFuture;
-import androidx.xr.runtime.internal.ActivityPose;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.InputEventListener;
-import androidx.xr.runtime.internal.LoggingEntity;
-import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.internal.ActivityPose;
+import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.internal.InputEventListener;
+import androidx.xr.scenecore.internal.LoggingEntity;
+import androidx.xr.scenecore.internal.SpaceValue;
 
 import com.google.common.util.concurrent.ListenableFuture;
 

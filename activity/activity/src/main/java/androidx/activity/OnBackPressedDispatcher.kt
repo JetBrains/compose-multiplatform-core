@@ -214,13 +214,13 @@ class OnBackPressedDispatcher(
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackStarted(backEvent: BackEventCompat) {
-        directInput.start(backEvent.toNavigationEvent())
+        directInput.backStarted(backEvent.toNavigationEvent())
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackProgressed(backEvent: BackEventCompat) {
-        directInput.progress(backEvent.toNavigationEvent())
+        directInput.backProgressed(backEvent.toNavigationEvent())
     }
 
     /**
@@ -233,13 +233,13 @@ class OnBackPressedDispatcher(
      */
     @MainThread
     fun onBackPressed() {
-        directInput.complete()
+        directInput.backCompleted()
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackCancelled() {
-        directInput.cancel()
+        directInput.backCancelled()
     }
 }
 

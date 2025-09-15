@@ -251,7 +251,7 @@ internal abstract class KspType(
         }
     }
 
-    override fun annotations(): Sequence<KSAnnotation> = originalKSAnnotations
+    override val ksAnnotations = originalKSAnnotations
 
     override fun isNone(): Boolean {
         // even void is converted to Unit so we don't have none type in KSP

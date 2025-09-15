@@ -121,10 +121,10 @@ class TracingTest {
             with(context) {
                 val process = getOrCreateProcessTrack(id = 1, name = "process")
                 with(process) {
-                    traceFlow("service") {
+                    traceCoroutine("service") {
                         coroutineScope {
-                            async { traceFlow(name = "method1") { delay(10) } }.await()
-                            async { traceFlow(name = "method2") { delay(40) } }.await()
+                            async { traceCoroutine(name = "method1") { delay(10) } }.await()
+                            async { traceCoroutine(name = "method2") { delay(40) } }.await()
                         }
                     }
                 }

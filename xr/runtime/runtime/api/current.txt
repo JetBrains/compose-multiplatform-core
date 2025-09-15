@@ -1,6 +1,23 @@
 // Signature format: 4.0
 package androidx.xr.runtime {
 
+  public final class AugmentedObjectCategory {
+    method public static java.util.List<androidx.xr.runtime.AugmentedObjectCategory> all();
+    field public static final androidx.xr.runtime.AugmentedObjectCategory.Companion Companion;
+    field public static final androidx.xr.runtime.AugmentedObjectCategory KEYBOARD;
+    field public static final androidx.xr.runtime.AugmentedObjectCategory LAPTOP;
+    field public static final androidx.xr.runtime.AugmentedObjectCategory MOUSE;
+    field public static final androidx.xr.runtime.AugmentedObjectCategory UNKNOWN;
+  }
+
+  public static final class AugmentedObjectCategory.Companion {
+    method public java.util.List<androidx.xr.runtime.AugmentedObjectCategory> all();
+    property public androidx.xr.runtime.AugmentedObjectCategory KEYBOARD;
+    property public androidx.xr.runtime.AugmentedObjectCategory LAPTOP;
+    property public androidx.xr.runtime.AugmentedObjectCategory MOUSE;
+    property public androidx.xr.runtime.AugmentedObjectCategory UNKNOWN;
+  }
+
   public final class Config {
     ctor public Config();
     ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking);
@@ -52,6 +69,17 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_ONLY;
   }
 
+  public static final class Config.DeviceTrackingMode {
+    field public static final androidx.xr.runtime.Config.DeviceTrackingMode.Companion Companion;
+    field public static final androidx.xr.runtime.Config.DeviceTrackingMode DISABLED;
+    field public static final androidx.xr.runtime.Config.DeviceTrackingMode LAST_KNOWN;
+  }
+
+  public static final class Config.DeviceTrackingMode.Companion {
+    property public androidx.xr.runtime.Config.DeviceTrackingMode DISABLED;
+    property public androidx.xr.runtime.Config.DeviceTrackingMode LAST_KNOWN;
+  }
+
   public static final class Config.HandTrackingMode {
     field public static final androidx.xr.runtime.Config.HandTrackingMode BOTH;
     field public static final androidx.xr.runtime.Config.HandTrackingMode.Companion Companion;
@@ -89,35 +117,6 @@ package androidx.xr.runtime {
     ctor public CoreState(kotlin.time.ComparableTimeMark timeMark);
     method public kotlin.time.ComparableTimeMark getTimeMark();
     property public kotlin.time.ComparableTimeMark timeMark;
-  }
-
-  public enum HandJointType {
-    enum_constant public static final androidx.xr.runtime.HandJointType INDEX_DISTAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType INDEX_INTERMEDIATE;
-    enum_constant public static final androidx.xr.runtime.HandJointType INDEX_METACARPAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType INDEX_PROXIMAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType INDEX_TIP;
-    enum_constant public static final androidx.xr.runtime.HandJointType LITTLE_DISTAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType LITTLE_INTERMEDIATE;
-    enum_constant public static final androidx.xr.runtime.HandJointType LITTLE_METACARPAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType LITTLE_PROXIMAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType LITTLE_TIP;
-    enum_constant public static final androidx.xr.runtime.HandJointType MIDDLE_DISTAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType MIDDLE_INTERMEDIATE;
-    enum_constant public static final androidx.xr.runtime.HandJointType MIDDLE_METACARPAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType MIDDLE_PROXIMAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType MIDDLE_TIP;
-    enum_constant public static final androidx.xr.runtime.HandJointType PALM;
-    enum_constant public static final androidx.xr.runtime.HandJointType RING_DISTAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType RING_INTERMEDIATE;
-    enum_constant public static final androidx.xr.runtime.HandJointType RING_METACARPAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType RING_PROXIMAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType RING_TIP;
-    enum_constant public static final androidx.xr.runtime.HandJointType THUMB_DISTAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType THUMB_METACARPAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType THUMB_PROXIMAL;
-    enum_constant public static final androidx.xr.runtime.HandJointType THUMB_TIP;
-    enum_constant public static final androidx.xr.runtime.HandJointType WRIST;
   }
 
   public final class Session {

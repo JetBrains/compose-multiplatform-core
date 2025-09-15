@@ -16,9 +16,9 @@
 
 package androidx.xr.scenecore.impl;
 
-import androidx.xr.runtime.internal.AnchorPlacement;
-import androidx.xr.runtime.internal.PlaneSemantic;
-import androidx.xr.runtime.internal.PlaneType;
+import androidx.xr.scenecore.internal.AnchorPlacement;
+import androidx.xr.scenecore.internal.PlaneSemantic;
+import androidx.xr.scenecore.internal.PlaneType;
 
 import java.util.HashSet;
 import java.util.Set;

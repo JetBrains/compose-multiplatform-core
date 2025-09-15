@@ -39,6 +39,7 @@ import androidx.wear.protolayout.ResourceBuilders.Resources;
 import androidx.wear.protolayout.expression.VersionBuilders;
 import androidx.wear.protolayout.expression.proto.VersionProto.VersionInfo;
 import androidx.wear.protolayout.proto.DeviceParametersProto.DeviceParameters;
+import androidx.wear.protolayout.proto.ResourceProto;
 import androidx.wear.protolayout.protobuf.InvalidProtocolBufferException;
 import androidx.wear.tiles.EventBuilders.TileAddEvent;
 import androidx.wear.tiles.EventBuilders.TileEnterEvent;
@@ -157,6 +158,16 @@ public abstract class TileService extends Service {
     private final Map<Integer, ProtoLayoutScope> mScopes = new HashMap<>();
 
     /**
+     * Map of all {@link Resources} for the tile instances that have requested new layout, but are
+     * not yet requested resources (i.e. on older renderers, who don't handle it in one call).
+     *
+     * <p>This field is **not** thread safe and should only be accessed from main thread.
+     */
+    // TODO: b/428692502 - Store this on disk so that even if service is destroyed we still have
+    // them.
+    private final Map<Integer, Resources> mResourcesToSend = new HashMap<>();
+
+    /**
      * Returns {@link ProtoLayoutScope} for the tile instance with the given ID. If the scope
      * doesn't exist, a new one will be created.
      *
@@ -175,6 +186,28 @@ public abstract class TileService extends Service {
     @MainThread
     void removeScope(int tileId) {
         mScopes.remove(tileId);
+    }
+
+    /**
+     * Returns and removes saved {@link Resources} for the tile instance with the given ID that
+     * should be sent for resources request as layout has already been requested. If no resources
+     * are saved, scope wasn't used or tile didn't have its layout requested, return null.
+     *
+     * <p>This method is not thread safe and should be called only from main thread.
+     */
+    @MainThread
+    @Nullable Resources removeSavedResource(int tileId) {
+        return mResourcesToSend.remove(tileId);
+    }
+
+    /**
+     * Saves the given {@link Resources} for the tile instance with the given ID.
+     *
+     * <p>This method is not thread safe and should be called only from main thread.
+     */
+    @MainThread
+    void saveResource(int tileId, @NonNull Resources resources) {
+        mResourcesToSend.put(tileId, resources);
     }
 
     /**
@@ -409,6 +442,7 @@ public abstract class TileService extends Service {
             return TileProvider.API_VERSION;
         }
 
+        @SuppressWarnings("RestrictedApiAndroidX")
         @Override
         public void onTileRequest(
                 int tileId, TileRequestData requestParams, TileCallback callback) {
@@ -428,6 +462,7 @@ public abstract class TileService extends Service {
                         tileService.markTileAsActiveLegacy(tileId);
                         TileRequest tileRequest;
 
+                        ProtoLayoutScope scope = tileService.getScope(tileId);
                         try {
                             RequestProto.TileRequest tileRequestProto =
                                     RequestProto.TileRequest.parseFrom(requestParams.getContents());
@@ -451,13 +486,17 @@ public abstract class TileService extends Service {
                             }
 
                             tileRequest =
-                                    TileRequest.fromProto(
-                                            tileRequestProtoBuilder.build(),
-                                            tileService.getScope(tileId));
+                                    TileRequest.fromProto(tileRequestProtoBuilder.build(), scope);
                         } catch (InvalidProtocolBufferException ex) {
                             Log.e(TAG, "Error deserializing TileRequest payload.", ex);
                             return;
                         }
+
+                        // Clear the scope before provider stores resources and intents.
+                        scope.clearAll();
+                        // Clear previously saved resources, as we now have new request we need to
+                        // handle
+                        tileService.removeSavedResource(tileId);
 
                         ListenableFuture<Tile> tileFuture = tileService.onTileRequest(tileRequest);
 
@@ -469,37 +508,92 @@ public abstract class TileService extends Service {
                                                 tileFuture.get().toProto().toBuilder()
                                                         .setSchemaVersion(Version.CURRENT);
 
-                                        if (!isResourcesWithTileAndExtrasEnabled(tileRequest)) {
-                                            updateTileDataV1(callback, tileBuilder.build());
-                                            return;
-                                        }
-
                                         // Collect the PendingIntents used in the layout clickable
                                         // if any
-                                        Bundle pendingIntents =
-                                                tileService
-                                                        .getScope(tileId)
-                                                        .collectPendingIntents();
+                                        Bundle pendingIntents = scope.collectPendingIntents();
                                         Bundle extras = new Bundle();
                                         extras.putParcelable(
                                                 TileData.PENDING_INTENT_KEY, pendingIntents);
 
+                                        String incomingResVer = tileBuilder.getResourcesVersion();
+                                        Resources resourcesFromScope = scope.collectResources();
+
+                                        boolean hasScopeResources = scope.hasResources();
+                                        if (hasScopeResources) {
+                                            // Take resources from scope. They will have their own
+                                            // version based on hash codes of actual resources
+                                            // inside, and we will append version set in Tile
+                                            // response. Update incoming version and version in
+                                            // resources to match generated one.
+                                            incomingResVer =
+                                                    mergeTileAndScopeResourcesVersion(
+                                                            incomingResVer, resourcesFromScope);
+                                            tileBuilder.setResourcesVersion(incomingResVer);
+                                            resourcesFromScope =
+                                                    Resources.fromProto(
+                                                            resourcesFromScope.toProto().toBuilder()
+                                                                    .setVersion(incomingResVer)
+                                                                    .build());
+                                        }
+
+                                        // Everything is collected, clear the scope for this tile
+                                        // instance.
+                                        scope.clearAll();
+
+                                        // Legacy behaviour for older renderers, where tile and
+                                        // resources are separated.
+                                        // If scope has resources, they will be preserved until
+                                        // onResourcesRequest is called.
+                                        if (!isResourcesWithTileAndExtrasEnabled(tileRequest)) {
+                                            // Save resources for onResReq if they were in the scope
+                                            if (hasScopeResources) {
+                                                tileService.saveResource(
+                                                        tileId, resourcesFromScope);
+                                            }
+                                            // Generated version will be propagated from Tile's
+                                            // version (updated above) via ResourcesRequest
+                                            updateTileDataV1(callback, tileBuilder.build());
+                                            return;
+                                        }
+
+                                        // Last resources version is set in the renderer, as
+                                        // `resources.getVersion` of resources applied to the tile.
+                                        // That is why we update resources version above to match
+                                        // the merged one in case scope is used.
                                         String lastResVer =
                                                 tileRequest.toProto().getLastResourcesVersion();
-                                        String incomingResVer = tileBuilder.getResourcesVersion();
+
                                         if (incomingResVer.isEmpty()
                                                 || incomingResVer.equals(lastResVer)) {
                                             // If the tile has no resources, or the resources
                                             // version is the same as the last one, then the
                                             // renderer will use the cached resources. We can skip
                                             // the resources fetch and send the tile data directly.
-                                            updateTileDataV2(callback, tileBuilder.build(), extras);
+                                            updateTileDataV2(
+                                                    callback,
+                                                    tileBuilder,
+                                                    /* resources= */ null,
+                                                    extras);
                                             return;
                                         }
 
+                                        // Scope has resources, we will send those.
+                                        if (hasScopeResources) {
+                                            updateTileDataV2(
+                                                    callback,
+                                                    tileBuilder,
+                                                    resourcesFromScope.toProto(),
+                                                    extras);
+                                            return;
+                                        }
+
+                                        // Since scope doesn't have resources, we will fetch new
+                                        // ones. There could be the case where resources are
+                                        // actually empty, but in that case this call will be quick.
+                                        String finalIncomingResVer = incomingResVer;
                                         ResourcesRequest resourcesRequest =
                                                 new ResourcesRequest.Builder()
-                                                        .setVersion(incomingResVer)
+                                                        .setVersion(finalIncomingResVer)
                                                         .setDeviceConfiguration(
                                                                 tileRequest
                                                                         .getDeviceConfiguration())
@@ -508,14 +602,13 @@ public abstract class TileService extends Service {
                                         onResourcesRequest(
                                                 resourcesRequest,
                                                 /* onSuccess= */ resources -> {
-                                                    if (incomingResVer.equals(
+                                                    if (finalIncomingResVer.equals(
                                                             resources.getVersion())) {
-                                                        TileProto.Tile tile =
-                                                                tileBuilder
-                                                                        .setResources(
-                                                                                resources.toProto())
-                                                                        .build();
-                                                        updateTileDataV2(callback, tile, extras);
+                                                        updateTileDataV2(
+                                                                callback,
+                                                                tileBuilder,
+                                                                resources.toProto(),
+                                                                extras);
                                                     }
                                                 });
                                     } catch (ExecutionException
@@ -596,6 +689,16 @@ public abstract class TileService extends Service {
             if (tileService == null) {
                 return;
             }
+
+            int tileId = resourcesRequest.getTileId();
+            Resources maybeSavedResources = tileService.removeSavedResource(tileId);
+
+            if (maybeSavedResources != null) {
+                // We can just send this resources and no need to call service.
+                onSuccess.accept(maybeSavedResources);
+                return;
+            }
+
             ListenableFuture<Resources> resourcesFuture =
                     tileService.onTileResourcesRequest(resourcesRequest);
             if (resourcesFuture.isDone()) {
@@ -818,6 +921,16 @@ public abstract class TileService extends Service {
         }
     }
 
+    /**
+     * Merges the resources version, that is usually generated from scope with the version that
+     * developer could put in Tile.
+     */
+    @VisibleForTesting
+    static @NonNull String mergeTileAndScopeResourcesVersion(
+            String incomingTileResVer, Resources resourcesFromScope) {
+        return incomingTileResVer + ";" + resourcesFromScope.getVersion();
+    }
+
     private static void updateTileDataV1(
             @NonNull TileCallback callback, TileProto.@NonNull Tile tile) {
         try {
@@ -827,11 +940,25 @@ public abstract class TileService extends Service {
         }
     }
 
+    /**
+     * Updates {@link TileCallback} as Tile V2 which accepts resources and Bundle within the
+     * response. Resources will only be set if they are not null.
+     */
+    @SuppressWarnings("RestrictedApiAndroidX")
     private static void updateTileDataV2(
-            @NonNull TileCallback callback, TileProto.@NonNull Tile tile, @Nullable Bundle extras) {
+            @NonNull TileCallback callback,
+            TileProto.Tile.@NonNull Builder tileBuilder,
+            ResourceProto.@Nullable Resources resources,
+            @Nullable Bundle extras) {
         try {
+            if (resources != null) {
+                tileBuilder.setResources(resources);
+            }
             callback.updateTileData(
-                    new TileData(tile.toByteArray(), extras, TileData.VERSION_PROTOBUF_2));
+                    new TileData(
+                            tileBuilder.build().toByteArray(),
+                            extras,
+                            TileData.VERSION_PROTOBUF_2));
         } catch (RemoteException ex) {
             Log.e(TAG, "RemoteException while returning tile payload", ex);
         }

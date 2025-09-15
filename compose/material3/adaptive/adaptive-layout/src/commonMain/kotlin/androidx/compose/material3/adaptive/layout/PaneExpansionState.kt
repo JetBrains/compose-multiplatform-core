@@ -261,6 +261,9 @@ fun rememberPaneExpansionState(
         remember(anchors, initialAnchoredIndex) {
             if (initialAnchoredIndex == -1) null else anchors[initialAnchoredIndex]
         }
+    // Note that this will only be updated when the current anchors change, which will serve as a
+    // fallback if the current anchor is no longer in the current anchors.
+    val initialAnchorForCurrentAnchors = remember(anchors) { initialAnchor }
     val data =
         rememberPersistentlyWithKey(
             key = key,
@@ -275,7 +278,13 @@ fun rememberPaneExpansionState(
         PaneExpansionState(data) { delta -> consumeDragDeltaRef(delta) }
     }
     LaunchedEffect(key, anchors, anchoringAnimationSpec, flingBehavior) {
-        expansionState.restore(data, anchors, anchoringAnimationSpec, flingBehavior)
+        expansionState.restore(
+            data = data,
+            anchors = anchors,
+            anchoringAnimationSpec = anchoringAnimationSpec,
+            flingBehavior = flingBehavior,
+            initialAnchorForCurrentAnchors = initialAnchorForCurrentAnchors,
+        )
     }
     return expansionState
 }
@@ -491,6 +500,7 @@ internal constructor(
         anchors: List<PaneExpansionAnchor>,
         anchoringAnimationSpec: FiniteAnimationSpec<Float>,
         flingBehavior: FlingBehavior,
+        initialAnchorForCurrentAnchors: PaneExpansionAnchor?,
     ) {
         dragMutex.mutate(MutatePriority.PreventUserInput) {
             this.data = data
@@ -505,7 +515,7 @@ internal constructor(
                     )
             }
             if (!anchors.contains(currentAnchor)) {
-                currentAnchor = null
+                currentAnchor = initialAnchorForCurrentAnchors
             }
             this.anchoringAnimationSpec = anchoringAnimationSpec
             this.flingBehavior = flingBehavior

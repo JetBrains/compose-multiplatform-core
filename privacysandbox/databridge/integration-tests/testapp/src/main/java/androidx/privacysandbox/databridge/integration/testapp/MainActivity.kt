@@ -18,6 +18,7 @@ package androidx.privacysandbox.databridge.integration.testapp
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.privacysandbox.databridge.client.SyncCallback
 import androidx.privacysandbox.databridge.core.Key
 import androidx.privacysandbox.databridge.core.KeyUpdateCallback
 import androidx.privacysandbox.databridge.integration.testsdk.SdkKeyUpdateCallback
@@ -123,6 +124,22 @@ class MainActivity : AppCompatActivity() {
             keyUpdateCallbackToSdkKeyUpdateCallbackMap[callback]!!,
         )
         keyUpdateCallbackToSdkKeyUpdateCallbackMap.remove(callback)
+    }
+
+    internal fun addKeysForSynchronization(keyValueMap: Map<Key, Any?>) {
+        testAppApi.addKeysForSynchronization(keyValueMap)
+    }
+
+    internal fun getSyncedKeys(): Set<Key> {
+        return testAppApi.getSyncedKeys()
+    }
+
+    internal fun addDataSyncCallback(executor: Executor, syncCallback: SyncCallback) {
+        testAppApi.addDataSyncCallback(executor, syncCallback)
+    }
+
+    internal fun removeDataSyncCallback(syncCallback: SyncCallback) {
+        testAppApi.removeDataSyncCallback(syncCallback)
     }
 
     class SdkKeyUpdateCallbackImpl(val executor: Executor, val callback: KeyUpdateCallback) :

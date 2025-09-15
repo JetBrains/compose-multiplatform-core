@@ -90,7 +90,8 @@ sealed interface AdaptStrategy {
      *   pane scaffold.
      * @param scrim the scrim to show when the pane is levitated to block user interaction with the
      *   underlying layout and emphasize the levitated pane; by default it will be `null` and no
-     *   scrim will show.
+     *   scrim will show; to display a scrim, we recommend to use [LevitatedPaneScrim] as a default
+     *   implementation.
      * @sample androidx.compose.material3.adaptive.samples.levitateAsBottomSheetSample
      * @sample androidx.compose.material3.adaptive.samples.levitateAsDialogSample
      * @sample androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSampleWithExtraPaneLevitatedAsDialog
@@ -101,7 +102,7 @@ sealed interface AdaptStrategy {
     @Immutable
     class Levitate(
         internal val alignment: Alignment = Alignment.Center,
-        val scrim: (@Composable () -> Unit)? = null,
+        internal val scrim: (@Composable () -> Unit)? = null,
     ) : AdaptStrategy {
         override fun toString() = "AdaptStrategy[Levitate, alignment=$alignment, scrim=$scrim]"
 

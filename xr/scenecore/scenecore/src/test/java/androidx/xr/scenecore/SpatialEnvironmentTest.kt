@@ -16,11 +16,11 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.internal.ExrImageResource as RtExrImageResource
-import androidx.xr.runtime.internal.GltfModelResource as RtGltfModelResource
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.MaterialResource as RtMaterialResource
-import androidx.xr.runtime.internal.SpatialEnvironment as RtSpatialEnvironment
+import androidx.xr.scenecore.internal.ExrImageResource as RtExrImageResource
+import androidx.xr.scenecore.internal.GltfModelResource as RtGltfModelResource
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.MaterialResource as RtMaterialResource
+import androidx.xr.scenecore.internal.SpatialEnvironment as RtSpatialEnvironment
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer

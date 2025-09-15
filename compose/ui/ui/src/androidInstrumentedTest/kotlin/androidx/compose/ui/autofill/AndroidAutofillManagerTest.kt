@@ -18,7 +18,9 @@ package androidx.compose.ui.autofill
 
 import android.graphics.Rect
 import android.os.Build
+import android.util.SparseArray
 import android.view.View
+import android.view.autofill.AutofillValue
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -61,6 +63,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.inputText
 import androidx.compose.ui.semantics.onAutofillText
+import androidx.compose.ui.semantics.onFillData
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.semanticsId
 import androidx.compose.ui.semantics.testTag
@@ -80,6 +83,8 @@ import kotlin.test.Ignore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -642,6 +647,36 @@ class AndroidAutofillManagerTest {
             Box(
                 Modifier.semantics {
                         testTag = "username"
+                        onFillData { true }
+                    }
+                    .size(height, width)
+                    .focusable()
+            )
+        }
+
+        rule.onNodeWithTag("username").requestFocus()
+
+        rule.waitForIdle()
+        verify(am)
+            .notifyViewEntered(
+                view = eq(view),
+                semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
+                bounds =
+                    eq(
+                        with(rule.density) {
+                            Rect(0, 0, width.toPx().toInt(), height.toPx().toInt())
+                        }
+                    ),
+            )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_notifyViewEntered_previousFocusFalse_onAutofillText() {
+        rule.setTestContent {
+            Box(
+                Modifier.semantics {
+                        testTag = "username"
                         onAutofillText { true }
                     }
                     .size(height, width)
@@ -693,6 +728,37 @@ class AndroidAutofillManagerTest {
                 modifier =
                     Modifier.semantics {
                             testTag = "username"
+                            onFillData { true }
+                        }
+                        .size(height, width)
+                        .focusable()
+            )
+        }
+
+        rule.onNodeWithTag("username").requestFocus()
+
+        rule.waitForIdle()
+        verify(am)
+            .notifyViewEntered(
+                view = eq(view),
+                semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
+                bounds =
+                    eq(
+                        with(rule.density) {
+                            Rect(0, 0, width.toPx().toInt(), height.toPx().toInt())
+                        }
+                    ),
+            )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_notifyViewEntered_previousFocusNull_onAutofillText() {
+        rule.setTestContent {
+            Box(
+                modifier =
+                    Modifier.semantics {
+                            testTag = "username"
                             onAutofillText { true }
                         }
                         .size(height, width)
@@ -719,6 +785,50 @@ class AndroidAutofillManagerTest {
     @Test
     @SdkSuppress(minSdkVersion = 26)
     fun autofillManager_notifyViewExited_previousFocusTrue() {
+        // Arrange.
+        rule.setTestContent {
+            Box(
+                Modifier.semantics {
+                        testTag = "username"
+                        onFillData { true }
+                    }
+                    .size(height, width)
+                    .focusable()
+            )
+        }
+        rule.onNodeWithTag("username").requestFocus()
+        val semanticsId = rule.onNodeWithTag("username").semanticsId()
+        rule.runOnIdle { clearInvocations(am) }
+
+        // Act.
+        rule.runOnIdle { focusManager.clearFocus() }
+
+        // Assert.
+        rule.waitForIdle()
+        verify(am).notifyViewExited(view = eq(view), semanticsId = eq(semanticsId))
+
+        // Clearing focus in Keyboard mode reassigns initial focus.
+        // Before API 28, we reassigned initial focus even in touch mode.
+        // https://developer.android.com/about/versions/pie/android-9.0-changes-28#focus
+        if (inputModeManager.inputMode == InputMode.Keyboard || Build.VERSION.SDK_INT < 28) {
+            rule.waitForIdle()
+            verify(am)
+                .notifyViewEntered(
+                    view = eq(view),
+                    semanticsId = eq(semanticsId),
+                    bounds =
+                        eq(
+                            with(rule.density) {
+                                Rect(0, 0, width.toPx().toInt(), height.toPx().toInt())
+                            }
+                        ),
+                )
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_notifyViewExited_previousFocusTrue_onAutofillText() {
         // Arrange.
         rule.setTestContent {
             Box(
@@ -1059,6 +1169,149 @@ class AndroidAutofillManagerTest {
                         }
                     ),
             )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_performAutofill_callsOnFillDataAndOnAutofillText_separateSemantics() {
+        // Arrange
+        var autoFilledValueNewApi: FillableData? = null
+        var autoFilledValueOldApi: String? = null
+        var autofillManager: AndroidAutofillManager? = null
+
+        rule.setTestContent {
+            autofillManager = LocalAutofillManager.current as AndroidAutofillManager
+            Box(
+                Modifier.semantics {
+                        onFillData {
+                            autoFilledValueNewApi = it
+                            true
+                        }
+                    }
+                    .semantics {
+                        onAutofillText {
+                            autoFilledValueOldApi = it.text
+                            true
+                        }
+                    }
+                    .testTag("autofill_node")
+            )
+        }
+        val semanticsId = rule.onNodeWithTag("autofill_node").semanticsId()
+        val autofillValue = AutofillValue.forText("autofill text")
+        val values = SparseArray<AutofillValue>().apply { put(semanticsId, autofillValue) }
+
+        // Act
+        rule.runOnIdle { autofillManager?.performAutofill(values) }
+
+        // Assert
+        rule.runOnIdle {
+            assertNotNull(autoFilledValueNewApi)
+            assertEquals("autofill text", autoFilledValueNewApi?.toAutofillValue()?.textValue)
+            assertEquals("autofill text", autoFilledValueOldApi)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_performAutofill_callsOnFillDataAndOnAutofillText() {
+        // Arrange
+        var autoFilledValueNewApi: FillableData? = null
+        var autoFilledValueOldApi: String? = null
+        var autofillManager: AndroidAutofillManager? = null
+
+        rule.setTestContent {
+            autofillManager = LocalAutofillManager.current as AndroidAutofillManager
+            Box(
+                Modifier.semantics {
+                    testTag = "autofill_node"
+                    onFillData {
+                        autoFilledValueNewApi = it
+                        true
+                    }
+                    onAutofillText {
+                        autoFilledValueOldApi = it.text
+                        true
+                    }
+                }
+            )
+        }
+        val semanticsId = rule.onNodeWithTag("autofill_node").semanticsId()
+        val autofillValue = AutofillValue.forText("autofill text")
+        val values = SparseArray<AutofillValue>().apply { put(semanticsId, autofillValue) }
+
+        // Act
+        rule.runOnIdle { autofillManager?.performAutofill(values) }
+
+        // Assert
+        rule.runOnIdle {
+            assertNotNull(autoFilledValueNewApi)
+            assertEquals(autofillValue, autoFilledValueNewApi?.toAutofillValue())
+            assertEquals("autofill text", autoFilledValueOldApi)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_performAutofill_callsOnFillData() {
+        // Arrange
+        var autoFilledValue: FillableData? = null
+        var autofillManager: AndroidAutofillManager? = null
+
+        rule.setTestContent {
+            autofillManager = LocalAutofillManager.current as AndroidAutofillManager
+            Box(
+                Modifier.semantics {
+                    testTag = "autofill_node"
+                    onFillData {
+                        autoFilledValue = it
+                        true
+                    }
+                }
+            )
+        }
+        val semanticsId = rule.onNodeWithTag("autofill_node").semanticsId()
+        val autofillValue = AutofillValue.forText("autofill text")
+        val values = SparseArray<AutofillValue>().apply { put(semanticsId, autofillValue) }
+
+        // Act
+        rule.runOnIdle { autofillManager?.performAutofill(values) }
+
+        // Assert
+        rule.runOnIdle {
+            assertNotNull(autoFilledValue)
+            assertEquals(autofillValue, autoFilledValue?.toAutofillValue())
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun autofillManager_performAutofill_callsOnAutofillText() {
+        // Arrange
+        var autoFilledValue: String? = null
+        var autofillManager: AndroidAutofillManager? = null
+
+        rule.setTestContent {
+            autofillManager = LocalAutofillManager.current as AndroidAutofillManager
+            Box(
+                Modifier.semantics {
+                    testTag = "autofill_node"
+                    onAutofillText {
+                        autoFilledValue = it.text
+                        true
+                    }
+                }
+            )
+        }
+        val semanticsId = rule.onNodeWithTag("autofill_node").semanticsId()
+        val autofillValue = AutofillValue.forText("autofill text")
+        val values = SparseArray<AutofillValue>().apply { put(semanticsId, autofillValue) }
+
+        // Act
+        rule.runOnIdle { autofillManager?.performAutofill(values) }
+
+        // Assert
+        rule.runOnIdle { assertEquals("autofill text", autoFilledValue) }
     }
 
     private fun ComposeContentTestRule.setTestContent(composable: @Composable () -> Unit) {

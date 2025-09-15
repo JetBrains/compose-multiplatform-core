@@ -18,16 +18,16 @@ package androidx.xr.scenecore
 
 import android.media.SoundPool
 import androidx.activity.ComponentActivity
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.Entity as RtEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PointSourceParams as RtPointSourceParams
-import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper as RtSoundPoolExtensionsWrapper
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.internal.SpatializerConstants as RtSpatializerConstants
-import androidx.xr.runtime.testing.FakeRuntimeFactory
 import androidx.xr.scenecore.SpatializerConstants.Companion.AMBISONICS_ORDER_FIRST_ORDER
+import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.internal.Entity as RtEntity
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.internal.SoundPoolExtensionsWrapper as RtSoundPoolExtensionsWrapper
+import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.internal.SpatializerConstants as RtSpatializerConstants
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -47,8 +47,9 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SpatialSoundPoolTest {
 
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private var mockRuntime: JxrPlatformAdapter = mock()
+    private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
+    private var mockPlatformAdapter: JxrPlatformAdapter = mock()
+
     private var mockRtSoundPoolExtensions: RtSoundPoolExtensionsWrapper = mock()
 
     private val mockGroupEntity = mock<RtEntity>()
@@ -60,7 +61,7 @@ class SpatialSoundPoolTest {
 
     @Before
     fun setUp() {
-        mockRuntime.stub {
+        mockPlatformAdapter.stub {
             on { spatialEnvironment } doReturn mock()
             on { activitySpace } doReturn mockActivitySpace
             on { activitySpaceRootImpl } doReturn mockActivitySpace
@@ -72,8 +73,17 @@ class SpatialSoundPoolTest {
         }
 
         mockRtSoundPoolExtensions = mock()
-        whenever(mockRuntime.soundPoolExtensionsWrapper).thenReturn(mockRtSoundPoolExtensions)
-        session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
+        whenever(mockPlatformAdapter.soundPoolExtensionsWrapper)
+            .thenReturn(mockRtSoundPoolExtensions)
+        session =
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        fakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockPlatformAdapter,
+                    ),
+            )
     }
 
     @Test

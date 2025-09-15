@@ -19,8 +19,8 @@ package androidx.xr.scenecore
 import androidx.annotation.MainThread
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.TextureResource as RtTextureResource
+import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.TextureResource as RtTextureResource
 import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import java.nio.file.Path
@@ -51,7 +51,7 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
     // TODO(b/376277201): Provide Session.GltfModel.dispose().
     @MainThread
     public open fun dispose() {
-        session.platformAdapter.destroyTexture(texture)
+        session.runtimes.filterIsInstance<JxrPlatformAdapter>().single().destroyTexture(texture)
     }
 
     public companion object {

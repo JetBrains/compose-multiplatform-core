@@ -3040,7 +3040,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          *   [SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT] or
          *   [SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT].
          */
-        fun onAccessibilityResize(slidingPaneLayout: SlidingPaneLayout, direction: Int) {
+        fun onAccessibilityResize(
+            slidingPaneLayout: SlidingPaneLayout,
+            @AccessibilityResizeDirection direction: Int,
+        ) {
             if (direction == SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT) {
                 slidingPaneLayout.splitDividerPosition =
                     if (slidingPaneLayout.splitDividerPosition == slidingPaneLayout.width) {
@@ -3106,6 +3109,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * be moved rightward.
          */
         const val SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT = 1
+
+        @IntDef(SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT, SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT)
+        @Retention(AnnotationRetention.SOURCE)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public annotation class AccessibilityResizeDirection
 
         /**
          * [UserResizeBehavior] where the divider can be released at any position respecting the
