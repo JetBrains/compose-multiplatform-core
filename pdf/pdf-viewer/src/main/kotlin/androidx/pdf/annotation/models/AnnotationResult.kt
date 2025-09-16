@@ -48,7 +48,7 @@ public class AnnotationResult(
             pdfAnnotationData.writeToParcel(dest, flags)
         }
         dest.writeInt(failures.size)
-        failures.forEach { dest.writeParcelable(it, flags) }
+        failures.forEach { it.writeToParcel(dest, flags) }
     }
 
     /** Companion object for creating [AnnotationResult] instances from a [Parcel]. */

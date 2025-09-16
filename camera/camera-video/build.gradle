@@ -46,9 +46,7 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.mockitoCore4)
     testImplementation("androidx.core:core-ktx:1.1.0")
-    testImplementation(project(":camera:camera-testing"), {
-        exclude group: "androidx.camera", module: "camera-core"
-    })
+    testImplementation(project(":camera:camera-testing"))
     testImplementation(libs.guavaAndroid)
 
     androidTestImplementation(project(":camera:camera-camera2"))

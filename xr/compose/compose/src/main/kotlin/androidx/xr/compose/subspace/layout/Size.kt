@@ -78,6 +78,79 @@ public fun SubspaceModifier.size(size: DpVolumeSize): SubspaceModifier =
     )
 
 /**
+ * Constrain the size of the content to be between min and max dp as permitted by the incoming
+ * measurement constraints. If the incoming constraints are more restrictive the requested size will
+ * obey the incoming constraints and attempt to be as close as possible to the preferred size.
+ *
+ * @param minWidth The minimum width.
+ * @param maxWidth The maximum width.
+ * @param minHeight The minimum height.
+ * @param maxHeight The maximum height.
+ * @param minDepth The minimum depth.
+ * @param maxDepth The maximum depth.
+ */
+public fun SubspaceModifier.sizeIn(
+    minWidth: Dp = Dp.Unspecified,
+    maxWidth: Dp = Dp.Unspecified,
+    minHeight: Dp = Dp.Unspecified,
+    maxHeight: Dp = Dp.Unspecified,
+    minDepth: Dp = Dp.Unspecified,
+    maxDepth: Dp = Dp.Unspecified,
+): SubspaceModifier =
+    this.then(
+        SizeElement(
+            minWidth = minWidth,
+            maxWidth = maxWidth,
+            minHeight = minHeight,
+            maxHeight = maxHeight,
+            minDepth = minDepth,
+            maxDepth = maxDepth,
+            enforceIncoming = true,
+        )
+    )
+
+/**
+ * Constrain the width of the content to be between [min]dp and [max]dp as permitted by the incoming
+ * measurement constraints. If the incoming constraints are more restrictive the requested size will
+ * obey the incoming constraints and attempt to be as close as possible to the preferred size.
+ *
+ * @param min The minimum width.
+ * @param max The maximum width.
+ */
+public fun SubspaceModifier.widthIn(
+    min: Dp = Dp.Unspecified,
+    max: Dp = Dp.Unspecified,
+): SubspaceModifier = this.then(SizeElement(minWidth = min, maxWidth = max, enforceIncoming = true))
+
+/**
+ * Constrain the height of the content to be between [min]dp and [max]dp as permitted by the
+ * incoming measurement constraints. If the incoming constraints are more restrictive the requested
+ * size will obey the incoming constraints and attempt to be as close as possible to the preferred
+ * size.
+ *
+ * @param min The minimum height.
+ * @param max The maximum height.
+ */
+public fun SubspaceModifier.heightIn(
+    min: Dp = Dp.Unspecified,
+    max: Dp = Dp.Unspecified,
+): SubspaceModifier =
+    this.then(SizeElement(minHeight = min, maxHeight = max, enforceIncoming = true))
+
+/**
+ * Constrain the depth of the content to be between [min]dp and [max]dp as permitted by the incoming
+ * measurement constraints. If the incoming constraints are more restrictive the requested size will
+ * obey the incoming constraints and attempt to be as close as possible to the preferred size.
+ *
+ * @param min The minimum depth.
+ * @param max The maximum depth.
+ */
+public fun SubspaceModifier.depthIn(
+    min: Dp = Dp.Unspecified,
+    max: Dp = Dp.Unspecified,
+): SubspaceModifier = this.then(SizeElement(minDepth = min, maxDepth = max, enforceIncoming = true))
+
+/**
  * Declare the size of the content to be exactly [width] dp along the x dimension, disregarding the
  * incoming [VolumeConstraints].
  *
@@ -406,13 +479,13 @@ private class SizeElement(
 }
 
 private class SizeNode(
-    public var minWidth: Dp = Dp.Unspecified,
-    public var maxWidth: Dp = Dp.Unspecified,
-    public var minHeight: Dp = Dp.Unspecified,
-    public var maxHeight: Dp = Dp.Unspecified,
-    public var minDepth: Dp = Dp.Unspecified,
-    public var maxDepth: Dp = Dp.Unspecified,
-    public var enforceIncoming: Boolean,
+    var minWidth: Dp = Dp.Unspecified,
+    var maxWidth: Dp = Dp.Unspecified,
+    var minHeight: Dp = Dp.Unspecified,
+    var maxHeight: Dp = Dp.Unspecified,
+    var minDepth: Dp = Dp.Unspecified,
+    var maxDepth: Dp = Dp.Unspecified,
+    var enforceIncoming: Boolean,
 ) : SubspaceLayoutModifierNode, SubspaceModifier.Node() {
 
     private val SubspaceMeasureScope.targetConstraints: VolumeConstraints

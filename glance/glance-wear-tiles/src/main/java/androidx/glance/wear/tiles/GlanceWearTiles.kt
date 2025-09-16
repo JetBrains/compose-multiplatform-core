@@ -42,6 +42,7 @@ import kotlinx.coroutines.withContext
 
 /** Object containing the result from composition of [GlanceWearTiles]. */
 @ExperimentalGlanceWearTilesApi
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
 @Suppress("deprecation") // For backwards compatibility.
 public class WearTilesCompositionResult(
     public val layout: androidx.wear.tiles.LayoutElementBuilders.LayoutElement,
@@ -58,6 +59,7 @@ public class WearTilesCompositionResult(
  * @param content Definition of the UI.
  * @return Composition result containing the glance ui.
  */
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
 public suspend fun compose(
     context: Context,
     size: DpSize,

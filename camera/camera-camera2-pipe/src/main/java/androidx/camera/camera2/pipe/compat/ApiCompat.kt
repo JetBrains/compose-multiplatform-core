@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.compat
 
-import android.content.Context
 import android.graphics.ColorSpace
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
@@ -44,63 +43,6 @@ import androidx.annotation.RequiresPermission
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.availableVideoStabilizationModes
 import java.util.concurrent.Executor
-
-@RequiresApi(23)
-internal object Api23Compat {
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    @Suppress("deprecation")
-    fun createReprocessableCaptureSession(
-        cameraDevice: CameraDevice,
-        inputConfig: InputConfiguration,
-        outputs: List<Surface>,
-        callback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
-    ) {
-        cameraDevice.createReprocessableCaptureSession(inputConfig, outputs, callback, handler)
-    }
-
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    @Suppress("deprecation")
-    fun createConstrainedHighSpeedCaptureSession(
-        cameraDevice: CameraDevice,
-        outputs: List<Surface>,
-        stateCallback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
-    ) {
-        cameraDevice.createConstrainedHighSpeedCaptureSession(outputs, stateCallback, handler)
-    }
-
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    fun createReprocessCaptureRequest(
-        cameraDevice: CameraDevice,
-        inputResult: TotalCaptureResult,
-    ): CaptureRequest.Builder {
-        return cameraDevice.createReprocessCaptureRequest(inputResult)
-    }
-
-    @JvmStatic
-    fun isReprocessable(cameraCaptureSession: CameraCaptureSession): Boolean {
-        return cameraCaptureSession.isReprocessable
-    }
-
-    @JvmStatic
-    fun getInputSurface(cameraCaptureSession: CameraCaptureSession): Surface? {
-        return cameraCaptureSession.inputSurface
-    }
-
-    @JvmStatic
-    fun newInputConfiguration(width: Int, height: Int, format: Int): InputConfiguration {
-        return InputConfiguration(width, height, format)
-    }
-
-    @JvmStatic
-    fun checkSelfPermission(context: Context, permission: String): Int {
-        return context.checkSelfPermission(permission)
-    }
-}
 
 @RequiresApi(24)
 internal object Api24Compat {

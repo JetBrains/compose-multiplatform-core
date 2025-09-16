@@ -2,10 +2,10 @@
 # -----------------------------------------------------------------------------
 # All of the following should be updated in sync.
 # -----------------------------------------------------------------------------
-androidGradlePlugin = "8.12.0"
+androidGradlePlugin = "8.13.0-alpha01"
 # NOTE: When updating the lint version we also need to update the `api` version
 # supported by `IssueRegistry`'s.' For e.g. r.android.com/1331903
-androidLint = "31.12.0"
+androidLint = "31.13.0-alpha01"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
 androidStudio = "2025.1.3.1"
@@ -24,7 +24,7 @@ androidxTestMonitor = "1.8.0"
 androidxTestCore = "1.7.0"
 androidxTestExtJunit = "1.3.0"
 androidxTestExtTruth = "1.7.0"
-annotationVersion = "1.9.1"
+annotationVersion = "1.7.0"
 atomicFu = "0.27.0"
 autoService = "1.0-rc6"
 autoValue = "1.6.3"
@@ -33,9 +33,8 @@ builder = "8.6.0-alpha05"
 byteBuddy = "1.14.9"
 asm = "9.7"
 cmake = "3.22.1"
-composeCompilerPlugin = "2.1.22-338"
+composeCompilerPlugin = "2.2.0-custom-branch-20"
 dagger = "2.54"
-datetime = "0.7.1"
 dependencyAnalysisGradlePlugin = "2.11.0"
 dexmaker = "2.28.5"
 dokka = "1.8.20-dev-214"
@@ -53,16 +52,17 @@ kotlin19 = "1.9.24"
 # Use the most up-to-date patch
 kotlin20 = "2.0.21"
 kotlin21 = "2.1.20"
-kotlin = "2.1.21"
+kotlin22 = "2.2.0"
+kotlin = "2.2.0"
 kotlinBenchmark = "0.4.11"
-kotlinGradlePluginAnnotations = "2.1.21"
-kotlinGradlePluginApi = "2.1.21"
+kotlinGradlePluginAnnotations = "1.9.24"
+kotlinGradlePluginApi = "1.9.24"
 kotlinCompileTesting = "1.4.9"
 kotlinCoroutines = "1.8.1"
-kotlinNativeUtils = "2.1.21"
-kotlinSerialization = "1.8.0"
-kotlinToolingCore = "2.1.21"
-ksp = "2.1.21-2.0.1"
+kotlinNativeUtils = "1.9.24"
+kotlinSerialization = "1.7.3"
+kotlinToolingCore = "1.9.24"
+ksp = "2.2.0-RC-2.0.1"
 ktfmt = "0.54"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
@@ -74,7 +74,7 @@ mockito = "2.25.0"
 moshi = "1.13.0"
 node = "22.0.0"
 protobuf = "4.28.2"
-skiko = "0.9.23"
+skiko = "0.7.7"
 spdxGradlePlugin = "0.6.0"
 sqldelight = "1.3.0"
 retrofit = "2.7.2"
@@ -132,7 +132,6 @@ checkmark = { module = "net.saff.checkmark:checkmark", version = "0.1.6" }
 constraintLayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.0.1"}
 dackka = { module = "com.google.devsite:dackka", version = "1.6.5" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 dependency-analysis-gradle-plugin = { module = "com.autonomousapps:dependency-analysis-gradle-plugin", version.ref = "dependencyAnalysisGradlePlugin" }
 daggerCompiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 desugarJdkLibs = { module = "com.android.tools:desugar_jdk_libs", version = "2.0.3" }
@@ -216,19 +215,14 @@ kotlinSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-serializ
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
 kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common" }
-# The Kotlin/JS and Kotlin/Wasm standard library must match the compiler
-kotlinStdlibJs = { module = "org.jetbrains.kotlin:kotlin-stdlib-js", version.ref = "kotlin" }
-kotlinStdlibWasm = { module = "org.jetbrains.kotlin:kotlin-stdlib-wasm-js", version.ref = "kotlin" }
-kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlinTestAnnotationsCommon = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common", version.ref = "kotlin" }
-kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common", version.ref = "kotlin" }
-kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-kotlinTestJs = { module = "org.jetbrains.kotlin:kotlin-test-js", version.ref = "kotlin" }
-kotlinTestWasm = { module = "org.jetbrains.kotlin:kotlin-test-wasm-js", version.ref = "kotlin" }
+kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test" }
+kotlinTestAnnotationsCommon = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common" }
+kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common" }
+kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "2.1.0" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "2.1.0" }
-kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3.1" }
+kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3" }
 ksp = { module = "com.google.devtools.ksp:symbol-processing", version.ref = "ksp" }
 kspApi = { module = "com.google.devtools.ksp:symbol-processing-api", version = "2.0.10-1.0.24" }
 kspCommon = { module = "com.google.devtools.ksp:symbol-processing-common-deps", version.ref = "ksp" }
@@ -287,16 +281,13 @@ rxjava2 = { module = "io.reactivex.rxjava2:rxjava", version = "2.2.9" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.0" }
 sdklib = { module = "com.android.tools:sdklib", version.ref = "androidLint" }
 shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version = "8.3.7" }
-skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
-skikoAwt = { module = "org.jetbrains.skiko:skiko-awt", version.ref = "skiko" }
-skikoAwtRuntimeMacOsArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64", version.ref = "skiko" }
-skikoAwtRuntimeMacOsX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-x64", version.ref = "skiko" }
-skikoAwtRuntimeWindowsX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-x64", version.ref = "skiko" }
-skikoAwtRuntimeWindowsArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-arm64", version.ref = "skiko" }
-skikoAwtRuntimeLinuxX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", version.ref = "skiko" }
-skikoAwtRuntimeLinuxArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
-skikoJsWasmRuntime = { module = "org.jetbrains.skiko:skiko-js-wasm-runtime", version.ref = "skiko" }
-skikoWasmJs = { module = "org.jetbrains.skiko:skiko-wasm-js", version.ref = "skiko" }
+skiko = { module = "org.jetbrains.skiko:skiko-awt", version.ref = "skiko" }
+skikoCommon = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
+skikoMacOsArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64", version.ref = "skiko" }
+skikoMacOsX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-x64", version.ref = "skiko" }
+skikoWindowsX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-x64", version.ref = "skiko" }
+skikoLinuxX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", version.ref = "skiko" }
+skikoLinuxArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
 spdxGradlePluginz = { module = "org.spdx:spdx-gradle-plugin", version.ref = "spdxGradlePlugin" }
 sqldelightAndroid = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelightCoroutinesExt = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
@@ -328,7 +319,6 @@ kotlinBenchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotli
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-atomicFu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "atomicFu" }
 
 [bundles]
 # prevent androidAccessibilityFramework 3.1 which pulls hamcrest 2.2, breaking espresso-core

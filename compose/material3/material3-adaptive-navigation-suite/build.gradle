@@ -44,9 +44,9 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
-                api(project(":compose:material3:material3"))
+                api("androidx.compose.material3:material3:1.4.0-beta01")
                 api(project(":compose:material3:adaptive:adaptive"))
-                implementation(project(":window:window-core"))
+                implementation("androidx.window:window-core:1.4.0")
             }
         }
 

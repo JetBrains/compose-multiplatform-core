@@ -17,6 +17,10 @@
 package androidx.ink.strokes
 
 import androidx.ink.brush.Brush
+import androidx.ink.brush.BrushBehavior
+import androidx.ink.brush.BrushFamily
+import androidx.ink.brush.BrushTip
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.StockBrushes
 import androidx.ink.geometry.BoxAccumulator
@@ -63,6 +67,13 @@ class InProgressStrokeTest {
     }
 
     @Test
+    fun unstartedStroke_doesNotChangeWithTime() {
+        val inProgressStroke = InProgressStroke()
+
+        assertThat(inProgressStroke.changesWithTime()).isFalse()
+    }
+
+    @Test
     fun unstartedStroke_inputIsFinished() {
         val inProgressStroke = InProgressStroke()
 
@@ -89,6 +100,37 @@ class InProgressStrokeTest {
     }
 
     @Test
+    fun startStroke_withSimpleBrush_doesNotChangeWithTime() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+
+        assertThat(inProgressStroke.changesWithTime()).isFalse()
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun startStroke_withTimeSinceInputBrush_changesWithTime() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeTimeSinceInputBrush())
+
+        assertThat(inProgressStroke.changesWithTime()).isTrue()
+    }
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    @Test
+    fun startStroke_withTimeSinceInputBrushAfterEndTime_noLongerChangesWithTime() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeTimeSinceInputBrush(timeSinceInputEndMillis = 1000F))
+        assertThat(inProgressStroke.changesWithTime()).isTrue()
+
+        inProgressStroke.updateShape(currentElapsedTimeMillis = 999)
+        assertThat(inProgressStroke.changesWithTime()).isTrue()
+
+        inProgressStroke.updateShape(currentElapsedTimeMillis = 1000)
+        assertThat(inProgressStroke.changesWithTime()).isFalse()
+    }
+
+    @Test
     fun enqueueInputs_withRealAndPredictedInputs_isUpdateNeeded() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
@@ -102,6 +144,7 @@ class InProgressStrokeTest {
 
         inProgressStroke.enqueueInputs(realInputs, predictedInputs)
         assertThat(inProgressStroke.isUpdateNeeded()).isTrue()
+        assertThat(inProgressStroke.changesWithTime()).isFalse()
     }
 
     @Test
@@ -722,4 +765,29 @@ class InProgressStrokeTest {
     }
 
     private fun makeBrush() = Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f)
+
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    private fun makeTimeSinceInputBrush(
+        timeSinceInputStartMillis: Float = 0F,
+        timeSinceInputEndMillis: Float = 1000F,
+    ) =
+        Brush(
+            BrushFamily(
+                BrushTip(
+                    behaviors =
+                        listOf(
+                            BrushBehavior(
+                                source = BrushBehavior.Source.TIME_SINCE_INPUT_IN_MILLIS,
+                                sourceValueRangeStart = timeSinceInputStartMillis,
+                                sourceValueRangeEnd = timeSinceInputEndMillis,
+                                target = BrushBehavior.Target.CORNER_ROUNDING_OFFSET,
+                                targetModifierRangeStart = 0F,
+                                targetModifierRangeEnd = 1F,
+                            )
+                        )
+                )
+            ),
+            size = 10F,
+            epsilon = 0.1F,
+        )
 }

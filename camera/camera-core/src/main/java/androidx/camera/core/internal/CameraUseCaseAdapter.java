@@ -664,6 +664,7 @@ public final class CameraUseCaseAdapter implements Camera {
         mStreamSharing = info.getStreamSharing();
     }
 
+    @GuardedBy("mLock")
     private void applyCameraConfig() {
         mCameraInternal.setExtendedConfig(mCameraConfig);
         if (mSecondaryCameraInternal != null) {
@@ -730,6 +731,7 @@ public final class CameraUseCaseAdapter implements Camera {
      * <li>When high-speed session is not enabled.</li>
      * </ul>
      */
+    @GuardedBy("mLock")
     private boolean isStreamSharingAllowed() {
         return !hasExtension()
                 && mCameraCoordinator.getCameraOperatingMode()
@@ -1317,8 +1319,13 @@ public final class CameraUseCaseAdapter implements Camera {
                 return false;
             }
         }
-        return mCameraInternal.getCameraInfoInternal().isUseCaseCombinationSupported(
-                new ArrayList<>(useCasesToVerify), getCameraMode(), false, mCameraConfig);
+        boolean isSupported;
+        synchronized (mLock) {
+            isSupported = mCameraInternal.getCameraInfoInternal().isUseCaseCombinationSupported(
+                    new ArrayList<>(useCasesToVerify), getCameraMode(), false, mCameraConfig);
+        }
+
+        return isSupported;
     }
 
     /**

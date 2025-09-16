@@ -336,7 +336,8 @@ class SemanticsTests {
             .onNodeWithTag(TestTag, useUnmergedTree = true)
             .assert(
                 SemanticsMatcher("fillableData") {
-                    it.config.getOrNull(SemanticsProperties.FillableData)?.textValue == "foo"
+                    it.config.getOrNull(SemanticsProperties.FillableData)?.getCharSequence() ==
+                        "foo"
                 }
             )
 
@@ -344,7 +345,8 @@ class SemanticsTests {
             .onNodeWithTag(TestTag)
             .assert(
                 SemanticsMatcher("fillableData") {
-                    it.config.getOrNull(SemanticsProperties.FillableData)?.textValue == "foo"
+                    it.config.getOrNull(SemanticsProperties.FillableData)?.getCharSequence() ==
+                        "foo"
                 }
             )
     }
@@ -372,7 +374,7 @@ class SemanticsTests {
             fillableData?.let { data -> it(data) }
         }
 
-        assertThat(receivedData?.textValue).isEqualTo("foo")
+        assertThat(receivedData?.getCharSequence()).isEqualTo("foo")
         fillableData?.let { data ->
             val fillMatcher =
                 SemanticsMatcher("fill") { node ->

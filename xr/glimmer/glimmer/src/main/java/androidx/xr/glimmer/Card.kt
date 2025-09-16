@@ -35,8 +35,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
+import kotlin.math.max
 
 /**
  * Card is a component used to group related information into a single digestible unit. A card can
@@ -215,6 +219,86 @@ public fun Card(
     )
 }
 
+/**
+ * Card is a component used to group related information into a single digestible unit. A card can
+ * adapt to display a wide range of content, from simple text blurbs to more complex summaries with
+ * multiple elements. A card contains text [content], and may also have any combination of [title],
+ * [subtitle], [leadingIcon], and [trailingIcon]. If specified, [title] is placed on top of the
+ * [subtitle], which is placed on top of the [content]. A card fills the maximum width available by
+ * default.
+ *
+ * This Card contains an [action] that is placed on the center of the bottom edge of the card. The
+ * action should be a [Button], and represents the action that will be performed when this card is
+ * interacted with. The main card itself is not focusable - the [action] takes the focus instead.
+ *
+ * For more documentation and samples of the other card parameters, see the other card overload
+ * without an action.
+ *
+ * @sample androidx.xr.glimmer.samples.CardWithTitleAndActionSample
+ * @param action the action for this card. This should be a [Button], and represents the action
+ *   performed when a user interacts with this card. The action is placed overlapping the bottom
+ *   edge of the card.
+ * @param modifier the [Modifier] to be applied to the outer layout containing the card and action
+ * @param title optional title to be placed above [subtitle] and [content], below [header]
+ * @param subtitle optional subtitle to be placed above [content], below [title]
+ * @param header optional header image to be placed at the top of the card. This image should
+ *   typically fill the max width available, for example using
+ *   [androidx.compose.ui.layout.ContentScale.FillWidth]. Headers are constrained to a maximum
+ *   aspect ratio (1.6) to avoid taking up too much vertical space, so using a modifier such as
+ *   [androidx.compose.foundation.layout.fillMaxSize] will result in an image that fills the maximum
+ *   aspect ratio.
+ * @param leadingIcon optional leading icon to be placed before [content]. This is typically an
+ *   [Icon]. [Colors.primary] is provided as the content color by default.
+ * @param trailingIcon optional trailing icon to be placed after [content]. This is typically an
+ *   [Icon]. [Colors.primary] is provided as the content color by default.
+ * @param shape the [Shape] used to clip this card, and also used to draw the background and border
+ * @param color background color of this card
+ * @param contentColor content color used by components inside [content], [title] and [subtitle].
+ * @param border the border to draw around this card
+ * @param contentPadding the spacing values to apply internally between the container and the
+ *   content. Note that there is additional padding applied around the content / text / icons inside
+ *   a card, this only affects the outermost content padding.
+ * @param content the main content / body text to display inside this card. This is recommended to
+ *   be limited to 10 lines of text.
+ */
+@Composable
+public fun Card(
+    action: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    title: @Composable (() -> Unit)? = null,
+    subtitle: @Composable (() -> Unit)? = null,
+    header: @Composable (() -> Unit)? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    shape: Shape = GlimmerTheme.shapes.medium,
+    color: Color = GlimmerTheme.colors.surface,
+    contentColor: Color = calculateContentColor(color),
+    border: BorderStroke? = SurfaceDefaults.border(),
+    contentPadding: PaddingValues = CardDefaults.ContentPadding,
+    content: @Composable () -> Unit,
+) {
+    // b/436852852 - in a list the button won't be focused until it crosses the focus line.
+    ActionCardLayout(modifier, action) {
+        CardImpl(
+            modifier = Modifier,
+            onClick = null,
+            focusable = false,
+            title = title,
+            subtitle = subtitle,
+            header = header,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            shape = shape,
+            color = color,
+            contentColor = contentColor,
+            border = border,
+            contentPadding = contentPadding,
+            interactionSource = null,
+            content = content,
+        )
+    }
+}
+
 @Composable
 private fun CardImpl(
     modifier: Modifier,
@@ -327,6 +411,79 @@ private fun CardImpl(
     }
 }
 
+@Composable
+private fun ActionCardLayout(
+    modifier: Modifier,
+    action: @Composable () -> Unit,
+    card: @Composable () -> Unit,
+) {
+    Layout(contents = listOf(action, card), modifier = modifier) { measurables, constraints ->
+        val actionMeasurables = measurables[0]
+        val cardMeasurables = measurables[1]
+
+        var actionMaxWidth = 0
+        var actionMaxHeight = 0
+        var cardMaxWidth = 0
+        var cardMaxHeight = 0
+
+        val actionPlaceables =
+            actionMeasurables.fastMap {
+                // Measure the action with relaxed constraints
+                val placeable = it.measure(constraints.copyMaxDimensions())
+                actionMaxWidth = max(actionMaxWidth, placeable.width)
+                actionMaxHeight = max(actionMaxHeight, placeable.height)
+                placeable
+            }
+
+        val actionInset = ActionInset.roundToPx()
+
+        // The card is allowed to take up the total height - the height of the overall layout taken
+        // up by the action
+        val heightTakenUpByAction = (actionMaxHeight - actionInset).coerceAtLeast(0)
+
+        // Shrink the height constraints, to account for the action button
+        val cardMinHeightConstraints =
+            (constraints.minHeight - heightTakenUpByAction).coerceAtLeast(0)
+        val cardMaxHeightConstraints =
+            if (constraints.hasBoundedHeight) {
+                (constraints.maxHeight - heightTakenUpByAction).coerceAtLeast(0)
+            } else {
+                constraints.maxHeight
+            }
+        val cardConstraints =
+            constraints.copy(
+                minHeight = cardMinHeightConstraints,
+                maxHeight = cardMaxHeightConstraints,
+            )
+
+        val cardPlaceables =
+            cardMeasurables.fastMap {
+                val placeable = it.measure(cardConstraints)
+                cardMaxWidth = max(cardMaxWidth, placeable.width)
+                cardMaxHeight = max(cardMaxHeight, placeable.height)
+                placeable
+            }
+
+        val layoutWidth = maxOf(actionMaxWidth, cardMaxWidth)
+        val layoutHeight = heightTakenUpByAction + cardMaxHeight
+
+        layout(layoutWidth, layoutHeight) {
+            cardPlaceables.fastForEach {
+                // Horizontally center in the overall space
+                val x = (layoutWidth - it.width) / 2
+                it.placeRelative(x, 0)
+            }
+
+            actionPlaceables.fastForEach {
+                // Horizontally center in the overall space
+                val x = (layoutWidth - it.width) / 2
+                val y = cardMaxHeight - actionInset
+                it.placeRelative(x, y)
+            }
+        }
+    }
+}
+
 /**
  * Constrains the content's height to a maximum aspect ratio, based on the maximum width.
  *
@@ -411,3 +568,6 @@ private val HeaderShape = RoundedCornerShape(24.dp)
  * vertical space
  */
 private const val HeaderMaximumAspectRatio = 1.6f
+
+/** How far the action button is inset from the underlying card's edge */
+private val ActionInset = 16.dp

@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -36,7 +37,6 @@ androidXMultiplatform {
     desktop()
     mac()
     linux()
-    mingwX64()
     ios()
     watchos()
     tvos()
@@ -58,21 +58,13 @@ androidXMultiplatform {
             }
         }
 
-        jvmMain {
-            dependsOn(commonMain)
-        }
-
         androidMain {
-            dependsOn(jvmMain)
+            dependsOn(commonMain)
             dependencies {
                 api(libs.testRules)
                 implementation(libs.testExtJunit)
                 implementation(libs.testCore)
             }
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
         }
 
         nativeMain {
@@ -83,27 +75,16 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        targets.configureEach { target ->
+        targets.all { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
             }
         }
     }
 }
+
 
 androidx {
     type = SoftwareType.INTERNAL_TEST_LIBRARY

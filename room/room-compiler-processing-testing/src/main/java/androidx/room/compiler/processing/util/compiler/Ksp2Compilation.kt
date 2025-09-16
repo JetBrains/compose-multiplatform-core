@@ -114,7 +114,7 @@ internal class Ksp2Compilation(
                 apiVersion = KotlinCliRunner.getApiVersion(arguments.kotlincArguments).versionString
                 jvmTarget = KotlinCliRunner.getJvmTarget(arguments.kotlincArguments).description
                 jvmDefaultMode =
-                    KotlinCliRunner.getJvmDefaultMode(arguments.kotlincArguments).description
+                    KotlinCliRunner.getLegacyJvmDefaultMode(arguments.kotlincArguments).description
 
                 processorOptions = this@Ksp2Compilation.processorOptions
             }

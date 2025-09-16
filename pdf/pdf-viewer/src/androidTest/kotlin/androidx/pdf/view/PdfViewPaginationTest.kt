@@ -23,7 +23,6 @@ import android.util.SparseArray
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.pdf.PdfPoint
 import androidx.pdf.R
 import androidx.pdf.view.fastscroll.getDimensions
@@ -649,18 +648,18 @@ class PdfViewPaginationTest {
     /** Create, measure, and layout a [PdfView] at the specified [width] and [height] */
     private fun setupPdfView(width: Int, height: Int, fakePdfDocument: FakePdfDocument?) {
         PdfViewTestActivity.onCreateCallback = { activity ->
-            pageMarginPx = activity.getDimensions(R.dimen.page_spacing)
-            topPageMarginPx = activity.getDimensions(R.dimen.top_page_margin)
-            val container = FrameLayout(activity)
-            pdfView = PdfView(activity)
-            container.addView(
-                pdfView?.apply {
-                    pdfDocument = fakePdfDocument
-                    id = PDF_VIEW_ID
-                },
-                ViewGroup.LayoutParams(width, height),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                pageMarginPx = activity.getDimensions(R.dimen.page_spacing)
+                topPageMarginPx = activity.getDimensions(R.dimen.top_page_margin)
+                pdfView = PdfView(activity)
+                container.addView(
+                    pdfView?.apply {
+                        pdfDocument = fakePdfDocument
+                        id = PDF_VIEW_ID
+                    },
+                    ViewGroup.LayoutParams(width, height),
+                )
+            }
         }
     }
 }

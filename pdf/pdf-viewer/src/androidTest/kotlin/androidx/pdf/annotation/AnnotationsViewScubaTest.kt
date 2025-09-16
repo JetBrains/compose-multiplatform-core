@@ -21,8 +21,8 @@ import android.graphics.Matrix
 import android.graphics.RectF
 import android.util.SparseArray
 import android.widget.FrameLayout
-import androidx.pdf.ANNOTATION_VIEW_MULTIPLE_SHAPES_SAME_PAGE_NO_TRANSFORM
-import androidx.pdf.ANNOTATION_VIEW_MULTIPLE_SHAPES_SAME_PAGE_SHARED_TRANSFORM
+import androidx.pdf.ANNOTATION_VIEW_MULTIPLE_SQUARES_SAME_PAGE_NO_TRANSFORM
+import androidx.pdf.ANNOTATION_VIEW_MULTIPLE_SQUARES_SAME_PAGE_SHARED_TRANSFORM
 import androidx.pdf.ANNOTATION_VIEW_MULTI_PAGE_DIFFERENT_TRANSFORMS
 import androidx.pdf.ANNOTATION_VIEW_SINGLE_SQUARE_NO_TRANSFORM
 import androidx.pdf.ANNOTATION_VIEW_SQUARE_COMBINED_TRANSFORM
@@ -106,41 +106,25 @@ class AnnotationViewScubaTest {
     }
 
     @Test
-    fun testAnnotationView_withMultipleShapesOnSamePageAndNoTransform() {
+    fun testAnnotationView_withMultipleSquaresOnSamePageAndNoTransform() {
         val square1 = createSquareAnnotation(size = 50f)
         val square2 =
             createSquareAnnotation(size = 50f, color = Color.GREEN, xOffset = 70f, yOffset = 20f)
-        val line =
-            createLineAnnotation(
-                startX = 30f,
-                startY = 100f,
-                endX = 150f,
-                endY = 130f,
-                color = Color.BLACK,
-            )
 
-        val pageData = createPageRenderData(annotations = listOf(square1, square2, line))
+        val pageData = createPageRenderData(annotations = listOf(square1, square2))
         val annotationsOnPage = SparseArray<PageAnnotationsData>().apply { put(0, pageData) }
 
         setupAndTakeScreenshot(
             annotationsOnPage,
-            ANNOTATION_VIEW_MULTIPLE_SHAPES_SAME_PAGE_NO_TRANSFORM,
+            ANNOTATION_VIEW_MULTIPLE_SQUARES_SAME_PAGE_NO_TRANSFORM,
         )
     }
 
     @Test
-    fun testAnnotationView_withMultipleShapesOnSamePageAndSharedTransform() {
+    fun testAnnotationView_withMultipleSquaresOnSamePageAndSharedTransform() {
         val square1 = createSquareAnnotation(size = 50f)
         val square2 =
             createSquareAnnotation(size = 50f, color = Color.GREEN, xOffset = 70f, yOffset = 20f)
-        val line =
-            createLineAnnotation(
-                startX = 30f,
-                startY = 100f,
-                endX = 150f,
-                endY = 130f,
-                color = Color.BLACK,
-            )
 
         // This single transform will apply to all annotations on this page
         val sharedTransform =
@@ -150,13 +134,13 @@ class AnnotationViewScubaTest {
             }
         val pageData =
             createPageRenderData(
-                annotations = listOf(square1, square2, line),
+                annotations = listOf(square1, square2),
                 transform = sharedTransform,
             )
         val annotationsOnPage = SparseArray<PageAnnotationsData>().apply { put(0, pageData) }
         setupAndTakeScreenshot(
             annotationsOnPage,
-            ANNOTATION_VIEW_MULTIPLE_SHAPES_SAME_PAGE_SHARED_TRANSFORM,
+            ANNOTATION_VIEW_MULTIPLE_SQUARES_SAME_PAGE_SHARED_TRANSFORM,
         )
     }
 
@@ -207,19 +191,20 @@ class AnnotationViewScubaTest {
 
     private fun setupAnnotationViewInActivity(annotationData: SparseArray<PageAnnotationsData>) {
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-            val layoutParams = FrameLayout.LayoutParams(CONTAINER_VIEW_WIDTH, CONTAINER_VIEW_HEIGHT)
-            container.layoutParams = layoutParams
+            with(activity) {
+                val layoutParams =
+                    FrameLayout.LayoutParams(CONTAINER_VIEW_WIDTH, CONTAINER_VIEW_HEIGHT)
+                container.layoutParams = layoutParams
 
-            val annotationView =
-                AnnotationsView(activity).apply {
-                    id = ANNOTATION_VIEW_ID
-                    this.layoutParams =
-                        FrameLayout.LayoutParams(CONTAINER_VIEW_WIDTH, CONTAINER_VIEW_HEIGHT)
-                    this.annotations = annotationData
-                }
-            container.addView(annotationView)
-            activity.setContentView(container)
+                val annotationView =
+                    AnnotationsView(activity).apply {
+                        id = ANNOTATION_VIEW_ID
+                        this.layoutParams =
+                            FrameLayout.LayoutParams(CONTAINER_VIEW_WIDTH, CONTAINER_VIEW_HEIGHT)
+                        this.annotations = annotationData
+                    }
+                container.addView(annotationView)
+            }
         }
     }
 
@@ -240,27 +225,6 @@ class AnnotationViewScubaTest {
             )
         val pathObject = PathPdfObject(brushColor = color, brushWidth = 5f, inputs = pathInputs)
         val bounds = RectF(xOffset, yOffset, xOffset + size, yOffset + size)
-        return StampAnnotation(pageNumber, bounds, listOf(pathObject))
-    }
-
-    private fun createLineAnnotation(
-        startX: Float,
-        startY: Float,
-        endX: Float,
-        endY: Float,
-        color: Int,
-        pageNumber: Int = 0,
-    ): StampAnnotation {
-        val pathInputs =
-            listOf(PathPdfObject.PathInput(startX, startY), PathPdfObject.PathInput(endX, endY))
-        val pathObject = PathPdfObject(brushColor = color, brushWidth = 5f, inputs = pathInputs)
-        val bounds =
-            RectF(
-                minOf(startX, endX),
-                minOf(startY, endY),
-                maxOf(startX, endX),
-                maxOf(startY, endY),
-            )
         return StampAnnotation(pageNumber, bounds, listOf(pathObject))
     }
 

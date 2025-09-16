@@ -210,8 +210,7 @@ internal constructor(
             val materialResourceFuture = platformAdapter.createWaterMaterial(isAlphaMapVersion)
             val materialFuture = ResolvableFuture.create<WaterMaterial>()
 
-            // TODO: b/375070346 - remove this `!!` when we're sure the future is non-null.
-            materialResourceFuture!!.addListener(
+            materialResourceFuture.addListener(
                 {
                     try {
                         val material = materialResourceFuture.get()

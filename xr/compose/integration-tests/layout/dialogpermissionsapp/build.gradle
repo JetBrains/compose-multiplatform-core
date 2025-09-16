@@ -44,10 +44,10 @@ dependencies {
     implementation(project(":xr:scenecore:scenecore"))
     implementation(project(":xr:runtime:runtime-manifest"))
 
-    implementation("androidx.activity:activity-compose:1.10.0-beta01")
+    implementation("androidx.activity:activity-compose:1.10.0")
     implementation("androidx.compose.ui:ui:1.7.0")
     implementation("androidx.compose.ui:ui-tooling-preview:1.7.0")
-    implementation("androidx.compose.runtime:runtime:1.8.0-rc02")
+    implementation("androidx.compose.runtime:runtime:1.8.0")
 
     compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
 }

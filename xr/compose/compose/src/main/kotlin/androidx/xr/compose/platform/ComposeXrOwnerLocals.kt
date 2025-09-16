@@ -56,6 +56,7 @@ internal class ComposeXrOwnerLocals(
     val spatialCapabilities: SpatialCapabilities,
     val coreMainPanelEntity: CoreMainPanelEntity,
     val subspaceRootNode: Entity,
+    val dialogManager: DialogManager,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -122,6 +123,7 @@ private fun View.createXrOwnerLocals(
                 GroupEntity.create(session, "SubspaceRootContainer").apply {
                     session.scene.setKeyEntity(this)
                 },
+            dialogManager = DefaultDialogManager(),
         )
         .also { setTag(R.id.compose_xr_owner_locals, it) }
 }

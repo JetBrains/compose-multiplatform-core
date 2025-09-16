@@ -19,10 +19,13 @@ package androidx.xr.runtime.testing
 import android.app.Activity
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivitySpace
+import androidx.xr.runtime.internal.CameraViewActivityPose
 import androidx.xr.runtime.internal.Entity
 import androidx.xr.runtime.internal.SceneRuntime
 import androidx.xr.runtime.internal.SpatialCapabilities
 import androidx.xr.runtime.math.Pose
+import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Test-only implementation of [SceneRuntime] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -31,7 +34,20 @@ public class FakeSceneRuntime(private val activity: Activity) : SceneRuntime {
 
     override val activitySpace: ActivitySpace = FakeActivitySpace()
 
+    override fun getCameraViewActivityPose(
+        @CameraViewActivityPose.CameraType cameraType: Int
+    ): CameraViewActivityPose? = FakeCameraViewActivityPose()
+
     override fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity = FakeEntity()
+
+    override fun addSpatialCapabilitiesChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<SpatialCapabilities>,
+    ) {}
+
+    override fun removeSpatialCapabilitiesChangedListener(
+        listener: Consumer<SpatialCapabilities>
+    ) {}
 
     override fun dispose() {}
 }

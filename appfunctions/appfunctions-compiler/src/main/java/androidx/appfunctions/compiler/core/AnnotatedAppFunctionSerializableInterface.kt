@@ -30,7 +30,9 @@ class AnnotatedAppFunctionSerializableInterface(private val classDeclaration: KS
         return this
     }
 
-    override fun getProperties(): List<AppFunctionPropertyDeclaration> {
+    override fun getProperties(
+        sharedDataTypeDescriptionMap: Map<String, String>
+    ): List<AppFunctionPropertyDeclaration> {
         return classDeclaration
             .getAllProperties()
             .map {
@@ -40,6 +42,7 @@ class AnnotatedAppFunctionSerializableInterface(private val classDeclaration: KS
                     // Property from interface is always required as there is no existing API
                     // to tell if the interface property has default value or not.
                     isRequired = true,
+                    sharedDataTypeDescriptionMap,
                 )
             }
             .toList()

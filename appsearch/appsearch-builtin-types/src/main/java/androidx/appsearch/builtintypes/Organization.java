@@ -101,6 +101,7 @@ public class Organization extends Thing {
             return (T) this;
         }
 
+        @Override
         public @NonNull Organization build() {
             return new Organization(
                 mNamespace,

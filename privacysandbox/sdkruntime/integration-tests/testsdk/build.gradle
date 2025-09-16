@@ -36,4 +36,5 @@ dependencies {
 
     implementation(project(":privacysandbox:sdkruntime:integration-tests:testaidl"))
     implementation(project(":privacysandbox:sdkruntime:sdkruntime-provider"))
+    implementation("androidx.activity:activity:1.9.3")
 }

@@ -36,6 +36,7 @@ import androidx.annotation.RestrictTo
 public abstract class Track(
     /** The [TraceContext] instance. */
     @JvmField // avoid getter generation
+    @PublishedApi
     internal val context: TraceContext,
     /**
      * The uuid for the track descriptor.
@@ -44,6 +45,7 @@ public abstract class Track(
      * used to connect recorded trace events to the containing track.
      */
     @JvmField // avoid getter generation
+    @PublishedApi
     internal val uuid: Long,
 ) {
     /**
@@ -53,14 +55,17 @@ public abstract class Track(
      */
     // Every poolable that is obtained from the pool, keeps track of its owner.
     // The underlying poolable, if eventually recycled by the Sink after an emit() is complete.
-    internal val pool: ProtoPool = ProtoPool(isDebug = context.isDebug)
+    @PublishedApi internal val pool: ProtoPool = ProtoPool(isDebug = context.isDebug)
 
     // this would be private, but internal prevents getters from being created
     @JvmField // avoid getter generation
-    internal var currentPacketArray = pool.obtainTracePacketArray()
+    @PublishedApi
+    internal var currentPacketArray: PooledTracePacketArray = pool.obtainTracePacketArray()
     @JvmField // we cache this separately to avoid having to query it with a function each time
-    internal var currentPacketArraySize = currentPacketArray.packets.size
+    @PublishedApi
+    internal var currentPacketArraySize: Int = currentPacketArray.packets.size
 
+    @PublishedApi
     internal fun flush() {
         context.sink.enqueue(currentPacketArray)
         currentPacketArray = pool.obtainTracePacketArray()
@@ -68,6 +73,7 @@ public abstract class Track(
     }
 
     /** Emit is internal, but it must be sure to only access */
+    @PublishedApi
     internal inline fun emitTraceEvent(
         immediateDispatch: Boolean = false,
         block: (TraceEvent) -> Unit,

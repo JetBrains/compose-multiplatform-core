@@ -35,8 +35,6 @@ internal fun runGradle(
             .withDebug(false)
             // workaround for b/231154556
             .withArguments("-Dorg.gradle.jvmargs=-Xmx1g -XX:MaxMetaspaceSize=512m", *args)
-    // Run tests using Gradle 8.14 to support AGP version used for the tests, b/431847386
-    projectSetup.setUpGradleVersion(runner, "8.14")
     return if (expectFailure) {
         runner.buildAndFail()
     } else {

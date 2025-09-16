@@ -20,6 +20,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.annotation.RestrictTo
+import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.service.PdfDocumentServiceImpl
 import androidx.pdf.service.connect.PdfSandboxHandleImpl
 import androidx.pdf.service.connect.PdfServiceConnection
@@ -123,6 +124,7 @@ public class SandboxedPdfLoader(
             binder.numPages(),
             binder.isPdfLinearized(),
             binder.getFormType(),
+            annotationsProcessor = BatchPdfAnnotationsProcessor(binder),
         )
     }
 

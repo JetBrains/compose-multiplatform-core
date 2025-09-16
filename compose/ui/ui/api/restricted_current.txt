@@ -466,21 +466,15 @@ package androidx.compose.ui.autofill {
   }
 
   public interface FillableData {
-    method public default Boolean? getBooleanValue();
-    method public default int getListIndexOrDefault(int defaultValue);
-    method public default Integer? getListIndexValue();
-    method public default CharSequence? getTextValue();
-    property public default Boolean? booleanValue;
-    property public default Integer? listIndexValue;
-    property public default CharSequence? textValue;
+    method public default Boolean? getBool();
+    method public default CharSequence? getCharSequence();
+    method public default Integer? getInt();
   }
 
   public final class FillableData_androidKt {
-    method public static androidx.compose.ui.autofill.FillableData? FillableData(android.view.autofill.AutofillValue autofillValue);
     method public static androidx.compose.ui.autofill.FillableData? FillableData(boolean booleanValue);
-    method public static androidx.compose.ui.autofill.FillableData? FillableData(int listIndexValue);
-    method public static androidx.compose.ui.autofill.FillableData? FillableData(CharSequence textValue);
-    method public static android.view.autofill.AutofillValue? toAutofillValue(androidx.compose.ui.autofill.FillableData);
+    method public static androidx.compose.ui.autofill.FillableData? FillableData(int intValue);
+    method public static androidx.compose.ui.autofill.FillableData? FillableData(CharSequence charSequenceValue);
   }
 
 }

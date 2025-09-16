@@ -22,6 +22,7 @@ import android.os.Looper;
 
 import androidx.annotation.VisibleForTesting;
 import androidx.xr.runtime.internal.ActivitySpace;
+import androidx.xr.runtime.internal.CameraViewActivityPose;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.SceneRuntime;
 import androidx.xr.runtime.internal.Space;
@@ -41,9 +42,16 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -62,6 +70,10 @@ class SpatialSceneRuntime implements SceneRuntime {
     private boolean mIsDisposed;
     private final EntityManager mEntityManager;
     private final PerceptionLibrary mPerceptionLibrary;
+    private final SpatialEnvironmentImpl mEnvironment;
+
+    private final Map<Consumer<SpatialCapabilities>, Executor>
+            mSpatialCapabilitiesChangedListeners = new ConcurrentHashMap<>();
 
     // TODO b/373481538: remove lazy initialization once XR Extensions bug is fixed. This will allow
     // us to remove the lazySpatialStateProvider instance and pass the spatialState directly.
@@ -72,6 +84,7 @@ class SpatialSceneRuntime implements SceneRuntime {
     private final Supplier<SpatialState> mLazySpatialStateProvider;
 
     private final ActivitySpaceImpl mActivitySpace;
+    private final List<CameraViewActivityPoseImpl> mCameraActivityPoses = new ArrayList<>();
 
     private SpatialSceneRuntime(
             @NonNull Activity activity,
@@ -102,6 +115,10 @@ class SpatialSceneRuntime implements SceneRuntime {
                                 });
         setSpatialStateCallback();
 
+        mEnvironment =
+                new SpatialEnvironmentImpl(
+                        activity, extensions, sceneRootNode, mLazySpatialStateProvider);
+
         mActivitySpace =
                 new ActivitySpaceImpl(
                         sceneRootNode,
@@ -112,6 +129,19 @@ class SpatialSceneRuntime implements SceneRuntime {
                         unscaledGravityAlignedActivitySpace,
                         executor);
         mEntityManager.addSystemSpaceActivityPose(mActivitySpace);
+        mCameraActivityPoses.add(
+                new CameraViewActivityPoseImpl(
+                        CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        mActivitySpace,
+                        mActivitySpace,
+                        perceptionLibrary));
+        mCameraActivityPoses.add(
+                new CameraViewActivityPoseImpl(
+                        CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        mActivitySpace,
+                        mActivitySpace,
+                        perceptionLibrary));
+        mCameraActivityPoses.forEach(mEntityManager::addSystemSpaceActivityPose);
     }
 
     static @NonNull SpatialSceneRuntime create(
@@ -188,6 +218,7 @@ class SpatialSceneRuntime implements SceneRuntime {
         if (mIsDisposed) {
             return;
         }
+        mEnvironment.dispose();
 
         // TODO: b/376934871 - Check async results.
         mExtensions.detachSpatialScene(mActivity, Runnable::run, (result) -> {});
@@ -213,8 +244,26 @@ class SpatialSceneRuntime implements SceneRuntime {
                 mLazySpatialStateProvider.get().getSpatialCapabilities());
     }
 
+    @Override
     public @NonNull ActivitySpace getActivitySpace() {
         return mActivitySpace;
+    }
+
+    @Override
+    public @Nullable CameraViewActivityPose getCameraViewActivityPose(
+            @CameraViewActivityPose.CameraType int cameraType) {
+        CameraViewActivityPoseImpl cameraViewActivityPose = null;
+        if (cameraType == CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE) {
+            cameraViewActivityPose = mCameraActivityPoses.get(0);
+        } else if (cameraType == CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE) {
+            cameraViewActivityPose = mCameraActivityPoses.get(1);
+        }
+        // If it is unable to retrieve a pose the camera in not yet loaded in openXR so return null.
+        if (cameraViewActivityPose == null
+                || cameraViewActivityPose.getPoseInOpenXrReferenceSpace() == null) {
+            return null;
+        }
+        return cameraViewActivityPose;
     }
 
     @Override
@@ -238,12 +287,70 @@ class SpatialSceneRuntime implements SceneRuntime {
     // execution of this method.
     @VisibleForTesting
     synchronized void onSpatialStateChanged(@NonNull SpatialState newSpatialState) {
-        mSpatialState.getAndSet(newSpatialState);
+        SpatialState previousSpatialState = mSpatialState.getAndSet(newSpatialState);
+        boolean spatialCapabilitiesChanged =
+                previousSpatialState == null
+                        || !newSpatialState
+                                .getSpatialCapabilities()
+                                .equals(previousSpatialState.getSpatialCapabilities());
+
+        boolean hasBoundsChanged =
+                previousSpatialState == null
+                        || !newSpatialState.getBounds().equals(previousSpatialState.getBounds());
+
+        EnumSet<SpatialEnvironmentImpl.ChangedSpatialStates> changedSpatialStates =
+                mEnvironment.setSpatialState(newSpatialState);
+        boolean environmentVisibilityChanged =
+                changedSpatialStates.contains(
+                        SpatialEnvironmentImpl.ChangedSpatialStates.ENVIRONMENT_CHANGED);
+        boolean passthroughVisibilityChanged =
+                changedSpatialStates.contains(
+                        SpatialEnvironmentImpl.ChangedSpatialStates.PASSTHROUGH_CHANGED);
+
+        // Fire the state change events only after all the states have been updated.
+        if (environmentVisibilityChanged) {
+            mEnvironment.fireOnSpatialEnvironmentChangedEvent();
+        }
+        if (passthroughVisibilityChanged) {
+            mEnvironment.firePassthroughOpacityChangedEvent();
+        }
+
+        // Get the scene parent transform and update the activity space.
+        if (newSpatialState.getSceneParentTransform() != null) {
+            mActivitySpace.handleOriginUpdate(
+                    RuntimeUtils.getMatrix(newSpatialState.getSceneParentTransform()));
+        }
+
+        if (spatialCapabilitiesChanged) {
+            SpatialCapabilities spatialCapabilities =
+                    RuntimeUtils.convertSpatialCapabilities(
+                            newSpatialState.getSpatialCapabilities());
+
+            mSpatialCapabilitiesChangedListeners.forEach(
+                    (listener, executor) ->
+                            executor.execute(() -> listener.accept(spatialCapabilities)));
+        }
+
+        if (hasBoundsChanged) {
+            mActivitySpace.onBoundsChanged(newSpatialState.getBounds());
+        }
     }
 
     private void setSpatialStateCallback() {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mExtensions.setSpatialStateCallback(
                 mActivity, mainHandler::post, this::onSpatialStateChanged);
+    }
+
+    @Override
+    public void addSpatialCapabilitiesChangedListener(
+            @NonNull Executor executor, @NonNull Consumer<SpatialCapabilities> listener) {
+        mSpatialCapabilitiesChangedListeners.put(listener, executor);
+    }
+
+    @Override
+    public void removeSpatialCapabilitiesChangedListener(
+            @NonNull Consumer<SpatialCapabilities> listener) {
+        mSpatialCapabilitiesChangedListeners.remove(listener);
     }
 }

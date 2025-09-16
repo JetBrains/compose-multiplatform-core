@@ -23,6 +23,8 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,12 +33,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions.ScrollBy
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performSemanticsAction
@@ -54,16 +63,18 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertical) {
 
+    private lateinit var focusManager: FocusManager
+
     @Test
     fun firstItem_is_initiallyFocused() {
-        rule.setContent { FocusableTestList() }
+        rule.setAutoFocusContent { FocusableTestList() }
 
         rule.onListItem(0).assertIsFocused()
     }
 
     @Test
     fun performScrollToIndex_movesAutoFocus() {
-        rule.setContent { FocusableTestList(size = 100) }
+        rule.setAutoFocusContent { FocusableTestList(size = 100) }
 
         rule.onNodeWithTag(LIST_TEST_TAG).performScrollToIndex(25)
         rule.waitForIdle()
@@ -75,7 +86,7 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
 
     @Test
     fun animateScrollToItem_movesAutoFocus() {
-        rule.setContent {
+        rule.setAutoFocusContent {
             val state = remember { ListState() }
             FocusableTestList(state = state, size = 100)
             LaunchedEffect(Unit) { state.animateScrollToItem(42) }
@@ -90,7 +101,7 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
 
     @Test
     fun performSemanticsAction_scrollBy_movesAutoFocus() {
-        rule.setContent { FocusableTestList(size = 100) }
+        rule.setAutoFocusContent { FocusableTestList(size = 100) }
 
         val scroll = with(rule.density) { (ItemHeight * 5).toPx() }
         rule.onNodeWithTag(LIST_TEST_TAG).performSemanticsAction(ScrollBy) { it.invoke(0f, scroll) }
@@ -102,7 +113,7 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
 
     @Test
     fun indirectTouch_movesAutoFocus() {
-        rule.setContent { FocusableTestList(size = 100) }
+        rule.setAutoFocusContent { FocusableTestList(size = 100) }
 
         val swipe = with(rule.density) { (ItemHeight * 5).toPx() }
         rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(swipe)
@@ -125,7 +136,7 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
      */
     @Test
     fun lastItem_is_focused_after_fastScrollToBottom() {
-        rule.setContent { FocusableTestList(size = 3) }
+        rule.setAutoFocusContent { FocusableTestList(size = 3) }
         val largeScroll = with(rule.density) { 10000.dp.toPx() }
 
         rule.onNodeWithTag(LIST_TEST_TAG).performSemanticsAction(ScrollBy) {
@@ -139,7 +150,9 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
     @Test
     fun focusPosition_isReset_afterChangingOrientation() {
         val listOrientation = mutableStateOf(Orientation.Vertical)
-        rule.setContent { FocusableTestList(size = 5, listOrientation = listOrientation.value) }
+        rule.setAutoFocusContent {
+            FocusableTestList(size = 5, listOrientation = listOrientation.value)
+        }
 
         // Vertical list, initially "item-0" is focused.
         rule.onListItem(0).assertIsFocused()
@@ -160,10 +173,10 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
 
     @Test
     fun mixture_of_focusable_and_nonFocusable_items() {
-        rule.setContent {
+        rule.setAutoFocusContent {
             FocusableTestList(size = 4) { index ->
                 val focusable = (index == 0) || (index == 3)
-                FocusableItem(index = index, focusable = focusable)
+                FocusableListItem(index = index, focusable = focusable)
             }
         }
 
@@ -184,9 +197,108 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         rule.onListItem(3).assertIsFocused()
     }
 
+    @Test
+    fun moveFocus_from_thePreviousFocusableElement_to_theList() {
+        rule.setAutoFocusContent {
+            FocusableItem(text = "Button", modifier = Modifier.testTag("button"))
+            FocusableTestList(size = 1)
+        }
+
+        // Check initial focus.
+        rule.onNodeWithTag("button").assertIsFocused()
+        rule.onListItem(0).assertIsNotFocused()
+
+        // Move focus into the list.
+        moveFocusForward()
+        rule.onNodeWithTag("button").assertIsNotFocused()
+        rule.onListItem(0).assertIsFocused()
+    }
+
+    @Test
+    fun moveFocus_from_theListWithSingleElement_to_theNextFocusableElement() {
+        rule.setAutoFocusContent {
+            FocusableTestList(size = 1)
+            FocusableItem(text = "Button", modifier = Modifier.testTag("button"))
+        }
+
+        // Check initial focus.
+        rule.onListItem(0).assertIsFocused()
+        rule.onNodeWithTag("button").assertIsNotFocused()
+
+        // Move focus out of the list.
+        moveFocusForward()
+        rule.onListItem(0).assertIsNotFocused()
+        rule.onNodeWithTag("button").assertIsFocused()
+    }
+
+    @Test
+    fun moveFocus_from_theLongList_to_theNextFocusableElement() {
+        rule.setAutoFocusContent {
+            FocusableTestList(size = 10)
+            FocusableItem(text = "Button", modifier = Modifier.testTag("button"))
+        }
+
+        // Check initial focus.
+        rule.onListItem(0).assertIsFocused()
+        rule.onNodeWithTag("button").assertIsNotFocused()
+
+        // Move focus to the last item in the list.
+        val scroll = with(rule.density) { (ItemHeight * 10).toPx() }
+        rule.onNodeWithTag(LIST_TEST_TAG).performSemanticsAction(ScrollBy) { it.invoke(0f, scroll) }
+        rule.waitForIdle()
+        rule.onListItem(9).assertIsFocused()
+
+        // Move focus out of the list.
+        moveFocusForward()
+        rule.onListItem(9).assertIsNotFocused()
+        rule.onNodeWithTag("button").assertIsFocused()
+    }
+
+    @Test
+    fun list_doesNotStealFocus_whenAdded() {
+        val addList = mutableStateOf(false)
+        rule.setAutoFocusContent {
+            if (addList.value) {
+                FocusableTestList(size = 1)
+            }
+            FocusableItem(text = "Button", modifier = Modifier.testTag("button"))
+        }
+
+        // Check the button is focused.
+        rule.onNodeWithTag("button").assertIsFocused()
+
+        // Bring the list to the screen.
+        addList.value = true
+        rule.waitForIdle()
+
+        // Check that focus remains on the button.
+        rule.onListItem(0).assertIsNotFocused()
+        rule.onNodeWithTag("button").assertIsFocused()
+    }
+
     private fun scrollListBy(scroll: Dp) {
         val pixels = with(rule.density) { scroll.toPx() }
         rule.onNodeWithTag(LIST_TEST_TAG).performSemanticsAction(ScrollBy) { it.invoke(0f, pixels) }
+        rule.waitForIdle()
+    }
+
+    private fun moveFocusForward() {
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+        rule.waitForIdle()
+    }
+
+    private fun ComposeContentTestRule.setAutoFocusContent(
+        modifier: Modifier = Modifier,
+        content: @Composable ColumnScope.() -> Unit,
+    ) {
+        val focusRequester = FocusRequester()
+        setContent {
+            scope = rememberCoroutineScope()
+            focusManager = LocalFocusManager.current
+            Column(modifier.focusRequester(focusRequester)) { content() }
+        }
+        // Request initial focus.
+        rule.runOnIdle { focusRequester.requestFocus() }
         rule.waitForIdle()
     }
 
@@ -216,9 +328,8 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         size: Int = 100,
         listOrientation: Orientation = orientation,
         state: ListState = rememberListState(),
-        itemContent: @Composable (Int) -> Unit = { FocusableItem(it) },
+        itemContent: @Composable (Int) -> Unit = { FocusableListItem(it) },
     ) {
-        scope = rememberCoroutineScope()
         TestList(
             state = state,
             itemsCount = size,
@@ -230,8 +341,17 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
     }
 
     @Composable
+    private fun FocusableListItem(index: Int, focusable: Boolean = true) {
+        FocusableItem(
+            text = index.toString(),
+            modifier = Modifier.testTag("item-$index"),
+            focusable = focusable,
+        )
+    }
+
+    @Composable
     private fun FocusableItem(
-        index: Int,
+        text: String,
         modifier: Modifier = Modifier,
         focusable: Boolean = true,
     ) {
@@ -241,18 +361,12 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
             contentAlignment = Alignment.Center,
             modifier =
                 modifier
-                    .testTag("item-$index")
                     .requiredSize(ItemWidth, ItemHeight)
                     .background(color = if (isFocused) Color.Red else Color.Green)
                     .border(1.dp, Color.Black)
                     .focusable(focusable, interactionSource),
         ) {
-            Text(
-                text = index.toString(),
-                fontSize = 30.sp,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold,
-            )
+            Text(text = text, fontSize = 30.sp, color = Color.Black, fontWeight = FontWeight.Bold)
         }
     }
 

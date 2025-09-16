@@ -60,4 +60,10 @@ internal object Versions {
             /* isAtLeastV */ Build.VERSION.SDK_INT == 35 &&
                 ("Baklava".uppercase() == Build.VERSION.CODENAME.uppercase()))
     }
+
+    /**
+     * For renderer with version under 1.520, there is a bug in how ArcDirection is handled for Arc
+     * element, which was fixed in cl/846396463.
+     */
+    fun VersionInfo.hasArcDirectionFixed() = major > 1 || (major == 1 && minor >= 520)
 }

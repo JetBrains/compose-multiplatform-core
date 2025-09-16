@@ -19,7 +19,6 @@
 package androidx.xr.scenecore
 
 import android.app.Activity
-import android.os.Bundle
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.SessionConnector
 import androidx.xr.runtime.internal.Entity as RtEntity
@@ -72,18 +71,12 @@ public class Scene : SessionConnector {
         private set
 
     /**
-     * The ActivitySpace is a special entity that represents the space in which the application is
+     * The [ActivitySpace] is a special entity that represents the space in which the application is
      * launched. It is the default parent of all entities in the scene.
      *
-     * The ActivitySpace is created automatically when the Session is created.
+     * The ActivitySpace is created automatically when the [Session] is created.
      */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public lateinit var activitySpace: ActivitySpace
-        private set
-
-    // TODO: 378706624 - Remove this method once we have a better way to handle the root entity.
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public lateinit var activitySpaceRoot: Entity
         private set
 
     /**
@@ -171,8 +164,6 @@ public class Scene : SessionConnector {
         activitySpace = ActivitySpace.create(platformAdapter, entityManager)
         spatialUser = SpatialUser.create(lifecycleManager, platformAdapter)
         mainPanelEntity = MainPanelEntity.create(lifecycleManager, platformAdapter, entityManager)
-        activitySpaceRoot =
-            entityManager.getEntityForRtEntity(platformAdapter.activitySpaceRootImpl)!!
         platformAdapter.spatialModeChangeListener =
             object : RtSpatialModeChangeListener {
                 override fun onSpatialModeChanged(
@@ -261,70 +252,6 @@ public class Scene : SessionConnector {
             },
         )
     }
-
-    /**
-     * Configures a [Bundle] to request that a new [Activity] be launched directly into Full Space
-     * Mode.
-     *
-     * The configured bundle can be used to launch an Activity directly into Full Space Mode through
-     * [Activity.startActivity]. If there's a bundle used for customizing how the Activity should be
-     * started by [android.app.ActivityOptions.toBundle] or
-     * [androidx.core.app.ActivityOptionsCompat.toBundle], it's suggested to use the bundle to call
-     * this method.
-     *
-     * The flag will be ignored when no [android.content.Intent.FLAG_ACTIVITY_NEW_TASK] is set in
-     * the bundle, or it is not started from a focused Activity context.
-     *
-     * This flag is also ignored when the
-     * [androidx.xr.runtime.manifest.PROPERTY_XR_ACTIVITY_START_MODE] property is set to a value
-     * other than [androidx.xr.runtime.manifest.XR_ACTIVITY_START_MODE_UNDEFINED] in the
-     * AndroidManifest.xml file for the activity being launched.
-     *
-     * @param bundle the input bundle to set with the Full Space Mode flag.
-     * @return the input bundle with the Full Space Mode flag set.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun configureBundleForFullSpaceModeLaunch(bundle: Bundle): Bundle =
-        platformAdapter.setFullSpaceMode(bundle)
-
-    /**
-     * Configures a [Bundle] to request that a new [Activity] be launched directly into Full Space
-     * Mode while inheriting the environment from the launching activity.
-     *
-     * The configured bundle can be used to launch an Activity directly into Full Space Mode while
-     * inherit the existing environment through [Activity.startActivity]. If there's a bundle used
-     * for customizing how the Activity should be started by [android.app.ActivityOptions.toBundle]
-     * or [androidx.core.app.ActivityOptionsCompat.toBundle], it's suggested to use the bundle to
-     * call this method.
-     *
-     * When launched, the Activity will be in Full Space Mode and will inherit the environment from
-     * the launching activity. If the inherited environment needs to be animated, the launching
-     * activity has to continue updating the environment even after the activity is put into the
-     * stopped state.
-     *
-     * The flag will be ignored when no [android.content.Intent.FLAG_ACTIVITY_NEW_TASK] is set in
-     * the intent, or it is not started from a focused Activity context.
-     *
-     * The flag will also be ignored when there is no environment to inherit or when the activity
-     * has its own environment set already.
-     *
-     * This flag is also ignored when the
-     * [androidx.xr.runtime.manifest.PROPERTY_XR_ACTIVITY_START_MODE] property is set to a value
-     * other than [androidx.xr.runtime.manifest.XR_ACTIVITY_START_MODE_UNDEFINED] in the
-     * AndroidManifest.xml file for the activity being launched.
-     *
-     * For security reasons, Z-testing for the new activity is disabled, and the activity is always
-     * drawn on top of the inherited environment. Because Z-testing is disabled, the activity should
-     * not spatialize itself.
-     *
-     * @param bundle the input bundle to configure with the inherit Full Space Mode environment
-     *   flag.
-     * @return the input bundle with the inherit Full Space Mode flag set.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun configureBundleForFullSpaceModeLaunchWithEnvironmentInherited(
-        bundle: Bundle
-    ): Bundle = platformAdapter.setFullSpaceModeWithEnvironmentInherited(bundle)
 
     /**
      * Returns all entities of the given type or its subtypes.

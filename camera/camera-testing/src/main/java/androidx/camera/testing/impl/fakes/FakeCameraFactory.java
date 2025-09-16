@@ -27,10 +27,12 @@ import androidx.camera.core.Logger;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
-import androidx.camera.core.impl.ConstantObservable;
 import androidx.camera.core.impl.Observable;
 import androidx.core.util.Pair;
 import androidx.core.util.Preconditions;
+
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -42,15 +44,17 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 
 /**
  * A {@link CameraFactory} implementation that contains and produces fake cameras.
  *
  */
 @RestrictTo(Scope.LIBRARY_GROUP)
-public final class FakeCameraFactory implements CameraFactory {
+public final class FakeCameraFactory implements CameraFactory, CameraFactory.Interrogator {
 
     private static final String TAG = "FakeCameraFactory";
 
@@ -63,7 +67,7 @@ public final class FakeCameraFactory implements CameraFactory {
     private @NonNull CameraCoordinator mCameraCoordinator = new FakeCameraCoordinator();
 
     private @NonNull Observable<List<CameraIdentifier>> mCameraSourceObservable =
-            ConstantObservable.withValue(new ArrayList<>());
+            new ControllableObservable();
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final Map<String, Pair<Integer, Callable<CameraInternal>>> mCameraMap = new HashMap<>();
@@ -74,6 +78,8 @@ public final class FakeCameraFactory implements CameraFactory {
 
     public FakeCameraFactory(@Nullable CameraSelector availableCamerasSelector) {
         mAvailableCamerasSelector = availableCamerasSelector;
+
+        updateCameraPresence();
     }
 
     @Override
@@ -104,6 +110,8 @@ public final class FakeCameraFactory implements CameraFactory {
         mCachedCameraIds = null;
 
         mCameraMap.put(cameraId, Pair.create(lensFacing, cameraInternal));
+
+        updateCameraPresence();
     }
 
     /**
@@ -152,6 +160,9 @@ public final class FakeCameraFactory implements CameraFactory {
 
         // Remove from the map and return the old value.
         Pair<Integer, Callable<CameraInternal>> removed = mCameraMap.remove(cameraId);
+
+        updateCameraPresence();
+
         if (removed != null) {
             return removed.second;
         }
@@ -166,19 +177,42 @@ public final class FakeCameraFactory implements CameraFactory {
             if (mAvailableCamerasSelector == null) {
                 mCachedCameraIds = Collections.unmodifiableSet(new HashSet<>(mCameraMap.keySet()));
             } else {
-                mCachedCameraIds = Collections.unmodifiableSet(new HashSet<>(filteredCameraIds()));
+                mCachedCameraIds = Collections.unmodifiableSet(
+                        new HashSet<>(filterCameraIds(mCameraMap.keySet())));
             }
         }
         return mCachedCameraIds;
     }
 
-    /** Returns a list of camera ids filtered with {@link #mAvailableCamerasSelector}. */
-    private @NonNull List<String> filteredCameraIds() {
+    @NonNull
+    @Override
+    public List<String> getAvailableCameraIds(@NonNull List<String> cameraIds) {
+        if (mAvailableCamerasSelector == null) {
+            // No selector, just return the input list but ensure cameras exist in our map.
+            List<String> existingIds = new ArrayList<>();
+            for (String cameraId : cameraIds) {
+                if (mCameraMap.containsKey(cameraId)) {
+                    existingIds.add(cameraId);
+                }
+            }
+            return existingIds;
+        }
+        return filterCameraIds(cameraIds);
+    }
+
+    /**
+     * A private helper to apply the CameraSelector filter to any list of camera IDs.
+     * This is used by both getAvailableCameraIds() and the new Interrogator method.
+     */
+    private @NonNull List<String> filterCameraIds(@NonNull Iterable<String> cameraIds) {
         Preconditions.checkNotNull(mAvailableCamerasSelector);
         final List<String> filteredCameraIds = new ArrayList<>();
-        for (Map.Entry<String, Pair<Integer, Callable<CameraInternal>>> entry :
-                mCameraMap.entrySet()) {
-            final Callable<CameraInternal> callable = entry.getValue().second;
+        for (String cameraId : cameraIds) {
+            if (!mCameraMap.containsKey(cameraId)) {
+                continue;
+            }
+            final Callable<CameraInternal> callable =
+                    Objects.requireNonNull(mCameraMap.get(cameraId)).second;
             if (callable == null) {
                 continue;
             }
@@ -188,7 +222,7 @@ public final class FakeCameraFactory implements CameraFactory {
                         mAvailableCamerasSelector.filter(
                                 new LinkedHashSet<>(Collections.singleton(camera)));
                 if (!filteredCameraInternals.isEmpty()) {
-                    filteredCameraIds.add(entry.getKey());
+                    filteredCameraIds.add(cameraId);
                 }
             } catch (Exception exception) {
                 Logger.e(TAG, "Failed to get access to the camera instance.", exception);
@@ -228,5 +262,59 @@ public final class FakeCameraFactory implements CameraFactory {
     @Override
     public void onCameraIdsUpdated(@NonNull List<String> cameraIds) {
 
+    }
+
+    /**
+     * A new private helper to push updates to the camera presence observable.
+     */
+    private void updateCameraPresence() {
+        Set<String> availableIds = getAvailableCameraIds();
+        List<CameraIdentifier> identifiers = new ArrayList<>();
+        for (String id : availableIds) {
+            identifiers.add(CameraIdentifier.create(id));
+        }
+
+        // This check is needed because setCameraPresenceSource can overwrite our observable.
+        if (mCameraSourceObservable instanceof ControllableObservable) {
+            ((ControllableObservable) mCameraSourceObservable).updateData(identifiers);
+        }
+    }
+
+    /**
+     * A simple observable implementation that allows internal updates.
+     */
+    private static class ControllableObservable implements Observable<List<CameraIdentifier>> {
+        private Observer<? super List<CameraIdentifier>> mObserver;
+        private Executor mExecutor;
+        private List<CameraIdentifier> mData = new ArrayList<>();
+
+        @Override
+        public void addObserver(@NonNull Executor executor,
+                @NonNull Observer<? super List<CameraIdentifier>> observer) {
+            mExecutor = executor;
+            mObserver = observer;
+            updateData(mData);
+        }
+
+        @Override
+        public void removeObserver(@NonNull Observer<? super List<CameraIdentifier>> observer) {
+            if (Objects.equals(mObserver, observer)) {
+                mObserver = null;
+                mExecutor = null;
+            }
+        }
+
+        @Override
+        public @NonNull ListenableFuture<List<CameraIdentifier>> fetchData() {
+            return Futures.immediateFuture(mData);
+        }
+
+        void updateData(@NonNull List<CameraIdentifier> data) {
+            mData = data;
+            if (mExecutor != null && mObserver != null) {
+                Observer<? super List<CameraIdentifier>> observer = mObserver;
+                mExecutor.execute(() -> observer.onNewData(data));
+            }
+        }
     }
 }

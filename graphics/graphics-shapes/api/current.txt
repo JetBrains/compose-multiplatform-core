@@ -117,7 +117,7 @@ package androidx.graphics.shapes {
   }
 
   public fun interface PointTransformer {
-    method public long transform(float x, float y);
+    method @KotlinOnly public androidx.collection.FloatFloatPair transform(float x, float y);
     method @BytecodeOnly public long transform-XgqJiTY(float, float);
   }
 
@@ -211,6 +211,8 @@ package androidx.graphics.shapes {
   public static final class SvgPathParser.Companion {
     method public java.util.List<androidx.graphics.shapes.Feature> parseFeatures(String svgPath);
   }
+
+  public typealias TransformResult = androidx.collection.FloatFloatPair;
 
 }
 

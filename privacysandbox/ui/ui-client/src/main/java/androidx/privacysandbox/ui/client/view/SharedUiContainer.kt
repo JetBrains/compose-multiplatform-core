@@ -338,13 +338,13 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
         }
 
         fun closeSandboxedSdkViewSession(sandboxedSdkView: SandboxedSdkView) {
-            sandboxedSdkView.closeClient()
+            sandboxedSdkView.scheduleClientClose()
         }
 
         /** Closes provider UI sessions for [SandboxedSdkView]s registered as assets. */
         fun closeSandboxedSdkViewSessions() {
             registeredAssets.forEach { (view, _) ->
-                if (view is SandboxedSdkView) view.closeClient()
+                if (view is SandboxedSdkView) view.scheduleClientClose()
             }
         }
 

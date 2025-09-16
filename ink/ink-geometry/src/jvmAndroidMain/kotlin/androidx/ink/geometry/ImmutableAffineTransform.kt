@@ -136,15 +136,15 @@ public constructor(
         @JvmStatic
         public fun scaleY(scaleFactor: Float): ImmutableAffineTransform = scale(1f, scaleFactor)
 
-        /** Returns a transformation that shears in the x-direction by the given factor. */
+        /** Returns a transformation that skews in the x-direction by the given factor. */
         @JvmStatic
-        public fun shearX(shearFactor: Float): ImmutableAffineTransform =
-            ImmutableAffineTransform(1f, shearFactor, 0f, 0f, 1f, 0f)
+        public fun skewX(sx: Float): ImmutableAffineTransform =
+            ImmutableAffineTransform(1f, sx, 0f, 0f, 1f, 0f)
 
-        /** Returns a transformation that shears in the y-direction by the given factor. */
+        /** Returns a transformation that skews in the y-direction by the given factor. */
         @JvmStatic
-        public fun shearY(shearFactor: Float): ImmutableAffineTransform =
-            ImmutableAffineTransform(1f, 0f, 0f, shearFactor, 1f, 0f)
+        public fun skewY(sy: Float): ImmutableAffineTransform =
+            ImmutableAffineTransform(1f, 0f, 0f, sy, 1f, 0f)
 
         /** Returns a transformation that rotates by the given angle, centered about the origin. */
         @JvmStatic

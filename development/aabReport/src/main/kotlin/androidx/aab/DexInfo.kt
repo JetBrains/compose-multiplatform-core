@@ -88,7 +88,6 @@ data class DexInfo(
             dexFile.stringSection.forEach {
                 if (it.startsWith("~~") && it.endsWith("}")) {
                     r8Markers.add(R8Marker.from(it))
-                    // println(r8Markers.last())
                 } else if (it.startsWith("r8-map-id-")) {
                     r8MapId = it
                 }

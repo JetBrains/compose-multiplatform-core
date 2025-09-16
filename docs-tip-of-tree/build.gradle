@@ -187,6 +187,7 @@ dependencies {
     docs(project(":glance:glance-preview"))
     docs(project(":glance:glance-testing"))
     docs(project(":glance:glance-wear-tiles"))
+    docs(project(":glance:wear:wear"))
     docs(project(":graphics:filters:filters"))
     docs(project(":graphics:graphics-core"))
     docs(project(":graphics:graphics-path"))

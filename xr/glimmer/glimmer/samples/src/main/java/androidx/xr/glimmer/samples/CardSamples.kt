@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.xr.glimmer.Button
 import androidx.xr.glimmer.Card
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Icon
@@ -47,7 +48,9 @@ fun CardSampleUsage() {
         item { CardWithTrailingIconSample() }
         item { CardWithTitleAndSubtitleAndLeadingIconSample() }
         item { CardWithTitleAndHeaderSample() }
+        item { CardWithTitleAndActionSample() }
         item { CardWithTitleAndLeadingIconAndHeader() }
+        item { CardWithTitleAndLeadingIconAndHeaderAndAction() }
         item { CardWithLongText() }
         item { CardWithTitleAndSubtitleAndLeadingIconLongText() }
         item { CardWithTitleAndSubtitleAndLeadingIconAndTrailingIconLongText() }
@@ -90,6 +93,14 @@ fun CardWithTitleAndHeaderSample() {
         },
     ) {
         Text("This is a card with a title and header image")
+    }
+}
+
+@Sampled
+@Composable
+fun CardWithTitleAndActionSample() {
+    Card(action = { Button(onClick = {}) { Text("Send") } }, title = { Text("Title") }) {
+        Text("This is a card with a title and action")
     }
 }
 
@@ -148,6 +159,24 @@ fun CardWithTitleAndLeadingIconAndHeader() {
 }
 
 @Composable
+fun CardWithTitleAndLeadingIconAndHeaderAndAction() {
+    Card(
+        action = {
+            Button(onClick = {}, trailingIcon = { Icon(FavoriteIcon, "Localized description") }) {
+                Text("Send")
+            }
+        },
+        title = { Text("Title") },
+        leadingIcon = { Icon(FavoriteIcon, "Localized description") },
+        header = {
+            Image(MyHeaderImage, "Localized description", contentScale = ContentScale.FillWidth)
+        },
+    ) {
+        Text("This is a card with a title, leading icon, header image, and action")
+    }
+}
+
+@Composable
 fun CardWithLongText() {
     Card {
         Text(
@@ -193,12 +222,6 @@ private fun CardPreview() {
 
 @Preview
 @Composable
-private fun CardWithLongTextPreview() {
-    GlimmerTheme { CardWithLongText() }
-}
-
-@Preview
-@Composable
 private fun CardWithTrailingIconPreview() {
     GlimmerTheme { CardWithTrailingIconSample() }
 }
@@ -211,8 +234,44 @@ private fun CardWithTitleAndSubtitleAndLeadingIconPreview() {
 
 @Preview
 @Composable
+private fun CardWithTitleAndHeaderPreview() {
+    GlimmerTheme { CardWithTitleAndHeaderSample() }
+}
+
+@Preview
+@Composable
+private fun CardWithTitleAndActionPreview() {
+    GlimmerTheme { CardWithTitleAndActionSample() }
+}
+
+@Preview
+@Composable
+private fun CardWithTitleAndLeadingIconAndHeaderPreview() {
+    GlimmerTheme { CardWithTitleAndLeadingIconAndHeader() }
+}
+
+@Preview
+@Composable
+private fun CardWithTitleAndLeadingIconAndHeaderAndActionPreview() {
+    GlimmerTheme { CardWithTitleAndLeadingIconAndHeaderAndAction() }
+}
+
+@Preview
+@Composable
+private fun CardWithLongTextPreview() {
+    GlimmerTheme { CardWithLongText() }
+}
+
+@Preview
+@Composable
 private fun CardWithTitleAndSubtitleAndLeadingIconLongTextPreview() {
     GlimmerTheme { CardWithTitleAndSubtitleAndLeadingIconLongText() }
+}
+
+@Preview
+@Composable
+private fun CardWithTitleAndSubtitleAndLeadingIconAndTrailingIconLongTextPreview() {
+    GlimmerTheme { CardWithTitleAndSubtitleAndLeadingIconAndTrailingIconLongText() }
 }
 
 fun placeholderImagePainter(intrinsicSize: Size): Painter =

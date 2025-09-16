@@ -16,7 +16,6 @@
 
 package androidx.ink.authoring
 
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
@@ -44,7 +43,6 @@ import androidx.ink.authoring.internal.InProgressStrokesRenderHelper
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.authoring.latency.LatencyDataCallback
 import androidx.ink.brush.Brush
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.ImmutableStrokeInputBatch
@@ -422,68 +420,10 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      *   is not invertible.
      */
     @JvmOverloads
-    @OptIn(androidx.ink.brush.ExperimentalInkCustomBrushApi::class)
     public fun startStroke(
         event: MotionEvent,
         pointerId: Int,
         brush: Brush,
-        motionEventToWorldTransform: Matrix = IDENTITY_MATRIX,
-        strokeToWorldTransform: Matrix = IDENTITY_MATRIX,
-    ): InProgressStrokeId =
-        startStroke(
-            event,
-            pointerId,
-            brush,
-            { 0f },
-            motionEventToWorldTransform,
-            strokeToWorldTransform,
-        )
-
-    /**
-     * Same as [startStroke], but for a stroke whose [Brush] includes a texture animation driven by
-     * a [ValueAnimator].
-     *
-     * @param textureAnimationProgress An animator for the progress (from 0 to 1) of this stroke's
-     *   texture animation. Values outside [0, 1] are wrapped. Non-finite values are not allowed. A
-     *   null animator is treated as always 0.
-     */
-    @JvmOverloads
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @ExperimentalInkCustomBrushApi
-    public fun startStroke(
-        event: MotionEvent,
-        pointerId: Int,
-        brush: Brush,
-        textureAnimationProgress: ValueAnimator?,
-        motionEventToWorldTransform: Matrix = IDENTITY_MATRIX,
-        strokeToWorldTransform: Matrix = IDENTITY_MATRIX,
-    ): InProgressStrokeId =
-        startStroke(
-            event,
-            pointerId,
-            brush,
-            { textureAnimationProgress?.animatedValue as Float? ?: 0f },
-            motionEventToWorldTransform,
-            strokeToWorldTransform,
-        )
-
-    /**
-     * Same as [startStroke], but for a stroke whose [Brush] includes a texture animation.
-     *
-     * @param textureAnimationProgress A lambda that, at any given time, will return the current
-     *   progress (from 0 to 1) of this stroke's texture animation. Values outside [0, 1] are
-     *   wrapped. Non-finite values are not allowed. This lambda will be called on the UI thread,
-     *   potentially multiple times per frame, so it should be fast, stateless, and side-effect
-     *   free.
-     */
-    @JvmOverloads
-    @ExperimentalInkCustomBrushApi
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    public fun startStroke(
-        event: MotionEvent,
-        pointerId: Int,
-        brush: Brush,
-        textureAnimationProgress: () -> Float,
         motionEventToWorldTransform: Matrix = IDENTITY_MATRIX,
         strokeToWorldTransform: Matrix = IDENTITY_MATRIX,
     ): InProgressStrokeId =
@@ -494,7 +434,6 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
                 motionEventToWorldTransform,
                 strokeToWorldTransform,
                 brush,
-                textureAnimationProgress,
                 strokeUnitLengthCm =
                     strokeUnitLengthCm(motionEventToWorldTransform, strokeToWorldTransform),
             )

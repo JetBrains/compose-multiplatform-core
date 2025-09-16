@@ -55,9 +55,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
- * Implementation of a RealityCore ActivitySpaceImpl.
+ * Implementation of SceneCore's ActivitySpace.
  *
- * <p>This is used to create an entity that contains the task node.
+ * <p>This Entity represents the origin of the Scene, and is positioned by the system.
  */
 @SuppressWarnings({"UnnecessarilyFullyQualified"})
 final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivitySpace {
@@ -74,6 +74,8 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     private SpatialModeChangeListener mSpatialModeChangeListener;
     private final AtomicReference<BoundingBox> mCachedRecommendedContentBox =
             new AtomicReference<>(null);
+
+    @SuppressWarnings("HidingField") // super class AndroidXrEntity has mEntityManager
     private final EntityManager mEntityManager;
 
     ActivitySpaceImpl(
@@ -88,6 +90,21 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         mEntityManager = entityManager;
         mSpatialStateProvider = spatialStateProvider;
         mUnscaledGravityAlignedActivitySpace = unscaledGravityAlignedActivitySpace;
+    }
+
+    @Override
+    public @NonNull Pose getPose(@SpaceValue int relativeTo) {
+        switch (relativeTo) {
+            case Space.PARENT:
+                throw new UnsupportedOperationException(
+                        "ActivitySpace is a root space and it does not have a parent.");
+            case Space.ACTIVITY:
+                return getPoseInActivitySpace();
+            case Space.REAL_WORLD:
+                return getPoseInPerceptionSpace();
+            default:
+                throw new IllegalArgumentException("Unsupported relativeTo value: " + relativeTo);
+        }
     }
 
     /** Returns the identity pose since this entity defines the origin of the activity space. */
@@ -144,21 +161,6 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     @Override
     public void setPose(@NonNull Pose pose, @SpaceValue int relativeTo) {
         throw new UnsupportedOperationException("Cannot set 'pose' on an ActivitySpace.");
-    }
-
-    @Override
-    public @NonNull Pose getPose(@SpaceValue int relativeTo) {
-        switch (relativeTo) {
-            case Space.PARENT:
-                throw new UnsupportedOperationException(
-                        "ActivitySpace is a root space and it does not have a parent.");
-            case Space.ACTIVITY:
-                return getPoseInActivitySpace();
-            case Space.REAL_WORLD:
-                return getPoseInPerceptionSpace();
-            default:
-                throw new IllegalArgumentException("Unsupported relativeTo value: " + relativeTo);
-        }
     }
 
     @SuppressWarnings("ObjectToString")

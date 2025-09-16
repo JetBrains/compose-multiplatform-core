@@ -17,6 +17,9 @@
 package androidx.xr.compose.subspace
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.runtime.math.Pose
@@ -50,14 +53,16 @@ public annotation class ExperimentalSubspaceVolumeApi
 @SubspaceComposable
 @ExperimentalSubspaceVolumeApi
 public fun Volume(modifier: SubspaceModifier = SubspaceModifier, onVolumeEntity: (Entity) -> Unit) {
-    SubspaceLayout(
-        modifier = modifier,
-        coreEntity =
-            rememberCoreGroupEntity {
-                GroupEntity.create(this, name = entityName("Volume"), pose = Pose.Identity)
-                    .apply(onVolumeEntity)
-            },
-    ) { _, constraints ->
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+
+    val coreGroupEntity = remember {
+        CoreGroupEntity(
+            GroupEntity.create(session, name = entityName("Volume"), pose = Pose.Identity)
+                .apply(onVolumeEntity)
+        )
+    }
+
+    SubspaceLayout(modifier = modifier, coreEntity = coreGroupEntity) { _, constraints ->
         val initialWidth = constraints.minWidth.coerceAtLeast(0)
         val initialHeight = constraints.minHeight.coerceAtLeast(0)
         val initialDepth = constraints.minDepth.coerceAtLeast(0)

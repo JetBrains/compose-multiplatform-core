@@ -16,6 +16,7 @@
 
 package androidx.tracing.driver.wire
 
+import androidx.tracing.driver.AtomicInteger
 import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.PooledTracePacketArray
 import androidx.tracing.driver.TraceContext
@@ -28,12 +29,15 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
+import perfetto.protos.MutableDebugAnnotation
 import perfetto.protos.MutableTracePacket
 import perfetto.protos.MutableTrackDescriptor
 import perfetto.protos.MutableTrackEvent
 
 class TestSink : TraceSink() {
     internal val packets = mutableListOf<MutableTracePacket>()
+    internal val debugAnnotations = mutableListOf<MutableDebugAnnotation>()
+    internal val debugAnnotationsIndex = AtomicInteger()
 
     override fun enqueue(pooledPacketArray: PooledTracePacketArray) {
         pooledPacketArray.forEach { it ->
@@ -56,6 +60,9 @@ class TestSink : TraceSink() {
                             // this is sometimes not used, but we don't care about extra
                             // allocations during this test
                             scratchTrackEvent = MutableTrackEvent(track_uuid = DEFAULT_LONG),
+                            // Don't really care about resizing for perf in tests.
+                            scratchAnnotations = debugAnnotations,
+                            scratchDebugAnnotationIndex = debugAnnotationsIndex,
                         )
                     }
             )

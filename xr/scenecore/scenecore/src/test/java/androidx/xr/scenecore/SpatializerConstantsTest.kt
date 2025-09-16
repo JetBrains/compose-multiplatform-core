@@ -28,7 +28,7 @@ class SpatializerConstantsTest {
     @Test
     fun sourceTypeToJXRExtension_createsCorrectIntDefType() {
         val rtBypass = RtSpatializerConstants.SOURCE_TYPE_BYPASS
-        assertThat(rtBypass.sourceTypeToJxr()).isEqualTo(SpatializerConstants.SOURCE_TYPE_BYPASS)
+        assertThat(rtBypass.sourceTypeToJxr()).isEqualTo(SpatializerConstants.SOURCE_TYPE_DEFAULT)
 
         val rtPointSource = RtSpatializerConstants.SOURCE_TYPE_POINT_SOURCE
         assertThat(rtPointSource.sourceTypeToJxr())

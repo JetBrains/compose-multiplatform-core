@@ -25,6 +25,7 @@ import androidx.camera.camera2.pipe.AudioRestrictionMode
 import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraph.Session
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.FrameMetadata
@@ -46,7 +47,6 @@ import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
 import javax.inject.Inject
-import kotlin.use
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -107,10 +107,7 @@ constructor(
             }
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            require(graphConfig.input == null) { "Reprocessing not supported under Android M" }
-        }
-        if (graphConfig.input != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (graphConfig.input != null) {
             require(graphConfig.input.isNotEmpty()) {
                 "At least one InputConfiguration is required for reprocessing"
             }
@@ -154,7 +151,7 @@ constructor(
         Debug.traceStop()
     }
 
-    override suspend fun acquireSession(): CameraGraph.Session {
+    override suspend fun acquireSession(): Session {
         // Step 1: Acquire a lock on the session mutex, which returns a releasable token. This may
         //         or may not suspend.
         val token = sessionLock.acquireToken()
@@ -164,14 +161,12 @@ constructor(
         return createSessionFromToken(token)
     }
 
-    override fun acquireSessionOrNull(): CameraGraph.Session? {
+    override fun acquireSessionOrNull(): Session? {
         val token = sessionLock.tryAcquireToken() ?: return null
         return createSessionFromToken(token)
     }
 
-    override suspend fun <T> useSession(
-        action: suspend CoroutineScope.(CameraGraph.Session) -> T
-    ): T =
+    override suspend fun <T> useSession(action: suspend CoroutineScope.(Session) -> T): T =
         acquireSession().use {
             // Wrap the block in a coroutineScope to ensure all operations are completed before
             // releasing the lock.
@@ -180,7 +175,7 @@ constructor(
 
     override fun <T> useSessionIn(
         scope: CoroutineScope,
-        action: suspend CoroutineScope.(CameraGraph.Session) -> T,
+        action: suspend CoroutineScope.(Session) -> T,
     ): Deferred<T> {
         return sessionLock.withTokenIn(scope) { token ->
             // Create and use the session

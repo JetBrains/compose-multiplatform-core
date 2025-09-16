@@ -265,9 +265,9 @@ public fun TimePicker(
                         FocusableElement.Hour -> hourString
                         FocusableElement.Minute -> minuteString
                         FocusableElement.Second -> secondString
-                        FocusableElement.Period -> ""
-                        else ->
+                        FocusableElement.None ->
                             if (touchExplorationServicesEnabled) instructionHeadingString else ""
+                        else -> ""
                     }
 
                 FadeLabel(

@@ -11,7 +11,7 @@ package androidx.photopicker.compose {
     method public final boolean isExpanded();
     method public final boolean isReady();
     method public final void notifyConfigurationChanged(android.content.res.Configuration config);
-    method public final void notifyResized(long size);
+    method @KotlinOnly public final void notifyResized(androidx.compose.ui.unit.IntSize size);
     method @BytecodeOnly public final void notifyResized-ozmzZPI(long);
     method public final suspend Object? runSession(android.widget.photopicker.EmbeddedPhotoPickerProvider provider, android.widget.photopicker.EmbeddedPhotoPickerFeatureInfo featureInfo, kotlin.jvm.functions.Function1<? super android.widget.photopicker.EmbeddedPhotoPickerSession,kotlin.Unit> onReceiveSession, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public final void setCurrentExpanded(boolean expanded);
@@ -45,7 +45,7 @@ package androidx.photopicker.compose {
     method public boolean isExpanded();
     method public boolean isReady();
     method public void notifyConfigurationChanged(android.content.res.Configuration config);
-    method public void notifyResized(long size);
+    method @KotlinOnly public void notifyResized(androidx.compose.ui.unit.IntSize size);
     method @BytecodeOnly public void notifyResized-ozmzZPI(long);
     method public void onSelectionComplete();
     method public void onSessionError(Throwable throwable);

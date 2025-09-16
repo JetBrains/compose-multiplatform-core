@@ -55,7 +55,8 @@ internal class ConnectionPoolImpl : ConnectionPool {
     private val readers: Pool
     private val writers: Pool
 
-    private val threadLocal = ThreadLocal<PooledConnectionImpl>()
+    private val connectionElementKey = ConnectionElementKey()
+    private val connectionThreadLocal = ThreadLocal<PooledConnectionImpl>()
 
     private val _isClosed = AtomicBoolean(false)
     private val isClosed: Boolean
@@ -105,7 +106,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
             throwSQLiteException(SQLITE_MISUSE, "Connection pool is closed")
         }
         val confinedConnection =
-            threadLocal.get() ?: coroutineContext[ConnectionElement]?.connectionWrapper
+            connectionThreadLocal.get() ?: coroutineContext[connectionElementKey]?.connectionWrapper
         if (confinedConnection != null) {
             if (!isReadOnly && confinedConnection.isReadOnly) {
                 throwSQLiteException(
@@ -113,7 +114,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
                     "Cannot upgrade connection from reader to writer",
                 )
             }
-            return if (coroutineContext[ConnectionElement] == null) {
+            return if (coroutineContext[connectionElementKey] == null) {
                 // Reinstall the connection context element if it is missing. We are likely in
                 // a new coroutine but were able to transfer the connection via the thread local.
                 withContext(createConnectionContext(confinedConnection)) {
@@ -136,6 +137,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
             val currentContext = coroutineContext
             connection =
                 PooledConnectionImpl(
+                    connectionElementKey = connectionElementKey,
                     delegate =
                         pool
                             .acquireWithTimeout(timeout) { onTimeout(isReadOnly) }
@@ -162,7 +164,8 @@ internal class ConnectionPoolImpl : ConnectionPool {
     }
 
     private fun createConnectionContext(connection: PooledConnectionImpl) =
-        ConnectionElement(connection) + threadLocal.asContextElement(connection)
+        ConnectionElement(connectionElementKey, connection) +
+            connectionThreadLocal.asContextElement(connection)
 
     private fun onTimeout(isReadOnly: Boolean) {
         val readOrWrite = if (isReadOnly) "reader" else "writer"
@@ -328,13 +331,12 @@ private class ConnectionWithLock(
     }
 }
 
-private class ConnectionElement(val connectionWrapper: PooledConnectionImpl) :
-    CoroutineContext.Element {
-    companion object Key : CoroutineContext.Key<ConnectionElement>
+private class ConnectionElement(
+    override val key: CoroutineContext.Key<ConnectionElement>,
+    val connectionWrapper: PooledConnectionImpl,
+) : CoroutineContext.Element
 
-    override val key: CoroutineContext.Key<ConnectionElement>
-        get() = ConnectionElement
-}
+private class ConnectionElementKey : CoroutineContext.Key<ConnectionElement>
 
 /**
  * A connection wrapper to enforce pool contract and implement transactions.
@@ -343,8 +345,11 @@ private class ConnectionElement(val connectionWrapper: PooledConnectionImpl) :
  * statement and using it is serialized as to prevent a coroutine from concurrently using the
  * statement between multiple different threads.
  */
-private class PooledConnectionImpl(val delegate: ConnectionWithLock, val isReadOnly: Boolean) :
-    Transactor, RawConnectionAccessor {
+private class PooledConnectionImpl(
+    val connectionElementKey: ConnectionElementKey,
+    val delegate: ConnectionWithLock,
+    val isReadOnly: Boolean,
+) : Transactor, RawConnectionAccessor {
     private val transactionStack = ArrayDeque<TransactionItem>()
 
     private val _isRecycled = AtomicBoolean(false)
@@ -474,7 +479,7 @@ private class PooledConnectionImpl(val delegate: ConnectionWithLock, val isReadO
         if (isRecycled) {
             throwSQLiteException(SQLITE_MISUSE, "Connection is recycled")
         }
-        val connectionElement = coroutineContext[ConnectionElement]
+        val connectionElement = coroutineContext[connectionElementKey]
         if (connectionElement == null || connectionElement.connectionWrapper !== this) {
             throwSQLiteException(
                 SQLITE_MISUSE,

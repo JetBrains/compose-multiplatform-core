@@ -32,6 +32,7 @@
             android:label="RequestResultTestActivity" />
         <activity
             android:name="androidx.camera.testing.impl.activity.Camera2TestActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="true"
             android:label="Camera2 TestActivity" />
         <activity

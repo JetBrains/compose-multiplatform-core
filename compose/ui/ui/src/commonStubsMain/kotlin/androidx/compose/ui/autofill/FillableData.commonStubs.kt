@@ -18,14 +18,38 @@ package androidx.compose.ui.autofill
 
 import androidx.compose.ui.implementedInJetBrainsFork
 
-internal actual fun FillableData(charSequenceValue: CharSequence): FillableData {
+/**
+ * Creates a [FillableData] object from a [CharSequence].
+ *
+ * This is a stub implementation and will throw an exception if called. Autofill is not supported on
+ * this platform.
+ *
+ * @param charSequenceValue The value to store in the [FillableData].
+ */
+actual fun FillableData(charSequenceValue: CharSequence): FillableData? {
     implementedInJetBrainsFork()
 }
 
-internal actual fun FillableData(booleanValue: Boolean): FillableData {
+/**
+ * Creates a [FillableData] object from a [Boolean].
+ *
+ * This is a stub implementation and will throw an exception if called. Autofill is not supported on
+ * this platform.
+ *
+ * @param booleanValue The value to store in the [FillableData].
+ */
+actual fun FillableData(booleanValue: Boolean): FillableData? {
     implementedInJetBrainsFork()
 }
 
-internal actual fun FillableData(intValue: Int): FillableData {
+/**
+ * Creates a [FillableData] object from an [Int].
+ *
+ * This is a stub implementation and will throw an exception if called. Autofill is not supported on
+ * this platform.
+ *
+ * @param intValue The value to store in the [FillableData].
+ */
+actual fun FillableData(intValue: Int): FillableData? {
     implementedInJetBrainsFork()
 }

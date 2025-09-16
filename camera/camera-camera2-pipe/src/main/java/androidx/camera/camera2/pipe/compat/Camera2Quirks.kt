@@ -22,6 +22,7 @@ import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBefo
 import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBeforeCapture.CompletionBehavior.EXACT
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
+import androidx.camera.camera2.pipe.compat.Camera2Quirks.Companion.SHOULD_WAIT_FOR_REPEATING_DEVICE_MAP
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.max
@@ -95,7 +96,7 @@ constructor(private val metadataProvider: Camera2MetadataProvider) {
      */
     internal fun shouldCloseCameraBeforeCreatingCaptureSession(cameraId: CameraId): Boolean {
         val isLegacyDevice =
-            Build.VERSION.SDK_INT in (Build.VERSION_CODES.M..Build.VERSION_CODES.S_V2) &&
+            Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2 &&
                 metadataProvider.awaitCameraMetadata(cameraId).isHardwareLevelLegacy
         val isQuirkyDevice =
             "motorola".equals(Build.BRAND, ignoreCase = true) &&

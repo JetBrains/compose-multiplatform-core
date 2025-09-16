@@ -265,7 +265,11 @@ class XExecutableElementTest {
             } else {
                 listOf(subject) to emptyList<File>()
             }
-        runProcessorTest(sources = sources, classpath = classpath) { invocation ->
+        runProcessorTest(
+            sources = sources,
+            classpath = classpath,
+            kotlincArguments = listOf("-Xjvm-default=disable"),
+        ) { invocation ->
             listOf("Base", "Sub").forEach { className ->
                 val element = invocation.processingEnv.requireTypeElement("foo.bar.$className")
                 element.getMethodByJvmName("noDefault").let { method ->
@@ -353,7 +357,11 @@ class XExecutableElementTest {
             } else {
                 listOf(subject) to emptyList<File>()
             }
-        runProcessorTest(sources = sources, classpath = classpath) { invocation ->
+        runProcessorTest(
+            sources = sources,
+            classpath = classpath,
+            kotlincArguments = listOf("-Xjvm-default=disable"),
+        ) { invocation ->
             listOf("Base", "Sub").forEach { className ->
                 val element = invocation.processingEnv.requireTypeElement("foo.bar.$className")
                 element.getMethodByJvmName("noDefault").let { method ->

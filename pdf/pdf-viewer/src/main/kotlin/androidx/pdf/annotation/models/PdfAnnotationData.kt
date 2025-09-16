@@ -30,7 +30,7 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("BanParcelableUsage")
 public class PdfAnnotationData(public val editId: EditId, public val annotation: PdfAnnotation) :
-    Parcelable {
+    Parcelable, PdfEditEntry<PdfAnnotation>(editId, annotation) {
     override fun describeContents(): Int = 0
 
     /** Flatten this object in to a Parcel. */

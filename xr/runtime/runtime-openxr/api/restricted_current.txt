@@ -191,7 +191,7 @@ package androidx.xr.runtime.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrRuntimeFactory implements androidx.xr.runtime.internal.RuntimeFactory {
     ctor public OpenXrRuntimeFactory();
-    method public androidx.xr.runtime.internal.Runtime createRuntime(android.app.Activity activity);
+    method public androidx.xr.runtime.internal.Runtime createRuntime(android.app.Activity activity, kotlin.coroutines.CoroutineContext coroutineContext);
     method public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
     field public static final androidx.xr.runtime.openxr.OpenXrRuntimeFactory.Companion Companion;

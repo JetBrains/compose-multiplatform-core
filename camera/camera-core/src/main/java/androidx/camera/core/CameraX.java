@@ -18,7 +18,6 @@ package androidx.camera.core;
 
 import static androidx.camera.core.CameraUnavailableException.CAMERA_ERROR;
 import static androidx.camera.core.impl.CameraValidator.CameraIdListIncorrectException;
-import static androidx.camera.core.impl.CameraValidator.validateCameras;
 
 import android.app.Application;
 import android.content.ComponentName;
@@ -47,6 +46,7 @@ import androidx.camera.core.impl.CameraPresenceProvider;
 import androidx.camera.core.impl.CameraProviderExecutionState;
 import androidx.camera.core.impl.CameraRepository;
 import androidx.camera.core.impl.CameraThreadConfig;
+import androidx.camera.core.impl.CameraValidator;
 import androidx.camera.core.impl.MetadataHolderService;
 import androidx.camera.core.impl.QuirkSettings;
 import androidx.camera.core.impl.QuirkSettingsHolder;
@@ -401,6 +401,8 @@ public final class CameraX {
 
                 CameraSelector availableCamerasLimiter =
                         mCameraXConfig.getAvailableCamerasLimiter(null);
+                CameraValidator cameraValidator =
+                        CameraValidator.create(appContext, availableCamerasLimiter);
                 long cameraOpenRetryMaxTimeoutInMillis =
                         mCameraXConfig.getCameraOpenRetryMaxTimeoutInMillisWhileResuming();
 
@@ -457,13 +459,13 @@ public final class CameraX {
                             mCameraUseCaseAdapterProvider);
                 }
 
-                mCameraPresenceProvider.startup(mCameraFactory, mCameraRepository);
+                mCameraPresenceProvider.startup(cameraValidator, mCameraFactory, mCameraRepository);
                 mCameraPresenceProvider.addDependentInternalListener(mSurfaceManager);
                 mCameraPresenceProvider.addDependentInternalListener(
                         mCameraFactory.getCameraCoordinator());
 
                 // Please ensure only validate the camera at the last of the initialization.
-                validateCameras(appContext, mCameraRepository, availableCamerasLimiter);
+                cameraValidator.validateOnFirstInit(mCameraRepository);
 
                 // Set completer to null if the init was successful.
                 if (attemptCount > 1) {
@@ -474,12 +476,12 @@ public final class CameraX {
                 completer.set(null);
             } catch (CameraIdListIncorrectException | InitializationException
                      | RuntimeException e) {
+                boolean shouldShutdown = true;
                 RetryPolicy.ExecutionState executionState =
                         new CameraProviderExecutionState(startMs, attemptCount, e);
                 RetryPolicy.RetryConfig retryConfig = mRetryPolicy.onRetryDecisionRequested(
                         executionState);
                 traceExecutionState(executionState);
-                mCameraPresenceProvider.shutdown();
                 if (retryConfig.shouldRetry() && attemptCount < Integer.MAX_VALUE) {
                     Logger.w(TAG, "Retry init. Start time " + startMs + " current time "
                             + SystemClock.elapsedRealtime(), e);
@@ -495,6 +497,7 @@ public final class CameraX {
                         // Ignoring camera failure for compatibility reasons. Initialization will
                         // be marked as complete, but some camera features might be unavailable.
                         setStateToInitialized();
+                        shouldShutdown = false;
                         completer.set(null);
                     } else if (e instanceof CameraIdListIncorrectException) {
                         String message = "Device reporting less cameras than anticipated. On real"
@@ -512,6 +515,10 @@ public final class CameraX {
                         // For any unexpected RuntimeException, catch it instead of crashing.
                         completer.setException(new InitializationException(e));
                     }
+                }
+
+                if (shouldShutdown) {
+                    mCameraPresenceProvider.shutdown();
                 }
             } finally {
                 Trace.endSection();

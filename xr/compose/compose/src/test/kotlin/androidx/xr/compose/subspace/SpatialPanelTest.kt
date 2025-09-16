@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -40,6 +41,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.xr.compose.platform.DefaultDialogManager
+import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.Subspace
@@ -482,18 +485,27 @@ class SpatialPanelTest {
 
         composeTestRule.setContent {
             TestSetup {
-                Subspace {
-                    SpatialActivityPanel(
-                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                        modifier = SubspaceModifier.width(200.dp).height(300.dp),
-                        shape = SpatialRoundedCornerShape(CornerSize(50)),
-                    )
-                    if (showDialog.value) {
-                        SpatialDialog(onDismissRequest = { showDialog.value = false }) {
-                            Text("Spatial Dialog")
+                CompositionLocalProvider(
+                    LocalDialogManager provides DefaultDialogManager(),
+                    content = {
+                        Subspace {
+                            SpatialActivityPanel(
+                                intent =
+                                    Intent(
+                                        composeTestRule.activity,
+                                        SpatialPanelActivity::class.java,
+                                    ),
+                                modifier = SubspaceModifier.width(200.dp).height(300.dp),
+                                shape = SpatialRoundedCornerShape(CornerSize(50)),
+                            )
+                            if (showDialog.value) {
+                                SpatialDialog(onDismissRequest = { showDialog.value = false }) {
+                                    Text("Spatial Dialog")
+                                }
+                            }
                         }
-                    }
-                }
+                    },
+                )
             }
         }
         val session = composeTestRule.activity.session
@@ -520,18 +532,27 @@ class SpatialPanelTest {
 
         composeTestRule.setContent {
             TestSetup {
-                Subspace {
-                    SpatialActivityPanel(
-                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                        modifier = SubspaceModifier.width(200.dp).height(300.dp),
-                        shape = SpatialRoundedCornerShape(CornerSize(50)),
-                    )
-                    if (showDialog.value) {
-                        SpatialDialog(onDismissRequest = { showDialog.value = false }) {
-                            Text("Spatial Dialog")
+                CompositionLocalProvider(
+                    LocalDialogManager provides DefaultDialogManager(),
+                    content = {
+                        Subspace {
+                            SpatialActivityPanel(
+                                intent =
+                                    Intent(
+                                        composeTestRule.activity,
+                                        SpatialPanelActivity::class.java,
+                                    ),
+                                modifier = SubspaceModifier.width(200.dp).height(300.dp),
+                                shape = SpatialRoundedCornerShape(CornerSize(50)),
+                            )
+                            if (showDialog.value) {
+                                SpatialDialog(onDismissRequest = { showDialog.value = false }) {
+                                    Text("Spatial Dialog")
+                                }
+                            }
                         }
-                    }
-                }
+                    },
+                )
             }
         }
         val session = composeTestRule.activity.session

@@ -110,6 +110,8 @@ package androidx.datastore.core {
     method public suspend Object? writeData(T value, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
+  public typealias IOException = java.io.IOException;
+
 }
 
 package androidx.datastore.core.handlers {

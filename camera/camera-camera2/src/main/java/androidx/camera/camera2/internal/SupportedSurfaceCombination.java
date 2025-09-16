@@ -661,6 +661,7 @@ public final class SupportedSurfaceCombination {
      * @param isStrictFpsRequired   whether strict fps is required
      * @return adjusted target frame rate
      */
+    @SuppressWarnings("ReferenceEquality") // newTargetFrameRate == storedTargetFrameRate
     @NonNull
     private Range<Integer> getUpdatedTargetFrameRate(@NonNull Range<Integer> newTargetFrameRate,
             @NonNull Range<Integer> storedTargetFrameRate, boolean isStrictFpsRequired) {
@@ -1336,6 +1337,7 @@ public final class SupportedSurfaceCombination {
      * @param isUltraHdrOn              whether the Ultra HDR image capture is enabled.
      * @param requiresFeatureComboQuery whether feature combination query is required.
      */
+    @SuppressWarnings("ReferenceEquality") // targetFpsRange == FRAME_RATE_RANGE_UNSPECIFIED
     private @NonNull FeatureSettings createFeatureSettings(
             @CameraMode.Mode int cameraMode, boolean hasVideoCapture,
             @NonNull Map<UseCaseConfig<?>, DynamicRange> resolvedDynamicRanges,
@@ -2184,8 +2186,10 @@ public final class SupportedSurfaceCombination {
                     maxFpsForStreamUseCase, maxFpsForAllSizes);
         }
 
+        @SuppressWarnings("AutoValueImmutableFields")
         @Nullable abstract List<Size> getBestSizes();
 
+        @SuppressWarnings("AutoValueImmutableFields")
         @Nullable abstract List<Size> getBestSizesForStreamUseCase();
 
         abstract int getMaxFpsForBestSizes();

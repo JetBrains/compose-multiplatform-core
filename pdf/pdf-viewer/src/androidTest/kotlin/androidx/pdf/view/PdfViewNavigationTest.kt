@@ -21,7 +21,6 @@ import android.graphics.Point
 import android.graphics.RectF
 import android.net.Uri
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.pdf.PdfDocument
 import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
@@ -49,15 +48,15 @@ class PdfViewNavigationTest {
 
     private fun setupPdfView(width: Int, height: Int, fakePdfDocument: FakePdfDocument?) {
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-            container.addView(
-                PdfView(activity).apply {
-                    pdfDocument = fakePdfDocument
-                    id = PDF_VIEW_ID
-                },
-                ViewGroup.LayoutParams(width, height),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfView(activity).apply {
+                        pdfDocument = fakePdfDocument
+                        id = PDF_VIEW_ID
+                    },
+                    ViewGroup.LayoutParams(width, height),
+                )
+            }
         }
     }
 

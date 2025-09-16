@@ -1026,6 +1026,7 @@ class AppCompatTextHelper {
             mTypefaceSetter = typefaceSetter;
         }
 
+        @SuppressWarnings("ReferenceEquality") // mLastKnownTypefaceSetOnPaint !=paint.getTypeface()
         public boolean setFontVariationSettings(@Nullable String fontVariationSettings) {
             Typeface baseTypeface = mOriginalTypeface;
             // Try to work around apps mutating the result of getPaint()

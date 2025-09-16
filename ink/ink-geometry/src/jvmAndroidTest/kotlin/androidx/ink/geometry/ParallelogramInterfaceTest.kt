@@ -34,7 +34,7 @@ class ParallelogramInterfaceTest {
                 assertThat(normalizedWidth).isEqualTo(expectedWidth)
                 assertThat(normalizedHeight).isEqualTo(expectedHeight)
                 assertThat(normalizedRotation).isWithin(tolerance).of(expectedRotation)
-                ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                     ImmutableVec(0f, 0f),
                     expectedWidth,
                     expectedHeight,
@@ -60,7 +60,7 @@ class ParallelogramInterfaceTest {
                 assertThat(normalizedWidth).isEqualTo(expectedWidth)
                 assertThat(normalizedHeight).isEqualTo(expectedHeight)
                 assertThat(normalizedRotation).isWithin(tolerance).of(expectedRotation)
-                ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                     ImmutableVec(0f, 0f),
                     expectedWidth,
                     expectedHeight,
@@ -85,7 +85,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.QUARTER_TURN_RADIANS,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -105,7 +105,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.QUARTER_TURN_RADIANS,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -136,7 +136,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.QUARTER_TURN_RADIANS,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -167,7 +167,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -198,7 +198,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -229,7 +229,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -252,7 +252,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -276,7 +276,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -301,7 +301,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -330,7 +330,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -355,7 +355,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -370,7 +370,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -390,7 +390,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,
@@ -405,7 +405,7 @@ class ParallelogramInterfaceTest {
                 height = 3f,
                 rotation = Angle.ZERO,
                 runBlock = { w: Float, h: Float, r: Float ->
-                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
                         ImmutableVec(0f, 0f),
                         w,
                         h,

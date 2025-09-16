@@ -91,7 +91,7 @@ class SpatialRowColumnTest {
                 Subspace {
                     SpatialRow(
                         SubspaceModifier.testTag("row1").size(20.dp),
-                        alignment = SpatialAlignment.CenterLeft,
+                        alignment = SpatialAlignment.CenterStart,
                     ) {
                         SpatialColumn(SubspaceModifier.testTag("column1").size(5.dp)) {
                             SpatialPanel { Text(text = "Column 1") }
@@ -128,7 +128,7 @@ class SpatialRowColumnTest {
                 Subspace {
                     SpatialRow(
                         SubspaceModifier.testTag("row1").size(20.dp),
-                        alignment = SpatialAlignment.CenterLeft,
+                        alignment = SpatialAlignment.CenterStart,
                     ) {
                         SpatialColumn(
                             SubspaceModifier.testTag("column1")
@@ -203,7 +203,7 @@ class SpatialRowColumnTest {
                         SpatialRow(
                             SubspaceModifier.testTag("row1")
                                 .size(10.dp)
-                                .align(SpatialAlignment.Left)
+                                .align(SpatialAlignment.Start)
                         ) {
                             SpatialPanel { Text(text = "SpatialRow 1") }
                         }

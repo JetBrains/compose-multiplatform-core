@@ -1,10 +1,12 @@
 package androidx.appfunctions.`internal`.serializableproxies
 
+import androidx.`annotation`.RequiresApi
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 import java.time.LocalDateTime
 import javax.`annotation`.processing.Generated
 
+@RequiresApi(33)
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$LocalDateTimeFactory` : AppFunctionSerializableFactory<LocalDateTime> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): LocalDateTime {

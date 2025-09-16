@@ -30,15 +30,15 @@ internal class PageTransformCalculator {
      * @param visiblePagesCount The number of visible pages.
      * @param pageLocations A sparse array mapping page numbers to their locations in the view.
      * @param zoomLevel The current zoom level of the PDF view.
-     * @return A [SparseArray] of transformation matrices for the visible pages.
+     * @return A [Map] of transformation matrices for the visible pages.
      */
     fun calculate(
         firstVisiblePage: Int,
         visiblePagesCount: Int,
         pageLocations: SparseArray<RectF>,
         zoomLevel: Float,
-    ): SparseArray<Matrix> {
-        val pageMatrices = SparseArray<Matrix>()
+    ): Map<Int, Matrix> {
+        val pageMatrices = mutableMapOf<Int, Matrix>()
         val lastVisiblePage = firstVisiblePage + visiblePagesCount
 
         for (currentPage in firstVisiblePage until lastVisiblePage) {
@@ -52,6 +52,6 @@ internal class PageTransformCalculator {
                 pageMatrices.put(currentPage, transformationMatrix)
             }
         }
-        return pageMatrices
+        return pageMatrices.toMap()
     }
 }

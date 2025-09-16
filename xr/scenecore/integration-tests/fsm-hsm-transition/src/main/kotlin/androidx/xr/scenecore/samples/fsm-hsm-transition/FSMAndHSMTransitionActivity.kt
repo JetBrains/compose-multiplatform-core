@@ -40,6 +40,8 @@ import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.SpatialWindow
+import androidx.xr.scenecore.createBundleForFullSpaceModeLaunch
+import androidx.xr.scenecore.createBundleForFullSpaceModeLaunchWithEnvironmentInherited
 import androidx.xr.scenecore.scene
 import java.nio.file.Paths
 import java.util.concurrent.Executors
@@ -78,7 +80,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
         val buttonLaunchInFSM: Button = findViewById(R.id.buttonLaunchInFsm)
         buttonLaunchInFSM.setOnClickListener {
             var (intent, bundle) = createIntent()
-            bundle = session.scene.configureBundleForFullSpaceModeLaunch(bundle)
+            bundle = createBundleForFullSpaceModeLaunch(session, bundle)
             startActivity(intent, bundle)
             Log.i(TAG, "Launching Settings app in a new task in FSM.")
         }
@@ -87,8 +89,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
             findViewById(R.id.buttonLaunchInFsmWithEnvironmentInherited)
         buttonLaunchInFSMWithEnv.setOnClickListener {
             var (intent, bundle) = createIntent()
-            bundle =
-                session.scene.configureBundleForFullSpaceModeLaunchWithEnvironmentInherited(bundle)
+            bundle = createBundleForFullSpaceModeLaunchWithEnvironmentInherited(session, bundle)
             startActivity(intent, bundle)
             Log.i(TAG, "Launching Settings app in a new task in FSM with environment inherited.")
         }

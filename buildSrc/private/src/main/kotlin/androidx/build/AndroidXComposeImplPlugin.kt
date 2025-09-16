@@ -200,9 +200,6 @@ private fun configureComposeCompilerPlugin(project: Project) {
         project.tasks.withType(KotlinCompilationTask::class.java).configureEach { compile ->
             compile.applyPlugin(kotlinPlugin)
 
-            compile.enableFeatureFlag(ComposeFeatureFlag.OptimizeNonSkippingGroups)
-            compile.enableFeatureFlag(ComposeFeatureFlag.PausableComposition)
-
             compile.addPluginOption(ComposeCompileOptions.SourceOption, "true")
         }
     }

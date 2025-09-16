@@ -316,6 +316,7 @@ public class BiometricFragment extends Fragment {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     // TODO(b/178855209): Move to AuthenticationInternalHelper
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -833,6 +834,7 @@ public class BiometricFragment extends Fragment {
      * Launches the confirm device credential Settings activity, where the user can authenticate
      * using their PIN, pattern, or password.
      */
+    @SuppressWarnings("deprecation")
     private void launchConfirmCredentialActivity() {
         final Context context = getContext();
 

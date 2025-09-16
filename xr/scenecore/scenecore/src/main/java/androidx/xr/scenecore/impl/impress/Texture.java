@@ -32,6 +32,7 @@ import org.jspecify.annotations.Nullable;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public final class Texture extends BindingsResource implements TextureResource {
     private final String TAG = getClass().getSimpleName();
+    @SuppressWarnings("UnusedVariable")
     private final ImpressApi impressApi;
     private final TextureSampler sampler;
 

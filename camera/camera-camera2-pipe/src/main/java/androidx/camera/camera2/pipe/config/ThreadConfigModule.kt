@@ -65,15 +65,6 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
     @Singleton
     @Provides
     fun provideThreads(cameraPipeLifetime: CameraPipeLifetime): Threads {
-        val testOnlyDispatcher = threadConfig.testOnlyDispatcher
-        val testOnlyScope = threadConfig.testOnlyScope
-        if (testOnlyDispatcher != null && testOnlyScope != null) {
-            return provideTestOnlyThreads(testOnlyDispatcher, testOnlyScope)
-        }
-        check(testOnlyDispatcher == null || testOnlyScope == null) {
-            "testOnlyDispatcher and testOnlyScope must be specified together!"
-        }
-
         val executorServices = mutableListOf<ExecutorService>()
 
         // TODO: b/391655975 - Figure out why cached thread pool creates kotlin default executors.
@@ -112,19 +103,23 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             }
         }
 
-        val cameraHandlerFn = {
-            if (threadConfig.defaultCameraHandler == null) {
-                val handlerThread =
-                    HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { it.start() }
-                cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.THREAD) {
-                    handlerThread.quit()
-                }
+        val cameraHandlerFn =
+            threadConfig.defaultCameraHandlerFn
+                ?: {
+                    if (threadConfig.defaultCameraHandler == null) {
+                        val handlerThread =
+                            HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { it.start() }
+                        cameraPipeLifetime.addShutdownAction(
+                            CameraPipeLifetime.ShutdownType.THREAD
+                        ) {
+                            handlerThread.quit()
+                        }
 
-                Handler(handlerThread.looper)
-            } else {
-                threadConfig.defaultCameraHandler
-            }
-        }
+                        Handler(handlerThread.looper)
+                    } else {
+                        threadConfig.defaultCameraHandler
+                    }
+                }
 
         val cameraExecutorFn = {
             if (threadConfig.defaultCameraExecutor == null) {
@@ -144,14 +139,21 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             }
         }
 
-        val cameraPipeScope =
-            CoroutineScope(SupervisorJob() + lightweightDispatcher + CoroutineName("CXCP"))
-        val cameraPipeDispatchScope =
-            CoroutineScope(SupervisorJob() + CoroutineName("CXCP-Dispatch"))
+        var cameraPipeScope: CoroutineScope
+        var cameraPipeDispatchScope: CoroutineScope
+        if (threadConfig.testOnlyScope != null) {
+            cameraPipeScope = threadConfig.testOnlyScope
+            cameraPipeDispatchScope = threadConfig.testOnlyScope
+        } else {
+            cameraPipeScope =
+                CoroutineScope(SupervisorJob() + lightweightDispatcher + CoroutineName("CXCP"))
+            cameraPipeDispatchScope =
+                CoroutineScope(SupervisorJob() + CoroutineName("CXCP-Dispatch"))
 
-        cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
-            cameraPipeScope.cancel()
-            cameraPipeDispatchScope.cancel()
+            cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
+                cameraPipeScope.cancel()
+                cameraPipeDispatchScope.cancel()
+            }
         }
 
         return Threads(

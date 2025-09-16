@@ -247,7 +247,7 @@ class LifecycleCameraProviderTest(
     @Test
     fun shutdown_onlyRemoveNecessaryCamerasFromRepository() {
         // Arrange.
-        val repository = LifecycleCameraRepository.getInstance()
+        val repository = LifecycleCameraRepositories.getInstance()
         val fakeCamera =
             repository.createLifecycleCamera(
                 FakeLifecycleOwner(),

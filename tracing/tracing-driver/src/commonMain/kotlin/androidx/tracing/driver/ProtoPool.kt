@@ -31,6 +31,7 @@ private const val TRACE_PACKET_POOL_ARRAY_POOL_SIZE = 32
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_STRING: String = ""
 
 /** The uber proto pool that knows how to create all the necessary protos. */
+@PublishedApi
 internal class ProtoPool(internal val isDebug: Boolean) {
     internal val tracePacketArrayPool: Pool<PooledTracePacketArray> =
         Pool(size = TRACE_PACKET_POOL_ARRAY_POOL_SIZE, isDebug = isDebug) { pool ->

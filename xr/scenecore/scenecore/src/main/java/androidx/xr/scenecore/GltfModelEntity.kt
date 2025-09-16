@@ -109,7 +109,8 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads
      *
-     * @param loop Whether the animation should loop over or stop after animating once.
+     * @param loop If true, the animation plays in a loop indefinitely until [stopAnimation] is
+     *   called. If false, the animation plays once and then stops.
      * @param animationName The name of the animation to start.
      * @throws IllegalArgumentException if the underlying model doesn't contain an animation with
      *   the given name.

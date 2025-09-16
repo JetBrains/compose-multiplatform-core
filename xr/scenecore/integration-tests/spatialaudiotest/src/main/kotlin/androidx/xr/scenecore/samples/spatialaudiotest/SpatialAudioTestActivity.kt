@@ -286,8 +286,7 @@ class SpatialAudioTestActivity : AppCompatActivity() {
 
         override fun configureBuilder(session: Session, builder: AudioTrack.Builder) {
             super.configureBuilder(session, builder)
-            val unused =
-                SpatialAudioTrackBuilder.setPointSourceParams(session, builder, pointSourceParams)
+            SpatialAudioTrackBuilder.setPointSourceParams(session, builder, pointSourceParams)
         }
     }
 
@@ -300,12 +299,7 @@ class SpatialAudioTestActivity : AppCompatActivity() {
     ) : AudioTrackPlayer(resources, filePath, sampleRate, session) {
 
         override fun configureBuilder(session: Session, builder: AudioTrack.Builder) {
-            val unused =
-                SpatialAudioTrackBuilder.setSoundFieldAttributes(
-                    session,
-                    builder,
-                    soundFieldAttributes,
-                )
+            SpatialAudioTrackBuilder.setSoundFieldAttributes(session, builder, soundFieldAttributes)
         }
     }
 
@@ -366,7 +360,7 @@ class SpatialAudioTestActivity : AppCompatActivity() {
             audioTrack.play()
 
             when (SpatialAudioTrack.getSpatialSourceType(session, audioTrack)) {
-                SpatializerConstants.SOURCE_TYPE_BYPASS -> {
+                SpatializerConstants.SOURCE_TYPE_DEFAULT -> {
                     Log.d(TAG, "Source type is bypass")
                 }
                 SpatializerConstants.SOURCE_TYPE_POINT_SOURCE -> {

@@ -25,39 +25,6 @@ import androidx.compose.runtime.tooling.findCompositionInstance
  * Processes a set of [CompositionData] instances and constructs a list of trees of custom nodes.
  *
  * This function builds a hierarchy from the provided compositions and then uses the `mapTree` to
- * transform each root composition into a custom tree structure defined by the [createNode]. Results
- * from `mapTree` that are `null` will be excluded from the final list.
- *
- * The processing involves:
- * 1. Building a lookup map from [CompositionInstance] to [CompositionData].
- * 2. Constructing a parent-to-children hierarchy of [CompositionInstance]s.
- * 3. Recursively traversing the hierarchy to map each composition using the provided [createNode],
- *    potentially stitching children processed from sub-compositions.
- *
- * @param prepareResult Give the caller a chance to setup data structures for a composition.
- * @param createNode A function that takes a [CompositionGroup], its [SourceContext], a list of
- *   already processed children of type [T] from the current composition, and an optional list of
- *   children of type [R] from stitched sub-compositions. It returns a custom node of type [R] or
- *   `null`.
- * @param createResult Create a result [R] from the top node [T] for this composition and the
- *   specified child compositions.
- * @param cache An optional [ContextCache] to optimize [SourceContext] creation.
- * @return A list of root nodes of type [R] representing the successfully processed trees.
- * @receiver A set of [CompositionData] to be processed into trees.
- */
-@UiToolingDataApi
-@OptIn(UiToolingDataApi::class)
-fun <T, R> Set<CompositionData>.makeTree(
-    prepareResult: (CompositionInstance) -> Unit,
-    createNode: (CompositionGroup, SourceContext, List<T>, List<R>) -> T?,
-    createResult: (CompositionInstance, T?, List<CompositionInstance>) -> R?,
-    cache: ContextCache = ContextCache(),
-): List<R> = CompositionDataTree(this, prepareResult, createNode, createResult, cache).build()
-
-/**
- * Processes a set of [CompositionData] instances and constructs a list of trees of custom nodes.
- *
- * This function builds a hierarchy from the provided compositions and then uses the `mapTree` to
  * transform each root composition into a custom tree structure defined by the [factory]. Results
  * from `mapTree` that are `null` will be excluded from the final list.
  *
@@ -77,20 +44,18 @@ fun <T, R> Set<CompositionData>.makeTree(
 @UiToolingDataApi
 @OptIn(UiToolingDataApi::class)
 fun <T> Set<CompositionData>.makeTree(
-    factory: (CompositionGroup, SourceContext, List<T>, List<T>) -> T?,
+    factory: (CompositionGroup, SourceContext, List<T>, List<T>?) -> T?,
     cache: ContextCache = ContextCache(),
-): List<T> = makeTree({}, factory, { _, out, _ -> out }, cache)
+): List<T> = CompositionDataTree(this, factory, cache).build()
 
 @OptIn(UiToolingDataApi::class)
-private class CompositionDataTree<T, R>(
+private class CompositionDataTree<T>(
     private val compositions: Set<CompositionData>,
-    private val prepareResult: (CompositionInstance) -> Unit,
-    private val createNode: (CompositionGroup, SourceContext, List<T>, List<R>) -> T?,
-    private val createResult: (CompositionInstance, T?, List<CompositionInstance>) -> R?,
+    private val factory: (CompositionGroup, SourceContext, List<T>, List<T>) -> T?,
     private val cache: ContextCache,
 ) {
     private val hierarchy = mutableMapOf<CompositionInstance, MutableList<CompositionInstance>>()
-    private val processedNodes = mutableMapOf<CompositionInstance, R?>()
+    private val processedNodes = mutableMapOf<CompositionInstance, T?>()
     private val rootCompositionInstances = mutableSetOf<CompositionInstance>()
 
     init {
@@ -101,12 +66,12 @@ private class CompositionDataTree<T, R>(
         }
     }
 
-    fun build(): List<R> {
+    fun build(): List<T> {
         return rootCompositionInstances.mapNotNull { rootInstance -> mapTree(rootInstance) }
     }
 
     @OptIn(UiToolingDataApi::class)
-    private fun mapTree(instance: CompositionInstance): R? {
+    private fun mapTree(instance: CompositionInstance): T? {
         // Check if already processed to handle shared nodes and cycles
         if (processedNodes.containsKey(instance)) {
             return processedNodes[instance]
@@ -120,7 +85,7 @@ private class CompositionDataTree<T, R>(
             mapTree(childInstance)
         }
 
-        val childrenToAdd = mutableMapOf<Any?, MutableList<R>>()
+        val childrenToAdd = mutableMapOf<Any?, MutableList<T>>()
         children
             .filter { it in processedNodes }
             .groupByTo(
@@ -132,9 +97,7 @@ private class CompositionDataTree<T, R>(
         // Now, map the current tree, stitching the children's results.
         // The `mapTreeWithStitching` function is an assumed extension that handles the actual
         // mapping.
-        prepareResult(instance)
-        val node = compositionData.mapTreeWithStitching(createNode, cache, childrenToAdd)
-        val result = createResult(instance, node, children)
+        val result = compositionData.mapTreeWithStitching(factory, cache, childrenToAdd)
 
         // Memoize the result
         processedNodes[instance] = result

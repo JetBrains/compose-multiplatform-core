@@ -16,11 +16,19 @@
 
 package androidx.tracing.driver
 
-internal const val TRACE_EVENT_TYPE_UNDEFINED: Int = 0
-internal const val TRACE_EVENT_TYPE_BEGIN: Int = 1
-internal const val TRACE_EVENT_TYPE_END: Int = 2
-internal const val TRACE_EVENT_TYPE_INSTANT: Int = 3
-internal const val TRACE_EVENT_TYPE_COUNTER: Int = 4
+import androidx.annotation.RestrictTo
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_UNDEFINED: Int = 0
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_BEGIN: Int = 1
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_END: Int = 2
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_INSTANT: Int = 3
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_COUNTER: Int = 4
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val METADATA_ENTRIES_EXPECTED_SIZE: Int = 4
 
 /**
  * Mutable in-memory only representation a trace event, such as a slice start, slice end, or counter
@@ -96,6 +104,19 @@ internal constructor(
     @field:Suppress("MutableBareField") // public / mutable to minimize overhead
     @JvmField
     public var trackDescriptor: TrackDescriptor?,
+
+    /** The list of debug annotations associated with a slice */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var metadataEntries: MutableList<MetadataEntry>,
+
+    /**
+     * Keeping track of the index separately, because the MutableList is pre-allocated with sentinel
+     * objects for performance reasons.
+     */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var metadataEntryIndex: Int,
 ) {
     public constructor() :
         this(
@@ -107,6 +128,8 @@ internal constructor(
             counterLongValue = null,
             flowIds = emptyList(),
             trackDescriptor = null,
+            metadataEntries = MutableList(METADATA_ENTRIES_EXPECTED_SIZE) { MetadataEntry() },
+            metadataEntryIndex = -1,
         )
 
     internal inline fun setPreamble(trackDescriptor: TrackDescriptor) {
@@ -114,6 +137,7 @@ internal constructor(
         this.timestamp = nanoTime()
     }
 
+    @PublishedApi
     internal inline fun setBeginSection(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_BEGIN
         this.trackUuid = trackUuid
@@ -121,6 +145,7 @@ internal constructor(
         this.name = name
     }
 
+    @PublishedApi
     internal inline fun setBeginSectionWithFlows(
         trackUuid: Long,
         name: String,
@@ -133,12 +158,14 @@ internal constructor(
         this.name = name
     }
 
+    @PublishedApi
     internal inline fun setEndSection(trackUuid: Long) {
         type = TRACE_EVENT_TYPE_END
         this.trackUuid = trackUuid
         timestamp = nanoTime()
     }
 
+    @PublishedApi
     internal inline fun setInstant(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_END
         this.trackUuid = trackUuid
@@ -146,6 +173,7 @@ internal constructor(
         this.name = name
     }
 
+    @PublishedApi
     internal inline fun setCounterLong(trackUuid: Long, value: Long) {
         type = TRACE_EVENT_TYPE_COUNTER
         this.trackUuid = trackUuid
@@ -153,11 +181,17 @@ internal constructor(
         counterLongValue = value
     }
 
+    @PublishedApi
     internal inline fun setCounterDouble(trackUuid: Long, value: Double) {
         type = TRACE_EVENT_TYPE_COUNTER
         this.trackUuid = trackUuid
         timestamp = nanoTime()
         counterDoubleValue = value
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public inline fun forEachMetadataEntry(block: (MetadataEntry) -> Unit) {
+        repeat(metadataEntryIndex + 1) { block(metadataEntries[it]) }
     }
 
     public fun reset() {
@@ -169,5 +203,13 @@ internal constructor(
         counterLongValue = null
         flowIds = emptyList()
         trackDescriptor = null
+        if (metadataEntryIndex >= 0) {
+            // Reset metadata entries and resize
+            forEachMetadataEntry { it.reset() }
+            if (metadataEntryIndex >= METADATA_ENTRIES_EXPECTED_SIZE) {
+                metadataEntries = metadataEntries.subList(0, METADATA_ENTRIES_EXPECTED_SIZE)
+            }
+            metadataEntryIndex = -1
+        }
     }
 }

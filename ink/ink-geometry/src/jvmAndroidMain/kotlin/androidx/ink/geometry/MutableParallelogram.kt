@@ -23,7 +23,7 @@ import kotlin.math.atan2
 
 /**
  * Mutable parallelogram (i.e. a quadrilateral with parallel sides), defined by its [center],
- * [width], [height], [rotation], and [shearFactor].
+ * [width], [height], [rotation], and [skew].
  */
 @UsedByNative
 public class MutableParallelogram
@@ -32,17 +32,17 @@ private constructor(
     width: Float,
     override var height: Float,
     @AngleRadiansFloat rotation: Float,
-    override var shearFactor: Float,
+    override var skew: Float,
 ) : Parallelogram() {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toImmutable(): ImmutableParallelogram =
-        ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+        ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
             center.toImmutable(),
             width,
             height,
             rotation,
-            shearFactor,
+            skew,
         )
 
     @get:AngleRadiansFloat
@@ -66,26 +66,26 @@ private constructor(
 
     /**
      * Constructs an empty [MutableParallelogram] with a center at the origin, a zero width, a zero
-     * height, zero rotation, and zero shear factor. This is intended for subsequent population with
-     * one of the `populateFrom` methods.
+     * height, zero rotation, and zero skew. This is intended for subsequent population with one of
+     * the `populateFrom` methods.
      */
     public constructor() : this(MutableVec(), 0f, 0f, Angle.ZERO, 0f)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @UsedByNative
-    public fun setCenterDimensionsRotationAndShear(
+    public fun setCenterDimensionsRotationAndSkew(
         centerX: Float,
         centerY: Float,
         width: Float,
         height: Float,
         @AngleRadiansFloat rotation: Float,
-        shearFactor: Float,
+        skew: Float,
     ): MutableParallelogram = run {
         normalizeAndRun(width, height, rotation) { w: Float, h: Float, r: Float ->
             this.width = w
             this.height = h
             this.rotation = r
-            this.shearFactor = shearFactor
+            this.skew = skew
             this.center.x = centerX
             this.center.y = centerY
             this
@@ -105,7 +105,7 @@ private constructor(
         width = input.width
         height = input.height
         rotation = input.rotation
-        shearFactor = input.shearFactor
+        skew = input.skew
         return this
     }
 
@@ -119,8 +119,8 @@ private constructor(
 
     /**
      * Populates a [MutableParallelogram] to have a given [center], [width] and [height]. The
-     * resulting [Parallelogram] has zero [rotation] and [shearFactor]. If the [width] is less than
-     * zero, the [Parallelogram] will be normalized.
+     * resulting [Parallelogram] has zero [rotation] and [skew]. If the [width] is less than zero,
+     * the [Parallelogram] will be normalized.
      *
      * @return `this`
      */
@@ -130,13 +130,13 @@ private constructor(
         height: Float,
     ): MutableParallelogram =
         normalizeAndRun(width, height, rotation = Angle.ZERO) { w: Float, h: Float, r: Float ->
-            setCenterDimensionsRotationAndShear(center.x, center.y, w, h, r, shearFactor = 0f)
+            setCenterDimensionsRotationAndSkew(center.x, center.y, w, h, r, skew = 0f)
         }
 
     /**
      * Populates the [MutableParallelogram] to have a given [center], [width], [height] and
-     * [rotation] and zero [shearFactor]. If the [width] is less than zero or if the [rotation] is
-     * not in the range [0, 2π), it will be normalized.
+     * [rotation] and zero [skew]. If the [width] is less than zero or if the [rotation] is not in
+     * the range [0, 2π), it will be normalized.
      *
      * @return `this`
      */
@@ -146,35 +146,30 @@ private constructor(
         height: Float,
         @AngleRadiansFloat rotation: Float,
     ): MutableParallelogram =
-        populateFromCenterDimensionsRotationAndShear(
-            center,
-            width,
-            height,
-            rotation,
-            shearFactor = 0f,
-        )
+        populateFromCenterDimensionsRotationAndSkew(center, width, height, rotation, skew = 0f)
 
     /**
      * Populates the [MutableParallelogram] to have a given [center], [width], [height], [rotation]
-     * and [shearFactor]. If the [width] is less than zero or if the [rotation] is not in the
-     * range [0, 2π), it will be normalized.
+     * and [skew]. If the [width] is less than zero or if the [rotation] is not in the range
+     * [0, 2π), it will be normalized. See the corresponding fields on [Parallelogram] for detail
+     * about these parameters.
      *
      * @return `this`
      */
-    public fun populateFromCenterDimensionsRotationAndShear(
+    public fun populateFromCenterDimensionsRotationAndSkew(
         center: MutableVec,
         @FloatRange(from = 0.0) width: Float,
         height: Float,
         @AngleRadiansFloat rotation: Float,
-        shearFactor: Float,
+        skew: Float,
     ): MutableParallelogram =
         normalizeAndRun(width, height, rotation) { w: Float, h: Float, r: Float ->
-            setCenterDimensionsRotationAndShear(center.x, center.y, w, h, r, shearFactor)
+            setCenterDimensionsRotationAndSkew(center.x, center.y, w, h, r, skew)
         }
 
     /**
      * Populates the [MutableParallelogram] to be aligned with the [segment] with its bounds
-     * [padding] units away from the segment and [shear] of zero.
+     * [padding] units away from the segment and [skew] of zero.
      *
      * @return `this`
      */
@@ -187,13 +182,13 @@ private constructor(
             height = 2 * padding,
             rotation = atan2((segment.start.y - segment.end.y), (segment.start.x - segment.end.x)),
         ) { w: Float, h: Float, r: Float ->
-            setCenterDimensionsRotationAndShear(
+            setCenterDimensionsRotationAndSkew(
                 segment.end.x / 2f + segment.start.x / 2f,
                 segment.end.y / 2f + segment.start.y / 2f,
                 width = w,
                 height = h,
                 rotation = r,
-                shearFactor = 0f,
+                skew = 0f,
             )
         }
 

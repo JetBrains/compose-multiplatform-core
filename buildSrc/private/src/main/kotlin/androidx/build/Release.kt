@@ -198,7 +198,7 @@ private fun Project.projectZipPrefix(): String {
     return "${project.group}-${project.name}"
 }
 
-private fun getZipName(fileNamePrefix: String) = "$fileNamePrefix-all-${getBuildId()}"
+private fun getZipName(fileNamePrefix: String) = "$fileNamePrefix-all"
 
 fun Project.getProjectZipPath(): String {
     return Release.PROJECT_ZIPS_FOLDER +

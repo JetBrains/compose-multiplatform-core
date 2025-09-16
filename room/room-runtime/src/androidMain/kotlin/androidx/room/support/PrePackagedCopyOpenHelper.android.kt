@@ -118,6 +118,16 @@ internal class PrePackagedCopyOpenHelper(
             if (currentVersion == databaseVersion) {
                 return
             }
+            if (
+                databaseConfiguration.migrationContainer.findMigrationPath(
+                    currentVersion,
+                    databaseVersion,
+                ) != null
+            ) {
+                // There is a migration path and it will be prioritized,  i.e. we won't be
+                // performing a copy destructive migration.
+                return
+            }
             if (databaseConfiguration.isMigrationRequired(currentVersion, databaseVersion)) {
                 // From the current version to the desired version a migration is required, i.e.
                 // we won't be performing a copy destructive migration.

@@ -124,7 +124,7 @@ public final class AppSearchLoggerHelper {
      * Copies native Query stats to builder.
      *
      * @param fromNativeStats Stats copied from.
-     * @param toStatsBuilder Stats copied to.
+     * @param toStatsBuilder  Stats copied to.
      */
     static void copyNativeStats(@NonNull QueryStatsProto fromNativeStats,
             QueryStats.@NonNull Builder toStatsBuilder) {
@@ -193,7 +193,7 @@ public final class AppSearchLoggerHelper {
      * Copies native Delete stats to builder.
      *
      * @param fromNativeStats Stats copied from.
-     * @param toStatsBuilder Stats copied to.
+     * @param toStatsBuilder  Stats copied to.
      */
     static void copyNativeStats(@NonNull DeleteStatsProto fromNativeStats,
             RemoveStats.@NonNull Builder toStatsBuilder) {
@@ -209,7 +209,7 @@ public final class AppSearchLoggerHelper {
      * Copies native DeleteByQuery stats to builder.
      *
      * @param fromNativeStats Stats copied from.
-     * @param toStatsBuilder Stats copied to.
+     * @param toStatsBuilder  Stats copied to.
      */
     static void copyNativeStats(@NonNull DeleteByQueryStatsProto fromNativeStats,
             RemoveStats.@NonNull Builder toStatsBuilder) {
@@ -232,7 +232,7 @@ public final class AppSearchLoggerHelper {
      * Copies native {@link OptimizeStatsProto} to builder.
      *
      * @param fromNativeStats Stats copied from.
-     * @param toStatsBuilder Stats copied to.
+     * @param toStatsBuilder  Stats copied to.
      */
     static void copyNativeStats(@NonNull OptimizeStatsProto fromNativeStats,
             OptimizeStats.@NonNull Builder toStatsBuilder) {
@@ -254,7 +254,7 @@ public final class AppSearchLoggerHelper {
                 .setNumDeletedNamespaces(fromNativeStats.getNumDeletedNamespaces());
     }
 
-    /*
+    /**
      * Copy SetSchema result stats to builder.
      *
      * @param fromProto Stats copied from.
@@ -270,8 +270,31 @@ public final class AppSearchLoggerHelper {
                 .setCompatibleTypeChangeCount(fromProto.getFullyCompatibleChangedSchemaTypesCount())
                 .setIndexIncompatibleTypeChangeCount(
                         fromProto.getIndexIncompatibleChangedSchemaTypesCount())
+                .setJoinIndexIncompatibleTypeChangeCount(
+                        fromProto.getJoinIncompatibleChangedSchemaTypesCount())
+                .setScorablePropertyIncompatibleTypeChangeCount(
+                        fromProto.getScorablePropertyIncompatibleChangedSchemaTypesCount())
                 .setBackwardsIncompatibleTypeChangeCount(
                         fromProto.getIncompatibleSchemaTypesCount())
+                .setDeletedDocumentCount(fromProto.getDeletedDocumentCount())
+                .setIsTermIndexRestored(fromProto.getHasTermIndexRestored())
+                .setIsIntegerIndexRestored(fromProto.getHasIntegerIndexRestored())
+                .setIsEmbeddingIndexRestored(fromProto.getHasEmbeddingIndexRestored())
+                .setIsQualifiedIdJoinIndexRestored(fromProto.getHasQualifiedIdJoinIndexRestored())
+                .setNativeSchemaStoreSetSchemaLatencyMillis(
+                        fromProto.getSetSchemaStats().getSchemaStoreSetSchemaLatencyMs())
+                .setNativeDocumentStoreUpdateSchemaLatencyMillis(
+                        fromProto.getSetSchemaStats().getDocumentStoreUpdateSchemaLatencyMs())
+                .setNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis(
+                        fromProto
+                                .getSetSchemaStats()
+                                .getDocumentStoreOptimizedUpdateSchemaLatencyMs())
+                .setNativeIndexRestorationLatencyMillis(
+                        fromProto.getSetSchemaStats().getIndexRestorationLatencyMs())
+                .setNativeScorablePropertyCacheRegenerationLatencyMillis(
+                        fromProto
+                                .getSetSchemaStats()
+                                .getScorablePropertyCacheRegenerationLatencyMs())
                 .addGetVmLatencyMillis(fromProto.getGetVmLatencyMs());
     }
 

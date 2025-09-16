@@ -1498,13 +1498,18 @@ class ProcessCameraProviderTest(
     fun bindWithExtensions_doesNotImpactPreviousCamera(): Unit =
         runBlocking(Dispatchers.Main) {
             // 1. Arrange.
+            ProcessCameraProvider.configureInstance(cameraConfig)
+            provider = ProcessCameraProvider.getInstance(context).await()
+
+            // Skips the test if the original supported max zoom ratio is not greater than 1.0f
+            val cameraInfo = provider.getCameraInfo(cameraSelector)
+            assumeTrue(cameraInfo.zoomState.value!!.maxZoomRatio > 1.0f)
+
             val cameraSelectorWithExtensions =
                 getCameraSelectorWithLimitedCapabilities(
                     cameraSelector,
                     emptySet(), // All capabilities are not supported.
                 )
-            ProcessCameraProvider.configureInstance(cameraConfig)
-            provider = ProcessCameraProvider.getInstance(context).await()
             val useCase = Preview.Builder().build()
 
             // 2. Act: bind with and then without Extensions.

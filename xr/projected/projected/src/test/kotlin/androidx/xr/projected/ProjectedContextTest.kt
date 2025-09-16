@@ -112,16 +112,20 @@ class ProjectedContextTest {
     fun createProjectedActivityOptions_projectedDeviceContext_returnsActivityOptionsWithLaunchDisplayId() {
         createVirtualDevice()
 
-        val activityOptions = ProjectedContext.createProjectedActivityOptions(context)
+        val activityOptions =
+            ProjectedContext.createProjectedActivityOptions(projectedDeviceContext)
 
         assertThat(activityOptions.launchDisplayId).isEqualTo(DISPLAY_ID)
     }
 
     @Test
-    fun createProjectedActivityOptions_anotherContext_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException::class.java) {
-            ProjectedContext.createProjectedActivityOptions(context)
-        }
+    @Ignore // Bring back this test once a new Robolectric version is available
+    fun createProjectedActivityOptions_anotherContext_returnsActivityOptionsWithLaunchDisplayId() {
+        createVirtualDevice()
+
+        val activityOptions = ProjectedContext.createProjectedActivityOptions(context)
+
+        assertThat(activityOptions.launchDisplayId).isEqualTo(DISPLAY_ID)
     }
 
     private fun createVirtualDevice() {

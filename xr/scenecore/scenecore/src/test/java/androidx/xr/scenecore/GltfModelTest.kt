@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.Session
@@ -47,8 +47,8 @@ class GltfModelTest {
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
     private val mockActivitySpace = mock<RtActivitySpace>()
     private val mockPanelEntityImpl = mock<RtPanelEntity>()
-    private val activity: Activity =
-        Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
 
     @Before
     fun setup() {

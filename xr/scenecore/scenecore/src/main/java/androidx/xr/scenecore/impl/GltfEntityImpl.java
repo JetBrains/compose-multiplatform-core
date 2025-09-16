@@ -45,6 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 // TODO: b/375520647 - Add unit tests for this class.
 class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     private final ImpressApi mImpressApi;
+    @SuppressWarnings("UnusedVariable")
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager;
     private final SubspaceNode mSubspace;
     private final int mModelImpressNode;

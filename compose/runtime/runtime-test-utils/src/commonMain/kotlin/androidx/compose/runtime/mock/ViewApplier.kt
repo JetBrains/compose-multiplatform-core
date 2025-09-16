@@ -127,3 +127,34 @@ private data class Down(val view: View) : Operation()
 private class Up : Operation() {
     override fun toString(): String = "Up"
 }
+
+private sealed class Operation
+
+private enum class Order {
+    TopDown,
+    BottomUp,
+}
+
+private data class Insert(val index: Int, val view: View, val order: Order) : Operation()
+
+private data class Remove(val index: Int, val count: Int) : Operation()
+
+private data class Move(val from: Int, val to: Int, val count: Int) : Operation()
+
+private class Clear : Operation() {
+    override fun toString(): String = "Clear"
+}
+
+private class Begin : Operation() {
+    override fun toString(): String = "Begin"
+}
+
+private class End : Operation() {
+    override fun toString(): String = "End"
+}
+
+private data class Down(val view: View) : Operation()
+
+private class Up : Operation() {
+    override fun toString(): String = "Up"
+}

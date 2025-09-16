@@ -21,9 +21,7 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.params.InputConfiguration
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.os.Build
 import android.util.Size
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateReprocessing
 import androidx.camera.camera2.pipe.core.Log
@@ -111,7 +109,6 @@ public interface ZslControl {
     public fun dequeueImageFromBuffer(): ImageProxy?
 }
 
-@RequiresApi(Build.VERSION_CODES.M)
 @CameraScope
 public class ZslControlImpl @Inject constructor(private val cameraProperties: CameraProperties) :
     ZslControl {

@@ -36,9 +36,10 @@ dependencies {
     implementation(project(":appfunctions:appfunctions"))
     implementation(project(":appfunctions:appfunctions-service"))
     implementation("junit:junit:4.13.2")
+    implementation(libs.robolectric)
 
     // Internal dependencies
-    implementation("androidx.annotation:annotation:1.9.0-rc01")
+    implementation("androidx.annotation:annotation:1.9.0")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation(libs.truth)

@@ -19,8 +19,19 @@ package androidx.privacysandbox.databridge.client
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.annotation.GuardedBy
+import androidx.annotation.VisibleForTesting
+import androidx.preference.PreferenceManager
+import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ERROR_ADDING_KEYS
+import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ERROR_SYNCING_UPDATES_FROM_DATABRIDGE
+import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES
+import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ErrorCode
 import androidx.privacysandbox.databridge.core.Key
+import androidx.privacysandbox.databridge.core.Type
+import java.lang.Exception
 import java.util.concurrent.Executor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * This class facilitates the sync between app's default [SharedPreferences] and [DataBridgeClient].
@@ -51,9 +62,23 @@ public abstract class DataSynchronizationManager private constructor() {
         public fun getInstance(context: Context): DataSynchronizationManager {
             synchronized(instanceLock) {
                 return instance
-                    ?: DataSynchronizationManagerImpl(context.applicationContext).also {
-                        instance = it
-                    }
+                    ?: DataSynchronizationManagerImpl(
+                            context.applicationContext,
+                            CoroutineScope(Dispatchers.IO),
+                        )
+                        .also { instance = it }
+            }
+        }
+
+        @JvmStatic
+        @VisibleForTesting
+        internal fun getInstance(
+            context: Context,
+            scope: CoroutineScope,
+        ): DataSynchronizationManager {
+            synchronized(instanceLock) {
+                instance = DataSynchronizationManagerImpl(context.applicationContext, scope)
+                return instance!!
             }
         }
     }
@@ -96,21 +121,133 @@ public abstract class DataSynchronizationManager private constructor() {
      */
     public abstract fun removeSyncCallback(syncCallback: SyncCallback)
 
-    private class DataSynchronizationManagerImpl(context: Context) : DataSynchronizationManager() {
+    private class DataSynchronizationManagerImpl(context: Context, val scope: CoroutineScope) :
+        DataSynchronizationManager() {
+
+        private val dataBridgeClient: DataBridgeClient = DataBridgeClient.getInstance(context)
+
+        private val sharedPreference: SharedPreferences =
+            PreferenceManager.getDefaultSharedPreferences(context)
+
+        private val syncCallbackAndExecutorList = mutableSetOf<Pair<SyncCallback, Executor>>()
+
+        @GuardedBy("keySet") private val keySet = mutableSetOf<Key>()
+
+        companion object {
+            private const val SOURCE_ADD_KEYS = "addKeys"
+            private const val SOURCE_SHARED_PREFERENCE = "sharedPreference"
+            private const val SOURCE_DATABRIDGE = "dataBridge"
+        }
+
         override fun addKeys(keyValueMap: Map<Key, Any?>) {
-            TODO("Not yet implemented")
+            if (keyValueMap.keys.any { it.type == Type.DOUBLE || it.type == Type.BYTE_ARRAY }) {
+                throw IllegalArgumentException(
+                    "Invalid type. Double and ByteArray not supported for synchronization"
+                )
+            }
+
+            synchronized(keySet) { keySet.addAll(keyValueMap.keys) }
+
+            updateDataBridgeClient(keyValueMap, SOURCE_ADD_KEYS)
+            updateSharedPreference(keyValueMap, SOURCE_ADD_KEYS)
         }
 
         override fun getKeys(): Set<Key> {
-            TODO("Not yet implemented")
+            synchronized(keySet) {
+                return keySet.toSet()
+            }
         }
 
         override fun addSyncCallback(executor: Executor, syncCallback: SyncCallback) {
-            TODO("Not yet implemented")
+            syncCallbackAndExecutorList.add(Pair(syncCallback, executor))
         }
 
         override fun removeSyncCallback(syncCallback: SyncCallback) {
-            TODO("Not yet implemented")
+            syncCallbackAndExecutorList.removeAll { it -> it.first == syncCallback }
+        }
+
+        @ErrorCode
+        private fun getErrorCodeFromSource(source: String): Int {
+            return when (source) {
+                SOURCE_ADD_KEYS -> ERROR_ADDING_KEYS
+                SOURCE_SHARED_PREFERENCE -> ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES
+                SOURCE_DATABRIDGE -> ERROR_SYNCING_UPDATES_FROM_DATABRIDGE
+                else -> {
+                    throw IllegalStateException()
+                }
+            }
+        }
+
+        private fun updateDataBridgeClient(keyValueMap: Map<Key, Any?>, source: String) {
+            scope.launch {
+                try {
+                    dataBridgeClient.setValues(keyValueMap)
+                } catch (exception: Exception) {
+                    sendSyncFailure(
+                        keyValueMap,
+                        getErrorCodeFromSource(source),
+                        exception.message.toString(),
+                    )
+                }
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun updateSharedPreference(keyValueMap: Map<Key, Any?>, source: String) {
+
+            val editor = sharedPreference.edit()
+
+            try {
+                keyValueMap.forEach { (key, value) ->
+                    when (key.type) {
+                        Type.INT -> editor.putInt(key.name, value as Int)
+                        Type.LONG -> editor.putLong(key.name, value as Long)
+                        Type.FLOAT -> editor.putFloat(key.name, value as Float)
+                        Type.BOOLEAN -> editor.putBoolean(key.name, value as Boolean)
+                        Type.STRING -> editor.putString(key.name, value as String)
+                        Type.STRING_SET -> editor.putStringSet(key.name, parseStringSetData(value))
+                        Type.DOUBLE,
+                        Type.BYTE_ARRAY -> {
+                            throw IllegalStateException("Data type not supported")
+                        }
+                    }
+                }
+            } catch (exception: Exception) {
+                sendSyncFailure(
+                    keyValueMap,
+                    getErrorCodeFromSource(source),
+                    exception.message.toString(),
+                )
+            }
+            scope.launch {
+                if (!editor.commit()) {
+                    sendSyncFailure(
+                        keyValueMap,
+                        getErrorCodeFromSource(source),
+                        "Failed to update SharedPreference",
+                    )
+                }
+            }
+        }
+
+        private fun sendSyncFailure(
+            keyValueMap: Map<Key, Any?>,
+            @ErrorCode errorCode: Int,
+            errorMessage: String,
+        ) {
+            syncCallbackAndExecutorList.forEach { (syncCallback, executor) ->
+                executor.execute {
+                    syncCallback.onSyncFailure(keyValueMap, errorCode, errorMessage)
+                }
+            }
+        }
+
+        private fun parseStringSetData(value: Any?): Set<String> {
+            return if (value is Iterable<*>) {
+                value.filterIsInstance<String>().toSet()
+            } else {
+                emptySet()
+            }
         }
     }
 }

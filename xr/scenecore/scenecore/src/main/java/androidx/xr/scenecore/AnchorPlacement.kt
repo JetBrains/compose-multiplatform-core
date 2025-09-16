@@ -22,11 +22,11 @@ package androidx.xr.scenecore
  * When an AnchorPlacement is added to a MovableComponent, the attached Entity may be automatically
  * anchored and reparented to a new Entity at the end of the movement.
  */
-public class AnchorPlacement private constructor() {
-    public val anchorablePlaneOrientations: MutableSet<@PlaneOrientationValue Int> =
-        HashSet<@PlaneOrientationValue Int>()
-    public val anchorablePlaneSemanticTypes: MutableSet<@PlaneSemanticTypeValue Int> =
-        HashSet<@PlaneSemanticTypeValue Int>()
+public class AnchorPlacement
+private constructor(
+    public val anchorablePlaneOrientations: Set<@PlaneOrientationValue Int>,
+    public val anchorablePlaneSemanticTypes: Set<@PlaneSemanticTypeValue Int>,
+) {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -77,10 +77,10 @@ public class AnchorPlacement private constructor() {
             anchorablePlaneSemanticTypes: Set<@PlaneSemanticTypeValue Int> =
                 setOf(PlaneSemanticType.ANY),
         ): AnchorPlacement {
-            val placement = AnchorPlacement()
-            placement.anchorablePlaneOrientations.addAll(anchorablePlaneOrientations)
-            placement.anchorablePlaneSemanticTypes.addAll(anchorablePlaneSemanticTypes)
-            return placement
+            return AnchorPlacement(
+                anchorablePlaneOrientations = anchorablePlaneOrientations.toSet(),
+                anchorablePlaneSemanticTypes = anchorablePlaneSemanticTypes.toSet(),
+            )
         }
     }
 }

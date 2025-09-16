@@ -162,7 +162,7 @@ private fun Project.registerGenerateTestConfigurationTask(
             task.additionalTags.set(androidXExtension.additionalDeviceTestTags)
             task.outputXml.set(getFileInTestConfigDirectory(xmlName))
             jsonName?.let { task.outputJson.set(getFileInTestConfigDirectory(it)) }
-            task.presubmit.set(isPresubmitBuild())
+            task.presubmit.set(project.providers.isPresubmitBuild())
             task.instrumentationArgs.putAll(instrumentationRunnerArgs)
             task.minSdk.set(minSdk)
             task.hasBenchmarkPlugin.set(hasBenchmarkPlugin())

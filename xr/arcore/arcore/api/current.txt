@@ -83,8 +83,10 @@ package androidx.xr.arcore {
 
   public static final class Hand.State {
     method public java.util.Map<androidx.xr.runtime.HandJointType,androidx.xr.runtime.math.Pose> getHandJoints();
+    method public java.nio.FloatBuffer getHandJointsBuffer();
     method public androidx.xr.runtime.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.runtime.HandJointType,androidx.xr.runtime.math.Pose> handJoints;
+    property public java.nio.FloatBuffer handJointsBuffer;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 

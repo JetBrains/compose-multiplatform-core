@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.library.abi.AbiTypeArgument.TypeProjection
 import org.jetbrains.kotlin.library.abi.AbiTypeNullability
 import org.jetbrains.kotlin.library.abi.AbiTypeParameter
 import org.jetbrains.kotlin.library.abi.AbiValueParameter
+import org.jetbrains.kotlin.library.abi.AbiValueParameterKind
 import org.jetbrains.kotlin.library.abi.AbiVariance
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 import org.jetbrains.kotlin.library.abi.LibraryAbi
@@ -869,6 +870,8 @@ private class DecoratedAbiProperty(abiProperty: AbiProperty, val parentClass: Ab
 private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
     AbiValueParameter by param
 
-private fun AbiFunction.contextReceiverParametersCount() = contextReceiverParametersCount
+fun AbiFunction.contextReceiverParametersCount(): Int =
+    valueParameters.count { it.kind == AbiValueParameterKind.CONTEXT }
 
-private fun AbiFunction.hasExtensionReceiverParameter() = hasExtensionReceiverParameter
+private fun AbiFunction.hasExtensionReceiverParameter() =
+    valueParameters.any { it.kind == AbiValueParameterKind.EXTENSION_RECEIVER }

@@ -18,6 +18,7 @@ package androidx.xr.runtime.internal
 
 import android.view.Surface
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.math.FloatSize2d
 
 /**
  * Interface for a spatialized Entity which manages an Android Surface. Applications can render to
@@ -38,11 +39,11 @@ public interface SurfaceEntity : Entity {
     public var stereoMode: Int
 
     /**
-     * Specifies the shape of the spatial canvas which the surface is texture mapped to.
+     * Specifies the geometry of the spatial canvas which the surface is texture mapped to.
      *
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
-    public var canvasShape: CanvasShape
+    public var shape: Shape
 
     /**
      * Retrieves the dimensions of the "spatial canvas" which the surface is mapped to. These values
@@ -103,8 +104,8 @@ public interface SurfaceEntity : Entity {
      * Indicates whether explicit color information has been set for the surface content. If
      * `false`, the runtime should signal the backend to use its best effort color correction and
      * tonemapping. If `true`, the runtime should inform the backend to use the values specified in
-     * [colorSpace], [colorTransfer], [colorRange], and [maxCLL] for color correction and
-     * tonemapping of the surface content.
+     * [colorSpace], [colorTransfer], [colorRange], and [maxContentLightLevel] for color correction
+     * and tonemapping of the surface content.
      *
      * This property is typically managed by the `setContentColorMetadata` and
      * `resetContentColorMetadata` methods.
@@ -131,10 +132,11 @@ public interface SurfaceEntity : Entity {
     public val colorRange: Int
 
     /**
-     * The active maximum content light level (MaxCLL) in nits. A value of 0 indicates that MaxCLL
-     * is not set or is unknown. This value is used if [contentColorMetadataSet] is `true`.
+     * The active maximum content light level (MaxContentLightLevel) in nits. A value of 0 indicates
+     * that MaxContentLightLevel is not set or is unknown. This value is used if
+     * [contentColorMetadataSet] is `true`.
      */
-    public val maxCLL: Int
+    public val maxContentLightLevel: Int
 
     /**
      * Sets the explicit color information for the surface content. This will also set
@@ -144,20 +146,20 @@ public interface SurfaceEntity : Entity {
      * @param colorTransfer The runtime color transfer value (e.g.,
      *   [SurfaceEntity.ColorTransfer.SRGB]).
      * @param colorRange The runtime color range value (e.g., [SurfaceEntity.ColorRange.FULL]).
-     * @param maxCLL The maximum content light level in nits.
+     * @param maxContentLightLevel The maximum content light level in nits.
      * @throws IllegalStateException if the Entity has been disposed.
      */
     public fun setContentColorMetadata(
         colorSpace: Int,
         colorTransfer: Int,
         colorRange: Int,
-        maxCLL: Int,
+        maxContentLightLevel: Int,
     )
 
     /**
      * Resets the color information to the runtime's default handling. This will set
      * [contentColorMetadataSet] to `false` and typically involves reverting [colorSpace],
-     * [colorTransfer], [colorRange], and [maxCLL] to their default runtime values.
+     * [colorTransfer], [colorRange], and [maxContentLightLevel] to their default runtime values.
      *
      * @throws IllegalStateException if the Entity has been disposed.
      */
@@ -189,7 +191,7 @@ public interface SurfaceEntity : Entity {
      *
      * See https://developer.android.com/reference/android/media/MediaDrm for more details.
      */
-    public annotation class ContentSecurityLevel {
+    public annotation class SurfaceProtection {
         public companion object {
             // The Surface content is not secured. DRM content can not be decoded into this Surface.
             // Screen captures of the SurfaceEntity will show the Surface content.
@@ -264,22 +266,22 @@ public interface SurfaceEntity : Entity {
     }
 
     /** Represents the shape of the spatial canvas which the surface is texture mapped to. */
-    public interface CanvasShape {
+    public interface Shape {
         public val dimensions: Dimensions
 
         /**
          * A 2D rectangle-shaped canvas. Width and height are represented in the local spatial
          * coordinate system of the entity. (0,0,0) is the center of the canvas.
          */
-        public class Quad(public val width: Float, public val height: Float) : CanvasShape {
-            override val dimensions: Dimensions = Dimensions(width, height, 0f)
+        public class Quad(public val extents: FloatSize2d) : Shape {
+            override val dimensions: Dimensions = Dimensions(extents.width, extents.height, 0f)
         }
 
         /**
          * A sphere-shaped canvas. Radius is represented in the local spatial coordinate system of
          * the entity. (0,0,0) is the center of the sphere.
          */
-        public class Vr360Sphere(public val radius: Float) : CanvasShape {
+        public class Sphere(public val radius: Float) : Shape {
             override val dimensions: Dimensions = Dimensions(radius * 2, radius * 2, radius * 2)
         }
 
@@ -287,7 +289,7 @@ public interface SurfaceEntity : Entity {
          * A hemisphere-shaped canvas. Radius is represented in the local spatial coordinate system
          * of the entity. (0,0,0) is the center of the base of the hemisphere.
          */
-        public class Vr180Hemisphere(public val radius: Float) : CanvasShape {
+        public class Hemisphere(public val radius: Float) : Shape {
             override val dimensions: Dimensions = Dimensions(radius * 2, radius * 2, radius)
         }
     }
@@ -295,15 +297,15 @@ public interface SurfaceEntity : Entity {
     /** Specifies edge transparency effects for the canvas. */
     public interface EdgeFeather {
         /** A smooth feathering effect which moves from edges of UV space to the center. */
-        public class SmoothFeather(public val leftRight: Float, public val topBottom: Float) :
+        public class RectangleFeather(public val leftRight: Float, public val topBottom: Float) :
             EdgeFeather
 
         /** A Default implementation of EdgeFeather that does nothing. */
-        public class SolidEdge() : EdgeFeather
+        public class NoFeathering() : EdgeFeather
     }
 
     /**
-     * The edge feathering effect for the spatialized geometry.
+     * The edge feathering effect for the spatialized shape.
      *
      * @throws IllegalStateException if the Entity has been disposed.
      */

@@ -25,7 +25,6 @@
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -38,11 +37,8 @@ androidXMultiplatform {
         namespace = "androidx.compose.material3.adaptive.layout"
         androidResources.enable = true
     }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -50,15 +46,14 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
-                implementation("androidx.collection:collection:1.5.0")
                 api(project(":compose:material3:adaptive:adaptive"))
-                api(project(":compose:animation:animation-core"))
-                api(project(":compose:ui:ui"))
-                implementation(project(":compose:animation:animation"))
-                implementation(project(":compose:foundation:foundation"))
-                implementation(project(":compose:foundation:foundation-layout"))
-                implementation(project(":compose:ui:ui-geometry"))
-                implementation(project(":window:window-core"))
+                api("androidx.compose.animation:animation-core:1.7.8")
+                api("androidx.compose.ui:ui:1.9.0-rc01")
+                implementation("androidx.compose.animation:animation:1.7.8")
+                implementation("androidx.compose.foundation:foundation:1.7.8")
+                implementation("androidx.compose.foundation:foundation-layout:1.7.8")
+                implementation("androidx.compose.ui:ui-geometry:1.7.8")
+                implementation("androidx.window:window-core:1.4.0")
             }
         }
 
@@ -73,10 +68,6 @@ androidXMultiplatform {
             }
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-        }
-
         androidMain {
             dependsOn(jvmMain)
             dependencies {
@@ -85,6 +76,18 @@ androidXMultiplatform {
                 implementation("androidx.compose.runtime:runtime:1.7.8")
                 implementation("androidx.core:core:1.15.0")
             }
+        }
+
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
@@ -101,56 +104,11 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.testRunner)
                 implementation(libs.truth)
-            }
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(skikoMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(skikoMain)
-        }
-
-        nativeTest {
-            dependsOn(skikoTest)
-        }
-
-        webMain {
-            dependsOn(skikoMain)
-        }
-
-        webTest {
-            dependsOn(skikoTest)
-        }
-
-        targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }
@@ -165,5 +123,3 @@ androidx {
     samples(project(":compose:material3:adaptive:adaptive-samples"))
     addGoldenImageAssets()
 }
-
-// TODO: Restore updateTranslations task

@@ -213,12 +213,6 @@ public final class UiWindow implements Searchable {
         }
     }
 
-    /** Recycles this window. */
-    private void recycle() {
-        mCachedWindow.recycle();
-        mCachedWindow = null;
-    }
-
     /**
      * Gets the root node in the window as a {@link UiObject2}.
      *

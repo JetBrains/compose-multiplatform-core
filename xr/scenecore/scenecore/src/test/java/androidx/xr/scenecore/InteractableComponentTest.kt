@@ -16,10 +16,10 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
 import android.content.Context
 import android.view.View
 import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.Entity as RtEntity
@@ -53,7 +53,8 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class InteractableComponentTest {
     private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private val mockRuntime = mock<JxrPlatformAdapter>()
     private val mockActivitySpace = mock<RtActivitySpace>()
     private lateinit var session: Session

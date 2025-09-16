@@ -33,6 +33,7 @@ import androidx.camera.camera2.pipe.integration.internal.CameraCompatibilityFilt
 import androidx.camera.camera2.pipe.integration.internal.CameraSelectionOptimizer
 import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.concurrent.CameraCoordinator
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraInternal
@@ -55,7 +56,8 @@ internal class CameraFactoryAdapter(
     camera2InteropCallbacks: CameraInteropStateCallbackRepository,
     private val availableCamerasSelector: CameraSelector?,
     private val streamSpecsCalculator: StreamSpecsCalculator,
-) : CameraFactory {
+    private val cameraXConfig: CameraXConfig,
+) : CameraFactory, CameraFactory.Interrogator {
     private val cameraCoordinator: CameraCoordinatorAdapter =
         CameraCoordinatorAdapter(lazyCameraPipe.value, lazyCameraPipe.value.cameras())
     private val pipeCameraPresenceObservable: PipeCameraPresenceSource
@@ -72,6 +74,7 @@ internal class CameraFactoryAdapter(
                         lazyCameraPipe.value,
                         camera2InteropCallbacks,
                         cameraCoordinator,
+                        cameraXConfig,
                     )
                 )
                 .build()
@@ -102,21 +105,7 @@ internal class CameraFactoryAdapter(
             return
         }
 
-        val optimizedIds =
-            CameraSelectionOptimizer.getSelectedAvailableCameraIds(
-                appComponent,
-                availableCamerasSelector,
-                cameraIds.toList(),
-                streamSpecsCalculator,
-            )
-
-        val filteredIds =
-            LinkedHashSet(
-                CameraCompatibilityFilter.getBackwardCompatibleCameraIds(
-                    appComponent.getCameraDevices(),
-                    optimizedIds,
-                )
-            )
+        val filteredIds = calculateAvailableCameraIds(cameraIds)
 
         synchronized(lock) {
             if (isShutdown.get()) {
@@ -128,6 +117,33 @@ internal class CameraFactoryAdapter(
             debug { "Updated available camera list: $availableCameraIds -> $filteredIds" }
             availableCameraIds = filteredIds
         }
+    }
+
+    /** Previews the result of a camera ID update without changing state. */
+    override fun getAvailableCameraIds(cameraIds: List<String>): List<String> {
+        if (isShutdown.get()) {
+            return emptyList()
+        }
+        // Call the shared helper and return the result as a list
+        return calculateAvailableCameraIds(cameraIds).toList()
+    }
+
+    /** A new private helper that contains the shared filtering logic. */
+    private fun calculateAvailableCameraIds(cameraIds: List<String>): Set<String> {
+        val optimizedIds =
+            CameraSelectionOptimizer.getSelectedAvailableCameraIds(
+                appComponent,
+                availableCamerasSelector,
+                cameraIds.toList(),
+                streamSpecsCalculator,
+            )
+
+        return LinkedHashSet(
+            CameraCompatibilityFilter.getBackwardCompatibleCameraIds(
+                appComponent.getCameraDevices(),
+                optimizedIds,
+            )
+        )
     }
 
     /**

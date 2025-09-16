@@ -237,7 +237,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     @NonNull
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
     public ListenableFuture<Long> loadImageBasedLightingAsset(
-            @NonNull byte[] data, @NonNull String key) {
+            byte @NonNull [] data, @NonNull String key) {
         long imageBasedLightingAssetToken = mNextImageBasedLightingAssetId++;
         mImageBasedLightingAssets.add(imageBasedLightingAssetToken);
         // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi
@@ -261,7 +261,7 @@ public class FakeImpressApiImpl implements ImpressApi {
     @Override
     @NonNull
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
-    public ListenableFuture<Long> loadGltfAsset(@NonNull byte[] data, @NonNull String key) {
+    public ListenableFuture<Long> loadGltfAsset(byte @NonNull [] data, @NonNull String key) {
         long gltfToken = mNextModelId++;
         mGltfModels.put(gltfToken, new ArrayList<>());
         // TODO(b/352827267): Enforce minSDK API strategy - go/androidx-api-guidelines#compat-newapi

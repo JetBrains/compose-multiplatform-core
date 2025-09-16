@@ -22,6 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.internal.RuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import java.util.ServiceLoader
+import kotlin.coroutines.EmptyCoroutineContext
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +49,7 @@ class ArCoreRuntimeFactoryTest {
         val factory = ArCoreRuntimeFactory()
 
         activityRule.scenario.onActivity {
-            val runtime = factory.createRuntime(it)
+            val runtime = factory.createRuntime(it, EmptyCoroutineContext)
 
             assertThat(runtime).isInstanceOf(ArCoreRuntime::class.java)
         }

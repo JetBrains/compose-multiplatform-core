@@ -26,9 +26,9 @@ import java.util.Base64
 import javax.annotation.processing.Processor
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.com.intellij.util.PathUtil
+import org.jetbrains.kotlin.kapt.base.AptMode
 import org.jetbrains.kotlin.kapt.cli.CliToolOption
 import org.jetbrains.kotlin.kapt.cli.KaptCliOption
-import org.jetbrains.kotlin.kapt3.base.AptMode
 
 /** Runs KAPT to run Java annotation processors. */
 internal class KaptCompilationStep(

@@ -77,7 +77,7 @@ class PathPdfObjectDrawerTest {
         PathPdfObjectDrawer.paint.apply {
             assertThat(color).isEqualTo(brushColor)
             assertThat(strokeWidth).isEqualTo(brushWidth)
-            assertThat(style).isEqualTo(android.graphics.Paint.Style.STROKE)
+            assertThat(style).isEqualTo(android.graphics.Paint.Style.FILL)
             assertThat(isAntiAlias).isTrue()
         }
 

@@ -417,11 +417,6 @@ public class MediaSessionCompat {
     // Maximum size of the bitmap in dp.
     private static final int MAX_BITMAP_SIZE_IN_DP = 320;
 
-    private static final String DATA_CALLING_PACKAGE = "data_calling_pkg";
-    private static final String DATA_CALLING_PID = "data_calling_pid";
-    private static final String DATA_CALLING_UID = "data_calling_uid";
-    private static final String DATA_EXTRAS = "data_extras";
-
     // Maximum size of the bitmap in px. It shouldn't be changed.
     static int sMaxBitmapSize;
 

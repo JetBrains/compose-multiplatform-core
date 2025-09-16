@@ -546,8 +546,7 @@ internal constructor(
                 platformAdapter.createKhronosPbrMaterial(spec.toRtKhronosPbrMaterialSpec())
             val materialFuture = ResolvableFuture.create<KhronosPbrMaterial>()
 
-            // TODO: b/375070346 - remove this `!!` when we're sure the future is non-null.
-            materialResourceFuture!!.addListener(
+            materialResourceFuture.addListener(
                 {
                     try {
                         val material = materialResourceFuture.get()

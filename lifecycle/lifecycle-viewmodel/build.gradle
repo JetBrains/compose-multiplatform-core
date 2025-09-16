@@ -111,52 +111,36 @@ androidXMultiplatform {
 
         desktopMain { dependsOn(jvmMain) }
         desktopTest { dependsOn(jvmTest) }
-
         nonJvmMain { dependsOn(commonMain) }
         nonJvmTest { dependsOn(commonTest) }
-
         nativeMain { dependsOn(nonJvmMain) }
         nativeTest { dependsOn(nonJvmTest) }
 
-        unixMain { dependsOn(nativeMain) }
-        unixTest { dependsOn(nativeTest) }
-
-        darwinMain { dependsOn(unixMain) }
-        darwinTest { dependsOn(unixTest) }
-
-        linuxMain { dependsOn(unixMain) }
-        linuxTest { dependsOn(unixTest) }
-
-        webMain { dependsOn(nonJvmMain) }
-        webTest { dependsOn(nonJvmTest) }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
+        unixMain {
+            dependsOn(nativeMain)
         }
 
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestWasm)
-            }
+        darwinMain {
+            dependsOn(unixMain)
         }
 
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
+        linuxMain {
+            dependsOn(unixMain)
         }
 
-        jsTest {
-            dependsOn(webTest)
+        mingwMain {
+            dependsOn(nativeMain)
+        }
+
+        webMain {
+            dependsOn(nonJvmMain)
+        }
+
+        webTest {
+            dependsOn(nonJvmTest)
             dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
             }
         }
 
@@ -164,14 +148,20 @@ androidXMultiplatform {
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family.appleFamily) {
                     target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
                 } else if (target.konanTarget.family == Family.LINUX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+                } else if (target.konanTarget.family == Family.MINGW) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(mingwMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
                 } else {
                     target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
                 }
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }

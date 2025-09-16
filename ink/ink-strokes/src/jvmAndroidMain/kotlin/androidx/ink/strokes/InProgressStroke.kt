@@ -205,6 +205,17 @@ public class InProgressStroke {
     public fun isUpdateNeeded(): Boolean = InProgressStrokeNative.isUpdateNeeded(nativePointer)
 
     /**
+     * Returns true if the stroke's geometry changes with the passage of time (denoted by new values
+     * being passed to [updateShape]), even if no new input points are provided via [enqueueInputs].
+     * This is the case if the brush has one or more timed animation behavior that are still active
+     * (which can be true even after inputs are finished).
+     *
+     * This is similar to [isUpdateNeeded], except that it ignores whether inputs are finished or
+     * pending.
+     */
+    public fun changesWithTime(): Boolean = InProgressStrokeNative.changesWithTime(nativePointer)
+
+    /**
      * Copies the current input, brush, and geometry as of the last call to [start] or [updateShape]
      * to a new [Stroke].
      *
@@ -563,6 +574,8 @@ private object InProgressStrokeNative {
     @UsedByNative external fun isInputFinished(nativePointer: Long): Boolean
 
     @UsedByNative external fun isUpdateNeeded(nativePointer: Long): Boolean
+
+    @UsedByNative external fun changesWithTime(nativePointer: Long): Boolean
 
     /** Returns the native pointer for an `ink::Stroke`, to be wrapped by a [Stroke]. */
     @UsedByNative external fun newStrokeFromCopy(nativePointer: Long): Long

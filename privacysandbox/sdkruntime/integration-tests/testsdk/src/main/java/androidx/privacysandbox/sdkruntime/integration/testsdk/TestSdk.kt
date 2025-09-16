@@ -26,6 +26,7 @@ import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListene
 import androidx.privacysandbox.sdkruntime.integration.callDoSomething
 import androidx.privacysandbox.sdkruntime.integration.testaidl.IClientImportanceListener
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ILoadSdkCallback
+import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkActivityHandler
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
 import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
 import androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat
@@ -37,8 +38,15 @@ import kotlinx.coroutines.launch
 
 class TestSdk(private val sdkContext: Context) : ISdkApi.Stub() {
 
-    private val appToSdkListenerMap =
-        mutableMapOf<IBinder, SdkSandboxClientImportanceListenerCompat>()
+    private val appSideClientImportanceListeners =
+        ClientCallbacksRegistry<
+            IClientImportanceListener,
+            SdkSandboxClientImportanceListenerCompat,
+        >(
+            wrapperFun = { ClientListenerWrapper(it) },
+            addBackend = { registerClientImportanceListener(it) },
+            removeBackend = { unregisterClientImportanceListener(it) },
+        )
 
     override fun doSomething(param: String): String {
         Log.i(TAG, "TestSdk#doSomething($param)")
@@ -122,27 +130,32 @@ class TestSdk(private val sdkContext: Context) : ISdkApi.Stub() {
     }
 
     override fun registerClientImportanceListener(listener: IClientImportanceListener) {
-        synchronized(appToSdkListenerMap) {
-            val binderToken = listener.asBinder()
-            // Replace to putIfAbsent after moving minSdk to 24+
-            if (!appToSdkListenerMap.containsKey(binderToken)) {
-                val wrapper = ClientListenerWrapper(listener)
-                appToSdkListenerMap.put(binderToken, wrapper)
-                SdkSandboxControllerCompat.from(sdkContext)
-                    .registerSdkSandboxClientImportanceListener(Runnable::run, wrapper)
-            }
-        }
+        appSideClientImportanceListeners.add(listener)
     }
 
     override fun unregisterClientImportanceListener(listener: IClientImportanceListener) {
-        synchronized(appToSdkListenerMap) {
-            val binderToken = listener.asBinder()
-            val wrapper = appToSdkListenerMap.remove(binderToken)
-            if (wrapper != null) {
-                SdkSandboxControllerCompat.from(sdkContext)
-                    .unregisterSdkSandboxClientImportanceListener(wrapper)
-            }
-        }
+        appSideClientImportanceListeners.remove(listener)
+    }
+
+    override fun registerSdkActivityHandler(appSideActivityHandler: ISdkActivityHandler): IBinder {
+        return SdkSandboxControllerCompat.from(sdkContext)
+            .registerSdkSandboxActivityHandler(
+                ActivityHandlerWrapper(sdkContext, appSideActivityHandler)
+            )
+    }
+
+    private fun registerClientImportanceListener(
+        listener: SdkSandboxClientImportanceListenerCompat
+    ) {
+        SdkSandboxControllerCompat.from(sdkContext)
+            .registerSdkSandboxClientImportanceListener(Runnable::run, listener)
+    }
+
+    private fun unregisterClientImportanceListener(
+        listener: SdkSandboxClientImportanceListenerCompat
+    ) {
+        SdkSandboxControllerCompat.from(sdkContext)
+            .unregisterSdkSandboxClientImportanceListener(listener)
     }
 
     private class ClientListenerWrapper(private val clientListener: IClientImportanceListener) :

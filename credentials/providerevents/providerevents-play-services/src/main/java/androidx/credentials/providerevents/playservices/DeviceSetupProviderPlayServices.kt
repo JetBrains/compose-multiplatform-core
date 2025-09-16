@@ -30,6 +30,7 @@ import androidx.credentials.providerevents.exception.ExportCredentialsException
 import androidx.credentials.providerevents.exception.ExportCredentialsSystemErrorException
 import androidx.credentials.providerevents.exception.ExportCredentialsUnknownErrorException
 import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesException
+import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesInvalidJsonException
 import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesSystemErrorException
 import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesUnknownErrorException
 import androidx.credentials.providerevents.exception.ImportCredentialsException
@@ -178,6 +179,14 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
             // TODO(b/385394695): Fix being able to create CallingAppInfo with GMS
             //  CallingAppInfoParcelable
             val jetpackRequest = convertToJetpackRequest(request)
+            if (jetpackRequest == null) {
+                val exception =
+                    GetCredentialTransferCapabilitiesInvalidJsonException(
+                        "The request did not contain the requestJson."
+                    )
+                callback.onFailure(exception.type, exception.message!!)
+                return
+            }
             handler.post {
                 val service = serviceRef.get()
                 if (service == null) {

@@ -24,6 +24,7 @@ import org.jspecify.annotations.NonNull;
 
 @WebNavigationClient.ExperimentalNavigationCallback
 public class PageImpl implements Page {
+    @SuppressWarnings("UnusedVariable")
     private final WebViewPageBoundaryInterface mPageBoundaryInterface;
 
     public PageImpl(@NonNull WebViewPageBoundaryInterface impl) {

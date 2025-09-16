@@ -36,6 +36,59 @@ import com.google.common.util.concurrent.ListenableFuture
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface RenderingRuntime {
     /**
+     * Loads glTF Asset for the given asset name from the assets folder. The future returned by this
+     * method will fire listeners on the UI thread if Runnable::run is supplied.
+     *
+     * @param assetName The name of the asset to load from the assets folder.
+     * @return A future that resolves to the glTF model when it is loaded. The future will be null
+     *   if the asset was not found.
+     */
+    @Suppress("AsyncSuffixFuture")
+    public fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource>
+
+    /**
+     * Loads glTF Asset from a provided byte array. The future returned by this method will fire
+     * listeners on the UI thread if Runnable::run is supplied.
+     *
+     * @param assetData A gltfAsset in the form of a byte array.
+     * @param assetKey The name of the asset to load from the cache.
+     * @return A future that resolves to the glTF model when it is loaded. The future will be null
+     *   if the asset was not found.
+     */
+    @Suppress("AsyncSuffixFuture")
+    // TODO(b/397746548): Add InputStream support for loading glTFs.
+    // Suppressed to allow CompletableFuture.
+    public fun loadGltfByByteArray(
+        assetData: ByteArray,
+        assetKey: String,
+    ): ListenableFuture<GltfModelResource>
+
+    /**
+     * Loads an ExrImage for the given asset name from the assets folder.
+     *
+     * @param assetName The name of the asset to load from the assets folder.
+     * @return A future that resolves to the ExrImage when it is loaded. The future will be null if
+     *   the asset was not found.
+     */
+    @SuppressWarnings("AsyncSuffixFuture")
+    public fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource>
+
+    /**
+     * Loads an ExrImage from a provided byte array.
+     *
+     * @param assetData An ExrImage in the form of a byte array.
+     * @param assetKey The name of the asset to load from the cache.
+     * @return A future that resolves to the ExrImage when it is loaded. The future will be null if
+     *   the asset was not found.
+     */
+    @Suppress("AsyncSuffixFuture")
+    // Suppressed to allow CompletableFuture.
+    public fun loadExrImageByByteArray(
+        assetData: ByteArray,
+        assetKey: String,
+    ): ListenableFuture<ExrImageResource>
+
+    /**
      * Loads a texture resource for the given asset name or URL. The future returned by this method
      * will fire listeners on the UI thread if Runnable::run is supplied.
      *
@@ -58,6 +111,15 @@ public interface RenderingRuntime {
      * @param texture The name of the texture to destroy.
      */
     public fun destroyTexture(texture: TextureResource)
+
+    /**
+     * Returns the reflection texture from the given IBL.
+     *
+     * @param iblToken An ExrImageResource representing a loaded Image-Based Lighting (IBL) asset.
+     * @return A TextureResource representing the reflection texture, or null if the texture was not
+     *   found.
+     */
+    public fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource?
 
     /**
      * Creates a water material by querying it from the system's built-in materials. The future

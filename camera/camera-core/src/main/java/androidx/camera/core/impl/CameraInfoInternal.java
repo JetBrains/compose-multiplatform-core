@@ -36,6 +36,7 @@ import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUseCaseAdapterProvider;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.ExperimentalLensFacing;
 import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SessionConfig;
@@ -181,6 +182,7 @@ public interface CameraInfoInternal extends CameraInfo {
     @NonNull
     Rect getSensorRect();
 
+    @SuppressWarnings("MixedMutabilityReturnType")
     @ExperimentalSessionConfig
     @Override
     default @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(
@@ -387,5 +389,13 @@ public interface CameraInfoInternal extends CameraInfo {
      */
     default @NonNull Set<@NonNull Integer> getAvailableCapabilities() {
         return Collections.emptySet();
+    }
+
+    /**
+     * Returns true if the camera is an external camera.
+     */
+    @OptIn(markerClass = ExperimentalLensFacing.class)
+    default boolean isExternalCamera() {
+        return getLensFacing() == CameraSelector.LENS_FACING_EXTERNAL;
     }
 }

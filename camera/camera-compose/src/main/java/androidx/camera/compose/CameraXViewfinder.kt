@@ -74,7 +74,14 @@ import kotlinx.coroutines.withContext
  * @sample androidx.camera.compose.samples.CameraXViewfinderSample
  * @param surfaceRequest The surface request from CameraX
  * @param modifier The [Modifier] to be applied to this viewfinder
- * @param implementationMode The [ImplementationMode] to be used by this viewfinder.
+ * @param implementationMode The [ImplementationMode] to be used by this viewfinder. By default,
+ *   this is chosen automatically based on the device's capabilities. The default behavior prefers
+ *   the higher-performance [ImplementationMode.EXTERNAL] mode, but will fall back to
+ *   [ImplementationMode.EMBEDDED] if the camera hardware level is
+ *   [LEGACY][android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY],
+ *   or on devices with other known compatibility issues (such as on API level 24 and below).
+ *   Explicitly setting a mode will override this compatibility logic and may have performance or
+ *   correctness implications on some devices.
  * @param coordinateTransformer The [MutableCoordinateTransformer] used to map offsets of this
  *   viewfinder to the source coordinates of the data being provided to the surface that fulfills
  *   [surfaceRequest]
@@ -88,7 +95,8 @@ import kotlinx.coroutines.withContext
 public fun CameraXViewfinder(
     surfaceRequest: SurfaceRequest,
     modifier: Modifier = Modifier,
-    implementationMode: ImplementationMode = ImplementationMode.EXTERNAL,
+    implementationMode: ImplementationMode =
+        CameraImplementationModeCompat.chooseCompatibleMode(surfaceRequest.camera.cameraInfo),
     coordinateTransformer: MutableCoordinateTransformer? = null,
     alignment: Alignment = Alignment.Center,
     contentScale: ContentScale = ContentScale.Crop,

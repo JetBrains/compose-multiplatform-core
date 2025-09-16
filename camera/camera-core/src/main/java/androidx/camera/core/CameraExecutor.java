@@ -61,6 +61,7 @@ public class CameraExecutor implements Executor {
                 CameraXThreads.TAG + "core_camera_%d";
         private final AtomicInteger mThreadId = new AtomicInteger(0);
 
+        @SuppressWarnings("ThreadPriorityCheck") // call to t.setPriority
         @Override
         public Thread newThread(@NonNull Runnable runnable) {
             Thread t = new Thread(() -> {

@@ -17,6 +17,7 @@
 package androidx.privacysandbox.ui.client.view
 
 import android.view.View
+import android.view.ViewTreeObserver
 import androidx.customview.poolingcontainer.PoolingContainerListener
 import androidx.customview.poolingcontainer.addPoolingContainerListener
 import androidx.customview.poolingcontainer.isPoolingContainer
@@ -30,6 +31,7 @@ import androidx.customview.poolingcontainer.removePoolingContainerListener
 internal class PoolingContainerListenerDelegate(val view: View) {
     private var viewContainingPoolingContainerListener: View? = null
     private var poolingContainerListener = PoolingContainerListener {}
+    var poolingContainerViewTreeObserver: ViewTreeObserver? = null
 
     /**
      * Attaches a [PoolingContainerListener] to the ancestor of [view] that is the nearest direct
@@ -58,6 +60,7 @@ internal class PoolingContainerListenerDelegate(val view: View) {
             parentView = currentView.parent
         }
 
+        poolingContainerViewTreeObserver = (parentView as View).viewTreeObserver
         currentView.addPoolingContainerListener(newPoolingContainerListener)
         viewContainingPoolingContainerListener = currentView
         poolingContainerListener = newPoolingContainerListener

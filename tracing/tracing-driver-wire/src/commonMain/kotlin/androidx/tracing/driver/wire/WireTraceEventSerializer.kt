@@ -16,14 +16,21 @@
 
 package androidx.tracing.driver.wire
 
+import androidx.tracing.driver.AtomicInteger
 import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.DEFAULT_STRING
+import androidx.tracing.driver.METADATA_ENTRIES_EXPECTED_SIZE
+import androidx.tracing.driver.METADATA_TYPE_BOOLEAN
+import androidx.tracing.driver.METADATA_TYPE_DOUBLE
+import androidx.tracing.driver.METADATA_TYPE_LONG
+import androidx.tracing.driver.METADATA_TYPE_STRING
 import androidx.tracing.driver.TRACK_DESCRIPTOR_TYPE_COUNTER
 import androidx.tracing.driver.TRACK_DESCRIPTOR_TYPE_PROCESS
 import androidx.tracing.driver.TRACK_DESCRIPTOR_TYPE_THREAD
 import androidx.tracing.driver.TraceEvent
 import com.squareup.wire.ProtoWriter
 import perfetto.protos.MutableCounterDescriptor
+import perfetto.protos.MutableDebugAnnotation
 import perfetto.protos.MutableProcessDescriptor
 import perfetto.protos.MutableThreadDescriptor
 import perfetto.protos.MutableTracePacket
@@ -47,6 +54,15 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
      */
     private val scratchTracePacket =
         MutableTracePacket(timestamp = DEFAULT_LONG, trusted_packet_sequence_id = sequenceId)
+
+    /** Private scratchpad of debug annotations. */
+    private var scratchDebugAnnotations: MutableList<MutableDebugAnnotation> =
+        MutableList(size = METADATA_ENTRIES_EXPECTED_SIZE) { MutableDebugAnnotation() }
+
+    /** This is passed by ref, to avoid unnecessary computation. */
+    // Using a Long for convenience, given we already have a commonized definition.
+    private val scratchDebugAnnotationIndex = AtomicInteger(/* initialValue= */ -1)
+
     /**
      * Private scratchpad descriptor, used to avoid allocating a descriptor for each new track
      * created
@@ -57,12 +73,25 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
 
     fun writeTraceEvent(event: TraceEvent) {
         updateScratchPacketFromTraceEvent(
-            event,
-            scratchTracePacket,
-            scratchTrackDescriptor,
-            scratchTrackEvent,
+            event = event,
+            scratchTracePacket = scratchTracePacket,
+            scratchTrackDescriptor = scratchTrackDescriptor,
+            scratchTrackEvent = scratchTrackEvent,
+            scratchAnnotations = scratchDebugAnnotations,
+            scratchDebugAnnotationIndex = scratchDebugAnnotationIndex,
         )
-        MutableTracePacket.Companion.ADAPTER.encodeWithTag(protoWriter, 1, scratchTracePacket)
+        MutableTracePacket.Companion.ADAPTER.encodeWithTag(
+            writer = protoWriter,
+            tag = 1,
+            value = scratchTracePacket,
+        )
+        // Resize the size of the list when necessary.
+        val index = scratchDebugAnnotationIndex.get()
+        val size = index + 1
+        if (size > METADATA_ENTRIES_EXPECTED_SIZE) {
+            scratchDebugAnnotations =
+                scratchDebugAnnotations.subList(0, METADATA_ENTRIES_EXPECTED_SIZE)
+        }
     }
 
     companion object {
@@ -78,14 +107,15 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             scratchTracePacket: MutableTracePacket,
             scratchTrackDescriptor: MutableTrackDescriptor,
             scratchTrackEvent: MutableTrackEvent,
+            scratchAnnotations: MutableList<MutableDebugAnnotation>,
+            scratchDebugAnnotationIndex: AtomicInteger,
         ) {
-
             scratchTracePacket.timestamp = event.timestamp
-
             // in the common case when the track_descriptor isn't needed, clear it on the
             // MutableTracePacket
             scratchTracePacket.track_event = null
             scratchTracePacket.track_descriptor = null
+
             if (event.trackDescriptor != null) {
                 // If the track_descriptor is needed, update and use the scratchTrackDescriptor to
                 // avoid the
@@ -135,6 +165,52 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                 if (scratchTrackEvent.flow_ids.isNotEmpty() || event.flowIds.isNotEmpty()) {
                     scratchTrackEvent.flow_ids = event.flowIds
                 }
+
+                // Debug annotations
+                var index = scratchDebugAnnotationIndex.get()
+                if (index >= 0 && index < scratchAnnotations.size) {
+                    repeat(index + 1) {
+                        val debugAnnotation = scratchAnnotations[it]
+                        debugAnnotation.name = null
+                        debugAnnotation.bool_value = null
+                        debugAnnotation.int_value = null
+                        debugAnnotation.double_value = null
+                        debugAnnotation.string_value = null
+                    }
+                }
+                index = -1
+                event.forEachMetadataEntry { metadataEntry ->
+                    index += 1
+                    if (index >= scratchAnnotations.size) {
+                        scratchAnnotations += MutableDebugAnnotation()
+                    }
+                    val debugAnnotation = scratchAnnotations[index]
+                    debugAnnotation.name = metadataEntry.name
+                    when (metadataEntry.type) {
+                        METADATA_TYPE_BOOLEAN ->
+                            debugAnnotation.bool_value = metadataEntry.booleanValue
+
+                        METADATA_TYPE_LONG -> debugAnnotation.int_value = metadataEntry.longValue
+
+                        METADATA_TYPE_DOUBLE ->
+                            debugAnnotation.double_value = metadataEntry.doubleValue
+
+                        METADATA_TYPE_STRING ->
+                            debugAnnotation.string_value = metadataEntry.stringValue
+
+                        else -> {
+                            // Should never happen
+                        }
+                    }
+                }
+                scratchDebugAnnotationIndex.set(index)
+                if (index >= 0) {
+                    // The actual usable annotations in the pool.
+                    // The actual resizing happens once we have finished the write.
+                    val debugAnnotations = scratchAnnotations.subList(0, index + 1)
+                    scratchTrackEvent.debug_annotations = debugAnnotations
+                }
+                // Update trace packet
                 scratchTracePacket.track_event = scratchTrackEvent
             }
         }

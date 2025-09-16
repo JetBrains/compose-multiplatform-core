@@ -149,7 +149,7 @@ public interface JxrPlatformAdapter {
      * returned by this method will fire listeners on the UI thread if Runnable::run is supplied.
      */
     @Suppress("AsyncSuffixFuture")
-    public fun createWaterMaterial(isAlphaMapVersion: Boolean): ListenableFuture<MaterialResource>?
+    public fun createWaterMaterial(isAlphaMapVersion: Boolean): ListenableFuture<MaterialResource>
 
     /** Destroys the given water material resource. */
     public fun destroyWaterMaterial(material: MaterialResource)
@@ -191,7 +191,7 @@ public interface JxrPlatformAdapter {
      */
     public fun createKhronosPbrMaterial(
         spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource>?
+    ): ListenableFuture<MaterialResource>
 
     /** Destroys the given Khronos PBR material resource. */
     public fun destroyKhronosPbrMaterial(material: MaterialResource)
@@ -444,10 +444,9 @@ public interface JxrPlatformAdapter {
      *
      * @param stereoMode Stereo mode for the surface.
      * @param pose Pose of this entity relative to its parent, default value is Identity.
-     * @param canvasShape The [SurfaceEntity.CanvasShape] which describes the spatialized shape of
-     *   the canvas.
-     * @param contentSecurityLevel The [SurfaceEntity.ContentSecurityLevel] which describes whether
-     *   DRM is enabled.
+     * @param shape The [SurfaceEntity.Shape] which describes the 3D geometry of the entity.
+     * @param surfaceProtection The [SurfaceEntity.SurfaceProtection] which describes whether DRM is
+     *   enabled.
      * @param superSampling The [SurfaceEntity.SuperSampling] which describes whether super sampling
      *   is enabled. Whether to use super sampling for the surface.
      * @param parentEntity The parent entity of this entity.
@@ -456,8 +455,8 @@ public interface JxrPlatformAdapter {
     public fun createSurfaceEntity(
         stereoMode: Int,
         pose: Pose,
-        canvasShape: SurfaceEntity.CanvasShape,
-        @SurfaceEntity.ContentSecurityLevel contentSecurityLevel: Int,
+        shape: SurfaceEntity.Shape,
+        @SurfaceEntity.SurfaceProtection surfaceProtection: Int,
         superSampling: Int,
         parentEntity: Entity,
     ): SurfaceEntity

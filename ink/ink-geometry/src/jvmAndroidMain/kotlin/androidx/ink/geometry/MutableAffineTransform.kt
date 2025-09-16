@@ -260,16 +260,16 @@ public constructor(
     }
 
     /**
-     * Fills this [MutableAffineTransform] with a transformation that shears in the x-direction by
+     * Fills this [MutableAffineTransform] with a transformation that skews in the x-direction by
      * the given factor.
      *
      * Returns the modified instance to allow chaining calls.
      *
      * @return `this`
      */
-    public fun populateFromShearX(shearFactor: Float): MutableAffineTransform {
+    public fun populateFromSkewX(sx: Float): MutableAffineTransform {
         m00 = 1f
-        m10 = shearFactor
+        m10 = sx
         m20 = 0f
         m01 = 0f
         m11 = 1f
@@ -278,18 +278,18 @@ public constructor(
     }
 
     /**
-     * Fills this [MutableAffineTransform] with a transformation that shears in the y-direction by
+     * Fills this [MutableAffineTransform] with a transformation that skews in the y-direction by
      * the given factor.
      *
      * Returns the modified instance to allow chaining calls.
      *
      * @return `this`
      */
-    public fun populateFromShearY(shearFactor: Float): MutableAffineTransform {
+    public fun populateFromSkewY(sy: Float): MutableAffineTransform {
         m00 = 1f
         m10 = 0f
         m20 = 0f
-        m01 = shearFactor
+        m01 = sy
         m11 = 1f
         m21 = 0f
         return this

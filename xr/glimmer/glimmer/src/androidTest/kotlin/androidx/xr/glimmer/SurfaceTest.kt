@@ -89,7 +89,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.matchers.MSSIMMatcher
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
@@ -110,6 +109,8 @@ class SurfaceTest {
 
     @get:Rule val rule = createComposeRule()
 
+    @get:Rule val inputModeRule = nonTouchInputModeRule()
+
     @Before
     fun before() {
         isDebugInspectorInfoEnabled = true
@@ -119,14 +120,6 @@ class SurfaceTest {
     fun after() {
         isDebugInspectorInfoEnabled = false
     }
-
-    // Enter non-touch mode for tests, so that clickables can be focused.
-    // TODO(b/267253920): Add a compose test API to set/reset InputMode.
-    @Before
-    fun enterNonTouchMode() = InstrumentationRegistry.getInstrumentation().setInTouchMode(false)
-
-    // TODO(b/267253920): Add a compose test API to set/reset InputMode.
-    @After fun resetTouchMode() = InstrumentationRegistry.getInstrumentation().resetInTouchMode()
 
     @Test
     fun focusableSurface_equality_providedInteractionSource() {

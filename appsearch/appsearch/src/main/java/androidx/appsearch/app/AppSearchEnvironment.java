@@ -17,6 +17,8 @@
 package androidx.appsearch.app;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.UserHandle;
 
 import androidx.annotation.IntDef;
@@ -92,4 +94,22 @@ public interface AppSearchEnvironment {
 
     /** Returns the {@code EnvironmentType} for this environment. */
     @EnvironmentType int getEnvironment();
+
+    /**
+     * Returns a file used to persist storage usage information for a specific user,
+     * as managed by {@link com.android.server.appsearch.UserStorageInfo}.
+     */
+    @NonNull
+    File getStorageInfoFile(@NonNull File fileParentPath, @NonNull String storageInfoFileName);
+
+    /**
+     * Populates the {@link PackageInfo#signatures} field for P- devices.
+     *
+     * <p>This is a GMSCore-specific fallback used after retrieving packages on P- devices. It
+     * ensures that a certificate history is still available for verification.
+     *
+     * @throws PackageManager.NameNotFoundException If the package is not found.
+     */
+    void populateSignatures(@NonNull Context context, @NonNull PackageInfo packageInfo)
+            throws PackageManager.NameNotFoundException;
 }

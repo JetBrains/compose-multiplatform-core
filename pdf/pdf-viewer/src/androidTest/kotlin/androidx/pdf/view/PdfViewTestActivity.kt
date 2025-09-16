@@ -19,11 +19,17 @@ package androidx.pdf.view
 import android.app.Activity
 import android.content.Context
 import android.os.Bundle
+import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.pdf.updateContext
 import java.util.Locale
 
 /** Bare bones test helper [Activity] for [PdfView] integration tests */
 open class PdfViewTestActivity : Activity() {
+
+    lateinit var container: FrameLayout
 
     override fun attachBaseContext(newBase: Context?) {
         // Update context of test activity if custom locale is injected
@@ -44,6 +50,18 @@ open class PdfViewTestActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        container = FrameLayout(this)
+        setContentView(container)
+
+        // With targetSdk of AndroidX = 35, UI is drawn beneath the top system bars,
+        // which causes click interactions to be blocked and not being propagated
+        // properly to PdfView. Hence we add padding to offset the PdfView so that it lies
+        // below the system bars.
+        ViewCompat.setOnApplyWindowInsetsListener(container) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(top = systemBars.top)
+            insets
+        }
         onCreateCallback(this)
         // disable enter animation.
         @Suppress("Deprecation") overridePendingTransition(0, 0)

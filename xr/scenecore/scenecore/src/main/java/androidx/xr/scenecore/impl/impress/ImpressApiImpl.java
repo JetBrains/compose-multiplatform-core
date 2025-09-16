@@ -214,7 +214,7 @@ public final class ImpressApiImpl implements ImpressApi {
     @Override
     @NonNull
     public ListenableFuture<Long> loadImageBasedLightingAsset(
-            @NonNull byte[] data, @NonNull String key) {
+            byte @NonNull [] data, @NonNull String key) {
         return CallbackToFutureAdapter.getFuture(
                 completer -> {
                     // TODO: b/374216912 - Add a cancellationListener to the completer here when the
@@ -305,7 +305,7 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     @NonNull
-    public ListenableFuture<Long> loadGltfAsset(@NonNull byte[] data, @NonNull String key) {
+    public ListenableFuture<Long> loadGltfAsset(byte @NonNull [] data, @NonNull String key) {
         return CallbackToFutureAdapter.getFuture(
                 completer -> {
                     // TODO: b/374216912 - Add a cancellationListener to the completer here when the

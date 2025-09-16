@@ -27,7 +27,6 @@ public open class ProcessTrack(
     /** The name of the process. */
     internal val name: String,
 ) : SliceTrack(context = context, uuid = monotonicId()) {
-    internal val packetLock = Any()
     internal val threads = mutableScatterMapOf<String, ThreadTrack>()
     internal val counters = mutableScatterMapOf<String, CounterTrack>()
 
@@ -45,34 +44,6 @@ public open class ProcessTrack(
                     )
                 )
             }
-        }
-    }
-
-    public override fun beginSection(name: String, flowIds: List<Long>) {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitTraceEvent { event -> event.setBeginSectionWithFlows(uuid, name, flowIds) }
-            }
-        }
-    }
-
-    public override fun beginSection(name: String) {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitTraceEvent { event -> event.setBeginSection(uuid, name) }
-            }
-        }
-    }
-
-    public override fun endSection() {
-        if (context.isEnabled) {
-            synchronized(packetLock) { emitTraceEvent { event -> event.setEndSection(uuid) } }
-        }
-    }
-
-    public override fun instant(name: String) {
-        if (context.isEnabled) {
-            synchronized(packetLock) { emitTraceEvent { event -> event.setInstant(uuid, name) } }
         }
     }
 

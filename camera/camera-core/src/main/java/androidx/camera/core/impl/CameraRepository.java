@@ -60,6 +60,7 @@ public class CameraRepository implements InternalCameraPresenceListener {
      *
      * <p>All cameras queried from the {@link CameraFactory} will be added to the repository.
      */
+    @SuppressWarnings("FutureReturnValueIgnored") // cameraToRemove.release()
     public void init(@NonNull CameraFactory cameraFactory) throws InitializationException {
         mCameraFactory = cameraFactory;
         synchronized (mCamerasLock) {

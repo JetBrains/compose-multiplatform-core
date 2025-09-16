@@ -29,6 +29,7 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import com.google.ar.core.Anchor as ARCoreAnchor
+import com.google.ar.core.Camera
 import com.google.ar.core.Frame
 import com.google.ar.core.HitResult
 import com.google.ar.core.Plane as ARCore1xPlane
@@ -66,10 +67,15 @@ class ArCorePerceptionManagerTest {
 
     lateinit var mockSession: Session
     lateinit var underTest: ArCorePerceptionManager
+    lateinit var mockCamera: Camera
+    lateinit var mockCameraPose: ARCorePose
 
     @Before
     fun setUp() {
         mockSession = mock<Session>()
+        mockCamera = mock<Camera>()
+        mockCameraPose = mock<ARCorePose>()
+        whenever(mockCamera.pose).thenReturn(mockCameraPose)
 
         val timeSource = ArCoreTimeSource()
         underTest = ArCorePerceptionManager(timeSource)
@@ -89,6 +95,7 @@ class ArCorePerceptionManagerTest {
         val mockFrame = mock<Frame>()
         whenever(mockARCoreAnchor.pose).thenReturn(pose.toARCorePose())
         doReturn(mockARCoreAnchor).whenever(mockSession).createAnchor(any())
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -112,6 +119,7 @@ class ArCorePerceptionManagerTest {
             .doThrow(ResourceExhaustedException())
             .whenever(mockSession)
             .createAnchor(any())
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -156,6 +164,7 @@ class ArCorePerceptionManagerTest {
             .thenReturn(listOf(mockPlane))
         whenever(mockFrame.hitTest(any(), eq(0), any(), eq(0))).thenReturn(listOf(mockHitResult))
         whenever(mockFrame.timestamp).thenReturn(timestamp)
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -190,6 +199,7 @@ class ArCorePerceptionManagerTest {
     @Test
     fun update_callsSessionUpdate() {
         val mockFrame = mock<Frame>()
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -205,6 +215,7 @@ class ArCorePerceptionManagerTest {
         whenever(mockFrame.getUpdatedTrackables(ARCore1xPlane::class.java))
             .thenReturn(listOf(mockPlane))
         whenever(mockFrame.timestamp).thenReturn(timestamp)
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()

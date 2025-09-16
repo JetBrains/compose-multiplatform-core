@@ -29,7 +29,7 @@ import org.gradle.api.provider.ValueSourceParameters
  */
 internal fun Project.fetchDevelocityKeysIfNeeded() {
     // We are in CI, so we should not fetch these keys
-    if (System.getenv("BUILD_NUMBER") != null) return
+    if (System.getenv("IS_ANDROIDX_CI") != null) return
 
     // User does not have remote cache enabled, so we will not have access to GCP
     if (System.getenv("USE_ANDROIDX_REMOTE_BUILD_CACHE") !in setOf("gcp", "true")) return

@@ -39,9 +39,7 @@ dependencies {
     implementation("androidx.slidingpanelayout:slidingpanelayout:1.2.0")
     implementation("androidx.transition:transition:1.5.1")
     implementation("com.google.android.material:material:1.4.0")
-    implementation(project(":internal-testutils-navigation"), {
-        exclude group: "androidx.navigation", module: "navigation-common"
-    })
+    implementation(project(":internal-testutils-navigation"))
 }
 
 android {

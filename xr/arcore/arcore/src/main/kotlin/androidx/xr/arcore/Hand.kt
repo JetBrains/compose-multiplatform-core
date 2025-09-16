@@ -106,11 +106,16 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
      * The representation of the current state of [Hand].
      *
      * @param trackingState the current [TrackingState] of the hand.
+     * @param handJointsBuffer the [FloatBuffer] containing the current state of the hand. It
+     *   contains an array of 182 floats (26 joints * 7 values per joint) which represent the poses
+     *   of all hand joints. Each hand joint pose consists of 7 float values that represent rotation
+     *   (x, y, z, w) and translation (x, y, z) as defined in [Quaternion] and [Vector3]
+     *   respectively.. The order of the joints within the array follows the order in which the
+     *   joints are defined in [HandJointType].
      */
     public class State
     internal constructor(
         public val trackingState: TrackingState,
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         public val handJointsBuffer: FloatBuffer,
     ) {
 

@@ -16,11 +16,10 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
 import android.content.Context
-import android.os.Bundle
 import android.view.View
 import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
@@ -39,6 +38,7 @@ import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
+import kotlin.test.assertFailsWith
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,7 +57,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SceneTest {
     private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val activityController = Robolectric.buildActivity(Activity::class.java)
+    private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
     private val activity = activityController.create().start().get()
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
     private val mockAnchorEntity = mock<RtAnchorEntity>()
@@ -78,6 +78,18 @@ class SceneTest {
     }
 
     @Test
+    fun getSceneBeforeSessionDestroyed_returnsScene() {
+        assertThat(session.scene).isInstanceOf(Scene::class.java)
+    }
+
+    @Test
+    fun getSceneAfterSessionDestroyed_throwsIllegalStateException() {
+        activityController.destroy()
+
+        assertFailsWith<IllegalStateException> { session.scene }
+    }
+
+    @Test
     fun getActivitySpace_returnsActivitySpace() {
         val activitySpace = session.scene.activitySpace
 
@@ -90,21 +102,6 @@ class SceneTest {
         val activitySpace2 = session.scene.activitySpace
 
         assertThat(activitySpace1).isEqualTo(activitySpace2)
-    }
-
-    @Test
-    fun getActivitySpaceRoot_returnsActivitySpaceRoot() {
-        val activitySpaceRoot = session.scene.activitySpaceRoot
-
-        assertThat(activitySpaceRoot).isNotNull()
-    }
-
-    @Test
-    fun getActivitySpaceRootTwice_returnsSameSpace() {
-        val activitySpaceRoot1 = session.scene.activitySpaceRoot
-        val activitySpaceRoot2 = session.scene.activitySpaceRoot
-
-        assertThat(activitySpaceRoot1).isEqualTo(activitySpaceRoot2)
     }
 
     @Test
@@ -135,28 +132,6 @@ class SceneTest {
         @Suppress("UNUSED_VARIABLE") val unusedAgain = session.scene.mainPanelEntity
 
         verify(mockPlatformAdapter, times(1)).mainPanelEntity
-    }
-
-    @Test
-    fun configureBundleForFullSpaceMode_Launch_callsThrough() {
-        // Test that Session calls into the runtime.
-        val bundle = Bundle().apply { putString("testkey", "testval") }
-        whenever(mockPlatformAdapter.setFullSpaceMode(any())).thenReturn(bundle)
-        @Suppress("UNUSED_VARIABLE")
-        val unused = session.scene.configureBundleForFullSpaceModeLaunch(bundle)
-        verify(mockPlatformAdapter).setFullSpaceMode(bundle)
-    }
-
-    @Test
-    fun configureBundleForFullSpaceModeLaunchWithEnvironmentInherited_callsThrough() {
-        // Test that Session calls into the runtime.
-        val bundle = Bundle().apply { putString("testkey", "testval") }
-        whenever(mockPlatformAdapter.setFullSpaceModeWithEnvironmentInherited(any()))
-            .thenReturn(bundle)
-        @Suppress("UNUSED_VARIABLE")
-        val unused =
-            session.scene.configureBundleForFullSpaceModeLaunchWithEnvironmentInherited(bundle)
-        verify(mockPlatformAdapter).setFullSpaceModeWithEnvironmentInherited(bundle)
     }
 
     @Test

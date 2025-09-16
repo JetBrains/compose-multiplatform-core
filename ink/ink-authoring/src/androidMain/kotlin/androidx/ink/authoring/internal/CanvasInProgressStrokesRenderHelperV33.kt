@@ -35,6 +35,7 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.AnyThread
+import androidx.annotation.Px
 import androidx.annotation.RequiresApi
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
@@ -638,12 +639,11 @@ internal class CanvasInProgressStrokesRenderHelperV33(
             // (largest values) round up. Pad the region a bit to avoid potential rounding errors
             // leading
             // to stray artifacts.
-            val clipRegionOutset = renderer.strokeModifiedRegionOutsetPx()
             renderThreadState.scratchRect.set(
-                /* left = */ floor(modifiedRegionInMainView.xMin).toInt() - clipRegionOutset,
-                /* top = */ floor(modifiedRegionInMainView.yMin).toInt() - clipRegionOutset,
-                /* right = */ ceil(modifiedRegionInMainView.xMax).toInt() + clipRegionOutset,
-                /* bottom = */ ceil(modifiedRegionInMainView.yMax).toInt() + clipRegionOutset,
+                /* left = */ floor(modifiedRegionInMainView.xMin).toInt() - CLIP_REGION_OUTSET_PX,
+                /* top = */ floor(modifiedRegionInMainView.yMin).toInt() - CLIP_REGION_OUTSET_PX,
+                /* right = */ ceil(modifiedRegionInMainView.xMax).toInt() + CLIP_REGION_OUTSET_PX,
+                /* bottom = */ ceil(modifiedRegionInMainView.yMax).toInt() + CLIP_REGION_OUTSET_PX,
             )
             // Make sure to set the clip region for both the off screen canvas and the front buffer
             // canvas. The off screen canvas is where the stroke draw operations are going first, so
@@ -1028,9 +1028,9 @@ internal class CanvasInProgressStrokesRenderHelperV33(
         }
     }
 
-    companion object {
+    private companion object {
 
-        private const val BASE_USAGE_FLAGS =
+        const val BASE_USAGE_FLAGS =
             HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or
                 HardwareBuffer.USAGE_GPU_COLOR_OUTPUT or
                 HardwareBuffer.USAGE_COMPOSER_OVERLAY
@@ -1039,8 +1039,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
          * The preferred flags to pass to [HardwareBuffer.create] for best performance. If not
          * supported, use [ALTERNATE_USAGE_FLAGS] instead.
          */
-        private const val DESIRED_USAGE_FLAGS =
-            HardwareBuffer.USAGE_FRONT_BUFFER or BASE_USAGE_FLAGS
+        const val DESIRED_USAGE_FLAGS = HardwareBuffer.USAGE_FRONT_BUFFER or BASE_USAGE_FLAGS
 
         /**
          * The flags passed to [HardwareBuffer.create] if [DESIRED_USAGE_FLAGS] are not supported.
@@ -1048,7 +1047,12 @@ internal class CanvasInProgressStrokesRenderHelperV33(
          * This fallback prevents ARM frame buffer compression from causing visual artifacts on
          * certain devices like Samsung Galaxy Tab S6 Lite. See b/365131024 for more information.
          */
-        private const val ALTERNATE_USAGE_FLAGS =
-            HardwareBuffer.USAGE_CPU_WRITE_OFTEN or BASE_USAGE_FLAGS
+        const val ALTERNATE_USAGE_FLAGS = HardwareBuffer.USAGE_CPU_WRITE_OFTEN or BASE_USAGE_FLAGS
+
+        /**
+         * Number of pixels to widen the transformed region by, in order to better guarantee that no
+         * pixels are cut off during incremental draws that modify the smallest possible rectangle.
+         */
+        @Px const val CLIP_REGION_OUTSET_PX = 3
     }
 }

@@ -45,6 +45,7 @@ class CameraPresenceProviderTest {
     private lateinit var testCameraRepository: TestCameraRepository
     private val fakeCoordinator = FakeCameraCoordinator()
     private val fakeSurfaceManager = FakeCameraDeviceSurfaceManager()
+    private val fakeValidator = FakeCameraValidator()
     private val publicListener = TestCameraPresenceListener()
 
     private lateinit var provider: CameraPresenceProvider
@@ -58,10 +59,100 @@ class CameraPresenceProviderTest {
         testCameraRepository = TestCameraRepository(fakeCameraFactory)
 
         provider = CameraPresenceProvider(MoreExecutors.directExecutor())
-        provider.startup(fakeCameraFactory, testCameraRepository)
+        provider.startup(fakeValidator, fakeCameraFactory, testCameraRepository)
         provider.addDependentInternalListener(fakeSurfaceManager)
         provider.addDependentInternalListener(fakeCoordinator)
         provider.addCameraPresenceListener(publicListener, MoreExecutors.directExecutor())
+    }
+
+    @Test
+    fun onNewData_abortsUpdate_whenValidatorReturnsInvalid() {
+        // Arrange: Start with one camera.
+        fakeCameraFactory.insertCamera(CameraSelector.LENS_FACING_BACK, CAMERA_ID_0) {
+            FakeCamera(CAMERA_ID_0, null, FakeCameraInfoInternal())
+        }
+        sourceObservable.updateData(listOf(IDENTIFIER_0))
+
+        // Sanity check initial state.
+        assertThat(testCameraRepository.updateCount).isEqualTo(1)
+        assertThat(testCameraRepository.lastReceivedIds).containsExactly(CAMERA_ID_0)
+
+        // Act: Configure validator to fail the next update.
+        fakeValidator.setNextIsChangeInvalid(true)
+        // Attempt to remove the camera.
+        sourceObservable.updateData(emptyList())
+
+        // Assert: The update should have been aborted.
+        // The repository update count remains 1 because the invalid update was blocked.
+        assertThat(testCameraRepository.updateCount).isEqualTo(1)
+        // The repository state should not have changed.
+        assertThat(testCameraRepository.lastReceivedIds).containsExactly(CAMERA_ID_0)
+        // The public listener should not be notified of any removal.
+        assertThat(publicListener.removedCameras).isEmpty()
+    }
+
+    @Test
+    fun onNewData_allowsNonImpactfulRemoval_fromDegradedState() {
+        // Arrange: Start in a degraded state with a required BACK camera and an EXTERNAL camera,
+        // but missing the required FRONT camera.
+        fakeCameraFactory.insertCamera(CameraSelector.LENS_FACING_BACK, CAMERA_ID_0) {
+            FakeCamera(
+                CAMERA_ID_0,
+                null,
+                FakeCameraInfoInternal(CAMERA_ID_0, 0, CameraSelector.LENS_FACING_BACK),
+            )
+        }
+        fakeCameraFactory.insertCamera(CameraSelector.LENS_FACING_EXTERNAL, CAMERA_ID_EXTERNAL) {
+            FakeCamera(
+                CAMERA_ID_EXTERNAL,
+                null,
+                FakeCameraInfoInternal(CAMERA_ID_EXTERNAL, 0, CameraSelector.LENS_FACING_EXTERNAL),
+            )
+        }
+        sourceObservable.updateData(listOf(IDENTIFIER_0, IDENTIFIER_EXTERNAL))
+        assertThat(testCameraRepository.updateCount).isEqualTo(1)
+
+        // Act: Remove the non-essential EXTERNAL camera. The validator will allow this
+        // by default (isChangeInvalid returns false).
+        fakeCameraFactory.removeCamera(CAMERA_ID_EXTERNAL)
+        sourceObservable.updateData(listOf(IDENTIFIER_0))
+
+        // Assert: The update proceeds because it doesn't make the state worse.
+        assertThat(testCameraRepository.updateCount).isEqualTo(2)
+        assertThat(testCameraRepository.lastReceivedIds).containsExactly(CAMERA_ID_0)
+        assertThat(publicListener.removedCameras).containsExactly(IDENTIFIER_EXTERNAL)
+    }
+
+    @Test
+    fun onNewData_blocksImpactfulRemoval_fromDegradedState() {
+        // Arrange: Start in a degraded state with a required BACK camera and an EXTERNAL camera.
+        fakeCameraFactory.insertCamera(CameraSelector.LENS_FACING_BACK, CAMERA_ID_0) {
+            FakeCamera(
+                CAMERA_ID_0,
+                null,
+                FakeCameraInfoInternal(CAMERA_ID_0, 0, CameraSelector.LENS_FACING_BACK),
+            )
+        }
+        fakeCameraFactory.insertCamera(CameraSelector.LENS_FACING_EXTERNAL, CAMERA_ID_EXTERNAL) {
+            FakeCamera(
+                CAMERA_ID_EXTERNAL,
+                null,
+                FakeCameraInfoInternal(CAMERA_ID_EXTERNAL, 0, CameraSelector.LENS_FACING_EXTERNAL),
+            )
+        }
+        sourceObservable.updateData(listOf(IDENTIFIER_0, IDENTIFIER_EXTERNAL))
+        assertThat(testCameraRepository.updateCount).isEqualTo(1)
+
+        // Act: Configure the validator to block the next removal, then attempt to remove the
+        // last required BACK camera.
+        fakeValidator.setNextIsChangeInvalid(true)
+        sourceObservable.updateData(listOf(IDENTIFIER_EXTERNAL))
+
+        // Assert: The update is blocked to prevent losing the last required camera.
+        assertThat(testCameraRepository.updateCount).isEqualTo(1)
+        assertThat(testCameraRepository.lastReceivedIds)
+            .containsExactly(CAMERA_ID_0, CAMERA_ID_EXTERNAL)
+        assertThat(publicListener.removedCameras).isEmpty()
     }
 
     @Test
@@ -250,8 +341,10 @@ class CameraPresenceProviderTest {
     private companion object {
         private const val CAMERA_ID_0 = "0"
         private const val CAMERA_ID_1 = "1"
+        private const val CAMERA_ID_EXTERNAL = "2"
         private val IDENTIFIER_0 = CameraIdentifier.create(CAMERA_ID_0)
         private val IDENTIFIER_1 = CameraIdentifier.create(CAMERA_ID_1)
+        private val IDENTIFIER_EXTERNAL = CameraIdentifier.create(CAMERA_ID_EXTERNAL)
     }
 
     private class MutableObservable<T> : Observable<T> {
@@ -313,6 +406,29 @@ class CameraPresenceProviderTest {
 
         fun setShouldThrow(shouldThrow: Boolean) {
             this.shouldThrow = shouldThrow
+        }
+    }
+
+    /** A fake implementation of CameraValidator for testing purposes. */
+    private class FakeCameraValidator : CameraValidator {
+        private var nextIsChangeInvalid = false
+
+        fun setNextIsChangeInvalid(isInvalid: Boolean) {
+            nextIsChangeInvalid = isInvalid
+        }
+
+        override fun validateOnFirstInit(cameraRepository: CameraRepository) {
+            // No-op for these tests, as we are not testing initial validation here.
+        }
+
+        override fun isChangeInvalid(
+            currentCameras: Set<CameraInternal>,
+            removedCameras: Set<CameraIdentifier>,
+        ): Boolean {
+            val result = nextIsChangeInvalid
+            // Reset after use so the next check defaults to valid.
+            nextIsChangeInvalid = false
+            return result
         }
     }
 }

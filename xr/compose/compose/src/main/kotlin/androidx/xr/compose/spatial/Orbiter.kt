@@ -273,9 +273,7 @@ internal fun PositionedOrbiter(data: OrbiterData, content: @Composable @UiCompos
                             this@Layout,
                             data.elevation,
                         )
-                    if (panelEntity.entity.getPose() != pose) {
-                        panelEntity.entity.setPose(pose)
-                    }
+                    panelEntity.poseInMeters = pose
                     panelEntity.parent = parentEntity
                     panelEntity.setShape(data.shape, this@Layout)
                     panelEntity.enabled = true

@@ -137,7 +137,7 @@ class NonCustomizableVideoPlayerActivity : ComponentActivity() {
 
             SpatialBox(
                 modifier = SubspaceModifier.fillMaxSize(),
-                alignment = SpatialAlignment.TopRight,
+                alignment = SpatialAlignment.TopStart,
             ) {
                 SpatialPanel(SubspaceModifier.offset(z = 30.dp)) {
                     Button(onClick = { finish() }) { Text("Close") }

@@ -217,7 +217,7 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     @Suppress("AsyncSuffixFuture")
     override fun createWaterMaterial(
         isAlphaMapVersion: Boolean
-    ): ListenableFuture<MaterialResource>? {
+    ): ListenableFuture<MaterialResource> {
         val newMaterial = FakeWaterMaterial(isAlphaMapVersion)
         createdWaterMaterials.add(newMaterial)
         return immediateFuture(newMaterial)
@@ -326,7 +326,7 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     @Suppress("AsyncSuffixFuture")
     override fun createKhronosPbrMaterial(
         spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource>? {
+    ): ListenableFuture<MaterialResource> {
         val newMaterial = FakeKhronosPbrMaterial(spec)
         createdKhronosPbrMaterials.add(newMaterial)
         return immediateFuture(newMaterial)
@@ -549,15 +549,15 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     override fun createSurfaceEntity(
         stereoMode: Int,
         pose: Pose,
-        canvasShape: SurfaceEntity.CanvasShape,
-        contentSecurityLevel: Int,
+        shape: SurfaceEntity.Shape,
+        surfaceProtection: Int,
         superSampling: Int,
         parentEntity: Entity,
     ): SurfaceEntity {
         val surfaceEntity = FakeSurfaceEntity()
         surfaceEntity.stereoMode = stereoMode
         surfaceEntity.setPose(pose)
-        surfaceEntity.canvasShape = canvasShape
+        surfaceEntity.shape = shape
         surfaceEntity.parent = parentEntity
 
         return surfaceEntity
@@ -774,7 +774,7 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     override fun createAnchorPlacementForPlanes(
         planeTypeFilter: Set<@JvmSuppressWildcards PlaneType>,
         planeSemanticFilter: Set<@JvmSuppressWildcards PlaneSemantic>,
-    ): AnchorPlacement = object : AnchorPlacement {}
+    ): FakeAnchorPlacement = FakeAnchorPlacement(planeTypeFilter, planeSemanticFilter)
 
     override fun createResizableComponent(
         minimumSize: Dimensions,

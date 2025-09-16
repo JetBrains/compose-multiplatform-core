@@ -1,0 +1,16 @@
+// Signature format: 4.0
+package androidx.glance.wear {
+
+  public abstract class GlanceWearWidgetService extends androidx.lifecycle.LifecycleService {
+    ctor public GlanceWearWidgetService();
+    method public final android.os.IBinder? onBind(android.content.Intent intent);
+    field public static final String ACTION_BIND_WIDGET_PROVIDER = "androidx.glance.wear.action.BIND_WIDGET_PROVIDER";
+    field public static final androidx.glance.wear.GlanceWearWidgetService.Companion Companion;
+  }
+
+  public static final class GlanceWearWidgetService.Companion {
+    property public static String ACTION_BIND_WIDGET_PROVIDER;
+  }
+
+}
+

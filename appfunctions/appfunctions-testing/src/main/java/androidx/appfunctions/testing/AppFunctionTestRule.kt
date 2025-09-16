@@ -26,6 +26,7 @@ import androidx.appfunctions.testing.internal.FakeAppFunctionReader
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
+import org.robolectric.shadows.ShadowSystemProperties
 
 /**
  * A JUnit TestRule for setting up an environment to exercise AppFunction APIs in unit or
@@ -160,6 +161,10 @@ public class AppFunctionTestRule(private val context: Context) : TestRule {
         object : Statement() {
             override fun evaluate() {
                 base?.evaluate()
+                // Robolectric platform doesn't set these properties, we have checks for certain
+                // AppSearch features that are only available if the sdk extensions for T are above
+                // 13.
+                ShadowSystemProperties.override(T_EXTENSION_PROPERTY_STRING, "13")
             }
         }
 
@@ -174,5 +179,9 @@ public class AppFunctionTestRule(private val context: Context) : TestRule {
             appFunctionManagerApi = appFunctionManagerApi,
             translatorSelector = NullTranslatorSelector(),
         )
+    }
+
+    private companion object {
+        private const val T_EXTENSION_PROPERTY_STRING = "build.version.extensions.t"
     }
 }

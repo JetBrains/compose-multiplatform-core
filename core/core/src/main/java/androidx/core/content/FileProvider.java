@@ -180,7 +180,6 @@ import java.util.Map;
  *     Represents files in the root of your app's external media area. The root path of this
  *     subdirectory is the same as the value returned by the first result of
  *     {@link Context#getExternalMediaDirs() Context.getExternalMediaDirs()}.
- *     <p><strong>Note:</strong> this directory is only available on API 21+ devices.</p>
  *     </li>
  * </ul>
  * <p>
@@ -535,7 +534,7 @@ public class FileProvider extends ContentProvider {
                         target = externalCacheDirs[0];
                     }
                 } else if (TAG_EXTERNAL_MEDIA.equals(tag)) {
-                    File[] externalMediaDirs = Api21Impl.getExternalMediaDirs(context);
+                    File[] externalMediaDirs = context.getExternalMediaDirs();
                     if (externalMediaDirs.length > 0) {
                         target = externalMediaDirs[0];
                     }
@@ -971,17 +970,6 @@ public class FileProvider extends ContentProvider {
 
             // The `filePath` _must_ reside as a descendant of the `rootPath`
             return filePath.startsWith(rootPath + '/');
-        }
-    }
-
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static File[] getExternalMediaDirs(Context context) {
-            // Deprecated, otherwise this would belong on ContextCompat as a public method.
-            return context.getExternalMediaDirs();
         }
     }
 }

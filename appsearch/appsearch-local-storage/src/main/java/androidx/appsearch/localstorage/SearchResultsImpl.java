@@ -148,7 +148,8 @@ class SearchResultsImpl implements SearchResults {
                 mIsClosed = true;
             } else {
                 FutureUtil.execute(mExecutor, () -> {
-                    mAppSearchImpl.invalidateNextPageToken(mPackageName, mNextPageToken);
+                    mAppSearchImpl.invalidateNextPageToken(mPackageName, mNextPageToken,
+                            /*callStatsBuilder=*/null);
                     mIsClosed = true;
                     return null;
                 });

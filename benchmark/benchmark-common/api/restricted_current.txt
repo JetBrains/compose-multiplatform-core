@@ -148,3 +148,9 @@ package androidx.benchmark.traceprocessor {
 
 }
 
+package androidx.benchmark.vmtrace {
+
+  public typealias UuidProvider = kotlin.jvm.functions.Function0<java.lang.Long>;
+
+}
+

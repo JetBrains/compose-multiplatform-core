@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.library.abi.AbiPropertyKind
 import org.jetbrains.kotlin.library.abi.AbiTypeArgument
 import org.jetbrains.kotlin.library.abi.AbiTypeNullability
 import org.jetbrains.kotlin.library.abi.AbiValueParameter
+import org.jetbrains.kotlin.library.abi.AbiValueParameterKind
 import org.jetbrains.kotlin.library.abi.AbiVariance
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 import org.junit.Test
@@ -429,7 +430,7 @@ class KlibParsingCursorExtensionsTest {
     fun parseValueParametersEmpty() {
         val input = "() thing"
         val cursor = Cursor(input)
-        val params = cursor.parseValueParameters()
+        val params = cursor.parseValueParameters(AbiValueParameterKind.CONTEXT)
         assertThat(params).isEqualTo(emptyList<AbiValueParameter>())
         assertThat(cursor.currentLine).isEqualTo("thing")
     }
@@ -438,7 +439,7 @@ class KlibParsingCursorExtensionsTest {
     fun parseValueParamsSimple() {
         val input = "(kotlin/Function1<#A, kotlin/Boolean>)"
         val cursor = Cursor(input)
-        val valueParams = cursor.parseValueParameters()
+        val valueParams = cursor.parseValueParameters(AbiValueParameterKind.CONTEXT)
         assertThat(valueParams).hasSize(1)
     }
 
@@ -446,7 +447,7 @@ class KlibParsingCursorExtensionsTest {
     fun parseValueParamsTwoArgs() {
         val input = "(#A1, kotlin/Function2<#A1, #A, #A1>)"
         val cursor = Cursor(input)
-        val valueParams = cursor.parseValueParameters()
+        val valueParams = cursor.parseValueParameters(AbiValueParameterKind.CONTEXT)
         assertThat(valueParams).hasSize(2)
         assertThat(valueParams?.first()?.type?.tag).isEqualTo("A1")
     }
@@ -455,7 +456,7 @@ class KlibParsingCursorExtensionsTest {
     fun parseValueParamsWithHasDefaultArg() {
         val input = "(kotlin/Int =...)"
         val cursor = Cursor(input)
-        val valueParams = cursor.parseValueParameters()
+        val valueParams = cursor.parseValueParameters(AbiValueParameterKind.CONTEXT)
         assertThat(valueParams).hasSize(1)
         assertThat(valueParams?.single()?.hasDefaultArg).isTrue()
     }
@@ -467,7 +468,7 @@ class KlibParsingCursorExtensionsTest {
                 "crossinline kotlin/Function1<#A, #B?> =..., " +
                 "crossinline kotlin/Function4<kotlin/Boolean, #A, #B, #B?, kotlin/Unit> =...)"
         val cursor = Cursor(input)
-        val valueParams = cursor.parseValueParameters()!!
+        val valueParams = cursor.parseValueParameters(AbiValueParameterKind.CONTEXT)!!
         assertThat(valueParams).hasSize(4)
         assertThat(valueParams.first().type.className?.toString()).isEqualTo("kotlin/Int")
         val rest = valueParams.subList(1, valueParams.size)
@@ -480,7 +481,7 @@ class KlibParsingCursorExtensionsTest {
     fun parseValueParamsComplex3() {
         val input = "(kotlin/Array<out kotlin/Pair<#A, #B>>...)"
         val cursor = Cursor(input)
-        val valueParams = cursor.parseValueParameters()!!
+        val valueParams = cursor.parseValueParameters(AbiValueParameterKind.CONTEXT)!!
         assertThat(valueParams).hasSize(1)
 
         assertThat(valueParams.single().isVararg).isTrue()
@@ -492,7 +493,7 @@ class KlibParsingCursorExtensionsTest {
     fun parseValueParamsWithStarTypeParam() {
         val input = "(androidx.datastore.preferences.core/Preferences.Key<*>)"
         val cursor = Cursor(input)
-        val valueParams = cursor.parseValueParameters()!!
+        val valueParams = cursor.parseValueParameters(AbiValueParameterKind.CONTEXT)!!
         assertThat(valueParams).hasSize(1)
         val valueParam = valueParams.single()
         val type = valueParam.type

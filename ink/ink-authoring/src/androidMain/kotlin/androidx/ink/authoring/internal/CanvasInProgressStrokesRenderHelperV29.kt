@@ -34,6 +34,7 @@ import android.os.Looper
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.Px
 import androidx.annotation.RequiresApi
 import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
@@ -238,8 +239,6 @@ internal class CanvasInProgressStrokesRenderHelperV29(
         // (largest values) round up. Pad the region a bit to avoid potential rounding errors
         // leading to
         // stray artifacts.
-        val clipRegionOutset = renderer.strokeModifiedRegionOutsetPx()
-
         // Make sure to set the clip region for both the offscreen canvas and the front buffer
         // canvas.
         // The offscreen canvas is where the stroke draw operations are going first, so clipping
@@ -253,10 +252,10 @@ internal class CanvasInProgressStrokesRenderHelperV29(
         // of
         // the front buffer outside of the modified region aren't cleared.
         scratchRect.set(
-            /* left = */ floor(modifiedRegionInMainView.xMin).toInt() - clipRegionOutset,
-            /* top = */ floor(modifiedRegionInMainView.yMin).toInt() - clipRegionOutset,
-            /* right = */ ceil(modifiedRegionInMainView.xMax).toInt() + clipRegionOutset,
-            /* bottom = */ ceil(modifiedRegionInMainView.yMax).toInt() + clipRegionOutset,
+            /* left = */ floor(modifiedRegionInMainView.xMin).toInt() - CLIP_REGION_OUTSET_PX,
+            /* top = */ floor(modifiedRegionInMainView.yMin).toInt() - CLIP_REGION_OUTSET_PX,
+            /* right = */ ceil(modifiedRegionInMainView.xMax).toInt() + CLIP_REGION_OUTSET_PX,
+            /* bottom = */ ceil(modifiedRegionInMainView.yMax).toInt() + CLIP_REGION_OUTSET_PX,
         )
         frontBufferCanvas.clipRect(scratchRect)
         // Using RenderNode.setClipRect instead of Canvas.clipRect for the offscreen frame buffer
@@ -506,5 +505,13 @@ internal class CanvasInProgressStrokesRenderHelperV29(
             delegate?.release(cancelPending = true, onReleaseComplete)
             delegate = null
         }
+    }
+
+    private companion object {
+        /**
+         * Number of pixels to widen the transformed region by, in order to better guarantee that no
+         * pixels are cut off during incremental draws that modify the smallest possible rectangle.
+         */
+        @Px const val CLIP_REGION_OUTSET_PX = 3
     }
 }

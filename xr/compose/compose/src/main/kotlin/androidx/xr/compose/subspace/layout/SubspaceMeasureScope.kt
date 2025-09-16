@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace.layout
 
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 
 /**
@@ -26,6 +27,11 @@ import androidx.xr.compose.subspace.node.SubspaceLayoutNode
  * Based on [androidx.compose.ui.layout.MeasureScope].
  */
 public interface SubspaceMeasureScope : Density {
+    /**
+     * The [LayoutDirection] of the `Layout` or `LayoutModifier` using the measure scope to measure
+     * their children.
+     */
+    public val layoutDirection: LayoutDirection
 
     /**
      * Sets the size and alignment lines of the measured layout, as well as the positioning block
@@ -63,4 +69,7 @@ internal class LayoutSubspaceMeasureScope(private val layoutNode: SubspaceLayout
 
     override val fontScale: Float
         get() = layoutNode.density.fontScale
+
+    override val layoutDirection: LayoutDirection
+        get() = layoutNode.layoutDirection
 }

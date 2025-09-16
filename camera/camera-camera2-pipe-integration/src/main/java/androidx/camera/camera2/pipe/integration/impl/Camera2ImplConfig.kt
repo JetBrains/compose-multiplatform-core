@@ -238,6 +238,17 @@ public class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
             return this
         }
 
+        /**
+         * Removes the capture request options in the map with the specified [CaptureRequest.Key].
+         */
+        public fun removeCaptureRequestOptions(keys: List<CaptureRequest.Key<*>>): Builder {
+            keys.forEach { key ->
+                val opt = key.createCaptureRequestOption()
+                mutableOptionsBundle.removeOption(opt)
+            }
+            return this
+        }
+
         /** Inserts options from other [Config] objects. */
         public fun insertAllOptions(config: Config): Builder {
             for (option in config.listOptions()) {

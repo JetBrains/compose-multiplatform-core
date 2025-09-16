@@ -16,7 +16,7 @@
 
 package androidx.privacysandbox.sdkruntime.integration.testapp
 
-import android.content.Context
+import android.app.Activity
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -35,9 +35,9 @@ import kotlinx.coroutines.Runnable
  *
  * Shared between UI in test app and functional/integration tests.
  */
-class TestAppApi(appContext: Context) {
+class TestAppApi(private val activity: Activity) {
 
-    private val sdkSandboxManager = SdkSandboxManagerCompat.from(appContext)
+    private val sdkSandboxManager = SdkSandboxManagerCompat.from(activity.applicationContext)
 
     private val registeredSandboxDeathCallbacks =
         mutableSetOf<SdkSandboxProcessDeathCallbackCompat>()
@@ -125,6 +125,10 @@ class TestAppApi(appContext: Context) {
                 sdkVersion = sdk.getVersion(),
             )
         }
+    }
+
+    fun startSdkActivity(sdkActivityToken: IBinder) {
+        sdkSandboxManager.startSdkSandboxActivity(activity, sdkActivityToken)
     }
 
     fun resetTestState() {

@@ -77,6 +77,9 @@ fun runMetalavaWithArgs(
                 "androidx.annotation.ReplaceWith",
                 "--exclude-annotation",
                 "androidx.compose.runtime.ComposableInferredTarget",
+                // internal annotation, includes debug information and values are not constant
+                "--exclude-annotation",
+                "androidx.compose.runtime.internal.FunctionKeyMeta",
             )
     val workQueue = workerExecutor.processIsolation()
     workQueue.submit(MetalavaWorkAction::class.java) { parameters ->

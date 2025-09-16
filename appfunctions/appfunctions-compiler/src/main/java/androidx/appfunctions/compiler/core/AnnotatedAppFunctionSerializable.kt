@@ -35,6 +35,8 @@ import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
+import kotlin.String
+import kotlin.text.ifEmpty
 
 // TODO(b/410764334): Re-evaluate the abstraction layer.
 /** Represents a class annotated with [androidx.appfunctions.AppFunctionSerializable]. */
@@ -110,13 +112,18 @@ open class AnnotatedAppFunctionSerializable(
         ) ?: false
     }
 
-    /** A description of the AppFunctionSerializable class and its intended use. */
-    val description: String by lazy {
+    /** The docstring of the annotated class. */
+    internal val docstring: String by lazy {
         if (isDescribedByKdoc) {
             appFunctionSerializableClass.docString.orEmpty()
         } else {
             ""
         }
+    }
+
+    /** A description of the AppFunctionSerializable class and its intended use. */
+    open fun getDescription(sharedDataTypeDescriptionMap: Map<String, String> = mapOf()): String {
+        return docstring.ifEmpty { sharedDataTypeDescriptionMap[jvmQualifiedName] ?: "" }
     }
 
     /** All the [KSDeclaration] from the AppFunctionSerializable. */
@@ -255,7 +262,9 @@ open class AnnotatedAppFunctionSerializable(
     }
 
     /** Returns the annotated class's properties as defined in its primary constructor. */
-    open fun getProperties(): List<AppFunctionPropertyDeclaration> {
+    open fun getProperties(
+        sharedDataTypeDescriptionMap: Map<String, String> = emptyMap()
+    ): List<AppFunctionPropertyDeclaration> {
         val primaryConstructorProperties =
             checkNotNull(appFunctionSerializableClass.primaryConstructor).parameters
 
@@ -267,9 +276,10 @@ open class AnnotatedAppFunctionSerializable(
         return primaryConstructorProperties.mapNotNull { valueParameter ->
             allProperties[valueParameter.name?.asString()]?.let {
                 AppFunctionPropertyDeclaration(
-                    it,
-                    isDescribedByKdoc,
+                    property = it,
+                    isDescribedByKdoc = isDescribedByKdoc,
                     isRequired = !valueParameter.hasDefault,
+                    sharedDataTypeDescriptionMap = sharedDataTypeDescriptionMap,
                 )
             }
         }

@@ -359,6 +359,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
      * Run 10 iterations of adding a new call + setting up extensions to test that we do not hit
      * this condition.
      */
+    @SdkSuppress(minSdkVersion = 26, maxSdkVersion = 35) // b/438225286
     @LargeTest
     @Test(timeout = 10000)
     fun testVoipAndIcsWithParticipantsRace() = runBlocking {

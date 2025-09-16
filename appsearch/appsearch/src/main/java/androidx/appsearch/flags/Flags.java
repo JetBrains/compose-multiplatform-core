@@ -295,6 +295,32 @@ public final class Flags {
     public static final String FLAG_ENABLE_REMOVE_BY_ID_USES_QUERY =
             FLAG_PREFIX + "enable_remove_by_id_uses_query";
 
+    /**
+     * Whether to enable the new header format (refactor legacy format and introduce unsynced tail
+     * checksum) related changes in PortableFileBackedProtoLog.
+     */
+    public static final String FLAG_ENABLE_PROTO_LOG_NEW_HEADER_FORMAT =
+            FLAG_PREFIX + "enable_proto_log_new_header_format";
+
+    /**
+     * Whether to skip interacting with icing if the set schema call is a noop.
+     */
+    public static final String FLAG_ENABLE_EARLY_SET_SCHEMA_EXIT =
+            FLAG_PREFIX + "enable_early_set_schema_exit";
+
+    /**
+     * Whether to enable the new embedding iterator which has improved access order.
+     */
+    public static final String FLAG_ENABLE_EMBEDDING_ITERATOR_V2 =
+            FLAG_PREFIX + "enable_embedding_iterator_v2";
+
+    /**
+     * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
+     * every single document read..
+     */
+    public static final String FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER =
+            FLAG_PREFIX + "enable_reusable_decompression_buffer";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -645,6 +671,40 @@ public final class Flags {
      */
     public static boolean enableRemoveByIdUsesQuery() {
         // TODO(b/401245772): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable the new header format (refactor legacy format and introduce unsynced tail
+     * checksum) related changes in PortableFileBackedProtoLog.
+     */
+    public static boolean enableProtoLogNewHeaderFormat() {
+        // TODO(b/415387509): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to skip interacting with icing if the set schema call is a noop.
+     */
+    public static boolean enableEarlySetSchemaExit() {
+        // TODO(b/436813583): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable the new embedding iterator which has improved access order.
+     */
+    public static boolean enableEmbeddingIteratorV2() {
+        // TODO(b/435005853): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
+     * every single document read..
+     */
+    public static boolean enableReusableDecompressionBuffer() {
+        // TODO(b/435754056): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
     }
 }

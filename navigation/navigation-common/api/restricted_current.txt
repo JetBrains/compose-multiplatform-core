@@ -631,5 +631,7 @@ package androidx.navigation {
   public interface SupportingPane {
   }
 
+  public typealias NavUri = android.net.Uri;
+
 }
 

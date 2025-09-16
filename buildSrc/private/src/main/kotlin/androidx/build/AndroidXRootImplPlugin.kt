@@ -183,26 +183,35 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             } else {
                 File(getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
             }
+
         val createYarnRcFileTask =
             tasks.register("createYarnRcFile", CreateYarnRcFileTask::class.java) {
                 it.offlineMirrorStorage.set(offlineMirrorStorage)
                 it.cacheStorage.set(layout.buildDirectory.dir("yarnCache"))
                 it.yarnrcFile.set(layout.buildDirectory.file(".yarnrc"))
             }
-
+        val createWasmYarnRcFileTask =
+            tasks.register("createWasmYarnRcFile", CreateYarnRcFileTask::class.java) {
+                it.offlineMirrorStorage.set(offlineMirrorStorage)
+                it.cacheStorage.set(layout.buildDirectory.dir("wasmYarnCache"))
+                it.yarnrcFile.set(layout.buildDirectory.file("wasm/.yarnrc"))
+            }
         tasks.withType<KotlinNpmInstallTask>().configureEach {
-            it.dependsOn(createYarnRcFileTask)
+            when (it.name) {
+                "kotlinNpmInstall" -> it.dependsOn(createYarnRcFileTask)
+                "kotlinWasmNpmInstall" -> it.dependsOn(createWasmYarnRcFileTask)
+            }
             it.args.addAll(listOf("--ignore-engines", "--verbose"))
             if (project.useYarnOffline()) {
                 it.args.add("--offline")
+                it.additionalFiles.plus(offlineMirrorStorage)
                 it.doFirst {
                     println(
                         """
                     Fetching yarn packages from the offline mirror: ${offlineMirrorStorage.path}.
                     Your build will fail if a package is not in the offline mirror. To fix, run:
 
-                    $TERMINAL_RED./gradlew kotlinNpmInstall -Pandroidx.yarnOfflineMode=false &&
-                    ./gradlew kotlinUpgradeYarnLock$TERMINAL_RESET
+                    $TERMINAL_RED./gradlew kotlinNpmInstall kotlinWasmNpmInstall -Pandroidx.yarnOfflineMode=false && ./gradlew kotlinUpgradeYarnLock kotlinWasmUpgradeYarnLock$TERMINAL_RESET
 
                     this will download the dependencies from the internet and update the lockfile.
                     Don't forget to upload the changes to Gerrit!

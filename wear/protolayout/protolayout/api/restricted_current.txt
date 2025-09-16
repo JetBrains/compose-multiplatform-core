@@ -1326,6 +1326,7 @@ package androidx.wear.protolayout {
   }
 
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public static final class ResourceBuilders.AndroidLottieResourceByResId {
+    method public static int getMaxPropertiesCount();
     method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat? getProgress();
     method public java.util.List<androidx.wear.protolayout.ResourceBuilders.LottieProperty!> getProperties();
     method @RawRes public int getRawResourceId();

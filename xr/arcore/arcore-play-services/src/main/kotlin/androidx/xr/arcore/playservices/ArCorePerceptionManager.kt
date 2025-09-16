@@ -223,8 +223,8 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val earth: ArCoreEarth = xrResources.earth
 
     /** Returns the [ArDevice] instance. */
-    override val arDevice: ArDevice
-        get() = throw NotImplementedError("Not implemented on mobile runtime.")
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val arDevice: ArCoreDevice = xrResources.arDevice
 
     /**
      * Returns a list of [ViewCamera] objects.
@@ -269,6 +269,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         val planes = _latestFrame.getUpdatedTrackables(ARCore1xPlane::class.java)
         planes.forEach { xrResources.addTrackable(it, ArCorePlane(it, xrResources)) }
 
+        arDevice.update(_latestFrame)
         earth.update(session)
     }
 

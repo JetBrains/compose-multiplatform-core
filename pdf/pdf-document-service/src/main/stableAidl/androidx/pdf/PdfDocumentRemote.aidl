@@ -31,6 +31,7 @@ import android.os.ParcelFileDescriptor;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.annotation.models.PdfAnnotation;
 import androidx.pdf.annotation.models.AnnotationResult;
+import androidx.pdf.annotation.models.PdfAnnotationData;
 
 /** Remote interface for interacting with a PDF document */
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
@@ -220,5 +221,11 @@ interface PdfDocumentRemote {
     */
     List<PdfAnnotation> getPageAnnotations(int pageNum);
 
-
+    /**
+    * Applies the given list of annotations to the document.
+    *
+    * @param annotations The list of annotations to apply.
+    * @return A {@link AnnotationResult} object indicating the success or failure of the operation.
+    */
+    AnnotationResult applyEdits(in List<PdfAnnotationData> annots);
 }

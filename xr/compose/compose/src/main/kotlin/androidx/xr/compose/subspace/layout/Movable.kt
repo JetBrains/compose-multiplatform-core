@@ -553,7 +553,6 @@ internal class MovableNode(
 
 /** Type of plane based on orientation i.e. Horizontal or Vertical. */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public value class PlaneOrientation private constructor(internal val value: Int) {
     public companion object {
         public val Horizontal: PlaneOrientation =
@@ -561,11 +560,19 @@ public value class PlaneOrientation private constructor(internal val value: Int)
         public val Vertical: PlaneOrientation = PlaneOrientation(SceneCorePlaneOrientation.VERTICAL)
         public val Any: PlaneOrientation = PlaneOrientation(SceneCorePlaneOrientation.ANY)
     }
+
+    override fun toString(): String {
+        return when (this) {
+            Horizontal -> "PlaneOrientation.Horizontal"
+            Vertical -> "PlaneOrientation.Vertical"
+            Any -> "PlaneOrientation.Any"
+            else -> super.toString()
+        }
+    }
 }
 
 /** Semantic plane types. */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public value class PlaneSemantic private constructor(internal val value: Int) {
     public companion object {
         public val Wall: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.WALL)
@@ -573,5 +580,16 @@ public value class PlaneSemantic private constructor(internal val value: Int) {
         public val Ceiling: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.CEILING)
         public val Table: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.TABLE)
         public val Any: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.ANY)
+    }
+
+    override fun toString(): String {
+        return when (this) {
+            Wall -> "PlaneSemantic.Wall"
+            Floor -> "PlaneSemantic.Floor"
+            Ceiling -> "PlaneSemantic.Ceiling"
+            Table -> "PlaneSemantic.Table"
+            Any -> "PlaneSemantic.Any"
+            else -> super.toString()
+        }
     }
 }

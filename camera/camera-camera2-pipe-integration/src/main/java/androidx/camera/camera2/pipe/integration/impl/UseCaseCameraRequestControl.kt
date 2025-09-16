@@ -94,6 +94,24 @@ public interface UseCaseCameraRequestControl {
     ): Deferred<Unit>
 
     /**
+     * Asynchronously removes parameters for the repeating capture request.
+     *
+     * This method clears the parameters with the specified [CaptureRequest.Key]s if the parameters
+     * with the same keys have been set to this control previously.
+     *
+     * This method doesn't clear the parameters with the specified [CaptureRequest.Key] if the
+     * parameters with the same keys are set by other controls.
+     *
+     * @param type The category of parameters being set (default: [Type.DEFAULT]).
+     * @param keys A list of [CaptureRequest.Key] to be removed.
+     * @return A [Deferred] object representing the asynchronous operation.
+     */
+    public fun removeParametersAsync(
+        type: Type = Type.DEFAULT,
+        keys: List<CaptureRequest.Key<*>> = emptyList(),
+    ): Deferred<Unit>
+
+    /**
      * Asynchronously updates the repeating request with a new configuration.
      *
      * This method replaces any existing configuration, tags, and listeners associated with the
@@ -258,6 +276,23 @@ constructor(
                     .getOrPut(type) { InfoBundle() }
                     .options
                     .addAllCaptureRequestOptionsWithPriority(values, optionPriority)
+                infoBundleMap.merge().updateCameraStateAsync()
+            }
+        } ?: canceledResult
+
+    override fun removeParametersAsync(
+        type: UseCaseCameraRequestControl.Type,
+        keys: List<CaptureRequest.Key<*>>,
+    ): Deferred<Unit> =
+        runIfNotClosed {
+            threads.confineDeferred {
+                debug {
+                    "UseCaseCameraRequestControlImpl#removeParametersAsync: [$type] keys = $keys"
+                }
+                infoBundleMap
+                    .getOrPut(type) { InfoBundle() }
+                    .options
+                    .removeCaptureRequestOptions(keys)
                 infoBundleMap.merge().updateCameraStateAsync()
             }
         } ?: canceledResult

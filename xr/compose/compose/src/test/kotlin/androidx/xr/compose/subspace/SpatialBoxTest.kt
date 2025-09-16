@@ -77,7 +77,7 @@ class SpatialBoxTest {
                 Subspace {
                     SpatialBox(
                         SubspaceModifier.size(100.dp),
-                        alignment = SpatialAlignment.TopLeft,
+                        alignment = SpatialAlignment.TopStart,
                     ) {
                         SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
                             Text(text = "Panel 1")
@@ -110,7 +110,7 @@ class SpatialBoxTest {
                 Subspace {
                     SpatialBox(
                         SubspaceModifier.size(100.dp),
-                        alignment = SpatialAlignment.BottomRight,
+                        alignment = SpatialAlignment.BottomEnd,
                     ) {
                         SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
                             Text(text = "Panel 1")
@@ -145,14 +145,14 @@ class SpatialBoxTest {
                         SpatialPanel(
                             SubspaceModifier.testTag("panel1")
                                 .size(50.dp)
-                                .align(SpatialAlignment.BottomLeft)
+                                .align(SpatialAlignment.BottomStart)
                         ) {
                             Text(text = "Panel 1")
                         }
                         SpatialPanel(
                             SubspaceModifier.testTag("panel2")
                                 .size(50.dp)
-                                .align(SpatialAlignment.TopRight)
+                                .align(SpatialAlignment.TopEnd)
                         ) {
                             Text(text = "Panel 2")
                         }

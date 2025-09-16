@@ -20,25 +20,39 @@ package androidx.compose.ui.autofill
  * Represents a single piece of data for autofill purposes.
  *
  * An instance of `FillableData` is expected to hold a value of a single specific type. Consumers
- * can use the corresponding property to retrieve the value. For any given instance, only the
- * property that matches the underlying data's type will return a non-null value. All other
- * properties will return `null`.
+ * can use the corresponding `get` method to retrieve the value. For any given instance, only the
+ * method that matches the underlying data's type will return a non-null value. All other `get`
+ * methods will return `null`.
  */
 interface FillableData {
-    /** The `CharSequence` (text) representation of the data, or `null` if none is available. */
-    val textValue: CharSequence?
-        get() = null
+    /**
+     * Retrieves the `CharSequence` (text) representation of the data.
+     *
+     * @return The `CharSequence` data, or `null` if none is available.
+     */
+    fun getCharSequence(): CharSequence? {
+        return null
+    }
 
-    /** The `Boolean` representation of the data, or `null` if none is available. */
-    val booleanValue: Boolean?
-        @Suppress("AutoBoxing") get() = null
+    /**
+     * Retrieves the `Boolean` representation of the data.
+     *
+     * @return The `Boolean` data, or `null` if none is available.
+     */
+    @Suppress("AutoBoxing")
+    fun getBool(): Boolean? {
+        return null
+    }
 
-    /** The `Int` (integer) representation of the data, or `null` if none is available. */
-    val listIndexValue: Int?
-        @Suppress("AutoBoxing") get() = null
-
-    /** Returns the list index value if it is available, otherwise returns the [defaultValue]. */
-    fun getListIndexOrDefault(defaultValue: Int): Int = listIndexValue ?: defaultValue
+    /**
+     * Retrieves the `Int` (integer) representation of the data.
+     *
+     * @return The `Int` data, or `null` if none is available.
+     */
+    @Suppress("AutoBoxing")
+    fun getInt(): Int? {
+        return null
+    }
 }
 
 /**
@@ -58,11 +72,11 @@ expect fun FillableData(booleanValue: Boolean): FillableData?
  *
  * This function is used to wrap a text value for autofill purposes.
  *
- * @param textValue The text data to be used for autofill.
+ * @param charSequenceValue The text data to be used for autofill.
  * @return A [FillableData] object containing the text data, or `null` if the platform does not
  *   support autofill.
  */
-expect fun FillableData(textValue: CharSequence): FillableData?
+expect fun FillableData(charSequenceValue: CharSequence): FillableData?
 
 /**
  * Creates a [FillableData] instance from an [Int].
@@ -70,9 +84,9 @@ expect fun FillableData(textValue: CharSequence): FillableData?
  * This function is used to wrap an integer value for autofill purposes, such as the selected index
  * in a dropdown menu or spinner.
  *
- * @param listIndexValue The integer data to be used for autofill, representing the index of the
- *   selected item in a list.
+ * @param intValue The integer data to be used for autofill, representing the index of the selected
+ *   item in a list.
  * @return A [FillableData] object containing the integer data, or `null` if the platform does not
  *   support autofill.
  */
-expect fun FillableData(listIndexValue: Int): FillableData?
+expect fun FillableData(intValue: Int): FillableData?

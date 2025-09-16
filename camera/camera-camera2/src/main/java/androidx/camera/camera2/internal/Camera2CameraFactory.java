@@ -54,7 +54,7 @@ import java.util.Set;
 /**
  * The factory class that creates {@link Camera2CameraImpl} instances.
  */
-public final class Camera2CameraFactory implements CameraFactory {
+public final class Camera2CameraFactory implements CameraFactory, CameraFactory.Interrogator {
     private static final String TAG = "Camera2CameraFactory";
     private static final int DEFAULT_ALLOWED_CONCURRENT_OPEN_CAMERAS = 1;
 
@@ -126,14 +126,20 @@ public final class Camera2CameraFactory implements CameraFactory {
     @Override
     public void onCameraIdsUpdated(@NonNull List<String> cameraIds) throws InitializationException {
         try {
-            List<String> rawIdList = new ArrayList<>(cameraIds);
-            List<String> optimizedIds = CameraSelectionOptimizer.getSelectedAvailableCameraIds(
-                    this, mAvailableCamerasSelector, rawIdList);
-            List<String> filteredIds = getBackwardCompatibleCameraIds(optimizedIds);
+            List<String> filteredIds = calculateAvailableCameraIds(cameraIds);
+
             synchronized (mLock) {
                 if (mAvailableCameraIds.equals(filteredIds)) {
                     return; // No change
                 }
+
+                List<String> idsToRemove = new ArrayList<>(mAvailableCameraIds);
+                idsToRemove.removeAll(filteredIds);
+                for (String id : idsToRemove) {
+                    Logger.d(TAG, "Removing camera info for unavailable camera: " + id);
+                    mCameraInfos.remove(id);
+                }
+
                 Logger.d(TAG, "Updated available camera list: " + mAvailableCameraIds + " -> "
                         + filteredIds);
                 mAvailableCameraIds = filteredIds;
@@ -143,6 +149,32 @@ public final class Camera2CameraFactory implements CameraFactory {
             Log.e(TAG, "Unable to get backward compatible camera ids", e);
             throw e;
         }
+    }
+
+    /**
+     * Previews the result of a camera ID update without changing state.
+     */
+    @NonNull
+    @Override
+    public List<String> getAvailableCameraIds(@NonNull List<String> cameraIds) {
+        try {
+            return calculateAvailableCameraIds(cameraIds);
+        } catch (InitializationException e) {
+            Logger.e(TAG, "Unable to calculate available camera ids.", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * A new private helper that contains the shared filtering logic.
+     */
+    @NonNull
+    private List<String> calculateAvailableCameraIds(@NonNull List<String> cameraIds)
+            throws InitializationException {
+        List<String> rawIdList = new ArrayList<>(cameraIds);
+        List<String> optimizedIds = CameraSelectionOptimizer.getSelectedAvailableCameraIds(
+                this, mAvailableCamerasSelector, rawIdList);
+        return getBackwardCompatibleCameraIds(optimizedIds);
     }
 
     @Override

@@ -111,6 +111,16 @@ class SandboxedSdkViewTest {
     }
 
     @Test
+    fun onDetachFromWindowClosesEstablishedSessionTest() {
+        addViewToLayout()
+        testSandboxedUiAdapter.assertSessionOpened()
+
+        removeAllViewsFromLayout()
+
+        testSandboxedUiAdapter.assertSessionClosed()
+    }
+
+    @Test
     fun preserveSessionOnWindowDetachmentSessionRemainsOpenOnWindowDetachment() {
         addViewToLayout()
         testSandboxedUiAdapter.assertSessionOpened()

@@ -27,15 +27,17 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertIs
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,6 +48,7 @@ import org.robolectric.junit.rules.TimeoutRule
 @RunWith(RobolectricTestRunner::class)
 @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@OptIn(FlowPreview::class)
 class AppFunctionTestRuleTest {
     private val context = InstrumentationRegistry.getInstrumentation().context
     private val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
@@ -58,12 +61,12 @@ class AppFunctionTestRuleTest {
         appFunctionTestRule.getAppFunctionManagerCompat()
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_observeApiNoFilter_returnsAllAppFunctions() =
         runBlocking<Unit> {
             val results =
                 appFunctionManagerCompat
                     .observeAppFunctions(AppFunctionSearchSpec())
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
@@ -71,7 +74,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_observeApi_returnsNewValueOnUpdate() =
         runBlocking<Unit> {
             val functionIdToTest = "androidx.appfunctions.testing.TestFunctions#disabledByDefault"
@@ -94,7 +96,9 @@ class AppFunctionTestRuleTest {
             )
 
             // Collect in a separate scope to avoid deadlock within the testcase.
-            runBlocking(Dispatchers.Default) { emittedValues.take(2).collect {} }
+            runBlocking(Dispatchers.Default) {
+                emittedValues.timeout(FLOW_COLLECTION_TIMEOUT).take(2).collect {}
+            }
             assertThat(emittedValues.replayCache).hasSize(2)
             // Assert first result to be default value.
             assertThat(
@@ -115,7 +119,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_filterBySchemaName_success() =
         runBlocking<Unit> {
             val results =
@@ -126,6 +129,7 @@ class AppFunctionTestRuleTest {
                             schemaName = "createNote",
                         )
                     )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
@@ -134,7 +138,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_filterByPackageName_success() =
         runBlocking<Unit> {
             val results =
@@ -142,6 +145,7 @@ class AppFunctionTestRuleTest {
                     .observeAppFunctions(
                         AppFunctionSearchSpec(packageNames = setOf(context.packageName))
                     )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
@@ -149,7 +153,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_filterBySchemaCategory_success() =
         runBlocking<Unit> {
             val results =
@@ -160,6 +163,7 @@ class AppFunctionTestRuleTest {
                             schemaCategory = "myNotes",
                         )
                     )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
@@ -168,7 +172,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_filterByMinSchemaVersion_success() =
         runBlocking<Unit> {
             val results =
@@ -179,6 +182,7 @@ class AppFunctionTestRuleTest {
                             minSchemaVersion = 2,
                         )
                     )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
@@ -187,7 +191,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_currentPackage_enabledByDefault_modified_success() =
         runBlocking<Unit> {
             val functionId = "androidx.appfunctions.testing.TestFunctions#enabledByDefault"
@@ -202,7 +205,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_currentPackage_disabledByDefault_modified_success() =
         runBlocking<Unit> {
             val functionId = "androidx.appfunctions.testing.TestFunctions#disabledByDefault"
@@ -217,7 +219,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun executeAppFunction_success() =
         runBlocking<Unit> {
             val response =
@@ -243,7 +244,6 @@ class AppFunctionTestRuleTest {
         }
 
     @Test(timeout = 5000)
-    @Ignore("b/436268542 - Re-enable after fixing timeout")
     fun returnedAppFunctionManagerCompat_currentPackage_disabledByDefault_modifiedAndRestoredToDefault_success() =
         runBlocking<Unit> {
             val functionId = "androidx.appfunctions.testing.TestFunctions#disabledByDefault"
@@ -261,4 +261,8 @@ class AppFunctionTestRuleTest {
             )
             assertThat(appFunctionManagerCompat.isAppFunctionEnabled(functionId)).isFalse()
         }
+
+    private companion object {
+        val FLOW_COLLECTION_TIMEOUT = 2.seconds
+    }
 }

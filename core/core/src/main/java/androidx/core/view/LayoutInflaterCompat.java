@@ -18,23 +18,16 @@ package androidx.core.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 
 import org.jspecify.annotations.NonNull;
-
-import java.lang.reflect.Field;
 
 /**
  * Helper for accessing features in {@link LayoutInflater}.
  */
 @SuppressWarnings("deprecation")
 public final class LayoutInflaterCompat {
-    private static final String TAG = "LayoutInflaterCompatHC";
-
-    private static Field sLayoutInflaterFactory2Field;
-    private static boolean sCheckedField;
 
     @SuppressWarnings("deprecation")
     static class Factory2Wrapper implements LayoutInflater.Factory2 {
@@ -58,35 +51,6 @@ public final class LayoutInflaterCompat {
         @Override
         public @NonNull String toString() {
             return getClass().getName() + "{" + mDelegateFactory + "}";
-        }
-    }
-
-    /**
-     * For APIs < 21, there was a framework bug that prevented a LayoutInflater's
-     * Factory2 from being merged properly if set after a cloneInContext from a LayoutInflater
-     * that already had a Factory2 registered. We work around that bug here. If we can't we
-     * log an error.
-     */
-    @SuppressWarnings("JavaReflectionMemberAccess")
-    private static void forceSetFactory2(LayoutInflater inflater, LayoutInflater.Factory2 factory) {
-        if (!sCheckedField) {
-            try {
-                sLayoutInflaterFactory2Field = LayoutInflater.class.getDeclaredField("mFactory2");
-                sLayoutInflaterFactory2Field.setAccessible(true);
-            } catch (NoSuchFieldException e) {
-                Log.e(TAG, "forceSetFactory2 Could not find field 'mFactory2' on class "
-                        + LayoutInflater.class.getName()
-                        + "; inflation may have unexpected results.", e);
-            }
-            sCheckedField = true;
-        }
-        if (sLayoutInflaterFactory2Field != null) {
-            try {
-                sLayoutInflaterFactory2Field.set(inflater, factory);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "forceSetFactory2 could not set the Factory2 on LayoutInflater "
-                        + inflater + "; inflation may have unexpected results.", e);
-            }
         }
     }
 

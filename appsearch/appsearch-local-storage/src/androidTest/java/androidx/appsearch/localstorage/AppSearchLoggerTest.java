@@ -50,6 +50,7 @@ import com.google.android.icing.proto.PutResultProto;
 import com.google.android.icing.proto.QueryStatsProto;
 import com.google.android.icing.proto.ScoringSpecProto;
 import com.google.android.icing.proto.SetSchemaResultProto;
+import com.google.android.icing.proto.SetSchemaStatsProto;
 import com.google.android.icing.proto.StatusProto;
 import com.google.android.icing.proto.TermMatchType;
 import com.google.common.collect.ImmutableList;
@@ -513,13 +514,44 @@ public class AppSearchLoggerTest {
         ImmutableList<String> deletedSchemaTypesList = ImmutableList.of("deleted1", "deleted2");
         ImmutableList<String> compatibleTypesList = ImmutableList.of("compatible1", "compatible2");
         ImmutableList<String> indexIncompatibleTypeChangeList = ImmutableList.of("index1");
+        ImmutableList<String> joinIndexIncompatibleChangeList = ImmutableList.of("index2, index3");
+        ImmutableList<String> scorablePropertyCacheIncompatibleChangeeList = ImmutableList.of(
+                "index2");
         ImmutableList<String> backwardsIncompatibleTypeChangeList = ImmutableList.of("backwards1");
+        int deletedDocsCount = 1;
+        boolean hasTermIndexRestored = true;
+        boolean hasIntegerIndexRestored = true;
+        boolean hasEmbeddingIndexRestored = true;
+        boolean hasQualifiedIdJoinIndexRestored = true;
+        int schemaStoreSetSchemaLatencyMillis = 2;
+        int documentStoreUpdateSchemaLatencyMillis = 3;
+        int documentStoreOptimizedUpdateSchemaLatencyMillis = 4;
+        int indexRestorationLatencyMillis = 5;
+        int scorablePropertyCacheRegenerationLatencyMillis = 6;
+
         SetSchemaResultProto setSchemaResultProto = SetSchemaResultProto.newBuilder()
                 .addAllNewSchemaTypes(newSchemaTypeChangeList)
                 .addAllDeletedSchemaTypes(deletedSchemaTypesList)
                 .addAllFullyCompatibleChangedSchemaTypes(compatibleTypesList)
                 .addAllIndexIncompatibleChangedSchemaTypes(indexIncompatibleTypeChangeList)
+                .addAllJoinIncompatibleChangedSchemaTypes(joinIndexIncompatibleChangeList)
+                .addAllScorablePropertyIncompatibleChangedSchemaTypes(
+                        scorablePropertyCacheIncompatibleChangeeList)
                 .addAllIncompatibleSchemaTypes(backwardsIncompatibleTypeChangeList)
+                .setDeletedDocumentCount(deletedDocsCount)
+                .setHasTermIndexRestored(hasTermIndexRestored)
+                .setHasIntegerIndexRestored(hasIntegerIndexRestored)
+                .setHasEmbeddingIndexRestored(hasEmbeddingIndexRestored)
+                .setHasQualifiedIdJoinIndexRestored(hasQualifiedIdJoinIndexRestored)
+                .setSetSchemaStats(SetSchemaStatsProto.newBuilder()
+                        .setSchemaStoreSetSchemaLatencyMs(schemaStoreSetSchemaLatencyMillis)
+                        .setDocumentStoreUpdateSchemaLatencyMs(
+                                documentStoreUpdateSchemaLatencyMillis)
+                        .setDocumentStoreOptimizedUpdateSchemaLatencyMs(
+                                documentStoreOptimizedUpdateSchemaLatencyMillis)
+                        .setIndexRestorationLatencyMs(indexRestorationLatencyMillis)
+                        .setScorablePropertyCacheRegenerationLatencyMs(
+                                scorablePropertyCacheRegenerationLatencyMillis))
                 .build();
         SetSchemaStats.Builder sBuilder = new SetSchemaStats.Builder(PACKAGE_NAME, DATABASE);
 
@@ -531,8 +563,28 @@ public class AppSearchLoggerTest {
         assertThat(sStats.getCompatibleTypeChangeCount()).isEqualTo(compatibleTypesList.size());
         assertThat(sStats.getIndexIncompatibleTypeChangeCount()).isEqualTo(
                 indexIncompatibleTypeChangeList.size());
+        assertThat(sStats.getJoinIndexIncompatibleTypeChangeCount()).isEqualTo(
+                joinIndexIncompatibleChangeList.size());
+        assertThat(sStats.getScorablePropertyIncompatibleTypeChangeCount()).isEqualTo(
+                scorablePropertyCacheIncompatibleChangeeList.size());
         assertThat(sStats.getBackwardsIncompatibleTypeChangeCount()).isEqualTo(
                 backwardsIncompatibleTypeChangeList.size());
+        assertThat(sStats.getDeletedDocumentCount()).isEqualTo(deletedDocsCount);
+        assertThat(sStats.isTermIndexRestored()).isEqualTo(hasTermIndexRestored);
+        assertThat(sStats.isIntegerIndexRestored()).isEqualTo(hasIntegerIndexRestored);
+        assertThat(sStats.isEmbeddingIndexRestored()).isEqualTo(hasEmbeddingIndexRestored);
+        assertThat(sStats.isQualifiedIdJoinIndexRestored()).isEqualTo(
+                hasQualifiedIdJoinIndexRestored);
+        assertThat(sStats.getNativeSchemaStoreSetSchemaLatencyMillis()).isEqualTo(
+                schemaStoreSetSchemaLatencyMillis);
+        assertThat(sStats.getNativeDocumentStoreUpdateSchemaLatencyMillis()).isEqualTo(
+                documentStoreUpdateSchemaLatencyMillis);
+        assertThat(sStats.getNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis()).isEqualTo(
+                documentStoreOptimizedUpdateSchemaLatencyMillis);
+        assertThat(sStats.getNativeIndexRestorationLatencyMillis()).isEqualTo(
+                indexRestorationLatencyMillis);
+        assertThat(sStats.getNativeScorablePropertyCacheRegenerationLatencyMillis()).isEqualTo(
+                scorablePropertyCacheRegenerationLatencyMillis);
     }
 
     //

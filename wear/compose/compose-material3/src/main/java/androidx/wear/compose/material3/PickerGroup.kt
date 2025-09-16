@@ -103,6 +103,7 @@ public fun PickerGroup(
                 }
             ),
         propagateMinConstraints = propagateMinConstraints,
+        autoCenter = autoCenter,
     ) {
         with(scope) {
             autoCenteringEnabled = autoCenter
@@ -207,13 +208,21 @@ public class PickerGroupScope {
 private fun AutoCenteringRow(
     modifier: Modifier = Modifier,
     propagateMinConstraints: Boolean,
+    autoCenter: Boolean,
     content: @Composable () -> Unit,
 ) {
-    var targetCenteringOffset by remember { mutableFloatStateOf(0f) }
+    // Use a sentinel value to detect the initial state, allowing us to differentiate
+    // between the very first composition and subsequent states where no item is selected.
+    var targetCenteringOffset by remember { mutableFloatStateOf(CenteringOffsetNotInitialized) }
+
+    // If the sentinel value is still set, we are in the initial state. The offset for
+    // the animation should be 0f until the first layout pass calculates the actual default offset.
+    val offsetForAnimation =
+        if (targetCenteringOffset == CenteringOffsetNotInitialized) 0f else targetCenteringOffset
 
     val animatedCenteringOffset by
         animateFloatAsState(
-            targetValue = targetCenteringOffset,
+            targetValue = offsetForAnimation,
             animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
         )
 
@@ -228,7 +237,22 @@ private fun AutoCenteringRow(
             }
 
         val placeables = measurables.fastMap { it.measure(constraints) }
-        targetCenteringOffset = computeCenteringOffset(placeables).toFloat()
+        // Try to find an explicitly selected picker to center.
+        val newTargetOffset = findTargetCenteringOffset(placeables)
+
+        if (newTargetOffset != null) {
+            // A specific picker is selected, so we update the target offset.
+            targetCenteringOffset = newTargetOffset.toFloat()
+        } else {
+            // No specific picker is selected.
+            // If this is the first composition (sentinel value is present),
+            // calculate and set the default offset (which centers the first item).
+            // Otherwise, we do nothing, preserving the last known centered position.
+            if (targetCenteringOffset == CenteringOffsetNotInitialized) {
+                targetCenteringOffset =
+                    computeDefaultCenteringOffset(placeables, autoCenter).toFloat()
+            }
+        }
 
         val rowWidth =
             if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
@@ -245,22 +269,35 @@ private fun AutoCenteringRow(
 }
 
 /**
- * Calculates the center for the list of [Placeable]. Returns the offset which can be applied on
- * parent composable to center the contents. If [autoCenteringTarget] is applied to any [Placeable],
- * the offset returned will allow to center that particular composable.
+ * Calculates the offset required to center a specific target Placeable, if one is found. A target
+ * is identified by the `Modifier.autoCenteringTarget()`.
+ *
+ * @return The offset in pixels to center the target, or null if no target is found.
  */
-private fun computeCenteringOffset(placeables: List<Placeable>): Int {
-    var sumWidth = 0
+private fun findTargetCenteringOffset(placeables: List<Placeable>): Int? {
+    var currentWidth = 0
     placeables.fastForEach { p ->
         if (p.isAutoCenteringTarget()) {
             // The target centering offset is at the middle of this child.
-            return sumWidth + p.width / 2
+            return currentWidth + p.width / 2
         }
-        sumWidth += p.width
+        currentWidth += p.width
     }
+    return null // No specific target found.
+}
 
-    // No target, center the whole row.
-    return sumWidth / 2
+/**
+ * Calculates the default centering offset for the group when no specific item is targeted. If
+ * auto-centering is enabled, it centers the first item. Otherwise, it centers the entire group.
+ */
+private fun computeDefaultCenteringOffset(placeables: List<Placeable>, autoCenter: Boolean): Int {
+    return if (autoCenter && placeables.isNotEmpty()) {
+        // Default to centering the first item.
+        placeables.first().width / 2
+    } else {
+        // Fallback to centering the whole group.
+        placeables.sumOf { it.width } / 2
+    }
 }
 
 /**
@@ -283,3 +320,5 @@ internal fun Modifier.autoCenteringTarget() =
 internal class AutoCenteringRowParentData
 
 internal fun Placeable.isAutoCenteringTarget() = (parentData as? AutoCenteringRowParentData) != null
+
+private const val CenteringOffsetNotInitialized = Float.MIN_VALUE

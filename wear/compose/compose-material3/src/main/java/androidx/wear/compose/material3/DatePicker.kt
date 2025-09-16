@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,8 +57,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.wear.compose.material3.ButtonDefaults.buttonColors
@@ -341,14 +338,19 @@ public fun DatePicker(
                             minimumInteractiveComponentSize,
                         )
                     }
-                val monthYearWidth =
+                val monthWidth =
                     with(LocalDensity.current) {
                         maxOf(
                             // Add 1dp buffer to compensate for potential conversion loss
-                            maxOf(
-                                measuredMetrics.maxMonthWidthPx.toDp(),
-                                (measuredMetrics.digitWidthPx * 4).toDp(),
-                            ) + 1.dp,
+                            measuredMetrics.maxMonthWidthPx.toDp() + 1.dp,
+                            minimumInteractiveComponentSize,
+                        )
+                    }
+                val yearWidth =
+                    with(LocalDensity.current) {
+                        maxOf(
+                            // Add 1dp buffer to compensate for potential conversion loss
+                            (measuredMetrics.digitWidthPx * 4).toDp() + 1.dp,
                             minimumInteractiveComponentSize,
                         )
                     }
@@ -364,21 +366,7 @@ public fun DatePicker(
                         .toInt()
 
                 Row(
-                    modifier =
-                        Modifier.fillMaxWidth().weight(1f).offset {
-                            IntOffset(
-                                getPickerGroupRowOffset(
-                                        boxConstraints.maxWidth,
-                                        dayWidth,
-                                        monthYearWidth,
-                                        monthYearWidth,
-                                        touchExplorationServicesEnabled,
-                                        selectedIndex,
-                                    )
-                                    .roundToPx(),
-                                0,
-                            )
-                        },
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
@@ -430,7 +418,7 @@ public fun DatePicker(
                                 DatePickerOption.Month ->
                                     PickerGroupItem(
                                         pickerState = datePickerState.monthState,
-                                        modifier = Modifier.width(monthYearWidth).fillMaxHeight(),
+                                        modifier = Modifier.width(monthWidth).fillMaxHeight(),
                                         onSelected = { onPickerSelected(index, index + 1) },
                                         selected = index == selectedIndex,
                                         contentDescription = monthContentDescription,
@@ -460,7 +448,7 @@ public fun DatePicker(
                                 DatePickerOption.Year ->
                                     PickerGroupItem(
                                         pickerState = datePickerState.yearState,
-                                        modifier = Modifier.width(monthYearWidth).fillMaxHeight(),
+                                        modifier = Modifier.width(yearWidth).fillMaxHeight(),
                                         onSelected = { onPickerSelected(index, index + 1) },
                                         selected = index == selectedIndex,
                                         contentDescription = yearContentDescription,
@@ -786,25 +774,6 @@ private fun getMonthNames(pattern: String): List<String> {
     val monthFormatter = DateTimeFormatter.ofPattern(pattern)
     val months = 1..12
     return months.map { LocalDate.of(2022, it, 1).format(monthFormatter) }
-}
-
-private fun getPickerGroupRowOffset(
-    rowWidth: Dp,
-    dayPickerWidth: Dp,
-    monthPickerWidth: Dp,
-    yearPickerWidth: Dp,
-    touchExplorationServicesEnabled: Boolean,
-    selectedIndex: Int?,
-): Dp {
-    val currentOffset = (rowWidth - (dayPickerWidth + monthPickerWidth + yearPickerWidth)) / 2
-
-    return if (touchExplorationServicesEnabled && selectedIndex == null) {
-        ((rowWidth - dayPickerWidth) / 2) - currentOffset
-    } else if (touchExplorationServicesEnabled && selectedIndex!! > 2) {
-        ((rowWidth - yearPickerWidth) / 2) - (dayPickerWidth + monthPickerWidth + currentOffset)
-    } else {
-        0.dp
-    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

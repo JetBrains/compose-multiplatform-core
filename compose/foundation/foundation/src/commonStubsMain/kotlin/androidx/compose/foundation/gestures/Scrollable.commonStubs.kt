@@ -19,7 +19,7 @@ package androidx.compose.foundation.gestures
 import androidx.compose.foundation.implementedInJetBrainsFork
 import androidx.compose.runtime.Composable
 
-internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
+internal actual fun platformScrollableDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
     implementedInJetBrainsFork()
 
 @Composable

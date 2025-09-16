@@ -59,6 +59,7 @@ dependencies {
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
 
+    androidTestImplementation(project(":lifecycle:lifecycle-common"))
 }
 
 androidx {

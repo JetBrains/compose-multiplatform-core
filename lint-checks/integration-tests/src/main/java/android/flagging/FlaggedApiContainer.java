@@ -55,6 +55,7 @@ public class FlaggedApiContainer {
     /**
      * API that uses generic types.
      */
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public static <T, R> T apiWithGenericType(R param) {
         return null;
     }

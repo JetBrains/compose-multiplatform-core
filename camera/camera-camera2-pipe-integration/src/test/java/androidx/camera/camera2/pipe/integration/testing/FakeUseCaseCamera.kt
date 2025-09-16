@@ -97,6 +97,8 @@ open class FakeUseCaseCameraRequestControl(
 ) : UseCaseCameraRequestControl {
     val addParameterCalls = mutableListOf<Map<CaptureRequest.Key<*>, Any>>()
     var addParameterResult = CompletableDeferred(Unit)
+    val removeParameterCalls = mutableListOf<CaptureRequest.Key<*>>()
+    var removeParameterResult = CompletableDeferred(Unit)
     var setConfigCalls = mutableListOf<RequestParameters>()
     var setConfigResult = CompletableDeferred(Unit)
     var setTorchResult = CompletableDeferred(Result3A(status = Result3A.Status.OK))
@@ -111,6 +113,14 @@ open class FakeUseCaseCameraRequestControl(
     ): Deferred<Unit> {
         addParameterCalls.add(values)
         return addParameterResult
+    }
+
+    override fun removeParametersAsync(
+        type: UseCaseCameraRequestControl.Type,
+        keys: List<CaptureRequest.Key<*>>,
+    ): Deferred<Unit> {
+        removeParameterCalls.addAll(keys)
+        return removeParameterResult
     }
 
     override fun setConfigAsync(

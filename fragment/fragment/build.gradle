@@ -41,10 +41,7 @@ dependencies {
     api(libs.kotlinStdlib)
     implementation("androidx.arch.core:core-common:2.2.0")
 
-    androidTestImplementation("androidx.appcompat:appcompat:1.1.0", {
-        exclude group: "androidx.fragment", module: "fragment"
-        exclude group: "androidx.activity", module: "activity"
-    })
+    androidTestImplementation("androidx.appcompat:appcompat:1.1.0")
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.leakcanaryInstrumentation)
     androidTestImplementation(libs.hamcrestCore)
@@ -58,9 +55,7 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation(project(":internal-testutils-runtime"), {
-        exclude group: "androidx.fragment", module: "fragment"
-    })
+    androidTestImplementation(project(":internal-testutils-runtime"))
 
     testImplementation(project(":fragment:fragment"))
     testImplementation(libs.kotlinStdlib)

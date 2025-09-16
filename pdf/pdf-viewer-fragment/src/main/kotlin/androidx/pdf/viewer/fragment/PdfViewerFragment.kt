@@ -44,7 +44,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.os.OperationCanceledException
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE
-import androidx.core.view.updatePadding
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -398,12 +398,15 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
         val dimenResId =
             if (windowWidthDp >= 840) {
-                androidx.pdf.R.dimen.pdf_horizontal_padding_w840dp
+                androidx.pdf.R.dimen.pdf_horizontal_margin_w840dp
             } else {
-                androidx.pdf.R.dimen.pdf_horizontal_padding
+                androidx.pdf.R.dimen.pdf_horizontal_margin
             }
-        val paddingPx = resources.getDimensionPixelSize(dimenResId)
-        _pdfContainer.updatePadding(left = paddingPx, right = paddingPx)
+        val marginPx = resources.getDimensionPixelSize(dimenResId)
+        _pdfContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+            leftMargin = marginPx
+            rightMargin = marginPx
+        }
 
         val gestureDetector =
             GestureDetector(

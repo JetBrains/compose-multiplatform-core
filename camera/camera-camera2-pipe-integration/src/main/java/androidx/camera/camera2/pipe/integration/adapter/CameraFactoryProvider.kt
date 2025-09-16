@@ -73,6 +73,7 @@ public class CameraFactoryProvider(
             sharedInteropCallbacks,
             availableCamerasLimiter,
             streamSpecsCalculator,
+            cameraXConfig ?: CameraXConfig.Builder().build(),
         )
     }
 

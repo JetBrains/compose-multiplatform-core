@@ -47,6 +47,8 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.compose.unit.toMeter
+import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.SurfaceEntity
@@ -128,23 +130,25 @@ private class SpatialExternalSphereSurfaceScopeInstance(
 public value class StereoMode private constructor(public val value: Int) {
     public companion object {
         /** Each eye will see the entire surface (no separation). */
-        public val Mono: StereoMode = StereoMode(SurfaceEntity.StereoMode.MONO)
+        public val Mono: StereoMode = StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_MONO)
         /** The [top, bottom] halves of the surface will map to [left, right] eyes. */
-        public val TopBottom: StereoMode = StereoMode(SurfaceEntity.StereoMode.TOP_BOTTOM)
+        public val TopBottom: StereoMode =
+            StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM)
         /** The [left, right] halves of the surface will map to [left, right] eyes. */
-        public val SideBySide: StereoMode = StereoMode(SurfaceEntity.StereoMode.SIDE_BY_SIDE)
+        public val SideBySide: StereoMode =
+            StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE)
         /**
          * For displaying mv-hevc video format, [base, secondary] view layers will map to
          * [left, right] eyes.
          */
         public val MultiviewLeftPrimary: StereoMode =
-            StereoMode(SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY)
+            StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY)
         /**
          * For displaying mv-hevc video format, [base, secondary] view layers will map to
          * [right, left] eyes.
          */
         public val MultiviewRightPrimary: StereoMode =
-            StereoMode(SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY)
+            StereoMode(SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY)
     }
 }
 
@@ -155,14 +159,14 @@ public value class SurfaceProtection private constructor(public val value: Int) 
     public companion object {
         /** No security is applied. */
         public val None: SurfaceProtection =
-            SurfaceProtection(SurfaceEntity.ContentSecurityLevel.NONE)
+            SurfaceProtection(SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE)
         /**
          * Sets the underlying Surface to set the
          * [android.hardware.HardwareBuffer.USAGE_PROTECTED_CONTENT] flag. This is mainly used to
          * protect DRM video content.
          */
         public val Protected: SurfaceProtection =
-            SurfaceProtection(SurfaceEntity.ContentSecurityLevel.PROTECTED)
+            SurfaceProtection(SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED)
     }
 }
 
@@ -175,7 +179,7 @@ public value class SurfaceProtection private constructor(public val value: Int) 
  *
  * Note that this Surface does not capture input events. It is also not currently possible to
  * synchronize StereoMode changes with application rendering or video decoding. This composable
- * currently cannot render in front of other panels, so movable modifier usage is not recommended if
+ * currently cannot render in front of other panels, so [dragPolicy] usage is not recommended if
  * there are other panels in the layout, aside from the content block of this Composable.
  *
  * Playing certain content will require the proper [SurfaceProtection]. This is mainly used to
@@ -187,6 +191,13 @@ public value class SurfaceProtection private constructor(public val value: Int) 
  * @param featheringEffect A [SpatialFeatheringEffect] to apply to to canvas of the surface exposed
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated].
  * @param surfaceProtection Sets the Surface's protection from CPU access.
+ * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
+ *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
+ *   anchoring to real-world surfaces. If a policy is provided, draggable UI controls will be shown,
+ *   allowing the user to manipulate the panel in 3D space. If null, no motion behavior is applied.
+ * @param resizePolicy An optional [ResizePolicy] configuration object that resizing behavior of
+ *   this [SpatialPanel]. The draggable UI controls will be shown that allow the user to resize the
+ *   element in 3D space. If null, there is no resize behavior applied to the element.
  * @param content Content block where the surface can be accessed using
  *   [SpatialExternalSurfaceScope.onSurfaceCreated]. Composable content will be rendered over the
  *   Surface canvas. If using [StereoMode.SideBySide] or [StereoMode.TopBottom], it is recommended
@@ -201,18 +212,25 @@ public fun SpatialExternalSurface(
     modifier: SubspaceModifier = SubspaceModifier,
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
+    dragPolicy: DragPolicy? = null,
+    resizePolicy: ResizePolicy? = null,
     content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
 ) {
+    val finalModifier = buildSpatialPanelModifier(modifier, dragPolicy, resizePolicy)
     val session = LocalSession.current
+    val density = LocalDensity.current
 
     // When surface protection changes, the surface entity has to be recreated because protection is
     // a non mutable setting.
     val coreSurfaceEntity =
-        rememberCoreSurfaceEntity(key = surfaceProtection) {
-            SurfaceEntity.create(
-                session = checkNotNull(session) { "Session is required" },
-                stereoMode = stereoMode.value,
-                contentSecurityLevel = surfaceProtection.value,
+        remember(surfaceProtection) {
+            CoreSurfaceEntity(
+                SurfaceEntity.create(
+                    session = checkNotNull(session) { "Session is required" },
+                    stereoMode = stereoMode.value,
+                    surfaceProtection = surfaceProtection.value,
+                ),
+                localDensity = density,
             )
         }
     val instance =
@@ -226,7 +244,7 @@ public fun SpatialExternalSurface(
 
     key(coreSurfaceEntity) {
         SubspaceLayout(
-            modifier = modifier,
+            modifier = finalModifier,
             coreEntity = coreSurfaceEntity,
             content = { instance.content() },
             measurePolicy = SpatialBoxMeasurePolicy(SpatialAlignment.Center, false),
@@ -353,20 +371,38 @@ private fun SpatialExternalSurfaceSphere(
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
     content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
 ) {
-    val session = LocalSession.current
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val density = LocalDensity.current
+
     val meterRadius = radius.toMeter().value
+
     val coreSurfaceEntity =
-        rememberCoreSphereSurfaceEntity(surfaceProtection) {
-            SurfaceEntity.create(
-                session = checkNotNull(session) { "Session is required" },
-                stereoMode = stereoMode.value,
-                contentSecurityLevel = surfaceProtection.value,
-                canvasShape =
-                    if (isHemisphere) {
-                        SurfaceEntity.CanvasShape.Vr180Hemisphere(meterRadius)
-                    } else {
-                        SurfaceEntity.CanvasShape.Vr360Sphere(meterRadius)
-                    },
+        remember(surfaceProtection) {
+            val headPose =
+                if (
+                    session.config.headTracking == HeadTrackingMode.LAST_KNOWN ||
+                        session.configure(
+                            config = session.config.copy(headTracking = HeadTrackingMode.LAST_KNOWN)
+                        ) is SessionConfigureSuccess
+                ) {
+                    session.scene.spatialUser.head?.activitySpacePose
+                } else {
+                    null
+                }
+            CoreSphereSurfaceEntity(
+                SurfaceEntity.create(
+                    session = checkNotNull(session) { "Session is required" },
+                    stereoMode = stereoMode.value,
+                    surfaceProtection = surfaceProtection.value,
+                    shape =
+                        if (isHemisphere) {
+                            SurfaceEntity.Shape.Hemisphere(meterRadius)
+                        } else {
+                            SurfaceEntity.Shape.Sphere(meterRadius)
+                        },
+                ),
+                headPose,
+                density,
             )
         }
 

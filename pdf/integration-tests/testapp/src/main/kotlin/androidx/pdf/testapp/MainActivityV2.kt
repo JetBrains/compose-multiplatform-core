@@ -16,12 +16,16 @@
 
 package androidx.pdf.testapp
 
+import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
 import android.view.View
 import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
@@ -32,13 +36,17 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.FragmentTransaction
+import androidx.pdf.ink.EditablePdfViewerFragment
 import androidx.pdf.testapp.ui.FeaturePreferencesDialog
 import androidx.pdf.testapp.ui.v2.PdfViewerFragmentExtended
 import androidx.pdf.testapp.ui.v2.StyledPdfViewerFragment
 import androidx.pdf.viewer.fragment.PdfViewerFragment
 import com.google.android.material.button.MaterialButton
+import java.io.IOException
 
 // TODO(b/386721657): Remove this activity once the switch to V2 completes
+
+@SuppressLint("RestrictedApiAndroidX")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class MainActivityV2 : AppCompatActivity() {
 
@@ -49,12 +57,27 @@ internal class MainActivityV2 : AppCompatActivity() {
     private lateinit var preferenceButton: ImageButton
 
     private val settingsDialog: FeaturePreferencesDialog by lazy { FeaturePreferencesDialog(this) }
+    private lateinit var savePdfButton: MaterialButton
 
     @VisibleForTesting
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private var filePicker: ActivityResultLauncher<String> =
         registerForActivityResult(GetContent()) { uri: Uri? ->
             uri?.let { pdfViewerFragment.documentUri = uri }
+        }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    private val createDocumentLauncher: ActivityResultLauncher<String> =
+        registerForActivityResult(ActivityResultContracts.CreateDocument(MIME_TYPE_PDF)) { uri: Uri?
+            ->
+            uri?.let {
+                val contentResolver = applicationContext.contentResolver
+                val pfd: ParcelFileDescriptor? =
+                    getParcelFileDescriptorFromUri(contentResolver, uri)
+                pfd?.let {
+                    (pdfViewerFragment as EditablePdfViewerFragment).writeTo(it) { it.close() }
+                }
+            }
         }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
@@ -86,12 +109,15 @@ internal class MainActivityV2 : AppCompatActivity() {
         openPdfButton = findViewById(R.id.launch_button)
         searchButton = findViewById(R.id.search_pdf_button)
         preferenceButton = findViewById(R.id.preference_button)
+        savePdfButton = findViewById(R.id.save_pdf_button)
+        savePdfButton.visibility = View.GONE
 
         openPdfButton.setOnClickListener { filePicker.launch(MIME_TYPE_PDF) }
 
         searchButton.setOnClickListener { pdfViewerFragment.isTextSearchActive = true }
 
         preferenceButton.setOnClickListener { view -> settingsDialog.show() }
+        savePdfButton.setOnClickListener { createDocumentLauncher.launch(MIME_TYPE_PDF) }
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
@@ -115,6 +141,10 @@ internal class MainActivityV2 : AppCompatActivity() {
         return when (fragmentType) {
             FragmentType.BASIC_FRAGMENT -> PdfViewerFragmentExtended()
             FragmentType.STYLED_FRAGMENT -> StyledPdfViewerFragment.newInstance()
+            FragmentType.EDITABLE_FRAGMENT -> {
+                savePdfButton.visibility = View.VISIBLE
+                EditablePdfViewerFragment()
+            }
         }
     }
 
@@ -143,6 +173,17 @@ internal class MainActivityV2 : AppCompatActivity() {
         }
     }
 
+    private fun getParcelFileDescriptorFromUri(
+        contentResolver: ContentResolver,
+        uri: Uri,
+    ): ParcelFileDescriptor? {
+        return try {
+            contentResolver.openFileDescriptor(uri, "rw")
+        } catch (e: IOException) {
+            null
+        }
+    }
+
     companion object {
         private const val MIME_TYPE_PDF = "application/pdf"
         private const val PDF_VIEWER_FRAGMENT_TAG = "pdf_viewer_fragment_tag"
@@ -151,6 +192,7 @@ internal class MainActivityV2 : AppCompatActivity() {
         internal enum class FragmentType {
             BASIC_FRAGMENT,
             STYLED_FRAGMENT,
+            EDITABLE_FRAGMENT,
         }
     }
 }

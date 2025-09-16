@@ -61,7 +61,7 @@ private class PointSourceNode(internal var onPointSourceParams: (PointSourcePara
 
     override fun CoreEntityScope.modifyCoreEntity() {
         if (!hasInvoked) {
-            onPointSourceParams(PointSourceParams(coreEntity.entity))
+            onPointSourceParams(coreEntity.pointSourceParams)
             hasInvoked = true
         }
     }

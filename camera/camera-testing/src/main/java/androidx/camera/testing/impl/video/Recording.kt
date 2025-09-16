@@ -52,12 +52,11 @@ import kotlinx.coroutines.CompletableDeferred
 public class Recording
 internal constructor(
     private val context: Context,
-    private val recorder: Recorder,
+    recorder: Recorder,
     private val outputOptions: OutputOptions,
     private val withAudio: Boolean,
     private val initialAudioMuted: Boolean,
     private val asPersistentRecording: Boolean,
-    private val recordingStopStrategy: (androidx.camera.video.Recording, Recorder) -> Unit,
     private val callbackExecutor: Executor,
     private val defaultVerifyStatusCount: Int,
     private val defaultVerifyTimeoutMs: Long,
@@ -121,10 +120,9 @@ internal constructor(
                             /*inOrder=*/ false,
                             defaultVerifyStatusTimeoutMs,
                             CallTimesAtLeast(1),
-                            ArgumentMatcher<VideoRecordEvent> {
-                                it.recordingStats.audioStats.audioBytesRecorded > 0L
-                            },
-                        )
+                        ) {
+                            it.recordingStats.audioStats.audioBytesRecorded > 0L
+                        }
                     }
                 }
             } else emptyList()
@@ -135,7 +133,7 @@ internal constructor(
 
     public fun stop() {
         if (this::recording.isInitialized) {
-            recordingStopStrategy.invoke(recording, recorder)
+            recording.stop()
         } else {
             stoppedDeferred.complete(Unit)
         }
@@ -154,6 +152,7 @@ internal constructor(
     public fun verifyFinalize(
         timeoutMs: Long = defaultVerifyTimeoutMs,
         error: Int? = ERROR_NONE,
+        shouldSkipOutputFileVerification: Boolean = false,
     ): RecordingResult {
         try {
             val finalize =
@@ -163,7 +162,9 @@ internal constructor(
                     .that(finalize.error)
                     .isEqualTo(error)
             }
-            if (finalize.outputResults.outputUri != Uri.EMPTY) {
+            if (
+                !shouldSkipOutputFileVerification && finalize.outputResults.outputUri != Uri.EMPTY
+            ) {
                 when (outputOptions) {
                     is FileOutputOptions,
                     is MediaStoreOutputOptions ->

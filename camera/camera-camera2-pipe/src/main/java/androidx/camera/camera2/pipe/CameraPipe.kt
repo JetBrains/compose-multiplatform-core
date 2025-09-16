@@ -38,7 +38,6 @@ import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import java.util.concurrent.Executor
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.locks.synchronized
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
 internal val cameraPipeIds = atomic(0)
@@ -170,8 +169,6 @@ public interface CameraPipe {
      *   split into a separate field since many camera operations are extremely latency sensitive.
      * - [defaultCameraHandler] is used on older API versions to interact with CameraAPIs. This is
      *   split into a separate field since many camera operations are extremely latency sensitive.
-     * - [testOnlyDispatcher] is used for testing to overwrite all internal dispatchers to the
-     *   testOnly version. If specified, default executors and handlers are ignored.
      * - [testOnlyScope] is used for testing to overwrite the internal global scope with the test
      *   method scope.
      */
@@ -181,7 +178,7 @@ public interface CameraPipe {
         val defaultBlockingExecutor: Executor? = null,
         val defaultCameraExecutor: Executor? = null,
         val defaultCameraHandler: Handler? = null,
-        val testOnlyDispatcher: CoroutineDispatcher? = null,
+        val defaultCameraHandlerFn: (() -> Handler)? = null,
         val testOnlyScope: CoroutineScope? = null,
     )
 

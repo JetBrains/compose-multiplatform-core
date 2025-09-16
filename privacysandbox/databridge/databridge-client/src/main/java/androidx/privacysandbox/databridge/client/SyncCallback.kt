@@ -29,17 +29,15 @@ import androidx.privacysandbox.databridge.core.Key
  */
 public interface SyncCallback {
     /**
-     * Callback invoked whenever a [Key] fails to sync after being added for synchronization using
-     * the [DataSynchronizationManager.addKeys]
+     * Callback invoked whenever some key value pair fails to sync after being added for
+     * synchronization using the [DataSynchronizationManager.addKeys]
      *
-     * @param key: [Key] for which sync failed
-     * @param value: value which failed to be synced
+     * @param keyValueMap: A map of the key and associated values which failed to be synced
      * @param errorCode: [ErrorCode] specifying the error code
      * @param errorMessage: Error message for the failure
      */
     public fun onSyncFailure(
-        key: Key,
-        value: Any?,
+        keyValueMap: Map<Key, Any?>,
         @ErrorCode errorCode: Int,
         errorMessage: String,
     ) {}
@@ -57,11 +55,18 @@ public interface SyncCallback {
          */
         public const val ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES: Int = 2
 
+        /**
+         * Indicates an error occurred when synchronizing the initial values passed to
+         * [DataSynchronizationManager.addKeys]
+         */
+        public const val ERROR_ADDING_KEYS: Int = 3
+
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(
             ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES,
             ERROR_SYNCING_UPDATES_FROM_DATABRIDGE,
+            ERROR_ADDING_KEYS,
         )
         public annotation class ErrorCode
     }

@@ -454,7 +454,7 @@ public class AppSearchSchemaCtsTest {
         assertThat(
                 ((AppSearchSchema.DocumentPropertyConfig) properties.get(6))
                         .shouldIndexNestedProperties())
-                .isEqualTo(true);
+                .isTrue();
 
         assertThat(properties.get(7).getName()).isEqualTo("document2");
         assertThat(properties.get(7).getCardinality())
@@ -464,7 +464,7 @@ public class AppSearchSchemaCtsTest {
         assertThat(
                 ((AppSearchSchema.DocumentPropertyConfig) properties.get(7))
                         .shouldIndexNestedProperties())
-                .isEqualTo(false);
+                .isFalse();
         assertThat(
                 ((AppSearchSchema.DocumentPropertyConfig) properties.get(7))
                         .getIndexableNestedProperties())
@@ -626,6 +626,7 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
+    @SuppressWarnings({"StringConcatToTextBlock", "StringSplitter"}) // Not supported in Jetpack.
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_DESCRIPTION)  // setDescription
     public void testAppSearchSchema_toString() {
         AppSearchSchema schema =
@@ -844,6 +845,7 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
+    @SuppressWarnings({"StringConcatToTextBlock", "StringSplitter"}) // Not supported in Jetpack.
     public void testAppSearchSchema_toStringNoDescriptionSet() {
         AppSearchSchema schema =
                 new AppSearchSchema.Builder("testSchema")
@@ -1011,7 +1013,7 @@ public class AppSearchSchemaCtsTest {
         assertThat(
                 ((AppSearchSchema.DocumentPropertyConfig) properties.get(2))
                         .shouldIndexNestedProperties())
-                .isEqualTo(true);
+                .isTrue();
 
         assertThat(properties.get(3).getName()).isEqualTo("embedding");
         assertThat(properties.get(3).getCardinality())

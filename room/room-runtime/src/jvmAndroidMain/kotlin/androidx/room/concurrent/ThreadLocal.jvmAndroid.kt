@@ -17,7 +17,7 @@
 package androidx.room.concurrent
 
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.asContextElement as asCoroutineContextElement
 
 /** Container of thread-local data. */
 @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
@@ -28,7 +28,7 @@ public actual typealias ThreadLocal<T> = java.lang.ThreadLocal<T>
  * threads resumed by the coroutine context.
  */
 internal actual fun <T> ThreadLocal<T>.asContextElement(value: T): CoroutineContext.Element =
-    this.asContextElement(value)
+    this.asCoroutineContextElement(value)
 
 /** Gets the current thread id. */
 @Suppress("deprecation") // b/323594292

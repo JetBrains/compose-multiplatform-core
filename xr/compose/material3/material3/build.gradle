@@ -35,10 +35,10 @@ plugins {
 dependencies {
     api(libs.kotlinStdlib)
     // Add dependencies here
-    implementation("androidx.compose.ui:ui-unit:1.8.0-rc02")
-    implementation("androidx.compose.material3:material3:1.4.0-alpha18")
-    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha07")
-    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.2.0-alpha07")
+    implementation("androidx.compose.ui:ui-unit:1.8.0")
+    implementation("androidx.compose.material3:material3:1.4.0-beta01")
+    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha10")
+    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.2.0-alpha10")
     implementation(project(":compose:material3:material3-adaptive-navigation-suite"))
 
     implementation(project(":xr:compose:compose"))

@@ -52,6 +52,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.platform.DefaultDialogManager
 import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.SpatialCapabilities
@@ -82,24 +83,30 @@ class SpatialDialogTest {
 
         composeTestRule.setContent {
             TestSetup {
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        if (showDialog.value) {
-                            SpatialDialog(
-                                onDismissRequest = { showDialog.value = false },
-                                properties = SpatialDialogProperties(dismissOnBackPress = true),
-                            ) {
-                                Text("Spatial Dialog")
-                                val dispatcher =
-                                    LocalOnBackPressedDispatcherOwner.current!!
-                                        .onBackPressedDispatcher
-                                Button(onClick = { dispatcher.onBackPressed() }) {
-                                    Text(text = "Press Back")
+                CompositionLocalProvider(
+                    LocalDialogManager provides DefaultDialogManager(),
+                    content = {
+                        Subspace {
+                            SpatialPanel(SubspaceModifier.testTag("panel")) {
+                                if (showDialog.value) {
+                                    SpatialDialog(
+                                        onDismissRequest = { showDialog.value = false },
+                                        properties =
+                                            SpatialDialogProperties(dismissOnBackPress = true),
+                                    ) {
+                                        Text("Spatial Dialog")
+                                        val dispatcher =
+                                            LocalOnBackPressedDispatcherOwner.current!!
+                                                .onBackPressedDispatcher
+                                        Button(onClick = { dispatcher.onBackPressed() }) {
+                                            Text(text = "Press Back")
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
+                    },
+                )
             }
         }
 
@@ -508,26 +515,25 @@ class SpatialDialogTest {
 
         composeTestRule.setContent {
             TestSetup {
-                val dialogManager = LocalDialogManager.current
-                Subspace {
-                    SpatialPanel(SubspaceModifier.testTag("panel")) {
-                        var showDialog by remember { mutableStateOf(true) }
-
-                        if (showDialog) {
-                            SpatialDialog(onDismissRequest = { showDialog = false }) {
-                                Text("Dialog Content")
-                                Button(
-                                    onClick = {
-                                        dialogManagerState =
-                                            dialogManager.isSpatialDialogActive.value
+                CompositionLocalProvider(
+                    LocalDialogManager provides DefaultDialogManager(),
+                    content = {
+                        Subspace {
+                            SpatialPanel(SubspaceModifier.testTag("panel")) {
+                                var showDialog by remember { mutableStateOf(true) }
+                                val data = LocalDialogManager.current.isSpatialDialogActive.value
+                                if (showDialog) {
+                                    SpatialDialog(onDismissRequest = { showDialog = false }) {
+                                        Text("Dialog Content")
+                                        Button(onClick = { dialogManagerState = data }) {
+                                            Text("Check State")
+                                        }
                                     }
-                                ) {
-                                    Text("Check State")
                                 }
                             }
                         }
-                    }
-                }
+                    },
+                )
             }
         }
 

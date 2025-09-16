@@ -51,8 +51,9 @@ public object ProjectedContext {
             Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
     /**
-     * Explicitly create the Projected device context from any context object. It returns null if
-     * the projected device was not found.
+     * Explicitly create the Projected device context from any context object.
+     *
+     * @throws IllegalStateException if the projected device was not found.
      */
     @JvmStatic
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -111,20 +112,25 @@ public object ProjectedContext {
     /**
      * Creates [ActivityOptions] that should be used to start an activity on the Projected device.
      *
-     * If the Projected device have more than one associated display, the activity will be started
-     * on the first one.
+     * If the Projected device has more than one associated display, the activity will be started on
+     * the first one.
      *
-     * @param context The Projected device context.
+     * @param context any context object. If the provided context is not a Projected device context,
+     *   a Projected device context will be created automatically and used to create Projected
+     *   [ActivityOptions].
+     * @throws IllegalStateException if the projected device was not found.
      */
     @JvmStatic
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public fun createProjectedActivityOptions(context: Context): ActivityOptions {
-        // TODO: b/424812882 - Turn this into a lint check with an annotation.
-        if (!isProjectedDeviceContext(context)) {
-            throw IllegalArgumentException("Provided context is not the Projected device context.")
-        }
+        val localContext =
+            if (isProjectedDeviceContext(context)) {
+                context
+            } else {
+                createProjectedDeviceContext(context)
+            }
 
-        val displayIds = getProjectedDisplayIds(context)
+        val displayIds = getProjectedDisplayIds(localContext)
 
         if (displayIds.isEmpty()) {
             throw IllegalStateException("No projected display found.")

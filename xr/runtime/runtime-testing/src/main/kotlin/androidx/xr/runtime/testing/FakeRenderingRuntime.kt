@@ -18,6 +18,8 @@ package androidx.xr.runtime.testing
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.internal.ExrImageResource
+import androidx.xr.runtime.internal.GltfModelResource
 import androidx.xr.runtime.internal.KhronosPbrMaterialSpec
 import androidx.xr.runtime.internal.MaterialResource
 import androidx.xr.runtime.internal.RenderingRuntime
@@ -37,6 +39,26 @@ public class FakeRenderingRuntime(
     private val sceneRuntime: SceneRuntime,
     private val activity: Activity,
 ) : RenderingRuntime {
+    @Suppress("AsyncSuffixFuture")
+    override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =
+        immediateFuture(FakeGltfModelResource(0))
+
+    @Suppress("AsyncSuffixFuture")
+    override fun loadGltfByByteArray(
+        assetData: ByteArray,
+        assetKey: String,
+    ): ListenableFuture<GltfModelResource> = immediateFuture(FakeGltfModelResource(0))
+
+    @Suppress("AsyncSuffixFuture")
+    override fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource> =
+        immediateFuture(FakeExrImageResource(0))
+
+    @Suppress("AsyncSuffixFuture")
+    override fun loadExrImageByByteArray(
+        assetData: ByteArray,
+        assetKey: String,
+    ): ListenableFuture<ExrImageResource> = immediateFuture(FakeExrImageResource(1))
+
     @Suppress("AsyncSuffixFuture")
     override fun loadTexture(
         assetName: String,
@@ -62,6 +84,10 @@ public class FakeRenderingRuntime(
 
     override fun destroyTexture(texture: TextureResource) {
         reflectionTexture = null
+    }
+
+    override fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource? {
+        return reflectionTexture
     }
 
     /**

@@ -19,6 +19,7 @@ package androidx.pdf.service
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
+import android.graphics.pdf.component.PdfAnnotation as AospPdfAnnotation
 import android.graphics.pdf.content.PdfPageGotoLinkContent
 import android.graphics.pdf.content.PdfPageImageContent
 import android.graphics.pdf.content.PdfPageLinkContent
@@ -37,14 +38,13 @@ import androidx.pdf.PdfLoadingStatus
 import androidx.pdf.adapter.PdfDocumentRenderer
 import androidx.pdf.adapter.PdfDocumentRendererFactory
 import androidx.pdf.adapter.PdfDocumentRendererFactoryImpl
-import androidx.pdf.adapter.PdfPage
+import androidx.pdf.annotation.converters.PdfAnnotationConvertersFactory
 import androidx.pdf.annotation.models.AnnotationResult
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
+import androidx.pdf.annotation.processor.PdfRendererAnnotationsProcessor
 import androidx.pdf.models.Dimensions
 import androidx.pdf.utils.readAnnotationsFromPfd
-import androidx.pdf.utils.toAospAnnotation
-import androidx.pdf.utils.toPdfAnnotation
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PdfDocumentRemoteImpl(
@@ -52,10 +52,13 @@ internal class PdfDocumentRemoteImpl(
 ) : PdfDocumentRemote.Stub() {
 
     private lateinit var rendererAdapter: PdfDocumentRenderer
+    private lateinit var annotationsProcessor: PdfRendererAnnotationsProcessor
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun openPdfDocument(pfd: ParcelFileDescriptor, password: String?): Int {
         try {
             rendererAdapter = adapterFactory.create(pfd, password)
+            annotationsProcessor = PdfRendererAnnotationsProcessor(rendererAdapter)
             return PdfLoadingStatus.SUCCESS.ordinal
         } catch (exception: SecurityException) {
             return PdfLoadingStatus.WRONG_PASSWORD.ordinal
@@ -71,7 +74,7 @@ internal class PdfDocumentRemoteImpl(
     }
 
     override fun getPageDimensions(pageNum: Int): Dimensions? {
-        return withPage(pageNum) { page -> Dimensions(page.width, page.height) }
+        return rendererAdapter.withPage(pageNum) { page -> Dimensions(page.width, page.height) }
     }
 
     override fun getPageBitmap(pageNum: Int, width: Int, height: Int): Bitmap {
@@ -106,11 +109,11 @@ internal class PdfDocumentRemoteImpl(
     }
 
     override fun getPageText(pageNum: Int): List<PdfPageTextContent>? {
-        return withPage(pageNum) { page -> page.getPageTextContents() }
+        return rendererAdapter.withPage(pageNum) { page -> page.getPageTextContents() }
     }
 
     override fun searchPageText(pageNum: Int, query: String): List<PageMatchBounds>? {
-        return withPage(pageNum) { page -> page.searchPageText(query) }
+        return rendererAdapter.withPage(pageNum) { page -> page.searchPageText(query) }
     }
 
     override fun selectPageText(
@@ -118,31 +121,31 @@ internal class PdfDocumentRemoteImpl(
         start: SelectionBoundary,
         stop: SelectionBoundary,
     ): PageSelection? {
-        return withPage(pageNum) { page -> page.selectPageText(start, stop) }
+        return rendererAdapter.withPage(pageNum) { page -> page.selectPageText(start, stop) }
     }
 
     override fun getPageExternalLinks(pageNum: Int): List<PdfPageLinkContent>? {
-        return withPage(pageNum) { page -> page.getPageLinks() }
+        return rendererAdapter.withPage(pageNum) { page -> page.getPageLinks() }
     }
 
     override fun getPageGotoLinks(pageNum: Int): List<PdfPageGotoLinkContent>? {
-        return withPage(pageNum) { page -> page.getPageGotoLinks() }
+        return rendererAdapter.withPage(pageNum) { page -> page.getPageGotoLinks() }
     }
 
     override fun getPageImageContent(pageNum: Int): List<PdfPageImageContent>? {
-        return withPage(pageNum) { page -> page.getPageImageContents() }
+        return rendererAdapter.withPage(pageNum) { page -> page.getPageImageContents() }
     }
 
     override fun getFormWidgetInfos(pageNum: Int): List<FormWidgetInfo>? {
-        return withPage(pageNum) { page -> page.getFormWidgetInfos() }
+        return rendererAdapter.withPage(pageNum) { page -> page.getFormWidgetInfos() }
     }
 
     override fun getFormWidgetInfosOfType(pageNum: Int, types: IntArray): List<FormWidgetInfo>? {
-        return withPage(pageNum) { page -> page.getFormWidgetInfos(types) }
+        return rendererAdapter.withPage(pageNum) { page -> page.getFormWidgetInfos(types) }
     }
 
     override fun applyEdit(pageNum: Int, editRecord: FormEditRecord): List<Rect>? {
-        return withPage(pageNum) { page -> page.applyEdit(editRecord) }
+        return rendererAdapter.withPage(pageNum) { page -> page.applyEdit(editRecord) }
     }
 
     override fun write(destination: ParcelFileDescriptor, removePasswordProtection: Boolean) {
@@ -163,8 +166,9 @@ internal class PdfDocumentRemoteImpl(
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     private fun addPdfAnnotationToAosp(pdfAnnotationData: PdfAnnotationData): Boolean {
         val annotation = pdfAnnotationData.annotation
-        return withPage(annotation.pageNum) { page ->
-            val aospAnnotation = annotation.toAospAnnotation()
+        return rendererAdapter.withPage(annotation.pageNum) { page ->
+            val converter = PdfAnnotationConvertersFactory.create<PdfAnnotation>(annotation)
+            val aospAnnotation = converter.convert(annotation)
             try {
                 page.addPageAnnotation(aospAnnotation)
                 true
@@ -176,17 +180,24 @@ internal class PdfDocumentRemoteImpl(
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun getPageAnnotations(pageNum: Int): List<PdfAnnotation>? {
-        return withPage(pageNum) { page ->
+        return rendererAdapter.withPage(pageNum) { page ->
             val aospAnnotations = page.getPageAnnotations()
             val pdfAnnotations = mutableListOf<PdfAnnotation>()
             for (aospAnnotation in aospAnnotations) {
-                aospAnnotation.second.toPdfAnnotation(pageNum)?.let { pfdAnnotation ->
+                val unused = aospAnnotation.first // <-- AOSP ID
+                val converter =
+                    PdfAnnotationConvertersFactory.create<AospPdfAnnotation>(aospAnnotation.second)
+                converter.convert(aospAnnotation.second, pageNum).let { pfdAnnotation ->
                     pdfAnnotations.add(pfdAnnotation)
                 }
             }
             pdfAnnotations
         }
     }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun applyEdits(annots: List<PdfAnnotationData>): AnnotationResult =
+        annotationsProcessor.process(annots)
 
     override fun isPdfLinearized(): Boolean {
         return rendererAdapter.isLinearized
@@ -202,19 +213,5 @@ internal class PdfDocumentRemoteImpl(
 
     override fun closePdfDocument() {
         rendererAdapter.close()
-    }
-
-    private fun <T> withPage(pageNum: Int, block: (PdfPage) -> T): T? {
-        var page: PdfPage? = null
-        var results: T?
-
-        try {
-            page = rendererAdapter.openPage(pageNum, useCache = false)
-            results = block(page)
-        } finally {
-            rendererAdapter.releasePage(page, pageNum)
-        }
-
-        return results
     }
 }

@@ -128,9 +128,8 @@ private fun LayoutSpatialElevation(elevation: Dp, content: @Composable () -> Uni
 
         layout(contentSize.width, contentSize.height) {
             coordinates?.positionInRoot()?.let {
-                panelEntity.entity.setPose(
+                panelEntity.poseInMeters =
                     calculatePose(it, parentViewSize, contentSize, this@Layout, elevation)
-                )
             }
             panelEntity.parent = parentEntity
             panelEntity.size =

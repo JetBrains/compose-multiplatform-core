@@ -66,6 +66,7 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
+import androidx.xr.compose.testapp.accessibility.AccessibilityActivity
 import androidx.xr.compose.testapp.animation.Animation
 import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
 import androidx.xr.compose.testapp.depthstacking.DepthStacking
@@ -77,6 +78,7 @@ import androidx.xr.compose.testapp.panelvolume.PanelVolume
 import androidx.xr.compose.testapp.permissionsdialog.PermissionsDialog
 import androidx.xr.compose.testapp.resizablepanel.ResizablePanel
 import androidx.xr.compose.testapp.rotation.Rotation
+import androidx.xr.compose.testapp.spatialalignmentusage.SpatialAlignmentUsageActivity
 import androidx.xr.compose.testapp.spatialcompose.SpatialCompose
 import androidx.xr.compose.testapp.spatialelevation.SpatialElevation
 import androidx.xr.compose.testapp.splitengine.SplitEngine
@@ -282,6 +284,9 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.movable_scalable_panel_test)) {
                         startTest<MovableScalable>()
                     }
+                    TestCaseColumnRowItem(getString(R.string.accessibility_test)) {
+                        startTest<AccessibilityActivity>()
+                    }
                     TestCaseBlankRow("THE FOLLOWING ARE JXR COMPOSE DEVELOPER TESTS")
                     TestCaseColumnRowItem(
                         getString(R.string.depthstacking_modifier_order_test_case)
@@ -296,6 +301,9 @@ class MainActivity : ComponentActivity() {
                     }
                     TestCaseColumnRowItem(getString(R.string.resizable_panel_test_case)) {
                         startTest<ResizablePanel>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.spatial_alignment_usage_test_case)) {
+                        startTest<SpatialAlignmentUsageActivity>()
                     }
                 }
             }

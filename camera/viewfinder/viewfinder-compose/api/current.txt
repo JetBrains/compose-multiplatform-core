@@ -3,13 +3,13 @@ package androidx.camera.viewfinder.compose {
 
   public interface CoordinateTransformer {
     method @BytecodeOnly public float[] getTransformMatrix-sQKQjiQ();
-    method public default long transform(long);
+    method @KotlinOnly public default androidx.compose.ui.geometry.Offset transform(androidx.compose.ui.geometry.Offset);
     method @BytecodeOnly public default long transform-MK-Hz9U(long);
     property public abstract androidx.compose.ui.graphics.Matrix transformMatrix;
   }
 
   public final class CoordinateTransformerKt {
-    method public static androidx.camera.viewfinder.compose.MutableCoordinateTransformer MutableCoordinateTransformer(optional float[] matrix);
+    method @KotlinOnly public static androidx.camera.viewfinder.compose.MutableCoordinateTransformer MutableCoordinateTransformer(optional androidx.compose.ui.graphics.Matrix matrix);
     method @BytecodeOnly public static androidx.camera.viewfinder.compose.MutableCoordinateTransformer MutableCoordinateTransformer-58bKbWc(float[]);
   }
 

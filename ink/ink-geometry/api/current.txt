@@ -118,8 +118,8 @@ package androidx.ink.geometry {
     method public static androidx.ink.geometry.ImmutableAffineTransform scale(float xScaleFactor, float yScaleFactor);
     method public static androidx.ink.geometry.ImmutableAffineTransform scaleX(float scaleFactor);
     method public static androidx.ink.geometry.ImmutableAffineTransform scaleY(float scaleFactor);
-    method public static androidx.ink.geometry.ImmutableAffineTransform shearX(float shearFactor);
-    method public static androidx.ink.geometry.ImmutableAffineTransform shearY(float shearFactor);
+    method public static androidx.ink.geometry.ImmutableAffineTransform skewX(float sx);
+    method public static androidx.ink.geometry.ImmutableAffineTransform skewY(float sy);
     method public static androidx.ink.geometry.ImmutableAffineTransform translate(androidx.ink.geometry.Vec offset);
     field public static final androidx.ink.geometry.ImmutableAffineTransform.Companion Companion;
   }
@@ -130,8 +130,8 @@ package androidx.ink.geometry {
     method public androidx.ink.geometry.ImmutableAffineTransform scale(float xScaleFactor, float yScaleFactor);
     method public androidx.ink.geometry.ImmutableAffineTransform scaleX(float scaleFactor);
     method public androidx.ink.geometry.ImmutableAffineTransform scaleY(float scaleFactor);
-    method public androidx.ink.geometry.ImmutableAffineTransform shearX(float shearFactor);
-    method public androidx.ink.geometry.ImmutableAffineTransform shearY(float shearFactor);
+    method public androidx.ink.geometry.ImmutableAffineTransform skewX(float sx);
+    method public androidx.ink.geometry.ImmutableAffineTransform skewY(float sy);
     method public androidx.ink.geometry.ImmutableAffineTransform translate(androidx.ink.geometry.Vec offset);
   }
 
@@ -157,17 +157,17 @@ package androidx.ink.geometry {
   public final class ImmutableParallelogram extends androidx.ink.geometry.Parallelogram {
     method public static androidx.ink.geometry.ImmutableParallelogram fromCenterAndDimensions(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height);
     method public static androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsAndRotation(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation);
-    method public static androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsRotationAndShear(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float shearFactor);
+    method public static androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsRotationAndSkew(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float skew);
     method public static androidx.ink.geometry.ImmutableParallelogram fromSegmentAndPadding(androidx.ink.geometry.Segment segment, float padding);
     method public androidx.ink.geometry.ImmutableVec getCenter();
     method public float getHeight();
     method public float getRotation();
-    method public float getShearFactor();
+    method public float getSkew();
     method public float getWidth();
     property public androidx.ink.geometry.ImmutableVec center;
     property public float height;
     property public float rotation;
-    property public float shearFactor;
+    property public float skew;
     property public float width;
     field public static final androidx.ink.geometry.ImmutableParallelogram.Companion Companion;
   }
@@ -175,7 +175,7 @@ package androidx.ink.geometry {
   public static final class ImmutableParallelogram.Companion {
     method public androidx.ink.geometry.ImmutableParallelogram fromCenterAndDimensions(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height);
     method public androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsAndRotation(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation);
-    method public androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsRotationAndShear(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float shearFactor);
+    method public androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsRotationAndSkew(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float skew);
     method public androidx.ink.geometry.ImmutableParallelogram fromSegmentAndPadding(androidx.ink.geometry.Segment segment, float padding);
   }
 
@@ -265,8 +265,8 @@ package androidx.ink.geometry {
     method public androidx.ink.geometry.MutableAffineTransform populateFromScale(float xScaleFactor, float yScaleFactor);
     method public androidx.ink.geometry.MutableAffineTransform populateFromScaleX(float scaleFactor);
     method public androidx.ink.geometry.MutableAffineTransform populateFromScaleY(float scaleFactor);
-    method public androidx.ink.geometry.MutableAffineTransform populateFromShearX(float shearFactor);
-    method public androidx.ink.geometry.MutableAffineTransform populateFromShearY(float shearFactor);
+    method public androidx.ink.geometry.MutableAffineTransform populateFromSkewX(float sx);
+    method public androidx.ink.geometry.MutableAffineTransform populateFromSkewY(float sy);
     method public androidx.ink.geometry.MutableAffineTransform populateFromTranslate(androidx.ink.geometry.Vec offset);
     method public void setValues(float m00, float m10, float m20, float m01, float m11, float m21);
     method public void setValues(@Size(min=6L) float[] values);
@@ -294,22 +294,22 @@ package androidx.ink.geometry {
     method public androidx.ink.geometry.MutableVec getCenter();
     method public float getHeight();
     method @androidx.ink.geometry.AngleRadiansFloat public float getRotation();
-    method public float getShearFactor();
+    method public float getSkew();
     method @FloatRange(from=0.0) public float getWidth();
     method public androidx.ink.geometry.MutableParallelogram populateFrom(androidx.ink.geometry.Parallelogram input);
     method public androidx.ink.geometry.MutableParallelogram populateFromCenterAndDimensions(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height);
     method public androidx.ink.geometry.MutableParallelogram populateFromCenterDimensionsAndRotation(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation);
-    method public androidx.ink.geometry.MutableParallelogram populateFromCenterDimensionsRotationAndShear(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float shearFactor);
+    method public androidx.ink.geometry.MutableParallelogram populateFromCenterDimensionsRotationAndSkew(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float skew);
     method public androidx.ink.geometry.MutableParallelogram populateFromSegmentAndPadding(androidx.ink.geometry.Segment segment, float padding);
     method public void setCenter(androidx.ink.geometry.MutableVec);
     method public void setHeight(float);
     method public void setRotation(@androidx.ink.geometry.AngleRadiansFloat float);
-    method public void setShearFactor(float);
+    method public void setSkew(float);
     method public void setWidth(@FloatRange(from=0.0) float);
     property public androidx.ink.geometry.MutableVec center;
     property public float height;
     property @androidx.ink.geometry.AngleRadiansFloat public float rotation;
-    property public float shearFactor;
+    property public float skew;
     property @FloatRange(from=0.0) public float width;
     field public static final androidx.ink.geometry.MutableParallelogram.Companion Companion;
   }
@@ -374,13 +374,13 @@ package androidx.ink.geometry {
     method public abstract androidx.ink.geometry.Vec getCenter();
     method public abstract float getHeight();
     method @androidx.ink.geometry.AngleRadiansFloat public abstract float getRotation();
-    method public abstract float getShearFactor();
+    method public abstract float getSkew();
     method @FloatRange(from=0.0) public abstract float getWidth();
     method public final boolean isAlmostEqual(androidx.ink.geometry.Parallelogram other, @FloatRange(from=0.0) float tolerance);
     property public abstract androidx.ink.geometry.Vec center;
     property public abstract float height;
     property @androidx.ink.geometry.AngleRadiansFloat public abstract float rotation;
-    property public abstract float shearFactor;
+    property public abstract float skew;
     property @FloatRange(from=0.0) public abstract float width;
     field public static final androidx.ink.geometry.Parallelogram.Companion Companion;
   }

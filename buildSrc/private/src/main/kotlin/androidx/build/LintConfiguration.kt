@@ -94,8 +94,6 @@ private fun Project.configureNonAndroidProjectForLint() = afterEvaluate {
     // The lintAnalyzeDebug task is used by `androidx-studio-integration-lint.sh`.
     tasks.register("lintAnalyzeDebug") { it.enabled = false }
 
-    addToBuildOnServer(tasks.named("lint"))
-
     // For Android projects, we can run lint configuration last using `DslLifecycle.finalizeDsl`;
     // however, we need to run it using `Project.afterEvaluate` for non-Android projects.
     configureLint(project.extensions.getByType(), isLibrary = true)
@@ -306,6 +304,13 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         // Currently suppresses warnings from baseline files working as intended
         lintConfig = File(project.getSupportRootFolder(), lintXmlPath)
         baseline = lintBaseline.get().asFile
+    }
+    project.buildOnServerDependsOnLint()
+}
+
+private fun Project.buildOnServerDependsOnLint() {
+    if (!project.usingMaxDepVersions().get()) {
+        project.addToBuildOnServer("lint")
     }
 }
 

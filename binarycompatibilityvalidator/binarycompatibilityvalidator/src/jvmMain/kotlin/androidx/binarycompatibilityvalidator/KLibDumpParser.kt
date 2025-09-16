@@ -31,9 +31,11 @@ import org.jetbrains.kotlin.library.abi.AbiProperty
 import org.jetbrains.kotlin.library.abi.AbiQualifiedName
 import org.jetbrains.kotlin.library.abi.AbiSignatureVersion
 import org.jetbrains.kotlin.library.abi.AbiSignatures
+import org.jetbrains.kotlin.library.abi.AbiValueParameterKind
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 import org.jetbrains.kotlin.library.abi.LibraryAbi
 import org.jetbrains.kotlin.library.abi.LibraryManifest
+import org.jetbrains.kotlin.library.abi.impl.AbiAnnotationListImpl
 import org.jetbrains.kotlin.library.abi.impl.AbiClassImpl
 import org.jetbrains.kotlin.library.abi.impl.AbiConstructorImpl
 import org.jetbrains.kotlin.library.abi.impl.AbiEnumEntryImpl
@@ -173,7 +175,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         return AbiClassImpl(
             qualifiedName = abiQualifiedName,
             signatures = signaturesStub,
-            annotations = emptySet(), // annotations aren't part of klib dumps
+            annotations = AbiAnnotationListImpl.EMPTY, // annotations aren't part of klib dumps
             modality = modality,
             kind = kind,
             isInner = isInner,
@@ -226,7 +228,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         return AbiPropertyImpl(
             qualifiedName = qualifiedName,
             signatures = signaturesStub,
-            annotations = emptySet(), // annotations aren't part of klib dumps
+            annotations = AbiAnnotationListImpl.EMPTY, // annotations aren't part of klib dumps
             modality = modality,
             kind = kind,
             getter = getter,
@@ -247,7 +249,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         return AbiEnumEntryImpl(
             qualifiedName = qualifiedName,
             signatures = signaturesStub,
-            annotations = emptySet(),
+            annotations = AbiAnnotationListImpl.EMPTY,
         )
     }
 
@@ -290,6 +292,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
                 if (null != functionReceiver) {
                     val functionReceiverAsValueParam =
                         AbiValueParameterImpl(
+                            kind = AbiValueParameterKind.EXTENSION_RECEIVER,
                             type = functionReceiver,
                             isVararg = false,
                             hasDefaultArg = false,
@@ -305,13 +308,11 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         return AbiFunctionImpl(
             qualifiedName = abiQualifiedName,
             signatures = signaturesStub,
-            annotations = emptySet(), // annotations aren't part of klib dumps
+            annotations = AbiAnnotationListImpl.EMPTY, // annotations aren't part of klib dumps
             modality = modality,
             isInline = isInline,
             isSuspend = isSuspend,
             typeParameters = typeParams,
-            hasExtensionReceiverParameter = null != functionReceiver,
-            contextReceiverParametersCount = contextParams.size,
             valueParameters = allValueParameters,
             returnType = returnType,
         )
@@ -333,9 +334,8 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         return AbiConstructorImpl(
             qualifiedName = abiQualifiedName,
             signatures = signaturesStub,
-            annotations = emptySet(), // annotations aren't part of klib dumps
+            annotations = AbiAnnotationListImpl.EMPTY, // annotations aren't part of klib dumps
             isInline = false, // inline constructors are not legal
-            contextReceiverParametersCount = 0, // not allowed on constructors
             valueParameters = valueParameters,
         )
     }

@@ -461,6 +461,6 @@ public data class WorkSpec(
 
 public data class WorkGenerationalId(val workSpecId: String, val generation: Int)
 
-public fun WorkSpec.generationalId() = WorkGenerationalId(id, generation)
+public fun WorkSpec.generationalId(): WorkGenerationalId = WorkGenerationalId(id, generation)
 
 private const val NOT_ENQUEUED = -1L

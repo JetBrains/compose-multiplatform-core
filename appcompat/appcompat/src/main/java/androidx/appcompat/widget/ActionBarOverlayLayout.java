@@ -62,9 +62,6 @@ import org.jspecify.annotations.Nullable;
 @SuppressLint("UnknownNullness") // this is not public API
 public class ActionBarOverlayLayout extends ViewGroup implements DecorContentParent,
         NestedScrollingParent, NestedScrollingParent2, NestedScrollingParent3 {
-    private static final String TAG = "ActionBarOverlayLayout";
-    private static final Rect EMPTY_RECT = new Rect();
-
     private int mActionBarHeight;
     //private WindowDecorActionBar mActionBar;
     private int mWindowVisibility = View.VISIBLE;
@@ -92,12 +89,6 @@ public class ActionBarOverlayLayout extends ViewGroup implements DecorContentPar
     private final Rect mTmpRect = new Rect();
     private boolean mDecorFitsSystemWindows = true;
     private boolean mActionBarExtendsIntoSystemInsets = false;
-
-    // Used on API < 21
-    private final Rect mBaseInnerInsetsRect = new Rect();
-    private final Rect mLastBaseInnerInsetsRect = new Rect();
-    private final Rect mInnerInsetsRect = new Rect();
-    private final Rect mLastInnerInsetsRect = new Rect();
 
     // Used on API 21+
     private @NonNull WindowInsetsCompat mBaseInnerInsets = WindowInsetsCompat.CONSUMED;

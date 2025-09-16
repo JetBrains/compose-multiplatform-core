@@ -344,9 +344,9 @@ class EntityTest {
                 lifecycleManager = lifecycleManager,
                 mockPlatformAdapter,
                 entityManager,
-                SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+                SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
                 Pose.Identity,
-                SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+                SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             )
     }
 
@@ -760,7 +760,7 @@ class EntityTest {
     @Test
     fun activityPanelEntityLaunchActivity_callsImplLaunchActivity() {
         val launchIntent = Intent(activity.applicationContext, ComponentActivity::class.java)
-        activityPanelEntity.launchActivity(launchIntent, null)
+        activityPanelEntity.startActivity(launchIntent)
 
         verify(mockActivityPanelEntity).launchActivity(launchIntent, null)
     }
@@ -1144,14 +1144,14 @@ class EntityTest {
 
     @Test
     fun SurfaceEntity_redirectsCallsToRtEntity() {
-        surfaceEntity.stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM
-        verify(mockSurfaceEntity).stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM
+        surfaceEntity.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
+        verify(mockSurfaceEntity).stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
 
         @Suppress("UNUSED_VARIABLE") var unusedMode = surfaceEntity.stereoMode
         verify(mockSurfaceEntity).stereoMode
 
-        surfaceEntity.canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f)
-        verify(mockSurfaceEntity).canvasShape = any()
+        surfaceEntity.shape = SurfaceEntity.Shape.Sphere(1.0f)
+        verify(mockSurfaceEntity).shape = any()
 
         // no equivalent test for getter - that just returns the Kotlin object for now.
     }
@@ -1276,5 +1276,11 @@ class EntityTest {
     fun surfaceEntity_useAferDisposeRaisesIllegalStateException() {
         surfaceEntity.dispose()
         verify(mockSurfaceEntity).dispose()
+    }
+
+    @Test
+    fun surfaceEntity_disposeSupportsMultipleCalls() {
+        surfaceEntity.dispose()
+        surfaceEntity.dispose()
     }
 }

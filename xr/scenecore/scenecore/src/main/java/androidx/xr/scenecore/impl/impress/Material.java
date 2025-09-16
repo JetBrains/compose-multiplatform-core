@@ -27,6 +27,7 @@ import org.jspecify.annotations.NonNull;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public abstract class Material extends BindingsResource implements MaterialResource {
     private final String TAG = getClass().getSimpleName();
+    @SuppressWarnings("UnusedVariable")
     private final ImpressApi impressApi;
 
     protected Material(@NonNull ImpressApi impressApi, long nativeMaterial) {

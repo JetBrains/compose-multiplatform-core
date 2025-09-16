@@ -34,7 +34,7 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
             entityManager: EntityManager,
             name: String,
             pose: Pose = Pose.Identity,
-        ): Entity =
+        ): GroupEntity =
             GroupEntity(
                 adapter.createGroupEntity(pose, name, adapter.activitySpaceRootImpl),
                 entityManager,
@@ -49,7 +49,7 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
          */
         @JvmOverloads
         @JvmStatic
-        public fun create(session: Session, name: String, pose: Pose = Pose.Identity): Entity =
-            GroupEntity.create(session.platformAdapter, session.scene.entityManager, name, pose)
+        public fun create(session: Session, name: String, pose: Pose = Pose.Identity): GroupEntity =
+            create(session.platformAdapter, session.scene.entityManager, name, pose)
     }
 }

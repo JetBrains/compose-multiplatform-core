@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.arcore.projected
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.LifecycleManager
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -28,6 +28,7 @@ import kotlin.time.ComparableTimeMark
  * @property activity The [Activity] instance.
  * @property perceptionManager The [ProjectedPerceptionManager] instance.
  * @property timeSource The [ProjectedTimeSource] instance.
+ * @property coroutineContext The [CoroutineContext] for this manager.
  */
 @Suppress("NotCloseable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -36,10 +37,9 @@ internal constructor(
     private val activity: Activity,
     internal val perceptionManager: ProjectedPerceptionManager,
     internal val timeSource: ProjectedTimeSource,
+    private val coroutineContext: CoroutineContext,
 ) : LifecycleManager {
-
     override val config: Config = Config()
-
     // TODO(b/411154789): Remove once Session runtime invocations are forced to run sequentially.
     internal var running: Boolean = false
 

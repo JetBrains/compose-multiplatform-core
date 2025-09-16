@@ -23,4 +23,4 @@ import androidx.annotation.RequiresApi
 
 public fun ConnectivityManager.registerDefaultNetworkCallbackCompat(
     networkCallback: ConnectivityManager.NetworkCallback
-) = registerDefaultNetworkCallback(networkCallback)
+): Unit = registerDefaultNetworkCallback(networkCallback)

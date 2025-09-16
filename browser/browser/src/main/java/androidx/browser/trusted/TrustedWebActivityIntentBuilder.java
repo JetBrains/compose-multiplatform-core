@@ -119,7 +119,7 @@ public class TrustedWebActivityIntentBuilder {
 
     private @NonNull TrustedWebActivityDisplayMode mDisplayMode =
             new TrustedWebActivityDisplayMode.DefaultMode();
-    private @NonNull List<TrustedWebActivityDisplayMode> mDisplayOverrideList;
+    private @Nullable List<TrustedWebActivityDisplayMode> mDisplayOverrideList;
 
     @ScreenOrientation.LockType
     private int mScreenOrientation = ScreenOrientation.DEFAULT;

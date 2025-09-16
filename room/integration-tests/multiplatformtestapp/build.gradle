@@ -169,7 +169,7 @@ room {
 }
 
 androidx {
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }
 
 // TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API

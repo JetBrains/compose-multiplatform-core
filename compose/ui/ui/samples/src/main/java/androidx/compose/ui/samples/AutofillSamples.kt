@@ -67,7 +67,9 @@ fun AutofillableTextFieldWithFillableDataSemantics() {
                 FillableData(state.text)?.let { fillableData = it }
                 // Replace the state value with data from the autofill provider.
                 onFillData { savedAutofillValue ->
-                    savedAutofillValue.textValue?.let { state.edit { replace(0, length, it) } }
+                    savedAutofillValue.getCharSequence()?.let {
+                        state.edit { replace(0, length, it) }
+                    }
                     true
                 }
             },

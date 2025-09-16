@@ -34,16 +34,16 @@ import org.gradle.api.provider.Provider
  * For more information, see b/171569941
  */
 fun Project.getChangedFilesFromChangeInfoProvider(
-    manifestPath: String,
-    changeInfoPath: String,
+    manifestPath: Provider<String>,
+    changeInfoPath: Provider<String>,
     projectDirRelativeToRoot: String = projectDir.relativeTo(getCheckoutRoot()).toString(),
 ): Provider<List<String>> {
     val manifestTextProvider =
-        project.providers
-            .fileContents(project.objects.fileProperty().fileValue(File(manifestPath)))
+        providers
+            .fileContents(objects.fileProperty().fileProvider(manifestPath.map { File(it) }))
             .asText
     return project.providers
-        .fileContents(project.objects.fileProperty().fileValue(File(changeInfoPath)))
+        .fileContents(project.objects.fileProperty().fileProvider(changeInfoPath.map { File(it) }))
         .asText
         .zip(manifestTextProvider) { changeInfoText, manifestText ->
             val fileList = mutableListOf<String>()
@@ -94,11 +94,13 @@ internal data class FileInfo(val path: String?, val oldPath: String?, val status
  * For more information, see b/171569941
  */
 fun Project.getHeadShaFromManifestProvider(
-    manifestPath: String,
+    manifestPath: Provider<String>,
     projectDirRelativeToRoot: String = projectDir.relativeTo(getCheckoutRoot()).toString(),
 ): Provider<String> {
     val contentsProvider =
-        project.providers.fileContents(project.objects.fileProperty().fileValue(File(manifestPath)))
+        project.providers.fileContents(
+            project.objects.fileProperty().fileProvider(manifestPath.map { File(it) })
+        )
     return contentsProvider.asText.map { manifestContent ->
         val projectName = computeProjectName(projectDirRelativeToRoot, manifestContent)
         val revisionRegex = Regex("revision=\"([^\"]*)\"")

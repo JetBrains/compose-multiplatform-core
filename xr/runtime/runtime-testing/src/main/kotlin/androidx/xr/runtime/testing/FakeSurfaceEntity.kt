@@ -23,8 +23,9 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.PerceivedResolutionResult
 import androidx.xr.runtime.internal.SurfaceEntity
-import androidx.xr.runtime.internal.SurfaceEntity.CanvasShape
+import androidx.xr.runtime.internal.SurfaceEntity.Shape
 import androidx.xr.runtime.internal.TextureResource
+import androidx.xr.runtime.math.FloatSize2d
 
 /**
  * Test-only implementation of [SurfaceEntity].
@@ -45,7 +46,7 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
     override var stereoMode: Int = SurfaceEntity.StereoMode.SIDE_BY_SIDE
 
     /** Specifies the shape of the spatial canvas which the surface is texture mapped to. */
-    override var canvasShape: CanvasShape = CanvasShape.Quad(0f, 0f)
+    override var shape: Shape = Shape.Quad(FloatSize2d(0f, 0f))
 
     /**
      * Retrieves the dimensions of the "spatial canvas" which the surface is mapped to. These values
@@ -54,7 +55,7 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
      * @return The canvas [Dimensions].
      */
     override val dimensions: Dimensions
-        get() = canvasShape.dimensions
+        get() = shape.dimensions
 
     private var _surface: Surface =
         ImageReader.newInstance(1, 1, ImageFormat.YUV_420_888, 1).surface
@@ -184,14 +185,14 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
     override val colorRange: Int
         get() = _colorRange
 
-    private var _maxCLL: Int = 0
+    private var _maxContentLightLevel: Int = 0
 
     /**
      * The active maximum content light level (MaxCLL) in nits. A value of 0 indicates that MaxCLL
      * is not set or is unknown. This value is used if [contentColorMetadataSet] is `true`.
      */
-    override val maxCLL: Int
-        get() = _maxCLL
+    override val maxContentLightLevel: Int
+        get() = _maxContentLightLevel
 
     /**
      * Sets the explicit color information for the surface content. This will also set
@@ -207,12 +208,12 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
         colorSpace: Int,
         colorTransfer: Int,
         colorRange: Int,
-        maxCLL: Int,
+        maxContentLightLevel: Int,
     ) {
         _colorSpace = colorSpace
         _colorTransfer = colorTransfer
         _colorRange = colorRange
-        _maxCLL = maxCLL
+        _maxContentLightLevel = maxContentLightLevel
     }
 
     /**
@@ -224,7 +225,7 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
         _colorSpace = SurfaceEntity.ColorSpace.BT709
         _colorTransfer = SurfaceEntity.ColorTransfer.LINEAR
         _colorRange = SurfaceEntity.ColorRange.FULL
-        _maxCLL = 0
+        _maxContentLightLevel = 0
     }
 
     /**
@@ -232,5 +233,5 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
      *
      * @throws IllegalStateException if the Entity has been disposed.
      */
-    override var edgeFeather: SurfaceEntity.EdgeFeather = SurfaceEntity.EdgeFeather.SolidEdge()
+    override var edgeFeather: SurfaceEntity.EdgeFeather = SurfaceEntity.EdgeFeather.NoFeathering()
 }

@@ -1,6 +1,9 @@
 // Signature format: 4.0
 package androidx.xr.runtime.testing {
 
+  public final class FakeAnchorPlacement {
+  }
+
   public final class FakeLifecycleManager {
     ctor public FakeLifecycleManager();
     ctor public FakeLifecycleManager(optional boolean hasCreatePermission);

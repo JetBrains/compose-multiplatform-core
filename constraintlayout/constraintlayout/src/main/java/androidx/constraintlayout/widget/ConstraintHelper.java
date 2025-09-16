@@ -466,8 +466,7 @@ public abstract class ConstraintHelper extends View {
      */
     protected void applyLayoutFeatures(ConstraintLayout container) {
         int visibility = getVisibility();
-        float elevation = 0;
-        elevation = getElevation();
+        float elevation = getElevation();
         for (int i = 0; i < mCount; i++) {
             int id = mIds[i];
             View view = container.getViewById(id);

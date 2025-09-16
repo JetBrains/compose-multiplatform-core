@@ -134,11 +134,26 @@ val taskNamesKnownToDuplicateOutputs =
         // The following tasks have the same output file:
         // ../../prebuilts/androidx/javascript-for-kotlin/yarn.lock
         "kotlinRestoreYarnLock",
+        "kotlinWasmRestoreYarnLock",
         "kotlinNpmInstall",
+        "kotlinWasmNpmInstall",
         "kotlinUpgradePackageLock",
+        "kotlinWasmUpgradePackageLock",
         "kotlinUpgradeYarnLock",
+        "kotlinWasmUpgradeYarnLock",
         "kotlinStorePackageLock",
+        "kotlinWasmStorePackageLock",
         "kotlinStoreYarnLock",
+        "kotlinWasmStoreYarnLock",
+
+        // The following tasks have the same output file:
+        // $OUT_DIR/androidx/build/wasm/yarn.lock
+        "wasmKotlinRestoreYarnLock",
+        "wasmKotlinNpmInstall",
+        "wasmKotlinUpgradePackageLock",
+        "wasmKotlinStorePackageLock",
+        "wasmKotlinUpgradeYarnLock",
+        "wasmKotlinStoreYarnLock",
 
         // The following tasks have the same output configFile file:
         // projectBuildDir/js/packages/projectName-wasm-js/webpack.config.js
@@ -150,8 +165,17 @@ val taskNamesKnownToDuplicateOutputs =
         "wasmJsBrowserProductionRun",
         "jsTestTestDevelopmentExecutableCompileSync",
 
-        // TODO file a bug
+        // https://youtrack.jetbrains.com/issue/KT-79936
+        // $OUT_DIR/.gradle/nodejs/node-v22.13.0-darwin-arm64.hash
         "kotlinNodeJsSetup",
+        "kotlinWasmNodeJsSetup",
+        // $OUT_DIR/.gradle/yarn/yarn-v1.22.17.hash
+        "wasmKotlinYarnSetup",
+        "kotlinYarnSetup",
+
+        // $OUT_DIR/.gradle/binaryen/binaryen-version_122.hash
+        "kotlinBinaryenSetup",
+        "kotlinWasmBinaryenSetup",
     )
 
 fun shouldValidateTaskOutput(task: Task): Boolean {

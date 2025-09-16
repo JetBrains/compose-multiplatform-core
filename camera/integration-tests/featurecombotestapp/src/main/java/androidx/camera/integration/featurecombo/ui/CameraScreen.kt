@@ -50,7 +50,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role.Companion.RadioButton
@@ -127,7 +126,7 @@ fun ContentScreen(
         FeatureCombinationRow(
             modifier =
                 Modifier.fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.75f))
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.75f))
                     .align(Alignment.TopCenter),
             featureList = featureUis,
             onFeatureUpdated = onFeatureUpdated,
@@ -135,7 +134,8 @@ fun ContentScreen(
 
         Column(
             modifier =
-                Modifier.align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.75f))
+                Modifier.align(Alignment.BottomCenter)
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.75f))
         ) {
             UseCasesAndResetRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -198,9 +198,9 @@ fun FeatureCombinationRow(
                                 text = value,
                                 color =
                                     if (!feature.unsupportedValues.contains(value)) {
-                                        MaterialTheme.colorScheme.primary
+                                        MaterialTheme.colorScheme.onBackground
                                     } else {
-                                        Color.Gray
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38F)
                                     },
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(start = 4.dp),

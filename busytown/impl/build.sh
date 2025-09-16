@@ -25,6 +25,15 @@ if [ "$CHANGE_INFO" != "" ]; then
   fi
 fi
 
+# Determine if this is a postsubmit build to push remote cache
+if [ -n "$BUILD_NUMBER" ] && [[ ! "$BUILD_NUMBER" == P* ]]; then
+  IS_POSTSUBMIT=true
+else
+  IS_POSTSUBMIT=false
+fi
+export IS_POSTSUBMIT
+export IS_ANDROIDX_CI=true
+
 # parse arguments
 if [ "$1" == "--diagnose" ]; then
   DIAGNOSE=true

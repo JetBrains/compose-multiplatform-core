@@ -83,6 +83,7 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -330,13 +331,13 @@ class VideoPlayerTestActivity : ComponentActivity() {
         val effectiveDisplayWidth = videoWidth.toFloat() * pixelAspectRatio
 
         return when (stereoMode) {
-            SurfaceEntity.StereoMode.MONO,
-            SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
-            SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
+            SurfaceEntity.StereoMode.STEREO_MODE_MONO,
+            SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
+            SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY ->
                 FloatSize3d(1.0f, videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
-            SurfaceEntity.StereoMode.TOP_BOTTOM ->
+            SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM ->
                 FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
-            SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
+            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE ->
                 FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
@@ -413,8 +414,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         value = featherRadiusX,
                         onValueChange = {
                             featherRadiusX = it
-                            surfaceEntity!!.edgeFeather =
-                                SurfaceEntity.EdgeFeatheringParams.SmoothFeather(
+                            surfaceEntity!!.edgeFeatheringParams =
+                                SurfaceEntity.EdgeFeatheringParams.RectangleFeather(
                                     featherRadiusX,
                                     featherRadiusY,
                                 )
@@ -425,8 +426,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         value = featherRadiusY,
                         onValueChange = {
                             featherRadiusY = it
-                            surfaceEntity!!.edgeFeather =
-                                SurfaceEntity.EdgeFeatheringParams.SmoothFeather(
+                            surfaceEntity!!.edgeFeatheringParams =
+                                SurfaceEntity.EdgeFeatheringParams.RectangleFeather(
                                     featherRadiusX,
                                     featherRadiusY,
                                 )
@@ -438,7 +439,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Button(
                     onClick = {
-                        surfaceEntity!!.canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f)
+                        surfaceEntity!!.shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f))
                         // Move the Quad-shaped canvas to a spot in front of the User.
                         surfaceEntity!!.setPose(
                             session.scene.spatialUser.head?.transformPoseTo(
@@ -453,33 +454,33 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 ) {
                     Text(text = "Set Quad", fontSize = 10.sp)
                 }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f)
-                    }
-                ) {
+                Button(onClick = { surfaceEntity!!.shape = SurfaceEntity.Shape.Sphere(1.0f) }) {
                     Text(text = "Set Vr360", fontSize = 10.sp)
                 }
-                Button(
-                    onClick = {
-                        surfaceEntity!!.canvasShape =
-                            SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f)
-                    }
-                ) {
+                Button(onClick = { surfaceEntity!!.shape = SurfaceEntity.Shape.Hemisphere(1.0f) }) {
                     Text(text = "Set Vr180", fontSize = 10.sp)
                 }
             } // end row
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.MONO }) {
+                Button(
+                    onClick = {
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO
+                    }
+                ) {
                     Text(text = "Mono", fontSize = 10.sp)
                 }
                 Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM }
+                    onClick = {
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
+                    }
                 ) {
                     Text(text = "Top-Bottom", fontSize = 10.sp)
                 }
                 Button(
-                    onClick = { surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE }
+                    onClick = {
+                        surfaceEntity!!.stereoMode =
+                            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE
+                    }
                 ) {
                     Text(text = "Side-by-Side", fontSize = 10.sp)
                 }
@@ -521,9 +522,11 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 orientedHeight,
                 currentPixelAspectRatio,
             )
-        if (currentSurfaceEntity.canvasShape is SurfaceEntity.CanvasShape.Quad) {
-            currentSurfaceEntity.canvasShape =
-                SurfaceEntity.CanvasShape.Quad(newShapeDimensions.width, newShapeDimensions.height)
+        if (currentSurfaceEntity.shape is SurfaceEntity.Shape.Quad) {
+            currentSurfaceEntity.shape =
+                SurfaceEntity.Shape.Quad(
+                    FloatSize2d(newShapeDimensions.width, newShapeDimensions.height)
+                )
             movableComponent?.size = currentSurfaceEntity.dimensions
         }
 
@@ -566,7 +569,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             // This is a hack for nonQuad canvas shapes. We don't expect those videos to contain
             // internal rotation, and we want to be able to position the control panel relative to
             // the video panel.
-            if (!(currentSurfaceEntity.canvasShape is SurfaceEntity.CanvasShape.Quad)) {
+            if (!(currentSurfaceEntity.shape is SurfaceEntity.Shape.Quad)) {
                 panel.parent = currentSurfaceEntity
             }
 
@@ -577,7 +580,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
         }
     }
 
-    // Note that pose here will be ignored if the canvasShape is not a Quad
+    // Note that pose here will be ignored if the shape is not a Quad
     // TODO: Update this to take a Pose for the controlPanel
     @Suppress("UnsafeOptInUsageError")
     @Composable
@@ -587,7 +590,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
         videoUri: String,
         stereoMode: Int,
         pose: Pose,
-        canvasShape: SurfaceEntity.CanvasShape,
+        shape: SurfaceEntity.Shape,
         buttonText: String,
         buttonColor: Color = VideoButtonColors.DefaultButton,
         enabled: Boolean = true,
@@ -611,7 +614,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             enabled = enabled,
             onClick = {
                 var actualPose = pose
-                if (!(canvasShape is SurfaceEntity.CanvasShape.Quad)) {
+                if (!(shape is SurfaceEntity.Shape.Quad)) {
                     actualPose =
                         session.scene.spatialUser.head?.transformPoseTo(
                             Pose.Identity,
@@ -624,9 +627,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
 
                     val surfaceContentLevel =
                         if (protected) {
-                            SurfaceEntity.ContentSecurityLevel.PROTECTED
+                            SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED
                         } else {
-                            SurfaceEntity.ContentSecurityLevel.NONE
+                            SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE
                         }
 
                     val superSamplingMode =
@@ -634,20 +637,19 @@ class VideoPlayerTestActivity : ComponentActivity() {
                             this@VideoPlayerTestActivity.superSamplingMode ==
                                 SuperSamplingMode.DEFAULT
                         ) {
-                            SurfaceEntity.SuperSampling.DEFAULT
+                            SurfaceEntity.SuperSampling.SUPER_SAMPLING_PENTAGON
                         } else {
-                            SurfaceEntity.SuperSampling.NONE
+                            SurfaceEntity.SuperSampling.SUPER_SAMPLING_NONE
                         }
 
                     surfaceEntity =
                         SurfaceEntity.create(
-                            session,
-                            stereoMode,
-                            actualPose,
-                            canvasShape,
-                            surfaceContentLevel,
-                            null,
-                            superSamplingMode,
+                            session = session,
+                            pose = actualPose,
+                            shape = shape,
+                            stereoMode = stereoMode,
+                            superSampling = superSamplingMode,
+                            surfaceProtection = surfaceContentLevel,
                         )
                     // Make the video player movable (to make it easier to look at it from different
                     // angles and distances) (only on quad canvas)
@@ -655,7 +657,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                     // The quad has a radius of 1.0 meters
                     movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
-                    if (canvasShape is SurfaceEntity.CanvasShape.Quad) {
+                    if (shape is SurfaceEntity.Shape.Quad) {
                         val unused = surfaceEntity!!.addComponent(movableComponent!!)
                     }
                 }
@@ -743,7 +745,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                                                         colorSpace = colorSpace,
                                                         colorTransfer = colorTransfer,
                                                         colorRange = colorRange,
-                                                        maxCLL = maxContentLightLevel,
+                                                        maxContentLightLevel = maxContentLightLevel,
                                                     )
                                                 surfaceEntity?.contentColorMetadata =
                                                     contentColorMetadata
@@ -829,9 +831,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/vid_bigbuckbunny.mp4",
-            stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             buttonText = "[Stereo] Play Big Buck Bunny",
             buttonColor = VideoButtonColors.StandardPlayback,
             enabled = enabled,
@@ -854,9 +856,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/mvhevc_flat_left_primary_1080.mov",
-            stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             buttonText = "[Multiview] Play MVHEVC Left Primary",
             buttonColor = VideoButtonColors.Multiview,
             enabled = enabled,
@@ -880,9 +882,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/mvhevc_flat_right_primary_1080.mov",
-            stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             buttonText = "[Multiview] Play MVHEVC Right Primary",
             buttonColor = VideoButtonColors.Multiview,
             enabled = enabled,
@@ -899,9 +901,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             // For Testers: Note that this translates to "/sdcard/Download/Naver180.mp4".
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() + "/Download/Naver180.mp4",
-            stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
             pose = Pose.Identity, // will be head pose
-            canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
+            shape = SurfaceEntity.Shape.Hemisphere(1.0f),
             buttonText = "[VR] Play Naver 180 (Side-by-Side)",
             buttonColor = VideoButtonColors.VR,
             enabled = enabled,
@@ -918,9 +920,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/Galaxy11_VR_3D360.mp4",
-            stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
             pose = Pose.Identity, // will be head pose
-            canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f),
+            shape = SurfaceEntity.Shape.Sphere(1.0f),
             buttonText = "[VR] Play Galaxy 360 (Top-Bottom)",
             buttonColor = VideoButtonColors.VR,
             enabled = enabled,
@@ -937,9 +939,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/Naver180_MV-HEVC.mp4",
-            stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
             pose = Pose.Identity, // will be head pose
-            canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
+            shape = SurfaceEntity.Shape.Hemisphere(1.0f),
             buttonText = "[VR] Play Naver 180 (MV-HEVC)",
             buttonColor = VideoButtonColors.VR,
             enabled = enabled,
@@ -957,9 +959,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/Galaxy11_VR_3D360_MV-HEVC.mp4",
-            stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
             pose = Pose.Identity, // will be head pose
-            canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f),
+            shape = SurfaceEntity.Shape.Sphere(1.0f),
             buttonText = "[VR] Play Galaxy 360 (MV-HEVC)",
             buttonColor = VideoButtonColors.VR,
             enabled = enabled,
@@ -982,9 +984,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/sdr_singleview_protected.mp4",
-            stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             buttonText = "[DRM] Play Side-by-Side",
             buttonColor = VideoButtonColors.DRM,
             enabled = enabled,
@@ -1008,9 +1010,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/mvhevc_flat_left_primary_1080_protected.mp4",
-            stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             buttonText = "[DRM] Play MVHEVC Left Primary",
             buttonColor = VideoButtonColors.DRM,
             enabled = enabled,
@@ -1034,9 +1036,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/hdr_pq_1000nits_1080p.mp4",
-            stereoMode = SurfaceEntity.StereoMode.MONO,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             buttonText = "[HDR] Play HDR PQ Video",
             buttonColor = VideoButtonColors.HDR,
             enabled = enabled,
@@ -1060,9 +1062,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/single_view_rotated_270_half_width.mp4",
-            stereoMode = SurfaceEntity.StereoMode.MONO,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             buttonText = "[Transform] Play Single View (Rot 270, PAR 0.5)",
             buttonColor = VideoButtonColors.Transformations,
             enabled = enabled,
@@ -1086,9 +1088,9 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/mvhevc_left_primary_rotated_180.mp4",
-            stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
             pose = Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
-            canvasShape = SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
+            shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
             buttonText = "[Transform] Play MVHEVC Left Primary (Rot 180)",
             buttonColor = VideoButtonColors.Transformations,
             enabled = enabled,

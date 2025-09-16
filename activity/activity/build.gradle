@@ -48,9 +48,7 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":internal-testutils-runtime"), {
-        exclude group: "androidx.activity", module: "activity"
-    })
+    androidTestImplementation(project(":internal-testutils-runtime"))
 
     lintPublish(project(":activity:activity-lint"))
 

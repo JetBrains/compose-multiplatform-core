@@ -21,6 +21,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSName
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeParameter
@@ -221,6 +222,14 @@ fun <T : Any> KSAnnotation.requirePropertyValueOfType(
 fun KSTypeReference.toTypeName(): TypeName {
     val args = resolve().arguments
     return resolve().toTypeName(args)
+}
+
+fun KSPropertyDeclaration.getQualifiedName(): String {
+    val qualifier =
+        qualifiedName?.getQualifier()
+            ?: throw ProcessingException("Unable to resolve the qualified name", this)
+    val simpleName = simpleName.asString()
+    return "$qualifier#$simpleName"
 }
 
 internal fun TypeName.ignoreNullable(): TypeName {

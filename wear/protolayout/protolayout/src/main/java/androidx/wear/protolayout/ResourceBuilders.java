@@ -17,6 +17,7 @@
 package androidx.wear.protolayout;
 
 import static androidx.annotation.Dimension.PX;
+import static androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId.Builder.LOTTIE_PROPERTIES_LIMIT;
 import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 
 import android.annotation.SuppressLint;
@@ -672,6 +673,14 @@ public final class ResourceBuilders {
                                             progress.toDynamicFloatByteArray())));
         }
 
+        /**
+         * Returns how many properties can be added for customization of one Lottie animation via
+         * {@link Builder#setProperties(LottieProperty...)} method.
+         */
+        public static int getMaxPropertiesCount() {
+            return LOTTIE_PROPERTIES_LIMIT;
+        }
+
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         public static @NonNull AndroidLottieResourceByResId fromProto(
@@ -771,14 +780,15 @@ public final class ResourceBuilders {
              * Adds customizations for Lottie animation, for example to apply a color to a slot with
              * specified ID.
              *
-             * <p>Only up to 10 properties are allowed to be added for customization of one Lottie
-             * animation.
+             * <p>Only up to {@link #getMaxPropertiesCount()} properties are allowed to be added for
+             * customization of one Lottie animation.
              *
              * <p>If more than one {@link LottieProperty} with the same filter and different value
              * (for example, with the same slot ID and different color in case of {@link
              * LottieProperty#colorForSlot}) is added, the last filter will be applied.
              *
-             * @throws IllegalArgumentException if the number of properties added is larger than 10.
+             * @throws IllegalArgumentException if the number of properties added is larger than
+             *     {@link #getMaxPropertiesCount()}.
              */
             @RequiresSchemaVersion(major = 1, minor = 600)
             public @NonNull Builder setProperties(LottieProperty @NonNull ... properties) {

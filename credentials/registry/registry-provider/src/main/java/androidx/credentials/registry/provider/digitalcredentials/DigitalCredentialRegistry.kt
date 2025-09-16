@@ -24,6 +24,9 @@ import androidx.credentials.registry.provider.RegistryManager
 /**
  * A request to register digital credentials with Credential Manager.
  *
+ * The ([type], [id]) properties together act as a primary key for this registry record stored with
+ * the Registry Manager. You later can use them to perform overwrite or deletion.
+ *
  * @param id the unique id that identifies this registry, such that it won't be overwritten by other
  *   different registries of the same `type`; in other words, registering the registry with the same
  *   id will overwrite the existing one when applicable

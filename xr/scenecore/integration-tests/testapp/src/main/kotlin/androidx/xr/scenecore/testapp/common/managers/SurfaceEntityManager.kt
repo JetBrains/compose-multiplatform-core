@@ -20,6 +20,7 @@ import android.widget.Button
 import android.widget.RadioGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.MovableComponent
@@ -47,21 +48,21 @@ class SurfaceEntityManager(private val session: Session, activity: AppCompatActi
         activity.findViewById<Button>(R.id.button_destroy_surface_entity)
     val canvasRadioOptions =
         listOf(
-            SurfaceEntity.CanvasShape.Quad(1f, 1f),
-            SurfaceEntity.CanvasShape.Vr180Hemisphere(1f),
-            SurfaceEntity.CanvasShape.Vr360Sphere(1f),
+            SurfaceEntity.Shape.Quad(FloatSize2d(1f, 1f)),
+            SurfaceEntity.Shape.Hemisphere(1f),
+            SurfaceEntity.Shape.Sphere(1f),
         )
-    private val _selectedCanvasShapeOptionFlow = MutableStateFlow(canvasRadioOptions[0])
-    private var selectedCanvasShapeOption: SurfaceEntity.CanvasShape
-        get() = _selectedCanvasShapeOptionFlow.value
+    private val _selectedShapeOptionFlow = MutableStateFlow(canvasRadioOptions[0])
+    private var selectedShapeOption: SurfaceEntity.Shape
+        get() = _selectedShapeOptionFlow.value
         set(value) {
-            _selectedCanvasShapeOptionFlow.value = value
+            _selectedShapeOptionFlow.value = value
         }
 
     init {
         updateButtonStates()
         surfaceEntityRadioGroup.setOnCheckedChangeListener { group, checkedId ->
-            selectedCanvasShapeOption =
+            selectedShapeOption =
                 when (checkedId) {
                     R.id.radiobutton_quad -> canvasRadioOptions[0]
                     R.id.radiobutton_vr180 -> canvasRadioOptions[1]
@@ -70,7 +71,7 @@ class SurfaceEntityManager(private val session: Session, activity: AppCompatActi
                 }
             // If entity exists, update its shape immediately
             if (surfaceEntity != null) {
-                surfaceEntity?.canvasShape = selectedCanvasShapeOption
+                surfaceEntity?.shape = selectedShapeOption
             }
         }
 
@@ -90,10 +91,10 @@ class SurfaceEntityManager(private val session: Session, activity: AppCompatActi
         if (surfaceEntity == null) {
             surfaceEntity =
                 SurfaceEntity.create(
-                    session,
-                    SurfaceEntity.StereoMode.MONO,
-                    Pose.Identity,
-                    selectedCanvasShapeOption,
+                    session = session,
+                    pose = Pose.Identity,
+                    shape = selectedShapeOption,
+                    stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO,
                 )
             // Make the video player movable (to make it easier to look at it from
             // different angles and distances)

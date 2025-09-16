@@ -220,7 +220,7 @@ public class ProtectionLayout extends FrameLayout {
         view.setTranslationX(attrs.getTranslationX());
         view.setTranslationY(attrs.getTranslationY());
         view.setAlpha(attrs.getAlpha());
-        view.setVisibility(attrs.isVisible() ? View.VISIBLE : View.INVISIBLE);
+        view.setVisibility(attrs.isVisible() ? View.VISIBLE : View.GONE);
         view.setBackground(attrs.getDrawable());
         final Protection.Attributes.Callback callback =
                 new Protection.Attributes.Callback() {
@@ -248,7 +248,7 @@ public class ProtectionLayout extends FrameLayout {
 
                     @Override
                     public void onVisibilityChanged(boolean visible) {
-                        view.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+                        view.setVisibility(visible ? View.VISIBLE : View.GONE);
                     }
 
                     @Override

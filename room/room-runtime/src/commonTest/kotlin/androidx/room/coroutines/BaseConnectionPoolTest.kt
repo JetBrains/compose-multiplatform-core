@@ -1372,6 +1372,39 @@ abstract class BaseConnectionPoolTest {
         multiThreadContext.close()
     }
 
+    @Test
+    fun connectionElementIsolation() = runTest {
+        val driver = setupDriver()
+        val poolOne = newSingleConnectionPool(driver = driver, fileName = ":memory:")
+        val poolTwo = newSingleConnectionPool(driver = driver, fileName = ":memory:")
+        poolOne.useWriterConnection {
+            it.execSQL("CREATE TABLE Dog (id INTEGER, name TEXT, PRIMARY KEY(id))")
+        }
+        poolTwo.useWriterConnection {
+            it.execSQL("CREATE TABLE Cat (id INTEGER, name TEXT, PRIMARY KEY(id))")
+        }
+        poolOne.useWriterConnection { c1 ->
+            c1.execSQL("INSERT INTO Dog (id, name) VALUES (1, 'Frida')")
+            poolTwo.useWriterConnection { c2 ->
+                c2.execSQL("INSERT INTO Cat (id, name) VALUES (1, 'Tom')")
+            }
+        }
+        poolOne.useReaderConnection { c1 ->
+            c1.usePrepared("SELECT name FROM Dog") {
+                assertThat(it.step()).isTrue()
+                assertThat(it.getText(0)).isEqualTo("Frida")
+            }
+        }
+        poolTwo.useReaderConnection { c1 ->
+            c1.usePrepared("SELECT name FROM Cat") {
+                assertThat(it.step()).isTrue()
+                assertThat(it.getText(0)).isEqualTo("Tom")
+            }
+        }
+        poolOne.close()
+        poolTwo.close()
+    }
+
     protected fun setupDriver(): SQLiteDriver {
         return getDriver().apply { setupTestDatabase(this) }
     }

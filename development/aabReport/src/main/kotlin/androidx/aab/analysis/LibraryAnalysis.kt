@@ -16,6 +16,7 @@
 
 package androidx.aab.analysis
 
+import androidx.aab.ApkInfo
 import androidx.aab.BundleInfo
 
 data class LibraryAnalysis(val hasDotVersionFiles: Boolean, val hasAppBundleDependencies: Boolean) :
@@ -37,6 +38,13 @@ data class LibraryAnalysis(val hasDotVersionFiles: Boolean, val hasAppBundleDepe
     }
 
     companion object {
+        fun ApkInfo.getLibraryAnalysis(): LibraryAnalysis {
+            return LibraryAnalysis(
+                hasDotVersionFiles = dotVersionFiles.isNotEmpty(),
+                hasAppBundleDependencies = false,
+            )
+        }
+
         fun BundleInfo.getLibraryAnalysis(): LibraryAnalysis {
             return LibraryAnalysis(
                 hasDotVersionFiles = dotVersionFiles.isNotEmpty(),

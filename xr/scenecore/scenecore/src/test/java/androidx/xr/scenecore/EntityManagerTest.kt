@@ -16,11 +16,11 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
 import android.content.Context
 import android.os.Build
 import android.view.View
 import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
@@ -54,7 +54,8 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class EntityManagerTest {
     private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
     private val mockActivitySpace = mock<RtActivitySpace>()
     private val mockGltfModelEntityImpl = mock<RtGltfEntity>()

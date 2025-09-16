@@ -836,6 +836,15 @@ public class WebViewFeatureInternal {
                     WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE,
                     StartupFeatures.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE);
 
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#preconnect(String)}
+     */
+    public static final ApiFeature.NoFramework PRECONNECT =
+            new ApiFeature.NoFramework(WebViewFeature.PRECONNECT,
+                    Features.PRECONNECT);
+
     // --- Add new feature constants above this line ---
 
     private WebViewFeatureInternal() {

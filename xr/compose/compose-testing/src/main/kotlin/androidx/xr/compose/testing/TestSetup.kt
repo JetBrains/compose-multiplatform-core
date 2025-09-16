@@ -310,7 +310,7 @@ private constructor(
     }
 }
 
-private class TestSessionSpatialCapabilities(session: Session) : SpatialCapabilities {
+internal class TestSessionSpatialCapabilities(session: Session) : SpatialCapabilities {
     private var capabilities by
         mutableStateOf(session.scene.spatialCapabilities).apply {
             session.scene.addSpatialCapabilitiesChangedListener { value = it }
@@ -333,7 +333,8 @@ private class TestSessionSpatialCapabilities(session: Session) : SpatialCapabili
 }
 
 /** A [SpatialConfiguration] that is attached to the current [Session]. */
-private class TestSessionSpatialConfiguration(private val session: Session) : SpatialConfiguration {
+internal class TestSessionSpatialConfiguration(private val session: Session) :
+    SpatialConfiguration {
     override val hasXrSpatialFeature: Boolean = true
 
     override val bounds: DpVolumeSize by

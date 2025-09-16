@@ -27,17 +27,12 @@ import androidx.annotation.RequiresApi;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.lang.reflect.Field;
-
 class ImageViewUtils {
 
     /**
      * False when linking of the hidden animateTransform method has previously failed.
      */
     private static boolean sTryHiddenAnimateTransform = true;
-
-    private static Field sDrawMatrixField;
-    private static boolean sDrawMatrixFieldFetched;
 
     /**
      * Sets the matrix to animate the content of the image view.
@@ -70,19 +65,6 @@ class ImageViewUtils {
             } catch (NoSuchMethodError e) {
                 sTryHiddenAnimateTransform = false;
             }
-        }
-    }
-
-    @SuppressLint("SoonBlockedPrivateApi") // only called for API <21
-    private static void fetchDrawMatrixField() {
-        if (!sDrawMatrixFieldFetched) {
-            try {
-                sDrawMatrixField = ImageView.class.getDeclaredField("mDrawMatrix");
-                sDrawMatrixField.setAccessible(true);
-            } catch (NoSuchFieldException ignore) {
-                // Do nothing
-            }
-            sDrawMatrixFieldFetched = true;
         }
     }
 

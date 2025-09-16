@@ -63,7 +63,7 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"‏این PDF قابل‌ویرایش نیست"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"‏محتوای کپی‌شده از PDF"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"نوار پیمایش"</string>
-    <string name="confirm_selection" msgid="7020926320719465164">"تأیید"</string>
+    <string name="confirm_selection" msgid="7020926320719465164">"تأیید کردن"</string>
     <string name="form_widget" msgid="5841730047544552656">"از ابزاره"</string>
     <string name="form_type" msgid="1302137779809645840">"نوع: <xliff:g id="WIDGET_TYPE_NAME">%1$s</xliff:g>."</string>
     <string name="form_title" msgid="2718582322716402117">"عنوان: <xliff:g id="WIDGET_ACCESSIBILITY_TITLE">%1$s</xliff:g>."</string>

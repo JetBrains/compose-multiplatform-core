@@ -167,16 +167,17 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
 
         // Merge Preview stabilization and video stabilization configs.
         for (UseCase useCase : mChildren) {
-            if (useCase.getCurrentConfig().getVideoStabilizationMode()
+            UseCaseConfig<?> useCaseConfig = requireNonNull(mChildrenConfigsMap.get(useCase));
+            if (useCaseConfig.getVideoStabilizationMode()
                     != StabilizationMode.UNSPECIFIED) {
                 mutableConfig.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
-                        useCase.getCurrentConfig().getVideoStabilizationMode());
+                        useCaseConfig.getVideoStabilizationMode());
             }
 
-            if (useCase.getCurrentConfig().getPreviewStabilizationMode()
+            if (useCaseConfig.getPreviewStabilizationMode()
                     != StabilizationMode.UNSPECIFIED) {
                 mutableConfig.insertOption(OPTION_PREVIEW_STABILIZATION_MODE,
-                        useCase.getCurrentConfig().getPreviewStabilizationMode());
+                        useCaseConfig.getPreviewStabilizationMode());
             }
         }
     }
