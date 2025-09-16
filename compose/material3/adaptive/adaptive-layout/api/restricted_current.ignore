@@ -1,7 +1,0 @@
-// Baseline format: 1.0
-AddedClass: androidx.compose.material3.adaptive.layout.LevitatedPaneScrimKt:
-    Added class androidx.compose.material3.adaptive.layout.LevitatedPaneScrimKt
-
-
-RemovedClass: androidx.compose.material3.adaptive.layout.ScrimKt:
-    Binary breaking change: Removed class androidx.compose.material3.adaptive.layout.ScrimKt

@@ -37,6 +37,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
@@ -103,11 +104,18 @@ import kotlinx.coroutines.withContext
  * bounds. Zoom can be changed using the [zoom] property, which is notably distinct from
  * [View.getScaleX] / [View.getScaleY]. Scroll position is based on the [View.getScrollX] /
  * [View.getScrollY] properties.
+ *
+ * This inherits [ViewGroup] but does not support adding arbitrary children via [addView] or in a
+ * layout.
  */
 public open class PdfView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
-    View(context, attrs, defStyle) {
+    ViewGroup(context, attrs, defStyle) {
+
+    init {
+        setWillNotDraw(false)
+    }
 
     public var fastScrollVerticalThumbDrawable: Drawable =
         requireNotNull(context.getDrawable(R.drawable.fast_scroll_thumb_drawable))
@@ -909,6 +917,26 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         return handled || super.onTouchEvent(event)
     }
 
+    override fun addView(child: View?) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
+    override fun addView(child: View?, index: Int) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
+    override fun addView(child: View?, width: Int, height: Int) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
+    override fun addView(child: View?, params: LayoutParams?) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
+    override fun addView(child: View?, index: Int, params: LayoutParams?) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
     private fun isContentAtHorizontalEdges(): Boolean {
         val leftContentEdgePx = -scrollX
         val rightContentEdgePx =
@@ -1027,7 +1055,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
         if (pendingZoomRecalculation) {
             this.zoom = getDefaultZoom()
             pendingZoomRecalculation = false

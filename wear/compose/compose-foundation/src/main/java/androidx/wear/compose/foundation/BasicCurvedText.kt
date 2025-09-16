@@ -16,9 +16,13 @@
 
 package androidx.wear.compose.foundation
 
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.Paint.LINEAR_TEXT_FLAG
 import android.graphics.Paint.SUBPIXEL_TEXT_FLAG
+import android.graphics.Path
 import android.graphics.Typeface
+import android.os.Build
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.TextUtils
@@ -130,6 +134,7 @@ internal class CurvedTextChild(
     @Composable
     override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
         actualStyle = DefaultCurvedTextStyles + style()
+
         // Avoid recreating the delegate if possible, as it's expensive
         delegate = remember { CurvedTextDelegate() }
         delegate.UpdateFontIfNeeded(
@@ -156,6 +161,7 @@ internal class CurvedTextChild(
             else actualStyle.letterSpacingCounterClockwise,
             density,
             if (actualStyle.lineHeight.isSpecified) actualStyle.lineHeight.toPx() else -1f,
+            actualStyle.warpOffset,
         )
 
         // Size the compose-ui node reasonably.
@@ -198,12 +204,17 @@ internal class CurvedTextChild(
         parentOuterRadius: Float,
         parentThickness: Float,
     ): PartialLayoutInfo {
-        val measureRadius = parentOuterRadius - delegate.baseLinePosition
+        val baselineRadius = parentOuterRadius - delegate.baseLinePosition
+        // getMeasureOffset is 0 when there is no warping, and the warping offset when there is
+        // this defines the horizontal line at which the text will maintain its width (lines closer
+        // to the center will be shrunk and lines further away will be stretched).
+        val realMeasureRadius =
+            baselineRadius + delegate.getMeasureOffset() * (if (clockwise) 1f else -1f)
         return PartialLayoutInfo(
-            delegate.textWidth / measureRadius,
+            delegate.textWidth / realMeasureRadius,
             parentOuterRadius,
             delegate.textHeight,
-            measureRadius,
+            baselineRadius,
         )
     }
 
@@ -251,15 +262,20 @@ internal class CurvedTextDelegate {
     private var typeFace: State<Typeface?> = mutableStateOf(null)
 
     private val paint =
-        android.graphics.Paint().apply {
+        TextPaint().apply {
             isAntiAlias = true
+            style = Paint.Style.FILL
             flags = flags or (SUBPIXEL_TEXT_FLAG + LINEAR_TEXT_FLAG)
         }
-    private val backgroundPath = android.graphics.Path()
-    private val textPath = android.graphics.Path()
+    private val backgroundPath = Path()
 
     var lastLayoutInfo: CurvedLayoutInfo? = null
     var lastParentSweepRadians: Float = 0f
+
+    // Start with the android rendered, will switch to the warped rendered if possible/needed.
+    private var textRender: CurvedTextRenderer = AndroidCurvedTextRenderer()
+    private var prevWarping = CurvedTextStyle.WarpOffset.None
+    private var warpRadiusOffset = 0f
 
     fun updateIfNeeded(
         text: String,
@@ -268,7 +284,28 @@ internal class CurvedTextDelegate {
         letterSpacing: TextUnit,
         density: Float,
         lineHeightPx: Float,
+        warpOffset: CurvedTextStyle.WarpOffset,
     ) {
+        var needsUpdate = false
+
+        if (Build.VERSION.SDK_INT >= 29) {
+            // Defaults to not warping.
+            val actualWarping = warpOffset.takeOrElse { CurvedTextStyle.WarpOffset.None }
+            if (actualWarping != prevWarping) {
+                prevWarping = actualWarping
+                // Note that the Rendered may be stateful (computing things in the `preRender` to
+                // (re)use during `render`), so we need our own instance.
+                textRender =
+                    if (actualWarping != CurvedTextStyle.WarpOffset.None) WarpedCurvedTextRenderer()
+                    else AndroidCurvedTextRenderer()
+
+                needsUpdate = true
+                warpRadiusOffset =
+                    if (actualWarping == CurvedTextStyle.WarpOffset.None) 0f
+                    else actualWarping.determineWarpRadiusOffset(paint.ascent(), paint.descent())
+            }
+        }
+
         if (
             text != this.text ||
                 clockwise != this.clockwise ||
@@ -298,10 +335,21 @@ internal class CurvedTextDelegate {
                     }
                 }
 
+            needsUpdate = true
+        }
+
+        if (needsUpdate) {
             updateMeasures()
             lastLayoutInfo = null // Ensure paths are recomputed
         }
     }
+
+    /**
+     * This is 0 when there is no warping, and the warping offset when there is, defining the
+     * horizontal (before warping) line at which the text will maintain its width (lines closer to
+     * the center will be shrink and lines further away will be stretched).
+     */
+    fun getMeasureOffset() = warpRadiusOffset
 
     @Composable
     fun UpdateFontIfNeeded(
@@ -389,14 +437,15 @@ internal class CurvedTextDelegate {
                 )
                 backgroundPath.close()
 
-                textPath.reset()
-                textPath.addArc(
-                    centerX - measureRadius,
-                    centerY - measureRadius,
-                    centerX + measureRadius,
-                    centerY + measureRadius,
-                    startAngleRadians.toDegrees() + (if (clockwise) 0f else sweepDegree),
-                    clockwiseFactor * sweepDegree,
+                textRender.preRender(
+                    centerOffset,
+                    measureRadius,
+                    clockwise,
+                    sweepDegree,
+                    startAngleRadians,
+                    text,
+                    paint,
+                    warpRadiusOffset,
                 )
             }
         }
@@ -429,12 +478,13 @@ internal class CurvedTextDelegate {
                 } else {
                     ellipsize(
                         text,
-                        TextPaint(paint),
+                        paint,
                         overflow == TextOverflow.Ellipsis,
                         (parentSweepRadians * layoutInfo.measureRadius).roundToInt(),
                     )
                 }
-            canvas.nativeCanvas.drawTextOnPath(actualText, textPath, 0f, 0f, paint)
+
+            textRender.render(canvas.nativeCanvas, actualText, paint)
         }
     }
 
@@ -462,5 +512,56 @@ internal class CurvedTextDelegate {
 
         // Cut text that it's too big when in TextOverFlow.Clip mode.
         return text.substring(0, layout.getLineEnd(0))
+    }
+}
+
+internal interface CurvedTextRenderer {
+    /*
+    Prepare this render to draw the text, this is guaranteed to be called before render, any
+    time some of the parameters change.
+     */
+    fun preRender(
+        center: Offset,
+        radius: Float,
+        clockwise: Boolean,
+        sweepDegree: Float,
+        startAngleRadians: Float,
+        text: String,
+        paint: TextPaint,
+        warpRadiusOffset: Float,
+    )
+
+    /*
+    Actually render the text. This will be called during the draw phase.
+     */
+    fun render(canvas: Canvas, text: String, paint: TextPaint)
+}
+
+private class AndroidCurvedTextRenderer : CurvedTextRenderer {
+    private val textPath = Path()
+
+    override fun preRender(
+        center: Offset,
+        radius: Float,
+        clockwise: Boolean,
+        sweepDegree: Float,
+        startAngleRadians: Float,
+        text: String,
+        paint: TextPaint,
+        warpRadiusOffset: Float,
+    ) {
+        textPath.reset()
+        textPath.addArc(
+            center.x - radius,
+            center.y - radius,
+            center.x + radius,
+            center.y + radius,
+            startAngleRadians.toDegrees() + (if (clockwise) 0f else sweepDegree),
+            if (clockwise) sweepDegree else -sweepDegree,
+        )
+    }
+
+    override fun render(canvas: Canvas, text: String, paint: TextPaint) {
+        canvas.drawTextOnPath(text, textPath, 0f, 0f, paint)
     }
 }

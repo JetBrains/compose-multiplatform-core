@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,10 +67,95 @@ import androidx.wear.compose.foundation.curvedRow
 import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.foundation.sizeIn
 import androidx.wear.compose.foundation.weight
+import androidx.wear.compose.material.CompactButton
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.ToggleButton
 import androidx.wear.compose.material.curvedText
+
+@Composable
+fun WarpedTextDemo() {
+    val warpings =
+        listOf(
+            CurvedTextStyle.WarpOffset.None to "0",
+            CurvedTextStyle.WarpOffset.Descent to "D",
+            CurvedTextStyle.WarpOffset.Baseline to "B",
+            CurvedTextStyle.WarpOffset.HalfOpticalHeight to "H",
+            CurvedTextStyle.WarpOffset.HalfAscent to "A/2",
+            CurvedTextStyle.WarpOffset.Ascent to "A",
+        )
+
+    var warpIx by remember { mutableIntStateOf(0) }
+
+    val style =
+        CurvedTextStyle(
+            fontSize = 20.sp,
+            color = Color.White,
+            letterSpacing = 0.em,
+            warpOffset = warpings[warpIx].first,
+        )
+
+    var arabicIx by remember { mutableIntStateOf(0) }
+    val arabicTexts =
+        listOf(
+            "مرحبا 👋 بالعالم 🌏!",
+            "مرحبا 🧑‍🚀",
+            "🧑‍🚀 مرحبا",
+            "الاجتماع بعد 5 دقائق",
+            "الوصول إلى العمل بعد 25 دقيقة",
+            "الوصول بعد دقيقتين",
+            "مؤشر جودة الهواء (AQI) غير صحي • 182",
+            "بعد 10 دقائق • يوغا",
+            "موعد مع ليلى كمال • الساعة ‎5:05",
+            "الوقت المقدر للوصول: ‎8:28 مساءً",
+            "كوردانو راسل",
+            "جارٍ التنقّل...",
+            "جارٍ تحضير الاتجاهات...",
+            "نهاية التنبيهات!",
+        )
+
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CurvedLayout(Modifier.padding(2.dp), radialAlignment = CurvedAlignment.Radial.Center) {
+            curvedComposable { Box(Modifier.size(10.dp).background(Color.Red)) }
+            curvedText(
+                "Huge",
+                style = style.copy(fontSize = 50.sp),
+                modifier = CurvedModifier.background(Color.DarkGray),
+            )
+            curvedComposable { Box(Modifier.size(15.dp).background(Color.Green)) }
+            curvedColumn {
+                curvedText(
+                    arabicTexts[arabicIx],
+                    style = style,
+                    modifier = CurvedModifier.background(Color.Gray),
+                )
+                curvedText(
+                    "\uD83D\uDE02 Text \uD83D\uDC4D",
+                    style = style,
+                    modifier = CurvedModifier.background(Color.DarkGray),
+                )
+            }
+            curvedComposable { Box(Modifier.size(20.dp).background(Color.Blue)) }
+        }
+        CurvedLayout(
+            Modifier.padding(5.dp),
+            angularDirection = CurvedDirection.Angular.Reversed,
+            anchor = 90f,
+        ) {
+            curvedText("Other", style = style, modifier = CurvedModifier.background(Color.Gray))
+            curvedComposable { Box(Modifier.size(15.dp).background(Color.Green)) }
+            curvedText("CCw", style = style, modifier = CurvedModifier.background(Color.Gray))
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CompactButton(onClick = { warpIx = warpIx.inc() % warpings.size }) {
+                Text(warpings[warpIx].second, color = Color.Black, fontSize = 12.sp)
+            }
+            CompactButton(onClick = { arabicIx = arabicIx.inc() % arabicTexts.size }) {
+                Text("Txt")
+            }
+        }
+    }
+}
 
 @Composable
 fun CurvedWorldDemo() {

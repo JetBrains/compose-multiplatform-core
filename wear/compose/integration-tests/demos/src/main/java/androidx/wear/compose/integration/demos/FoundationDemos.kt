@@ -30,6 +30,7 @@ import androidx.wear.compose.foundation.samples.CurvedLetterSpacingSample
 import androidx.wear.compose.foundation.samples.CurvedLineHeight
 import androidx.wear.compose.foundation.samples.CurvedRowAndColumn
 import androidx.wear.compose.foundation.samples.CurvedSemanticsSample
+import androidx.wear.compose.foundation.samples.CurvedWarpingSample
 import androidx.wear.compose.foundation.samples.CurvedWeight
 import androidx.wear.compose.foundation.samples.EdgeSwipeForSwipeToDismiss
 import androidx.wear.compose.foundation.samples.ExpandableTextSample
@@ -112,6 +113,8 @@ val WearFoundationDemos =
             DemoCategory(
                 "CurvedLayout",
                 listOf(
+                    ComposableDemo("Warped Text Demo") { WarpedTextDemo() },
+                    ComposableDemo("Warped Text Sample") { CurvedWarpingSample() },
                     ComposableDemo("Curved Row") { CurvedWorldDemo() },
                     ComposableDemo("Curved Row and Column") { CurvedRowAndColumn() },
                     ComposableDemo("Curved Box") { CurvedBoxDemo() },

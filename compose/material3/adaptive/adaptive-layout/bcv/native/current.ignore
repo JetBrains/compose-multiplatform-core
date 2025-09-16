@@ -1,13 +1,10 @@
 // Baseline format: 1.0
-[linuxX64]: Removed declaration androidx.compose.material3.adaptive.layout/ScrimDefaults from androidx.compose.material
-[linuxX64]: Removed declaration androidx.compose.material3.adaptive.layout/androidx_compose_material3_adaptive_layout_ScrimDefaults$stableprop from androidx.compose.material
-[linuxX64]: Removed declaration androidx.compose.material3.adaptive.layout/Scrim(androidx.compose.ui/Modifier?, kotlin/Function0<kotlin/Unit>?, androidx.compose.ui.graphics/Color, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) from androidx.compose.material
-[linuxX64]: Removed declaration androidx.compose.material3.adaptive.layout/androidx_compose_material3_adaptive_layout_ScrimDefaults$stableprop_getter() from androidx.compose.material
-[linuxX64]: Added declaration androidx.compose.material3.adaptive.layout/LevitatedPaneScrimDefaults to androidx.compose.material
-[linuxX64]: Added declaration androidx.compose.material3.adaptive.layout/androidx_compose_material3_adaptive_layout_LevitatedPaneScrimDefaults$stableprop to androidx.compose.material
-[linuxX64]: Added declaration androidx.compose.material3.adaptive.layout/LevitatedPaneScrim(androidx.compose.ui/Modifier?, kotlin/Function0<kotlin/Unit>?, androidx.compose.ui.graphics/Color, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) to androidx.compose.material
-[linuxX64]: Added declaration androidx.compose.material3.adaptive.layout/androidx_compose_material3_adaptive_layout_LevitatedPaneScrimDefaults$stableprop_getter() to androidx.compose.material
-[linuxX64]: Removed declaration scrim from androidx.compose.material3.adaptive.layout/AdaptStrategy.Levitate
-[linuxX64]: Removed declaration alignment from androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated
-[linuxX64]: Removed declaration scrim from androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Levitated
-[linuxX64]: Removed declaration reflowUnder from androidx.compose.material3.adaptive.layout/PaneAdaptedValue.Reflowed
+[linuxX64]: Removed declaration androidx.compose.material3.adaptive.layout/DockedEdge from androidx.compose.material
+[linuxX64]: Removed declaration androidx.compose.material3.adaptive.layout/DragToResizeState from androidx.compose.material
+[linuxX64]: Removed declaration androidx.compose.material3.adaptive.layout/rememberDragToResizeState(androidx.compose.material3.adaptive.layout/DockedEdge, androidx.compose.ui.unit/Dp, androidx.compose.ui.unit/Dp, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) from androidx.compose.material
+[linuxX64]: Removed declaration (androidx.compose.ui/Modifier).dragToResize(androidx.compose.material3.adaptive.layout/DragToResizeState) from androidx.compose.material3.adaptive.layout/ExtendedPaneScaffoldPaneScope
+[linuxX64]: Removed declaration (androidx.compose.ui/Modifier).dragToResize(androidx.compose.material3.adaptive.layout/DragToResizeState) from androidx.compose.material3.adaptive.layout/ExtendedPaneScaffoldScope
+[linuxX64]: Removed declaration dragToResizeState from androidx.compose.material3.adaptive.layout/PaneScaffoldParentData
+[linuxX64]: Removed declaration (androidx.compose.ui/Modifier).dragToResize(androidx.compose.material3.adaptive.layout/DragToResizeState) from androidx.compose.material3.adaptive.layout/PaneScaffoldScope
+[linuxX64]: Removed declaration (androidx.compose.ui/Modifier).dragToResize(androidx.compose.material3.adaptive.layout/DragToResizeState) from androidx.compose.material3.adaptive.layout/ThreePaneScaffoldPaneScope
+[linuxX64]: Removed declaration (androidx.compose.ui/Modifier).dragToResize(androidx.compose.material3.adaptive.layout/DragToResizeState) from androidx.compose.material3.adaptive.layout/ThreePaneScaffoldScope

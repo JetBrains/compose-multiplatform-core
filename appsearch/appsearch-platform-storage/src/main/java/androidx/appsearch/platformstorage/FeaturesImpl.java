@@ -42,12 +42,16 @@ final class FeaturesImpl implements Features {
     @Override
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public boolean isFeatureSupported(@NonNull String feature) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             // AppSearch landed in platform in S, however it was not updatable via mainline until T.
-            // So all features here are not available below T.
+            // The features listed below are not available below S.
             return false;
         }
         switch (feature) {
+            // Android S Features
+            case Features.SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM:
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+
             // Android T Features
             case Features.ADD_PERMISSIONS_AND_GET_VISIBILITY:
                 // fall through

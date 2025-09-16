@@ -794,10 +794,13 @@ internal class CompositionImpl(
                 for (changed in toRecord as Array<Set<Any>>) {
                     addPendingInvalidationsLocked(changed, forgetConditionalScopes = false)
                 }
-            null ->
-                composeRuntimeError(
-                    "calling recordModificationsOf and applyChanges concurrently is not supported"
-                )
+            null -> {
+                if (pendingPausedComposition == null)
+                    composeImmediateRuntimeError(
+                        "calling recordModificationsOf and applyChanges concurrently is not supported"
+                    )
+                // otherwise, the paused composition may be being resumed concurrently.
+            }
             else -> composeRuntimeError("corrupt pendingModifications drain: $pendingModifications")
         }
     }

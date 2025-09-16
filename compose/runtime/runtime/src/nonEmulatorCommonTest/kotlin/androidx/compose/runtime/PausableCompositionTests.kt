@@ -34,8 +34,10 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.yield
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Stable
@@ -683,6 +685,54 @@ class PausableCompositionTests {
 
         awaiter.await()
     }
+
+    @Test
+    fun resumeOnBackgroundThread() = compositionTest {
+        val awaiter = Awaiter()
+        var text by mutableStateOf("Some text")
+        var running by mutableStateOf(false)
+        var counter = 0
+        val mutatorJob =
+            launch(Dispatchers.Default) {
+                while (running) {
+                    text = "Some text $counter"
+                    counter++
+                    yield()
+                }
+            }
+
+        val workflow = workflow {
+            setContent()
+
+            val resumeJob =
+                launch(Dispatchers.Default) {
+                    while (!isComplete) {
+                        resumeOnce { true }
+                    }
+                }
+
+            resumeJob.join()
+            resumeTillComplete { false }
+            apply()
+            awaiter.done()
+        }
+
+        compose {
+            W { Text(text) }
+
+            PausableContent(workflow) { W { repeat(1000) { W { Text(text) } } } }
+            W { Text(text) }
+        }
+
+        repeat(100) {
+            advance(ignorePendingWork = true)
+            delay(1)
+        }
+
+        running = false
+        mutatorJob.join()
+        awaiter.await()
+    }
 }
 
 fun String.splitRecording() = split(", ")
@@ -824,12 +874,18 @@ private fun D() {
     }
 }
 
+@Composable
+private fun W(content: @Composable () -> Unit) {
+    Linear(content)
+}
+
 private fun MockViewValidator.D() {
     this.Linear { repeat(3) { this.C() } }
 }
 
 interface PausableContentWorkflowScope {
     val iteration: Int
+    val isComplete: Boolean
     val applied: Boolean
     val composition: PausableComposition
 
@@ -864,6 +920,9 @@ class PausableContentWorkflowDriver(
     override var iteration = 0
     override val applied: Boolean
         get() = host == null && pausedComposition == null
+
+    override val isComplete: Boolean
+        get() = host == null || pausedComposition?.isComplete == true
 
     override fun setContent(): PausedComposition {
         checkPrecondition(pausedComposition == null)

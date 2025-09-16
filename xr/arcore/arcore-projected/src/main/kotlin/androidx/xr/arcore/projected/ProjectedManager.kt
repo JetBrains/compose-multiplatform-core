@@ -68,12 +68,12 @@ internal constructor(
      */
     override fun create() {
         checkProjectedSupportedAndUpToDate(activity)
-        CoroutineScope(coroutineContext).launch {
-            if (testPerceptionService != null) {
-                perceptionManager.service = testPerceptionService
-                return@launch
-            }
+        if (testPerceptionService != null) {
+            perceptionManager.service = testPerceptionService
+            return
+        }
 
+        CoroutineScope(coroutineContext).launch {
             val binder = bindPerceptionService(activity)
         }
     }

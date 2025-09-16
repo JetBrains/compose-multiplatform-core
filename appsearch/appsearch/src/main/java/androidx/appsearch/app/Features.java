@@ -366,6 +366,16 @@ public interface Features {
     String SEARCH_EMBEDDING_MATCH_INFO = "SEARCH_EMBEDDING_MATCH_INFO";
 
     /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature check if
+     * READ_GLOBAL_APP_SEARCH_DATA permission is supported in this environment.
+     * This permission allows documents to be visible on any system UI surface.
+     * This feature covers {@link SetSchemaRequest.Builder#setSchemaTypeDisplayedBySystem}.
+     */
+    @ExperimentalAppSearchApi
+    String SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM =
+            "SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM";
+
+    /**
      * Returns whether a feature is supported at run-time. Feature support depends on the
      * feature in question, the AppSearch backend being used and the Android version of the
      * device.

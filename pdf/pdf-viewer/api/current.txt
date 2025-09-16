@@ -273,7 +273,7 @@ package androidx.pdf.view {
     property public int color;
   }
 
-  public class PdfView extends android.view.View {
+  public class PdfView extends android.view.ViewGroup {
     ctor public PdfView(android.content.Context context);
     ctor public PdfView(android.content.Context context, optional android.util.AttributeSet? attrs);
     ctor public PdfView(android.content.Context context, optional android.util.AttributeSet? attrs, optional int defStyle);

@@ -1021,8 +1021,8 @@ private class PaneMeasurable(
             else -> 0f
         }
 
-    val dragToResizeState
-        get() = data.dragToResizeState
+    val dragToResizeState: DragToResizeState? = null
+    // TODO: uncomment this when publish the feature: "get() = data.dragToResizeState"
 
     val measuredAndPlaced
         get() = measuredBounds != null

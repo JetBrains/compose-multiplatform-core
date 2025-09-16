@@ -226,17 +226,19 @@ package androidx.wear.compose.foundation {
 
   public final class CurvedTextStyle {
     ctor public CurvedTextStyle();
-    ctor @KotlinOnly public CurvedTextStyle(optional androidx.compose.ui.graphics.Color background, optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.unit.TextUnit fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional androidx.compose.ui.unit.TextUnit letterSpacing, optional androidx.compose.ui.unit.TextUnit letterSpacingCounterClockwise, optional androidx.compose.ui.unit.TextUnit lineHeight);
+    ctor @KotlinOnly public CurvedTextStyle(optional androidx.compose.ui.graphics.Color background, optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.unit.TextUnit fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional androidx.compose.ui.unit.TextUnit letterSpacing, optional androidx.compose.ui.unit.TextUnit letterSpacingCounterClockwise, optional androidx.compose.ui.unit.TextUnit lineHeight, optional androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset warpOffset);
     ctor public CurvedTextStyle(androidx.compose.ui.text.TextStyle style);
     ctor @BytecodeOnly @Deprecated public CurvedTextStyle(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly @Deprecated public CurvedTextStyle(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
-    ctor @BytecodeOnly public CurvedTextStyle(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public CurvedTextStyle(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, long, long, long, byte, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public CurvedTextStyle(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor @BytecodeOnly @Deprecated public CurvedTextStyle(long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method @KotlinOnly public androidx.wear.compose.foundation.CurvedTextStyle copy(optional androidx.compose.ui.graphics.Color background, optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.unit.TextUnit fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional androidx.compose.ui.unit.TextUnit letterSpacing, optional androidx.compose.ui.unit.TextUnit letterSpacingCounterClockwise, optional androidx.compose.ui.unit.TextUnit lineHeight);
+    method @KotlinOnly public androidx.wear.compose.foundation.CurvedTextStyle copy(optional androidx.compose.ui.graphics.Color background, optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.unit.TextUnit fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional androidx.compose.ui.unit.TextUnit letterSpacing, optional androidx.compose.ui.unit.TextUnit letterSpacingCounterClockwise, optional androidx.compose.ui.unit.TextUnit lineHeight, optional androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset warpOffset);
     method @BytecodeOnly @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle! copy-MF-8BNI(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, long);
+    method @BytecodeOnly public androidx.wear.compose.foundation.CurvedTextStyle copy-cDbMonc(long, long, long, androidx.compose.ui.text.font.FontFamily?, androidx.compose.ui.text.font.FontWeight?, androidx.compose.ui.text.font.FontStyle?, androidx.compose.ui.text.font.FontSynthesis?, long, long, long, byte);
     method @BytecodeOnly @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle! copy-rRnh6Vg(long, long, long);
     method @BytecodeOnly @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle! copy-xgAEyWg(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!);
-    method @BytecodeOnly public androidx.wear.compose.foundation.CurvedTextStyle copy-zt0DKyk(long, long, long, androidx.compose.ui.text.font.FontFamily?, androidx.compose.ui.text.font.FontWeight?, androidx.compose.ui.text.font.FontStyle?, androidx.compose.ui.text.font.FontSynthesis?, long, long, long);
+    method @BytecodeOnly @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle! copy-zt0DKyk(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, long, long, long);
     method @BytecodeOnly public long getBackground-0d7_KjU();
     method @BytecodeOnly public long getColor-0d7_KjU();
     method public androidx.compose.ui.text.font.FontFamily? getFontFamily();
@@ -247,6 +249,7 @@ package androidx.wear.compose.foundation {
     method @BytecodeOnly public long getLetterSpacing-XSAIIZE();
     method @BytecodeOnly public long getLetterSpacingCounterClockwise-XSAIIZE();
     method @BytecodeOnly public long getLineHeight-XSAIIZE();
+    method @BytecodeOnly public byte getWarpOffset-5xPYRZc();
     method public androidx.wear.compose.foundation.CurvedTextStyle merge(optional androidx.wear.compose.foundation.CurvedTextStyle? other);
     method public operator androidx.wear.compose.foundation.CurvedTextStyle plus(androidx.wear.compose.foundation.CurvedTextStyle other);
     property public androidx.compose.ui.graphics.Color background;
@@ -259,6 +262,36 @@ package androidx.wear.compose.foundation {
     property public androidx.compose.ui.unit.TextUnit letterSpacing;
     property public androidx.compose.ui.unit.TextUnit letterSpacingCounterClockwise;
     property public androidx.compose.ui.unit.TextUnit lineHeight;
+    property public androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset warpOffset;
+  }
+
+  @kotlin.jvm.JvmInline public static final value class CurvedTextStyle.WarpOffset {
+    method @BytecodeOnly public static androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset! box-impl(byte);
+    method @BytecodeOnly public static boolean isSpecified-impl(byte);
+    method @BytecodeOnly public static boolean isUnspecified-impl(byte);
+    method @KotlinOnly public inline androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset takeOrElse(kotlin.jvm.functions.Function0<androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset> block);
+    method @BytecodeOnly public static byte takeOrElse-MRdpWGo(byte, kotlin.jvm.functions.Function0<androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset!>);
+    method @BytecodeOnly public byte unbox-impl();
+    property @androidx.compose.runtime.Stable public inline boolean isSpecified;
+    property @androidx.compose.runtime.Stable public inline boolean isUnspecified;
+    field public static final androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset.Companion Companion;
+  }
+
+  public static final class CurvedTextStyle.WarpOffset.Companion {
+    method @BytecodeOnly public byte getAscent-5xPYRZc();
+    method @BytecodeOnly public byte getBaseline-5xPYRZc();
+    method @BytecodeOnly public byte getDescent-5xPYRZc();
+    method @BytecodeOnly public byte getHalfAscent-5xPYRZc();
+    method @BytecodeOnly public byte getHalfOpticalHeight-5xPYRZc();
+    method @BytecodeOnly public byte getNone-5xPYRZc();
+    method @BytecodeOnly public byte getUnspecified-5xPYRZc();
+    property public androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset Ascent;
+    property public androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset Baseline;
+    property public androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset Descent;
+    property public androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset HalfAscent;
+    property public androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset HalfOpticalHeight;
+    property public androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset None;
+    property public androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset Unspecified;
   }
 
   public final class ExpandableItemsDefaults {

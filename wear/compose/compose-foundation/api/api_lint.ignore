@@ -1,13 +1,19 @@
 // Baseline format: 1.0
 GetterSetterNames: androidx.wear.compose.foundation.ExpandableState#expanded:
     Invalid name for boolean property `expanded`. Should start with one of `has`, `can`, `should`, `is`.
-GetterSetterNames: androidx.wear.compose.foundation.lazy.TransformingLazyColumnState#getCanScrollBackward():
-    Getter for boolean property `canScrollBackward` is named `getCanScrollBackward` but should match the property name. Use `@get:JvmName` to rename.
-GetterSetterNames: androidx.wear.compose.foundation.lazy.TransformingLazyColumnState#getCanScrollForward():
-    Getter for boolean property `canScrollForward` is named `getCanScrollForward` but should match the property name. Use `@get:JvmName` to rename.
 GetterSetterNames: androidx.wear.compose.foundation.lazy.ScalingLazyListLayoutInfo#reverseLayout:
     Invalid name for boolean property `reverseLayout`. Should start with one of `has`, `can`, `should`, `is`.
 GetterSetterNames: androidx.wear.compose.foundation.lazy.ScalingLazyListState#getCanScrollBackward():
     Getter for boolean property `canScrollBackward` is named `getCanScrollBackward` but should match the property name. Use `@get:JvmName` to rename.
 GetterSetterNames: androidx.wear.compose.foundation.lazy.ScalingLazyListState#getCanScrollForward():
     Getter for boolean property `canScrollForward` is named `getCanScrollForward` but should match the property name. Use `@get:JvmName` to rename.
+GetterSetterNames: androidx.wear.compose.foundation.lazy.TransformingLazyColumnState#getCanScrollBackward():
+    Getter for boolean property `canScrollBackward` is named `getCanScrollBackward` but should match the property name. Use `@get:JvmName` to rename.
+GetterSetterNames: androidx.wear.compose.foundation.lazy.TransformingLazyColumnState#getCanScrollForward():
+    Getter for boolean property `canScrollForward` is named `getCanScrollForward` but should match the property name. Use `@get:JvmName` to rename.
+
+
+NoByteOrShort: androidx.wear.compose.foundation.CurvedTextStyle#copy(long, long, long, androidx.compose.ui.text.font.FontFamily, androidx.compose.ui.text.font.FontWeight, androidx.compose.ui.text.font.FontStyle, androidx.compose.ui.text.font.FontSynthesis, long, long, long, byte) parameter #10:
+    Should avoid odd sized primitives; use `int` instead of `byte` in parameter warpOffset in androidx.wear.compose.foundation.CurvedTextStyle.copy(long background, long color, long fontSize, androidx.compose.ui.text.font.FontFamily fontFamily, androidx.compose.ui.text.font.FontWeight fontWeight, androidx.compose.ui.text.font.FontStyle fontStyle, androidx.compose.ui.text.font.FontSynthesis fontSynthesis, long letterSpacing, long letterSpacingCounterClockwise, long lineHeight, byte warpOffset)
+NoByteOrShort: androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset#takeOrElse(kotlin.jvm.functions.Function0<androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset>):
+    Should avoid odd sized primitives; use `int` instead of `byte` in method androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset.takeOrElse(kotlin.jvm.functions.Function0<androidx.wear.compose.foundation.CurvedTextStyle.WarpOffset>)

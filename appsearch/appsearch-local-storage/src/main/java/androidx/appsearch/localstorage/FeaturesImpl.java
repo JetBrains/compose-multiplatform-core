@@ -118,6 +118,8 @@ public class FeaturesImpl implements Features {
             case Features.ISOLATED_STORAGE:
                 // Isolated storage is only supported for platform storage.
                 return false;
+            case Features.SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM:
+                // READ_GLOBAL_APP_SEARCH_DATA permission is only supported in platform storage.
             default:
                 return false;
         }

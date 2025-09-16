@@ -307,6 +307,56 @@ class CurvedScreenshotTest {
         }
     }
 
+    @Test
+    fun warp_test() {
+        verify_composable_screenshot {
+            val baseStyle =
+                CurvedTextStyle(color = Color.White, background = Color.Gray, fontSize = 30.sp)
+            CurvedLayout(
+                modifier = Modifier.fillMaxSize().background(Color.Black),
+                radialAlignment = CurvedAlignment.Radial.Center,
+            ) {
+                listOf(
+                        "No" to CurvedTextStyle.WarpOffset.None,
+                        "D" to CurvedTextStyle.WarpOffset.Descent,
+                        "B" to CurvedTextStyle.WarpOffset.Baseline,
+                        "H" to CurvedTextStyle.WarpOffset.HalfOpticalHeight,
+                        "A2" to CurvedTextStyle.WarpOffset.HalfAscent,
+                        "A" to CurvedTextStyle.WarpOffset.Ascent,
+                    )
+                    .forEachIndexed { ix, (text, offset) ->
+                        if (ix != 0) curvedBox(CurvedModifier.angularSizeDp(5.dp)) {}
+                        curvedColumn(angularAlignment = CurvedAlignment.Angular.Center) {
+                            basicCurvedText("HHH", style = baseStyle.copy(warpOffset = offset))
+                            basicCurvedText(
+                                text,
+                                style = baseStyle.copy(background = Color.Transparent),
+                            )
+                        }
+                    }
+            }
+        }
+    }
+
+    @Test
+    fun arabic_test() {
+        verify_composable_screenshot {
+            val style =
+                CurvedTextStyle(
+                    color = Color.White,
+                    background = Color.Gray,
+                    fontSize = 30.sp,
+                    warpOffset = CurvedTextStyle.WarpOffset.HalfOpticalHeight,
+                )
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                CurvedLayout { basicCurvedText("مرحبا 👋 بالعالم 🌏!", style) }
+                CurvedLayout(anchor = 90f, angularDirection = CurvedDirection.Angular.Reversed) {
+                    basicCurvedText("مرحبا 👋 بالعالم 🌏!", style)
+                }
+            }
+        }
+    }
+
     private fun CurvedScope.layout_direction_block() {
         basicCurvedText("A")
         curvedColumn {
