@@ -18,6 +18,8 @@ package androidx.compose.ui.node
 
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.mutableIntObjectMapOf
+import androidx.compose.runtime.ForgetfulRetainScope
+import androidx.compose.runtime.RetainScope
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -160,8 +162,8 @@ internal class RootNodeOwner(
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
     private var isDisposed = false
 
-    private var windowPosition: Offset? = null
-    private var globalPosition: Offset? = null
+    private var positionInWindow: Offset? = null
+    private var positionOnScreen: Offset? = null
 
     // TODO: Android assumes matrix for some APIs, so we need store something to avoid extra
     //  allocations. Clean up this APIs and remove it.
@@ -224,44 +226,44 @@ internal class RootNodeOwner(
     }
 
     private fun updatePositionCacheAndDispatch(hasContainerSizeChanged: Boolean = false) {
-        val globalPosition = platformContext.convertLocalToScreenPosition(Offset.Zero)
-        val hasGlobalPositionChanged = if (platformContext.hasNonTranslationComponents) {
-            this.globalPosition = null
+        val positionOnScreen = platformContext.convertLocalToScreenPosition(Offset.Zero)
+        val hasPositionOnScreenChanged = if (platformContext.hasNonTranslationComponents) {
+            this.positionOnScreen = null
             true // Always invalidate in case of rotation, skew, etc.
-        } else if (globalPosition != this.globalPosition) {
-            this.globalPosition = globalPosition
+        } else if (positionOnScreen != this.positionOnScreen) {
+            this.positionOnScreen = positionOnScreen
             true
         } else false
 
-        val windowPosition = platformContext.convertLocalToWindowPosition(Offset.Zero)
-        val hasWindowPositionChanged = if (platformContext.hasNonTranslationComponents) {
-            this.windowPosition = null
+        val positionInWindow = platformContext.convertLocalToWindowPosition(Offset.Zero)
+        val hasPositionInWindowChanged = if (platformContext.hasNonTranslationComponents) {
+            this.positionInWindow = null
             true // Always invalidate in case of rotation, skew, etc.
-        } else if (windowPosition != this.windowPosition) {
-            this.windowPosition = windowPosition
+        } else if (positionInWindow != this.positionInWindow) {
+            this.positionInWindow = positionInWindow
             true
         } else false
 
-        if (hasGlobalPositionChanged || hasWindowPositionChanged) {
+        if (hasPositionOnScreenChanged || hasPositionInWindowChanged) {
             owner.root.layoutDelegate.measurePassDelegate.notifyChildrenUsingCoordinatesWhilePlacing()
         }
         val containerSize = platformContext.windowInfo.containerSize
         owner.rectManager.updateOffsets(
-            screenOffset = globalPosition.round(),
-            windowOffset = windowPosition.round(),
+            screenOffset = positionOnScreen.round(),
+            windowOffset = positionInWindow.round(),
             viewToWindowMatrix = identityMatrix, // TODO: Replace viewToWindowMatrix to delegates
             windowWidth = containerSize.width,
             windowHeight = containerSize.height,
         )
         measureAndLayoutDelegate.dispatchOnPositionedCallbacks(
-            forceDispatch = hasGlobalPositionChanged || hasWindowPositionChanged
+            forceDispatch = hasPositionOnScreenChanged || hasPositionInWindowChanged
         )
         if (ComposeUiFlags.isRectTrackingEnabled) {
             owner.rectManager.dispatchCallbacks()
         }
-        if (hasWindowPositionChanged || hasContainerSizeChanged) {
+        if (hasPositionInWindowChanged || hasContainerSizeChanged) {
             graphicsContext.setLightingInfo(
-                canvasOffset = windowPosition,
+                canvasOffset = positionInWindow,
                 density = density,
                 containerSize = containerSize
             )
@@ -493,6 +495,7 @@ internal class RootNodeOwner(
         override val pointerIconService = PointerIconServiceImpl()
         override val semanticsOwner = SemanticsOwner(root, rootSemanticsNode, layoutNodes)
         override val windowInfo get() = platformContext.windowInfo
+        override val retainScope: RetainScope get() = ForgetfulRetainScope
         // TODO: 1.8.0-alpha02 Implement ComposeUiFlags.isRectTrackingEnabled
         //  https://youtrack.jetbrains.com/issue/CMP-6715/Support-ComposeUiFlags.isRectTrackingEnabled
         override val rectManager = RectManager()

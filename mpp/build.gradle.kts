@@ -79,13 +79,6 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:material3:adaptive:adaptive-layout"),
         ComposeComponent(":compose:material3:adaptive:adaptive-navigation"),
     ),
-    "GRAPHICS_SHAPES" to listOf(
-        ComposeComponent(
-            path = ":graphics:graphics-shapes",
-            // TODO: Maybe it makes sense to support mingwX64 here for consistency
-            supportedPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE
-        ),
-    ),
     "LIFECYCLE" to listOf(
         ComposeComponent(
             path = ":lifecycle:lifecycle-common",
@@ -108,6 +101,12 @@ val libraryToComponents = mapOf(
         ComposeComponent(":navigation:navigation-compose"),
         ComposeComponent(":navigation:navigation-common", supportedPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE),
         ComposeComponent(":navigation:navigation-runtime", supportedPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE),
+    ),
+    "NAVIGATION_3" to listOf(
+        ComposeComponent(":navigation3:navigation3-ui"),
+    ),
+    "NAVIGATION_EVENT" to listOf(
+        ComposeComponent(":navigationevent:navigationevent-compose"),
     ),
     "SAVEDSTATE" to listOf(
         ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL_AOSP),

@@ -205,9 +205,14 @@ abstract interface androidx.compose.ui.autofill/Autofill { // androidx.compose.u
 }
 
 abstract interface androidx.compose.ui.autofill/FillableData { // androidx.compose.ui.autofill/FillableData|null[0]
-    open fun getBool(): kotlin/Boolean? // androidx.compose.ui.autofill/FillableData.getBool|getBool(){}[0]
-    open fun getCharSequence(): kotlin/CharSequence? // androidx.compose.ui.autofill/FillableData.getCharSequence|getCharSequence(){}[0]
-    open fun getInt(): kotlin/Int? // androidx.compose.ui.autofill/FillableData.getInt|getInt(){}[0]
+    open val booleanValue // androidx.compose.ui.autofill/FillableData.booleanValue|{}booleanValue[0]
+        open fun <get-booleanValue>(): kotlin/Boolean? // androidx.compose.ui.autofill/FillableData.booleanValue.<get-booleanValue>|<get-booleanValue>(){}[0]
+    open val listIndexValue // androidx.compose.ui.autofill/FillableData.listIndexValue|{}listIndexValue[0]
+        open fun <get-listIndexValue>(): kotlin/Int? // androidx.compose.ui.autofill/FillableData.listIndexValue.<get-listIndexValue>|<get-listIndexValue>(){}[0]
+    open val textValue // androidx.compose.ui.autofill/FillableData.textValue|{}textValue[0]
+        open fun <get-textValue>(): kotlin/CharSequence? // androidx.compose.ui.autofill/FillableData.textValue.<get-textValue>|<get-textValue>(){}[0]
+
+    open fun getListIndexOrDefault(kotlin/Int): kotlin/Int // androidx.compose.ui.autofill/FillableData.getListIndexOrDefault|getListIndexOrDefault(kotlin.Int){}[0]
 }
 
 abstract interface androidx.compose.ui.draganddrop/DragAndDropModifierNode : androidx.compose.ui.draganddrop/DragAndDropTarget, androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.draganddrop/DragAndDropModifierNode|null[0]
@@ -3468,6 +3473,8 @@ final object androidx.compose.ui.semantics/SemanticsActions { // androidx.compos
         final fun <get-OnAutofillText>(): androidx.compose.ui.semantics/SemanticsPropertyKey<androidx.compose.ui.semantics/AccessibilityAction<kotlin/Function1<androidx.compose.ui.text/AnnotatedString, kotlin/Boolean>>> // androidx.compose.ui.semantics/SemanticsActions.OnAutofillText.<get-OnAutofillText>|<get-OnAutofillText>(){}[0]
     final val OnClick // androidx.compose.ui.semantics/SemanticsActions.OnClick|{}OnClick[0]
         final fun <get-OnClick>(): androidx.compose.ui.semantics/SemanticsPropertyKey<androidx.compose.ui.semantics/AccessibilityAction<kotlin/Function0<kotlin/Boolean>>> // androidx.compose.ui.semantics/SemanticsActions.OnClick.<get-OnClick>|<get-OnClick>(){}[0]
+    final val OnFillData // androidx.compose.ui.semantics/SemanticsActions.OnFillData|{}OnFillData[0]
+        final fun <get-OnFillData>(): androidx.compose.ui.semantics/SemanticsPropertyKey<androidx.compose.ui.semantics/AccessibilityAction<kotlin/Function1<androidx.compose.ui.autofill/FillableData, kotlin/Boolean>>> // androidx.compose.ui.semantics/SemanticsActions.OnFillData.<get-OnFillData>|<get-OnFillData>(){}[0]
     final val OnImeAction // androidx.compose.ui.semantics/SemanticsActions.OnImeAction|{}OnImeAction[0]
         final fun <get-OnImeAction>(): androidx.compose.ui.semantics/SemanticsPropertyKey<androidx.compose.ui.semantics/AccessibilityAction<kotlin/Function0<kotlin/Boolean>>> // androidx.compose.ui.semantics/SemanticsActions.OnImeAction.<get-OnImeAction>|<get-OnImeAction>(){}[0]
     final val OnLongClick // androidx.compose.ui.semantics/SemanticsActions.OnLongClick|{}OnLongClick[0]
@@ -3521,6 +3528,8 @@ final object androidx.compose.ui.semantics/SemanticsProperties { // androidx.com
         final fun <get-EditableText>(): androidx.compose.ui.semantics/SemanticsPropertyKey<androidx.compose.ui.text/AnnotatedString> // androidx.compose.ui.semantics/SemanticsProperties.EditableText.<get-EditableText>|<get-EditableText>(){}[0]
     final val Error // androidx.compose.ui.semantics/SemanticsProperties.Error|{}Error[0]
         final fun <get-Error>(): androidx.compose.ui.semantics/SemanticsPropertyKey<kotlin/String> // androidx.compose.ui.semantics/SemanticsProperties.Error.<get-Error>|<get-Error>(){}[0]
+    final val FillableData // androidx.compose.ui.semantics/SemanticsProperties.FillableData|{}FillableData[0]
+        final fun <get-FillableData>(): androidx.compose.ui.semantics/SemanticsPropertyKey<androidx.compose.ui.autofill/FillableData> // androidx.compose.ui.semantics/SemanticsProperties.FillableData.<get-FillableData>|<get-FillableData>(){}[0]
     final val Focused // androidx.compose.ui.semantics/SemanticsProperties.Focused|{}Focused[0]
         final fun <get-Focused>(): androidx.compose.ui.semantics/SemanticsPropertyKey<kotlin/Boolean> // androidx.compose.ui.semantics/SemanticsProperties.Focused.<get-Focused>|<get-Focused>(){}[0]
     final val Heading // androidx.compose.ui.semantics/SemanticsProperties.Heading|{}Heading[0]
@@ -3735,6 +3744,7 @@ final val androidx.compose.ui.input.key/utf16CodePoint // androidx.compose.ui.in
 final val androidx.compose.ui.input.nestedscroll/androidx_compose_ui_input_nestedscroll_NestedScrollDispatcher$stableprop // androidx.compose.ui.input.nestedscroll/androidx_compose_ui_input_nestedscroll_NestedScrollDispatcher$stableprop|#static{}androidx_compose_ui_input_nestedscroll_NestedScrollDispatcher$stableprop[0]
 final val androidx.compose.ui.input.nestedscroll/androidx_compose_ui_input_nestedscroll_NestedScrollNode$stableprop // androidx.compose.ui.input.nestedscroll/androidx_compose_ui_input_nestedscroll_NestedScrollNode$stableprop|#static{}androidx_compose_ui_input_nestedscroll_NestedScrollNode$stableprop[0]
 final val androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_DataPointAtTime$stableprop // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_DataPointAtTime$stableprop|#static{}androidx_compose_ui_input_pointer_util_DataPointAtTime$stableprop[0]
+final val androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_DefaultVelocityTracker$stableprop // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_DefaultVelocityTracker$stableprop|#static{}androidx_compose_ui_input_pointer_util_DefaultVelocityTracker$stableprop[0]
 final val androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_PointerIdArray$stableprop // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_PointerIdArray$stableprop|#static{}androidx_compose_ui_input_pointer_util_PointerIdArray$stableprop[0]
 final val androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_VelocityTracker$stableprop // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_VelocityTracker$stableprop|#static{}androidx_compose_ui_input_pointer_util_VelocityTracker$stableprop[0]
 final val androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_VelocityTracker1D$stableprop // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_VelocityTracker1D$stableprop|#static{}androidx_compose_ui_input_pointer_util_VelocityTracker1D$stableprop[0]
@@ -4058,6 +4068,9 @@ final var androidx.compose.ui.semantics/customActions // androidx.compose.ui.sem
 final var androidx.compose.ui.semantics/editableText // androidx.compose.ui.semantics/editableText|@androidx.compose.ui.semantics.SemanticsPropertyReceiver{}editableText[0]
     final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<get-editableText>(): androidx.compose.ui.text/AnnotatedString // androidx.compose.ui.semantics/editableText.<get-editableText>|<get-editableText>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(){}[0]
     final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<set-editableText>(androidx.compose.ui.text/AnnotatedString) // androidx.compose.ui.semantics/editableText.<set-editableText>|<set-editableText>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(androidx.compose.ui.text.AnnotatedString){}[0]
+final var androidx.compose.ui.semantics/fillableData // androidx.compose.ui.semantics/fillableData|@androidx.compose.ui.semantics.SemanticsPropertyReceiver{}fillableData[0]
+    final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<get-fillableData>(): androidx.compose.ui.autofill/FillableData // androidx.compose.ui.semantics/fillableData.<get-fillableData>|<get-fillableData>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(){}[0]
+    final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<set-fillableData>(androidx.compose.ui.autofill/FillableData) // androidx.compose.ui.semantics/fillableData.<set-fillableData>|<set-fillableData>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(androidx.compose.ui.autofill.FillableData){}[0]
 final var androidx.compose.ui.semantics/focused // androidx.compose.ui.semantics/focused|@androidx.compose.ui.semantics.SemanticsPropertyReceiver{}focused[0]
     final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<get-focused>(): kotlin/Boolean // androidx.compose.ui.semantics/focused.<get-focused>|<get-focused>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(){}[0]
     final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).<set-focused>(kotlin/Boolean) // androidx.compose.ui.semantics/focused.<set-focused>|<set-focused>@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.Boolean){}[0]
@@ -4221,6 +4234,7 @@ final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.com
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/invisibleToUser() // androidx.compose.ui.semantics/invisibleToUser|invisibleToUser@androidx.compose.ui.semantics.SemanticsPropertyReceiver(){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/onAutofillText(kotlin/String? = ..., kotlin/Function1<androidx.compose.ui.text/AnnotatedString, kotlin/Boolean>?) // androidx.compose.ui.semantics/onAutofillText|onAutofillText@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function1<androidx.compose.ui.text.AnnotatedString,kotlin.Boolean>?){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/onClick(kotlin/String? = ..., kotlin/Function0<kotlin/Boolean>?) // androidx.compose.ui.semantics/onClick|onClick@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function0<kotlin.Boolean>?){}[0]
+final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/onFillData(kotlin/String? = ..., kotlin/Function1<androidx.compose.ui.autofill/FillableData, kotlin/Boolean>?) // androidx.compose.ui.semantics/onFillData|onFillData@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function1<androidx.compose.ui.autofill.FillableData,kotlin.Boolean>?){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/onImeAction(androidx.compose.ui.text.input/ImeAction, kotlin/String? = ..., kotlin/Function0<kotlin/Boolean>?) // androidx.compose.ui.semantics/onImeAction|onImeAction@androidx.compose.ui.semantics.SemanticsPropertyReceiver(androidx.compose.ui.text.input.ImeAction;kotlin.String?;kotlin.Function0<kotlin.Boolean>?){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/onLongClick(kotlin/String? = ..., kotlin/Function0<kotlin/Boolean>?) // androidx.compose.ui.semantics/onLongClick|onLongClick@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function0<kotlin.Boolean>?){}[0]
 final fun (androidx.compose.ui.semantics/SemanticsPropertyReceiver).androidx.compose.ui.semantics/pageDown(kotlin/String? = ..., kotlin/Function0<kotlin/Boolean>?) // androidx.compose.ui.semantics/pageDown|pageDown@androidx.compose.ui.semantics.SemanticsPropertyReceiver(kotlin.String?;kotlin.Function0<kotlin.Boolean>?){}[0]
@@ -4331,6 +4345,9 @@ final fun <#A: kotlin/Any?> (androidx.compose.ui/Modifier).androidx.compose.ui.m
 final fun <#A: kotlin/Any?> androidx.compose.ui.modifier/modifierLocalMapOf(androidx.compose.ui.modifier/ModifierLocal<#A>): androidx.compose.ui.modifier/ModifierLocalMap // androidx.compose.ui.modifier/modifierLocalMapOf|modifierLocalMapOf(androidx.compose.ui.modifier.ModifierLocal<0:0>){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.compose.ui.modifier/modifierLocalMapOf(kotlin/Pair<androidx.compose.ui.modifier/ModifierLocal<#A>, #A>): androidx.compose.ui.modifier/ModifierLocalMap // androidx.compose.ui.modifier/modifierLocalMapOf|modifierLocalMapOf(kotlin.Pair<androidx.compose.ui.modifier.ModifierLocal<0:0>,0:0>){0§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.compose.ui.modifier/modifierLocalOf(kotlin/Function0<#A>): androidx.compose.ui.modifier/ProvidableModifierLocal<#A> // androidx.compose.ui.modifier/modifierLocalOf|modifierLocalOf(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]
+final fun androidx.compose.ui.autofill/FillableData(kotlin/Boolean): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/FillableData|FillableData(kotlin.Boolean){}[0]
+final fun androidx.compose.ui.autofill/FillableData(kotlin/CharSequence): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/FillableData|FillableData(kotlin.CharSequence){}[0]
+final fun androidx.compose.ui.autofill/FillableData(kotlin/Int): androidx.compose.ui.autofill/FillableData? // androidx.compose.ui.autofill/FillableData|FillableData(kotlin.Int){}[0]
 final fun androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillManager$stableprop_getter|androidx_compose_ui_autofill_AutofillManager$stableprop_getter(){}[0]
 final fun androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillNode$stableprop_getter(): kotlin/Int // androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillNode$stableprop_getter|androidx_compose_ui_autofill_AutofillNode$stableprop_getter(){}[0]
 final fun androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillTree$stableprop_getter(): kotlin/Int // androidx.compose.ui.autofill/androidx_compose_ui_autofill_AutofillTree$stableprop_getter|androidx_compose_ui_autofill_AutofillTree$stableprop_getter(){}[0]
@@ -4418,6 +4435,7 @@ final fun androidx.compose.ui.input.nestedscroll/androidx_compose_ui_input_neste
 final fun androidx.compose.ui.input.nestedscroll/androidx_compose_ui_input_nestedscroll_NestedScrollNode$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.nestedscroll/androidx_compose_ui_input_nestedscroll_NestedScrollNode$stableprop_getter|androidx_compose_ui_input_nestedscroll_NestedScrollNode$stableprop_getter(){}[0]
 final fun androidx.compose.ui.input.nestedscroll/nestedScrollModifierNode(androidx.compose.ui.input.nestedscroll/NestedScrollConnection, androidx.compose.ui.input.nestedscroll/NestedScrollDispatcher?): androidx.compose.ui.node/DelegatableNode // androidx.compose.ui.input.nestedscroll/nestedScrollModifierNode|nestedScrollModifierNode(androidx.compose.ui.input.nestedscroll.NestedScrollConnection;androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher?){}[0]
 final fun androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_DataPointAtTime$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_DataPointAtTime$stableprop_getter|androidx_compose_ui_input_pointer_util_DataPointAtTime$stableprop_getter(){}[0]
+final fun androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_DefaultVelocityTracker$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_DefaultVelocityTracker$stableprop_getter|androidx_compose_ui_input_pointer_util_DefaultVelocityTracker$stableprop_getter(){}[0]
 final fun androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_PointerIdArray$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_PointerIdArray$stableprop_getter|androidx_compose_ui_input_pointer_util_PointerIdArray$stableprop_getter(){}[0]
 final fun androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_VelocityTracker$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_VelocityTracker$stableprop_getter|androidx_compose_ui_input_pointer_util_VelocityTracker$stableprop_getter(){}[0]
 final fun androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_VelocityTracker1D$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer.util/androidx_compose_ui_input_pointer_util_VelocityTracker1D$stableprop_getter|androidx_compose_ui_input_pointer_util_VelocityTracker1D$stableprop_getter(){}[0]
@@ -4947,12 +4965,6 @@ final class androidx.compose.ui.viewinterop/UIKitInteropProperties { // androidx
 }
 
 // Targets: [ios]
-final val androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop|#static{}androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop[0]
-
-// Targets: [ios]
-final val androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop|#static{}androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop[0]
-
-// Targets: [ios]
 final val androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_DropSessionContext$stableprop // androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_DropSessionContext$stableprop|#static{}androidx_compose_ui_draganddrop_DropSessionContext$stableprop[0]
 
 // Targets: [ios]
@@ -4967,6 +4979,12 @@ final val androidx.compose.ui.interop/LocalUIViewController // androidx.compose.
 
 // Targets: [ios]
 final val androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop // androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop|#static{}androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop|#static{}androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop|#static{}androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop[0]
 
 // Targets: [ios]
 final val androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop|#static{}androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop[0]
@@ -5011,9 +5029,6 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyInputTraits$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyInputTraits$stableprop|#static{}androidx_compose_ui_platform_EmptyInputTraits$stableprop[0]
 
 // Targets: [ios]
-final val androidx.compose.ui.platform/androidx_compose_ui_platform_IOSLifecycleOwner$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_IOSLifecycleOwner$stableprop|#static{}androidx_compose_ui_platform_IOSLifecycleOwner$stableprop[0]
-
-// Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop|#static{}androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop[0]
 
 // Targets: [ios]
@@ -5021,6 +5036,9 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformWind
 
 // Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop|#static{}androidx_compose_ui_platform_Translations$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop|#static{}androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop[0]
 
 // Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop|#static{}androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop[0]
@@ -5155,12 +5173,6 @@ final fun <#A: platform.UIKit/UIViewController> androidx.compose.ui.interop/UIKi
 final fun <#A: platform.UIKit/UIViewController> androidx.compose.ui.viewinterop/UIKitViewController(kotlin/Function0<#A>, androidx.compose.ui/Modifier?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, kotlin/Function1<#A, kotlin/Unit>?, androidx.compose.ui.viewinterop/UIKitInteropProperties?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.viewinterop/UIKitViewController|UIKitViewController(kotlin.Function0<0:0>;androidx.compose.ui.Modifier?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;kotlin.Function1<0:0,kotlin.Unit>?;androidx.compose.ui.viewinterop.UIKitInteropProperties?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<platform.UIKit.UIViewController>}[0]
 
 // Targets: [ios]
-final fun androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop_getter(): kotlin/Int // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop_getter|androidx_compose_ui_backhandler_UIKitBackGestureDispatcher$stableprop_getter(){}[0]
-
-// Targets: [ios]
-final fun androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop_getter(): kotlin/Int // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop_getter|androidx_compose_ui_backhandler_UIKitBackGestureRecognizer$stableprop_getter(){}[0]
-
-// Targets: [ios]
 final fun androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_DropSessionContext$stableprop_getter(): kotlin/Int // androidx.compose.ui.draganddrop/androidx_compose_ui_draganddrop_DropSessionContext$stableprop_getter|androidx_compose_ui_draganddrop_DropSessionContext$stableprop_getter(){}[0]
 
 // Targets: [ios]
@@ -5174,6 +5186,12 @@ final fun androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegat
 
 // Targets: [ios]
 final fun androidx.compose.ui.main/defaultUIKitMain(kotlin/String, platform.UIKit/UIViewController) // androidx.compose.ui.main/defaultUIKitMain|defaultUIKitMain(kotlin.String;platform.UIKit.UIViewController){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter(): kotlin/Int // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter|androidx_compose_ui_navigationevent_UIKitBackGestureRecognizer$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter(): kotlin/Int // androidx.compose.ui.navigationevent/androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter|androidx_compose_ui_navigationevent_UIKitNavigationEventInput$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter|androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter(){}[0]
@@ -5218,9 +5236,6 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyInputTraits$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyInputTraits$stableprop_getter|androidx_compose_ui_platform_EmptyInputTraits$stableprop_getter(){}[0]
 
 // Targets: [ios]
-final fun androidx.compose.ui.platform/androidx_compose_ui_platform_IOSLifecycleOwner$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_IOSLifecycleOwner$stableprop_getter|androidx_compose_ui_platform_IOSLifecycleOwner$stableprop_getter(){}[0]
-
-// Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop_getter|androidx_compose_ui_platform_MotionDurationScaleImpl$stableprop_getter(){}[0]
 
 // Targets: [ios]
@@ -5228,6 +5243,9 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformWind
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop_getter|androidx_compose_ui_platform_Translations$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop_getter|androidx_compose_ui_platform_UIKitArchitectureComponentsOwner$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter|androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter(){}[0]
