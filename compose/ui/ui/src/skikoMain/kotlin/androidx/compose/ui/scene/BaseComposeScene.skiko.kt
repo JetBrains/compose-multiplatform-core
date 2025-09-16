@@ -57,7 +57,7 @@ import kotlinx.coroutines.withContext
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
     coroutineContext: CoroutineContext,
-    private val invalidate: (canRenderImmediately: Boolean) -> Unit,
+    private val invalidate: (throttledToVsync: Boolean) -> Unit,
 ) : ComposeScene {
     protected val snapshotInvalidationTracker = SnapshotInvalidationTracker {
         updateInvalidations(throttledToVsync = false)
