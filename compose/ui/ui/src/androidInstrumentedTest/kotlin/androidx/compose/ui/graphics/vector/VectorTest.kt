@@ -61,6 +61,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -498,6 +499,45 @@ class VectorTest {
         rule.waitForIdle()
         rule.onNodeWithTag(testTag).captureToImage().assertPixels { Color.Green }
         assertEquals(ImageBitmapConfig.Alpha8, vectorPainter!!.bitmapConfig)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testDrawWhenVectorHasOneColorWithAlpha() {
+        val backgroundColor = Color.Red
+        val brushColor = Color.Blue.copy(alpha = 0.5F)
+        val compositeColor = brushColor.compositeOver(backgroundColor)
+        val testTag = "testTag"
+        var vectorPainter: VectorPainter? = null
+        rule.setContent {
+            vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    autoMirror = false,
+                ) { viewportWidth, viewportHeight ->
+                    Path(
+                        fill = SolidColor(brushColor),
+                        pathData =
+                            PathData {
+                                lineTo(viewportWidth, 0f)
+                                lineTo(viewportWidth, viewportHeight)
+                                lineTo(0f, viewportHeight)
+                                close()
+                            },
+                    )
+                }
+            Image(
+                painter = vectorPainter,
+                contentDescription = null,
+                modifier = Modifier.testTag(testTag).background(backgroundColor),
+            )
+        }
+
+        val isBitmapConfigAlpha8 = vectorPainter?.bitmapConfig == ImageBitmapConfig.Alpha8
+        assertTrue("Bitmap config was not Alpha8", isBitmapConfigAlpha8)
+
+        rule.onNodeWithTag(testTag).captureToImage().assertPixels { compositeColor }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)

@@ -3893,6 +3893,8 @@ class NavControllerTest {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
 
+        var removeListener = false
+
         val listener =
             object : NavController.OnDestinationChangedListener {
                 override fun onDestinationChanged(
@@ -3900,12 +3902,15 @@ class NavControllerTest {
                     destination: NavDestination,
                     arguments: Bundle?,
                 ) {
-                    navController.removeOnDestinationChangedListener(this)
+                    if (removeListener) {
+                        navController.removeOnDestinationChangedListener(this)
+                    }
                 }
             }
 
         navController.addOnDestinationChangedListener(listener)
         navController.addOnDestinationChangedListener { _, _, _ -> }
+        removeListener = true
         navController.navigate(R.id.second_test)
     }
 

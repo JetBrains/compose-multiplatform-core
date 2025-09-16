@@ -523,7 +523,18 @@ internal fun NavHost(
     var progress by remember { mutableFloatStateOf(0f) }
     var inPredictiveBack by remember { mutableStateOf(false) }
     PredictiveBackHandler(currentBackStack.size > 1) { backEvent ->
+        // This block handles the three phases of a predictive back gesture:
+        // 1. OnStarted: When the gesture begins.
+        // 2. OnProgressed: As the user drags their finger.
+        // 3. OnCompleted or OnCancelled: When the gesture finishes or is cancelled.
+        //
+        // Always guard with `currentBackStack.size > 1`:
+        // If `enabled` becomes stale (set false mid-frame while a gesture is in-flight),
+        // these checks prevent IndexOutOfBounds when accessing the stack.
+
         var currentBackStackEntry: NavBackStackEntry? = null
+
+        // --- OnStarted ---
         if (currentBackStack.size > 1) {
             progress = 0f
             currentBackStackEntry = currentBackStack.lastOrNull()
@@ -536,6 +547,7 @@ internal fun NavHost(
                 val goodEdge =
                     limitBackGestureSwipeEdge == null || it.swipeEdge == limitBackGestureSwipeEdge
 
+                // --- OnProgressed ---
                 if (currentBackStack.size > 1) {
                     inPredictiveBack = true
                     if (goodEdge) {
@@ -547,11 +559,13 @@ internal fun NavHost(
                     }
                 }
             }
+            // --- OnCompleted ---
             if (currentBackStack.size > 1) {
                 inPredictiveBack = false
                 composeNavigator.popBackStack(currentBackStackEntry!!, false)
             }
-        } catch (e: CancellationException) {
+        } catch (_: CancellationException) {
+            // --- OnCancelled ---
             if (currentBackStack.size > 1) {
                 inPredictiveBack = false
             }
@@ -637,8 +651,11 @@ internal fun NavHost(
 
         if (inPredictiveBack) {
             LaunchedEffect(progress) {
-                val previousEntry = currentBackStack[currentBackStack.size - 2]
-                transitionState.seekTo(progress, previousEntry)
+                // Update transition progress safely (same guard against stale enabled state).
+                if (currentBackStack.size > 1) {
+                    val previousEntry = currentBackStack[currentBackStack.size - 2]
+                    transitionState.seekTo(progress, previousEntry)
+                }
             }
         } else {
             LaunchedEffect(backStackEntry) {
