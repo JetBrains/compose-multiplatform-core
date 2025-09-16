@@ -497,7 +497,7 @@ internal interface BasicAlertDialogOverride {
  * @param properties typically platform specific properties to further configure the dialog.
  * @param content the content of the dialog
  */
-class BasicAlertDialogOverrideScope
+internal class BasicAlertDialogOverrideScope
 internal constructor(
     val onDismissRequest: () -> Unit,
     val modifier: Modifier = Modifier,
