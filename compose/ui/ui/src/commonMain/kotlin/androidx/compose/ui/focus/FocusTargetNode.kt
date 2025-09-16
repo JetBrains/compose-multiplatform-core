@@ -35,13 +35,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.BeyondBoundsLayout
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.findNearestBeyondBoundsLayoutAncestor
 import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.node.requireOwner
@@ -142,7 +142,7 @@ internal class FocusTargetNode(
     var previouslyFocusedChildHash: Int = 0
 
     val beyondBoundsLayoutParent: BeyondBoundsLayout?
-        get() = ModifierLocalBeyondBoundsLayout.current
+        get() = findNearestBeyondBoundsLayoutAncestor()
 
     override fun onObservedReadsChanged() {
         invalidateFocus()

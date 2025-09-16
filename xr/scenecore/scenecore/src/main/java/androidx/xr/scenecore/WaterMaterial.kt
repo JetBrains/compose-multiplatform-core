@@ -23,6 +23,7 @@ import androidx.xr.runtime.Session
 import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.MaterialResource as RtMaterial
 import com.google.common.util.concurrent.ListenableFuture
+import java.util.concurrent.CancellationException
 
 /** Represents a Material in SceneCore. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -231,7 +232,11 @@ internal constructor(
                         if (e is InterruptedException) {
                             Thread.currentThread().interrupt()
                         }
-                        materialFuture.setException(e)
+                        if (e is CancellationException) {
+                            materialFuture.cancel(false)
+                        } else {
+                            materialFuture.setException(e)
+                        }
                     }
                 },
                 Runnable::run,

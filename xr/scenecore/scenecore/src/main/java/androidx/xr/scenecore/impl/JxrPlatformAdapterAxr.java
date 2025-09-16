@@ -109,6 +109,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
@@ -527,10 +528,18 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                                 if (e instanceof InterruptedException) {
                                     Thread.currentThread().interrupt();
                                 }
-                                Log.e(
-                                        TAG,
-                                        "Failed to init perception session with error: "
-                                                + e.getMessage());
+                                if (e instanceof CancellationException) {
+                                    sessionFuture.cancel(false);
+                                    Log.w(
+                                            TAG,
+                                            "Cancelling perception session init with error: "
+                                                    + e.getMessage());
+                                } else {
+                                    Log.e(
+                                            TAG,
+                                            "Failed to init perception session with error: "
+                                                    + e.getMessage());
+                                }
                             }
                         },
                         mExecutor);
@@ -829,8 +838,13 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         if (e instanceof InterruptedException) {
                             Thread.currentThread().interrupt();
                         }
-                        Log.e(TAG, "Failed to load texture with error: " + e.getMessage());
-                        textureResourceFuture.setException(e);
+                        if (e instanceof CancellationException) {
+                            Log.w(TAG, "Cancelled loading texture with error: " + e.getMessage());
+                            textureResourceFuture.cancel(false);
+                        } else {
+                            Log.e(TAG, "Failed to load texture with error: " + e.getMessage());
+                            textureResourceFuture.setException(e);
+                        }
                     }
                 },
                 // It's convenient for the main application for us to dispatch their listeners on
@@ -909,8 +923,18 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         if (e instanceof InterruptedException) {
                             Thread.currentThread().interrupt();
                         }
-                        Log.e(TAG, "Failed to load water material with error: " + e.getMessage());
-                        materialResourceFuture.setException(e);
+                        if (e instanceof CancellationException) {
+                            Log.w(
+                                    TAG,
+                                    "Cancelled loading water material with error: "
+                                            + e.getMessage());
+                            materialResourceFuture.cancel(false);
+                        } else {
+                            Log.e(
+                                    TAG,
+                                    "Failed to load water material with error: " + e.getMessage());
+                            materialResourceFuture.setException(e);
+                        }
                     }
                 },
                 // It's convenient for the main application for us to dispatch their listeners on
@@ -1102,11 +1126,19 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         if (e instanceof InterruptedException) {
                             Thread.currentThread().interrupt();
                         }
-                        Log.e(
-                                TAG,
-                                "Failed to load Khronos PBR material with error: "
-                                        + e.getMessage());
-                        materialResourceFuture.setException(e);
+                        if (e instanceof CancellationException) {
+                            Log.w(
+                                    TAG,
+                                    "Cancelled loading Khronos PBR material with error: "
+                                            + e.getMessage());
+                            materialResourceFuture.cancel(false);
+                        } else {
+                            Log.e(
+                                    TAG,
+                                    "Failed to load Khronos PBR material with error: "
+                                            + e.getMessage());
+                            materialResourceFuture.setException(e);
+                        }
                     }
                 },
                 // It's convenient for the main application for us to dispatch their listeners on
@@ -2043,8 +2075,13 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         if (e instanceof InterruptedException) {
                             Thread.currentThread().interrupt();
                         }
-                        Log.e(TAG, "Failed to load glTF model: " + e.getMessage());
-                        gltfModelResourceFuture.setException(e);
+                        if (e instanceof CancellationException) {
+                            Log.w(TAG, "Cancelled loading glTF model: " + e.getMessage());
+                            gltfModelResourceFuture.cancel(false);
+                        } else {
+                            Log.e(TAG, "Failed to load glTF model: " + e.getMessage());
+                            gltfModelResourceFuture.setException(e);
+                        }
                     }
                 },
                 mActivity::runOnUiThread);
@@ -2078,8 +2115,13 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
                         if (e instanceof InterruptedException) {
                             Thread.currentThread().interrupt();
                         }
-                        Log.e(TAG, "Failed to load EXR image: " + e.getMessage());
-                        exrImageResourceFuture.setException(e);
+                        if (e instanceof CancellationException) {
+                            Log.w(TAG, "Cancelled loading EXR image: " + e.getMessage());
+                            exrImageResourceFuture.cancel(false);
+                        } else {
+                            Log.e(TAG, "Failed to load EXR image: " + e.getMessage());
+                            exrImageResourceFuture.setException(e);
+                        }
                     }
                 },
                 mActivity::runOnUiThread);

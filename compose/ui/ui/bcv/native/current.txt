@@ -539,6 +539,11 @@ abstract interface androidx.compose.ui.layout/BeyondBoundsLayout { // androidx.c
     }
 }
 
+abstract interface androidx.compose.ui.layout/BeyondBoundsLayoutProviderModifierNode : androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.layout/BeyondBoundsLayoutProviderModifierNode|null[0]
+    abstract val beyondBoundsLayout // androidx.compose.ui.layout/BeyondBoundsLayoutProviderModifierNode.beyondBoundsLayout|{}beyondBoundsLayout[0]
+        abstract fun <get-beyondBoundsLayout>(): androidx.compose.ui.layout/BeyondBoundsLayout // androidx.compose.ui.layout/BeyondBoundsLayoutProviderModifierNode.beyondBoundsLayout.<get-beyondBoundsLayout>|<get-beyondBoundsLayout>(){}[0]
+}
+
 abstract interface androidx.compose.ui.layout/ContentScale { // androidx.compose.ui.layout/ContentScale|null[0]
     abstract fun computeScaleFactor(androidx.compose.ui.geometry/Size, androidx.compose.ui.geometry/Size): androidx.compose.ui.layout/ScaleFactor // androidx.compose.ui.layout/ContentScale.computeScaleFactor|computeScaleFactor(androidx.compose.ui.geometry.Size;androidx.compose.ui.geometry.Size){}[0]
 
@@ -4002,6 +4007,7 @@ final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.layout/
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.node/dispatchDraw(androidx.compose.ui.graphics.drawscope/ContentDrawScope) // androidx.compose.ui.node/dispatchDraw|dispatchDraw@androidx.compose.ui.node.DelegatableNode(androidx.compose.ui.graphics.drawscope.ContentDrawScope){}[0]
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.node/dispatchOnScrollChanged(androidx.compose.ui.geometry/Offset) // androidx.compose.ui.node/dispatchOnScrollChanged|dispatchOnScrollChanged@androidx.compose.ui.node.DelegatableNode(androidx.compose.ui.geometry.Offset){}[0]
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.node/findNearestAncestor(kotlin/Any?): androidx.compose.ui.node/TraversableNode? // androidx.compose.ui.node/findNearestAncestor|findNearestAncestor@androidx.compose.ui.node.DelegatableNode(kotlin.Any?){}[0]
+final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.node/findNearestBeyondBoundsLayoutAncestor(): androidx.compose.ui.layout/BeyondBoundsLayout? // androidx.compose.ui.node/findNearestBeyondBoundsLayoutAncestor|findNearestBeyondBoundsLayoutAncestor@androidx.compose.ui.node.DelegatableNode(){}[0]
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.node/invalidateDrawForSubtree() // androidx.compose.ui.node/invalidateDrawForSubtree|invalidateDrawForSubtree@androidx.compose.ui.node.DelegatableNode(){}[0]
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.node/invalidateLayoutForSubtree() // androidx.compose.ui.node/invalidateLayoutForSubtree|invalidateLayoutForSubtree@androidx.compose.ui.node.DelegatableNode(){}[0]
 final fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.node/invalidateSubtree() // androidx.compose.ui.node/invalidateSubtree|invalidateSubtree@androidx.compose.ui.node.DelegatableNode(){}[0]

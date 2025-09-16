@@ -21,8 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.BeyondBoundsLayout.BeyondBoundsScope
 import androidx.compose.ui.layout.BeyondBoundsLayout.LayoutDirection
 import androidx.compose.ui.layout.BeyondBoundsLayout.LayoutDirection.Companion.After
-import androidx.compose.ui.modifier.modifierLocalConsumer
-import androidx.compose.ui.modifier.modifierLocalProvider
+import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.elementOf
+import androidx.compose.ui.node.findNearestBeyondBoundsLayoutAncestor
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -31,14 +32,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Test was kept for compatibility with [ModifierLocalBeyondBoundsLayout]. The version of this test
- * using Modifier Nodes is in BeyondBoundsLayoutProviderModifierNodeTest.
- */
-@Suppress("DEPRECATION")
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-class BeyondBoundsLayoutTest {
+class BeyondBoundsLayoutProviderModifierNodeTest {
 
     @get:Rule val rule = createComposeRule()
 
@@ -52,9 +48,8 @@ class BeyondBoundsLayoutTest {
         var blockInvoked = false
         rule.setContent {
             Box(
-                Modifier.parentWithoutNonVisibleItems().modifierLocalConsumer {
-                    parent = ModifierLocalBeyondBoundsLayout.current
-                }
+                Modifier.parentWithoutNonVisibleItems()
+                    .elementOf(ParentCapturingNode { parent = it })
             )
         }
 
@@ -79,9 +74,8 @@ class BeyondBoundsLayoutTest {
         var blockInvokeCount = 0
         rule.setContent {
             Box(
-                Modifier.parentWithFiveNonVisibleItems().modifierLocalConsumer {
-                    parent = ModifierLocalBeyondBoundsLayout.current
-                }
+                Modifier.parentWithFiveNonVisibleItems()
+                    .elementOf(ParentCapturingNode { parent = it })
             )
         }
 
@@ -110,9 +104,8 @@ class BeyondBoundsLayoutTest {
         var iterationCount = 0
         rule.setContent {
             Box(
-                Modifier.parentWithFiveNonVisibleItems().modifierLocalConsumer {
-                    parent = ModifierLocalBeyondBoundsLayout.current
-                }
+                Modifier.parentWithFiveNonVisibleItems()
+                    .elementOf(ParentCapturingNode { parent = it })
             )
         }
 
@@ -141,9 +134,8 @@ class BeyondBoundsLayoutTest {
         var parent: BeyondBoundsLayout? = null
         rule.setContent {
             Box(
-                Modifier.parentWithFiveNonVisibleItems().modifierLocalConsumer {
-                    parent = ModifierLocalBeyondBoundsLayout.current
-                }
+                Modifier.parentWithFiveNonVisibleItems()
+                    .elementOf(ParentCapturingNode { parent = it })
             )
         }
 
@@ -167,9 +159,8 @@ class BeyondBoundsLayoutTest {
         var parent: BeyondBoundsLayout? = null
         rule.setContent {
             Box(
-                Modifier.parentWithFiveNonVisibleItems().modifierLocalConsumer {
-                    parent = ModifierLocalBeyondBoundsLayout.current
-                }
+                Modifier.parentWithFiveNonVisibleItems()
+                    .elementOf(ParentCapturingNode { parent = it })
             )
         }
 
@@ -195,9 +186,8 @@ class BeyondBoundsLayoutTest {
         var returnValue2: Int? = null
         rule.setContent {
             Box(
-                Modifier.parentWithFiveNonVisibleItems().modifierLocalConsumer {
-                    parent = ModifierLocalBeyondBoundsLayout.current
-                }
+                Modifier.parentWithFiveNonVisibleItems()
+                    .elementOf(ParentCapturingNode { parent = it })
             )
         }
 
@@ -221,8 +211,8 @@ class BeyondBoundsLayoutTest {
         }
 
         // Assert.
-        assertThat(block1InvokeCount++).isEqualTo(5)
-        assertThat(block2InvokeCount++).isEqualTo(5)
+        assertThat(block1InvokeCount).isEqualTo(5)
+        assertThat(block2InvokeCount).isEqualTo(5)
         assertThat(returnValue1).isNull()
         assertThat(returnValue2).isNull()
     }
@@ -238,9 +228,8 @@ class BeyondBoundsLayoutTest {
         var returnValue2: Int? = null
         rule.setContent {
             Box(
-                Modifier.parentWithFiveNonVisibleItems().modifierLocalConsumer {
-                    parent = ModifierLocalBeyondBoundsLayout.current
-                }
+                Modifier.parentWithFiveNonVisibleItems()
+                    .elementOf(ParentCapturingNode { parent = it })
             )
         }
 
@@ -269,44 +258,55 @@ class BeyondBoundsLayoutTest {
         }
 
         // Assert.
-        assertThat(block1InvokeCount++).isEqualTo(5)
-        assertThat(block2InvokeCount++).isEqualTo(5)
+        assertThat(block1InvokeCount).isEqualTo(5)
+        assertThat(block2InvokeCount).isEqualTo(5)
         assertThat(returnValue1).isNull()
         assertThat(returnValue2).isNull()
     }
 
     private fun Modifier.parentWithoutNonVisibleItems(): Modifier {
-        return this.modifierLocalProvider(ModifierLocalBeyondBoundsLayout) {
-            object : BeyondBoundsLayout {
+        return this.elementOf(
+            object : Modifier.Node(), BeyondBoundsLayoutProviderModifierNode, BeyondBoundsLayout {
+                override val beyondBoundsLayout: BeyondBoundsLayout
+                    get() = this
+
                 override fun <T> layout(
                     direction: LayoutDirection,
                     block: BeyondBoundsScope.() -> T?,
                 ): T? = null
             }
-        }
+        )
     }
 
     private fun Modifier.parentWithFiveNonVisibleItems(): Modifier {
-        return this.modifierLocalProvider(ModifierLocalBeyondBoundsLayout) {
-            object : BeyondBoundsLayout {
-                override fun <T> layout(
-                    direction: LayoutDirection,
-                    block: BeyondBoundsScope.() -> T?,
-                ): T? {
-                    var count = 5
-                    var result: T? = null
-                    while (count-- > 0 && result == null) {
-                        result =
-                            block.invoke(
-                                object : BeyondBoundsScope {
-                                    override val hasMoreContent: Boolean
-                                        get() = count > 0
-                                }
-                            )
-                    }
-                    return result
-                }
+        return this.elementOf(BeyondBoundsProviderModifierNode())
+    }
+
+    private class BeyondBoundsProviderModifierNode() :
+        Modifier.Node(), BeyondBoundsLayoutProviderModifierNode, BeyondBoundsLayout {
+        override val beyondBoundsLayout: BeyondBoundsLayout
+            get() = this
+
+        override fun <T> layout(direction: LayoutDirection, block: BeyondBoundsScope.() -> T?): T? {
+            var count = 5
+            var result: T? = null
+            while (count-- > 0 && result == null) {
+                result =
+                    block.invoke(
+                        object : BeyondBoundsScope {
+                            override val hasMoreContent: Boolean
+                                get() = count > 0
+                        }
+                    )
             }
+            return result
+        }
+    }
+
+    private class ParentCapturingNode(val onParentReady: (BeyondBoundsLayout) -> Unit) :
+        Modifier.Node(), DelegatableNode {
+        override fun onAttach() {
+            findNearestBeyondBoundsLayoutAncestor()?.let { onParentReady(it) }
         }
     }
 }

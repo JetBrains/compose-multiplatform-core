@@ -141,13 +141,6 @@ object ComposeUiFlags {
     @JvmField
     var isNoPinningInFocusRestorationEnabled: Boolean = false
 
-    /**
-     * With this flag on, SubcomposeLayout will deactivate not used content slots outside of the
-     * frame, not as part of a regular recomposition phase. It allows to not block the drawing
-     * phase, improving the scrolling performance for lazy layouts.
-     */
-    @Suppress("MutableBareField") @JvmField var isOutOfFrameDeactivationEnabled: Boolean = true
-
     /** Enable clearing focus when a focused item is removed from a lazyList. */
     @Deprecated("This flag is no longer needed.")
     @Suppress("MutableBareField", "unused")

@@ -26,6 +26,7 @@ import androidx.xr.runtime.math.Vector4
 import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.MaterialResource as RtMaterial
 import com.google.common.util.concurrent.ListenableFuture
+import java.util.concurrent.CancellationException
 
 /**
  * A Material which implements the Khronos Physically Based Rendering (PBR) spec. The Khronos spec
@@ -577,7 +578,11 @@ internal constructor(
                         if (e is InterruptedException) {
                             Thread.currentThread().interrupt()
                         }
-                        materialFuture.setException(e)
+                        if (e is CancellationException) {
+                            materialFuture.cancel(false)
+                        } else {
+                            materialFuture.setException(e)
+                        }
                     }
                 },
                 Runnable::run,

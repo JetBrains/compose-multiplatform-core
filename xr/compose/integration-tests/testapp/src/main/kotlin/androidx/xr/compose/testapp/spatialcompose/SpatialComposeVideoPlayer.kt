@@ -595,7 +595,9 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                                         )
 
                                         val floatRange = 0f..250f
-                                        var sliderValue by remember { mutableFloatStateOf(0f) }
+                                        var sliderValue by remember {
+                                            mutableFloatStateOf(featheringValue)
+                                        }
 
                                         Text(text = "Selected Value: ${sliderValue.roundToInt()}")
                                         Slider(

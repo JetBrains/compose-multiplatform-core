@@ -35,6 +35,7 @@ import androidx.compose.ui.input.rotary.RotaryInputModifierNode
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.ApproachLayoutModifierNode
+import androidx.compose.ui.layout.BeyondBoundsLayoutProviderModifierNode
 import androidx.compose.ui.layout.LayoutModifier
 import androidx.compose.ui.layout.OnGloballyPositionedModifier
 import androidx.compose.ui.layout.OnPlacedModifier
@@ -163,6 +164,10 @@ internal object Nodes {
     @JvmStatic
     inline val OnPlaced
         get() = NodeKind<LayoutAwareModifierNode>(0b1 shl 22)
+
+    @JvmStatic
+    inline val BeyondBoundsLayout
+        get() = NodeKind<BeyondBoundsLayoutProviderModifierNode>(0b1 shl 23)
     // ...
 }
 
@@ -286,6 +291,10 @@ internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
         if (node is IndirectTouchInputModifierNode) {
             mask = mask or Nodes.IndirectTouchInput
         }
+        if (node is BeyondBoundsLayoutProviderModifierNode) {
+            mask = mask or Nodes.BeyondBoundsLayout
+        }
+        // ...
         mask
     }
 }

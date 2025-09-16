@@ -24,6 +24,7 @@ import androidx.xr.scenecore.internal.TextureResource as RtTextureResource
 import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import java.nio.file.Path
+import java.util.concurrent.CancellationException
 
 /**
  * Represents a [Texture] in SceneCore.
@@ -72,7 +73,11 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
                         if (e is InterruptedException) {
                             Thread.currentThread().interrupt()
                         }
-                        textureFuture.setException(e)
+                        if (e is CancellationException) {
+                            textureFuture.cancel(false)
+                        } else {
+                            textureFuture.setException(e)
+                        }
                     }
                 },
                 Runnable::run,

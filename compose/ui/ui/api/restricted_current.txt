@@ -149,7 +149,6 @@ package androidx.compose.ui {
     property public boolean isInitialFocusOnFocusableAvailable;
     property public boolean isNestedScrollInteropIntegerPropagationEnabled;
     property @Deprecated public boolean isNoPinningInFocusRestorationEnabled;
-    property public boolean isOutOfFrameDeactivationEnabled;
     property public boolean isPre26FocusFinderFixEnabled;
     property public boolean isRectTrackingEnabled;
     property @Deprecated public boolean isRemoveFocusedViewFixEnabled;
@@ -171,7 +170,6 @@ package androidx.compose.ui {
     field public static boolean isInitialFocusOnFocusableAvailable;
     field public static boolean isNestedScrollInteropIntegerPropagationEnabled;
     field @Deprecated public static boolean isNoPinningInFocusRestorationEnabled;
-    field public static boolean isOutOfFrameDeactivationEnabled;
     field public static boolean isPre26FocusFinderFixEnabled;
     field public static boolean isRectTrackingEnabled;
     field @Deprecated public static boolean isRemoveFocusedViewFixEnabled;
@@ -2699,8 +2697,13 @@ package androidx.compose.ui.layout {
   }
 
   public final class BeyondBoundsLayoutKt {
-    method public static androidx.compose.ui.modifier.ProvidableModifierLocal<androidx.compose.ui.layout.BeyondBoundsLayout?> getModifierLocalBeyondBoundsLayout();
-    property public static androidx.compose.ui.modifier.ProvidableModifierLocal<androidx.compose.ui.layout.BeyondBoundsLayout?> ModifierLocalBeyondBoundsLayout;
+    method @Deprecated public static androidx.compose.ui.modifier.ProvidableModifierLocal<androidx.compose.ui.layout.BeyondBoundsLayout?> getModifierLocalBeyondBoundsLayout();
+    property @Deprecated public static androidx.compose.ui.modifier.ProvidableModifierLocal<androidx.compose.ui.layout.BeyondBoundsLayout?> ModifierLocalBeyondBoundsLayout;
+  }
+
+  public interface BeyondBoundsLayoutProviderModifierNode extends androidx.compose.ui.node.DelegatableNode {
+    method public androidx.compose.ui.layout.BeyondBoundsLayout getBeyondBoundsLayout();
+    property public abstract androidx.compose.ui.layout.BeyondBoundsLayout beyondBoundsLayout;
   }
 
   @androidx.compose.runtime.Stable public interface ContentScale {
@@ -3468,6 +3471,7 @@ package androidx.compose.ui.node {
   public final class DelegatableNodeKt {
     method @KotlinOnly public static void dispatchOnScrollChanged(androidx.compose.ui.node.DelegatableNode, androidx.compose.ui.geometry.Offset delta);
     method @BytecodeOnly public static void dispatchOnScrollChanged-Uv8p0NA(androidx.compose.ui.node.DelegatableNode, long);
+    method public static androidx.compose.ui.layout.BeyondBoundsLayout? findNearestBeyondBoundsLayoutAncestor(androidx.compose.ui.node.DelegatableNode);
     method public static void invalidateDrawForSubtree(androidx.compose.ui.node.DelegatableNode);
     method public static void invalidateLayoutForSubtree(androidx.compose.ui.node.DelegatableNode);
     method public static void invalidateSubtree(androidx.compose.ui.node.DelegatableNode);
