@@ -35,7 +35,6 @@ import androidx.camera.core.impl.DeferrableSurface
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
-import java.util.concurrent.CancellationException
 import javax.inject.Scope
 
 @Scope public annotation class UseCaseCameraScope
@@ -103,27 +102,7 @@ public class UseCaseCameraConfig(
             cameraGraph.streams[streamConfig]?.let { surfaceToStreamMap[deferrableSurface] = it.id }
         }
 
-        Log.debug { "Prepare UseCaseCameraGraphConfig: $cameraGraph " }
-
-        // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and we
-        // will close the CameraGraph when that happens, and we cannot start a closed CameraGraph.
-        cameraGraph.start()
-
-        Log.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
-        if (sessionConfigAdapter.isSessionConfigValid()) {
-            useCaseSurfaceManager
-                .setupAsync(cameraGraph, sessionConfigAdapter, surfaceToStreamMap)
-                .invokeOnCompletion { throwable ->
-                    // Only show logs for error cases, ignore CancellationException since the
-                    // task could be cancelled by UseCaseSurfaceManager#stopAsync().
-                    if (throwable != null && throwable !is CancellationException) {
-                        Log.error(throwable) { "Surface setup error!" }
-                    }
-                }
-        } else {
-            Log.error { "Unable to create capture session due to conflicting configurations" }
-        }
-
+        Log.debug { "Prepared UseCaseGraphConfig: $cameraGraph " }
         return UseCaseGraphConfig(
             graph = cameraGraph,
             surfaceToStreamMap = surfaceToStreamMap,

@@ -39,4 +39,7 @@
     <dimen name="page_indicator_text_size">12sp</dimen>
     <dimen name="scroller_top_margin">2dp</dimen>
     <dimen name="scroller_bottom_margin">2dp</dimen>
+
+    <!-- Form Filling -->
+    <dimen name="form_widget_edit_text_boundary_width">2dp</dimen>
 </resources>

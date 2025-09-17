@@ -20,12 +20,15 @@ import android.companion.virtual.VirtualDeviceManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.hardware.display.VirtualDisplay
+import android.hardware.display.VirtualDisplayConfig
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.projected.ProjectedContext.PROJECTED_DEVICE_NAME
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.Executor
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertThrows
@@ -110,17 +113,38 @@ class ProjectedContextTest {
     }
 
     @Test
-    fun createProjectedActivityOptions_projectedDisplayAvailable_returnsActivityOptionsWithLaunchDisplayId() {
-        val expectedDisplayId =
-            ShadowDisplayManager.addDisplay("", ProjectedContext.PROJECTED_DISPLAY_NAME)
+    fun createProjectedActivityOptions_projectedDisplayAvailable_projectedDeviceContext_returnsActivityOptionsWithLaunchDisplayId() {
+        createVirtualDevice()
+
+        val activityOptions =
+            ProjectedContext.createProjectedActivityOptions(projectedDeviceContext)
+
+        assertThat(activityOptions.launchDisplayId).isEqualTo(1)
+    }
+
+    @Test
+    fun createProjectedActivityOptions_projectedDisplayAvailable_anotherContext_returnsActivityOptionsWithLaunchDisplayId() {
+        createVirtualDevice()
 
         val activityOptions = ProjectedContext.createProjectedActivityOptions(context)
 
-        assertThat(activityOptions.launchDisplayId).isEqualTo(expectedDisplayId)
+        assertThat(activityOptions.launchDisplayId).isEqualTo(1)
     }
 
     @Test
     fun createProjectedActivityOptions_projectedDisplayUnavailable_throwsIllegalStateException() {
+        assertThrows(IllegalStateException::class.java) {
+            ProjectedContext.createProjectedActivityOptions(context)
+        }
+    }
+
+    @Test
+    fun createProjectedActivityOptions_projectedDisplayDoesNotBelongToProjectedDevice_throwsIllegalStateException() {
+        createVirtualDevice(shouldCreateVirtualDisplay = false)
+
+        // Create a display with the Projected display name that belongs to another device.
+        ShadowDisplayManager.addDisplay("", ProjectedContext.PROJECTED_DISPLAY_NAME)
+
         assertThrows(IllegalStateException::class.java) {
             ProjectedContext.createProjectedActivityOptions(context)
         }
@@ -140,7 +164,7 @@ class ProjectedContextTest {
             .isFalse()
     }
 
-    private fun createVirtualDevice() {
+    private fun createVirtualDevice(shouldCreateVirtualDisplay: Boolean = true) {
         val virtualDeviceParamsBuilderClass =
             Class.forName("android.companion.virtual.VirtualDeviceParams\$Builder")
         val virtualDeviceParamsClass =
@@ -155,12 +179,27 @@ class ProjectedContextTest {
             )
         virtualDeviceParamsBuilder =
             ReflectionHelpers.callInstanceMethod(virtualDeviceParamsBuilder, "build")
-        ReflectionHelpers.callInstanceMethod<Any?>(
-            virtualDeviceManager,
-            "createVirtualDevice",
-            ClassParameter(Int::class.javaPrimitiveType, 1),
-            ClassParameter(virtualDeviceParamsClass, virtualDeviceParamsBuilder),
-        )
+        val virtualDevice =
+            ReflectionHelpers.callInstanceMethod<Any?>(
+                virtualDeviceManager,
+                "createVirtualDevice",
+                ClassParameter(Int::class.javaPrimitiveType, 1),
+                ClassParameter(virtualDeviceParamsClass, virtualDeviceParamsBuilder),
+            )
+
+        val virtualDisplayConfig =
+            VirtualDisplayConfig.Builder(ProjectedContext.PROJECTED_DISPLAY_NAME, 10, 10, 10)
+                .build()
+
+        if (shouldCreateVirtualDisplay) {
+            ReflectionHelpers.callInstanceMethod<Any?>(
+                virtualDevice,
+                "createVirtualDisplay",
+                ClassParameter(VirtualDisplayConfig::class.java, virtualDisplayConfig),
+                ClassParameter(Executor::class.java, null),
+                ClassParameter(VirtualDisplay.Callback::class.java, null),
+            )
+        }
     }
 
     class LocalContextWrapper(context: Context, private val deviceId: Int) :

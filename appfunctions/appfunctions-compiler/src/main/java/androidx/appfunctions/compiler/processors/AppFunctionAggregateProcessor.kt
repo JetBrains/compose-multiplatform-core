@@ -19,6 +19,7 @@ package androidx.appfunctions.compiler.processors
 import androidx.appfunctions.compiler.AppFunctionCompiler
 import androidx.appfunctions.compiler.AppFunctionCompilerOptions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
+import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTIONS_INTERNAL_PACKAGE_NAME
 import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME
 import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTION_INVENTORY_CLASS
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AggregatedAppFunctionInventoryClass
@@ -87,10 +88,7 @@ class AppFunctionAggregateProcessor(
         aggregatedInventoryClassBuilder.addProperty(buildInventoriesProperty(generatedInventories))
 
         val fileSpec =
-            FileSpec.builder(
-                    APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
-                    aggregatedInventoryClassName,
-                )
+            FileSpec.builder(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, aggregatedInventoryClassName)
                 .addType(aggregatedInventoryClassBuilder.build())
                 .build()
 

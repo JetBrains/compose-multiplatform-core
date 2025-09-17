@@ -30,6 +30,7 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.file.FileCollection
 import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
+import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
@@ -53,7 +54,8 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                         .getByType<KotlinMultiplatformAndroidComponentsExtension>()
                         .finalizeDsl { project.configureAndroidCommonOptions(it.lint) }
                 }
-                is KotlinBasePluginWrapper -> {
+                is KotlinBasePluginWrapper,
+                is KotlinBaseApiPlugin -> {
                     configureComposeCompilerPlugin(project)
                 }
             }
@@ -101,6 +103,55 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                 // unpublished project
                 if (ignoreListIteratorFilter.any { path.contains(it) } || !isPublished) {
                     disable.add("ListIterator")
+                }
+
+                // Paths for which we want to disable ComposeTestRuleDispatcher
+                val ignoreComposeTestRuleDispatcherFilter =
+                    listOf(
+                        "activity:activity-compose",
+                        "camera:camera-compose",
+                        "camera:integration-tests",
+                        "camera:viewfinder:viewfinder-compose",
+                        "compose:animation",
+                        "compose:foundation",
+                        "compose:material",
+                        "compose:material3",
+                        "compose:remote",
+                        "compose:runtime",
+                        "compose:ui",
+                        "compose:test-utils",
+                        "constraintlayout:constraintlayout-compose",
+                        "core:core-backported-fixes",
+                        "fragment:fragment-compose",
+                        "hilt:hilt-lifecycle-viewmodel-compose",
+                        "hilt:hilt-navigation-compose",
+                        "lifecycle:lifecycle-runtime-compose",
+                        "lifecycle:lifecycle-viewmodel-compose",
+                        "lifecycle:lifecycle-viewmodel-navigation3",
+                        "navigation:navigation-compose",
+                        "navigation:navigation-fragment-compose",
+                        "navigation3:navigation3-ui",
+                        "navigation3:navigation3-runtime",
+                        "navigationevent:navigationevent-compose",
+                        "paging:paging-compose",
+                        "pdf:pdf-compose",
+                        "photopicker:photopicker-compose",
+                        "privacysandbox:ui:ui-client-compose",
+                        "tv:tv-material",
+                        "wear:compose:compose-foundation",
+                        "wear:compose:compose-material",
+                        "wear:compose:compose-material-core",
+                        "wear:compose:compose-material3",
+                        "wear:compose:compose-navigation",
+                        "wear:compose:integration-tests",
+                        "xr:compose",
+                        "xr:glimmer",
+                        "xr:projected:projected",
+                    )
+
+                // Disable ComposeTestRuleDispatcher if not in a matching path
+                if (ignoreComposeTestRuleDispatcherFilter.any { path.contains(it) }) {
+                    disable.add("ComposeTestRuleDispatcher")
                 }
 
                 // b/333784604 Disable ConfigurationScreenWidthHeight for wear libraries, it

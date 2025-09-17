@@ -43,6 +43,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDateTime
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlinx.coroutines.flow.first
 import org.junit.After
@@ -1255,6 +1256,48 @@ class IntegrationTest {
         targetContext.assertWriteAccessible(filesData.writeOnlyUri.uri)
         targetContext.assertReadAccessible(filesData.readWriteUri.uri)
         targetContext.assertWriteAccessible(filesData.readWriteUri.uri)
+    }
+
+    @Test
+    fun serializeAppFunctionSerializable_failsForInvalidValues() {
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.serialize(
+                IntEnumSerializable(value = -1),
+                IntEnumSerializable::class.java,
+            )
+        }
+    }
+
+    @Test
+    fun serializeAppFunctionSerializable_success() {
+        val afd =
+            AppFunctionData.serialize(
+                IntEnumSerializable(value = 10),
+                IntEnumSerializable::class.java,
+            )
+
+        assertThat(afd.getInt("value")).isEqualTo(10)
+    }
+
+    @Test
+    fun deserializeAppFunctionSerializable_failsForInvalidValues() {
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder("")
+                .setInt("value", -1)
+                .build()
+                .deserialize(IntEnumSerializable::class.java)
+        }
+    }
+
+    @Test
+    fun deserializeAppFunctionSerializable_success() {
+        val intEnumSerializable =
+            AppFunctionData.Builder("")
+                .setInt("value", 10)
+                .build()
+                .deserialize(IntEnumSerializable::class.java)
+
+        assertThat(intEnumSerializable.value).isEqualTo(10)
     }
 
     /**

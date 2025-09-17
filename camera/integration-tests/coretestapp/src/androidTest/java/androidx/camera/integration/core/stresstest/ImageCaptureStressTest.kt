@@ -77,7 +77,10 @@ class ImageCaptureStressTest(
 
     @get:Rule
     val permissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        GrantPermissionRule.grant(
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        )
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
@@ -122,17 +125,20 @@ class ImageCaptureStressTest(
 
     @After
     fun tearDown(): Unit = runBlocking {
-        if (::cameraProvider.isInitialized) {
-            withContext(Dispatchers.Main) {
-                cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
-            }
-        }
-
         // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
         // to other tests :)
         device.unfreezeRotation()
         device.pressHome()
         device.waitForIdle(StressTestUtil.HOME_TIMEOUT_MS)
+
+        // shutdownAsync should be invoked at the very last step, e.g. device.unfreezeRotation() may
+        // lead to onCreate invocation on test app which may depend on the camera provider still
+        // being active.
+        if (::cameraProvider.isInitialized) {
+            withContext(Dispatchers.Main) {
+                cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
+            }
+        }
     }
 
     @LabTestRule.LabTestOnly

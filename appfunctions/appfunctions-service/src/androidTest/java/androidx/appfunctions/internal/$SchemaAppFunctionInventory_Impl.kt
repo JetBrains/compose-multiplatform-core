@@ -19,6 +19,7 @@ package androidx.appfunctions.internal
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.core.AppFunctionMetadataTestHelper
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 
@@ -41,6 +42,9 @@ class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
                     AppFunctionMetadataTestHelper.FunctionMetadata.MEDIA_SCHEMA2_PRINT
                         .toStaticCompileTimeMetadata(),
             )
+
+    override val componentsMetadata: AppFunctionComponentsMetadata
+        get() = AppFunctionMetadataTestHelper.FunctionMetadata.NOTES_SCHEMA_PRINT.components
 
     private fun AppFunctionMetadata.toStaticCompileTimeMetadata(): CompileTimeAppFunctionMetadata {
         return CompileTimeAppFunctionMetadata(

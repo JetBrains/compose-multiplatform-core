@@ -345,6 +345,7 @@ class TestFunctions {
         appFunctionContext: AppFunctionContext,
         @AppFunctionIntValueConstraint(enumValues = [0, 1]) intEnum: Int,
         @AppFunctionStringValueConstraint(enumValues = ["A", "B"]) stringEnum: String,
+        intEnumSerializable: IntEnumSerializable? = null,
     ) {
         throw UnsupportedOperationException("Not implemented")
     }
@@ -502,3 +503,8 @@ class NotesFunctions : CreateNoteAppFunction<NotesFunctions.Parameters, NotesFun
     @AppFunctionSerializable
     class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
 }
+
+@AppFunctionSerializable
+data class IntEnumSerializable(
+    @property:AppFunctionIntValueConstraint(enumValues = [10, 20]) val value: Int
+)

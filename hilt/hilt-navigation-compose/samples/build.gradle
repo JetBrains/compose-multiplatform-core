@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -44,6 +45,7 @@ androidx {
     mavenVersion = LibraryVersions.HILT_NAVIGATION_COMPOSE
     inceptionYear = "2021"
     description = "Samples for the Navigation Compose Hilt Integration"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {

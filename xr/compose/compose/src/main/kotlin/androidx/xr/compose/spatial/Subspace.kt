@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.spatial
 
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Spacer
@@ -36,9 +37,12 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
+import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalComposeXrOwners
 import androidx.xr.compose.platform.LocalCoreEntity
 import androidx.xr.compose.platform.LocalSession
@@ -283,6 +287,7 @@ private fun PanelEmbeddedSubspace(
     val density = LocalDensity.current
     val placeholderDpSize =
         subspaceContentPixelSize.run { with(density) { DpSize(width.toDp(), height.toDp()) } }
+    val view = LocalView.current
 
     // Render a Spacer in a Layout such that the measurable passed to the 2D layout has the same
     // size as the content in the SubspaceLayout, but the SubspaceLayout gets the constraints
@@ -297,6 +302,7 @@ private fun PanelEmbeddedSubspace(
         // We set the scene content here so the 3D content has access to the 2D constraints.
         scene.setContent {
             SubspaceLayout(content = { SpatialBox(content = content) }) { subspaceMeasurables, _ ->
+                val volumeConstraints = view.findVolumeConstraints()
                 val placeables =
                     subspaceMeasurables.map {
                         it.measure(
@@ -305,10 +311,8 @@ private fun PanelEmbeddedSubspace(
                                 maxWidth = constraints.maxWidth,
                                 minHeight = constraints.minHeight,
                                 maxHeight = constraints.maxHeight,
-                                // TODO(b/366564066) Nested Subspaces should get their depth
-                                // constraints from the parent Subspace
-                                minDepth = 0,
-                                maxDepth = Int.MAX_VALUE,
+                                minDepth = volumeConstraints?.minDepth ?: 0,
+                                maxDepth = volumeConstraints?.maxDepth ?: Int.MAX_VALUE,
                             )
                         )
                     }
@@ -406,4 +410,23 @@ public fun GravityAlignedSubspace(
             content = content,
         )
     }
+}
+
+/**
+ * Traverses up the view hierarchy starting from the given [View] to find the first view or ancestor
+ * that has the `compose_xr_panel_volume_constraints` tag set.
+ *
+ * @return The [VolumeConstraints] object if found, otherwise `null`.
+ */
+private fun View.findVolumeConstraints(): VolumeConstraints? {
+    var current: View? = this
+    while (current != null) {
+        val constraints = current.getTag(R.id.compose_xr_panel_volume_constraints)
+        if (constraints is VolumeConstraints) {
+            return constraints
+        }
+        current = current.getParentOrViewTreeDisjointParent() as? View
+    }
+    // No constraints found in this branch of the hierarchy
+    return null
 }

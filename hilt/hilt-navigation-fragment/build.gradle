@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -69,5 +70,6 @@ androidx {
     inceptionYear = "2021"
     description = "Android Navigation Fragment Hilt Extension"
     legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 

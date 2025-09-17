@@ -58,6 +58,8 @@ message ProcessDescriptor {
 }
 
 message TrackEvent {
+  // non-interned variant.
+  repeated string categories = 22;
   oneof name_field {
     // non-interned variant.
     string name = 23;

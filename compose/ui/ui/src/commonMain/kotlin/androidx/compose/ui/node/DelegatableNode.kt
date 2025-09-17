@@ -396,7 +396,7 @@ fun DelegatableNode.invalidateSubtree() {
 }
 
 /**
- * Invalidates layout for the entire subtree of this node.
+ * Invalidates measurements for the entire subtree of this node.
  *
  * Note that [invalidateMeasurement] is preferable in most cases, however it is only guaranteed to
  * invalidate measurement for that specific node, and it is possible that layout nodes that are
@@ -410,9 +410,9 @@ fun DelegatableNode.invalidateSubtree() {
  * to relayout instead of just parts that are otherwise invalidated. [invalidateMeasurement] is
  * preferable in most cases, and this should only be used when absolutely necessary.
  */
-fun DelegatableNode.invalidateLayoutForSubtree() {
+fun DelegatableNode.invalidateMeasurementForSubtree() {
     if (node.isAttached) {
-        requireLayoutNode().invalidateLayoutForSubtree()
+        requireLayoutNode().invalidateMeasurementForSubtree()
     }
 }
 

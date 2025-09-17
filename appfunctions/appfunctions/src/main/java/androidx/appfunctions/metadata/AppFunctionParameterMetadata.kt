@@ -63,8 +63,7 @@ constructor(
             ")"
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toAppFunctionParameterMetadataDocument(): AppFunctionParameterMetadataDocument {
+    internal fun toAppFunctionParameterMetadataDocument(): AppFunctionParameterMetadataDocument {
         return AppFunctionParameterMetadataDocument(
             name = name,
             isRequired = isRequired,

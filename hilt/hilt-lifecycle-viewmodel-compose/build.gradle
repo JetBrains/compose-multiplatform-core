@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -58,6 +59,7 @@ androidx {
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2025"
     description = "ViewModel Compose Hilt Extension"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {

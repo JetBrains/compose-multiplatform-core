@@ -324,6 +324,10 @@ internal class CaptureSessionState(
             }
         }
 
+        Debug.traceStart { "$graphListener#onGraphStopping" }
+        graphListener.onGraphStopping()
+        Debug.traceStop()
+
         val captureSession = configuredCaptureSession
         if (captureSession != null) {
             val graphProcessor = captureSession.processor
@@ -338,11 +342,7 @@ internal class CaptureSessionState(
             //
             // WARNING - DO NOT CALL session.close().
             Log.debug { "$this Shutdown" }
-
             Debug.traceStart { "$this#shutdown" }
-            Debug.traceStart { "$graphListener#onGraphStopping" }
-            graphListener.onGraphStopping()
-            Debug.traceStop()
 
             // On newer API levels, aborting capture allows us to switch to a new capture session
             // sooner [1]. However, it has been shown during field metrics, that faulty HAL

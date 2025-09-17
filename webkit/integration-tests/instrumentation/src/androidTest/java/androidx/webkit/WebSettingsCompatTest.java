@@ -346,6 +346,28 @@ public class WebSettingsCompatTest {
     }
 
     @Test
+    public void testBFCacheSettings() {
+        WebkitUtils.checkFeature(WebViewFeature.BACK_FORWARD_CACHE_SETTINGS);
+        WebSettings settings = mWebViewOnUiThread.getSettings();
+        final int pageLimit = 5;
+        final int timeout = 96000;
+
+        BackForwardCacheSettings backForwardCacheSettings =
+                new BackForwardCacheSettings.Builder()
+                        .setTimeoutSeconds(timeout)
+                        .setMaxPagesInCache(pageLimit)
+                        .build();
+
+        WebSettingsCompat.setBackForwardCacheSettings(settings, backForwardCacheSettings);
+        BackForwardCacheSettings newBackForwardCacheSettings =
+                WebSettingsCompat.getBackForwardCacheSettings(settings);
+        Assert.assertEquals(backForwardCacheSettings.getMaxPagesInCache(),
+                newBackForwardCacheSettings.getMaxPagesInCache());
+        Assert.assertEquals(backForwardCacheSettings.getTimeoutSeconds(),
+                newBackForwardCacheSettings.getTimeoutSeconds());
+    }
+
+    @Test
     public void testPaymentRequestSupport() {
         WebkitUtils.checkFeature(WebViewFeature.PAYMENT_REQUEST);
         WebSettings settings = mWebViewOnUiThread.getSettings();

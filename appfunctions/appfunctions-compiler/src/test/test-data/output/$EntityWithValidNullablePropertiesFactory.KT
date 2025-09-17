@@ -9,22 +9,23 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$EntityWithValidNullablePropertiesFactory` : AppFunctionSerializableFactory<EntityWithValidNullableProperties> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): EntityWithValidNullableProperties {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.EntityWithValidNullableProperties")
     val inputSerializableFactory = `$InputSerializableFactory`()
 
-    val longParam = appFunctionData.getLongOrNull("longParam")
-    val doubleParam = appFunctionData.getDoubleOrNull("doubleParam")
-    val boolParam = appFunctionData.getBooleanOrNull("boolParam")
-    val stringParam = appFunctionData.getStringOrNull("stringParam")
-    val longArray = appFunctionData.getLongArray("longArray")
-    val doubleArray = appFunctionData.getDoubleArray("doubleArray")
-    val boolArray = appFunctionData.getBooleanArray("boolArray")
-    val stringList = appFunctionData.getStringList("stringList")
-    val inputSerializableData = appFunctionData.getAppFunctionData("inputSerializable")
+    val longParam = appFunctionDataWithSpec.getLongOrNull("longParam")
+    val doubleParam = appFunctionDataWithSpec.getDoubleOrNull("doubleParam")
+    val boolParam = appFunctionDataWithSpec.getBooleanOrNull("boolParam")
+    val stringParam = appFunctionDataWithSpec.getStringOrNull("stringParam")
+    val longArray = appFunctionDataWithSpec.getLongArray("longArray")
+    val doubleArray = appFunctionDataWithSpec.getDoubleArray("doubleArray")
+    val boolArray = appFunctionDataWithSpec.getBooleanArray("boolArray")
+    val stringList = appFunctionDataWithSpec.getStringList("stringList")
+    val inputSerializableData = appFunctionDataWithSpec.getAppFunctionData("inputSerializable")
     var inputSerializable: InputSerializable? = null
     if (inputSerializableData != null) {
       inputSerializable = inputSerializableFactory.fromAppFunctionData(inputSerializableData)
     }
-    val serializableListData = appFunctionData.getAppFunctionDataList("serializableList")
+    val serializableListData = appFunctionDataWithSpec.getAppFunctionDataList("serializableList")
     val serializableList = serializableListData?.map { data ->
       inputSerializableFactory.fromAppFunctionData(data)
     }
@@ -37,7 +38,7 @@ public class `$EntityWithValidNullablePropertiesFactory` : AppFunctionSerializab
     val entityWithValidNullableProperties_appFunctionSerializable = appFunctionSerializable
     val inputSerializableFactory = `$InputSerializableFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.EntityWithValidNullableProperties")
+    val builder = getAppFunctionDataBuilder("com.testdata.EntityWithValidNullableProperties")
     val longParam = entityWithValidNullableProperties_appFunctionSerializable.longParam
     if (longParam != null) {
       builder.setLong("longParam", longParam)

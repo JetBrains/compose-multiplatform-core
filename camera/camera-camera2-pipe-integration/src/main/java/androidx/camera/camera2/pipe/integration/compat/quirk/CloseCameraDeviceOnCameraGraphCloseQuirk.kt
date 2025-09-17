@@ -68,6 +68,10 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
                 // OplusHansManager actively "freezes" app processes, which means we cannot delay
                 // closing the camera device for any amount of time.
                 return true
+            } else if (Device.isVivoDevice()) {
+                // On Vivo devices, buggy custom modifications were added during CameraDevice.close
+                // such that it may trigger NPE if the camera device is closed too late.
+                return true
             } else if (isXiaomiProblematicDevice) {
                 // When Extensions is enabled, switching modes might cause the black screen issue.
                 // Applying this quirk when Extensions is enabled will fix it.

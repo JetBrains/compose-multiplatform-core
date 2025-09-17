@@ -29,12 +29,12 @@ import androidx.appfunctions.AppFunctionException
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.internal.Translator
 import androidx.appfunctions.internal.TranslatorSelector
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
-import androidx.appfunctions.service.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.service.internal.AggregatedAppFunctionInvoker
 import androidx.appfunctions.service.internal.unsafeBuildReturnValue
 import androidx.appfunctions.service.internal.unsafeGetParameterValue

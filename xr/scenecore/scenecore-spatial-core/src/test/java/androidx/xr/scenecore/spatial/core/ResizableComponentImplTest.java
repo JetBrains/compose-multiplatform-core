@@ -731,17 +731,25 @@ public class ResizableComponentImplTest {
 
         ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 
-        resizableComponent.setFixedAspectRatio(2.0f);
+        // If no size was set the default aspect ratio will be 1.
+        resizableComponent.setFixedAspectRatioEnabled(true);
+        assertThat(options.getFixedAspectRatio()).isEqualTo(1.0f);
 
-        assertThat(options.getFixedAspectRatio()).isEqualTo(2.0f);
+        // Updating the size will update the aspect ratio if enabled.
+        resizableComponent.setSize(new Dimensions(1f, 2f, 1f));
+        assertThat(options.getFixedAspectRatio()).isEqualTo(0.5f);
 
-        resizableComponent.setFixedAspectRatio(0.0f);
-
+        // Disabling the aspect ratio will set the fixed aspect ratio to 0.
+        resizableComponent.setFixedAspectRatioEnabled(false);
         assertThat(options.getFixedAspectRatio()).isEqualTo(0.0f);
 
-        resizableComponent.setFixedAspectRatio(-1.0f);
+        // Updating the size will not update the aspect ratio if disabled.
+        resizableComponent.setSize(new Dimensions(3f, 1f, 1f));
+        assertThat(options.getFixedAspectRatio()).isEqualTo(0.0f);
 
-        assertThat(options.getFixedAspectRatio()).isEqualTo(-1.0f);
+        // Enabling it will update the aspect ratio based on the current size.
+        resizableComponent.setFixedAspectRatioEnabled(true);
+        assertThat(options.getFixedAspectRatio()).isEqualTo(3.0f);
     }
 
     @Test

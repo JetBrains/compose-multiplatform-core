@@ -521,11 +521,21 @@ constructor(
                 )
             when (openResult) {
                 is OpenVirtualCameraResult.Success -> {
-                    Log.info { "PruningCameraDeviceManager: $cameraId opened successfully" }
                     realCamera = openResult.activeCamera
-                    // Acquire a token to mark this active camera as used.
-                    realCameraToken = checkNotNull(realCamera.acquire())
-                    activeCameras.add(realCamera)
+                    // Acquire a token to confirm that this active camera is available and mark it
+                    // as used.
+                    realCameraToken = realCamera.acquire()
+                    if (realCameraToken != null) {
+                        Log.info { "PruningCameraDeviceManager: $cameraId opened successfully" }
+                        activeCameras.add(realCamera)
+                    } else {
+                        Log.info {
+                            "PruningCameraDeviceManager: Failed to open $cameraId: " +
+                                "Camera may have encountered an error immediately after opening"
+                        }
+                        requestOpen.virtualCamera.disconnect(null)
+                        return null
+                    }
                 }
                 is OpenVirtualCameraResult.Error -> {
                     Log.info { "PruningCameraDeviceManager: Failed to open $cameraId" }

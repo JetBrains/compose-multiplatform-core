@@ -17,7 +17,7 @@ package androidx.activity
 
 import androidx.annotation.MainThread
 import androidx.navigationevent.NavigationEvent
-import androidx.navigationevent.NavigationEventCallback
+import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInfo.NotProvided
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.minusAssign
@@ -44,13 +44,13 @@ import kotlin.collections.plusAssign
 abstract class OnBackPressedCallback(enabled: Boolean) {
 
     /**
-     * This [OnBackPressedCallback] class will delegate all interactions to [eventCallbacks], which
+     * This [OnBackPressedCallback] class will delegate all interactions to [eventHandlers], which
      * provides a KMP-compatible API while preserving behavior compatibility with existing callback
      * mechanisms.
      *
      * @see [OnBackPressedDispatcher.eventDispatcher]
      */
-    private val eventCallbacks: MutableList<NavigationEventCallback<*>> = mutableListOf()
+    private val eventHandlers: MutableList<NavigationEventHandler<*>> = mutableListOf()
 
     /**
      * The enabled state of the callback. Only when this callback is enabled will it receive
@@ -65,7 +65,7 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
     var isEnabled: Boolean = enabled
         set(value) {
             field = value
-            for (callback in eventCallbacks) {
+            for (callback in eventHandlers) {
                 callback.isBackEnabled = value
             }
         }
@@ -79,10 +79,10 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
             closeable.close()
         }
         closeables.clear()
-        for (callback in eventCallbacks) {
+        for (callback in eventHandlers) {
             callback.remove()
         }
-        eventCallbacks.clear()
+        eventHandlers.clear()
     }
 
     /**
@@ -126,14 +126,15 @@ abstract class OnBackPressedCallback(enabled: Boolean) {
         closeables -= closeable
     }
 
-    internal fun createNavigationEventCallback(): NavigationEventCallback<*> {
-        val newCallback = EventCallback(this)
-        eventCallbacks += newCallback
-        return newCallback
+    internal fun createNavigationEventHandler(): NavigationEventHandler<*> {
+        val newHandler = OnBackPressedEventHandler(onBackPressedCallback = this)
+        eventHandlers += newHandler
+        return newHandler
     }
 
-    private class EventCallback(private val onBackPressedCallback: OnBackPressedCallback) :
-        NavigationEventCallback<NotProvided>(isBackEnabled = onBackPressedCallback.isEnabled) {
+    private class OnBackPressedEventHandler(
+        private val onBackPressedCallback: OnBackPressedCallback
+    ) : NavigationEventHandler<NotProvided>(isBackEnabled = onBackPressedCallback.isEnabled) {
 
         override fun onBackStarted(event: NavigationEvent) {
             onBackPressedCallback.handleOnBackStarted(BackEventCompat(event))

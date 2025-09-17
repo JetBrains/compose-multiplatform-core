@@ -54,7 +54,6 @@ class SelectionContextualMenuTest {
     @Before
     fun setUp() {
         PdfFeatureFlags.isLinkSelectionEnabled = true
-        PdfFeatureFlags.isSmartActionMenuComponentEnabled = true
         val textContents = FAKE_PAGE_TEXT.map { text -> PdfPageTextContent(BOUNDS, text) }
         val goToLinkContent =
             PdfPageLinks(
@@ -96,7 +95,6 @@ class SelectionContextualMenuTest {
     @After
     fun tearDown() {
         PdfViewTestActivity.onCreateCallback = {}
-        PdfFeatureFlags.isSmartActionMenuComponentEnabled = false
         PdfFeatureFlags.isLinkSelectionEnabled = false
     }
 

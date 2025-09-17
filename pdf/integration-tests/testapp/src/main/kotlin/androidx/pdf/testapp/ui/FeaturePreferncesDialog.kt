@@ -61,12 +61,6 @@ internal class FeaturePreferencesDialog(
                 context.getString(R.string.link_selection),
             ),
             FeatureFlagConfig(
-                R.id.switch_smart_action_menu,
-                PdfFeatureFlags::isSmartActionMenuComponentEnabled,
-                FeatureFlagNames.SMART_ACTION_MENU,
-                context.getString(R.string.smart_action_menu),
-            ),
-            FeatureFlagConfig(
                 R.id.custom_link_handling_switch,
                 PdfFeatureFlags::isCustomLinkHandlingEnabled,
                 FeatureFlagNames.CUSTOM_LINK_HANDLING,
@@ -136,6 +130,5 @@ object FeatureFlagNames {
     const val CUSTOM_LINK_HANDLING: String = "CUSTOM_LINK_HANDLING"
     const val EXTERNAL_HARDWARE_INTERACTION: String = "EXTERNAL_HARDWARE_INTERACTION"
     const val LINK_SELECTION: String = "LINK_SELECTION"
-    const val SMART_ACTION_MENU: String = "SMART_ACTION_MENU"
     const val THUMBNAIL_PREVIEW: String = "THUMBNAIL_PREVIEW"
 }

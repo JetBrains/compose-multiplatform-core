@@ -28,6 +28,16 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("BanParcelableUsage")
 public class EditId(public val pageNum: Int, public val value: String) : Parcelable {
+    override fun equals(other: Any?): Boolean {
+        return (other is EditId) && other.pageNum == pageNum && other.value == value
+    }
+
+    override fun hashCode(): Int {
+        var result = pageNum.hashCode()
+        result = 31 * result + value.hashCode()
+        return result
+    }
+
     override fun describeContents(): Int = 0
 
     /** Flatten this object in to a Parcel. */

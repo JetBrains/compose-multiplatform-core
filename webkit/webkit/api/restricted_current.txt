@@ -1,6 +1,18 @@
 // Signature format: 4.0
 package androidx.webkit {
 
+  @SuppressCompatibility @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public class BackForwardCacheSettings {
+    method public int getMaxPagesInCache();
+    method public long getTimeoutSeconds();
+  }
+
+  public static final class BackForwardCacheSettings.Builder {
+    ctor public BackForwardCacheSettings.Builder();
+    method public androidx.webkit.BackForwardCacheSettings build();
+    method public androidx.webkit.BackForwardCacheSettings.Builder setMaxPagesInCache(int);
+    method public androidx.webkit.BackForwardCacheSettings.Builder setTimeoutSeconds(long);
+  }
+
   @AnyThread public class CookieManagerCompat {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.GET_COOKIE_INFO, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static java.util.List<java.lang.String!> getCookieInfo(android.webkit.CookieManager, String);
   }
@@ -388,6 +400,7 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.COOKIE_INTERCEPT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static boolean areCookiesIncludedInShouldInterceptRequest(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static int getAttributionRegistrationBehavior(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static boolean getBackForwardCacheEnabled(android.webkit.WebSettings);
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public static androidx.webkit.BackForwardCacheSettings getBackForwardCacheSettings(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.DISABLED_ACTION_MODE_MENU_ITEMS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static int getDisabledActionModeMenuItems(android.webkit.WebSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static boolean getEnterpriseAuthenticationAppLinkPolicyEnabled(android.webkit.WebSettings);
     method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.FORCE_DARK, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static int getForceDark(android.webkit.WebSettings);
@@ -405,6 +418,7 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setAlgorithmicDarkeningAllowed(android.webkit.WebSettings, boolean);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setAttributionRegistrationBehavior(android.webkit.WebSettings, int);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setBackForwardCacheEnabled(android.webkit.WebSettings, boolean);
+    method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.BACK_FORWARD_CACHE_SETTINGS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public static void setBackForwardCacheSettings(android.webkit.WebSettings, androidx.webkit.BackForwardCacheSettings);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.COOKIE_INTERCEPT, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setCookiesIncludedInShouldInterceptRequest(android.webkit.WebSettings, boolean);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.DISABLED_ACTION_MODE_MENU_ITEMS, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setDisabledActionModeMenuItems(android.webkit.WebSettings, int);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setEnterpriseAuthenticationAppLinkPolicyEnabled(android.webkit.WebSettings, boolean);
@@ -435,6 +449,9 @@ package androidx.webkit {
     field public static final int WEB_AUTHENTICATION_SUPPORT_FOR_APP = 1; // 0x1
     field public static final int WEB_AUTHENTICATION_SUPPORT_FOR_BROWSER = 2; // 0x2
     field public static final int WEB_AUTHENTICATION_SUPPORT_NONE = 0; // 0x0
+  }
+
+  @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.TYPE}) public static @interface WebSettingsCompat.ExperimentalBackForwardCacheSettings {
   }
 
   @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.TYPE}) public static @interface WebSettingsCompat.ExperimentalSpeculativeLoading {
@@ -548,6 +565,7 @@ package androidx.webkit {
     field public static final String ALGORITHMIC_DARKENING = "ALGORITHMIC_DARKENING";
     field public static final String ATTRIBUTION_REGISTRATION_BEHAVIOR = "ATTRIBUTION_REGISTRATION_BEHAVIOR";
     field public static final String BACK_FORWARD_CACHE = "BACK_FORWARD_CACHE";
+    field public static final String BACK_FORWARD_CACHE_SETTINGS = "BACK_FORWARD_CACHE_SETTINGS";
     field @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalCacheProvider public static final String CACHE_PROVIDER = "CACHE_PROVIDER";
     field public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";
     field public static final String CREATE_WEB_MESSAGE_CHANNEL = "CREATE_WEB_MESSAGE_CHANNEL";

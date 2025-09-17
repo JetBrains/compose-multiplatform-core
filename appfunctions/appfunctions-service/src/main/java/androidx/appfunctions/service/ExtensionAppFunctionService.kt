@@ -45,7 +45,7 @@ public class ExtensionAppFunctionService : AppFunctionService() {
                 this@ExtensionAppFunctionService,
                 Dispatchers.Worker,
                 Dispatchers.Main,
-                ServiceDependencies.aggregatedAppFunctionInventory,
+                checkNotNull(Dependencies.aggregatedAppFunctionInventory),
                 ServiceDependencies.aggregatedAppFunctionInvoker,
                 Dependencies.translatorSelector,
             )

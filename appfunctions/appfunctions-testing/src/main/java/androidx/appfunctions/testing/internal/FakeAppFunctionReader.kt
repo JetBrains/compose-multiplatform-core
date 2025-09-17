@@ -22,13 +22,13 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionManagerCompat
 import androidx.appfunctions.AppFunctionSearchSpec
+import androidx.appfunctions.internal.AggregatedAppFunctionInventory
+import androidx.appfunctions.internal.AppFunctionInventory
 import androidx.appfunctions.internal.AppFunctionReader
 import androidx.appfunctions.internal.findImpl
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
-import androidx.appfunctions.service.internal.AggregatedAppFunctionInventory
-import androidx.appfunctions.service.internal.AppFunctionInventory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map

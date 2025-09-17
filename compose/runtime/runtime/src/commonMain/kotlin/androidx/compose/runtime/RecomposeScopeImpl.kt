@@ -22,6 +22,8 @@ import androidx.collection.ScatterSet
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.snapshots.fastAny
 import androidx.compose.runtime.snapshots.fastForEach
+import androidx.compose.runtime.tooling.ComposeToolingApi
+import androidx.compose.runtime.tooling.IdentifiableRecomposeScope
 
 /**
  * Represents a recomposable scope or section of the composition hierarchy. Can be used to manually
@@ -82,8 +84,9 @@ private val callbackLock = makeSynchronizedObject()
  * in [anchor] and call [block] when recomposition is requested. It is created by
  * [Composer.startRestartGroup] and is used to track how to restart the group.
  */
+@OptIn(ComposeToolingApi::class)
 internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
-    ScopeUpdateScope, RecomposeScope {
+    ScopeUpdateScope, RecomposeScope, IdentifiableRecomposeScope {
 
     /** The backing store for the boolean flags tracked by the recompose scope. */
     private var flags: Int = 0
@@ -93,6 +96,11 @@ internal class RecomposeScopeImpl(internal var owner: RecomposeScopeOwner?) :
      * recompose scope.
      */
     var anchor: Anchor? = null
+
+    /** Access to anchor from tooling */
+    @ComposeToolingApi
+    override val identity: Any?
+        get() = anchor
 
     /**
      * Return whether the scope is valid. A scope becomes invalid when the slots it updates are

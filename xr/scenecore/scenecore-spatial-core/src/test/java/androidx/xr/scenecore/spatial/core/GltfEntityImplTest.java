@@ -121,12 +121,24 @@ public class GltfEntityImplTest {
     }
 
     @Test
-    public void setMaterialOverrideGltfEntity_materialOverridesMesh() throws Exception {
+    public void setMaterialOverrideGltfEntity_materialOverridesNode() throws Exception {
         MaterialResource material = Mockito.mock(MaterialResource.class);
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
 
-        mGltfEntity.setMaterialOverride(material, "fake_mesh_name");
+        mGltfEntity.setMaterialOverride(material, nodeName, primitiveIndex);
 
-        verify(mMockGltfFeature).setMaterialOverride(material, "fake_mesh_name");
+        verify(mMockGltfFeature).setMaterialOverride(material, nodeName, primitiveIndex);
+    }
+
+    @Test
+    public void clearMaterialOverrideGltfEntity_clearsMaterialOverride() throws Exception {
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
+
+        mGltfEntity.clearMaterialOverride(nodeName, primitiveIndex);
+
+        verify(mMockGltfFeature).clearMaterialOverride(nodeName, primitiveIndex);
     }
 
     @Test

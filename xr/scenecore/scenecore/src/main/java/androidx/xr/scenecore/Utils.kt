@@ -357,9 +357,22 @@ internal fun Int.toSpatialPointerIcon(): SpatialPointerIcon {
     }
 }
 
-/** Extension function that converts a [KhronosPbrMaterialSpec] to [RtKhronosPbrMaterialSpec]. */
-internal fun KhronosPbrMaterialSpec.toRtKhronosPbrMaterialSpec(): RtKhronosPbrMaterialSpec {
-    return RtKhronosPbrMaterialSpec(lightingModel, blendMode, doubleSidedMode)
+/** Extension function that converts a [AlphaMode] to [RtKhronosPbrMaterialSpec]. */
+internal fun Int.toRtKhronosUnlitMaterialSpec(): RtKhronosPbrMaterialSpec {
+    return RtKhronosPbrMaterialSpec(
+        lightingModel = RtKhronosPbrMaterialSpec.UNLIT,
+        blendMode = this,
+        doubleSidedMode = RtKhronosPbrMaterialSpec.SINGLE_SIDED,
+    )
+}
+
+/** Extension function that converts a [AlphaMode] to [RtKhronosPbrMaterialSpec]. */
+internal fun Int.toRtKhronosPbrMaterialSpec(): RtKhronosPbrMaterialSpec {
+    return RtKhronosPbrMaterialSpec(
+        lightingModel = RtKhronosPbrMaterialSpec.LIT,
+        blendMode = this,
+        doubleSidedMode = RtKhronosPbrMaterialSpec.SINGLE_SIDED,
+    )
 }
 
 /**

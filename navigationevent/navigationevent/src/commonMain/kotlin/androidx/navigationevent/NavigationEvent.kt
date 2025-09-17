@@ -18,6 +18,7 @@ package androidx.navigationevent
 
 import androidx.annotation.FloatRange
 import kotlin.jvm.JvmName
+import kotlin.jvm.JvmOverloads
 
 /**
  * Represents a system navigation event, such as a predictive back gesture or a back button press.
@@ -28,8 +29,28 @@ import kotlin.jvm.JvmName
  *
  * Note that not all parameters apply to every type of navigation event. For example, [touchX] and
  * [touchY] are only relevant for gesture-based navigation.
+ *
+ * @see NavigationEventHandler
+ * @see NavigationEventDispatcher
  */
-public class NavigationEvent(
+public class NavigationEvent
+@JvmOverloads
+public constructor(
+    /**
+     * Indicates which screen edge a swipe-based navigation gesture originates from. For non-swipe
+     * events, this will be [NavigationEventSwipeEdge.None].
+     */
+    @get:JvmName("getSwipeEdge") // Disable name mangling for Java
+    public val swipeEdge: NavigationEventSwipeEdge = NavigationEventSwipeEdge.None,
+    /**
+     * A normalized value from `0.0F` to `1.0F` indicating how far the navigation action has
+     * progressed.
+     *
+     * For continuous gestures like a swipe, this value will update incrementally. For discrete
+     * actions like a button press, a single event with `progress` of `0.0F` may be sent when the
+     * action starts, followed by a completion signal.
+     */
+    @FloatRange(from = 0.0, to = 1.0) public val progress: Float = 0.0F,
     /**
      * The absolute X coordinate of the touch point for this event, in pixels, in the coordinate
      * space of the screen. For events not triggered by a touch gesture (e.g., a key press), this
@@ -42,21 +63,6 @@ public class NavigationEvent(
      * will be `0.0F`.
      */
     @FloatRange(from = 0.0) public val touchY: Float = 0.0F,
-    /**
-     * A normalized value from `0.0F` to `1.0F` indicating how far the navigation action has
-     * progressed.
-     *
-     * For continuous gestures like a swipe, this value will update incrementally. For discrete
-     * actions like a button press, a single event with `progress` of `0.0F` may be sent when the
-     * action starts, followed by a completion signal.
-     */
-    @FloatRange(from = 0.0, to = 1.0) public val progress: Float = 0.0F,
-    /**
-     * Indicates which screen edge a swipe-based navigation gesture originates from. For non-swipe
-     * events, this will be [NavigationEventSwipeEdge.None].
-     */
-    @get:JvmName("getSwipeEdge") // Disable name mangling for Java
-    public val swipeEdge: NavigationEventSwipeEdge = NavigationEventSwipeEdge.None,
     /**
      * The timestamp in milliseconds when this navigation event occurred. This is useful for
      * synchronizing animations or for debugging event sequences.

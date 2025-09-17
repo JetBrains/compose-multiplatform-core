@@ -2033,6 +2033,17 @@ public abstract class CameraController {
         return description.toString();
     }
 
+    @MainThread
+    private void unbindAllUseCases() {
+        if (!isCameraInitialized()) {
+            return;
+        }
+
+        // Invokes the unbind() method to unbind all use cases created by the CameraController.
+        // This can avoid to unbind the UseCases bound with the other lifecycle owner unexpectedly.
+        mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
+    }
+
     /**
      * Unbinds all the use cases and recreate with the latest parameters.
      */
@@ -2715,24 +2726,22 @@ public abstract class CameraController {
             return null;
         }
 
+        // Always unbinds all UseCases to allow the resolution selection logic to re-select a
+        // workable resolutions set for the new UseCases combination.
+        unbindAllUseCases();
+
         UseCaseGroup.Builder builder = new UseCaseGroup.Builder().addUseCase(mPreview);
 
         if (isImageCaptureEnabled()) {
             builder.addUseCase(mImageCapture);
-        } else {
-            mCameraProvider.unbind(mImageCapture);
         }
 
         if (isImageAnalysisEnabled()) {
             builder.addUseCase(mImageAnalysis);
-        } else {
-            mCameraProvider.unbind(mImageAnalysis);
         }
 
         if (isVideoCaptureEnabled()) {
             builder.addUseCase(mVideoCapture);
-        } else {
-            mCameraProvider.unbind(mVideoCapture);
         }
 
         builder.setViewPort(mViewPort);

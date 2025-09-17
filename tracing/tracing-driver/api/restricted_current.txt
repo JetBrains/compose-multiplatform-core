@@ -104,15 +104,15 @@ package androidx.tracing.driver {
     method public final inline void beginSection(String name, java.util.List<java.lang.Long> flowIds, optional kotlin.jvm.functions.Function1<? super androidx.tracing.driver.TraceEventScope,kotlin.Unit> metadataBlock);
     method public final inline void beginSection(String name, optional kotlin.jvm.functions.Function1<? super androidx.tracing.driver.TraceEventScope,kotlin.Unit> metadataBlock);
     method public final inline void endSection();
-    method @BytecodeOnly @kotlin.PublishedApi internal final Object getPacketLock();
+    method @BytecodeOnly @kotlin.PublishedApi internal final androidx.tracing.driver.TraceEventScope getTraceEventScope();
     method public final void instant(String name);
     method public final inline <T> T trace(String name, kotlin.jvm.functions.Function0<? extends T> block);
     method public final inline <T> T trace(String name, optional kotlin.jvm.functions.Function1<? super androidx.tracing.driver.TraceEventScope,kotlin.Unit> metadataBlock, kotlin.jvm.functions.Function0<? extends T> block);
     method public final suspend inline <T> Object? traceCoroutine(String name, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> block, optional kotlin.coroutines.Continuation<? super T>);
     method public final suspend inline <T> Object? traceCoroutine(String name, optional long flowId, optional kotlin.jvm.functions.Function1<? super androidx.tracing.driver.TraceEventScope,kotlin.Unit> metadataBlock, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super T>);
     method public final suspend inline <T> Object? traceCoroutine(String name, optional long flowId, kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super T>);
-    property @kotlin.PublishedApi internal final Object packetLock;
-    field @kotlin.PublishedApi internal final Object packetLock;
+    property @kotlin.PublishedApi internal final androidx.tracing.driver.TraceEventScope traceEventScope;
+    field @kotlin.PublishedApi internal final androidx.tracing.driver.TraceEventScope traceEventScope;
   }
 
   public class ThreadTrack extends androidx.tracing.driver.SliceTrack {
@@ -152,21 +152,25 @@ package androidx.tracing.driver {
     method @kotlin.PublishedApi internal inline void setCounterLong(long trackUuid, long value);
     method @kotlin.PublishedApi internal inline void setEndSection(long trackUuid);
     method @kotlin.PublishedApi internal inline void setInstant(long trackUuid, String name);
+    property public java.util.List<java.lang.String> categories;
     property public Double? counterDoubleValue;
     property public Long? counterLongValue;
     property public java.util.List<java.lang.Long> flowIds;
+    property public int lastCategoryIndex;
+    property public int lastMetadataEntryIndex;
     property public java.util.List<androidx.tracing.driver.MetadataEntry> metadataEntries;
-    property public int metadataEntryIndex;
     property public String? name;
     property public long timestamp;
     property public androidx.tracing.driver.TrackDescriptor? trackDescriptor;
     property public long trackUuid;
     property public int type;
+    field public java.util.List<java.lang.String> categories;
     field public Double? counterDoubleValue;
     field public Long? counterLongValue;
     field public java.util.List<java.lang.Long> flowIds;
+    field public int lastCategoryIndex;
+    field public int lastMetadataEntryIndex;
     field public java.util.List<androidx.tracing.driver.MetadataEntry> metadataEntries;
-    field public int metadataEntryIndex;
     field public String? name;
     field public long timestamp;
     field public androidx.tracing.driver.TrackDescriptor? trackDescriptor;
@@ -187,19 +191,17 @@ package androidx.tracing.driver {
     field @kotlin.PublishedApi internal static final int TRACE_EVENT_TYPE_UNDEFINED = 0; // 0x0
   }
 
-  @kotlin.jvm.JvmInline public final value class TraceEventScope {
-    ctor @KotlinOnly @kotlin.PublishedApi internal TraceEventScope(androidx.tracing.driver.TraceEvent event);
-    method @KotlinOnly public void addMetadataEntry(String name, boolean value);
-    method @KotlinOnly public void addMetadataEntry(String name, double value);
-    method @KotlinOnly public void addMetadataEntry(String name, String value);
-    method @KotlinOnly public void addMetadataEntry(String name, long value);
-    method @BytecodeOnly public static void addMetadataEntry-impl(androidx.tracing.driver.TraceEvent!, String, boolean);
-    method @BytecodeOnly public static void addMetadataEntry-impl(androidx.tracing.driver.TraceEvent!, String, double);
-    method @BytecodeOnly public static void addMetadataEntry-impl(androidx.tracing.driver.TraceEvent!, String, String);
-    method @BytecodeOnly public static void addMetadataEntry-impl(androidx.tracing.driver.TraceEvent!, String, long);
-    method @BytecodeOnly public static androidx.tracing.driver.TraceEventScope! box-impl(androidx.tracing.driver.TraceEvent!);
-    method @BytecodeOnly @kotlin.PublishedApi internal static androidx.tracing.driver.TraceEvent constructor-impl(androidx.tracing.driver.TraceEvent);
-    method @BytecodeOnly public androidx.tracing.driver.TraceEvent! unbox-impl();
+  public final class TraceEventScope {
+    ctor @kotlin.PublishedApi internal TraceEventScope();
+    method public void addCategory(String name);
+    method public void addMetadataEntry(String name, boolean value);
+    method public void addMetadataEntry(String name, double value);
+    method public void addMetadataEntry(String name, String value);
+    method public void addMetadataEntry(String name, long value);
+    method @BytecodeOnly @kotlin.PublishedApi internal androidx.tracing.driver.TraceEvent getEvent();
+    method @BytecodeOnly @kotlin.PublishedApi internal void setEvent(androidx.tracing.driver.TraceEvent);
+    property @kotlin.PublishedApi internal androidx.tracing.driver.TraceEvent event;
+    field @kotlin.PublishedApi internal androidx.tracing.driver.TraceEvent event;
   }
 
   public abstract class TraceSink implements java.lang.AutoCloseable {

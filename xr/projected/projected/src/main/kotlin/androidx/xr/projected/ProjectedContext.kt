@@ -120,18 +120,32 @@ public object ProjectedContext {
     /**
      * Creates [ActivityOptions] that should be used to start an activity on the Projected device.
      *
-     * @param context any context object.
-     * @throws IllegalStateException if the projected display was not found.
+     * @param context any [Context] object. If the provided context is not a Projected device
+     *   context, a Projected device context will be created automatically and used to create
+     *   Projected [ActivityOptions].
+     * @throws IllegalStateException if the projected display was not found or if the Projected
+     *   device doesn't have any displays.
      */
     @JvmStatic
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public fun createProjectedActivityOptions(context: Context): ActivityOptions {
-        val projectionDisplay =
+        val projectedDeviceContext =
+            if (isProjectedDeviceContext(context)) {
+                context
+            } else {
+                createProjectedDeviceContext(context)
+            }
+
+        val projectedDisplayIds = getProjectedDisplayIds(projectedDeviceContext)
+
+        check(projectedDisplayIds.isNotEmpty()) { "Projected device doesn't have any displays." }
+
+        val projectedDisplay =
             context.getSystemService(DisplayManager::class.java).displays.find {
-                it.name == PROJECTED_DISPLAY_NAME
+                it.name == PROJECTED_DISPLAY_NAME && projectedDisplayIds.contains(it.displayId)
             } ?: throw IllegalStateException("No projected display found.")
 
-        return ActivityOptions.makeBasic().setLaunchDisplayId(projectionDisplay.displayId)
+        return ActivityOptions.makeBasic().setLaunchDisplayId(projectedDisplay.displayId)
     }
 
     /**
@@ -190,4 +204,8 @@ public object ProjectedContext {
         context.getSystemService(VirtualDeviceManager::class.java).virtualDevices.find {
             it.deviceId == context.deviceId
         }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun getProjectedDisplayIds(context: Context) =
+        getVirtualDevice(context)?.displayIds ?: IntArray(size = 0)
 }

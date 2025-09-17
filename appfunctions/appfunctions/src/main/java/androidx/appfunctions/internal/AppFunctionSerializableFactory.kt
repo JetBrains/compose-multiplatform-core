@@ -21,19 +21,22 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionData
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 
 /**
  * An interface for factory classes that convert between a class annotated with
- * [androidx.appfunctions.AppFunctionSerializable] and [androidx.appfunctions.AppFunctionData].
+ * [androidx.appfunctions.AppFunctionSerializable] and [AppFunctionData].
  *
  * Each class annotated with [androidx.appfunctions.AppFunctionSerializable] will have a generated
  * class that implements this interface.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public interface AppFunctionSerializableFactory<T : Any> {
     /**
-     * Deserializes the given [androidx.appfunctions.AppFunctionData] into an instance of the
-     * AppFunctionSerializable annotated class.
+     * Deserializes the given [AppFunctionData] into an instance of the AppFunctionSerializable
+     * annotated class.
      *
      * Type mismatch: An [IllegalArgumentException] if a property is stored as a different type in
      * [appFunctionData].
@@ -42,6 +45,60 @@ public interface AppFunctionSerializableFactory<T : Any> {
 
     /** Serializes the given class into an [AppFunctionData]. */
     public fun toAppFunctionData(appFunctionSerializable: T): AppFunctionData
+
+    // TODO: b/442726462 - Consider decoupling Serializable metadata generation from inventories.
+    private fun getAppFunctionComponentsMetadata(): AppFunctionComponentsMetadata? {
+        val aggregatedInventory = Dependencies.aggregatedAppFunctionInventory
+        if (aggregatedInventory != null) {
+            val componentsMetadata = aggregatedInventory.componentsMetadata
+            return componentsMetadata
+        }
+
+        val schemaAppFunctionInventory = Dependencies.schemaAppFunctionInventory
+
+        if (schemaAppFunctionInventory != null) {
+            return schemaAppFunctionInventory.componentsMetadata
+        }
+
+        return null
+    }
+
+    /**
+     * Returns an [AppFunctionData.Builder] instance with validation for the serializable specified
+     * by [qualifiedName], if the metadata for the serializable is available.
+     */
+    public fun getAppFunctionDataBuilder(qualifiedName: String): AppFunctionData.Builder {
+        val componentsMetadata = getAppFunctionComponentsMetadata()
+
+        if (componentsMetadata == null) return AppFunctionData.Builder(qualifiedName)
+
+        val dataTypeMetadata =
+            componentsMetadata.dataTypes[qualifiedName] as? AppFunctionObjectTypeMetadata
+
+        if (dataTypeMetadata == null) return AppFunctionData.Builder(qualifiedName)
+
+        return AppFunctionData.Builder(dataTypeMetadata, componentsMetadata)
+    }
+
+    /**
+     * Returns a new [AppFunctionData] instance with validation for the serializable specified by
+     * [qualifiedName], if the metadata for the serializable is available.
+     */
+    public fun getAppFunctionDataWithSpec(
+        appFunctionData: AppFunctionData,
+        qualifiedName: String,
+    ): AppFunctionData {
+        val componentsMetadata = getAppFunctionComponentsMetadata()
+
+        if (componentsMetadata == null) return appFunctionData
+
+        val dataTypeMetadata =
+            componentsMetadata.dataTypes[qualifiedName] as? AppFunctionObjectTypeMetadata
+
+        if (dataTypeMetadata == null) return appFunctionData
+
+        return appFunctionData.replaceSpecWith(dataTypeMetadata, componentsMetadata)
+    }
 
     /**
      * Contains the information about the type parameter.

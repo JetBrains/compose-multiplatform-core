@@ -272,12 +272,12 @@ class ResizableComponentTest {
             )
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
-        val testAspectRatio = 1.23f
-        resizableComponent.fixedAspectRatio = testAspectRatio
+        val testAspectRatio = true
+        resizableComponent.isFixedAspectRatioEnabled = testAspectRatio
 
-        assertThat(resizableComponent.fixedAspectRatio).isEqualTo(testAspectRatio)
-        val captor = ArgumentCaptor.forClass(Float::class.java)
-        verify(mockRtResizableComponent).fixedAspectRatio = captor.capture()
+        assertThat(resizableComponent.isFixedAspectRatioEnabled).isEqualTo(testAspectRatio)
+        val captor = ArgumentCaptor.forClass(Boolean::class.java)
+        verify(mockRtResizableComponent).isFixedAspectRatioEnabled = captor.capture()
         assertThat(captor.value).isEqualTo(testAspectRatio)
     }
 
@@ -309,7 +309,7 @@ class ResizableComponentTest {
     }
 
     @Test
-    fun resizableComponent_setAutoUpdateSizeInvokesRuntimeResizableComponentSetAutoUpdateSize() {
+    fun resizableComponent_setAutoUpdateOverlayInvokesRuntimeResizableComponentSetAutoUpdateSize() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 

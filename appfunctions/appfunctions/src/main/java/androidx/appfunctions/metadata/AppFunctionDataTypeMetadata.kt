@@ -49,8 +49,8 @@ internal constructor(
     public val description: String,
 ) {
     /** Converts this [AppFunctionDataTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public abstract fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument
+    internal abstract fun toAppFunctionDataTypeMetadataDocument():
+        AppFunctionDataTypeMetadataDocument
 
     public companion object {
         /** Void type. */
@@ -139,7 +139,6 @@ constructor(
     }
 
     /** Converts this [AppFunctionArrayTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             itemType = itemType.toAppFunctionDataTypeMetadataDocument(),
@@ -151,7 +150,7 @@ constructor(
 
     public companion object {
         /** Array type. The schema of the array is defined in a [AppFunctionArrayTypeMetadata] */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val TYPE: Int = TYPE_ARRAY
+        internal const val TYPE: Int = TYPE_ARRAY
     }
 }
 
@@ -257,7 +256,6 @@ constructor(
         return "AppFunctionAllOfTypeMetadata(matchAll=$matchAll, isNullable=$isNullable, description=$description)"
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         val allOfDocuments = matchAll.map { it.toAppFunctionDataTypeMetadataDocument() }
         return AppFunctionDataTypeMetadataDocument(
@@ -321,7 +319,7 @@ constructor(
          * * Top level [AppFunctionObjectTypeMetadata]
          * * An [AppFunctionReferenceTypeMetadata] to an outer object metadata.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val TYPE: Int = TYPE_ALL_OF
+        internal const val TYPE: Int = TYPE_ALL_OF
     }
 }
 
@@ -379,7 +377,6 @@ constructor(
     /**
      * Converts this [AppFunctionObjectTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         val properties =
             properties.map { (name, dataType) ->
@@ -402,7 +399,7 @@ constructor(
         /**
          * Object type. The schema of the object is defined in a [AppFunctionObjectTypeMetadata].
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val TYPE: Int = TYPE_OBJECT
+        internal const val TYPE: Int = TYPE_OBJECT
     }
 }
 
@@ -439,7 +436,6 @@ constructor(
             ")"
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE,
@@ -453,7 +449,7 @@ constructor(
         /**
          * Object type. The schema of the object is defined in a [AppFunctionObjectTypeMetadata].
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val TYPE: Int = TYPE_REFERENCE
+        internal const val TYPE: Int = TYPE_REFERENCE
     }
 }
 
@@ -492,7 +488,6 @@ constructor(
     }
 
     /** Converts this [AppFunctionIntTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_INT,
@@ -529,7 +524,6 @@ constructor(
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
 
     /** Converts this [AppFunctionLongTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_LONG,
@@ -568,7 +562,6 @@ constructor(
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
 
     /** Converts this [AppFunctionFloatTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_FLOAT,
@@ -609,7 +602,6 @@ constructor(
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
 
     /** Converts this [AppFunctionUnitTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_UNIT,
@@ -650,7 +642,6 @@ constructor(
     /**
      * Converts this [AppFunctionBooleanTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_BOOLEAN,
@@ -689,7 +680,6 @@ constructor(
 ) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
 
     /** Converts this [AppFunctionBytesTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_BYTES,
@@ -730,7 +720,6 @@ constructor(
     /**
      * Converts this [AppFunctionDoubleTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_DOUBLE,
@@ -791,7 +780,6 @@ constructor(
     /**
      * Converts this [AppFunctionStringTypeMetadata] to an [AppFunctionDataTypeMetadataDocument].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_STRING,
@@ -833,7 +821,6 @@ constructor(
      * Converts this [AppFunctionPendingIntentTypeMetadata] to an
      * [AppFunctionDataTypeMetadataDocument].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
         return AppFunctionDataTypeMetadataDocument(
             type = TYPE_PENDING_INTENT,

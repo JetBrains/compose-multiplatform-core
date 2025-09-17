@@ -32,6 +32,7 @@ import android.os.Parcelable
 import android.util.AttributeSet
 import android.util.Range
 import android.util.SparseArray
+import android.util.TypedValue
 import android.view.ActionMode
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -39,6 +40,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
+import android.view.inputmethod.InputMethodManager
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
@@ -436,6 +438,18 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * operations until we've applied both zoom *and* scroll
      */
     private var deferViewportUpdate: Boolean = false
+
+    private var formFillingEditText: FormFillingEditText? = null
+        set(value) {
+            checkMainThread()
+            if (field == value) return
+            removeView(field?.editText)
+            field = value
+            addFormFillingEditText()
+        }
+
+    private val formFillingEditTextBoundaryWidth: Int =
+        resources.getDimensionPixelSize(R.dimen.form_widget_edit_text_boundary_width)
 
     /**
      * Used to determine whether the form edit state restoration is in progress. If true, we block
@@ -1065,6 +1079,35 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         awaitingFirstLayout = false
         // As view dimensions are finalized we need to update the action mode visibility if needed.
         updateSelectionActionModeVisibility()
+        layoutFormFillingEditTextIfPresent()
+    }
+
+    private fun layoutFormFillingEditTextIfPresent() {
+        formFillingEditText?.let {
+            val widgetRect = it.formWidget.widgetRect
+            val topLeftCorner =
+                pdfToViewPoint(
+                    PdfPoint(it.pageNum, widgetRect.left.toFloat(), widgetRect.top.toFloat()),
+                    accountForScroll = false,
+                )
+            val bottomRightCorner =
+                pdfToViewPoint(
+                    PdfPoint(it.pageNum, widgetRect.right.toFloat(), widgetRect.bottom.toFloat()),
+                    accountForScroll = false,
+                )
+            if (topLeftCorner == null || bottomRightCorner == null) {
+                removeView(it.editText)
+                formFillingEditText = null
+                return
+            }
+            it.editText.setTextSize(TypedValue.COMPLEX_UNIT_PX, it.fontSize * zoom)
+            it.editText.layout(
+                topLeftCorner.x.roundToInt() - formFillingEditTextBoundaryWidth,
+                topLeftCorner.y.roundToInt() - formFillingEditTextBoundaryWidth,
+                bottomRightCorner.x.roundToInt() + formFillingEditTextBoundaryWidth,
+                bottomRightCorner.y.roundToInt() + formFillingEditTextBoundaryWidth,
+            )
+        }
     }
 
     private fun maybeAdjustZoomAndScroll() {
@@ -1376,6 +1419,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     launch {
                         handler.invalidatedAreas.collect {
                             val localPageLayoutManager = pageMetadataLoader ?: return@collect
+                            if (localPageLayoutManager.visiblePageAreas[it.first] == null)
+                                return@collect
                             pageManager?.maybeInvalidateAreas(
                                 pageNum = it.first,
                                 visibleArea = localPageLayoutManager.visiblePageAreas[it.first],
@@ -1492,7 +1537,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             )
 
         formWidgetInteractionHandler =
-            FormWidgetInteractionHandler(context, localPdfDocument, backgroundScope, errorFlow)
+            FormWidgetInteractionHandler(context, localPdfDocument, backgroundScope, errorFlow) {
+                formFillingEditText ->
+                this.formFillingEditText = formFillingEditText
+            }
 
         pdfFormFillingStateManager =
             PdfFormFillingStateManager(
@@ -1609,6 +1657,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             maybeUpdatePageVisibility()
         }
         pdfViewAccessibilityManager?.invalidateRoot()
+        formFillingEditText?.editText?.let { requestLayout() }
+    }
+
+    private fun addFormFillingEditText() {
+        formFillingEditText?.let {
+            addViewInLayout(it.editText, 0, it.editText.layoutParams)
+            requestLayout()
+            it.editText.requestFocus()
+            it.editText.post {
+                val imm: InputMethodManager =
+                    context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(formFillingEditText?.editText, 0)
+            }
+        }
     }
 
     private fun dispatchViewportChanged() {
@@ -1701,6 +1763,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         pageManager?.cleanup()
         pageManager = null
         pageMetadataLoader = null
+        formFillingEditText = null
         startedFetchingAllDimensions = false
         backgroundScope.coroutineContext.cancelChildren()
         stopCollectingData()
@@ -1846,6 +1909,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             pdfViewAccessibilityManager = null
         }
         ViewCompat.setAccessibilityDelegate(this, pdfViewAccessibilityManager)
+    }
+
+    private fun commitFormFillingEditText() {
+        formFillingEditText?.let { formWidgetInteractionHandler?.commitEditTextValue(it) }
     }
 
     /** The height of the viewport, minus padding */
@@ -2119,6 +2186,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            commitFormFillingEditText()
             selectionStateManager?.clearSelection()
             val pageLayoutManager = pageMetadataLoader ?: return super.onSingleTapConfirmed(e)
             val touchPoint =

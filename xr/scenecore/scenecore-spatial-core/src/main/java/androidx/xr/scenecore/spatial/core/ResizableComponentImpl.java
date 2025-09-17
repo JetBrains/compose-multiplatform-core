@@ -117,6 +117,9 @@ class ResizableComponentImpl implements ResizableComponent {
                 throw new IllegalStateException(
                         "Size of attached panel entity is not within minsize and maxsize.");
             }
+            if (mFixedAspectRatio != 0) {
+                updateFixedAspectRatio(true);
+            }
         }
         if (isSizeWellFormed(mCurrentSize)) { // allows set (0, 0, 0) in onAttach
             unused =
@@ -175,6 +178,11 @@ class ResizableComponentImpl implements ResizableComponent {
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
         ReformOptions unused =
                 reformOptions.setCurrentSize(new Vec3(size.width, size.height, size.depth));
+        // Update the fixed aspect ratio if it is enabled.
+        if (mFixedAspectRatio != 0) {
+            updateFixedAspectRatio(true);
+            unused = reformOptions.setFixedAspectRatio(mFixedAspectRatio);
+        }
         ((AndroidXrEntity) mEntity).updateReformOptions();
     }
 
@@ -223,19 +231,38 @@ class ResizableComponentImpl implements ResizableComponent {
     }
 
     @Override
-    public float getFixedAspectRatio() {
-        return mFixedAspectRatio;
+    public boolean isFixedAspectRatioEnabled() {
+        return mFixedAspectRatio != 0;
     }
 
     @Override
-    public void setFixedAspectRatio(float fixedAspectRatio) {
-        mFixedAspectRatio = fixedAspectRatio;
+    public void setFixedAspectRatioEnabled(boolean fixedAspectRatioEnabled) {
+        float initialFixedAspectRatio = mFixedAspectRatio;
+        updateFixedAspectRatio(fixedAspectRatioEnabled);
+        // Return early if there was no update.
+        if (mFixedAspectRatio == initialFixedAspectRatio) {
+            return;
+        }
         if (mEntity == null) {
             throw new IllegalStateException("This component isn't attached to an entity.");
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
-        ReformOptions unused = reformOptions.setFixedAspectRatio(fixedAspectRatio);
+        ReformOptions unused = reformOptions.setFixedAspectRatio(mFixedAspectRatio);
         ((AndroidXrEntity) mEntity).updateReformOptions();
+    }
+
+    private void updateFixedAspectRatio(boolean fixedAspectRatioEnabled) {
+        float updatedFixedAspectRatio = 0f;
+        // Update the fixed aspect ratio based on the current size, or the default size if no
+        // current size was set.
+        if (fixedAspectRatioEnabled) {
+            if (mCurrentSize == null) {
+                updatedFixedAspectRatio = mDefaultSize.width / mDefaultSize.height;
+            } else {
+                updatedFixedAspectRatio = mCurrentSize.width / mCurrentSize.height;
+            }
+        }
+        mFixedAspectRatio = updatedFixedAspectRatio;
     }
 
     @Override

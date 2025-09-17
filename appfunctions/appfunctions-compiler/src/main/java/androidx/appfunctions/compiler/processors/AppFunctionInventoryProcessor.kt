@@ -147,5 +147,6 @@ class AppFunctionInventoryProcessor(private val codeGenerator: CodeGenerator) : 
         const val RESPONSE_METADATA_PROPERTY_NAME = "RESPONSE_METADATA"
         const val COMPONENT_METADATA_PROPERTY_NAME = "COMPONENTS_METADATA"
         const val FUNCTION_ID_TO_METADATA_MAP_PROPERTY_NAME = "functionIdToMetadataMap"
+        const val INVENTORY_COMPONENTS_METADATA_PROPERTY_NAME = "componentsMetadata"
     }
 }

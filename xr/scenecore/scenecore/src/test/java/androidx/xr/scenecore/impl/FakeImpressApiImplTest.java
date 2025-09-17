@@ -129,8 +129,8 @@ public final class FakeImpressApiImplTest {
             throws ExecutionException, InterruptedException {
         ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
         Long modelToken = modelFuture.get();
-        ImpressNode entityNode = mFakeImpressApi.instanceGltfModel(
-                modelToken, /* enableCollider= */ true);
+        ImpressNode entityNode =
+                mFakeImpressApi.instanceGltfModel(modelToken, /* enableCollider= */ true);
         assertThat(entityNode.getHandle()).isNotEqualTo(0);
     }
 
@@ -139,8 +139,8 @@ public final class FakeImpressApiImplTest {
             throws ExecutionException, InterruptedException {
         ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
         Long modelToken = modelFuture.get();
-        ImpressNode entityNode = mFakeImpressApi.instanceGltfModel(
-                modelToken, /* enableCollider= */ false);
+        ImpressNode entityNode =
+                mFakeImpressApi.instanceGltfModel(modelToken, /* enableCollider= */ false);
         assertThat(entityNode.getHandle()).isNotEqualTo(0);
     }
 
@@ -854,8 +854,11 @@ public final class FakeImpressApiImplTest {
             throws ExecutionException, InterruptedException {
         ImpressNode entityNode = mFakeImpressApi.createImpressNode();
         WaterMaterial material = mFakeImpressApi.createWaterMaterial(true).get();
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
+
         mFakeImpressApi.setMaterialOverride(
-                entityNode, material.getNativeHandle(), "fake_mesh_name");
+                entityNode, material.getNativeHandle(), nodeName, primitiveIndex);
         Map<GltfNodeData, GltfNodeData> nodes = mFakeImpressApi.getImpressNodes();
         boolean foundMaterial = false;
         for (Map.Entry<GltfNodeData, GltfNodeData> node : nodes.entrySet()) {
@@ -867,6 +870,29 @@ public final class FakeImpressApiImplTest {
             }
         }
         assertThat(foundMaterial).isTrue();
+    }
+
+    @Test
+    public void clearMaterialOverride_clearsMaterialOverride()
+            throws ExecutionException, InterruptedException {
+        ImpressNode entityNode = mFakeImpressApi.createImpressNode();
+        WaterMaterial material = mFakeImpressApi.createWaterMaterial(true).get();
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
+
+        mFakeImpressApi.setMaterialOverride(
+                entityNode, material.getNativeHandle(), nodeName, primitiveIndex);
+        mFakeImpressApi.clearMaterialOverride(entityNode, nodeName, primitiveIndex);
+
+        Map<GltfNodeData, GltfNodeData> nodes = mFakeImpressApi.getImpressNodes();
+        boolean overrideWasCleared = false;
+        for (Map.Entry<GltfNodeData, GltfNodeData> node : nodes.entrySet()) {
+            if (node.getKey().getEntityId() == entityNode.getHandle()
+                    && node.getKey().getMaterialOverride() == null) {
+                overrideWasCleared = true;
+            }
+        }
+        assertThat(overrideWasCleared).isTrue();
     }
 
     @Test
@@ -892,8 +918,9 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setPrimaryAlphaMaskForStereoSurface(
-                            new ImpressNode(0), 0));
+                        () ->
+                                mFakeImpressApi.setPrimaryAlphaMaskForStereoSurface(
+                                        new ImpressNode(0), 0));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 
@@ -902,8 +929,9 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setAuxiliaryAlphaMaskForStereoSurface(
-                            new ImpressNode(0), 0));
+                        () ->
+                                mFakeImpressApi.setAuxiliaryAlphaMaskForStereoSurface(
+                                        new ImpressNode(0), 0));
         assertThat(thrown).hasMessageThat().contains("not implemented");
     }
 

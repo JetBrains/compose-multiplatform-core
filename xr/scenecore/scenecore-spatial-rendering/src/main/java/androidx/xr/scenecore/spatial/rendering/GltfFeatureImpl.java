@@ -43,8 +43,7 @@ import java.util.concurrent.Executor;
 // TODO: b/375520647 - Add unit tests for this class.
 class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
     private final ImpressNode mModelImpressNode;
-    @GltfEntity.AnimationStateValue
-    private int mAnimationState = GltfEntity.AnimationState.STOPPED;
+    @GltfEntity.AnimationStateValue private int mAnimationState = GltfEntity.AnimationState.STOPPED;
 
     GltfFeatureImpl(
             GltfModelResourceImpl gltfModelResource,
@@ -60,9 +59,7 @@ class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
 
     @Override
     public void startAnimation(
-            boolean looping,
-            @Nullable String animationName,
-            @NonNull Executor executor) {
+            boolean looping, @Nullable String animationName, @NonNull Executor executor) {
         // TODO: b/362826747 - Add a listener interface so that the application can be
         // notified that the animation has stopped, been cancelled (by starting another animation)
         // and / or shown an error state if something went wrong.
@@ -110,12 +107,21 @@ class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
     }
 
     @Override
-    public void setMaterialOverride(@NonNull MaterialResource material, @NonNull String meshName) {
+    public void setMaterialOverride(
+            @NonNull MaterialResource material, @NonNull String nodeName, int primitiveIndex) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
         mImpressApi.setMaterialOverride(
-                mModelImpressNode, ((Material) material).getNativeHandle(), meshName);
+                mModelImpressNode,
+                ((Material) material).getNativeHandle(),
+                nodeName,
+                primitiveIndex);
+    }
+
+    @Override
+    public void clearMaterialOverride(@NonNull String nodeName, int primitiveIndex) {
+        mImpressApi.clearMaterialOverride(mModelImpressNode, nodeName, primitiveIndex);
     }
 
     @Override

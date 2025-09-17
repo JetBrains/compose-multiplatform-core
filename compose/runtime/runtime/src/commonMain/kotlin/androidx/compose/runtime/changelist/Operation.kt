@@ -40,6 +40,7 @@ import androidx.compose.runtime.internal.identityHashCode
 import androidx.compose.runtime.removeCurrentGroup
 import androidx.compose.runtime.runtimeCheck
 import androidx.compose.runtime.snapshots.fastForEachIndexed
+import androidx.compose.runtime.tooling.ComposeStackTrace
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.tooling.attachComposeStackTrace
@@ -1133,7 +1134,7 @@ private fun Throwable.attachComposeStackTrace(
                     listOf(head.copy(groupOffset = offset)) + tail
                 }
             }
-        trace + parentTrace
+        ComposeStackTrace(trace + parentTrace)
     }
 }
 

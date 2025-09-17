@@ -442,6 +442,7 @@ package androidx.xr.runtime.internal {
     method public default void configure(androidx.xr.runtime.Config config);
     method public default void destroy();
     method public default void initialize();
+    method public default boolean isSupported(androidx.xr.runtime.Config.ConfigMode configMode);
     method public default void pause();
     method public default void resume();
     method public default suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark?>);

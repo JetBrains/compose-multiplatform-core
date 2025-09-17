@@ -50,20 +50,12 @@ public interface ResizableComponent : Component {
     public var maximumSize: Dimensions
 
     /**
-     * Sets the aspect ratio of the entity during resizing.
+     * Whether the aspect ratio is maintained during resizing.
      *
-     * <p>The aspect ratio is determined by taking the panel's width over its height. A value of
-     * 0.0f (or negative) means there are no preferences.
-     *
-     * <p>This method does not immediately resize the entity. The new aspect ratio will be applied
-     * the next time the user resizes the entity through the reform UI. During this resize
-     * operation, the entity's current area will be preserved.
-     *
-     * <p>If a different resizing behavior is desired, such as fixing the width and adjusting the
-     * height, the client can manually resize the entity to the preferred dimensions before calling
-     * this method. No automatic resizing will occur when using the reform UI then.
+     * If true the affordance will maintain its current aspect ratio being resized and all suggested
+     * sizes will maintain the current aspect ratio. This defaults to false.
      */
-    public var fixedAspectRatio: Float
+    public var isFixedAspectRatioEnabled: Boolean
 
     /**
      * Sets whether or not content (including content of all child nodes) is auto-hidden during

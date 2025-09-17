@@ -36,6 +36,7 @@ import androidx.pdf.annotation.models.EditId;
 import androidx.pdf.annotation.models.PdfEdit;
 import androidx.pdf.annotation.models.AddEditResult;
 import androidx.pdf.annotation.models.ModifyEditResult;
+import androidx.pdf.annotation.models.PaginatedAnnotations;
 
 /** Remote interface for interacting with a PDF document */
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
@@ -256,5 +257,21 @@ interface PdfDocumentRemote {
     * @return A {@link ModifyEditResult} object indicating the success or failure of the operation.
     */
     ModifyEditResult removeEdit(in List<EditId> editIds);
+
+    /**
+    * Retrieves the annotations present on the specified page in the paginated format.
+    *
+    * @param pageNum The 0-based index of the page from which to retrieve annotations.
+    * @return Continuation token
+    */
+    PaginatedAnnotations getAllPageAnnotations(int pageNum);
+
+    /**
+    * Retrieves the annotations present on the specified page for the specific batch.
+    *
+    * @param pageNum The 0-based index of the page from which to retrieve annotations.
+    * @return Continuation token
+    */
+    PaginatedAnnotations getBatchedPageAnnotations(int pageNum, in int batchIndex);
 
 }

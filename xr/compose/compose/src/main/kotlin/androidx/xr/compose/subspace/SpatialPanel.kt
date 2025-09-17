@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toDrawable
+import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.platform.LocalOpaqueEntity
@@ -659,6 +660,7 @@ private class SpatialViewPanelMeasurePolicy(private val view: View) : SubspaceMe
         measurables: List<SubspaceMeasurable>,
         constraints: VolumeConstraints,
     ): SubspaceMeasureResult {
+        view.setTag(R.id.compose_xr_panel_volume_constraints, constraints)
         view.measure(
             MeasureSpec.makeMeasureSpec(
                 constraints.maxWidth.coerceAtMost(MAX_MEASURE_SPEC_SIZE),
@@ -687,7 +689,6 @@ private class SpatialViewPanelMeasurePolicy(private val view: View) : SubspaceMe
  * @param resizePolicy An optional [ResizePolicy] to configure resizing behavior.
  * @return A [SubspaceModifier] with all applicable policies integrated.
  */
-@Suppress("DEPRECATION")
 internal fun buildSpatialPanelModifier(
     baseModifier: SubspaceModifier,
     dragPolicy: DragPolicy?,

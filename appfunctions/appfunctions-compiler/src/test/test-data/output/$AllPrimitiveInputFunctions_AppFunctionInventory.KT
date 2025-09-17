@@ -1,5 +1,6 @@
 package com.testdata
 
+import androidx.appfunctions.`internal`.AppFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
@@ -14,7 +15,6 @@ import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
-import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
 import kotlin.String
 import kotlin.collections.List
@@ -52,6 +52,13 @@ public class `$AllPrimitiveInputFunctions_AppFunctionInventory` : AppFunctionInv
     "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableBooleanArray" to ComTestdataAllPrimitiveInputFunctionsSimpleFunctionNullableBooleanArrayMetadataObject.APP_FUNCTION_METADATA,
     "com.testdata.AllPrimitiveInputFunctions#simpleFunctionNullableStringList" to ComTestdataAllPrimitiveInputFunctionsSimpleFunctionNullableStringListMetadataObject.APP_FUNCTION_METADATA,
   )
+
+  private val componentsMetadataDataTypesMap: Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    )
+
+  override val componentsMetadata: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
+          dataTypes = componentsMetadataDataTypesMap
+      )
 
   private object ComTestdataAllPrimitiveInputFunctionsSimpleFunctionIntMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null

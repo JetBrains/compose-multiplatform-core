@@ -321,12 +321,12 @@ public final class SpatialEnvironmentImplTest {
 
     @Test
     public void
-            setPreferredSpatialEnvWithSkyboxAndGeoWithMeshAndAnimation_doesNotDetachEnvironment() {
+            setPreferredSpatialEnvWithSkyboxAndGeoWithNodeAndAnimation_doesNotDetachEnvironment() {
         long exr = fakeLoadEnvironment("fakeEnvironment");
         long gltf = fakeLoadGltfAsset("fakeGltfAsset");
         // Create dummy regular version of the water material.
         MaterialResource material = fakeLoadMaterial(false);
-        String meshName = "fakeMesh";
+        String nodeName = "fakeNode";
         String animationName = "fakeAnimation";
 
         // Ensure that an environment is set.
@@ -335,7 +335,7 @@ public final class SpatialEnvironmentImplTest {
                         new ExrImageResourceImpl(exr),
                         new GltfModelResourceImpl(gltf),
                         material,
-                        meshName,
+                        nodeName,
                         animationName));
 
         long initialSkybox = mFakeImpressApi.getCurrentEnvironmentLight();
@@ -446,12 +446,12 @@ public final class SpatialEnvironmentImplTest {
 
     @Test
     public void
-            setPreferredSpatialEnvironmentGeometryWithMaterialAndMeshName_materialIsOverriden() {
+            setPreferredSpatialEnvironmentGeometryWithMaterialAndNodeName_materialIsOverriden() {
         long exr = fakeLoadEnvironment("fakeEnvironment");
         long gltf = fakeLoadGltfAsset("fakeGltfAsset");
         // Create dummy regular version of the water material.
         MaterialResource material = fakeLoadMaterial(false);
-        String meshName = "fakeMesh";
+        String nodeName = "fakeNode";
         String animationName = "fakeAnimation";
 
         // Ensure that an environment is set.
@@ -460,7 +460,7 @@ public final class SpatialEnvironmentImplTest {
                         new ExrImageResourceImpl(exr),
                         new GltfModelResourceImpl(gltf),
                         material,
-                        meshName,
+                        nodeName,
                         animationName));
 
         Map<Long, MaterialData> materials = mFakeImpressApi.getMaterials();
@@ -483,7 +483,7 @@ public final class SpatialEnvironmentImplTest {
     }
 
     @Test
-    public void setPreferredSpatialEnvGeometryWithMaterialAndNoMeshName_materialIsNotOverriden() {
+    public void setPreferredSpatialEnvGeometryWithMaterialAndNoNodeName_materialIsNotOverriden() {
         long exr = fakeLoadEnvironment("fakeEnvironment");
         long gltf = fakeLoadGltfAsset("fakeGltfAsset");
         // Create dummy regular version of the water material.
@@ -515,10 +515,10 @@ public final class SpatialEnvironmentImplTest {
     }
 
     @Test
-    public void setPreferredSpatialEnvGeometryWithNoMaterialAndMeshName_materialIsNotOverriden() {
+    public void setPreferredSpatialEnvGeometryWithNoMaterialAndNodeName_materialIsNotOverriden() {
         long exr = fakeLoadEnvironment("fakeEnvironment");
         long gltf = fakeLoadGltfAsset("fakeGltfAsset");
-        String meshName = "fakeMesh";
+        String nodeName = "fakeNode";
         String animationName = "fakeAnimation";
 
         // Ensure that an environment is set.
@@ -527,7 +527,7 @@ public final class SpatialEnvironmentImplTest {
                         new ExrImageResourceImpl(exr),
                         new GltfModelResourceImpl(gltf),
                         null,
-                        meshName,
+                        nodeName,
                         animationName));
 
         Map<Long, MaterialData> materials = mFakeImpressApi.getMaterials();
@@ -699,7 +699,7 @@ public final class SpatialEnvironmentImplTest {
         long gltf = fakeLoadGltfAsset("fakeGltfAsset");
         // Create dummy regular version of the water material.
         MaterialResource material = fakeLoadMaterial(false);
-        String meshName = "fakeMesh";
+        String nodeName = "fakeNode";
         String animationName = "fakeAnimation";
 
         mEnvironment.setPreferredSpatialEnvironment(
@@ -707,7 +707,7 @@ public final class SpatialEnvironmentImplTest {
                         new ExrImageResourceImpl(exr),
                         new GltfModelResourceImpl(gltf),
                         material,
-                        meshName,
+                        nodeName,
                         animationName));
 
         assertThat(mFakeImpressApi.getImageBasedLightingAssets()).isNotEmpty();

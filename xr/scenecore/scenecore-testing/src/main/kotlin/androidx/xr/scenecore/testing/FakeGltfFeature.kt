@@ -38,8 +38,16 @@ public class FakeGltfFeature(nodeHolder: NodeHolder<*>) :
         mockGltfFeature?.stopAnimation()
     }
 
-    override fun setMaterialOverride(material: MaterialResource, meshName: String) {
-        mockGltfFeature?.setMaterialOverride(material, meshName)
+    override fun setMaterialOverride(
+        material: MaterialResource,
+        nodeName: String,
+        primitiveIndex: Int,
+    ) {
+        mockGltfFeature?.setMaterialOverride(material, nodeName, primitiveIndex)
+    }
+
+    override fun clearMaterialOverride(nodeName: String, primitiveIndex: Int) {
+        mockGltfFeature?.clearMaterialOverride(nodeName, primitiveIndex)
     }
 
     override fun setColliderEnabled(enableCollider: Boolean) {

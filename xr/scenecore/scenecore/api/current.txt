@@ -27,6 +27,16 @@ package androidx.xr.scenecore {
     property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
   }
 
+  public final class AlphaMode {
+    property public static int ALPHA_MODE_BLEND;
+    property public static int ALPHA_MODE_MASK;
+    property public static int ALPHA_MODE_OPAQUE;
+    field public static final int ALPHA_MODE_BLEND = 2; // 0x2
+    field public static final int ALPHA_MODE_MASK = 1; // 0x1
+    field public static final int ALPHA_MODE_OPAQUE = 0; // 0x0
+    field public static final androidx.xr.scenecore.AlphaMode INSTANCE;
+  }
+
   public final class AnchorEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.scenecore.internal.AnchorEntity> {
     method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.arcore.Anchor anchor);
     method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType);
@@ -184,9 +194,13 @@ package androidx.xr.scenecore {
   }
 
   public final class GltfModelEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.scenecore.internal.GltfEntity> {
+    method @MainThread public void clearMaterialOverride(String nodeName);
+    method @MainThread public void clearMaterialOverride(String nodeName, optional int primitiveIndex);
     method @MainThread public static androidx.xr.scenecore.GltfModelEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.GltfModel model);
     method @MainThread public static androidx.xr.scenecore.GltfModelEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.GltfModel model, optional androidx.xr.runtime.math.Pose pose);
     method public int getAnimationState();
+    method @MainThread public void setMaterialOverride(androidx.xr.scenecore.Material material, String nodeName);
+    method @MainThread public void setMaterialOverride(androidx.xr.scenecore.Material material, String nodeName, optional int primitiveIndex);
     method @MainThread public void startAnimation();
     method @MainThread public void startAnimation(optional boolean loop);
     method @MainThread public void startAnimation(boolean loop, String animationName);
@@ -329,6 +343,62 @@ package androidx.xr.scenecore {
     method public androidx.xr.scenecore.InteractableComponent create(androidx.xr.runtime.Session session, java.util.function.Consumer<androidx.xr.scenecore.InputEvent> inputEventListener);
   }
 
+  public final class KhronosPbrMaterial implements androidx.xr.scenecore.Material {
+    method @MainThread public static suspend Object? create(androidx.xr.runtime.Session session, int alphaMode, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.KhronosPbrMaterial>);
+    method @MainThread public void dispose();
+    method @MainThread public void setAlphaCutoff(@FloatRange(from=0.0, to=1.0) float alphaCutoff);
+    method @MainThread public void setBaseColorFactor(androidx.xr.runtime.math.Vector4 factor);
+    method @MainThread public void setBaseColorTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setBaseColorTexture(androidx.xr.scenecore.Texture texture, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setClearcoatFactor(@FloatRange(from=0.0, to=1.0) float factor);
+    method @MainThread public void setClearcoatNormalTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setClearcoatNormalTexture(androidx.xr.scenecore.Texture texture, optional @FloatRange(from=0.0) float scale);
+    method @MainThread public void setClearcoatNormalTexture(androidx.xr.scenecore.Texture texture, optional @FloatRange(from=0.0) float scale, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setClearcoatRoughnessFactor(@FloatRange(from=0.0, to=1.0) float factor);
+    method @MainThread public void setClearcoatRoughnessTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setClearcoatRoughnessTexture(androidx.xr.scenecore.Texture texture, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setClearcoatTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setClearcoatTexture(androidx.xr.scenecore.Texture texture, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setEmissiveFactor(androidx.xr.runtime.math.Vector3 factor);
+    method @MainThread public void setEmissiveTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setEmissiveTexture(androidx.xr.scenecore.Texture texture, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setMetallicFactor(@FloatRange(from=0.0, to=1.0) float factor);
+    method @MainThread public void setMetallicRoughnessTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setMetallicRoughnessTexture(androidx.xr.scenecore.Texture texture, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setNormalTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setNormalTexture(androidx.xr.scenecore.Texture texture, optional @FloatRange(from=0.0) float scale);
+    method @MainThread public void setNormalTexture(androidx.xr.scenecore.Texture texture, optional @FloatRange(from=0.0) float scale, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setOcclusionTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setOcclusionTexture(androidx.xr.scenecore.Texture texture, optional @FloatRange(from=0.0, to=1.0) float strength);
+    method @MainThread public void setOcclusionTexture(androidx.xr.scenecore.Texture texture, optional @FloatRange(from=0.0, to=1.0) float strength, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setRoughnessFactor(@FloatRange(from=0.0, to=1.0) float factor);
+    method @MainThread public void setSheenColorFactor(androidx.xr.runtime.math.Vector3 factor);
+    method @MainThread public void setSheenColorTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setSheenColorTexture(androidx.xr.scenecore.Texture texture, optional androidx.xr.scenecore.TextureSampler sampler);
+    method @MainThread public void setSheenRoughnessFactor(@FloatRange(from=0.0, to=1.0) float factor);
+    method @MainThread public void setSheenRoughnessTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setSheenRoughnessTexture(androidx.xr.scenecore.Texture texture, optional androidx.xr.scenecore.TextureSampler sampler);
+    field public static final androidx.xr.scenecore.KhronosPbrMaterial.Companion Companion;
+  }
+
+  public static final class KhronosPbrMaterial.Companion {
+    method @MainThread public suspend Object? create(androidx.xr.runtime.Session session, int alphaMode, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.KhronosPbrMaterial>);
+  }
+
+  public final class KhronosUnlitMaterial implements androidx.xr.scenecore.Material {
+    method @MainThread public static suspend Object? create(androidx.xr.runtime.Session session, int alphaMode, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.KhronosUnlitMaterial>);
+    method @MainThread public void dispose();
+    method @MainThread public void setAlphaCutoff(@FloatRange(from=0.0, to=1.0) float alphaCutoff);
+    method @MainThread public void setBaseColorFactor(androidx.xr.runtime.math.Vector4 factor);
+    method @MainThread public void setBaseColorTexture(androidx.xr.scenecore.Texture texture);
+    method @MainThread public void setBaseColorTexture(androidx.xr.scenecore.Texture texture, optional androidx.xr.scenecore.TextureSampler sampler);
+    field public static final androidx.xr.scenecore.KhronosUnlitMaterial.Companion Companion;
+  }
+
+  public static final class KhronosUnlitMaterial.Companion {
+    method @MainThread public suspend Object? create(androidx.xr.runtime.Session session, int alphaMode, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.KhronosUnlitMaterial>);
+  }
+
   public final class LaunchUtils {
     method public static android.os.Bundle createBundleForFullSpaceModeLaunch(androidx.xr.runtime.Session session, android.os.Bundle bundle);
     method public static android.os.Bundle createBundleForFullSpaceModeLaunchWithEnvironmentInherited(androidx.xr.runtime.Session session, android.os.Bundle bundle);
@@ -342,6 +412,10 @@ package androidx.xr.scenecore {
   }
 
   public static final class MainPanelEntity.Companion {
+  }
+
+  public interface Material {
+    method @MainThread public void dispose();
   }
 
   public final class MovableComponent implements androidx.xr.scenecore.Component {
@@ -484,18 +558,18 @@ package androidx.xr.scenecore {
     method public static androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.FloatSize3d minimumSize, java.util.function.Consumer<androidx.xr.scenecore.ResizeEvent> resizeEventListener);
     method public static androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, java.util.function.Consumer<androidx.xr.scenecore.ResizeEvent> resizeEventListener);
     method public androidx.xr.runtime.math.FloatSize3d getAffordanceSize();
-    method public float getFixedAspectRatio();
     method public androidx.xr.runtime.math.FloatSize3d getMaximumEntitySize();
     method public androidx.xr.runtime.math.FloatSize3d getMinimumEntitySize();
     method public boolean isAlwaysShowOverlayEnabled();
     method public boolean isAutoHideContentWhileResizingEnabled();
+    method public boolean isFixedAspectRatioEnabled();
     method public boolean onAttach(androidx.xr.scenecore.Entity entity);
     method public void onDetach(androidx.xr.scenecore.Entity entity);
     method public void removeResizeEventListener(java.util.function.Consumer<androidx.xr.scenecore.ResizeEvent> resizeEventListener);
     method public void setAffordanceSize(androidx.xr.runtime.math.FloatSize3d);
     method public void setAlwaysShowOverlayEnabled(boolean);
     method public void setAutoHideContentWhileResizingEnabled(boolean);
-    method public void setFixedAspectRatio(float);
+    method public void setFixedAspectRatioEnabled(boolean);
     method public void setMaximumEntitySize(androidx.xr.runtime.math.FloatSize3d);
     method public void setMinimumEntitySize(androidx.xr.runtime.math.FloatSize3d);
     method public void setShouldAutoUpdateOverlay(boolean);
@@ -503,6 +577,7 @@ package androidx.xr.scenecore {
     property public androidx.xr.runtime.math.FloatSize3d affordanceSize;
     property public boolean isAlwaysShowOverlayEnabled;
     property public boolean isAutoHideContentWhileResizingEnabled;
+    property public boolean isFixedAspectRatioEnabled;
     property public androidx.xr.runtime.math.FloatSize3d maximumEntitySize;
     property public androidx.xr.runtime.math.FloatSize3d minimumEntitySize;
     field public static final androidx.xr.scenecore.ResizableComponent.Companion Companion;

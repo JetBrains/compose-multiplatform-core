@@ -20,6 +20,7 @@ import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -28,6 +29,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.internal.Icons
+import androidx.compose.material3.internal.Strings
+import androidx.compose.material3.internal.getString
 import androidx.compose.material3.tokens.ButtonGroupSmallTokens
 import androidx.compose.material3.tokens.ConnectedButtonGroupSmallTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
@@ -318,13 +322,59 @@ object ButtonGroupDefaults {
         checkedShape: Shape = connectedButtonCheckedShape,
     ): ToggleButtonShapes =
         ToggleButtonShapes(shape = shape, pressedShape = pressedShape, checkedShape = checkedShape)
+
+    /**
+     * Default overflow indicator for [ButtonGroup]. It uses a [FilledIconButton]. When clicked it
+     * will open the menu associated with the provided [ButtonGroupMenuState].
+     *
+     * @param menuState the [ButtonGroupMenuState] used to show or dismiss the overflow menu.
+     * @param modifier [Modifier] to be applied to the overflow indicator
+     * @param enabled controls the enabled state of this icon button. When `false`, this component
+     *   will not respond to user input, and it will appear visually disabled and disabled to
+     *   accessibility services.
+     * @param shape defines the shape of this icon button's container
+     * @param colors [IconButtonColors] that will be used to resolve the colors used for this icon
+     *   button in different states. See [IconButtonDefaults.filledIconButtonColors].
+     * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+     *   emitting [Interaction]s for this icon button. You can use this to change the icon button's
+     *   appearance or preview the icon button in different states. Note that if `null` is provided,
+     *   interactions will still happen internally.
+     */
+    @Composable
+    fun OverflowIndicator(
+        menuState: ButtonGroupMenuState,
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true,
+        shape: Shape = IconButtonDefaults.filledShape,
+        colors: IconButtonColors = IconButtonDefaults.filledIconButtonColors(),
+        interactionSource: MutableInteractionSource? = null,
+    ) {
+        val contentDescription = getString(Strings.ButtonGroupMoreOptions)
+
+        FilledIconButton(
+            onClick = {
+                if (menuState.isExpanded) {
+                    menuState.dismiss()
+                } else {
+                    menuState.show()
+                }
+            },
+            modifier = modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = colors,
+            interactionSource = interactionSource,
+            content = {
+                Icon(imageVector = Icons.Filled.MoreVert, contentDescription = contentDescription)
+            },
+        )
+    }
 }
 
 /** State class for the overflow menu in [ButtonGroup]. */
-class ButtonGroupMenuState(initialIsExpanded: Boolean = false) {
-
+class ButtonGroupMenuState(initialIsShowing: Boolean = false) {
     /** Indicates whether the overflow menu is currently expanded. */
-    var isExpanded by mutableStateOf(initialIsExpanded)
+    var isExpanded by mutableStateOf(initialIsShowing)
         private set
 
     /** Closes the overflow menu. */

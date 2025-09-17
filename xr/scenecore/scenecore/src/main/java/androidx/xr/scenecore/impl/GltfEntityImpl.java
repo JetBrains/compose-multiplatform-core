@@ -74,8 +74,8 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
         String subspaceName = "gltf_entity_subspace_" + mSubspaceImpressNode.getHandle();
 
         mSubspace =
-            splitEngineSubspaceManager.createSubspace(subspaceName,
-                    mSubspaceImpressNode.getHandle());
+                splitEngineSubspaceManager.createSubspace(
+                        subspaceName, mSubspaceImpressNode.getHandle());
 
         if (mSubspace != null) {
             try (NodeTransaction transaction = extensions.createNodeTransaction()) {
@@ -143,12 +143,21 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     }
 
     @Override
-    public void setMaterialOverride(@NonNull MaterialResource material, @NonNull String meshName) {
+    public void setMaterialOverride(
+            @NonNull MaterialResource material, @NonNull String nodeName, int primitiveIndex) {
         if (!(material instanceof Material)) {
             throw new IllegalArgumentException("MaterialResource is not a Material");
         }
         mImpressApi.setMaterialOverride(
-                mModelImpressNode, ((Material) material).getNativeHandle(), meshName);
+                mModelImpressNode,
+                ((Material) material).getNativeHandle(),
+                nodeName,
+                primitiveIndex);
+    }
+
+    @Override
+    public void clearMaterialOverride(@NonNull String nodeName, int primitiveIndex) {
+        mImpressApi.clearMaterialOverride(mModelImpressNode, nodeName, primitiveIndex);
     }
 
     @SuppressWarnings("ObjectToString")

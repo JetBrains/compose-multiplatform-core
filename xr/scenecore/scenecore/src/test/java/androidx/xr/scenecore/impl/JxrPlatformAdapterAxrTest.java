@@ -2491,11 +2491,13 @@ public final class JxrPlatformAdapterAxrTest {
     }
 
     @Test
-    public void setMaterialOverrideGltfEntity_materialOverridesMesh() throws Exception {
+    public void setMaterialOverrideGltfEntity_materialOverridesNode() throws Exception {
         GltfEntity gltfEntity = createGltfEntity();
         MaterialResource material = createWaterMaterial();
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
 
-        gltfEntity.setMaterialOverride(material, "fake_mesh_name");
+        gltfEntity.setMaterialOverride(material, nodeName, primitiveIndex);
 
         assertThat(
                         mFakeImpressApi.getImpressNodes().keySet().stream()
@@ -2507,6 +2509,23 @@ public final class JxrPlatformAdapterAxrTest {
                                                                         .Type.WATER)
                                 .toArray())
                 .hasLength(1);
+    }
+
+    @Test
+    public void clearMaterialOverrideGltfEntity_clearsMaterialOverride() throws Exception {
+        GltfEntity gltfEntity = createGltfEntity();
+        MaterialResource material = createWaterMaterial();
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
+
+        gltfEntity.setMaterialOverride(material, nodeName, primitiveIndex);
+        gltfEntity.clearMaterialOverride(nodeName, primitiveIndex);
+
+        assertThat(
+                        mFakeImpressApi.getImpressNodes().keySet().stream()
+                                .filter(node -> node.getMaterialOverride() != null)
+                                .toArray())
+                .isEmpty();
     }
 
     interface FakeComponent extends Component {}

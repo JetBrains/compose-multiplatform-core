@@ -1,0 +1,70 @@
+/*
+ * Copyright 2018 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.room3.integration.noappcompat;
+
+import androidx.room3.Dao;
+import androidx.room3.Database;
+import androidx.room3.Entity;
+import androidx.room3.Insert;
+import androidx.room3.OnConflictStrategy;
+import androidx.room3.PrimaryKey;
+import androidx.room3.Query;
+import androidx.room3.RoomDatabase;
+
+@Database(
+        version = 1,
+        entities = {BareDatabase.BareEntity.class},
+        exportSchema = false
+)
+abstract class BareDatabase extends RoomDatabase {
+    abstract BareDao dao();
+
+    @Dao
+    interface BareDao {
+        @Insert(onConflict = OnConflictStrategy.REPLACE)
+        void insert(BareEntity entity);
+
+        @Query("select * from BareEntity WHERE id = :id")
+        BareEntity get(int id);
+    }
+
+    @SuppressWarnings("WeakerAccess") // to avoid naming them with m
+    @Entity
+    static class BareEntity {
+        @PrimaryKey
+        public final int id;
+        public final String name;
+
+        BareEntity(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof BareEntity)) return false;
+            BareEntity that = (BareEntity) o;
+            return id == that.id && name.equals(that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return id + (name.hashCode() >> 31);
+        }
+    }
+}

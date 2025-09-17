@@ -25,9 +25,11 @@ import androidx.collection.emptyScatterMap
 import androidx.collection.mutableScatterMapOf
 import androidx.compose.runtime.collection.fastFilter
 import androidx.compose.runtime.collection.sortedBy
+import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.CompositionGroup
 import androidx.compose.runtime.tooling.CompositionInstance
+import androidx.compose.runtime.tooling.SourceInformation
 import androidx.compose.runtime.tooling.findSubcompositionContextGroup
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
@@ -1093,20 +1095,28 @@ public sealed interface Composer {
         }
 
         /**
+         * Set the mode for collecting composition stack traces. See [ComposeStackTraceMode] for
+         * more information about available modes. The stack traces are disabled by default.
+         *
+         * Note: changing stack trace collection mode will not affect already running compositions.
+         */
+        public fun setDiagnosticStackTraceMode(mode: ComposeStackTraceMode) {
+            composeStackTraceMode = mode
+        }
+
+        /**
          * Enable composition stack traces based on the source information. When this flag is
          * enabled, composition will record source information at runtime. When crash occurs,
          * Compose will append a suppressed exception that contains a stack trace pointing to the
          * place in composition closest to the crash.
          *
-         * Note that:
-         * - Recording source information introduces additional performance overhead, so this option
-         *   should NOT be enabled in release builds.
-         * - Compose ships with a minifier config that removes source information from the release
-         *   builds. Enabling this flag in minified builds will have no effect.
+         * @see [ComposeStackTraceMode.SourceInformation] for more information.
          */
+        @Deprecated(message = "Use setDiagnosticStackTraceMode instead")
         @ExperimentalComposeRuntimeApi
         public fun setDiagnosticStackTraceEnabled(enabled: Boolean) {
-            composeStackTraceEnabled = enabled
+            composeStackTraceMode =
+                if (enabled) ComposeStackTraceMode.SourceInformation else ComposeStackTraceMode.None
         }
     }
 }
@@ -1175,7 +1185,7 @@ public interface CompositionTracer {
 
 @OptIn(InternalComposeTracingApi::class) private var compositionTracer: CompositionTracer? = null
 
-internal var composeStackTraceEnabled: Boolean = false
+internal var composeStackTraceMode = ComposeStackTraceMode.None
 
 /**
  * Internal tracing API.

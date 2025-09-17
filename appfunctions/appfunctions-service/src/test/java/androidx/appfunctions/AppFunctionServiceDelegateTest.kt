@@ -18,6 +18,9 @@ package androidx.appfunctions
 
 import android.content.Context
 import android.os.OutcomeReceiver
+import androidx.appfunctions.internal.AggregatedAppFunctionInventory
+import androidx.appfunctions.internal.AppFunctionInventory
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
@@ -26,9 +29,7 @@ import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.service.AppFunctionServiceDelegate
-import androidx.appfunctions.service.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.service.internal.AggregatedAppFunctionInvoker
-import androidx.appfunctions.service.internal.AppFunctionInventory
 import androidx.appfunctions.service.internal.AppFunctionInvoker
 import androidx.appfunctions.testing.FakeTranslator
 import androidx.appfunctions.testing.FakeTranslatorSelector
@@ -344,6 +345,9 @@ class AppFunctionServiceDelegateTest {
 
                 override val functionIdToMetadataMap: Map<String, CompileTimeAppFunctionMetadata>
                     get() = internalMap
+
+                override val componentsMetadata: AppFunctionComponentsMetadata
+                    get() = AppFunctionComponentsMetadata()
 
                 fun setAppFunctionMetadata(metadata: CompileTimeAppFunctionMetadata) {
                     internalMap[metadata.id] = metadata

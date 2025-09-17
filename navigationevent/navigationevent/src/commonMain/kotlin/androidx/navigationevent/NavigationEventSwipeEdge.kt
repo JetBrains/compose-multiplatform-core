@@ -18,8 +18,10 @@ package androidx.navigationevent
 
 import kotlin.jvm.JvmInline
 import kotlin.jvm.JvmName
+import kotlin.jvm.JvmStatic
 
 /** Defines the possible screen edges from which a swipe gesture can originate. */
+@Suppress("ValueClassDefinition")
 @JvmInline
 public value class NavigationEventSwipeEdge private constructor(internal val value: Int) {
 
@@ -27,10 +29,12 @@ public value class NavigationEventSwipeEdge private constructor(internal val val
 
         /** Indicates the navigation gesture originates from the left edge of the screen. */
         @get:JvmName("getLeft") // Disable name mangling for Java
+        @JvmStatic
         public val Left: NavigationEventSwipeEdge = NavigationEventSwipeEdge(0)
 
         /** Indicates the navigation gesture originates from the right edge of the screen. */
         @get:JvmName("getRight") // Disable name mangling for Java
+        @JvmStatic
         public val Right: NavigationEventSwipeEdge = NavigationEventSwipeEdge(1)
 
         /**
@@ -38,6 +42,7 @@ public value class NavigationEventSwipeEdge private constructor(internal val val
          * like a 3-button navigation press or a hardware back button event.
          */
         @get:JvmName("getNone") // Disable name mangling for Java
+        @JvmStatic
         public val None: NavigationEventSwipeEdge = NavigationEventSwipeEdge(2)
     }
 }

@@ -1,5 +1,6 @@
 package com.testdata
 
+import androidx.appfunctions.`internal`.AppFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
@@ -10,7 +11,6 @@ import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
-import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
 import kotlin.String
 import kotlin.collections.List
@@ -29,6 +29,40 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     "com.testdata.RecursiveSerializableInputFunctions#simpleFunctionNullableSerializableList" to ComTestdataRecursiveSerializableInputFunctionsSimpleFunctionNullableSerializableListMetadataObject.APP_FUNCTION_METADATA,
     "com.testdata.RecursiveSerializableInputFunctions#simpleFunctionNullableSerializable" to ComTestdataRecursiveSerializableInputFunctionsSimpleFunctionNullableSerializableMetadataObject.APP_FUNCTION_METADATA,
   )
+
+  private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_NESTED:
+      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+          referenceDataType = "com.testdata.RecursiveSerializable",
+          isNullable = true,
+          description = ""
+      )
+
+  private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
+      Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "nested" to COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_NESTED,
+  )
+
+  private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
+      List<String> = listOf(
+    "nested",
+  )
+
+  private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata =
+      AppFunctionObjectTypeMetadata(
+          properties = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
+          required = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
+          qualifiedName = "com.testdata.RecursiveSerializable",
+          isNullable = true,
+          description = ""
+      )
+
+  private val componentsMetadataDataTypesMap: Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "com.testdata.RecursiveSerializable" to COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE,
+    )
+
+  override val componentsMetadata: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
+          dataTypes = componentsMetadataDataTypesMap
+      )
 
   private object ComTestdataRecursiveSerializableInputFunctionsSimpleFunctionMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null

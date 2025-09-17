@@ -158,8 +158,9 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeGltfEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.internal.GltfEntity {
     ctor public FakeGltfEntity();
+    method public void clearMaterialOverride(String nodeName, int primitiveIndex);
     method public int getAnimationState();
-    method public void setMaterialOverride(androidx.xr.scenecore.internal.MaterialResource material, String meshName);
+    method public void setMaterialOverride(androidx.xr.scenecore.internal.MaterialResource material, String nodeName, int primitiveIndex);
     method public void startAnimation(boolean loop, String? animationName);
     method public void stopAnimation();
     property @androidx.xr.scenecore.internal.GltfEntity.AnimationStateValue public int animationState;
@@ -167,9 +168,10 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeGltfFeature extends androidx.xr.scenecore.testing.FakeBaseRenderingFeature implements androidx.xr.scenecore.internal.GltfFeature {
     ctor public FakeGltfFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
+    method public void clearMaterialOverride(String nodeName, int primitiveIndex);
     method public int getAnimationState();
     method public void setColliderEnabled(boolean enableCollider);
-    method public void setMaterialOverride(androidx.xr.scenecore.internal.MaterialResource material, String meshName);
+    method public void setMaterialOverride(androidx.xr.scenecore.internal.MaterialResource material, String nodeName, int primitiveIndex);
     method public void startAnimation(boolean loop, String? animationName, java.util.concurrent.Executor executor);
     method public void stopAnimation();
     property public int animationState;
@@ -802,28 +804,28 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeResizableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.internal.ResizableComponent {
     ctor public FakeResizableComponent();
-    ctor public FakeResizableComponent(optional androidx.xr.scenecore.internal.Dimensions size, optional androidx.xr.scenecore.internal.Dimensions minimumSize, optional androidx.xr.scenecore.internal.Dimensions maximumSize, optional float fixedAspectRatio, optional boolean autoHideContent, optional boolean autoUpdateSize, optional boolean forceShowResizeOverlay);
+    ctor public FakeResizableComponent(optional androidx.xr.scenecore.internal.Dimensions size, optional androidx.xr.scenecore.internal.Dimensions minimumSize, optional androidx.xr.scenecore.internal.Dimensions maximumSize, optional boolean isFixedAspectRatioEnabled, optional boolean autoHideContent, optional boolean autoUpdateSize, optional boolean forceShowResizeOverlay);
     method public void addResizeEventListener(java.util.concurrent.Executor executor, androidx.xr.scenecore.internal.ResizeEventListener resizeEventListener);
     method public boolean getAutoHideContent();
     method public boolean getAutoUpdateSize();
-    method public float getFixedAspectRatio();
     method public boolean getForceShowResizeOverlay();
     method public androidx.xr.scenecore.internal.Dimensions getMaximumSize();
     method public androidx.xr.scenecore.internal.Dimensions getMinimumSize();
     method public java.util.Map<androidx.xr.scenecore.internal.ResizeEventListener,java.util.concurrent.Executor> getResizeEventListenersMap();
     method public androidx.xr.scenecore.internal.Dimensions getSize();
+    method public boolean isFixedAspectRatioEnabled();
     method public void removeResizeEventListener(androidx.xr.scenecore.internal.ResizeEventListener resizeEventListener);
     method public void setAutoHideContent(boolean);
     method public void setAutoUpdateSize(boolean);
-    method public void setFixedAspectRatio(float);
+    method public void setFixedAspectRatioEnabled(boolean);
     method public void setForceShowResizeOverlay(boolean);
     method public void setMaximumSize(androidx.xr.scenecore.internal.Dimensions);
     method public void setMinimumSize(androidx.xr.scenecore.internal.Dimensions);
     method public void setSize(androidx.xr.scenecore.internal.Dimensions);
     property public boolean autoHideContent;
     property public boolean autoUpdateSize;
-    property public float fixedAspectRatio;
     property public boolean forceShowResizeOverlay;
+    property public boolean isFixedAspectRatioEnabled;
     property public androidx.xr.scenecore.internal.Dimensions maximumSize;
     property public androidx.xr.scenecore.internal.Dimensions minimumSize;
     property public java.util.Map<androidx.xr.scenecore.internal.ResizeEventListener,java.util.concurrent.Executor> resizeEventListenersMap;

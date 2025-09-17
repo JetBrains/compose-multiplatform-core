@@ -1984,7 +1984,13 @@ class BaselineProfileConsumerPluginTestWithKmp(agpVersion: TestAgpVersion) {
         // TODO: remove when b/442018105 is fixed
         projectSetup.rootFolder.root
             .resolve("gradle.properties")
-            .writeText("android.builtInKotlin=false")
+            .writeText(
+                """
+                android.newDsl=false
+                android.builtInKotlin=false
+            """
+                    .trimIndent()
+            )
         gradleRunner.buildAndAssertThatOutput("releaseSources") {
             expected.forEach { e -> contains(e.absolutePath) }
         }
@@ -2041,7 +2047,13 @@ class BaselineProfileConsumerPluginTestWithKmp(agpVersion: TestAgpVersion) {
         // TODO: remove when b/442018105 is fixed
         projectSetup.rootFolder.root
             .resolve("gradle.properties")
-            .writeText("android.builtInKotlin=false")
+            .writeText(
+                """
+                android.newDsl=false
+                android.builtInKotlin=false
+            """
+                    .trimIndent()
+            )
         gradleRunner.buildAndAssertThatOutput("releaseSources") {
             expected.forEach { e -> contains(e.absolutePath) }
         }

@@ -62,6 +62,7 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalSessionConfig::class)
+@androidx.annotation.OptIn(ExperimentalCameraProviderConfiguration::class)
 class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
     private lateinit var appContext: Context
 
@@ -119,10 +120,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
 
     private var bindStartTime: Long = Long.MIN_VALUE
 
-    @androidx.annotation.OptIn(ExperimentalCameraProviderConfiguration::class)
-    fun init(applicationContext: Context, lifecycleOwner: LifecycleOwner) {
-        appContext = applicationContext
-
+    init {
         ProcessCameraProvider.configureInstance(
             if (isCameraPipe) {
                 CameraPipeConfig.defaultConfig()
@@ -130,6 +128,10 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                 Camera2Config.defaultConfig()
             }
         )
+    }
+
+    fun setupCamera(applicationContext: Context, lifecycleOwner: LifecycleOwner) {
+        appContext = applicationContext
 
         viewModelScope.launch {
             with(ProcessCameraProvider.awaitInstance(applicationContext)) {
@@ -141,7 +143,11 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                     return@launch
                 }
 
-                reconfigureUseCasesAndFeatureCombo(lifecycleOwner)
+                if (featureCombo == null) {
+                    reconfigureUseCasesAndFeatureCombo(lifecycleOwner)
+                } else {
+                    bindCamera(lifecycleOwner)
+                }
             }
         }
     }
@@ -151,6 +157,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     }
 
     private suspend fun initCameraSelector() {
+        if (::cameraSelector.isInitialized) return
+
         if (cameraProvider().hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
             _isRearCamera.value = true
             cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA

@@ -20,11 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
-import androidx.navigationevent.NavigationEventCallback
+import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInfo
 
 /**
- * A composable that handles navigation events using simple lambda callbacks, providing contextual
+ * A composable that handles navigation events using simple lambda handlers, providing contextual
  * information about both back and forward navigation destinations.
  *
  * ## Precedence
@@ -79,23 +79,23 @@ public fun <T : NavigationEventInfo> NavigationEventHandler(
             }
             .navigationEventDispatcher
 
-    val callback = remember { ComposeNavigationEventCallback<T>() }
+    val handler = remember { ComposeNavigationEventHandler<T>() }
 
     SideEffect {
-        callback.isForwardEnabled = isForwardEnabled
-        callback.currentOnForwardCancelled = onForwardCancelled
-        callback.currentOnForwardCompleted = onForwardCompleted
+        handler.isForwardEnabled = isForwardEnabled
+        handler.currentOnForwardCancelled = onForwardCancelled
+        handler.currentOnForwardCompleted = onForwardCompleted
 
-        callback.isBackEnabled = isBackEnabled
-        callback.currentOnBackCancelled = onBackCancelled
-        callback.currentOnBackCompleted = onBackCompleted
+        handler.isBackEnabled = isBackEnabled
+        handler.currentOnBackCancelled = onBackCancelled
+        handler.currentOnBackCompleted = onBackCompleted
 
-        callback.setInfo(currentInfo, backInfo, forwardInfo)
+        handler.setInfo(currentInfo, backInfo, forwardInfo)
     }
 
-    DisposableEffect(dispatcher, callback) {
-        dispatcher.addCallback(callback)
-        onDispose { callback.remove() }
+    DisposableEffect(dispatcher, handler) {
+        dispatcher.addHandler(handler)
+        onDispose { handler.remove() }
     }
 }
 
@@ -168,12 +168,9 @@ public fun <T : NavigationEventInfo> NavigationForwardHandler(
     )
 }
 
-/**
- * A simple [NavigationEventCallback] that delegates its methods to lambda functions. This serves as
- * a bridge for the simpler, non-flow based `NavigationEventHandler` composables.
- */
-private class ComposeNavigationEventCallback<T : NavigationEventInfo> :
-    NavigationEventCallback<T>(isBackEnabled = false, isForwardEnabled = false) {
+/** A simple [NavigationEventHandler] that delegates its methods to lambda functions. */
+private class ComposeNavigationEventHandler<T : NavigationEventInfo> :
+    NavigationEventHandler<T>(isBackEnabled = false, isForwardEnabled = false) {
 
     var currentOnForwardCancelled: () -> Unit = {}
     var currentOnForwardCompleted: () -> Unit = {}

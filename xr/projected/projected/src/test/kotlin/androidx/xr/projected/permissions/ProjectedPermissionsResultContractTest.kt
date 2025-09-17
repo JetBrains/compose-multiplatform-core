@@ -113,7 +113,6 @@ class ProjectedPermissionsResultContractTest {
             val request = getLastRequestedPermission(activity)!!
             assertThat(request.requestedPermissions.toList())
                 .isEqualTo(NOT_DEVICE_SCOPED_PERMISSIONS)
-            assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
         }
     }
 
@@ -141,7 +140,6 @@ class ProjectedPermissionsResultContractTest {
             request = getLastRequestedPermission(activity)!!
             assertThat(request.requestedPermissions.toList())
                 .isEqualTo(NOT_DEVICE_SCOPED_PERMISSIONS)
-            assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
         }
     }
 
@@ -365,115 +363,6 @@ class ProjectedPermissionsResultContractTest {
     }
 
     @Test
-    fun requestDeviceScopedPermissions_requestsPermissionsForBothHostAndProjectedDevice() {
-        launchHostActivity(
-            listOf(
-                ProjectedPermissionsRequestParams(
-                    permissions =
-                        listOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
-                    rationale = null,
-                )
-            )
-        ) { activity, projectedActivityScenario ->
-            // first request
-            var request = getLastRequestedPermission(activity)!!
-            assertThat(request.requestedPermissions.toList())
-                .containsExactly(Manifest.permission.CAMERA)
-            assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
-            acceptPermissionsRequestFor(request, activity)
-            // second request
-            request = getLastRequestedPermission(activity)!!
-            assertThat(request.requestedPermissions.toList())
-                .containsExactly(Manifest.permission.CAMERA)
-            assertThat(request.deviceId).isEqualTo(virtualDevice.deviceId)
-            acceptPermissionsRequestFor(request, activity)
-            // third request
-            request = getLastRequestedPermission(activity)!!
-            assertThat(request.requestedPermissions.toList())
-                .containsExactly(Manifest.permission.RECORD_AUDIO)
-            assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
-            acceptPermissionsRequestFor(request, activity)
-            // fourth request
-            request = getLastRequestedPermission(activity)!!
-            assertThat(request.requestedPermissions.toList())
-                .containsExactly(Manifest.permission.RECORD_AUDIO)
-            assertThat(request.deviceId).isEqualTo(virtualDevice.deviceId)
-            acceptPermissionsRequestFor(request, activity)
-            // verify results sent to the app
-            val resultReceivedByAppActivity = projectedActivityScenario.result
-            assertThat(
-                    ProjectedPermissionsResultContract()
-                        .parseResult(
-                            resultReceivedByAppActivity.resultCode,
-                            resultReceivedByAppActivity.resultData,
-                        )
-                )
-                .isEqualTo(
-                    mapOf(
-                        Manifest.permission.CAMERA to true,
-                        Manifest.permission.RECORD_AUDIO to true,
-                    )
-                )
-        }
-    }
-
-    @Test
-    fun requestDeviceScopedPermissions_userAcceptsHostPermissionButDeclinesProjected_sendsDeclineToApp() {
-        launchHostActivity(
-            listOf(
-                ProjectedPermissionsRequestParams(
-                    permissions = listOf(Manifest.permission.CAMERA),
-                    rationale = null,
-                )
-            )
-        ) { activity, projectedActivityScenario ->
-            var request = getLastRequestedPermission(activity)!!
-
-            acceptPermissionsRequestFor(request, activity)
-            request = getLastRequestedPermission(activity)!!
-            declinePermissionsRequestFor(request, activity)
-
-            val resultReceivedByAppActivity = projectedActivityScenario.result
-            assertThat(
-                    ProjectedPermissionsResultContract()
-                        .parseResult(
-                            resultReceivedByAppActivity.resultCode,
-                            resultReceivedByAppActivity.resultData,
-                        )
-                )
-                .isEqualTo(mapOf(Manifest.permission.CAMERA to false))
-        }
-    }
-
-    @Test
-    fun requestDeviceScopedPermissions_userDeclinesHostPermissionAndAcceptsProjected_sendsDeclineToApp() {
-        launchHostActivity(
-            listOf(
-                ProjectedPermissionsRequestParams(
-                    permissions = listOf(Manifest.permission.CAMERA),
-                    rationale = null,
-                )
-            )
-        ) { activity, projectedActivityScenario ->
-            var request = getLastRequestedPermission(activity)!!
-
-            declinePermissionsRequestFor(request, activity)
-            request = getLastRequestedPermission(activity)!!
-            acceptPermissionsRequestFor(request, activity)
-
-            val resultReceivedByAppActivity = projectedActivityScenario.result
-            assertThat(
-                    ProjectedPermissionsResultContract()
-                        .parseResult(
-                            resultReceivedByAppActivity.resultCode,
-                            resultReceivedByAppActivity.resultData,
-                        )
-                )
-                .isEqualTo(mapOf(Manifest.permission.CAMERA to false))
-        }
-    }
-
-    @Test
     fun multipleRequests_sendsCorrectResult() {
         // This test verifies a user journey with multiple requests, which some accepted, some
         // declined,
@@ -516,24 +405,18 @@ class ProjectedPermissionsResultContractTest {
             // user continues
             composeTestRule.onNodeWithText(continueButtonText).performClick()
             var request = getLastRequestedPermission(activity)!!
-            // RECORD_AUDIO is device-scoped, so separate requests for host and projected device are
-            // made
             assertThat(request.requestedPermissions.toList())
-                .containsExactly(Manifest.permission.RECORD_AUDIO)
-            assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
-            // user declines host's audio permission
-            declinePermissionsRequestFor(request, activity)
-            request = getLastRequestedPermission(activity)!!
-            assertThat(request.requestedPermissions.toList())
-                .containsExactly(Manifest.permission.RECORD_AUDIO)
+                .containsExactly(
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                )
             assertThat(request.deviceId).isEqualTo(virtualDevice.deviceId)
-            // user accepts projected's device audio permission
-            acceptPermissionsRequestFor(request, activity)
-            request = getLastRequestedPermission(activity)!!
-            assertThat(request.requestedPermissions.toList())
-                .containsExactly(Manifest.permission.BLUETOOTH_CONNECT)
-            // user accepts bluetooth permission
-            acceptPermissionsRequestFor(request, activity)
+            // user declines audio permission and accepts bluetooth permissions
+            respondToPermissionsRequest(
+                request,
+                activity,
+                intArrayOf(PackageManager.PERMISSION_DENIED, PackageManager.PERMISSION_GRANTED),
+            )
             composeTestRule.onNodeWithText("My rationale 3").assertIsDisplayed()
             // user continues, declines the calendar permission, and grants the contacts permission
             composeTestRule.onNodeWithText(continueButtonText).performClick()
@@ -674,7 +557,6 @@ class ProjectedPermissionsResultContractTest {
                 val request = getLastRequestedPermission(activity)!!
                 assertThat(request.requestedPermissions.toList())
                     .isEqualTo(NOT_DEVICE_SCOPED_PERMISSIONS)
-                assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
                 // simulate the user accepting the request
                 acceptPermissionsRequestFor(request, activity)
 
@@ -731,7 +613,6 @@ class ProjectedPermissionsResultContractTest {
                 // verify the correct permission is requested
                 assertThat(request.requestedPermissions)
                     .isEqualTo(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
-                assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
                 // simulate the user accepting the request
                 acceptPermissionsRequestFor(request, activity)
                 // verify results sent to the app activity
@@ -787,15 +668,8 @@ class ProjectedPermissionsResultContractTest {
                 // verify the correct permission is requested
                 assertThat(request.requestedPermissions)
                     .isEqualTo(arrayOf(Manifest.permission.CAMERA))
-                assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
-                // simulate the user accepting the request
-                acceptPermissionsRequestFor(request, activity)
-                // Since CAMERA is device-scoped, we should request the Projected device-scoped
-                // permission
-                request = getLastRequestedPermission(activity)!!
-                assertThat(request.requestedPermissions)
-                    .isEqualTo(arrayOf(Manifest.permission.CAMERA))
                 assertThat(request.deviceId).isEqualTo(virtualDevice.deviceId)
+                // simulate the user declining the request
                 declinePermissionsRequestFor(request, activity)
                 // verify results sent to the app activity
                 val resultReceivedByAppActivity = projectedActivityScenario.result
@@ -1071,7 +945,6 @@ class ProjectedPermissionsResultContractTest {
                     // verify the correct permission from permissionResultList2 is requested
                     assertThat(request.requestedPermissions)
                         .isEqualTo(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
-                    assertThat(request.deviceId).isEqualTo(Context.DEVICE_ID_DEFAULT)
                     // simulate the user accepting the request
                     acceptPermissionsRequestFor(request, hostActivity)
                     // verify results sent to the new app activity
@@ -1170,8 +1043,6 @@ class ProjectedPermissionsResultContractTest {
                                     val request = getLastRequestedPermission(hostActivity)!!
                                     assertThat(request.requestedPermissions)
                                         .isEqualTo(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
-                                    assertThat(request.deviceId)
-                                        .isEqualTo(Context.DEVICE_ID_DEFAULT)
                                     // simulate the user accepting the request
                                     acceptPermissionsRequestFor(request, hostActivity)
                                     // verify results sent to the new app activity

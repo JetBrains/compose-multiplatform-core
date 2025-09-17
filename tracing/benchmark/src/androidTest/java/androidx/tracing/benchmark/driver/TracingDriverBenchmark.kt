@@ -27,6 +27,7 @@ import androidx.tracing.benchmark.BASIC_STRING
 import androidx.tracing.benchmark.PROCESS_NAME
 import androidx.tracing.driver.TRACE_PACKET_BUFFER_SIZE
 import androidx.tracing.driver.TraceContext
+import androidx.tracing.driver.TraceEventScope
 import androidx.tracing.driver.wire.TraceSink
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertEquals
@@ -81,6 +82,24 @@ class TracingDriverBenchmark {
         benchmarkRule.measureRepeated {
             repeat(4) {
                 repeat(8) { process.trace(BASIC_STRING) {} }
+                // 32 total events (or 16 begin/end pairs) will dispatch
+                // instead, we reset after 8 begin/end pairs so we only measure
+                // producer write cost without sending to sink
+                process.resetFillCount()
+            }
+        }
+    }
+
+    @Test
+    fun beginEnd_basic32_writeOnly_withCategory() {
+        val metadataBlock: TraceEventScope.() -> Unit = { addCategory("category") }
+        benchmarkRule.measureRepeated {
+            repeat(4) {
+                repeat(8) {
+                    process.trace(name = BASIC_STRING, metadataBlock = metadataBlock) {
+                        // does nothing.
+                    }
+                }
                 // 32 total events (or 16 begin/end pairs) will dispatch
                 // instead, we reset after 8 begin/end pairs so we only measure
                 // producer write cost without sending to sink

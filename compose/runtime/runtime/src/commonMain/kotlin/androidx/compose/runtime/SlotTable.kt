@@ -1367,6 +1367,13 @@ internal class SlotWriter(
         return if (groups.hasObjectKey(address)) slots[groups.objectKeyIndex(address)] else null
     }
 
+    fun isValid(index: Int): Boolean = groupIndexToAddress(index) * Group_Fields_Size < groups.size
+
+    fun hasObjectKey(index: Int): Boolean {
+        val address = groupIndexToAddress(index)
+        return groups.hasObjectKey(address)
+    }
+
     /** Return the size of the group at [index]. */
     fun groupSize(index: Int): Int = groups.groupSize(groupIndexToAddress(index))
 

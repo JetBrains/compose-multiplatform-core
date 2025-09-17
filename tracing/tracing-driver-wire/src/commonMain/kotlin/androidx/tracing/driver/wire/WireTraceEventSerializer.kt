@@ -171,14 +171,8 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                 scratchTrackEvent.name = event.name
                 scratchTrackEvent.counter_value = event.counterLongValue
                 scratchTrackEvent.double_counter_value = event.counterDoubleValue
-
-                // While it would be simpler to simply always set this.flow_ids, we avoid it in the
-                // common cases when it does need to be called, since it's already up to date, as
-                // Wire will deep copy the list with `immutableCopyOf(...)`. This is only necessary
-                // if either it was already non-empty, or if it's becoming non-empty
-                if (scratchTrackEvent.flow_ids.isNotEmpty() || event.flowIds.isNotEmpty()) {
-                    scratchTrackEvent.flow_ids = event.flowIds
-                }
+                scratchTrackEvent.flow_ids = event.flowIds
+                scratchTrackEvent.categories = event.categories
                 // Debug annotations
                 var index = -1
                 event.forEachMetadataEntry { metadataEntry ->

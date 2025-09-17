@@ -347,6 +347,7 @@ public final class Camera2CameraControlImplDeviceTest {
     @Test
     @SdkSuppress(minSdkVersion = 28)
     public void enableExternalFlashAeMode_aeModeSetAndRequestUpdated() throws InterruptedException {
+        // Arrange: Check if device supports this test and set up test resources.
         setUp(CameraSelector.LENS_FACING_FRONT);
 
         assumeThat("CONTROL_AE_MODE_ON_EXTERNAL_FLASH not supported",
@@ -354,13 +355,23 @@ public final class Camera2CameraControlImplDeviceTest {
                 equalTo(CONTROL_AE_MODE_ON_EXTERNAL_FLASH));
         // Other flash modes may override the external flash AE mode
         mCamera2CameraControlImpl.setFlashMode(ImageCapture.FLASH_MODE_SCREEN);
+
+        // Await and consume all callback events so far.
+        HandlerUtil.waitForLooperToIdle(mHandler);
         Mockito.reset(mControlUpdateCallback);
 
+        // Act: Enable external flash AE mode.
         mCamera2CameraControlImpl.getFocusMeteringControl().enableExternalFlashAeMode(true);
 
-        HandlerUtil.waitForLooperToIdle(mHandler);
+        // Assert: Verify onCameraControlUpdateSessionConfig is invoked and the external flash AE
+        // mode is set in the updated session config.
 
+        // Ensure onCameraControlUpdateSessionConfig is invoked after awaiting looper.
+        HandlerUtil.waitForLooperToIdle(mHandler);
         verify(mControlUpdateCallback, times(1)).onCameraControlUpdateSessionConfig();
+
+        // The session config should be the updated one once onCameraControlUpdateSessionConfig is
+        // invoked.
         SessionConfig sessionConfig = mCamera2CameraControlImpl.getSessionConfig();
         Camera2ImplConfig camera2Config = new Camera2ImplConfig(
                 sessionConfig.getImplementationOptions());
@@ -372,22 +383,33 @@ public final class Camera2CameraControlImplDeviceTest {
     @SdkSuppress(minSdkVersion = 28)
     public void disableExternalFlashAeMode_aeModeUnsetAndRequestUpdated()
             throws InterruptedException {
+        // Arrange: Check if device supports this test and enable external flash AE mode first.
         setUp(CameraSelector.LENS_FACING_FRONT);
 
         assumeThat("CONTROL_AE_MODE_ON_EXTERNAL_FLASH not supported",
                 mCamera2CameraControlImpl.getSupportedAeMode(CONTROL_AE_MODE_ON_EXTERNAL_FLASH),
                 equalTo(CONTROL_AE_MODE_ON_EXTERNAL_FLASH));
+
         mCamera2CameraControlImpl.setFlashMode(ImageCapture.FLASH_MODE_SCREEN);
-        Mockito.reset(mControlUpdateCallback);
 
         mCamera2CameraControlImpl.getFocusMeteringControl().enableExternalFlashAeMode(true);
-        HandlerUtil.waitForLooperToIdle(mHandler);
 
+        // Await and consume all callback events so far.
+        HandlerUtil.waitForLooperToIdle(mHandler);
+        Mockito.reset(mControlUpdateCallback);
+
+        // Act: Disable external flash AE mode.
         mCamera2CameraControlImpl.getFocusMeteringControl().enableExternalFlashAeMode(false);
 
-        HandlerUtil.waitForLooperToIdle(mHandler);
+        // Assert: Verify onCameraControlUpdateSessionConfig is invoked and the external flash AE
+        // mode is unset in the updated session config.
 
-        verify(mControlUpdateCallback, times(2)).onCameraControlUpdateSessionConfig();
+        // Ensure onCameraControlUpdateSessionConfig is invoked after awaiting looper.
+        HandlerUtil.waitForLooperToIdle(mHandler);
+        verify(mControlUpdateCallback, times(1)).onCameraControlUpdateSessionConfig();
+
+        // The session config should be the updated one once onCameraControlUpdateSessionConfig is
+        // invoked.
         SessionConfig sessionConfig = mCamera2CameraControlImpl.getSessionConfig();
         Camera2ImplConfig camera2Config = new Camera2ImplConfig(
                 sessionConfig.getImplementationOptions());

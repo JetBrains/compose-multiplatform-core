@@ -18,6 +18,7 @@ package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.ConfigMode
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -48,6 +49,19 @@ public interface JxrRuntime {
      * method.
      */
     public fun configure(config: Config) {}
+
+    /**
+     * Checks whether the provided mode is supported by this runtime for the current device.
+     *
+     * @param configMode the [ConfigMode] mode to check.
+     * @return true if supported, false if not.
+     */
+    @SuppressWarnings("UnavailableSymbol")
+    public fun isSupported(
+        @SuppressWarnings("HiddenTypeParameter") configMode: ConfigMode
+    ): Boolean {
+        return false
+    }
 
     /**
      * Updates the state of the system. The call is blocking and will return once the underlying

@@ -32,6 +32,7 @@ import android.webkit.WebView;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
+import androidx.webkit.BackForwardCacheSettings;
 import androidx.webkit.Navigation;
 import androidx.webkit.Page;
 import androidx.webkit.PrerenderOperationCallback;
@@ -674,6 +675,16 @@ public class WebViewFeatureInternal {
     public static final ApiFeature.NoFramework BACK_FORWARD_CACHE =
             new ApiFeature.NoFramework(WebViewFeature.BACK_FORWARD_CACHE,
                     Features.BACK_FORWARD_CACHE);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link WebSettingsCompat#setBackForwardCacheSettings(WebSettings, BackForwardCacheSettings)}
+     * {@link WebSettingsCompat#getBackForwardCacheSettings(WebSettings)}
+     */
+    public static final ApiFeature.NoFramework BACK_FORWARD_CACHE_SETTINGS =
+            new ApiFeature.NoFramework(WebViewFeature.BACK_FORWARD_CACHE_SETTINGS,
+                    Features.BACK_FORWARD_CACHE_SETTINGS);
 
 
     public static final ApiFeature.NoFramework DELETE_BROWSING_DATA = new ApiFeature.NoFramework(

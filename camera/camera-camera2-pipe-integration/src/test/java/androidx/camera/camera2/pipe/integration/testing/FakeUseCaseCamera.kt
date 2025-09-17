@@ -253,6 +253,8 @@ open class FakeUseCaseCameraRequestControl(
 class FakeUseCaseCamera(
     override var requestControl: UseCaseCameraRequestControl = FakeUseCaseCameraRequestControl()
 ) : UseCaseCamera {
+    override fun start() {}
+
     override suspend fun getCameraCapturePipeline(
         captureMode: Int,
         flashMode: Int,

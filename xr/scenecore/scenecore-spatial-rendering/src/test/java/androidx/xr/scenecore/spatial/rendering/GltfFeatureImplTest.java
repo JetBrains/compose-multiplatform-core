@@ -89,8 +89,7 @@ public class GltfFeatureImplTest {
         mGltfFeature.dispose();
     }
 
-    private GltfFeature createGltfFeature()
-            throws ExecutionException, InterruptedException {
+    private GltfFeature createGltfFeature() throws ExecutionException, InterruptedException {
         long modelToken = -1;
         ListenableFuture<Long> modelTokenFuture =
                 mFakeImpressApi.loadGltfAsset("FakeGltfAsset.glb");
@@ -99,14 +98,11 @@ public class GltfFeatureImplTest {
         mModelImpressNode =
                 mFakeImpressApi.instanceGltfModel(modelResource.getExtensionModelToken());
         when(mMockImpressApi.createImpressNode()).thenReturn(mFakeImpressApi.createImpressNode());
-        when(mMockImpressApi.instanceGltfModel(modelResource.getExtensionModelToken())).thenReturn(
-                mModelImpressNode);
+        when(mMockImpressApi.instanceGltfModel(modelResource.getExtensionModelToken()))
+                .thenReturn(mModelImpressNode);
 
         return new GltfFeatureImpl(
-                modelResource,
-                mMockImpressApi,
-                mSplitEngineSubspaceManager,
-                mXrExtensions);
+                modelResource, mMockImpressApi, mSplitEngineSubspaceManager, mXrExtensions);
     }
 
     @Nullable
@@ -125,9 +121,9 @@ public class GltfFeatureImplTest {
     @Test
     public void startAnimation_startsAnimation() {
         String animationName = "test_animation";
-        when(mMockImpressApi.animateGltfModel(
-                mModelImpressNode, animationName, true)).thenReturn(
-                mFakeImpressApi.animateGltfModel(mModelImpressNode, animationName, true));
+        when(mMockImpressApi.animateGltfModel(mModelImpressNode, animationName, true))
+                .thenReturn(
+                        mFakeImpressApi.animateGltfModel(mModelImpressNode, animationName, true));
         mGltfFeature.startAnimation(/* looping= */ true, animationName, mExecutor);
 
         assertThat(mGltfFeature.getAnimationState()).isEqualTo(GltfEntity.AnimationState.PLAYING);
@@ -137,9 +133,9 @@ public class GltfFeatureImplTest {
     @Test
     public void stopAnimation_stopsAnimation() {
         String animationName = "test_animation";
-        when(mMockImpressApi.animateGltfModel(
-                mModelImpressNode, animationName, true)).thenReturn(
-                mFakeImpressApi.animateGltfModel(mModelImpressNode, animationName, true));
+        when(mMockImpressApi.animateGltfModel(mModelImpressNode, animationName, true))
+                .thenReturn(
+                        mFakeImpressApi.animateGltfModel(mModelImpressNode, animationName, true));
         mGltfFeature.startAnimation(/* looping= */ true, animationName, mExecutor);
 
         assertThat(mGltfFeature.getAnimationState()).isEqualTo(GltfEntity.AnimationState.PLAYING);
@@ -152,17 +148,21 @@ public class GltfFeatureImplTest {
     }
 
     @Test
-    public void setMaterialOverrideGltfEntity_materialOverridesMesh() throws Exception {
+    public void setMaterialOverrideGltfEntity_materialOverridesNode() throws Exception {
         MaterialResource material = createWaterMaterial(/* isAlphaMapVersion= */ false);
         long nativeHandle = ((Material) material).getNativeHandle();
 
         assertThat(material).isNotNull();
 
-        String meshName = "fake_mesh_name";
-        mGltfFeature.setMaterialOverride(material, meshName);
-        mFakeImpressApi.setMaterialOverride(mModelImpressNode, nativeHandle, meshName);
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
 
-        verify(mMockImpressApi).setMaterialOverride(mModelImpressNode, nativeHandle, meshName);
+        mGltfFeature.setMaterialOverride(material, nodeName, primitiveIndex);
+        mFakeImpressApi.setMaterialOverride(
+                mModelImpressNode, nativeHandle, nodeName, primitiveIndex);
+
+        verify(mMockImpressApi)
+                .setMaterialOverride(mModelImpressNode, nativeHandle, nodeName, primitiveIndex);
         assertThat(
                         mFakeImpressApi.getImpressNodes().keySet().stream()
                                 .filter(
@@ -173,6 +173,22 @@ public class GltfFeatureImplTest {
                                                                         .Type.WATER)
                                 .toArray())
                 .hasLength(1);
+    }
+
+    @Test
+    public void clearMaterialOverrideGltfEntity_clearsMaterialOverride() throws Exception {
+        MaterialResource material = createWaterMaterial(/* isAlphaMapVersion= */ false);
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
+
+        mGltfFeature.setMaterialOverride(material, nodeName, primitiveIndex);
+        mGltfFeature.clearMaterialOverride(nodeName, primitiveIndex);
+
+        assertThat(
+                        mFakeImpressApi.getImpressNodes().keySet().stream()
+                                .filter(node -> node.getMaterialOverride() != null)
+                                .toArray())
+                .isEmpty();
     }
 
     // TODO: b/426594104 provide a fake SplitEngineSubspaceManager and cover the dispose() method

@@ -37,6 +37,7 @@ import androidx.xr.scenecore.internal.RenderingEntityFactory;
 import androidx.xr.scenecore.internal.SceneRuntime;
 import androidx.xr.scenecore.internal.SubspaceNodeEntity;
 import androidx.xr.scenecore.internal.SurfaceEntity;
+import androidx.xr.scenecore.internal.TextureResource;
 import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
@@ -130,6 +131,16 @@ public class SpatialRenderingRuntimeTest {
                 mSplitEngineSubspaceManager, mXrExtensions);
         return mRenderingEntityFactory.createGltfEntity(feature, pose,
                 mSceneRuntime.getActivitySpace());
+    }
+
+    TextureResource loadTexture() throws Exception {
+        ListenableFuture<TextureResource> textureFuture =
+                mRenderingRuntime.loadTexture("FakeTexture.png");
+        assertThat(textureFuture).isNotNull();
+        // This resolves the transformation of the Future from a SplitEngine token to the JXR
+        // Texture.  This is a hidden detail from the API surface's perspective.
+        mFakeExecutor.runAll();
+        return textureFuture.get();
     }
 
     MaterialResource createWaterMaterial() throws Exception {
@@ -252,6 +263,11 @@ public class SpatialRenderingRuntimeTest {
         Surface surface = surfaceEntityQuad.getSurface();
 
         assertThat(surface).isNotNull();
+    }
+
+    @Test
+    public void loadTexture_returnsTexture() throws Exception {
+        assertThat(loadTexture()).isNotNull();
     }
 
     @Test

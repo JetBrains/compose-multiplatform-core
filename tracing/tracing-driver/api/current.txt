@@ -103,21 +103,25 @@ package androidx.tracing.driver {
   @SuppressCompatibility @androidx.tracing.driver.DelicateTracingApi public final class TraceEvent {
     ctor public TraceEvent();
     method public void reset();
+    property public java.util.List<java.lang.String> categories;
     property public Double? counterDoubleValue;
     property public Long? counterLongValue;
     property public java.util.List<java.lang.Long> flowIds;
+    property public int lastCategoryIndex;
+    property public int lastMetadataEntryIndex;
     property public java.util.List<androidx.tracing.driver.MetadataEntry> metadataEntries;
-    property public int metadataEntryIndex;
     property public String? name;
     property public long timestamp;
     property public androidx.tracing.driver.TrackDescriptor? trackDescriptor;
     property public long trackUuid;
     property public int type;
+    field public java.util.List<java.lang.String> categories;
     field public Double? counterDoubleValue;
     field public Long? counterLongValue;
     field public java.util.List<java.lang.Long> flowIds;
+    field public int lastCategoryIndex;
+    field public int lastMetadataEntryIndex;
     field public java.util.List<androidx.tracing.driver.MetadataEntry> metadataEntries;
-    field public int metadataEntryIndex;
     field public String? name;
     field public long timestamp;
     field public androidx.tracing.driver.TrackDescriptor? trackDescriptor;
@@ -125,17 +129,12 @@ package androidx.tracing.driver {
     field public int type;
   }
 
-  @kotlin.jvm.JvmInline public final value class TraceEventScope {
-    method @KotlinOnly public void addMetadataEntry(String name, boolean value);
-    method @KotlinOnly public void addMetadataEntry(String name, double value);
-    method @KotlinOnly public void addMetadataEntry(String name, String value);
-    method @KotlinOnly public void addMetadataEntry(String name, long value);
-    method @BytecodeOnly public static void addMetadataEntry-impl(androidx.tracing.driver.TraceEvent!, String, boolean);
-    method @BytecodeOnly public static void addMetadataEntry-impl(androidx.tracing.driver.TraceEvent!, String, double);
-    method @BytecodeOnly public static void addMetadataEntry-impl(androidx.tracing.driver.TraceEvent!, String, String);
-    method @BytecodeOnly public static void addMetadataEntry-impl(androidx.tracing.driver.TraceEvent!, String, long);
-    method @BytecodeOnly public static androidx.tracing.driver.TraceEventScope! box-impl(androidx.tracing.driver.TraceEvent!);
-    method @BytecodeOnly public androidx.tracing.driver.TraceEvent! unbox-impl();
+  public final class TraceEventScope {
+    method public void addCategory(String name);
+    method public void addMetadataEntry(String name, boolean value);
+    method public void addMetadataEntry(String name, double value);
+    method public void addMetadataEntry(String name, String value);
+    method public void addMetadataEntry(String name, long value);
   }
 
   public abstract class TraceSink implements java.lang.AutoCloseable {

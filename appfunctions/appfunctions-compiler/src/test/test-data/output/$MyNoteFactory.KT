@@ -9,10 +9,11 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$CreateNoteFunction$Data$MyNoteFactory` : AppFunctionSerializableFactory<CreateNoteFunction.Data.MyNote> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): CreateNoteFunction.Data.MyNote {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.CreateNoteFunction${'$'}Data${'$'}MyNote")
     val myAttachmentFactory = `$MyAttachmentFactory`()
 
-    val id = checkNotNull(appFunctionData.getStringOrNull("id"))
-    val attachmentData = checkNotNull(appFunctionData.getAppFunctionData("attachment"))
+    val id = checkNotNull(appFunctionDataWithSpec.getStringOrNull("id"))
+    val attachmentData = checkNotNull(appFunctionDataWithSpec.getAppFunctionData("attachment"))
     val attachment = myAttachmentFactory.fromAppFunctionData(attachmentData)
 
     val resultMyNote = CreateNoteFunction.Data.MyNote(id, attachment)
@@ -23,7 +24,7 @@ public class `$CreateNoteFunction$Data$MyNoteFactory` : AppFunctionSerializableF
     val myNote_appFunctionSerializable = appFunctionSerializable
     val myAttachmentFactory = `$MyAttachmentFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.CreateNoteFunction${'$'}Data${'$'}MyNote")
+    val builder = getAppFunctionDataBuilder("com.testdata.CreateNoteFunction${'$'}Data${'$'}MyNote")
     val id = myNote_appFunctionSerializable.id
     builder.setString("id", id)
     val attachment = myNote_appFunctionSerializable.attachment

@@ -669,12 +669,40 @@ public class ResizableComponentImplTest {
         assertThat(entity.addComponent(resizableComponent)).isTrue();
         ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 
-        resizableComponent.setFixedAspectRatio(2.0f);
-        assertThat(options.getFixedAspectRatio()).isEqualTo(2.0f);
-        resizableComponent.setFixedAspectRatio(0.0f);
+        // If no size was set the default aspect ratio will be 1.
+        resizableComponent.setFixedAspectRatioEnabled(true);
+        assertThat(options.getFixedAspectRatio()).isEqualTo(1.0f);
+        // Updating the size will update the aspect ratio if enabled.
+        resizableComponent.setSize(new Dimensions(1f, 2f, 1f));
+        assertThat(options.getFixedAspectRatio()).isEqualTo(0.5f);
+        // Disabling the aspect ratio will set the fixed aspect ratio to 0.
+        resizableComponent.setFixedAspectRatioEnabled(false);
         assertThat(options.getFixedAspectRatio()).isEqualTo(0.0f);
-        resizableComponent.setFixedAspectRatio(-1.0f);
-        assertThat(options.getFixedAspectRatio()).isEqualTo(-1.0f);
+        // Updating the size will not update the aspect ratio if disabled.
+        resizableComponent.setSize(new Dimensions(3f, 1f, 1f));
+        assertThat(options.getFixedAspectRatio()).isEqualTo(0.0f);
+        // Enabling it will update the aspect ratio based on the current size.
+        resizableComponent.setFixedAspectRatioEnabled(true);
+        assertThat(options.getFixedAspectRatio()).isEqualTo(3.0f);
+    }
+
+    @Test
+    public void setFixedAspectRatioOnResizableComponent_setsPanelAspectRatio() {
+        Dimensions panelDimensions = new Dimensions(2.0f, 1.0f, 0.0f);
+        PanelEntityImpl entity =
+                (PanelEntityImpl) createTestPanelEntity(new Pose(), panelDimensions);
+        assertThat(entity).isNotNull();
+        ResizableComponentImpl resizableComponent =
+                new ResizableComponentImpl(
+                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
+        assertThat(resizableComponent).isNotNull();
+        resizableComponent.setFixedAspectRatioEnabled(true);
+
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+        assertThat(options.getFixedAspectRatio())
+                .isEqualTo(panelDimensions.width / panelDimensions.height);
     }
 
     @Test

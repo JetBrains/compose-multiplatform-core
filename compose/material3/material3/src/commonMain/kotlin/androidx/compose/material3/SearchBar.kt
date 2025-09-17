@@ -61,6 +61,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
@@ -487,7 +488,14 @@ fun ExpandedFullScreenSearchBar(
     properties: DialogProperties = DialogProperties(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (!state.isExpanded) return
+    if (
+        !state.isExpanded
+        // Workaround for b/442852007.
+        // Don't remove the window until the soft keyboard has finished its hide animation.
+        && !isImeVisible()
+    ) {
+        return
+    }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -569,7 +577,14 @@ fun ExpandedDockedSearchBar(
     properties: PopupProperties = PopupProperties(focusable = true, clippingEnabled = false),
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (!state.isExpanded) return
+    if (
+        !state.isExpanded
+        // Workaround for b/442852007.
+        // Don't remove the window until the soft keyboard has finished its hide animation.
+        && !isImeVisible()
+    ) {
+        return
+    }
 
     val positionProvider =
         remember(state) {
@@ -901,12 +916,12 @@ private constructor(
 
     /** Animate the search bar to its expanded state. */
     suspend fun animateToExpanded() {
-        animatable.animateTo(targetValue = 1f, animationSpec = animationSpecForExpand)
+        animatable.animateTo(targetValue = Expanded, animationSpec = animationSpecForExpand)
     }
 
     /** Animate the search bar to its collapsed state. */
     suspend fun animateToCollapsed() {
-        animatable.animateTo(targetValue = 0f, animationSpec = animationSpecForCollapse)
+        animatable.animateTo(targetValue = Collapsed, animationSpec = animationSpecForCollapse)
     }
 
     /**
@@ -2902,6 +2917,15 @@ private val UnspecifiedTextFieldColors: TextFieldColors =
 
 // TODO: Replace to `WindowInfo.containerSize` once available
 @Composable internal expect fun getWindowContainerHeight(): Dp
+
+// WindowInsets.isImeVisible is experimental (and Android-only)
+@Composable
+private fun isImeVisible(): Boolean {
+    val density = LocalDensity.current
+    val ime = WindowInsets.ime
+    val isImeVisible = remember(ime, density) { derivedStateOf { ime.getBottom(density) > 0 } }
+    return isImeVisible.value
+}
 
 private const val LayoutIdInputField = "InputField"
 private const val LayoutIdSurface = "Surface"

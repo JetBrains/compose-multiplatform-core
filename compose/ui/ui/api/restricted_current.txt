@@ -3473,7 +3473,7 @@ package androidx.compose.ui.node {
     method @BytecodeOnly public static void dispatchOnScrollChanged-Uv8p0NA(androidx.compose.ui.node.DelegatableNode, long);
     method public static androidx.compose.ui.layout.BeyondBoundsLayout? findNearestBeyondBoundsLayoutAncestor(androidx.compose.ui.node.DelegatableNode);
     method public static void invalidateDrawForSubtree(androidx.compose.ui.node.DelegatableNode);
-    method public static void invalidateLayoutForSubtree(androidx.compose.ui.node.DelegatableNode);
+    method public static void invalidateMeasurementForSubtree(androidx.compose.ui.node.DelegatableNode);
     method public static void invalidateSubtree(androidx.compose.ui.node.DelegatableNode);
     method public static void requestAutofill(androidx.compose.ui.node.DelegatableNode);
     method public static androidx.compose.ui.unit.Density requireDensity(androidx.compose.ui.node.DelegatableNode);

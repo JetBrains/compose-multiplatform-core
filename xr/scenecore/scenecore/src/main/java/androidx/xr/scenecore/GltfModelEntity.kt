@@ -18,7 +18,6 @@ package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.internal.GltfEntity as RtGltfEntity
@@ -160,21 +159,45 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     }
 
     /**
-     * Sets a material override for a mesh in the glTF model.
+     * Sets a material override for a primitive of a node within the glTF graph.
      *
-     * This method must be called from the main thread.
-     * https://developer.android.com/guide/components/processes-and-threads
+     * This function searches for the first node in the glTF scene graph with a matching [nodeName].
+     * The override is then applied to a primitive of that node at the specified [primitiveIndex].
      *
-     * If the material is not created or the mesh name is not found in the glTF model, this method
-     * will throw an IllegalStateException.
-     *
-     * @param material The material to use for the mesh.
-     * @param meshName The name of the mesh to use the material for.
+     * @param material The new [Material] to apply to the primitive.
+     * @param nodeName The name of the node as defined in the glTF graph, containing the primitive
+     *   to override.
+     * @param primitiveIndex The zero-based index for the primitive of the specified node, as
+     *   defined in the glTF graph. Default is the first primitive of that node.
+     * @throws IllegalArgumentException if the provided [material] is invalid or if no node with the
+     *   given [nodeName] is found in the model.
+     * @throws IndexOutOfBoundsException if the [primitiveIndex] is out of bounds.
      */
+    @JvmOverloads
     @MainThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun setMaterialOverride(material: Material, meshName: String) {
+    public fun setMaterialOverride(material: Material, nodeName: String, primitiveIndex: Int = 0) {
         checkNotDisposed()
-        rtEntity!!.setMaterialOverride(material.material!!, meshName)
+        rtEntity!!.setMaterialOverride(material.material!!, nodeName, primitiveIndex)
+    }
+
+    /**
+     * Clears a previously set material override for a specific primitive of a node within the glTF
+     * graph.
+     *
+     * If no override was previously set for that primitive, this call has no effect.
+     *
+     * @param nodeName The name of the node containing the primitive whose material override will be
+     *   cleared.
+     * @param primitiveIndex The zero-based index for the primitive of the specified node, as
+     *   defined in the glTF graph. Default is the first primitive of that node.
+     * @throws IllegalArgumentException if the provided [material] is invalid or if no node with the
+     *   given [nodeName] is found in the model.
+     * @throws IndexOutOfBoundsException if the [primitiveIndex] is out of bounds.
+     */
+    @JvmOverloads
+    @MainThread
+    public fun clearMaterialOverride(nodeName: String, primitiveIndex: Int = 0) {
+        checkNotDisposed()
+        rtEntity!!.clearMaterialOverride(nodeName, primitiveIndex)
     }
 }

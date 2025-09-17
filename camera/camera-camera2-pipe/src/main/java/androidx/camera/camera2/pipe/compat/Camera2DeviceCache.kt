@@ -43,7 +43,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.onFailure
@@ -53,7 +52,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 @Singleton
@@ -96,7 +94,6 @@ constructor(
 
         cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
             scope.cancel()
-            runBlocking { scope.coroutineContext[Job]?.cancelAndJoin() }
         }
     }
 
@@ -298,6 +295,13 @@ constructor(
                 ids
             } catch (e: CameraAccessException) {
                 Log.warn(e) { "Failed to query CameraManager#getCameraIdList!" }
+                return null
+            } catch (e: ArrayIndexOutOfBoundsException) {
+                // getCameraIdList() can throw ArrayIndexOutOfBoundsException: b/443332525
+                Log.warn(e) {
+                    "Failed to query CameraManager#getCameraIdList!" +
+                        "Unexpected ArrayIndexOutOfBoundsException thrown by framework."
+                }
                 return null
             }
         val cameraIds = cameraIdArray.map { CameraId(it) }

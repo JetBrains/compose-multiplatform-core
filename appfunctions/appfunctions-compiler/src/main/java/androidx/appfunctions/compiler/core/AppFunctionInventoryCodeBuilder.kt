@@ -38,6 +38,7 @@ import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetada
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.APP_FUNCTION_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.COMPONENT_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.FUNCTION_ID_TO_METADATA_MAP_PROPERTY_NAME
+import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.INVENTORY_COMPONENTS_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.PARAMETER_METADATA_LIST_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.RESPONSE_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.SCHEMA_METADATA_PROPERTY_NAME
@@ -84,6 +85,15 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
             inventoryClassBuilder.addType(functionMetadataObjectClassBuilder.build())
         }
         addFunctionIdToMetadataMapProperty(inventoryClassBuilder, appFunctionMetadataList)
+        addComponentsMetadataProperty(
+            inventoryClassBuilder,
+            AppFunctionComponentsMetadata(
+                dataTypes =
+                    appFunctionMetadataList
+                        .map { it.components.dataTypes }
+                        .reduce { acc, map -> acc + map }
+            ),
+        )
     }
 
     private fun addPropertyForAppFunctionMetadata(
@@ -932,6 +942,40 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     null,
                 )
         }
+    }
+
+    private fun addComponentsMetadataProperty(
+        inventoryClassBuilder: TypeSpec.Builder,
+        componentsMetadata: AppFunctionComponentsMetadata,
+    ) {
+        val dataTypesMapPropertyName = INVENTORY_COMPONENTS_METADATA_PROPERTY_NAME + "DataTypesMap"
+        addPropertyForComponentsDataTypes(
+            propertyName = dataTypesMapPropertyName,
+            functionMetadataObjectClassBuilder = inventoryClassBuilder,
+            dataTypes = componentsMetadata.dataTypes,
+        )
+        inventoryClassBuilder.addProperty(
+            PropertySpec.builder(
+                    INVENTORY_COMPONENTS_METADATA_PROPERTY_NAME,
+                    IntrospectionHelper.APP_FUNCTION_COMPONENTS_METADATA_CLASS,
+                )
+                .addModifiers(KModifier.OVERRIDE)
+                .initializer(
+                    buildCodeBlock {
+                        addStatement(
+                            """
+                            %T(
+                                dataTypes = %L
+                            )
+                            """
+                                .trimIndent(),
+                            IntrospectionHelper.APP_FUNCTION_COMPONENTS_METADATA_CLASS,
+                            dataTypesMapPropertyName,
+                        )
+                    }
+                )
+                .build()
+        )
     }
 
     /** Creates the `functionIdToMetadataMap` property of the `AppFunctionInventory`. */

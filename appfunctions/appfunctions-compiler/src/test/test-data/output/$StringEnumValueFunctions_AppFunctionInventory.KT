@@ -1,5 +1,6 @@
 package com.testdata
 
+import androidx.appfunctions.`internal`.AppFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
@@ -10,7 +11,6 @@ import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
-import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
 import kotlin.String
 import kotlin.collections.List
@@ -27,6 +27,40 @@ public class `$StringEnumValueFunctions_AppFunctionInventory` : AppFunctionInven
     "com.testdata.StringEnumValueFunctions#stringEnumReturnFunction" to ComTestdataStringEnumValueFunctionsStringEnumReturnFunctionMetadataObject.APP_FUNCTION_METADATA,
     "com.testdata.StringEnumValueFunctions#stringEnumSerializableFunction" to ComTestdataStringEnumValueFunctionsStringEnumSerializableFunctionMetadataObject.APP_FUNCTION_METADATA,
   )
+
+  private val COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_STRINGPROP:
+      AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = setOf("ON", "OFF"),
+      )
+
+  private val COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
+      Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "stringProp" to COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_STRINGPROP,
+  )
+
+  private val COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
+      List<String> = listOf(
+    "stringProp",
+  )
+
+  private val COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE:
+      AppFunctionObjectTypeMetadata = AppFunctionObjectTypeMetadata(
+          properties = COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
+          required = COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
+          qualifiedName = "com.testdata.StringEnumPropSerializable",
+          isNullable = true,
+          description = ""
+      )
+
+  private val componentsMetadataDataTypesMap: Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "com.testdata.StringEnumPropSerializable" to COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE,
+    )
+
+  override val componentsMetadata: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
+          dataTypes = componentsMetadataDataTypesMap
+      )
 
   private object ComTestdataStringEnumValueFunctionsStringEnumParamFunctionMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null

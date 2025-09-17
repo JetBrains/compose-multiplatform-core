@@ -16,6 +16,8 @@
 
 package androidx.appfunctions.service.internal
 
+import androidx.appfunctions.internal.AggregatedAppFunctionInventory
+import androidx.appfunctions.internal.AppFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
@@ -80,6 +82,8 @@ class AggregatedAppFunctionInventoryTest {
                         components = AppFunctionComponentsMetadata(),
                     )
             )
+        override val componentsMetadata: AppFunctionComponentsMetadata
+            get() = AppFunctionComponentsMetadata()
     }
 
     private class Inventory2 : AppFunctionInventory {
@@ -98,5 +102,7 @@ class AggregatedAppFunctionInventoryTest {
                         components = AppFunctionComponentsMetadata(),
                     )
             )
+        override val componentsMetadata: AppFunctionComponentsMetadata
+            get() = AppFunctionComponentsMetadata()
     }
 }

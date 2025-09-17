@@ -27,6 +27,8 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.RequestTemplate
+import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
@@ -57,6 +59,7 @@ import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.testing.impl.FakeCameraCapturePipeline
+import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -189,6 +192,29 @@ class TestUseCaseCamera(
                     )
                 }
             }
+
+    override fun start(): Unit =
+        with(useCaseCameraGraphConfig) {
+            // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and
+            // we will close the CameraGraph when that happens, and we cannot start a closed
+            // CameraGraph.
+            graph.start()
+
+            debug { "Setting up Surfaces with UseCaseSurfaceManager" }
+            if (sessionConfigAdapter.isSessionConfigValid()) {
+                useCaseSurfaceManager
+                    .setupAsync(graph, sessionConfigAdapter, surfaceToStreamMap)
+                    .invokeOnCompletion { throwable ->
+                        // Only show logs for error cases, ignore CancellationException since the
+                        // task could be cancelled by UseCaseSurfaceManager#stopAsync().
+                        if (throwable != null && throwable !is CancellationException) {
+                            Log.error(throwable) { "Surface setup error!" }
+                        }
+                    }
+            } else {
+                Log.error { "Unable to create capture session due to conflicting configurations" }
+            }
+        }
 
     override suspend fun getCameraCapturePipeline(
         captureMode: Int,

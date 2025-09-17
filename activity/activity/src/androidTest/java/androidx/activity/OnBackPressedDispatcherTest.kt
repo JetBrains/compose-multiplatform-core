@@ -19,7 +19,7 @@ package androidx.activity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.navigationevent.DirectNavigationEventInput
-import androidx.navigationevent.testing.TestNavigationEventCallback
+import androidx.navigationevent.testing.TestNavigationEventHandler
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -512,20 +512,20 @@ class OnBackPressedHandlerTest {
     @UiThreadTest
     @Test
     fun testBothCallbacksAdded() {
-        val callback1 = TestNavigationEventCallback()
-        dispatcher.eventDispatcher.addCallback(callback1)
+        val handler = TestNavigationEventHandler()
+        dispatcher.eventDispatcher.addHandler(handler)
 
-        val callback2 = CountingOnBackPressedCallback()
-        dispatcher.addCallback(callback2)
+        val callback = CountingOnBackPressedCallback()
+        dispatcher.addCallback(callback)
 
         dispatcher.onBackPressed()
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should not be incremented as the callback is not at the top")
-            .that(callback1.onBackCompletedInvocations)
+            .that(handler.onBackCompletedInvocations)
             .isEqualTo(0)
         assertWithMessage("Count should be incremented after each onBackPressed")
-            .that(callback2.count)
+            .that(callback.count)
             .isEqualTo(2)
     }
 
@@ -584,14 +584,14 @@ class OnBackPressedHandlerTest {
 
     @UiThreadTest
     @Test
-    fun testOnBackPressedDispatchesToNavigationEventCallback() {
-        val callback = TestNavigationEventCallback()
-        dispatcher.eventDispatcher.addCallback(callback)
+    fun testOnBackPressedDispatchesToNavigationEventHandler() {
+        val handler = TestNavigationEventHandler()
+        dispatcher.eventDispatcher.addHandler(handler)
 
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should be incremented after onBackPressed")
-            .that(callback.onBackCompletedInvocations)
+            .that(handler.onBackCompletedInvocations)
             .isEqualTo(1)
     }
 

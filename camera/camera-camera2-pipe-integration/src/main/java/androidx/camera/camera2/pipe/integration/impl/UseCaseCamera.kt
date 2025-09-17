@@ -20,6 +20,7 @@ import android.hardware.camera2.CameraDevice
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.GraphState.GraphStateError
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
+import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
@@ -30,6 +31,7 @@ import androidx.camera.core.imagecapture.CameraCapturePipeline
 import androidx.camera.core.impl.Config
 import dagger.Binds
 import dagger.Module
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
@@ -45,6 +47,8 @@ internal const val defaultTemplate = CameraDevice.TEMPLATE_PREVIEW
 public interface UseCaseCamera {
     // RequestControl of the UseCaseCamera
     public val requestControl: UseCaseCameraRequestControl
+
+    public fun start()
 
     public suspend fun getCameraCapturePipeline(
         @ImageCapture.CaptureMode captureMode: Int,
@@ -95,6 +99,29 @@ constructor(
             }
         }
     }
+
+    override fun start(): Unit =
+        with(useCaseGraphConfig) {
+            // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and
+            // we will close the CameraGraph when that happens, and we cannot start a closed
+            // CameraGraph.
+            graph.start()
+
+            debug { "Setting up Surfaces with UseCaseSurfaceManager" }
+            if (sessionConfigAdapter.isSessionConfigValid()) {
+                useCaseSurfaceManager
+                    .setupAsync(graph, sessionConfigAdapter, surfaceToStreamMap)
+                    .invokeOnCompletion { throwable ->
+                        // Only show logs for error cases, ignore CancellationException since the
+                        // task could be cancelled by UseCaseSurfaceManager#stopAsync().
+                        if (throwable != null && throwable !is CancellationException) {
+                            Log.error(throwable) { "Surface setup error!" }
+                        }
+                    }
+            } else {
+                Log.error { "Unable to create capture session due to conflicting configurations" }
+            }
+        }
 
     override fun close(): Job {
         return if (closed.compareAndSet(expect = false, update = true)) {

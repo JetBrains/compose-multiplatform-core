@@ -46,7 +46,7 @@ public class PlatformAppFunctionService : AppFunctionService() {
                 this@PlatformAppFunctionService,
                 Dispatchers.Worker,
                 Dispatchers.Main,
-                ServiceDependencies.aggregatedAppFunctionInventory,
+                checkNotNull(Dependencies.aggregatedAppFunctionInventory),
                 ServiceDependencies.aggregatedAppFunctionInvoker,
                 Dependencies.translatorSelector,
             )

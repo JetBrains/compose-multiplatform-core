@@ -35,6 +35,8 @@ androidXMultiplatform {
         compileSdk = 36
         namespace = "androidx.compose.material3.adaptive.navigation3"
     }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -44,6 +46,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinStdlib)
                 api(project(":compose:material3:adaptive:adaptive-navigation"))
                 api(project(":navigation3:navigation3-ui"))
+                implementation(project(":navigationevent:navigationevent-compose"))
             }
         }
 
@@ -70,6 +73,18 @@ androidXMultiplatform {
                 implementation(libs.junit)
                 implementation(libs.truth)
             }
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(nonAndroidMain)
         }
     }
 }

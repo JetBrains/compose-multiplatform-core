@@ -150,8 +150,15 @@ public class FakeImpressApiImpl implements ImpressApi {
             this.mEntityId = entityId;
         }
 
-        public void setMaterialOverride(@Nullable MaterialData materialOverride) {
+        public void setMaterialOverride(
+                @Nullable MaterialData materialOverride,
+                @NonNull String nodeName,
+                int primitiveIndex) {
             this.mMaterialOverride = materialOverride;
+        }
+
+        public void clearMaterialOverride(@NonNull String nodeName, int primitiveIndex) {
+            this.mMaterialOverride = null;
         }
 
         public int getEntityId() {
@@ -913,12 +920,25 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setMaterialOverride(
-            @NonNull ImpressNode impressNode, long nativeMaterial, @NonNull String meshName) {
+            @NonNull ImpressNode impressNode,
+            long nativeMaterial,
+            @NonNull String nodeName,
+            int primitiveIndex) {
         GltfNodeData gltfNodeData = getGltfNodeData(impressNode);
         if (gltfNodeData == null) {
             throw new IllegalArgumentException("Impress node not found");
         }
-        gltfNodeData.setMaterialOverride(mMaterials.get(nativeMaterial));
+        gltfNodeData.setMaterialOverride(mMaterials.get(nativeMaterial), nodeName, primitiveIndex);
+    }
+
+    @Override
+    public void clearMaterialOverride(
+            @NonNull ImpressNode impressNode, @NonNull String nodeName, int primitiveIndex) {
+        GltfNodeData gltfNodeData = getGltfNodeData(impressNode);
+        if (gltfNodeData == null) {
+            throw new IllegalArgumentException("Impress node not found");
+        }
+        gltfNodeData.clearMaterialOverride(nodeName, primitiveIndex);
     }
 
     @Override

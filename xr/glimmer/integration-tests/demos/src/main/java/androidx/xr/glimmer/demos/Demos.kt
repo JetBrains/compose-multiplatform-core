@@ -43,6 +43,7 @@ val Demos =
             ComposableDemo("TitleChips") { TitleChipSampleUsage() },
             DemoCategory("Focus", FocusDemos),
             DemoCategory("List", ListDemos),
+            ComposableDemo("VerticalStack") { VerticalStackDemo() },
             ComposableDemo("Settings") { DemoSettings() },
         ),
     )

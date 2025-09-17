@@ -132,11 +132,12 @@ class UseCaseSurfaceManagerDeviceTest {
         // Act. Open CameraGraph
         testUseCaseCamera =
             TestUseCaseCamera(
-                context = ApplicationProvider.getApplicationContext(),
-                cameraId = cameraId,
-                useCases = useCases,
-                threads = useCaseThreads,
-            )
+                    context = ApplicationProvider.getApplicationContext(),
+                    cameraId = cameraId,
+                    useCases = useCases,
+                    threads = useCaseThreads,
+                )
+                .also { it.start() }
         assertThat(testSessionParameters.repeatingOutputDataLatch.await(3, TimeUnit.SECONDS))
             .isTrue()
         val cameraOpenedUsageCount = testSessionParameters.deferrableSurface.useCount
@@ -172,11 +173,12 @@ class UseCaseSurfaceManagerDeviceTest {
             )
         testUseCaseCamera =
             TestUseCaseCamera(
-                context = ApplicationProvider.getApplicationContext(),
-                cameraId = cameraId,
-                useCases = useCases,
-                threads = useCaseThreads,
-            )
+                    context = ApplicationProvider.getApplicationContext(),
+                    cameraId = cameraId,
+                    useCases = useCases,
+                    threads = useCaseThreads,
+                )
+                .also { it.start() }
         val surfaceActiveCountDown = CountDownLatch(1)
         val surfaceInactiveCountDown = CountDownLatch(1)
         testUseCaseCamera.cameraPipe
@@ -251,19 +253,20 @@ class UseCaseSurfaceManagerDeviceTest {
         val cameraPipe = CameraPipe(CameraPipe.Config(context))
         testUseCaseCamera =
             TestUseCaseCamera(
-                context = context,
-                cameraId = cameraId,
-                useCases = useCases,
-                threads = useCaseThreads,
-                cameraPipe = cameraPipe,
-                useCaseSurfaceManager =
-                    UseCaseSurfaceManager(
-                        useCaseThreads,
-                        cameraPipe,
-                        InactiveSurfaceCloserImpl(),
-                        SessionConfigAdapter(useCases = useCases),
-                    ),
-            )
+                    context = context,
+                    cameraId = cameraId,
+                    useCases = useCases,
+                    threads = useCaseThreads,
+                    cameraPipe = cameraPipe,
+                    useCaseSurfaceManager =
+                        UseCaseSurfaceManager(
+                            useCaseThreads,
+                            cameraPipe,
+                            InactiveSurfaceCloserImpl(),
+                            SessionConfigAdapter(useCases = useCases),
+                        ),
+                )
+                .also { it.start() }
 
         // Act.
         testUseCaseCamera.useCaseCameraGraphConfig.graph.close()

@@ -59,8 +59,8 @@ androidXMultiplatform {
                 implementation(libs.kotlinStdlib)
                 implementation("androidx.collection:collection:1.4.5")
                 // TODO pin lifecycle:lifecycle-runtime to the version that contains the `LifecycleOwner` composable api when it is released
-                implementation(project(":lifecycle:lifecycle-runtime"))
-                implementation(project(":lifecycle:lifecycle-runtime-compose"))
+                implementation("androidx.lifecycle:lifecycle-runtime:2.10.0-alpha03")
+                implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0-alpha03")
             }
         }
 

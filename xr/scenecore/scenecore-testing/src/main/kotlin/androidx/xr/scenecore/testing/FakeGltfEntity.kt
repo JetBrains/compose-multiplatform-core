@@ -32,5 +32,11 @@ public class FakeGltfEntity : GltfEntity, FakeEntity() {
 
     override fun stopAnimation() {}
 
-    override fun setMaterialOverride(material: MaterialResource, meshName: String) {}
+    override fun setMaterialOverride(
+        material: MaterialResource,
+        nodeName: String,
+        primitiveIndex: Int,
+    ) {}
+
+    override fun clearMaterialOverride(nodeName: String, primitiveIndex: Int) {}
 }

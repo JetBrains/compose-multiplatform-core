@@ -63,6 +63,7 @@ abstract class StudioTask : DefaultTask() {
         validateEnvironment()
         install()
         installKtfmtPlugin()
+        writeAndroidSdkPath()
         launch()
     }
 
@@ -114,9 +115,13 @@ abstract class StudioTask : DefaultTask() {
         File(studioInstallationDir.parentFile, studioArchiveName).absolutePath
     }
 
+    private val studioConfigBaseDir =
+        File(System.getenv("HOME"), ".AndroidStudioAndroidX/config").also { it.mkdirs() }
+
     /** Directory where Studio downloads plugins to */
-    private val studioPluginDir =
-        File(System.getenv("HOME"), ".AndroidStudioAndroidX/config/plugins").also { it.mkdirs() }
+    private val studioPluginDir = File(studioConfigBaseDir, "plugins").also { it.mkdirs() }
+
+    private val studioOptionsDir = File(studioConfigBaseDir, "options").also { it.mkdirs() }
 
     private val studioKtfmtPluginVersion by lazy { project.getVersionByName("ktfmtIdeaPlugin") }
 
@@ -145,7 +150,8 @@ abstract class StudioTask : DefaultTask() {
     open val vmOptions = File(project.getSupportRootFolder(), "development/studio/studio.vmoptions")
 
     /** The path to the SDK directory used by Studio. */
-    @get:Internal open val localSdkPath = project.getSdkPath()
+    @get:Internal
+    open val localSdkPath = project.getSdkPath().relativeTo(project.getSupportRootFolder())
 
     /** List of additional environment variables to pass into the Studio application. */
     @get:Internal open val additionalEnvironmentProperties: Map<String, String> = emptyMap()
@@ -225,7 +231,7 @@ abstract class StudioTask : DefaultTask() {
     /** Attempts to symlink the system-images and emulator SDK directories to a canonical SDK. */
     private fun setupSymlinksIfNeeded() {
         val paths = listOf("system-images", "emulator")
-        if (!localSdkPath.exists()) {
+        if (!localSdkPath.canonicalFile.exists()) {
             // We probably got the support root folder wrong. Fail gracefully.
             return
         }
@@ -248,7 +254,7 @@ abstract class StudioTask : DefaultTask() {
         }
 
         paths.forEach { path ->
-            val link = File(localSdkPath, path)
+            val link = File(localSdkPath.canonicalFile, path)
             val target = File(canonicalSdkPath, path)
             if (!target.exists()) {
                 println("Skipping canonical SDK symlink creation, not found at: $target")
@@ -271,7 +277,7 @@ abstract class StudioTask : DefaultTask() {
                     """
                     Please specify which set of projects you'd like to open in studio
                     with ANDROIDX_PROJECTS=MAIN ./gradlew studio
-                    or PROJECT_PREFIX=:room: ./gradlew studio
+                    or PROJECT_PREFIX=:room3: ./gradlew studio
 
                     For possible options see settings.gradle
                     """
@@ -414,6 +420,21 @@ abstract class StudioTask : DefaultTask() {
                     .trimIndent()
             )
         }
+    }
+
+    // TODO(b/443681166) Remove when fixed
+    private fun writeAndroidSdkPath() {
+        val sdkPathFile = File(studioOptionsDir, "android.sdk.path.xml")
+        sdkPathFile.writeText(
+            """
+                <application>
+                  <component name="AndroidSdkPathStore">
+                    <option name="androidSdkAbsolutePath" value="${localSdkPath.path}" />
+                  </component>
+                </application>
+                        """
+                .trimIndent()
+        )
     }
 
     companion object {

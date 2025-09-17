@@ -50,8 +50,7 @@ constructor(
         return "AppFunctionResponseMetadata(valueType=$valueType, description=$description)"
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toAppFunctionResponseMetadataDocument(): AppFunctionResponseMetadataDocument {
+    internal fun toAppFunctionResponseMetadataDocument(): AppFunctionResponseMetadataDocument {
         return AppFunctionResponseMetadataDocument(
             valueType = valueType.toAppFunctionDataTypeMetadataDocument(),
             description = description,

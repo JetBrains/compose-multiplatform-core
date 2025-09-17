@@ -55,13 +55,7 @@ import kotlinx.coroutines.asExecutor
  *
  * TODO(b/427974119): Investigate fix for resizing from size Zero.
  */
-@Deprecated(
-    "The Resizable modifier is now deprecated. Use the appropriate SpatialPanel or " +
-        "SpatialExternalSurface composable with a ResizePolicy instead. " +
-        "For example: SpatialPanel(resizePolicy = ResizePolicy(...), content = { /* your content */ })",
-    level = DeprecationLevel.WARNING,
-)
-public fun SubspaceModifier.resizable(
+internal fun SubspaceModifier.resizable(
     enabled: Boolean = true,
     minimumSize: DpVolumeSize = DpVolumeSize.Zero,
     maximumSize: DpVolumeSize = DpVolumeSize(Dp.Infinity, Dp.Infinity, Dp.Infinity),
@@ -213,8 +207,7 @@ internal class ResizableNode(
      */
     fun handleResizeEvent(resizeEvent: ResizeEvent) {
         if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_START) {
-            component.fixedAspectRatio =
-                if (maintainAspectRatio) getAspectRatioY(resizeEvent.newSize) else 0.0f
+            component.isFixedAspectRatioEnabled = maintainAspectRatio
         } else if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END) {
             resizeListener(resizeEvent.newSize)
         }

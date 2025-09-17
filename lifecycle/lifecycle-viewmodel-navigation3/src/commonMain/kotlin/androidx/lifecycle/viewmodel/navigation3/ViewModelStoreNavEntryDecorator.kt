@@ -97,12 +97,12 @@ public fun ViewModelStoreNavEntryDecorator(
                     get() = viewModelStore
 
                 override val defaultViewModelProviderFactory: ViewModelProvider.Factory
-                    get() = SavedStateViewModelFactory(null, savedStateRegistryOwner)
+                    get() = SavedStateViewModelFactory()
 
                 override val defaultViewModelCreationExtras: CreationExtras
                     get() =
                         MutableCreationExtras().also {
-                            it[SAVED_STATE_REGISTRY_OWNER_KEY] = savedStateRegistryOwner
+                            it[SAVED_STATE_REGISTRY_OWNER_KEY] = this
                             it[VIEW_MODEL_STORE_OWNER_KEY] = this
                         }
 
@@ -139,7 +139,7 @@ private class EntryViewModel : ViewModel() {
 
 private fun ViewModelStore.getEntryViewModel(): EntryViewModel {
     val provider =
-        ViewModelProvider(
+        ViewModelProvider.create(
             store = this,
             factory = viewModelFactory { initializer { EntryViewModel() } },
         )

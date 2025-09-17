@@ -316,17 +316,10 @@ public final class Flags {
 
     /**
      * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
-     * every single document read.
+     * every single document read..
      */
     public static final String FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER =
             FLAG_PREFIX + "enable_reusable_decompression_buffer";
-
-    /**
-     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
-     * existing types will be preserved when possible.
-     */
-    public static final String FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION =
-            FLAG_PREFIX + "enable_schema_type_id_optimization";
 
     // Whether the features should be enabled.
     //
@@ -712,16 +705,6 @@ public final class Flags {
      */
     public static boolean enableReusableDecompressionBuffer() {
         // TODO(b/435754056): Enable this once the feature is rolled out to Nextfood in platform.
-        return false;
-    }
-
-    /**
-     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
-     * existing types will be preserved when possible, and there will be no schema-type id
-     * reassignment for adding new types.
-     */
-    public static boolean enableSchemaTypeIdOptimization() {
-        // TODO(b/434218554): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
     }
 }

@@ -132,12 +132,14 @@ public class GltfEntityImplTest {
     }
 
     @Test
-    public void setMaterialOverrideGltfEntity_materialOverridesMesh() throws Exception {
+    public void setMaterialOverrideGltfEntity_materialOverridesNode() throws Exception {
         MaterialResource material = createWaterMaterial(/* isAlphaMapVersion= */ false);
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
 
         assertThat(material).isNotNull();
 
-        mGltfEntity.setMaterialOverride(material, "fake_mesh_name");
+        mGltfEntity.setMaterialOverride(material, nodeName, primitiveIndex);
 
         assertThat(
                         mFakeImpressApi.getImpressNodes().keySet().stream()
@@ -149,6 +151,22 @@ public class GltfEntityImplTest {
                                                                         .Type.WATER)
                                 .toArray())
                 .hasLength(1);
+    }
+
+    @Test
+    public void clearMaterialOverrideGltfEntity_clearsMaterialOverride() throws Exception {
+        MaterialResource material = createWaterMaterial(/* isAlphaMapVersion= */ false);
+        String nodeName = "fake_node_name";
+        int primitiveIndex = 0;
+
+        mGltfEntity.setMaterialOverride(material, nodeName, primitiveIndex);
+        mGltfEntity.clearMaterialOverride(nodeName, primitiveIndex);
+
+        assertThat(
+                        mFakeImpressApi.getImpressNodes().keySet().stream()
+                                .filter(node -> node.getMaterialOverride() != null)
+                                .toArray())
+                .isEmpty();
     }
 
     // TODO: b/426594104 provide a fake SplitEngineSubspaceManager and cover the dispose() method

@@ -24,6 +24,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * CameraPipeLifetime is an internal class designed to facilitate CameraPipe shutdown. It does so in
@@ -114,7 +115,12 @@ constructor(@CameraPipeJob private val cameraPipeJob: Job) {
             for (shutdownAction in scopeShutdownActions) {
                 shutdownAction.run()
             }
-            runBlocking { cameraPipeJob.cancelAndJoin() }
+            runBlocking {
+                withTimeoutOrNull(CAMERA_PIPE_JOB_CANCEL_TIMEOUT_MS) {
+                    Log.debug { "Cancelling CameraPipe root Job..." }
+                    cameraPipeJob.cancelAndJoin()
+                }
+            }
         }
 
     private fun shutdownThread() =
@@ -129,5 +135,9 @@ constructor(@CameraPipeJob private val cameraPipeJob: Job) {
         CAMERA,
         SCOPE,
         THREAD,
+    }
+
+    companion object {
+        private const val CAMERA_PIPE_JOB_CANCEL_TIMEOUT_MS = 3_000L
     }
 }

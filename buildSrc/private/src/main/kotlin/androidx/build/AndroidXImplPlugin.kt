@@ -123,6 +123,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -168,7 +169,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                         androidXKmpExtension.agpKmpExtension,
                         androidXExtension,
                     )
-                is KotlinBasePluginWrapper ->
+                is KotlinBasePluginWrapper,
+                is KotlinBaseApiPlugin ->
                     configureWithKotlinPlugin(
                         project,
                         androidXExtension,
@@ -408,7 +410,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun configureWithKotlinPlugin(
         project: Project,
         androidXExtension: AndroidXExtension,
-        plugin: KotlinBasePluginWrapper,
+        plugin: Any,
         androidXMultiplatformExtension: AndroidXMultiplatformExtension,
     ) {
         val targetsAndroid =
@@ -966,7 +968,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 sourceCompatibility = defaultTargetJavaVersion
                 targetCompatibility = defaultTargetJavaVersion
             }
-            if (!project.plugins.hasPlugin(KotlinBasePluginWrapper::class.java)) {
+            if (
+                !project.plugins.hasPlugin(KotlinBasePluginWrapper::class.java) ||
+                    !project.plugins.hasPlugin(KotlinBaseApiPlugin::class.java)
+            ) {
                 project.configureSourceJarForJava(androidXExtension.samplesProjects)
             }
         }
@@ -1448,7 +1453,7 @@ internal fun getDefaultTargetJavaVersion(
 ): JavaVersion {
     return when {
         // TODO(b/353328300): Move room-compiler-processing to Java 17 once Dagger is ready.
-        projectName != null && projectName.contains("room-compiler-processing") -> VERSION_11
+        projectName != null && projectName.contains("room3-compiler-processing") -> VERSION_11
         projectName != null && projectName.contains("desktop") -> VERSION_11
         targetName != null && (targetName == "desktop" || targetName == "jvmStubs") -> VERSION_11
         softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17

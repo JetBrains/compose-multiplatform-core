@@ -25,20 +25,16 @@ import androidx.xr.scenecore.internal.MaterialResource as RtMaterial
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CancellationException
 
-/** Represents a Material in SceneCore. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class Material(internal val material: RtMaterial?)
-
 /** A Material which implements a water effect. */
 // TODO(b/396201066): Add unit tests for this class if we end up making it public.
 @Suppress("NotCloseable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class WaterMaterial
 internal constructor(
-    internal val materialResource: RtMaterial,
+    override val material: RtMaterial,
     internal val isAlphaMapVersion: Boolean,
     internal val session: Session,
-) : Material(materialResource) {
+) : Material {
 
     /**
      * Disposes the given water material resource.
@@ -52,8 +48,8 @@ internal constructor(
      */
     // TODO(b/376277201): Provide Session.GltfModel.dispose().
     @MainThread
-    public fun dispose() {
-        session.platformAdapter.destroyWaterMaterial(materialResource)
+    override public fun dispose() {
+        session.platformAdapter.destroyWaterMaterial(material)
     }
 
     /**
@@ -68,7 +64,7 @@ internal constructor(
     @MainThread
     public fun setReflectionMap(reflectionMap: CubeMapTexture, sampler: TextureSampler) {
         session.platformAdapter.setReflectionMapOnWaterMaterial(
-            materialResource,
+            material,
             reflectionMap.texture,
             sampler.toRtTextureSampler(),
         )
@@ -86,7 +82,7 @@ internal constructor(
     @MainThread
     public fun setNormalMap(normalMap: Texture, sampler: TextureSampler) {
         session.platformAdapter.setNormalMapOnWaterMaterial(
-            materialResource,
+            material,
             normalMap.texture,
             sampler.toRtTextureSampler(),
         )
@@ -102,7 +98,7 @@ internal constructor(
      */
     @MainThread
     public fun setNormalTiling(normalTiling: Float) {
-        session.platformAdapter.setNormalTilingOnWaterMaterial(materialResource, normalTiling)
+        session.platformAdapter.setNormalTilingOnWaterMaterial(material, normalTiling)
     }
 
     /**
@@ -115,7 +111,7 @@ internal constructor(
      */
     @MainThread
     public fun setNormalSpeed(normalSpeed: Float) {
-        session.platformAdapter.setNormalSpeedOnWaterMaterial(materialResource, normalSpeed)
+        session.platformAdapter.setNormalSpeedOnWaterMaterial(material, normalSpeed)
     }
 
     /**
@@ -131,7 +127,7 @@ internal constructor(
     public fun setAlphaStepMultiplier(alphaStepMultiplier: Float) {
         if (isAlphaMapVersion) {
             session.platformAdapter.setAlphaStepMultiplierOnWaterMaterial(
-                materialResource,
+                material,
                 alphaStepMultiplier,
             )
         } else {
@@ -155,7 +151,7 @@ internal constructor(
     public fun setAlphaMap(alphaMap: Texture, sampler: TextureSampler) {
         if (isAlphaMapVersion) {
             session.platformAdapter.setAlphaMapOnWaterMaterial(
-                materialResource,
+                material,
                 alphaMap.texture,
                 sampler.toRtTextureSampler(),
             )
@@ -178,7 +174,7 @@ internal constructor(
     @MainThread
     public fun setNormalZ(normalZ: Float) {
         if (isAlphaMapVersion) {
-            session.platformAdapter.setNormalZOnWaterMaterial(materialResource, normalZ)
+            session.platformAdapter.setNormalZOnWaterMaterial(material, normalZ)
         } else {
             throw IllegalStateException(
                 "The normal Z can only be set for alpha map version of the water material.."
@@ -198,10 +194,7 @@ internal constructor(
     @MainThread
     public fun setNormalBoundary(normalBoundary: Float) {
         if (isAlphaMapVersion) {
-            session.platformAdapter.setNormalBoundaryOnWaterMaterial(
-                materialResource,
-                normalBoundary,
-            )
+            session.platformAdapter.setNormalBoundaryOnWaterMaterial(material, normalBoundary)
         } else {
             throw IllegalStateException(
                 "The normal boundary can only be set for alpha map version of the water material."

@@ -25,6 +25,10 @@ import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.annotation.models.StampAnnotation
 import androidx.pdf.util.createDummyUri
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -74,6 +78,45 @@ class InMemoryAnnotationsManagerTest {
 
         assertThat(annotations).hasSize(1)
         assertThat(fakeDocument.getAnnotationsForPageCallCount[1]).isEqualTo(1)
+    }
+
+    @Test
+    fun getAnnotationsForPage_concurrentCallsSamePage_fetchesOnlyOnce() = runTest {
+        val pageNum = 2
+        fakeDocument.addAnnotationToPage(pageNum, createStampAnnotationWithPath(pageNum, 1))
+
+        val manager = InMemoryAnnotationsManager { page ->
+            delay(100)
+            fakeDocument.getEditsForPage<PdfAnnotationData>(page).map { it.annotation }
+        }
+
+        val deferred1 = async { manager.getAnnotationsForPage(pageNum) }
+        val deferred2 = async { manager.getAnnotationsForPage(pageNum) }
+        awaitAll(deferred1, deferred2)
+
+        assertThat(fakeDocument.getAnnotationsForPageCallCount[pageNum]).isEqualTo(1)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun getAnnotationsForPage_concurrentCallsDifferentPages_notBlocked() = runTest {
+        val pageNum1 = 3
+        val pageNum2 = 4
+        fakeDocument.addAnnotationToPage(pageNum1, createStampAnnotationWithPath(pageNum1, 1))
+        fakeDocument.addAnnotationToPage(pageNum2, createStampAnnotationWithPath(pageNum2, 1))
+
+        val manager = InMemoryAnnotationsManager { page ->
+            delay(100)
+            fakeDocument.getEditsForPage<PdfAnnotationData>(page).map { it.annotation }
+        }
+
+        val deferred1 = async { manager.getAnnotationsForPage(pageNum1) }
+        val deferred2 = async { manager.getAnnotationsForPage(pageNum2) }
+        awaitAll(deferred1, deferred2)
+
+        assertThat(fakeDocument.getAnnotationsForPageCallCount[pageNum1]).isEqualTo(1)
+        assertThat(fakeDocument.getAnnotationsForPageCallCount[pageNum2]).isEqualTo(1)
+        assertThat(testScheduler.currentTime).isLessThan(200)
     }
 
     @Test

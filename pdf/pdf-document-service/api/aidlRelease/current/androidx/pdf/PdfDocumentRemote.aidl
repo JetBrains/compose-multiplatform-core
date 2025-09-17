@@ -59,4 +59,6 @@ interface PdfDocumentRemote {
   androidx.pdf.annotation.models.AddEditResult addEdit(in List<androidx.pdf.annotation.models.PdfAnnotationData> annots);
   androidx.pdf.annotation.models.ModifyEditResult updateEdit(in List<androidx.pdf.annotation.models.PdfAnnotationData> annots);
   androidx.pdf.annotation.models.ModifyEditResult removeEdit(in List<androidx.pdf.annotation.models.EditId> editIds);
+  androidx.pdf.annotation.models.PaginatedAnnotations getAllPageAnnotations(int pageNum);
+  androidx.pdf.annotation.models.PaginatedAnnotations getBatchedPageAnnotations(int pageNum, in int batchIndex);
 }

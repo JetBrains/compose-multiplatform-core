@@ -54,18 +54,18 @@ public abstract class NavigationEventInput() {
     @MainThread @EmptySuper protected open fun onRemoved() {}
 
     @MainThread
-    internal fun doOnHasEnabledCallbacksChanged(hasEnabledCallbacks: Boolean) {
-        onHasEnabledCallbacksChanged(hasEnabledCallbacks)
+    internal fun doOnHasEnabledHandlerChanged(hasEnabledHandler: Boolean) {
+        onHasEnabledHandlerChanged(hasEnabledHandler)
     }
 
     /**
-     * Callback that will be notified when the connected dispatcher's `hasEnabledCallbacks` changes.
+     * Handler that will be notified when the connected dispatcher's `hasEnabledHandlers` changes.
      *
-     * @param hasEnabledCallbacks Whether the connected dispatcher has any enabled callbacks.
+     * @param hasEnabledHandler Whether the connected dispatcher has any enabled handlers.
      */
     @MainThread
     @EmptySuper
-    protected open fun onHasEnabledCallbacksChanged(hasEnabledCallbacks: Boolean) {}
+    protected open fun onHasEnabledHandlerChanged(hasEnabledHandler: Boolean) {}
 
     /**
      * Dispatch a back started event with the connected dispatcher.

@@ -29,6 +29,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
@@ -210,15 +212,36 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         mainPanelLandscapeAspectRadioButton.text = getString(R.string.landscape_label)
         val mainPanelAspectRatioRadioGroup = findViewById<RadioGroup>(R.id.radioGroup1)
         mainPanelAspectRatioRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            mainPanelResizableComponent.fixedAspectRatio =
-                when (checkedId) {
-                    R.id.radioButton2 -> 0.7f
-                    R.id.radioButton3 -> 1.4f
-                    // A negative ratio means "no preferences."
-                    else -> -12.345f
+            when (checkedId) {
+                // Portrait aspect ratio.
+                R.id.radioButton2 -> {
+                    val updatedSize =
+                        FloatSize2d(
+                            session!!.scene.mainPanelEntity.size.height * 0.7f,
+                            session!!.scene.mainPanelEntity.size.height,
+                        )
+                    session!!.scene.mainPanelEntity.size = updatedSize
+                    mainPanelResizableComponent.affordanceSize =
+                        FloatSize3d(updatedSize.width, updatedSize.height, 1.0f)
+                    mainPanelResizableComponent.isFixedAspectRatioEnabled = true
                 }
+                // Landscape aspect ratio.
+                R.id.radioButton3 -> {
+                    val updatedSize =
+                        FloatSize2d(
+                            session!!.scene.mainPanelEntity.size.height / 0.7f,
+                            session!!.scene.mainPanelEntity.size.height,
+                        )
+                    session!!.scene.mainPanelEntity.size = updatedSize
+                    mainPanelResizableComponent.affordanceSize =
+                        FloatSize3d(updatedSize.width, updatedSize.height, 1.0f)
+                    mainPanelResizableComponent.isFixedAspectRatioEnabled = true
+                }
+                // No preference on the aspect ratio.
+                else -> mainPanelResizableComponent.isFixedAspectRatioEnabled = false
+            }
         }
-        mainPanelResizableComponent.fixedAspectRatio = 0.0f // no preferences initially
+        mainPanelResizableComponent.isFixedAspectRatioEnabled = false // no preferences initially
 
         val mainPanelResizableSwitch = findViewById<MaterialSwitch>(R.id.resizableSwitch)
         mainPanelResizableSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -404,15 +427,36 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         landscapeAspectRadioButton.text = getString(R.string.landscape_label)
         val aspectRatioRadioGroup = resizablePanelView.findViewById<RadioGroup>(R.id.radioGroup1)
         aspectRatioRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            resizablePanelComponent.fixedAspectRatio =
-                when (checkedId) {
-                    R.id.radioButton2 -> 0.7f
-                    R.id.radioButton3 -> 1.4f
-                    // A negative ratio means "no preferences."
-                    else -> -12.345f
+            when (checkedId) {
+                // Portrait aspect ratio.
+                R.id.radioButton2 -> {
+                    val updatedSize =
+                        FloatSize2d(
+                            resizablePanelEntity.size.height * 0.7f,
+                            resizablePanelEntity.size.height,
+                        )
+                    resizablePanelEntity.size = updatedSize
+                    resizablePanelComponent.affordanceSize =
+                        FloatSize3d(updatedSize.width, updatedSize.height, 1.0f)
+                    resizablePanelComponent.isFixedAspectRatioEnabled = true
                 }
+                // Landscape aspect ratio.
+                R.id.radioButton3 -> {
+                    val updatedSize =
+                        FloatSize2d(
+                            resizablePanelEntity.size.height / 0.7f,
+                            resizablePanelEntity.size.height,
+                        )
+                    resizablePanelEntity.size = updatedSize
+                    resizablePanelComponent.affordanceSize =
+                        FloatSize3d(updatedSize.width, updatedSize.height, 1.0f)
+                    resizablePanelComponent.isFixedAspectRatioEnabled = true
+                }
+                // No preference on the aspect ratio.
+                else -> resizablePanelComponent.isFixedAspectRatioEnabled = false
+            }
         }
-        resizablePanelComponent.fixedAspectRatio = 0.0f // no preferences initially
+        resizablePanelComponent.isFixedAspectRatioEnabled = false // no preferences initially
 
         val resizablePanelSwitch = resizablePanelView.findViewById<MaterialSwitch>(R.id.switch1)
         resizablePanelSwitch.setOnCheckedChangeListener { _, isChecked ->

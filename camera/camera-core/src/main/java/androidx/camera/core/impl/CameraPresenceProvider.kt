@@ -325,9 +325,7 @@ public class CameraPresenceProvider(
                             TAG,
                             "Ignore camera state change handling since already stop monitoring",
                         )
-                    } else if (
-                        cameraState.error != null || cameraState?.type == CameraState.Type.CLOSED
-                    ) {
+                    } else if (cameraState.error != null) {
                         Logger.w(
                             TAG,
                             "Camera $cameraIdStr state changed to ${cameraState.type} with " +

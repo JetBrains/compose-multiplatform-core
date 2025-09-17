@@ -1350,9 +1350,9 @@ internal class LayoutNode(
         _children.forEach { it.invalidateSubtree(false) }
     }
 
-    fun invalidateLayoutForSubtree() {
+    fun invalidateMeasurementForSubtree() {
         requestRemeasure()
-        _children.forEach { it.invalidateLayoutForSubtree() }
+        _children.forEach { it.invalidateMeasurementForSubtree() }
     }
 
     fun invalidateDrawForSubtree(isRootOfInvalidation: Boolean = true) {

@@ -87,6 +87,7 @@ androidXMultiplatform {
     ios()
     watchos()
     tvos()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -111,6 +112,10 @@ androidXMultiplatform {
             dependsOn(jvmAndroidMain)
         }
 
+        wasmJsMain {
+            dependsOn(commonMain)
+        }
+
         jvmMain {
             dependsOn(jvmAndroidMain)
         }
@@ -127,13 +132,16 @@ androidXMultiplatform {
             }
         }
 
-        jvmAndroidTest {
+        nonWebCommonTest {
             dependsOn(commonTest)
+        }
+
+        jvmAndroidTest {
+            dependsOn(nonWebCommonTest)
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.kotlinTest)
                 implementation(project(":kruth:kruth"))
-                implementation(project(":internal-testutils-datastore"))
 
                 // Workaround bug in 1.8.0, was supposed be fixed in RC2/final, but apparently not.
                 implementation(libs.kotlinTestJunit)
@@ -184,7 +192,7 @@ androidXMultiplatform {
             }
         }
         nativeTest {
-            dependsOn(commonTest)
+            dependsOn(nonWebCommonTest)
         }
 
         targets.configureEach { target ->

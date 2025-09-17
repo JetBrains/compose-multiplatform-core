@@ -34,6 +34,7 @@ import androidx.annotation.RestrictTo
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.util.forEach
 import androidx.fragment.app.viewModels
+import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InProgressStrokesView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -47,11 +48,11 @@ import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfEdits
 import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.ink.util.PageTransformCalculator
-import androidx.pdf.ink.util.StrokeProcessor
 import androidx.pdf.view.PdfContentLayout
 import androidx.pdf.view.PdfView
 import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.viewer.fragment.PdfViewerFragment
+import java.util.Collections
 import kotlinx.coroutines.launch
 
 /** A [PdfViewerFragment] that provide annotations capabilities using ink library. */
@@ -72,8 +73,9 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     override val documentViewModel: EditableDocumentViewModel by viewModels {
         EditableDocumentViewModel.Factory
     }
-    private var strokeProcessor: StrokeProcessor? = null
     private var pageTransformCalculator: PageTransformCalculator = PageTransformCalculator()
+    private val strokeIdToPageNumMap: MutableMap<InProgressStrokeId, Int> =
+        Collections.synchronizedMap(mutableMapOf<InProgressStrokeId, Int>())
 
     /**
      * Writes the current state of the document, including any edits, to the given destination.
@@ -129,7 +131,6 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        strokeProcessor = StrokeProcessor(this::getPageBoundsFromViewCoordinates)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -191,13 +192,18 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         wetStrokesOnFinishedListener =
             WetStrokesOnFinishedListener(
                 wetStrokesView = wetStrokesView,
-                strokeProcessor = strokeProcessor,
-                pdfViewZoomProvider = { pdfView.zoom },
+                strokeIdToPageNumMap = strokeIdToPageNumMap,
                 annotationsViewModel = documentViewModel,
             )
         wetStrokesView.apply {
             addFinishedStrokesListener(wetStrokesOnFinishedListener)
-            setOnTouchListener(WetStrokesViewTouchHandler(this, ::getPageBoundsFromViewCoordinates))
+            setOnTouchListener(
+                WetStrokesViewTouchHandler(this, ::getPageInfoFromViewCoordinates) {
+                    strokeId,
+                    pageNum ->
+                    strokeIdToPageNumMap[strokeId] = pageNum
+                }
+            )
         }
 
         val annotationsViewOnTouchListener =
@@ -305,33 +311,38 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     }
 
     /**
-     * Returns the [PageBoundsProvider.PageBounds] for the page that contains the given view
+     * Returns the [PageInfoProvider.PageInfo] for the page that contains the given view
      * coordinates, or null if no page contains the coordinates.
      */
-    private fun getPageBoundsFromViewCoordinates(
+    private fun getPageInfoFromViewCoordinates(
         viewX: Float,
         viewY: Float,
-    ): PageBoundsProvider.PageBounds? {
+    ): PageInfoProvider.PageInfo? {
         val pageLocations: SparseArray<RectF> = pdfView.getCurrentPageLocations()
+        val currentZoom = pdfView.zoom
         pageLocations.forEach { pageNum, pageBounds ->
             if (pageBounds.contains(viewX, viewY)) {
-                return PageBoundsProvider.PageBounds(pageNum = pageNum, bounds = pageBounds)
+                return PageInfoProvider.PageInfo(
+                    pageNum = pageNum,
+                    bounds = pageBounds,
+                    zoom = currentZoom,
+                )
             }
         }
         return null
     }
 
     /**
-     * A functional interface to provide the bounds of the current page based on touch coordinates.
-     * The coordinates are relative to the WetStrokesView.
+     * A functional interface that provides page-specific information (e.g. page number, bounds,
+     * zoom level) for given touch coordinates. Returns `null` if the coordinates are outside any
+     * page area.
      *
-     * @return [RectF] representing the page bounds, or null if the coordinates are outside any
-     *   page.
+     * The coordinates are relative to the WetStrokesView.
      */
-    internal fun interface PageBoundsProvider {
-        fun getCurrentPageBounds(viewX: Float, viewY: Float): PageBounds?
+    internal fun interface PageInfoProvider {
+        fun getCurrentPageInfo(viewX: Float, viewY: Float): PageInfo?
 
-        data class PageBounds(val pageNum: Int, val bounds: RectF)
+        data class PageInfo(val pageNum: Int, val bounds: RectF, val zoom: Float)
     }
 
     internal inner class WetStrokesViewTouchEventDispatcher : TouchEventDispatcher {

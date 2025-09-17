@@ -17,7 +17,7 @@
 package androidx.pdf.ink
 
 import android.graphics.Color
-import android.graphics.RectF
+import android.graphics.Matrix
 import android.os.Build
 import android.view.MotionEvent
 import android.view.View
@@ -27,25 +27,26 @@ import androidx.ink.authoring.InProgressStrokesView
 import androidx.ink.brush.Brush
 import androidx.ink.brush.StockBrushes
 import androidx.input.motionprediction.MotionEventPredictor
-import androidx.pdf.ink.EditablePdfViewerFragment.PageBoundsProvider
+import androidx.pdf.ink.EditablePdfViewerFragment.PageInfoProvider
 
 /**
  * Handles touch events on an [InProgressStrokesView] for ink drawing.
  *
  * @param wetStrokesView The view for drawing strokes.
- * @param pageBoundsProvider A functional interface that returns page bounds for given touch
- *   coordinates, or null if outside.
+ * @param pageInfoProvider Provider for page-specific information like zoom and bounds.
+ * @param onStrokeStartedListener A listener that is invoked when a new ink stroke is initiated.
  */
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 internal class WetStrokesViewTouchHandler(
     private val wetStrokesView: InProgressStrokesView,
-    private val pageBoundsProvider: PageBoundsProvider,
+    private val pageInfoProvider: PageInfoProvider,
+    private val onStrokeStartedListener: OnStrokeStartedListener,
 ) : View.OnTouchListener {
 
     private var currentPointerId: Int = MotionEvent.INVALID_POINTER_ID
     private var currentStrokeId: InProgressStrokeId? = null
     private val motionEventPredictor = MotionEventPredictor.newInstance(wetStrokesView)
-    private var currentPageBounds: RectF? = null
+    private var currentPageInfo: PageInfoProvider.PageInfo? = null
     private var lastValidEvent: MotionEvent? = null
 
     override fun onTouch(view: View, event: MotionEvent): Boolean {
@@ -87,18 +88,25 @@ internal class WetStrokesViewTouchHandler(
         }
 
         currentPointerId = pointerId
-        currentPageBounds = pageBoundsProvider.getCurrentPageBounds(event.x, event.y)?.bounds
+        currentPageInfo = pageInfoProvider.getCurrentPageInfo(event.x, event.y)
 
-        currentPageBounds?.let {
-            currentStrokeId =
-                wetStrokesView.startStroke(
-                    event = event,
-                    pointerId = pointerId,
-                    brush = DEFAULT_BRUSH,
-                )
-            lastValidEvent?.recycle()
-            lastValidEvent = MotionEvent.obtain(event)
-        }
+        val pageInfo = currentPageInfo ?: return false
+
+        val strokeToWorldTransform =
+            Matrix().apply {
+                postScale(pageInfo.zoom, pageInfo.zoom)
+                postTranslate(pageInfo.bounds.left, pageInfo.bounds.top)
+            }
+        currentStrokeId =
+            wetStrokesView.startStroke(
+                event = event,
+                pointerId = pointerId,
+                brush = DEFAULT_BRUSH,
+                strokeToWorldTransform = strokeToWorldTransform,
+            )
+        onStrokeStartedListener.onStrokeStarted(currentStrokeId!!, pageInfo.pageNum)
+        lastValidEvent?.recycle()
+        lastValidEvent = MotionEvent.obtain(event)
         return true
     }
 
@@ -115,9 +123,10 @@ internal class WetStrokesViewTouchHandler(
 
         val currentEventX = event.getX(pointerIndex)
         val currentEventY = event.getY(pointerIndex)
-        val bounds = currentPageBounds
+        val pageBounds = currentPageInfo?.bounds
 
-        if (bounds != null && bounds.contains(currentEventX, currentEventY)) {
+        if (pageBounds != null && pageBounds.contains(currentEventX, currentEventY)) {
+            // Pointer is within the current page bounds, add to the stroke.
             wetStrokesView.addToStroke(event, currentPointerId, activeStrokeId, predictedEvent)
             lastValidEvent?.recycle()
             lastValidEvent = MotionEvent.obtain(event)
@@ -154,9 +163,20 @@ internal class WetStrokesViewTouchHandler(
     private fun resetStrokeState() {
         currentPointerId = MotionEvent.INVALID_POINTER_ID
         currentStrokeId = null
-        currentPageBounds = null
+        currentPageInfo = null
         lastValidEvent?.recycle()
         lastValidEvent = null
+    }
+
+    /** Callback invoked when a new ink stroke is started on a page. */
+    internal fun interface OnStrokeStartedListener {
+        /**
+         * Called when a new ink stroke has been successfully initiated.
+         *
+         * @param strokeId The unique identifier for the newly started in-progress stroke.
+         * @param pageNum The page number (0-indexed) on which the stroke was started.
+         */
+        fun onStrokeStarted(strokeId: InProgressStrokeId, pageNum: Int)
     }
 
     companion object {
@@ -164,7 +184,7 @@ internal class WetStrokesViewTouchHandler(
             Brush.createWithColorIntArgb(
                 family = StockBrushes.pressurePenLatest,
                 colorIntArgb = Color.GREEN,
-                size = 10F,
+                size = 5F,
                 epsilon = 0.15F,
             )
     }

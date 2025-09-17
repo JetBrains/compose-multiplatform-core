@@ -138,11 +138,9 @@ package androidx.compose.foundation {
     property public boolean isKeepInViewFocusObservationChangeEnabled;
     property public boolean isMouseWheel1DAxisLockingEnabled;
     property public boolean isNewContextMenuEnabled;
-    property public boolean isNonComposedClickableEnabled;
     property public boolean isNonSuspendingPointerInputInClickableEnabled;
     property public boolean isNonSuspendingPointerInputInDraggableEnabled;
     property public boolean isPausableCompositionInPrefetchEnabled;
-    property public boolean isScrollMinConstraintsFixEnabled;
     property public boolean isSmartSelectionEnabled;
     property public boolean isTextFieldDpadNavigationEnabled;
     field public static final androidx.compose.foundation.ComposeFoundationFlags INSTANCE;
@@ -151,11 +149,9 @@ package androidx.compose.foundation {
     field public static boolean isKeepInViewFocusObservationChangeEnabled;
     field public static boolean isMouseWheel1DAxisLockingEnabled;
     field public static boolean isNewContextMenuEnabled;
-    field public static boolean isNonComposedClickableEnabled;
     field public static boolean isNonSuspendingPointerInputInClickableEnabled;
     field public static boolean isNonSuspendingPointerInputInDraggableEnabled;
     field public static boolean isPausableCompositionInPrefetchEnabled;
-    field public static boolean isScrollMinConstraintsFixEnabled;
     field public static boolean isSmartSelectionEnabled;
     field public static boolean isTextFieldDpadNavigationEnabled;
   }

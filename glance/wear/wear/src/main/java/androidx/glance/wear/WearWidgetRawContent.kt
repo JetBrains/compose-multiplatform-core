@@ -31,14 +31,15 @@ import okio.ByteString.Companion.toByteString
 public class WearWidgetRawContent(public val rcDocument: ByteArray) {
 
     /** Convert to the parcelable [WearWidgetRawContentData]. */
-    internal fun toData(): WearWidgetRawContentData {
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public fun toData(): WearWidgetRawContentData {
         val contentProto = WearWidgetRawContentProto(rc_document = rcDocument.toByteString())
         return WearWidgetRawContentData().apply { payload = contentProto.encode() }
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    internal companion object {
-        fun fromData(contentData: WearWidgetRawContentData): WearWidgetRawContent? {
+    public companion object {
+        public fun fromData(contentData: WearWidgetRawContentData): WearWidgetRawContent? {
             try {
                 val contentProto = WearWidgetRawContentProto.ADAPTER.decode(contentData.payload)
                 return WearWidgetRawContent(rcDocument = contentProto.rc_document.toByteArray())

@@ -821,6 +821,25 @@ internal constructor(
         )
     }
 
+    /**
+     * Creates a new [AppFunctionData] instance with a new [AppFunctionDataSpec] based on the
+     * provided [objectTypeMetadata] and [componentMetadata].
+     *
+     * This should only used by the AppFunction infrastructure when recreating the [AppFunctionData]
+     * from remote response. So that the [AppFunctionData] exposed in the public API surface will
+     * have the same read validation.
+     */
+    internal fun replaceSpecWith(
+        objectTypeMetadata: AppFunctionObjectTypeMetadata,
+        componentMetadata: AppFunctionComponentsMetadata,
+    ): AppFunctionData {
+        return AppFunctionData(
+            AppFunctionDataSpec.create(objectTypeMetadata, componentMetadata),
+            genericDocument,
+            extras,
+        )
+    }
+
     /** Visits all [AppFunctionUriGrant] under the [AppFunctionData]. */
     @WorkerThread
     @RestrictTo(LIBRARY_GROUP)

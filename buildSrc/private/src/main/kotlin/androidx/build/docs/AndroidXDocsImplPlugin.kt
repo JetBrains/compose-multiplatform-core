@@ -723,7 +723,7 @@ private val hiddenAnnotations: List<String> =
         // This annotation is intended to target the compiler and is general not useful for devs.
         "java.lang.Override",
         // This annotation is used by the room processor and isn't useful for developers
-        "androidx.room.Ignore",
+        "androidx.room3.Ignore",
         // This is an internal annotation only used by the kotlin compiler.
         "kotlin.ExtensionFunctionType",
     )

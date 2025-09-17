@@ -76,7 +76,7 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel()) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LifecycleStartEffect(Unit) {
-        viewModel.init(context.applicationContext, lifecycleOwner)
+        viewModel.setupCamera(context.applicationContext, lifecycleOwner)
         onStopOrDispose {}
     }
 

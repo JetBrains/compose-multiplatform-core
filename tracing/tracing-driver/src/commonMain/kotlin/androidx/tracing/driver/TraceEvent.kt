@@ -30,6 +30,10 @@ import androidx.annotation.RestrictTo
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val METADATA_ENTRIES_EXPECTED_SIZE: Int = 4
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val CATEGORIES_EXPECTED_SIZE: Int = 4
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LAST_INDEX_WHEN_EMPTY: Int = -1
+
 /**
  * Mutable in-memory only representation a trace event, such as a slice start, slice end, or counter
  * update.
@@ -113,11 +117,25 @@ internal constructor(
 
     /**
      * Keeping track of the index separately, because the MutableList is pre-allocated with sentinel
-     * objects for performance reasons.
+     * objects for performance reasons. This `index` can be used to determine the true `size` of the
+     * [metadataEntries] `MutableList`.
      */
     @field:Suppress("MutableBareField") // public / mutable to minimize overhead
     @JvmField
-    public var metadataEntryIndex: Int,
+    public var lastMetadataEntryIndex: Int,
+
+    /** The categories that this Trace Event belongs to. */
+    // public / mutable to minimize overhead
+    @field:Suppress("MutableBareField") @JvmField public var categories: MutableList<String>,
+
+    /**
+     * Keeping track of the index separately for [categories], because the `MutableList` is
+     * pre-allocated with sentinel objects for performance reasons. This `index` can be used to
+     * determine the true `size` of the [categories] `MutableList`.
+     */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var lastCategoryIndex: Int,
 ) {
     public constructor() :
         this(
@@ -130,7 +148,9 @@ internal constructor(
             flowIds = emptyList(),
             trackDescriptor = null,
             metadataEntries = MutableList(METADATA_ENTRIES_EXPECTED_SIZE) { MetadataEntry() },
-            metadataEntryIndex = -1,
+            lastMetadataEntryIndex = LAST_INDEX_WHEN_EMPTY,
+            categories = MutableList(size = CATEGORIES_EXPECTED_SIZE) { DEFAULT_STRING },
+            lastCategoryIndex = LAST_INDEX_WHEN_EMPTY,
         )
 
     internal inline fun setPreamble(trackDescriptor: TrackDescriptor) {
@@ -192,7 +212,7 @@ internal constructor(
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public inline fun forEachMetadataEntry(block: (MetadataEntry) -> Unit) {
-        repeat(metadataEntryIndex + 1) { block(metadataEntries[it]) }
+        repeat(lastMetadataEntryIndex + 1) { block(metadataEntries[it]) }
     }
 
     public fun reset() {
@@ -204,13 +224,21 @@ internal constructor(
         counterLongValue = null
         flowIds = emptyList()
         trackDescriptor = null
-        if (metadataEntryIndex >= 0) {
+        if (lastMetadataEntryIndex >= 0) {
             // Reset metadata entries and resize
             forEachMetadataEntry { it.reset() }
-            if (metadataEntryIndex >= METADATA_ENTRIES_EXPECTED_SIZE) {
+            if (lastMetadataEntryIndex >= METADATA_ENTRIES_EXPECTED_SIZE) {
                 metadataEntries = metadataEntries.subList(0, METADATA_ENTRIES_EXPECTED_SIZE)
             }
-            metadataEntryIndex = -1
+            lastMetadataEntryIndex = LAST_INDEX_WHEN_EMPTY
+        }
+        if (lastCategoryIndex >= 0) {
+            // Reset categories and resize
+            repeat(lastCategoryIndex + 1) { categories[it] = DEFAULT_STRING }
+            if (lastCategoryIndex >= CATEGORIES_EXPECTED_SIZE) {
+                categories = categories.subList(0, CATEGORIES_EXPECTED_SIZE)
+            }
+            lastCategoryIndex = LAST_INDEX_WHEN_EMPTY
         }
     }
 }

@@ -24,6 +24,8 @@ import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.annotation.models.PdfEdits
 import java.util.Collections
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Manages annotations for a PDF document, storing them in memory. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -36,6 +38,8 @@ public class InMemoryAnnotationsManager(private val fetcher: PageAnnotationFetch
     // have been found then the value will be empty.
     private val existingAnnotationsPerPage: MutableMap<Int, List<PdfAnnotation>> =
         Collections.synchronizedMap(HashMap())
+
+    private val pageFetchLocks: MutableMap<Int, Mutex> = Collections.synchronizedMap(HashMap())
 
     /**
      * Fetches annotations for the given page from the document, caches them, and adds them to the
@@ -63,9 +67,19 @@ public class InMemoryAnnotationsManager(private val fetcher: PageAnnotationFetch
      * @return A list of [PdfAnnotationData] for the specified page.
      */
     override suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotationData> {
-        if (existingAnnotationsPerPage[pageNum] == null) {
-            fetchAndCacheAnnotationsForPage(pageNum)
+        if (existingAnnotationsPerPage[pageNum] != null) {
+            return annotationEditsDraftState.getEdits(pageNum)
         }
+        val lock = pageFetchLocks.computeIfAbsent(pageNum) { Mutex() }
+        lock.withLock {
+            // After acquiring the lock, another coroutine might have
+            // already fetched the data while this one was waiting. This check
+            // prevents a redundant fetch.
+            if (existingAnnotationsPerPage[pageNum] == null) {
+                fetchAndCacheAnnotationsForPage(pageNum)
+            }
+        }
+
         return annotationEditsDraftState.getEdits(pageNum)
     }
 

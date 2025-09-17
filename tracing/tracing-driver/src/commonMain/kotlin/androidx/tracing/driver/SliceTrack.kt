@@ -37,7 +37,9 @@ public abstract class SliceTrack(
      */
     uuid: Long,
 ) : Track(context = context, uuid = uuid) {
-    @PublishedApi internal val packetLock: Any = Any()
+
+    // Use a single shared trace event scope to avoid allocations.
+    @PublishedApi internal val traceEventScope: TraceEventScope = TraceEventScope()
 
     /**
      * Writes a trace message indicating that a given section of code has begun.
@@ -55,10 +57,11 @@ public abstract class SliceTrack(
         crossinline metadataBlock: (TraceEventScope.() -> Unit) = {},
     ) {
         if (context.isEnabled) {
-            synchronized(packetLock) {
+            synchronized(traceEventScope) {
                 emitTraceEvent { event ->
+                    traceEventScope.event = event
                     event.setBeginSection(uuid, name)
-                    metadataBlock.invoke(TraceEventScope(event))
+                    metadataBlock.invoke(traceEventScope)
                 }
             }
         }
@@ -85,10 +88,11 @@ public abstract class SliceTrack(
         crossinline metadataBlock: (TraceEventScope.() -> Unit) = {},
     ) {
         if (context.isEnabled) {
-            synchronized(packetLock) {
+            synchronized(traceEventScope) {
                 emitTraceEvent { event ->
+                    traceEventScope.event = event
                     event.setBeginSectionWithFlows(uuid, name, flowIds)
-                    metadataBlock.invoke(TraceEventScope(event))
+                    metadataBlock.invoke(traceEventScope)
                 }
             }
         }
@@ -103,7 +107,7 @@ public abstract class SliceTrack(
     @Suppress("NOTHING_TO_INLINE")
     public inline fun endSection() {
         if (context.isEnabled) {
-            synchronized(packetLock) { emitTraceEvent { event -> event.setEndSection(uuid) } }
+            synchronized(traceEventScope) { emitTraceEvent { event -> event.setEndSection(uuid) } }
         }
     }
 
@@ -120,7 +124,9 @@ public abstract class SliceTrack(
      */
     public fun instant(name: String) {
         if (context.isEnabled) {
-            synchronized(packetLock) { emitTraceEvent { event -> event.setInstant(uuid, name) } }
+            synchronized(traceEventScope) {
+                emitTraceEvent { event -> event.setInstant(uuid, name) }
+            }
         }
     }
 

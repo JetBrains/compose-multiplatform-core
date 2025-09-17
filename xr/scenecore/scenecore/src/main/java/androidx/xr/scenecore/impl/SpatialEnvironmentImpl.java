@@ -302,7 +302,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
     private void applyGeometry(
             @Nullable GltfModelResourceImpl geometry,
             @Nullable MaterialResource material,
-            @Nullable String meshName,
+            @Nullable String nodeName,
             @Nullable String animationName) {
         if (!Looper.getMainLooper().isCurrentThread()) {
             throw new IllegalStateException("This method must be called on the main thread.");
@@ -329,10 +329,13 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
             ImpressNode modelImpressNode =
                     mImpressApi.instanceGltfModel(
                             geometry.getExtensionModelToken(), /* enableCollider= */ false);
-            if (material != null && meshName != null) {
+            if (material != null && nodeName != null) {
                 Material materialImpl = (Material) material;
                 mImpressApi.setMaterialOverride(
-                        modelImpressNode, materialImpl.getNativeHandle(), meshName);
+                        modelImpressNode,
+                        materialImpl.getNativeHandle(),
+                        nodeName,
+                        /* primitiveIndex= */ 0);
             }
             if (animationName != null) {
                 ListenableFuture<Void> unused =
@@ -369,8 +372,8 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
                             prevPreference == null ? null : prevPreference.getSkybox();
                     MaterialResource newMaterial =
                             newPreference == null ? null : newPreference.getGeometryMaterial();
-                    String newMeshName =
-                            newPreference == null ? null : newPreference.getGeometryMeshName();
+                    String newNodeName =
+                            newPreference == null ? null : newPreference.getGeometryNodeName();
                     String newAnimationName =
                             newPreference == null ? null : newPreference.getGeometryAnimationName();
 
@@ -397,7 +400,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
                             applyGeometry(
                                     (GltfModelResourceImpl) newGeometry,
                                     newMaterial,
-                                    newMeshName,
+                                    newNodeName,
                                     newAnimationName);
                         } else if (newGeometry != null) {
                             // Only throw unsupported if the geometry is not null. If it is null,

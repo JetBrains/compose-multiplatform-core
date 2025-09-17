@@ -40,8 +40,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.runBlocking
 
 /** Configure and provide a single [Threads] object to other parts of the library. */
 @Module
@@ -162,11 +160,6 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
                 cameraPipeScope.cancel()
                 cameraPipeDispatchScope.cancel()
-
-                runBlocking {
-                    cameraPipeScope.coroutineContext[Job]?.cancelAndJoin()
-                    cameraPipeDispatchScope.coroutineContext[Job]?.cancelAndJoin()
-                }
             }
         }
 

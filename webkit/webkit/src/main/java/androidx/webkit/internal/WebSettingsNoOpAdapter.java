@@ -19,6 +19,7 @@ package androidx.webkit.internal;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import androidx.webkit.BackForwardCacheSettings;
 import androidx.webkit.UserAgentMetadata;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewMediaIntegrityApiStatusConfig;
@@ -167,7 +168,7 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
     /**
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#setRequestedWithHeaderOriginAllowList(
-     * WebSettings, Set)}.
+     *WebSettings, Set)}.
      */
     @Override
     public void setRequestedWithHeaderOriginAllowList(@NonNull Set<String> allowList) {
@@ -186,7 +187,7 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
     /**
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#setUserAgentMetadata(
-     * WebSettings, UserAgentMetadata)}.
+     *WebSettings, UserAgentMetadata)}.
      */
     @Override
     public void setUserAgentMetadata(@NonNull UserAgentMetadata uaMetadata) {
@@ -286,7 +287,8 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
      * {@link androidx.webkit.WebSettingsCompat#setPaymentRequestEnabled(WebSettings, boolean)}
      */
     @Override
-    public void setPaymentRequestEnabled(boolean enabled) {}
+    public void setPaymentRequestEnabled(boolean enabled) {
+    }
 
     /**
      * Adapter method for
@@ -302,7 +304,8 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
      * {@link androidx.webkit.WebSettingsCompat#setHasEnrolledInstrumentEnabled(WebSettings, boolean)}
      */
     @Override
-    public void setHasEnrolledInstrumentEnabled(boolean enabled) {}
+    public void setHasEnrolledInstrumentEnabled(boolean enabled) {
+    }
 
     /**
      * Adapter method for
@@ -328,4 +331,23 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
      */
     @Override
     public void setHyperlinkContextMenuItems(int hyperlinkMenuItems) {}
+
+    /**
+     * {@link androidx.webkit.WebSettingsCompat#getBackForwardCacheSettings(WebSettings)}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public @NonNull BackForwardCacheSettings getBackForwardCacheSettings() {
+        return new BackForwardCacheSettings.Builder().build();
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setBackForwardCacheSettings(WebSettings, BackForwardCacheSettings)}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    @Override
+    public void setBackForwardCacheSettings(@NonNull BackForwardCacheSettings settings) {
+    }
+
 }

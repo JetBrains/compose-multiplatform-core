@@ -17,14 +17,11 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
-import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.TextureResource as RtTextureResource
-import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import java.nio.file.Path
-import java.util.concurrent.CancellationException
 
 /**
  * Represents a [Texture] in SceneCore.
@@ -56,33 +53,13 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
     }
 
     public companion object {
-        @SuppressWarnings("RestrictTo")
-        internal fun createAsync(
+        internal suspend fun createAsync(
             platformAdapter: JxrPlatformAdapter,
             name: String,
             session: Session,
-        ): ListenableFuture<Texture> {
-            val textureResourceFuture = platformAdapter.loadTexture(name)
-            val textureFuture = ResolvableFuture.create<Texture>()
-            textureResourceFuture!!.addListener(
-                {
-                    try {
-                        val texture = textureResourceFuture.get()
-                        textureFuture.set(Texture(texture, session))
-                    } catch (e: Exception) {
-                        if (e is InterruptedException) {
-                            Thread.currentThread().interrupt()
-                        }
-                        if (e is CancellationException) {
-                            textureFuture.cancel(false)
-                        } else {
-                            textureFuture.setException(e)
-                        }
-                    }
-                },
-                Runnable::run,
-            )
-            return textureFuture
+        ): Texture {
+            val textureResource = platformAdapter.loadTexture(name)!!.awaitSuspending()
+            return Texture(textureResource, session)
         }
 
         /**
@@ -104,7 +81,7 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
             require(!File(path.toString()).isAbsolute) {
                 "Texture.create() expects a path relative to `assets/`, received absolute path $path."
             }
-            return createAsync(session.platformAdapter, path.toString(), session).awaitSuspending()
+            return createAsync(session.platformAdapter, path.toString(), session)
         }
     }
 }

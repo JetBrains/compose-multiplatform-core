@@ -30,7 +30,6 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionS
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
 import androidx.appfunctions.compiler.core.IntrospectionHelper
-import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionDataClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass.FromAppFunctionDataMethod
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass.FromAppFunctionDataMethod.APP_FUNCTION_DATA_PARAM_NAME
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass.ToAppFunctionDataMethod.APP_FUNCTION_SERIALIZABLE_PARAM_NAME
@@ -46,7 +45,6 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.buildCodeBlock
-import kotlin.text.replace
 
 /**
  * Wraps methods to build the [CodeBlock]s that make up the method bodies of the generated
@@ -166,6 +164,8 @@ class AppFunctionSerializableFactoryCodeBuilder(
      *
      * For example, given the following serializable class:
      * ```
+     * package com.example
+     *
      * @AppFunctionSerializable
      * class SampleSerializable(
      *     val longParam: Long,
@@ -176,6 +176,10 @@ class AppFunctionSerializableFactoryCodeBuilder(
      * The generated `fromAppFunctionData` method would look like:
      * ```
      * override fun fromAppFunctionData(appFunctionData: AppFunctionData) : SampleSerializable {
+     *     val appFunctionDataWithSpec = getAppFunctionDataWithSpec(
+     *             appFunctionData = appFunctionData,
+     *             qualifiedName = "com.example.SampleSerializable"
+     *     )
      *     val longParam = checkNotNull(appFunctionData.getLongOrNull("longParam"))
      *     val doubleParam = checkNotNull(appFunctionData.getDoubleOrNull("doubleParam"))
      *     val resultSampleSerializable = SampleSerializable(longParam, doubleParam)
@@ -189,6 +193,14 @@ class AppFunctionSerializableFactoryCodeBuilder(
      */
     private fun appendFromAppFunctionDataMethodBodyCommon(getterResultName: String): CodeBlock {
         return buildCodeBlock {
+            addStatement(
+                "val %L = %N(appFunctionData = %L, qualifiedName = %S)",
+                APP_FUNCTION_DATA_WITH_SPEC_VARIABLE_NAME,
+                IntrospectionHelper.AppFunctionSerializableFactoryClass.GetAppFunctionDataWithSpec
+                    .METHOD_NAME,
+                APP_FUNCTION_DATA_PARAM_NAME,
+                annotatedClass.jvmQualifiedName,
+            )
             add(factoryInitStatements)
             for (property in annotatedClass.getProperties()) {
                 val paramName = property.name
@@ -360,8 +372,9 @@ class AppFunctionSerializableFactoryCodeBuilder(
             add(factoryInitStatements)
             val qualifiedClassName = annotatedClass.jvmQualifiedName
             addStatement(
-                "val builder = %T(%S)",
-                AppFunctionDataClass.BuilderClass.CLASS_NAME,
+                "val builder = %N(%S)",
+                IntrospectionHelper.AppFunctionSerializableFactoryClass.GetAppFunctionDataBuilder
+                    .METHOD_NAME,
                 qualifiedClassName,
             )
             for (property in annotatedClass.getProperties()) {
@@ -397,7 +410,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
         val formatStringMap =
             mapOf<String, Any>(
                 "param_name" to paramName,
-                "app_function_data_param_name" to APP_FUNCTION_DATA_PARAM_NAME,
+                "app_function_data_param_name" to APP_FUNCTION_DATA_WITH_SPEC_VARIABLE_NAME,
                 "type_parameter_property_name" to getTypeParameterPropertyName(paramTypeParameter),
             )
         addNamed(
@@ -470,7 +483,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
         val formatStringMap =
             mapOf<String, Any>(
                 "param_name" to paramName,
-                "app_function_data_param_name" to APP_FUNCTION_DATA_PARAM_NAME,
+                "app_function_data_param_name" to APP_FUNCTION_DATA_WITH_SPEC_VARIABLE_NAME,
                 "getter_name" to getAppFunctionDataGetterName(afType),
                 "default_value_postfix" to getGetterDefaultValueStatement(afType, isRequired),
             )
@@ -498,7 +511,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
                 "param_name" to paramName,
                 "param_type" to afType.selfTypeReference.toTypeName(),
                 "factory_name" to factoryName,
-                "app_function_data_param_name" to APP_FUNCTION_DATA_PARAM_NAME,
+                "app_function_data_param_name" to APP_FUNCTION_DATA_WITH_SPEC_VARIABLE_NAME,
                 "getter_name" to getAppFunctionDataGetterName(afType),
                 "from_app_function_data_method_name" to FromAppFunctionDataMethod.METHOD_NAME,
                 "serializable_data_val_name" to "${paramName}Data",
@@ -542,7 +555,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
             mapOf<String, Any>(
                 "param_name" to paramName,
                 "temp_list_name" to "${paramName}Data",
-                "app_function_data_param_name" to APP_FUNCTION_DATA_PARAM_NAME,
+                "app_function_data_param_name" to APP_FUNCTION_DATA_WITH_SPEC_VARIABLE_NAME,
                 "factory_instance_name" to factoryInstanceName,
                 "getter_name" to getAppFunctionDataGetterName(afType),
                 "default_value_postfix" to getGetterDefaultValueStatement(afType, isRequired),
@@ -1035,5 +1048,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
         fun getTypeParameterPropertyName(typeParameter: KSTypeParameter): String {
             return "${typeParameter.name.asString().uppercase().replaceFirstChar { it.lowercase() }}TypeParameter"
         }
+
+        const val APP_FUNCTION_DATA_WITH_SPEC_VARIABLE_NAME = "appFunctionDataWithSpec"
     }
 }

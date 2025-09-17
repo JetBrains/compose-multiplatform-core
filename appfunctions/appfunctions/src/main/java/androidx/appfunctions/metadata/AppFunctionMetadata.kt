@@ -106,8 +106,7 @@ constructor(
         append(")")
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun copy(
+    internal fun copy(
         id: String = this.id,
         packageName: String = this.packageName,
         isEnabled: Boolean = this.isEnabled,
@@ -165,8 +164,7 @@ public data class CompileTimeAppFunctionMetadata(
     public val description: String = "",
 ) {
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun copy(
+    internal fun copy(
         id: String? = null,
         isEnabledByDefault: Boolean? = null,
         schema: AppFunctionSchemaMetadata? = null,
@@ -191,8 +189,7 @@ public data class CompileTimeAppFunctionMetadata(
      *
      * This method is used to persist the [CompileTimeAppFunctionMetadata] in a database.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toAppFunctionMetadataDocument(): AppFunctionMetadataDocument {
+    internal fun toAppFunctionMetadataDocument(): AppFunctionMetadataDocument {
         return AppFunctionMetadataDocument(
             id = id,
             isEnabledByDefault = isEnabledByDefault,

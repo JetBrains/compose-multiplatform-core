@@ -31,7 +31,7 @@ public open class ProcessTrack(
     internal val counters = mutableScatterMapOf<String, CounterTrack>()
 
     init {
-        synchronized(packetLock) {
+        synchronized(traceEventScope) {
             emitTraceEvent(immediateDispatch = true) { event ->
                 event.setPreamble(
                     TrackDescriptor(

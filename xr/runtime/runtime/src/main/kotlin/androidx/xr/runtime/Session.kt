@@ -19,6 +19,7 @@
 package androidx.xr.runtime
 
 import android.app.Activity
+import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -44,6 +45,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * A session is the main entrypoint to features provided by ARCore for Jetpack XR. It manages the
@@ -296,7 +300,10 @@ public constructor(
 
     private var updateJob: Job? = null
 
+    private val lock = Mutex()
+
     /** The current state of the runtime configuration. */
+    @GuardedBy("lock")
     public var config: Config =
         Config(
             Config.PlaneTrackingMode.DISABLED,
@@ -326,7 +333,7 @@ public constructor(
      * @return the result of the operation. This will be a [SessionConfigureSuccess] if the
      *   configuration was successful, or another [SessionConfigureResult] if a certain
      *   configuration criteria was not met.
-     * @throws IllegalStateException if the session has been destroyed.
+     * @throws [IllegalStateException] if the session has been destroyed.
      * @throws [SecurityException] if the necessary permissions have not been granted to the calling
      *   application for the provided configuration.
      */
@@ -334,19 +341,23 @@ public constructor(
         check(activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
             "Session has been destroyed."
         }
-        try {
-            for (runtime in runtimes) {
-                runtime.configure(config)
+        return runBlocking {
+            lock.withLock {
+                try {
+                    for (runtime in runtimes) {
+                        runtime.configure(config)
+                    }
+                } catch (e: ConfigurationNotSupportedException) {
+                    return@withLock SessionConfigureConfigurationNotSupported()
+                } catch (e: FaceTrackingNotCalibratedException) {
+                    return@withLock SessionConfigureCalibrationRequired(
+                        RequiredCalibrationType.REQUIRED_CALIBRATION_TYPE_FACE_TRACKING
+                    )
+                }
+                this@Session.config = config
+                SessionConfigureSuccess()
             }
-        } catch (e: ConfigurationNotSupportedException) {
-            return SessionConfigureConfigurationNotSupported()
-        } catch (e: FaceTrackingNotCalibratedException) {
-            return SessionConfigureCalibrationRequired(
-                RequiredCalibrationType.REQUIRED_CALIBRATION_TYPE_FACE_TRACKING
-            )
         }
-        this.config = config
-        return SessionConfigureSuccess()
     }
 
     /** Starts or resumes the session. */
@@ -391,23 +402,23 @@ public constructor(
 
     private suspend fun updateLoop() {
         while (activity.lifecycle.currentState == Lifecycle.State.RESUMED) {
-            update()
+            lock.withLock { update() }
         }
     }
 
     /** Produces the latest [CoreState] so it can be emitted downstream. */
+    @GuardedBy("lock")
     private suspend fun update() {
         var timeMark: ComparableTimeMark? = null
         for (runtime in runtimes) {
             runtime.update()?.let { timeMark = it }
         }
         check(timeMark != null)
-        val state = CoreState(timeMark!!)
+        val state = CoreState(timeMark)
 
         for (stateExtender in stateExtenders) {
             stateExtender.extend(state)
         }
-
         _state.emit(state)
     }
 }

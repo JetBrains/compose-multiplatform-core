@@ -701,8 +701,9 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         Runnable onSurfaceInvalidated = this::notifyReset;
         Range<Integer> expectedFrameRate = resolveFrameRate(streamSpec);
         MediaSpec mediaSpec = requireNonNull(getMediaSpec());
+        int sessionType = streamSpec.getSessionType();
         VideoCapabilities videoCapabilities = getVideoCapabilities(camera.getCameraInfo(),
-                streamSpec.getSessionType());
+                sessionType);
         DynamicRange dynamicRange = streamSpec.getDynamicRange();
         VideoValidatedEncoderProfilesProxy encoderProfiles =
                 videoCapabilities.findNearestHigherSupportedEncoderProfilesFor(resolution,
@@ -722,10 +723,12 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         mCropRect = adjustCropRectByQuirk(
                 mCropRect,
                 mRotationDegrees,
-                isCreateNodeNeeded(camera, config, mCropRect, resolution, dynamicRange),
+                isCreateNodeNeeded(camera, config, sessionType, mCropRect, resolution,
+                        dynamicRange),
                 videoEncoderInfo
         );
-        mNode = createNodeIfNeeded(camera, config, mCropRect, resolution, dynamicRange);
+        mNode = createNodeIfNeeded(camera, config, sessionType, mCropRect, resolution,
+                dynamicRange);
         boolean hasGlProcessing = !camera.getHasTransform() || mNode != null;
         Timebase timebase = resolveTimebase(camera, mNode);
         Logger.d(TAG, "camera timebase = " + camera.getCameraInfoInternal().getTimebase()
@@ -781,7 +784,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
         SessionConfig.Builder sessionConfigBuilder = SessionConfig.Builder.createFrom(config,
                 streamSpec.getResolution());
-        sessionConfigBuilder.setSessionType(streamSpec.getSessionType());
+        sessionConfigBuilder.setSessionType(sessionType);
         // Use the frame rate range directly from the StreamSpec here (don't resolve it to the
         // default if unresolved).
         // Applies the AE fps range to the session config builder according to the stream spec and
@@ -1081,10 +1084,16 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     private boolean isCreateNodeNeeded(@NonNull CameraInternal camera,
             @NonNull VideoCaptureConfig<?> config,
+            int sessionType,
             @NonNull Rect cropRect,
             @NonNull Size resolution,
             @NonNull DynamicRange dynamicRange
     ) {
+        if (sessionType == SESSION_TYPE_HIGH_SPEED) {
+            // High-Speed capture on preview surface (ex: SurfaceTexture Surface) is not
+            // supported by framework.
+            return false;
+        }
         return getEffect() != null
                 || shouldEnableSurfaceProcessingByConfig(camera, config)
                 || shouldEnableSurfaceProcessingByQuirk(camera)
@@ -1096,10 +1105,11 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     private @Nullable SurfaceProcessorNode createNodeIfNeeded(@NonNull CameraInternal camera,
             @NonNull VideoCaptureConfig<T> config,
+            int sessionType,
             @NonNull Rect cropRect,
             @NonNull Size resolution,
             @NonNull DynamicRange dynamicRange) {
-        if (isCreateNodeNeeded(camera, config, cropRect, resolution, dynamicRange)) {
+        if (isCreateNodeNeeded(camera, config, sessionType, cropRect, resolution, dynamicRange)) {
             Logger.d(TAG, "Surface processing is enabled.");
             return new SurfaceProcessorNode(requireNonNull(getCamera()),
                     getEffect() != null ? getEffect().createSurfaceProcessorInternal() :

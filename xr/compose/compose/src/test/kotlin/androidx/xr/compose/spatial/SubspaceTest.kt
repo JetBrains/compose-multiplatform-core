@@ -42,6 +42,7 @@ import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.depth
+import androidx.xr.compose.subspace.layout.fillMaxDepth
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.fillMaxWidth
@@ -274,6 +275,54 @@ class SubspaceTest {
             composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
         val innerPanelEntity = innerPanelNode.semanticsEntity
         assertThat(innerPanelEntity?.isEnabled(true)).isTrue()
+    }
+
+    @Test
+    fun subspace_panelEmbedded_depthConstraint() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.depth(10.dp).testTag("panel")) {
+                    Subspace {
+                        SpatialPanel(SubspaceModifier.depth(20.dp).testTag("innerPanel")) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(10.dp)
+    }
+
+    @Test
+    fun subspace_panelEmbedded_fillMaxDepth() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.depth(10.dp).testTag("panel")) {
+                    Subspace {
+                        SpatialPanel(SubspaceModifier.fillMaxDepth().testTag("innerPanel")) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(10.dp)
+    }
+
+    @Test
+    fun subspace_panelEmbedded_unboundedDepth() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.sizeIn(maxDepth = VolumeConstraints.INFINITY.dp)
+                        .testTag("panel")
+                ) {
+                    Subspace {
+                        SpatialPanel(SubspaceModifier.depth(20.dp).testTag("innerPanel")) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(20.dp)
     }
 
     @Test

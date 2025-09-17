@@ -38,12 +38,25 @@ public interface GltfEntity : Entity {
     public fun stopAnimation()
 
     /**
-     * Sets a material override for a mesh in the glTF model.
+     * Sets a material override for a specific mesh of a node.
      *
-     * @param material The material to use for the mesh.
-     * @param meshName The name of the mesh to use the material for.
+     * @param material The material to use for the mesh primitive.
+     * @param nodeName The name of the node containing the mesh to override.
+     * @param primitiveIndex The zero-based index for the mesh of the node.
      */
-    public fun setMaterialOverride(material: MaterialResource, meshName: String)
+    public fun setMaterialOverride(
+        material: MaterialResource,
+        nodeName: String,
+        primitiveIndex: Int,
+    )
+
+    /**
+     * Clears a material override for a specific mesh of a node.
+     *
+     * @param nodeName The name of the node containing the mesh for which to clear the override.
+     * @param primitiveIndex The zero-based index for the mesh of the node.
+     */
+    public fun clearMaterialOverride(nodeName: String, primitiveIndex: Int)
 
     // TODO: b/417750821 - Add an OnAnimationFinished() Listener interface
     //                     Add a getAnimationTimeRemaining() interface

@@ -18,10 +18,14 @@ package androidx.webkit.internal;
 
 import android.webkit.WebSettings;
 
+import androidx.webkit.BackForwardCacheSettings;
 import androidx.webkit.UserAgentMetadata;
+import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewMediaIntegrityApiStatusConfig;
 
 import org.chromium.support_lib_boundary.WebSettingsBoundaryInterface;
+import org.chromium.support_lib_boundary.WebViewBackForwardCacheSettingsBoundaryInterface;
+import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Set;
@@ -149,7 +153,7 @@ public class WebSettingsAdapter {
     /**
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#setRequestedWithHeaderOriginAllowList(
-     * WebSettings, Set)}.
+     *WebSettings, Set)}.
      */
     public void setRequestedWithHeaderOriginAllowList(@NonNull Set<String> allowList) {
         mBoundaryInterface.setRequestedWithHeaderOriginAllowList(allowList);
@@ -167,7 +171,7 @@ public class WebSettingsAdapter {
     /**
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#setUserAgentMetadata(
-     * WebSettings, UserAgentMetadata)}.
+     *WebSettings, UserAgentMetadata)}.
      */
     public void setUserAgentMetadata(@NonNull UserAgentMetadata uaMetadata) {
         mBoundaryInterface.setUserAgentMetadataFromMap(
@@ -313,5 +317,40 @@ public class WebSettingsAdapter {
      */
     public void setHyperlinkContextMenuItems(int hyperlinkMenuItems) {
         mBoundaryInterface.setHyperlinkContextMenuItems(hyperlinkMenuItems);
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#getBackForwardCacheSettings(WebSettings)}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public @NonNull BackForwardCacheSettings getBackForwardCacheSettings() {
+        WebViewBackForwardCacheSettingsBoundaryInterface boundaryInterface =
+                BoundaryInterfaceReflectionUtil.castToSuppLibClass(
+                        WebViewBackForwardCacheSettingsBoundaryInterface.class,
+                        mBoundaryInterface.getBackForwardCacheSettings());
+
+        BackForwardCacheSettings settings =
+                (BackForwardCacheSettings) boundaryInterface.getOrCreatePeer(
+                        () -> new BackForwardCacheSettings.Builder().setMaxPagesInCache(
+                                boundaryInterface.getMaxPagesInCache()).setTimeoutSeconds(
+                                boundaryInterface.getTimeoutInSeconds()).build()
+                );
+
+        if (settings != null) return settings;
+        return new BackForwardCacheSettings.Builder().build();
+    }
+
+    /**
+     * Adapter method for
+     * {@link androidx.webkit.WebSettingsCompat#setBackForwardCacheSettings(WebSettings, BackForwardCacheSettings)}
+     */
+    @WebSettingsCompat.ExperimentalBackForwardCacheSettings
+    public void setBackForwardCacheSettings(@NonNull BackForwardCacheSettings settings) {
+        WebViewBackForwardCacheSettingsBoundaryInterface boundaryInterface =
+                new BackForwardCacheSettingsImpl(settings);
+
+        mBoundaryInterface.setBackForwardCacheSettings(
+                BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(boundaryInterface));
     }
 }

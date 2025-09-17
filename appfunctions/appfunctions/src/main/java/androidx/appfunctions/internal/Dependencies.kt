@@ -43,4 +43,13 @@ public object Dependencies {
             null
         }
     }
+
+    public val aggregatedAppFunctionInventory: AggregatedAppFunctionInventory? by lazy {
+        try {
+            AggregatedAppFunctionInventory::class.java.findImpl(prefix = "$", suffix = "_Impl")
+        } catch (e: Exception) {
+            Log.d(APP_FUNCTIONS_TAG, "Cannot find AggregatedAppFunctionInventory implementation", e)
+            null
+        }
+    }
 }

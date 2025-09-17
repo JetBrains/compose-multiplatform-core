@@ -22,7 +22,6 @@ import androidx.annotation.ColorLong
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.ColorAttribute
 import androidx.compose.remote.core.operations.Utils
-import androidx.compose.remote.frontend.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.frontend.capture.RecordingCanvas.Companion.REMOTE_COMPOSE_EXPRESSION_COLOR_SPACE_ID
 import androidx.compose.remote.frontend.capture.RemoteComposeCreationState
 import androidx.compose.remote.frontend.layout.RemoteComposable
@@ -198,6 +197,11 @@ public open class RemoteColor(
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
+        /** Creates a [RemoteColor] from [Color]. */
+        public operator fun invoke(color: Color): RemoteColor {
+            return RemoteColor(color.toArgb())
+        }
+
         /**
          * Creates a [RemoteColor] from remote [hue], [saturation], and [value] (brightness)
          * components. The resulting color is expressed as a [RemoteColor] expression that combines
@@ -308,10 +312,9 @@ public fun rememberRemoteColor(
     domain: String = "USER",
     value: () -> Color,
 ): RemoteColor {
-    val state = LocalRemoteComposeCreationState.current
     return remember(name) {
         RemoteColor(hasConstantValue = false) {
-            state.document.addNamedColor("$domain:$name", value().toArgb())
+            it.document.addNamedColor("$domain:$name", value().toArgb())
         }
     }
 }

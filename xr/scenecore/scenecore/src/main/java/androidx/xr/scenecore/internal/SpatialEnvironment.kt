@@ -136,8 +136,8 @@ public interface SpatialEnvironment {
      *   null, it will be all black.
      * @param geometryMaterial the material to override a given mesh in the geometry. If null, the
      *   material will not override any mesh.
-     * @param geometryMeshName the name of the mesh to override with the material. If null, the
-     *   material will not override any mesh.
+     * @param geometryNodeName the name of the node that contains the mesh to override with the
+     *   material. If null, the material will not override any mesh.
      * @param geometryAnimationName the name of the animation to play on the geometry. If null, the
      *   geometry will not play any animation. Note that the animation will be played in loop.
      */
@@ -147,7 +147,7 @@ public interface SpatialEnvironment {
         public val skybox: ExrImageResource?,
         public val geometry: GltfModelResource?,
         public val geometryMaterial: MaterialResource? = null,
-        public val geometryMeshName: String? = null,
+        public val geometryNodeName: String? = null,
         public val geometryAnimationName: String? = null,
     ) {
         override fun equals(other: Any?): Boolean {
@@ -157,7 +157,7 @@ public interface SpatialEnvironment {
             return skybox == other.skybox &&
                 geometry == other.geometry &&
                 geometryMaterial == other.geometryMaterial &&
-                geometryMeshName == other.geometryMeshName &&
+                geometryNodeName == other.geometryNodeName &&
                 geometryAnimationName == other.geometryAnimationName
         }
 

@@ -355,8 +355,9 @@ public final class ImpressApiImpl implements ImpressApi {
     @Override
     @NonNull
     public ImpressNode instanceGltfModel(long gltfToken) {
-        return new ImpressNode(nInstanceGltfModel(
-                getViewNativeHandle(view), gltfToken, /* enableCollider= */ false));
+        return new ImpressNode(
+                nInstanceGltfModel(
+                        getViewNativeHandle(view), gltfToken, /* enableCollider= */ false));
     }
 
     @Override
@@ -369,7 +370,7 @@ public final class ImpressApiImpl implements ImpressApi {
     // TODO(b/376740308): Add support for toggling the collider on StereoSurface.
     @Override
     public void setGltfModelColliderEnabled(
-                @NonNull ImpressNode impressNode, boolean enableCollider) {
+            @NonNull ImpressNode impressNode, boolean enableCollider) {
         nSetGltfModelColliderEnabled(
                 getViewNativeHandle(view), impressNode.getHandle(), enableCollider);
     }
@@ -467,30 +468,34 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setImpressNodeParent(
-                @NonNull ImpressNode impressNodeChild, @NonNull ImpressNode impressNodeParent) {
-        nSetImpressNodeParent(getViewNativeHandle(view),
-                impressNodeChild.getHandle(), impressNodeParent.getHandle());
+            @NonNull ImpressNode impressNodeChild, @NonNull ImpressNode impressNodeParent) {
+        nSetImpressNodeParent(
+                getViewNativeHandle(view),
+                impressNodeChild.getHandle(),
+                impressNodeParent.getHandle());
     }
 
     @Override
     @NonNull
     public ImpressNode createStereoSurface(@StereoMode int stereoMode) {
-        return new ImpressNode(nCreateStereoSurfaceEntity(
-                getViewNativeHandle(view),
-                validateStereoMode(stereoMode),
-                ContentSecurityLevel.NONE,
-                /* useSuperSampling= */ false));
+        return new ImpressNode(
+                nCreateStereoSurfaceEntity(
+                        getViewNativeHandle(view),
+                        validateStereoMode(stereoMode),
+                        ContentSecurityLevel.NONE,
+                        /* useSuperSampling= */ false));
     }
 
     @Override
     @NonNull
     public ImpressNode createStereoSurface(
             @StereoMode int stereoMode, @ContentSecurityLevel int contentSecurityLevel) {
-        return new ImpressNode(nCreateStereoSurfaceEntity(
-                getViewNativeHandle(view),
-                validateStereoMode(stereoMode),
-                validateContentSecurityLevel(contentSecurityLevel),
-                /* useSuperSampling= */ false));
+        return new ImpressNode(
+                nCreateStereoSurfaceEntity(
+                        getViewNativeHandle(view),
+                        validateStereoMode(stereoMode),
+                        validateContentSecurityLevel(contentSecurityLevel),
+                        /* useSuperSampling= */ false));
     }
 
     @Override
@@ -499,39 +504,42 @@ public final class ImpressApiImpl implements ImpressApi {
             @StereoMode int stereoMode,
             @ContentSecurityLevel int contentSecurityLevel,
             boolean useSuperSampling) {
-        return new ImpressNode(nCreateStereoSurfaceEntity(
-                getViewNativeHandle(view),
-                validateStereoMode(stereoMode),
-                validateContentSecurityLevel(contentSecurityLevel),
-                useSuperSampling));
+        return new ImpressNode(
+                nCreateStereoSurfaceEntity(
+                        getViewNativeHandle(view),
+                        validateStereoMode(stereoMode),
+                        validateContentSecurityLevel(contentSecurityLevel),
+                        useSuperSampling));
     }
 
     @Override
     public void setStereoSurfaceEntityCanvasShapeQuad(
-                @NonNull ImpressNode impressNode, float width, float height) {
+            @NonNull ImpressNode impressNode, float width, float height) {
         nSetStereoSurfaceEntityCanvasShapeQuad(
                 getViewNativeHandle(view), impressNode.getHandle(), width, height);
     }
 
     @Override
     public void setStereoSurfaceEntityCanvasShapeSphere(
-                @NonNull ImpressNode impressNode, float radius) {
+            @NonNull ImpressNode impressNode, float radius) {
         nSetStereoSurfaceEntityCanvasShapeSphere(
                 getViewNativeHandle(view), impressNode.getHandle(), radius);
     }
 
     @Override
     public void setStereoSurfaceEntityCanvasShapeHemisphere(
-                @NonNull ImpressNode impressNode, float radius) {
+            @NonNull ImpressNode impressNode, float radius) {
         nSetStereoSurfaceEntityCanvasShapeHemisphere(
                 getViewNativeHandle(view), impressNode.getHandle(), radius);
     }
 
     @Override
     public void setStereoModeForStereoSurface(
-                @NonNull ImpressNode panelImpressNode, @StereoMode int stereoMode) {
-        nSetStereoModeForStereoSurfaceEntity(getViewNativeHandle(view),
-                panelImpressNode.getHandle(), validateStereoMode(stereoMode));
+            @NonNull ImpressNode panelImpressNode, @StereoMode int stereoMode) {
+        nSetStereoModeForStereoSurfaceEntity(
+                getViewNativeHandle(view),
+                panelImpressNode.getHandle(),
+                validateStereoMode(stereoMode));
     }
 
     @Override
@@ -572,14 +580,14 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setPrimaryAlphaMaskForStereoSurface(
-                @NonNull ImpressNode panelImpressNode, long alphaMask) {
+            @NonNull ImpressNode panelImpressNode, long alphaMask) {
         nSetPrimaryAlphaMaskForStereoSurfaceEntity(
                 getViewNativeHandle(view), panelImpressNode.getHandle(), alphaMask);
     }
 
     @Override
     public void setAuxiliaryAlphaMaskForStereoSurface(
-                @NonNull ImpressNode panelImpressNode, long alphaMask) {
+            @NonNull ImpressNode panelImpressNode, long alphaMask) {
         nSetAuxiliaryAlphaMaskForStereoSurfaceEntity(
                 getViewNativeHandle(view), panelImpressNode.getHandle(), alphaMask);
     }
@@ -1298,9 +1306,23 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setMaterialOverride(
-            @NonNull ImpressNode impressNode, long nativeMaterial, @NonNull String meshName) {
+            @NonNull ImpressNode impressNode,
+            long nativeMaterial,
+            @NonNull String nodeName,
+            int primitiveIndex) {
         nSetMaterialOverride(
-                getViewNativeHandle(view), impressNode.getHandle(), nativeMaterial, meshName);
+                getViewNativeHandle(view),
+                impressNode.getHandle(),
+                nativeMaterial,
+                nodeName,
+                primitiveIndex);
+    }
+
+    @Override
+    public void clearMaterialOverride(
+            @NonNull ImpressNode impressNode, @NonNull String nodeName, int primitiveIndex) {
+        nClearMaterialOverride(
+                getViewNativeHandle(view), impressNode.getHandle(), nodeName, primitiveIndex);
     }
 
     @Override
@@ -1739,7 +1761,10 @@ public final class ImpressApiImpl implements ImpressApi {
     private static native void nDestroyNativeObject(long view, long nativeHandle);
 
     private static native void nSetMaterialOverride(
-            long view, int impressNode, long nativeMaterial, String meshName);
+            long view, int impressNode, long nativeMaterial, String nodeName, int primitive_index);
+
+    private static native void nClearMaterialOverride(
+            long view, int impressNode, String nodeName, int primitive_index);
 
     private static native void nSetEnvironmentLight(long view, long iblToken);
 

@@ -265,6 +265,9 @@ internal actual value class Strings constructor(val value: Int) {
 
         actual inline val WideNavigationRailPaneTitle
             get() = Strings(MaterialR.string.m3c_wide_navigation_rail_pane_title)
+
+        actual inline val ButtonGroupMoreOptions
+            get() = Strings(MaterialR.string.m3c_button_group_more_options)
     }
 }
 

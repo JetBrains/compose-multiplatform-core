@@ -90,7 +90,7 @@ object IntrospectionHelper {
 
     // Classes
     val APP_FUNCTION_INVENTORY_CLASS =
-        ClassName(APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME, "AppFunctionInventory")
+        ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AppFunctionInventory")
     val SCHEMA_APP_FUNCTION_INVENTORY_CLASS =
         ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "SchemaAppFunctionInventory")
     val APP_FUNCTION_METADATA_CLASS =
@@ -173,6 +173,16 @@ object IntrospectionHelper {
             const val APP_FUNCTION_DATA_PARAM_NAME = "appFunctionData"
         }
 
+        object GetAppFunctionDataBuilder {
+            const val METHOD_NAME = "getAppFunctionDataBuilder"
+            const val QUALIFIED_NAME_PARAM_NAME = "qualifiedName"
+        }
+
+        object GetAppFunctionDataWithSpec {
+            const val METHOD_NAME = "getAppFunctionDataWithSpec"
+            const val QUALIFIED_NAME_PARAM_NAME = "appFunctionData"
+        }
+
         object ToAppFunctionDataMethod {
             const val METHOD_NAME = "toAppFunctionData"
             const val APP_FUNCTION_SERIALIZABLE_PARAM_NAME = "appFunctionSerializable"
@@ -230,7 +240,7 @@ object IntrospectionHelper {
 
     object AggregatedAppFunctionInventoryClass {
         val CLASS_NAME =
-            ClassName(APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME, "AggregatedAppFunctionInventory")
+            ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AggregatedAppFunctionInventory")
 
         const val PROPERTY_INVENTORIES_NAME = "inventories"
     }

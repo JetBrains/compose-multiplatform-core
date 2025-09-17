@@ -22,7 +22,6 @@ import android.os.Build
 import android.os.LocaleList
 import android.view.textclassifier.TextClassificationManager
 import android.view.textclassifier.TextClassifier
-import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.ClipboardUtils
 import kotlinx.coroutines.coroutineScope
@@ -42,9 +41,7 @@ internal class TextSelectionMenuProvider(private val context: Context) :
 
     override suspend fun getMenuItems(selection: TextSelection): List<ContextMenuComponent> {
         val menuItems: MutableList<ContextMenuComponent> = mutableListOf()
-        if (PdfFeatureFlags.isSmartActionMenuComponentEnabled) {
-            menuItems += getSmartMenuItems(selection.text)
-        }
+        menuItems += getSmartMenuItems(selection.text)
         menuItems += getDefaultMenuItems()
         return menuItems
     }

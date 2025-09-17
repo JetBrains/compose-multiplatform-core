@@ -17,8 +17,6 @@
 package androidx.compose.foundation.selection
 
 import androidx.compose.foundation.ClickableNode
-import androidx.compose.foundation.ComposeFoundationFlags
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.LocalIndication
@@ -144,51 +142,17 @@ fun Modifier.toggleable(
     interactionSource: MutableInteractionSource? = null,
     onValueChange: (Boolean) -> Unit,
 ): Modifier {
-    @OptIn(ExperimentalFoundationApi::class)
-    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
-        this.then(
-            ToggleableElement(
-                value = value,
-                interactionSource = interactionSource,
-                indicationNodeFactory = null,
-                useLocalIndication = true,
-                enabled = enabled,
-                role = role,
-                onValueChange = onValueChange,
-            )
+    return this.then(
+        ToggleableElement(
+            value = value,
+            interactionSource = interactionSource,
+            indicationNodeFactory = null,
+            useLocalIndication = true,
+            enabled = enabled,
+            role = role,
+            onValueChange = onValueChange,
         )
-    } else
-        composed(
-            inspectorInfo =
-                debugInspectorInfo {
-                    name = "toggleable"
-                    properties["value"] = value
-                    properties["enabled"] = enabled
-                    properties["role"] = role
-                    properties["onValueChange"] = onValueChange
-                }
-        ) {
-            val localIndication = LocalIndication.current
-            val intSource =
-                interactionSource
-                    ?: if (localIndication is IndicationNodeFactory) {
-                        // We can fast path here as it will be created inside clickable lazily
-                        null
-                    } else {
-                        // We need an interaction source to pass between the indication modifier and
-                        // clickable, so
-                        // by creating here we avoid another composed down the line
-                        remember { MutableInteractionSource() }
-                    }
-            Modifier.toggleable(
-                value = value,
-                interactionSource = intSource,
-                indication = localIndication,
-                enabled = enabled,
-                role = role,
-                onValueChange = onValueChange,
-            )
-        }
+    )
 }
 
 /**
@@ -488,51 +452,17 @@ fun Modifier.triStateToggleable(
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
 ): Modifier {
-    @OptIn(ExperimentalFoundationApi::class)
-    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
-        this.then(
-            TriStateToggleableElement(
-                state = state,
-                interactionSource = interactionSource,
-                indicationNodeFactory = null,
-                useLocalIndication = true,
-                enabled = enabled,
-                role = role,
-                onClick = onClick,
-            )
+    return this.then(
+        TriStateToggleableElement(
+            state = state,
+            interactionSource = interactionSource,
+            indicationNodeFactory = null,
+            useLocalIndication = true,
+            enabled = enabled,
+            role = role,
+            onClick = onClick,
         )
-    } else
-        composed(
-            inspectorInfo =
-                debugInspectorInfo {
-                    name = "triStateToggleable"
-                    properties["state"] = state
-                    properties["enabled"] = enabled
-                    properties["role"] = role
-                    properties["onClick"] = onClick
-                }
-        ) {
-            val localIndication = LocalIndication.current
-            val intSource =
-                interactionSource
-                    ?: if (localIndication is IndicationNodeFactory) {
-                        // We can fast path here as it will be created inside clickable lazily
-                        null
-                    } else {
-                        // We need an interaction source to pass between the indication modifier and
-                        // clickable, so
-                        // by creating here we avoid another composed down the line
-                        remember { MutableInteractionSource() }
-                    }
-            Modifier.triStateToggleable(
-                state = state,
-                interactionSource = intSource,
-                indication = localIndication,
-                enabled = enabled,
-                role = role,
-                onClick = onClick,
-            )
-        }
+    )
 }
 
 /**

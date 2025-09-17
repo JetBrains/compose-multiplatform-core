@@ -33,10 +33,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
+import androidx.xr.scenecore.AlphaMode
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.KhronosPbrMaterial
-import androidx.xr.scenecore.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.Material
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.Texture
@@ -247,13 +247,7 @@ class EnvironmentActivity : AppCompatActivity() {
         this.dragonGeometry =
             GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
         this.patternTexture = Texture.create(session!!, Paths.get("textures", "pattern.png"))
-        val spec =
-            KhronosPbrMaterialSpec.create(
-                lightingModel = KhronosPbrMaterialSpec.LightingModel.LIT,
-                blendMode = KhronosPbrMaterialSpec.BlendMode.OPAQUE,
-                doubleSidedMode = KhronosPbrMaterialSpec.DoubleSidedMode.SINGLE_SIDED,
-            )
-        this.khronosPbrMaterial = KhronosPbrMaterial.create(session!!, spec)
+        this.khronosPbrMaterial = KhronosPbrMaterial.create(session!!, AlphaMode.ALPHA_MODE_OPAQUE)
         this.khronosPbrMaterial.setBaseColorTexture(patternTexture, TextureSampler())
     }
 
@@ -261,10 +255,10 @@ class EnvironmentActivity : AppCompatActivity() {
         skybox: ExrImage?,
         geometry: GltfModel?,
         material: Material? = null,
-        meshName: String? = null,
+        nodeName: String? = null,
         animationName: String? = null,
     ) {
-        if (material == null && meshName == null && animationName == null) {
+        if (material == null && nodeName == null && animationName == null) {
             spatialEnvironmentPreference =
                 SpatialEnvironment.SpatialEnvironmentPreference(skybox, geometry)
         } else {
@@ -273,7 +267,7 @@ class EnvironmentActivity : AppCompatActivity() {
                     skybox,
                     geometry,
                     material,
-                    meshName,
+                    nodeName,
                     animationName,
                 )
         }

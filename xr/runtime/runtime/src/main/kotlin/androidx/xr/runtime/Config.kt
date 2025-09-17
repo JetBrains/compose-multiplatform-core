@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.runtime
 
 import androidx.annotation.RestrictTo
@@ -172,16 +171,34 @@ constructor(
         )
     }
 
+    /** Describes a specific value used to set the configuration via [Session.configure]. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public interface ConfigMode {
+        /**
+         * Queries whether the [ConfigMode] is supported and is available to be configured for the
+         * [session] via [Session.configure]. Attempting to configure this [ConfigMode] if it not
+         * supported will result in [Session.configure] returning [UnsupportedOperationException].
+         *
+         * @param session the [Session] to check support for.
+         * @return true if supported, else false.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public fun isSupported(session: Session): Boolean {
+            return session.runtimes.map { it.isSupported(this) }.contains(true)
+        }
+    }
+
     /**
      * Feature that allows tracking of and provides information about scene planes.
      *
      * Setting this feature to [PlaneTrackingMode.HORIZONTAL_AND_VERTICAL] requires that the
      * `SCENE_UNDERSTANDING_COARSE` Android permission is granted.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class PlaneTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** Planes will not be tracked. */
             @JvmField public val DISABLED: PlaneTrackingMode = PlaneTrackingMode(0)
@@ -203,10 +220,11 @@ constructor(
      * Setting this feature to [HandTrackingMode.BOTH] requires that the `HAND_TRACKING` Android
      * permission is granted by the calling application.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class HandTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** Hands will not be tracked. */
             @JvmField public val DISABLED: HandTrackingMode = HandTrackingMode(0)
@@ -227,10 +245,11 @@ constructor(
      *
      * This feature does not require any additional application permissions.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class DeviceTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /**
              * The device pose will not be tracked. In this mode,
@@ -262,10 +281,11 @@ constructor(
      * Setting this feature to [HeadTrackingMode.LAST_KNOWN] requires that the `HEAD_TRACKING`
      * Android permission is granted by the calling application.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class HeadTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** The head pose is not updated. It remains at the origin (an identity pose). */
             @JvmField public val DISABLED: HeadTrackingMode = HeadTrackingMode(0)
@@ -294,10 +314,11 @@ constructor(
      * [DepthEstimationMode.SMOOTH_ONLY] or [DepthEstimationMode.SMOOTH_AND_RAW] requires that the
      * `SCENE_UNDERSTANDING_FINE` Android permission is granted by the calling application.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class DepthEstimationMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** No information about scene depth will be provided. */
             @JvmField public val DISABLED: DepthEstimationMode = DepthEstimationMode(0)
@@ -332,10 +353,11 @@ constructor(
      *
      * This feature does not require any additional application permissions.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class AnchorPersistenceMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** Anchors cannot be persisted. */
             @JvmField public val DISABLED: AnchorPersistenceMode = AnchorPersistenceMode(0)
@@ -354,10 +376,11 @@ constructor(
      * Setting this feature to [FaceTrackingMode.USER] requires that the `FACE_TRACKING` Android
      * permission is granted by the calling application.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class FaceTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** Faces will not be tracked. */
             @JvmField public val DISABLED: FaceTrackingMode = FaceTrackingMode(0)
@@ -389,10 +412,11 @@ constructor(
      * Note that setting this mode will consume additional runtime resources.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @SuppressWarnings("HiddenSuperclass")
     public class GeospatialMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /**
              * The Geospatial API is disabled. When GeospatialMode is disabled, current [Anchor]
@@ -450,7 +474,8 @@ constructor(
      * `EYE_TRACKING` Android permission is granted by the calling application.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public class EyeTrackingMode private constructor(public val mode: Int) {
+    @SuppressWarnings("HiddenSuperclass")
+    public class EyeTrackingMode private constructor(public val mode: Int) : ConfigMode {
         public companion object {
             /** Eye tracking is disabled. */
             @JvmField public val DISABLED: EyeTrackingMode = EyeTrackingMode(0)

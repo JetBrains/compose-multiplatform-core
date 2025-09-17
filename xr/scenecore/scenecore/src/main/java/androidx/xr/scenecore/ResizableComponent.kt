@@ -90,19 +90,16 @@ private constructor(
         }
 
     /**
-     * The aspect ratio of the entity during resizing. The aspect ratio is determined by taking the
-     * entity's width over its height. A value of 0.0f (or negative) means there are no preferences.
+     * Whether the aspect ratio is maintained during resizing.
      *
-     * This method does not immediately resize the entity. The new aspect ratio will be provided in
-     * the [Consumer<ResizeEvent>] the next time the user resizes the [Entity] through the reform
-     * UI.
+     * If true the affordance will maintain its current aspect ratio being resized and all suggested
+     * sizes will maintain the current aspect ratio. This defaults to false.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public var fixedAspectRatio: Float = 0.0f
+    public var isFixedAspectRatioEnabled: Boolean = false
         set(value) {
             if (field != value) {
                 field = value
-                rtResizableComponent.fixedAspectRatio = value
+                rtResizableComponent.isFixedAspectRatioEnabled = value
             }
         }
 

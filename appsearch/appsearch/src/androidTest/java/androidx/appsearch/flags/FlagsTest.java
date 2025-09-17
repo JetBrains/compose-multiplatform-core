@@ -335,10 +335,4 @@ public class FlagsTest {
         assertThat(Flags.FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER)
                 .isEqualTo("com.android.appsearch.flags.enable_reusable_decompression_buffer");
     }
-
-    @Test
-    public void testFlagValue_enableSchemaTypeIdOptimization() {
-        assertThat(Flags.FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION).isEqualTo(
-                "com.android.appsearch.flags.enable_schema_type_id_optimization");
-    }
 }

@@ -28,7 +28,7 @@ public class FakeResizableComponent(
     override var size: Dimensions = Dimensions(2.0f, 2.0f, 2.0f),
     override var minimumSize: Dimensions = Dimensions(1.0f, 1.0f, 1.0f),
     override var maximumSize: Dimensions = Dimensions(2.0f, 2.0f, 2.0f),
-    override var fixedAspectRatio: Float = 20.0f,
+    override var isFixedAspectRatioEnabled: Boolean = false,
     @get:Suppress("GetterSetterNames") override var autoHideContent: Boolean = false,
     @get:Suppress("GetterSetterNames") override var autoUpdateSize: Boolean = false,
     @get:Suppress("GetterSetterNames") override var forceShowResizeOverlay: Boolean = false,

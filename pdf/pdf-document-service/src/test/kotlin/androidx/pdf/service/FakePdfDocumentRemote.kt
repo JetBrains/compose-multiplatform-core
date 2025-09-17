@@ -34,6 +34,7 @@ import androidx.pdf.annotation.models.AnnotationResult
 import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.JetpackAospIdPair
 import androidx.pdf.annotation.models.ModifyEditResult
+import androidx.pdf.annotation.models.PaginatedAnnotations
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.models.Dimensions
@@ -156,5 +157,13 @@ class FakePdfDocumentRemote : PdfDocumentRemote.Stub() {
     override fun removeEdit(editIds: List<EditId>): ModifyEditResult {
         val (success, failures) = editIds.partition { it.pageNum >= 0 }
         return ModifyEditResult(success.map { it }, failures.map { it })
+    }
+
+    override fun getAllPageAnnotations(pageNum: Int): PaginatedAnnotations? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getBatchedPageAnnotations(pageNum: Int, batchIndex: Int): PaginatedAnnotations? {
+        TODO("Not yet implemented")
     }
 }

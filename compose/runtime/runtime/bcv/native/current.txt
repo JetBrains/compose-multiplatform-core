@@ -249,6 +249,11 @@ abstract interface androidx.compose.runtime.tooling/CompositionInstance { // and
     abstract fun findContextGroup(): androidx.compose.runtime.tooling/CompositionGroup? // androidx.compose.runtime.tooling/CompositionInstance.findContextGroup|findContextGroup(){}[0]
 }
 
+abstract interface androidx.compose.runtime.tooling/IdentifiableRecomposeScope { // androidx.compose.runtime.tooling/IdentifiableRecomposeScope|null[0]
+    abstract val identity // androidx.compose.runtime.tooling/IdentifiableRecomposeScope.identity|{}identity[0]
+        abstract fun <get-identity>(): kotlin/Any? // androidx.compose.runtime.tooling/IdentifiableRecomposeScope.identity.<get-identity>|<get-identity>(){}[0]
+}
+
 abstract interface androidx.compose.runtime/ComposeNodeLifecycleCallback { // androidx.compose.runtime/ComposeNodeLifecycleCallback|null[0]
     abstract fun onDeactivate() // androidx.compose.runtime/ComposeNodeLifecycleCallback.onDeactivate|onDeactivate(){}[0]
     abstract fun onRelease() // androidx.compose.runtime/ComposeNodeLifecycleCallback.onRelease|onRelease(){}[0]
@@ -481,6 +486,8 @@ sealed interface androidx.compose.runtime/Composer { // androidx.compose.runtime
     final object Companion { // androidx.compose.runtime/Composer.Companion|null[0]
         final val Empty // androidx.compose.runtime/Composer.Companion.Empty|{}Empty[0]
             final fun <get-Empty>(): kotlin/Any // androidx.compose.runtime/Composer.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
+
+        final fun setDiagnosticStackTraceMode(androidx.compose.runtime.tooling/ComposeStackTraceMode) // androidx.compose.runtime/Composer.Companion.setDiagnosticStackTraceMode|setDiagnosticStackTraceMode(androidx.compose.runtime.tooling.ComposeStackTraceMode){}[0]
     }
 }
 
@@ -971,6 +978,23 @@ final value class <#A: kotlin/Any?> androidx.compose.runtime/Updater { // androi
     final inline fun update(kotlin/Int, noinline kotlin/Function2<#A, kotlin/Int, kotlin/Unit>) // androidx.compose.runtime/Updater.update|update(kotlin.Int;kotlin.Function2<1:0,kotlin.Int,kotlin.Unit>){}[0]
 }
 
+final value class androidx.compose.runtime.tooling/ComposeStackTraceMode { // androidx.compose.runtime.tooling/ComposeStackTraceMode|null[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.runtime.tooling/ComposeStackTraceMode.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.compose.runtime.tooling/ComposeStackTraceMode.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // androidx.compose.runtime.tooling/ComposeStackTraceMode.toString|toString(){}[0]
+
+    final object Companion { // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion|null[0]
+        final val Auto // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion.Auto|{}Auto[0]
+            final fun <get-Auto>(): androidx.compose.runtime.tooling/ComposeStackTraceMode // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion.Auto.<get-Auto>|<get-Auto>(){}[0]
+        final val GroupKeys // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion.GroupKeys|{}GroupKeys[0]
+            final fun <get-GroupKeys>(): androidx.compose.runtime.tooling/ComposeStackTraceMode // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion.GroupKeys.<get-GroupKeys>|<get-GroupKeys>(){}[0]
+        final val None // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion.None|{}None[0]
+            final fun <get-None>(): androidx.compose.runtime.tooling/ComposeStackTraceMode // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion.None.<get-None>|<get-None>(){}[0]
+        final val SourceInformation // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion.SourceInformation|{}SourceInformation[0]
+            final fun <get-SourceInformation>(): androidx.compose.runtime.tooling/ComposeStackTraceMode // androidx.compose.runtime.tooling/ComposeStackTraceMode.Companion.SourceInformation.<get-SourceInformation>|<get-SourceInformation>(){}[0]
+    }
+}
+
 open class androidx.compose.runtime.snapshots/MutableSnapshot : androidx.compose.runtime.snapshots/Snapshot { // androidx.compose.runtime.snapshots/MutableSnapshot|null[0]
     open val readOnly // androidx.compose.runtime.snapshots/MutableSnapshot.readOnly|{}readOnly[0]
         open fun <get-readOnly>(): kotlin/Boolean // androidx.compose.runtime.snapshots/MutableSnapshot.readOnly.<get-readOnly>|<get-readOnly>(){}[0]
@@ -1260,6 +1284,7 @@ final val androidx.compose.runtime.tooling/LocalCompositionErrorContext // andro
     final fun <get-LocalCompositionErrorContext>(): androidx.compose.runtime/CompositionLocal<androidx.compose.runtime.tooling/CompositionErrorContext?> // androidx.compose.runtime.tooling/LocalCompositionErrorContext.<get-LocalCompositionErrorContext>|<get-LocalCompositionErrorContext>(){}[0]
 final val androidx.compose.runtime.tooling/LocalInspectionTables // androidx.compose.runtime.tooling/LocalInspectionTables|{}LocalInspectionTables[0]
     final fun <get-LocalInspectionTables>(): androidx.compose.runtime/ProvidableCompositionLocal<kotlin.collections/MutableSet<androidx.compose.runtime.tooling/CompositionData>?> // androidx.compose.runtime.tooling/LocalInspectionTables.<get-LocalInspectionTables>|<get-LocalInspectionTables>(){}[0]
+final val androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTrace$stableprop // androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTrace$stableprop|#static{}androidx_compose_runtime_tooling_ComposeStackTrace$stableprop[0]
 final val androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTraceBuilder$stableprop // androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTraceBuilder$stableprop|#static{}androidx_compose_runtime_tooling_ComposeStackTraceBuilder$stableprop[0]
 final val androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTraceFrame$stableprop // androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTraceFrame$stableprop|#static{}androidx_compose_runtime_tooling_ComposeStackTraceFrame$stableprop[0]
 final val androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_CompositionErrorContextImpl$stableprop // androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_CompositionErrorContextImpl$stableprop|#static{}androidx_compose_runtime_tooling_CompositionErrorContextImpl$stableprop[0]
@@ -1582,6 +1607,7 @@ final fun androidx.compose.runtime.snapshots/androidx_compose_runtime_snapshots_
 final fun androidx.compose.runtime.snapshots/androidx_compose_runtime_snapshots_TransparentObserverMutableSnapshot$stableprop_getter(): kotlin/Int // androidx.compose.runtime.snapshots/androidx_compose_runtime_snapshots_TransparentObserverMutableSnapshot$stableprop_getter|androidx_compose_runtime_snapshots_TransparentObserverMutableSnapshot$stableprop_getter(){}[0]
 final fun androidx.compose.runtime.snapshots/androidx_compose_runtime_snapshots_TransparentObserverSnapshot$stableprop_getter(): kotlin/Int // androidx.compose.runtime.snapshots/androidx_compose_runtime_snapshots_TransparentObserverSnapshot$stableprop_getter|androidx_compose_runtime_snapshots_TransparentObserverSnapshot$stableprop_getter(){}[0]
 final fun androidx.compose.runtime.snapshots/notifyWrite(androidx.compose.runtime.snapshots/Snapshot, androidx.compose.runtime.snapshots/StateObject) // androidx.compose.runtime.snapshots/notifyWrite|notifyWrite(androidx.compose.runtime.snapshots.Snapshot;androidx.compose.runtime.snapshots.StateObject){}[0]
+final fun androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTrace$stableprop_getter(): kotlin/Int // androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTrace$stableprop_getter|androidx_compose_runtime_tooling_ComposeStackTrace$stableprop_getter(){}[0]
 final fun androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTraceBuilder$stableprop_getter(): kotlin/Int // androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTraceBuilder$stableprop_getter|androidx_compose_runtime_tooling_ComposeStackTraceBuilder$stableprop_getter(){}[0]
 final fun androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTraceFrame$stableprop_getter(): kotlin/Int // androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_ComposeStackTraceFrame$stableprop_getter|androidx_compose_runtime_tooling_ComposeStackTraceFrame$stableprop_getter(){}[0]
 final fun androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_CompositionErrorContextImpl$stableprop_getter(): kotlin/Int // androidx.compose.runtime.tooling/androidx_compose_runtime_tooling_CompositionErrorContextImpl$stableprop_getter|androidx_compose_runtime_tooling_CompositionErrorContextImpl$stableprop_getter(){}[0]

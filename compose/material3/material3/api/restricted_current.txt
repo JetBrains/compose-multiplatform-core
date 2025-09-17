@@ -441,6 +441,8 @@ package androidx.compose.material3 {
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public final class ButtonGroupDefaults {
+    method @androidx.compose.runtime.Composable public void OverflowIndicator(androidx.compose.material3.ButtonGroupMenuState menuState, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.material3.IconButtonColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void OverflowIndicator(androidx.compose.material3.ButtonGroupMenuState, androidx.compose.ui.Modifier?, boolean, androidx.compose.ui.graphics.Shape?, androidx.compose.material3.IconButtonColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable public androidx.compose.material3.ToggleButtonShapes connectedLeadingButtonShapes(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape checkedShape);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.compose.material3.ToggleButtonShapes connectedLeadingButtonShapes(androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable public androidx.compose.material3.ToggleButtonShapes connectedMiddleButtonShapes(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape checkedShape);
@@ -482,7 +484,7 @@ package androidx.compose.material3 {
 
   public final class ButtonGroupMenuState {
     ctor public ButtonGroupMenuState();
-    ctor public ButtonGroupMenuState(optional boolean initialIsExpanded);
+    ctor public ButtonGroupMenuState(optional boolean initialIsShowing);
     method public void dismiss();
     method public boolean isExpanded();
     method public void show();

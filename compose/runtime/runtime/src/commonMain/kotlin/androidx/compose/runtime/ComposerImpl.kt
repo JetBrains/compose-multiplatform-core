@@ -37,7 +37,9 @@ import androidx.compose.runtime.internal.trace
 import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastToSet
+import androidx.compose.runtime.tooling.ComposeStackTrace
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
+import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.CompositionErrorContextImpl
 import androidx.compose.runtime.tooling.LocalCompositionErrorContext
@@ -296,7 +298,7 @@ internal class ComposerImpl(
     private var shouldPauseCallback: ShouldPauseCallback? = null
 
     internal val errorContext: CompositionErrorContextImpl? = CompositionErrorContextImpl(this)
-        get() = if (sourceMarkersEnabled) field else null
+        get() = if (parentContext.stackTraceEnabled) field else null
 
     override val applyCoroutineContext: CoroutineContext =
         parentContext.effectCoroutineContext + (errorContext ?: EmptyCoroutineContext)
@@ -2514,31 +2516,34 @@ internal class ComposerImpl(
         sourceMarkersEnabled = false
     }
 
-    internal fun stackTraceForValue(value: Any?): List<ComposeStackTraceFrame> {
-        if (!sourceMarkersEnabled) return emptyList()
+    @OptIn(ComposeToolingApi::class)
+    internal fun stackTraceForValue(value: Any?): ComposeStackTrace {
+        val stackTrace =
+            slotTable
+                .findLocation { it === value || (it as? RememberObserverHolder)?.wrapped === value }
+                ?.let { (groupIndex, dataIndex) ->
+                    stackTraceForGroup(groupIndex, dataIndex) + parentStackTrace()
+                } ?: emptyList()
 
-        return slotTable
-            .findLocation { it === value || (it as? RememberObserverHolder)?.wrapped === value }
-            ?.let { (groupIndex, dataIndex) ->
-                stackTraceForGroup(groupIndex, dataIndex) + parentStackTrace()
-            } ?: emptyList()
+        return ComposeStackTrace(stackTrace)
     }
 
-    private fun currentStackTrace(): List<ComposeStackTraceFrame> {
-        if (!sourceMarkersEnabled) return emptyList()
+    @OptIn(ComposeToolingApi::class)
+    private fun currentStackTrace(): ComposeStackTrace? =
+        if (parentContext.stackTraceEnabled) {
+            ComposeStackTrace(
+                buildList {
+                    addAll(writer.buildTrace())
+                    addAll(reader.buildTrace())
+                    addAll(parentStackTrace())
+                }
+            )
+        } else {
+            null
+        }
 
-        val trace = mutableListOf<ComposeStackTraceFrame>()
-        trace.addAll(writer.buildTrace())
-        trace.addAll(reader.buildTrace())
-
-        return trace.apply { addAll(parentStackTrace()) }
-    }
-
-    private fun stackTraceForGroup(group: Int, dataOffset: Int?): List<ComposeStackTraceFrame> {
-        if (!sourceMarkersEnabled) return emptyList()
-
-        return slotTable.read { it.traceForGroup(group, dataOffset) }
-    }
+    private fun stackTraceForGroup(group: Int, dataOffset: Int?): List<ComposeStackTraceFrame> =
+        slotTable.read { it.traceForGroup(group, dataOffset) }
 
     fun parentStackTrace(): List<ComposeStackTraceFrame> {
         val parentComposition = parentContext.composition as? CompositionImpl ?: return emptyList()
@@ -2959,6 +2964,9 @@ internal class ComposerImpl(
 
         override val collectingCallByInformation: Boolean
             get() = parentContext.collectingCallByInformation
+
+        override val stackTraceEnabled: Boolean
+            get() = parentContext.stackTraceEnabled
 
         fun dispose() {
             if (composers.isNotEmpty()) {
@@ -3398,7 +3406,7 @@ private val InvalidationLocationAscending =
 
 // rootKey doesn't need a corresponding OpaqueKey as it never has sibling nodes and will always
 // a unique key.
-private const val rootKey = 100
+internal const val rootKey = 100
 
 // An arbitrary key value for a node.
-private const val nodeKey = 125
+internal const val nodeKey = 125

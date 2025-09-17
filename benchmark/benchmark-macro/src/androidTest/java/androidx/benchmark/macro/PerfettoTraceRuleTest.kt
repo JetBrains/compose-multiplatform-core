@@ -27,6 +27,7 @@ import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.tracing.trace
+import kotlin.test.assertContains
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -69,11 +70,19 @@ class PerfettoTraceRuleTest {
                                     }
                                 }
                             assertEquals(listOf(UNIQUE_SLICE_NAME), sliceNameInstances)
+
+                            assertContains(
+                                trace!!.path,
+                                "/CUSTOM_LABEL_",
+                                message = "expected ${trace!!.path} to contain custom label",
+                            )
                         }
                     }
                 }
             }
-            .around(PerfettoTraceRule { trace = it })
+            .around(
+                PerfettoTraceRule(labelProvider = { description -> "CUSTOM_LABEL" }) { trace = it }
+            )
 
     @Test
     fun simple() {

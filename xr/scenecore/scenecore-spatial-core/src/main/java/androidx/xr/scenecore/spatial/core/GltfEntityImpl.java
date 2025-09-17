@@ -67,8 +67,14 @@ class GltfEntityImpl extends BaseRenderingEntity implements GltfEntity {
     }
 
     @Override
-    public void setMaterialOverride(@NonNull MaterialResource material, @NonNull String meshName) {
-        mFeature.setMaterialOverride(material, meshName);
+    public void setMaterialOverride(
+            @NonNull MaterialResource material, @NonNull String nodeName, int primitiveIndex) {
+        mFeature.setMaterialOverride(material, nodeName, primitiveIndex);
+    }
+
+    @Override
+    public void clearMaterialOverride(@NonNull String nodeName, int primitiveIndex) {
+        mFeature.clearMaterialOverride(nodeName, primitiveIndex);
     }
 
     @SuppressWarnings("ObjectToString")

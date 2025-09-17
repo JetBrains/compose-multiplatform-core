@@ -111,32 +111,52 @@ public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumen
         public const val MAX_BATCH_SIZE_IN_BYTES: Int = 1000000
 
         /**
-         * Used to expand a 1D list to a 2D list of annotations based on [maxSizeInBytes].
+         * Splits this list of [Parcelable] items into multiple sublists (batches), where the total
+         * parcel size of the items in each batch does not exceed a specified maximum.
          *
-         * If the accumulated size if greater or equal to the [maxSizeInBytes] then the item is
-         * added to a new sublist else it is added to the existing one.
+         * Note: Any single item whose individual parcel size is larger than [maxSizeInBytes] will
+         * be ignored and will not be included in any of the resulting batches.
          *
-         * @param maxSizeInBytes max size limit for each sublist
-         * @return 2D list divided into list of sublists
+         * @param T The type of [Parcelable] items in the list.
+         * @param maxSizeInBytes The maximum permitted size in bytes for the parcelled content of
+         *   each batch.
+         * @return A `List<List<T>>` where each inner list represents a batch.
          */
-        @VisibleForTesting
-        internal fun <T : Parcelable> List<T>.unflatten(maxSizeInBytes: Int): List<List<T>> {
-            return this.fold(emptyList()) { acc, edits ->
-                val lastSublist = acc.lastOrNull() ?: listOf()
-                val editsSize = edits.parcelSizeInBytes()
-
-                val newListSizeInBytes = lastSublist.sumOf { it.parcelSizeInBytes() } + editsSize
-
-                if (newListSizeInBytes <= maxSizeInBytes) {
-                    // Add the item to the last sublist
-                    val newLastSublist = lastSublist + edits
-                    acc.dropLast(1) + listOf(newLastSublist)
-                } else if (editsSize > maxSizeInBytes) {
-                    acc
-                } else {
-                    acc + listOf(listOf(edits))
-                }
+        public fun <T : Parcelable> List<T>.unflatten(maxSizeInBytes: Int): List<List<T>> {
+            if (isEmpty()) {
+                return emptyList()
             }
+
+            val batches = mutableListOf<List<T>>()
+            var currentBatch = mutableListOf<T>()
+            var currentBatchSize = 0
+
+            for (item in this) {
+                val itemSize = item.parcelSizeInBytes()
+
+                // Ignore items that are individually larger than the max size.
+                if (itemSize > maxSizeInBytes) {
+                    continue
+                }
+
+                // If adding the new item would exceed the max size,
+                // finalize the current batch and start a new one.
+                if (currentBatch.isNotEmpty() && currentBatchSize + itemSize > maxSizeInBytes) {
+                    batches.add(currentBatch)
+                    currentBatch = mutableListOf()
+                    currentBatchSize = 0
+                }
+
+                currentBatch.add(item)
+                currentBatchSize += itemSize
+            }
+
+            // Add the last batch if it has any items.
+            if (currentBatch.isNotEmpty()) {
+                batches.add(currentBatch)
+            }
+
+            return batches
         }
 
         /**

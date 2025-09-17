@@ -58,8 +58,7 @@ constructor(
      *
      * @return the [AppFunctionComponentsMetadataDocument] representation of the metadata.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toAppFunctionComponentsMetadataDocument(): AppFunctionComponentsMetadataDocument {
+    internal fun toAppFunctionComponentsMetadataDocument(): AppFunctionComponentsMetadataDocument {
         return AppFunctionComponentsMetadataDocument(
             dataTypes =
                 dataTypes.map { (name, dataType) ->

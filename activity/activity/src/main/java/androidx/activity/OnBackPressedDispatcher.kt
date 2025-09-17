@@ -25,8 +25,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigationevent.DirectNavigationEventInput
-import androidx.navigationevent.NavigationEventCallback
 import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInput
 import androidx.navigationevent.OnBackInvokedInput
 
@@ -81,8 +81,8 @@ class OnBackPressedDispatcher(
         onHasEnabledCallbacksChanged?.let { callback ->
             dispatcher.addInput(
                 object : NavigationEventInput() {
-                    override fun onHasEnabledCallbacksChanged(hasEnabledCallbacks: Boolean) {
-                        callback.accept(hasEnabledCallbacks)
+                    override fun onHasEnabledHandlerChanged(hasEnabledHandler: Boolean) {
+                        callback.accept(hasEnabledHandler)
                     }
                 }
             )
@@ -124,7 +124,7 @@ class OnBackPressedDispatcher(
      */
     @MainThread
     fun addCallback(onBackPressedCallback: OnBackPressedCallback) {
-        eventDispatcher.addCallback(onBackPressedCallback.createNavigationEventCallback())
+        eventDispatcher.addHandler(onBackPressedCallback.createNavigationEventHandler())
     }
 
     /**
@@ -159,8 +159,8 @@ class OnBackPressedDispatcher(
         // This observer manages the callback's lifecycle-aware registration.
         val lifecycleObserver =
             object : LifecycleEventObserver, AutoCloseable {
-                private val eventCallback: NavigationEventCallback<*> =
-                    onBackPressedCallback.createNavigationEventCallback()
+                private val eventHandler: NavigationEventHandler<*> =
+                    onBackPressedCallback.createNavigationEventHandler()
 
                 /**
                  * Manages lifecycle-aware registration of an [OnBackPressedCallback].
@@ -179,13 +179,13 @@ class OnBackPressedDispatcher(
                     if (event === Lifecycle.Event.ON_START) {
                         // Register the INNER callback only when the lifecycle enters STARTED.
                         // NOTE: This ADDS the callback to the top of the dispatching stack.
-                        eventDispatcher.addCallback(eventCallback)
+                        eventDispatcher.addHandler(eventHandler)
                     } else if (event === Lifecycle.Event.ON_STOP) {
                         // Removes the callback from the dispatching stack.
-                        eventCallback.remove()
+                        eventHandler.remove()
                     } else if (event === Lifecycle.Event.ON_DESTROY) {
                         // Removes the callback from the dispatching stack.
-                        eventCallback.remove()
+                        eventHandler.remove()
                         // Stop lifecycle tracking if destroyed.
                         lifecycle.removeObserver(observer = this)
                     }
@@ -209,7 +209,7 @@ class OnBackPressedDispatcher(
      *
      * @return True if there is at least one enabled callback.
      */
-    @MainThread fun hasEnabledCallbacks(): Boolean = eventDispatcher.hasEnabledCallbacks()
+    @MainThread fun hasEnabledCallbacks(): Boolean = eventDispatcher.hasEnabledHandler()
 
     @VisibleForTesting
     @MainThread

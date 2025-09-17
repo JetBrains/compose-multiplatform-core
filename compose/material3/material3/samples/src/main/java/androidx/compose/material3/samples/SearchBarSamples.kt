@@ -111,7 +111,7 @@ fun SimpleSearchBarSample() {
 
     SearchBar(state = searchBarState, inputField = inputField)
     ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField) {
-        SearchResults(
+        SampleSearchResults(
             onResultClick = { result ->
                 textFieldState.setTextAndPlaceCursorAtEnd(result)
                 scope.launch { searchBarState.animateToCollapsed() }
@@ -225,7 +225,7 @@ fun FullScreenSearchBarScaffoldSample() {
                 },
             )
             ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField) {
-                SearchResults(
+                SampleSearchResults(
                     onResultClick = { result ->
                         textFieldState.setTextAndPlaceCursorAtEnd(result)
                         scope.launch { searchBarState.animateToCollapsed() }
@@ -303,7 +303,7 @@ fun DockedSearchBarScaffoldSample() {
                     ),
             )
             ExpandedDockedSearchBar(state = searchBarState, inputField = inputField) {
-                SearchResults(
+                SampleSearchResults(
                     onResultClick = { result ->
                         textFieldState.setTextAndPlaceCursorAtEnd(result)
                         scope.launch { searchBarState.animateToCollapsed() }
@@ -325,7 +325,7 @@ fun DockedSearchBarScaffoldSample() {
 }
 
 @Composable
-private fun SearchResults(onResultClick: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun SampleSearchResults(onResultClick: (String) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState())) {
         repeat(10) { idx ->
             val resultText = "Suggestion $idx"

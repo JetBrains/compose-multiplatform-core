@@ -32,7 +32,7 @@ class FakeResizableComponentTest {
     private val initialSize = Dimensions(1.0f, 1.0f, 1.0f)
     private val initialMinSize = Dimensions(0.5f, 0.5f, 0.5f)
     private val initialMaxSize = Dimensions(2.0f, 2.0f, 2.0f)
-    private val initialFixedAspectRatio = 1.0f
+    private val initialFixedAspectRatio = true
     private val initialAutoHideContent = false
     private val initialAutoUpdateSize = false
     private val initialForceShowResizeOverlay = false
@@ -46,7 +46,7 @@ class FakeResizableComponentTest {
                 size = initialSize,
                 minimumSize = initialMinSize,
                 maximumSize = initialMaxSize,
-                fixedAspectRatio = initialFixedAspectRatio,
+                isFixedAspectRatioEnabled = initialFixedAspectRatio,
                 autoHideContent = initialAutoHideContent,
                 autoUpdateSize = initialAutoUpdateSize,
                 forceShowResizeOverlay = initialForceShowResizeOverlay,
@@ -58,7 +58,7 @@ class FakeResizableComponentTest {
         check(underTest.size == initialSize)
         check(underTest.minimumSize == initialMinSize)
         check(underTest.maximumSize == initialMaxSize)
-        check(underTest.fixedAspectRatio == initialFixedAspectRatio)
+        check(underTest.isFixedAspectRatioEnabled == initialFixedAspectRatio)
         check(underTest.autoHideContent == initialAutoHideContent)
         check(underTest.autoUpdateSize == initialAutoUpdateSize)
         check(underTest.forceShowResizeOverlay == initialForceShowResizeOverlay)

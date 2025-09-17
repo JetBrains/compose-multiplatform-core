@@ -98,6 +98,7 @@ internal expect value class Strings constructor(val value: Int) {
         val TimePickerToggleTouch: Strings
         val TooltipPaneDescription: Strings
         val WideNavigationRailPaneTitle: Strings
+        val ButtonGroupMoreOptions: Strings
     }
 }
 

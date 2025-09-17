@@ -568,12 +568,14 @@ public final class SetSchemaRequest {
          * <p>The default behavior, if this method is not called, is to allow types to be
          * displayed on system UI surfaces.
          *
+         * <!--@exportToFramework:ifJetpack()-->
          * <p>You can use {@link Features#isFeatureSupported} with the
          * {@link Features#SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM} Feature to see if
          * this visibility mode is supported on this backend / API level combination. If not
          * supported, this function is still safe to call and the configuration will be saved in
          * the schema, but it will not have any effect and documents will not be visible through
          * this mechanism on that backend / API level.
+         * <!--@exportToFramework:else() -->
          *
          * @param schemaType The name of an {@link AppSearchSchema} within the same
          *                   {@link SetSchemaRequest}, which will be configured.

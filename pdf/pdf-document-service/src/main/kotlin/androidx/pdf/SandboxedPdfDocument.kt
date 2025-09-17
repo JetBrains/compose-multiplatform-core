@@ -59,6 +59,9 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -455,10 +458,29 @@ public class SandboxedPdfDocument(
 
     override fun getAllEdits(): PdfEdits = annotationsManager.getSnapshot()
 
-    private suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> =
-        withDocument { pdfDocumentRemote ->
-            pdfDocumentRemote.getPageAnnotations(pageNum)
+    private suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> {
+        val firstBatch = withDocument { it.getAllPageAnnotations(pageNum) } ?: return emptyList()
+        if (firstBatch.totalBatchCount <= 1) {
+            return firstBatch.annotations.map { it.annotation }
         }
+
+        return coroutineScope {
+            val firstAnnotations = firstBatch.annotations.map { it.annotation }
+            val deferredRemainingBatches =
+                (1 until firstBatch.totalBatchCount).map { batchIndex ->
+                    async {
+                        withDocument { remote ->
+                            remote.getBatchedPageAnnotations(pageNum, batchIndex).annotations.map {
+                                it.annotation
+                            }
+                        }
+                    }
+                }
+
+            val remainingAnnotations = deferredRemainingBatches.awaitAll().flatten()
+            firstAnnotations + remainingAnnotations
+        }
+    }
 
     private companion object {
         private const val DEFAULT_PAGE = 400

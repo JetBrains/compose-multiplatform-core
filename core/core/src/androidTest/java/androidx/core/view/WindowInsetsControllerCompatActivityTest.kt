@@ -178,8 +178,8 @@ public class WindowInsetsControllerCompatActivityTest {
     @Test
     public fun statusBar_light() {
         scenario.onActivity { windowInsetsController.setAppearanceLightStatusBars(true) }
-        if (Build.VERSION.SDK_INT < 31) {
-            // The view's systemUiVisibility flags are not changed on API 31+
+        if (Build.VERSION.SDK_INT < 35) {
+            // The view's systemUiVisibility flags are not changed on API 35+
             val systemUiVisibility = scenario.withActivity { window.decorView }.systemUiVisibility
             assertThat(
                 systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR,
@@ -200,8 +200,8 @@ public class WindowInsetsControllerCompatActivityTest {
             windowInsetsController.setAppearanceLightStatusBars(false)
         }
 
-        if (Build.VERSION.SDK_INT < 31) {
-            // The view's systemUiVisibility flags are not changed on API 31+
+        if (Build.VERSION.SDK_INT < 35) {
+            // The view's systemUiVisibility flags are not changed on API 35+
             val systemUiVisibility = scenario.withActivity { window.decorView }.systemUiVisibility
             assertThat(systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR, equalTo(0))
         }
@@ -213,8 +213,8 @@ public class WindowInsetsControllerCompatActivityTest {
     public fun navigationBar_light() {
         scenario.onActivity { windowInsetsController.setAppearanceLightNavigationBars(true) }
         val systemUiVisibility = scenario.withActivity { window.decorView }.systemUiVisibility
-        if (Build.VERSION.SDK_INT < 31) {
-            // The view's systemUiVisibility flags are not changed on API 31+
+        if (Build.VERSION.SDK_INT < 35) {
+            // The view's systemUiVisibility flags are not changed on API 35+
             assertThat(
                 systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR,
                 equalTo(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR),
@@ -235,8 +235,8 @@ public class WindowInsetsControllerCompatActivityTest {
             windowInsetsController.setAppearanceLightNavigationBars(false)
         }
         val systemUiVisibility = scenario.withActivity { window.decorView }.systemUiVisibility
-        if (Build.VERSION.SDK_INT < 31) {
-            // The view's systemUiVisibility flags are not changed on API 31+
+        if (Build.VERSION.SDK_INT < 35) {
+            // The view's systemUiVisibility flags are not changed on API 35+
             assertThat(systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR, equalTo(0))
         }
         assertThat(windowInsetsController.isAppearanceLightNavigationBars(), `is`(false))
