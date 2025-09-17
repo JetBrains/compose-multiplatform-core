@@ -873,7 +873,6 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     private fun addKnownCompositionLocked(composition: ControlledComposition) {
         _knownCompositions += composition
         _knownCompositionsCache = null
-        registerCompositionLocked(composition)
     }
 
     @OptIn(ExperimentalComposeRuntimeApi::class)
@@ -1222,7 +1221,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
                 if (_state.value > State.ShuttingDown) {
                     val new = composition !in knownCompositionsLocked()
                     if (new) {
-                        addKnownCompositionLocked(composition)
+                        registerCompositionLocked(composition)
                     }
                     new
                 } else {
@@ -1233,12 +1232,22 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         try {
             composing(composition, null) { composition.composeContent(content) }
         } catch (e: Throwable) {
-            processCompositionError(e, composition, recoverable = true)
-
             if (newComposition) {
-                synchronized(stateLock) { removeKnownCompositionLocked(composition) }
+                synchronized(stateLock) { unregisterCompositionLocked(composition) }
             }
+
+            processCompositionError(e, composition, recoverable = true)
             return
+        }
+
+        synchronized(stateLock) {
+            if (_state.value > State.ShuttingDown) {
+                if (composition !in knownCompositionsLocked()) {
+                    addKnownCompositionLocked(composition)
+                }
+            } else {
+                unregisterCompositionLocked(composition)
+            }
         }
 
         // TODO(b/143755743)

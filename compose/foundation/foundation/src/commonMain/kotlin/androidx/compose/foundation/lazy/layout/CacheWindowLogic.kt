@@ -264,7 +264,6 @@ internal abstract class CacheWindowLogic(private val cacheWindow: LazyLayoutCach
                 prefetchWindowEndExtraSpace -= itemSize
             }
         } else { // scrolling backwards, starting on first visible
-
             if (changedScrollDirection || shouldRefillWindow) {
                 prefetchWindowStartExtraSpace = (prefetchForwardWindow - mainAxisExtraSpaceStart)
                 prefetchWindowStartLine = visibleWindowStart
@@ -326,7 +325,7 @@ internal abstract class CacheWindowLogic(private val cacheWindow: LazyLayoutCach
         } else { // scrolling backwards, keep around from last visible
             prefetchWindowEndExtraSpace = (keepAroundWindow - mainAxisExtraSpaceEnd)
             prefetchWindowEndLine = visibleWindowEnd
-            while (prefetchWindowEndExtraSpace > 0 && prefetchWindowEndLine < itemsCount) {
+            while (prefetchWindowEndExtraSpace > 0 && prefetchWindowEndLine < itemsCount - 1) {
                 val item =
                     if (windowCache.containsKey(prefetchWindowEndLine + 1)) {
                         windowCache[prefetchWindowEndLine + 1]
