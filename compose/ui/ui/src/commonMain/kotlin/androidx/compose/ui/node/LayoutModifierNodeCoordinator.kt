@@ -243,10 +243,7 @@ internal class LayoutModifierNodeCoordinator(
         // get(line), to obtain the position of the alignment line the coordinator currently needs
         // our position in order ot know how to offset the value we provided).
         if (isShallowPlacing) return
-        if (!isPlacingForAlignment) {
-            onPlaced()
-        }
-        val wrapped = wrappedNonNull
+        onPlaced()
         approachMeasureScope?.let {
             with(it.approachNode) {
                 val approachComplete =
@@ -256,15 +253,13 @@ internal class LayoutModifierNodeCoordinator(
                         ) &&
                             !it.approachMeasureRequired &&
                             size == lookaheadDelegate?.size &&
-                            wrapped.size == wrapped.lookaheadDelegate?.size
+                            wrappedNonNull.size == wrappedNonNull.lookaheadDelegate?.size
                     }
-                wrapped.forcePlaceWithLookaheadOffset = approachComplete
+                wrappedNonNull.forcePlaceWithLookaheadOffset = approachComplete
             }
         }
-        wrapped.isPlacingForAlignment = isPlacingForAlignment
         measureResult.placeChildren()
-        wrapped.isPlacingForAlignment = false
-        wrapped.forcePlaceWithLookaheadOffset = false
+        wrappedNonNull.forcePlaceWithLookaheadOffset = false
     }
 
     override fun calculateAlignmentLine(alignmentLine: AlignmentLine): Int {
