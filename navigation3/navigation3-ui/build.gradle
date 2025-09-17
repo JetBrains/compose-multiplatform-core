@@ -23,6 +23,7 @@
  */
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -49,18 +50,17 @@ androidXMultiplatform {
             dependencies {
                 api(project(":navigation3:navigation3-runtime"))
                 api(project(":navigationevent:navigationevent-compose"))
-                api("androidx.compose.animation:animation:1.9.0-rc01")
-                api("androidx.compose.runtime:runtime:1.9.0-rc01")
-                api("androidx.compose.runtime:runtime-saveable:1.9.0-rc01")
-                api("androidx.compose.ui:ui:1.9.0-rc01")
+                api(project(":compose:animation:animation"))
+                api(project(":compose:runtime:runtime"))
+                api(project(":compose:runtime:runtime-saveable"))
+                api(project(":compose:ui:ui"))
                 api("androidx.savedstate:savedstate:1.3.0")
                 api("androidx.savedstate:savedstate-compose:1.3.0")
-                implementation("androidx.annotation:annotation:1.8.0")
+                implementation("androidx.annotation:annotation:1.9.1")
                 implementation(libs.kotlinStdlib)
-                implementation("androidx.collection:collection:1.4.5")
-                // TODO pin lifecycle:lifecycle-runtime to the version that contains the `LifecycleOwner` composable api when it is released
-                implementation("androidx.lifecycle:lifecycle-runtime:2.10.0-alpha03")
-                implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0-alpha03")
+                implementation("androidx.collection:collection:1.5.0")
+                implementation(project(":lifecycle:lifecycle-runtime"))
+                implementation(project(":lifecycle:lifecycle-runtime-compose"))
             }
         }
 
@@ -97,6 +97,10 @@ androidXMultiplatform {
             }
         }
 
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
         nonAndroidTest {
             dependsOn(commonTest)
         }
@@ -126,10 +130,10 @@ androidXMultiplatform {
         }
 
         targets.configureEach { target ->
-            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
+            if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                 target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-            } else if (target.platformType in [org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.js, org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.wasm]) {
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
                 target.compilations["main"].defaultSourceSet.dependsOn(webMain)
                 target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
