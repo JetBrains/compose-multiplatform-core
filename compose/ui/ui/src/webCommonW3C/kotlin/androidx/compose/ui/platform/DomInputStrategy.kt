@@ -45,10 +45,6 @@ internal class DomInputStrategy(
     }
 
     private fun initEvents() {
-        htmlInput.addEventListener("blur", { evt ->
-            // TODO: any actions here?
-        })
-
         htmlInput.addEventListener("keydown", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
         })
