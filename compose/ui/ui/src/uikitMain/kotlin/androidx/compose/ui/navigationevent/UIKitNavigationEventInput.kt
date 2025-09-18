@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.width
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventInput
+import androidx.navigationevent.NavigationEventSwipeEdge
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CPointed
@@ -57,13 +58,6 @@ internal class UIKitNavigationEventInput(
     private val density: Density,
     private val getTopLeftOffsetInWindow: () -> IntOffset
 ) : NavigationEventInput() {
-    val isBackGestureActive: Boolean
-        get() = false
-    fun onDidMoveToWindow(window: UIWindow?, composeRootView: UIView) {}
-    fun onKeyEvent(event: KeyEvent): Boolean = false
-/*
-TODO: https://youtrack.jetbrains.com/issue/CMP-8937
-
     companion object {
         private const val BACK_GESTURE_SCREEN_SIZE = 0.3
         private const val BACK_GESTURE_VELOCITY = 100
@@ -87,12 +81,12 @@ TODO: https://youtrack.jetbrains.com/issue/CMP-8937
 
     override fun onAdded(dispatcher: NavigationEventDispatcher) {
         super.onAdded(dispatcher)
-        updateRecognizersEnabledState(dispatcher.hasEnabledCallbacks())
+        updateRecognizersEnabledState(dispatcher.hasEnabledHandler())
     }
 
-    override fun onHasEnabledCallbacksChanged(hasEnabledCallbacks: Boolean) {
-        super.onHasEnabledCallbacksChanged(hasEnabledCallbacks)
-        updateRecognizersEnabledState(hasEnabledCallbacks)
+    override fun onHasEnabledHandlerChanged(hasEnabledHandler: Boolean) {
+        super.onHasEnabledHandlerChanged(hasEnabledHandler)
+        updateRecognizersEnabledState(hasEnabledHandler)
     }
 
     override fun onRemoved() {
@@ -140,7 +134,7 @@ TODO: https://youtrack.jetbrains.com/issue/CMP-8937
 
     fun onKeyEvent(event: KeyEvent): Boolean {
         if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
-            dispatchOnCompleted()
+            dispatchOnBackCompleted()
             return true
         } else {
             return false
@@ -157,14 +151,14 @@ TODO: https://youtrack.jetbrains.com/issue/CMP-8937
                     val touch = recognizer.locationOfTouch(0u, view).asDpOffset()
                     val eventOffset =
                         touch.toOffset(density) - getTopLeftOffsetInWindow().toOffset()
-                    dispatchOnStarted(
+                    dispatchOnBackStarted(
                         NavigationEvent(
                             touchX = eventOffset.x,
                             touchY = eventOffset.y,
                             swipeEdge = if (recognizer.edges == UIRectEdgeLeft) {
-                                NavigationEvent.EDGE_LEFT
+                                NavigationEventSwipeEdge.Left
                             } else {
-                                NavigationEvent.EDGE_RIGHT
+                                NavigationEventSwipeEdge.Right
                             },
                             progress = 0f,
                             frameTimeMillis = CACurrentMediaTime().toLong() * 1000
@@ -183,14 +177,14 @@ TODO: https://youtrack.jetbrains.com/issue/CMP-8937
                     } else {
                         (bounds.width - touch.x) / bounds.width
                     }
-                    dispatchOnProgressed(
+                    dispatchOnBackProgressed(
                         NavigationEvent(
                             touchX = eventOffset.x,
                             touchY = eventOffset.y,
                             swipeEdge = if (leftEdge) {
-                                NavigationEvent.EDGE_LEFT
+                                NavigationEventSwipeEdge.Left
                             } else {
-                                NavigationEvent.EDGE_RIGHT
+                                NavigationEventSwipeEdge.Right
                             },
                             progress = progress,
                             frameTimeMillis = CACurrentMediaTime().toLong() * 1000
@@ -210,13 +204,13 @@ TODO: https://youtrack.jetbrains.com/issue/CMP-8937
                                     if (edge == UIRectEdgeLeft) this@velocity.x else -this@velocity.x
                                 when {
                                     //if movement is fast in the right direction
-                                    velX > BACK_GESTURE_VELOCITY -> dispatchOnCompleted()
+                                    velX > BACK_GESTURE_VELOCITY -> dispatchOnBackCompleted()
                                     //if movement is backward
-                                    velX < -10 -> dispatchOnCancelled()
+                                    velX < -10 -> dispatchOnBackCancelled()
                                     //if there is no movement, or the movement is slow,
                                     //but the touch is already more than BACK_GESTURE_SCREEN_SIZE
-                                    abs(x) >= size.width * BACK_GESTURE_SCREEN_SIZE -> dispatchOnCompleted()
-                                    else -> dispatchOnCancelled()
+                                    abs(x) >= size.width * BACK_GESTURE_SCREEN_SIZE -> dispatchOnBackCompleted()
+                                    else -> dispatchOnBackCancelled()
                                 }
                             }
                         }
@@ -224,16 +218,15 @@ TODO: https://youtrack.jetbrains.com/issue/CMP-8937
                 }
 
                 UIGestureRecognizerStateCancelled -> {
-                    dispatchOnCancelled()
+                    dispatchOnBackCancelled()
                 }
 
                 UIGestureRecognizerStateFailed -> {
-                    dispatchOnCompleted()
+                    dispatchOnBackCompleted()
                 }
             }
         }
     }
-*/
 }
 
 /**
