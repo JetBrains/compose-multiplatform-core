@@ -67,6 +67,9 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.OSVersion
+import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGPointMake
 import platform.CoreGraphics.CGRect
@@ -115,6 +118,7 @@ import platform.UIKit.accessibilityElements
 import platform.UIKit.accessibilityFrame
 import platform.UIKit.isAccessibilityElement
 import platform.UIKit.setAccessibilityElements
+import platform.UIKit.setAutomationElements
 import platform.darwin.NSObject
 
 private val DUMMY_UI_ACCESSIBILITY_CONTAINER = NSObject()
@@ -421,6 +425,9 @@ private class AccessibilityElement(
     init {
         setAccessibilityElements(children + nodeSemanticsElements())
         children.forEach { it.setAccessibilityContainer(this) }
+        if (available(OS.Ios to OSVersion(major = 17))) {
+            setAutomationElements(children + nodeSemanticsElements())
+        }
     }
 
     private fun nodeSemanticsElements(): List<Any> =
@@ -440,6 +447,9 @@ private class AccessibilityElement(
             (it as? CMPAccessibilityElement)?.setAccessibilityContainer(null)
         }
         setAccessibilityElements(children + nodeSemanticsElements())
+        if (available(OS.Ios to OSVersion(major = 17))) {
+            setAutomationElements(children + nodeSemanticsElements())
+        }
         children.forEach { it.setAccessibilityContainer(this) }
         this.cachedProperties.clear()
     }
@@ -452,6 +462,7 @@ private class AccessibilityElement(
         isAlive = false
         setAccessibilityContainer(null)
         setAccessibilityElements(emptyList<Any>())
+        setAutomationElements(null)
         cachedProperties.clear()
     }
 
@@ -1314,7 +1325,11 @@ internal class AccessibilityMediator(
                 }
             }
 
-            repeat(element.accessibilityElementCount().toInt()) { index ->
+            element.accessibilityElements?.takeIf { it.isNotEmpty() }?.forEach { element ->
+                findElement(element as NSObject, point)?.let {
+                    return it
+                }
+            } ?: repeat(element.accessibilityElementCount().toInt()) { index ->
                 element.accessibilityElementAtIndex(index.toLong())?.let { element ->
                     findElement(element as NSObject, point)?.let {
                         return it
@@ -1360,7 +1375,9 @@ internal class AccessibilityMediator(
         if (nsNode.isAccessibilityElement) {
             return nsNode
         }
-        repeat(node.accessibilityElementCount().toInt()) { index ->
+        nsNode.accessibilityElements?.takeIf { it.isNotEmpty() }?.forEach {
+            findFocusableElement(it as Any)
+        } ?: repeat(node.accessibilityElementCount().toInt()) { index ->
             node.accessibilityElementAtIndex(index.toLong())?.let {
                 findFocusableElement(it)
             }
@@ -1410,10 +1427,10 @@ private fun debugTraverse(debugLogger: AccessibilityDebugLogger, accessibilityOb
         is AccessibilityElement -> {
             accessibilityObject.debugLog(debugLogger, depth)
 
-            val count = accessibilityObject.accessibilityElementCount()
-            for (index in 0 until count) {
-                val element = accessibilityObject.accessibilityElementAtIndex(index)
-                element?.let {
+            accessibilityObject.accessibilityElements?.takeIf { it.isNotEmpty() }?.forEach {
+                debugTraverse(debugLogger, it as Any, depth + 1)
+            } ?: repeat(accessibilityObject.accessibilityElementCount().toInt()) { index ->
+                accessibilityObject.accessibilityElementAtIndex(index.toLong())?.let { element ->
                     debugTraverse(debugLogger, element, depth + 1)
                 }
             }
