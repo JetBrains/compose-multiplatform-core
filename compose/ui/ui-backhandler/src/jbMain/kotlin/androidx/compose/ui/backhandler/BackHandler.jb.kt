@@ -77,8 +77,7 @@ actual fun PredictiveBackHandler(
                 val navEvent = it.latestEvent
                 val swipeEdge = when (navEvent.swipeEdge) {
                     NavigationEventSwipeEdge.Left -> BackEventCompat.EDGE_LEFT
-                    NavigationEventSwipeEdge.Right -> BackEventCompat.EDGE_RIGHT
-                    else -> 0
+                    else -> BackEventCompat.EDGE_RIGHT
                 }
                 val event = BackEventCompat(
                     navEvent.touchX, navEvent.touchY, navEvent.progress, swipeEdge
