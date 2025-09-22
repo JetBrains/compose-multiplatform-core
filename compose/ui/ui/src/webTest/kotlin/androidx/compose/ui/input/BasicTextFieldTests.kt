@@ -27,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.TestInputState
-import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.events.beforeInput
 import androidx.compose.ui.events.compositionEnd
 import androidx.compose.ui.events.compositionStart
@@ -51,10 +50,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.clipboard.ClipboardEvent
-import org.w3c.dom.events.Event
 
 internal interface BasicTextFieldTestSpec : TextFieldTestSpec, CopyPasteTestSpec {
 
