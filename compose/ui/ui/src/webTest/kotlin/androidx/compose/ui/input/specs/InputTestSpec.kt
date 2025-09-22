@@ -53,10 +53,14 @@ internal interface InputTestSpec : TextFieldTestSpec {
     // sends keydown / input sequence of events like in Chrome in normal mode
     private fun standardKeyboardSequence(vararg keys: String): Array<Event> {
         return keys.flatMap {  key ->
-            listOf(
-                keyEvent(key),
-                beforeInput(inputType = "insertText", data = key),
-            )
+            buildList {
+                add(keyEvent(key))
+                // we treat anything of size > 0 as a character that does not have type representation
+                if (key.length == 1) {
+                    add(beforeInput(inputType = "insertText", data = key))
+                }
+                add(keyEvent(key, type = "keyup"))
+            }
         }.toTypedArray()
     }
 
