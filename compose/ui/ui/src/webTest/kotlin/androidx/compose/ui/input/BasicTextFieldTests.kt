@@ -26,7 +26,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.TestInputState
 import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.events.beforeInput
@@ -37,6 +36,8 @@ import androidx.compose.ui.events.mobileKeyDown
 import androidx.compose.ui.events.mobileKeyUp
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.specs.CopyPasteTestSpec
+import androidx.compose.ui.input.specs.TextFieldTestSpec
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -55,50 +56,7 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.clipboard.ClipboardEvent
 import org.w3c.dom.events.Event
 
-internal interface TextFieldTestSpec : OnCanvasTests {
-    fun currentHtmlInput() = getShadowRoot().querySelector("textarea") as HTMLTextAreaElement
-
-    suspend fun createTestInputState(
-        initialText: String = "",
-        initialSelection: TextRange = TextRange(initialText.length)
-    ): TestInputState
-
-
-    suspend fun WebApplicationScope.createApplicationWithHolder(
-        initialText: String = "",
-        initialSelection: TextRange = TextRange(initialText.length)
-    ): TestInputState {
-        val focusRequester = FocusRequester()
-        val textFieldStateHolder = createTestInputState(initialText, initialSelection)
-
-        createComposeWindow {
-            textFieldStateHolder.createBasicTextField(focusRequester)
-        }
-
-        focusRequester.requestFocus()
-        waitForHtmlInput()
-
-        return textFieldStateHolder
-    }
-
-    fun sendToHtmlInput(vararg events: Event) {
-        dispatchEvents(currentHtmlInput(), *events)
-    }
-
-    suspend fun WebApplicationScope.waitForHtmlInput(): HTMLTextAreaElement {
-        while (true) {
-            val element = getShadowRoot().querySelector("textarea")
-            if (element is HTMLTextAreaElement) {
-                return element
-            }
-            yield()
-        }
-        awaitIdle()
-    }
-
-}
-
-internal interface BasicTextFieldTestSpec : TextFieldTestSpec {
+internal interface BasicTextFieldTestSpec : TextFieldTestSpec, CopyPasteTestSpec {
 
     // delay in web tests called directly will be completely ignored
     private suspend fun waitFor(millis: Long) {
@@ -465,45 +423,6 @@ internal interface BasicTextFieldTestSpec : TextFieldTestSpec {
 
         inputHolder2.awaitAndAssertTextEquals("step2")
     }
-
-    @Test
-    fun pasteEvent() = runApplicationTest {
-        val textFieldValue =  createApplicationWithHolder(initialText = "A ")
-        textFieldValue.awaitAndAssertTextEquals("A ")
-
-        sendToHtmlInput(
-            clipboardEvent(type = "paste").also {
-                it.clipboardData!!.setData("text/plain", "QWERTY")
-            }
-        )
-
-        textFieldValue.awaitAndAssertTextEquals("A QWERTY")
-    }
-
-    @Test
-    fun copyEvent() = runApplicationTest {
-        createApplicationWithHolder("HELLO", TextRange(1, 5))
-        awaitIdle()
-
-        val copyEvent = clipboardEvent(type = "copy")
-        sendToHtmlInput(copyEvent)
-        awaitIdle()
-
-        assertEquals("ELLO", copyEvent.clipboardData!!.getData("text/plain"))
-    }
-
-    @Test
-    fun cutEvent() = runApplicationTest {
-        val textFieldValue =  createApplicationWithHolder("HELLO", TextRange(1, 4))
-        awaitIdle()
-
-        val cutEvent = clipboardEvent(type = "cut")
-        sendToHtmlInput(cutEvent)
-        awaitIdle()
-
-        assertEquals("ELL", cutEvent.clipboardData!!.getData("text/plain"))
-        assertEquals("HO", textFieldValue.text)
-    }
 }
 
 internal class BasicTextFieldWithValueTests : BasicTextFieldTestSpec {
@@ -552,8 +471,3 @@ internal class BasicTextFieldWithStateTests : BasicTextFieldTestSpec {
         initialSelection: TextRange
     ): TestInputState = TextFieldStateHolder(TextFieldState(initialText, initialSelection))
 }
-
-// The default API doesn't work correctly on FF :(, so we do it manually
-private fun clipboardEvent(type: String): ClipboardEvent = js(""" 
-        new ClipboardEvent(type, { 'clipboardData': new DataTransfer() })
-    """)
