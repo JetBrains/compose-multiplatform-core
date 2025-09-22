@@ -29,8 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.TestInputState
 import androidx.compose.ui.WebApplicationScope
-import androidx.compose.ui.events.InputEvent
-import androidx.compose.ui.events.InputEventInit
 import androidx.compose.ui.events.beforeInput
 import androidx.compose.ui.events.compositionEnd
 import androidx.compose.ui.events.compositionStart
@@ -53,13 +51,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import org.w3c.dom.DataTransfer
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.clipboard.ClipboardEvent
-import org.w3c.dom.clipboard.ClipboardEventInit
 import org.w3c.dom.events.Event
 
-internal interface TextInputTests : OnCanvasTests {
+internal interface TextFieldTestSpec : OnCanvasTests {
 
     suspend fun createTestInputState(
         initialText: String = "",
@@ -506,7 +502,7 @@ internal interface TextInputTests : OnCanvasTests {
     }
 }
 
-internal class BasicTextFieldTests : TextInputTests {
+internal class BasicTextFieldWithValueTests : TextFieldTestSpec {
 
     private class TextFieldValueHolder(private val textFieldValue: MutableState<TextFieldValue>) : TestInputState {
         override val text: String
@@ -533,7 +529,7 @@ internal class BasicTextFieldTests : TextInputTests {
     )
 }
 
-internal class BasicTextFieldTests2 : TextInputTests {
+internal class BasicTextFieldWithStateTests : TextFieldTestSpec {
     private class TextFieldStateHolder(private val textFieldState: TextFieldState) : TestInputState {
         override val text: CharSequence
             get() = textFieldState.text
