@@ -55,7 +55,7 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.clipboard.ClipboardEvent
 import org.w3c.dom.events.Event
 
-internal interface TextFieldTestSpec : OnCanvasTests {
+internal interface BasicTextFieldTestSpec : OnCanvasTests {
 
     suspend fun createTestInputState(
         initialText: String = "",
@@ -502,7 +502,7 @@ internal interface TextFieldTestSpec : OnCanvasTests {
     }
 }
 
-internal class BasicTextFieldWithValueTests : TextFieldTestSpec {
+internal class BasicTextFieldWithValueTests : BasicTextFieldTestSpec {
 
     private class TextFieldValueHolder(private val textFieldValue: MutableState<TextFieldValue>) : TestInputState {
         override val text: String
@@ -529,7 +529,7 @@ internal class BasicTextFieldWithValueTests : TextFieldTestSpec {
     )
 }
 
-internal class BasicTextFieldWithStateTests : TextFieldTestSpec {
+internal class BasicTextFieldWithStateTests : BasicTextFieldTestSpec {
     private class TextFieldStateHolder(private val textFieldState: TextFieldState) : TestInputState {
         override val text: CharSequence
             get() = textFieldState.text
