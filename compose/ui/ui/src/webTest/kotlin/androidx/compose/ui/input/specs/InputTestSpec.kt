@@ -41,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.events.Event
 
 internal interface InputTestSpec : TextFieldTestSpec {
 
@@ -49,6 +50,18 @@ internal interface InputTestSpec : TextFieldTestSpec {
         withContext(Dispatchers.Default) { delay(millis) }
     }
 
+    // sends keydown / input sequence of events like in Chrome in normal mode
+    private fun standardKeyboardSequence(vararg keys: String): Array<Event> {
+        return keys.flatMap {  key ->
+            listOf(
+                keyEvent(key),
+                beforeInput(inputType = "insertText", data = key),
+            )
+        }.toTypedArray()
+    }
+
+    private fun standardKeyboardSequence(str: String): Array<Event> = standardKeyboardSequence(*str.toCharArray().map { it.toString() }.toTypedArray())
+    private fun sendStandardKeyboardSequence(str: String) = sendToHtmlInput(*standardKeyboardSequence(str))
 
     @Test
     fun positionInput() = runApplicationTest {
@@ -67,14 +80,7 @@ internal interface InputTestSpec : TextFieldTestSpec {
         focusRequester.requestFocus()
         waitForHtmlInput()
 
-        sendToHtmlInput(
-            keyEvent("a"),
-            beforeInput(inputType = "insertText", data = "a"),
-            keyEvent("b"),
-            beforeInput(inputType = "insertText", data = "b"),
-            keyEvent("c"),
-            beforeInput(inputType = "insertText", data = "c"),
-        )
+        sendStandardKeyboardSequence("abc")
 
         inputHolder.awaitAndAssertTextEquals("abc")
 
@@ -122,19 +128,7 @@ internal interface InputTestSpec : TextFieldTestSpec {
     fun regularInput() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
 
-        sendToHtmlInput(
-            keyEvent("s"),
-            beforeInput(inputType = "insertText", data = "s"),
-            keyEvent("t"),
-            beforeInput(inputType = "insertText", data = "t"),
-            keyEvent("e"),
-            beforeInput(inputType = "insertText", data = "e"),
-            keyEvent("p"),
-            beforeInput(inputType = "insertText", data = "p"),
-            keyEvent("1"),
-            beforeInput(inputType = "insertText", data = "1"),
-        )
-
+        sendStandardKeyboardSequence("step1")
         textFieldValue.awaitAndAssertTextEquals("step1")
 
         sendToHtmlInput(
@@ -380,33 +374,13 @@ internal interface InputTestSpec : TextFieldTestSpec {
         focusRequester1.requestFocus()
         waitForHtmlInput()
 
-        sendToHtmlInput(
-            keyEvent("s"),
-            beforeInput(inputType = "insertText", data = "s"),
-            keyEvent("t"),
-            beforeInput(inputType = "insertText", data = "t"),
-            keyEvent("e"),
-            beforeInput(inputType = "insertText", data = "e"),
-            keyEvent("p"),
-            beforeInput(inputType = "insertText", data = "p"),
-            keyEvent("1"),
-            beforeInput(inputType = "insertText", data = "1"),
-        )
-
+        sendStandardKeyboardSequence("step1")
         inputHolder1.awaitAndAssertTextEquals("step1")
 
         focusRequester2.requestFocus()
         waitForHtmlInput()
 
-        sendToHtmlInput(
-            keyEvent("s"),
-            keyEvent("t"),
-            keyEvent("e"),
-            keyEvent("p"),
-            keyEvent("2"),
-            beforeInput(inputType = "insertText", data = "step2"),
-        )
-
+        sendStandardKeyboardSequence("step2")
         inputHolder2.awaitAndAssertTextEquals("step2")
     }
 }
