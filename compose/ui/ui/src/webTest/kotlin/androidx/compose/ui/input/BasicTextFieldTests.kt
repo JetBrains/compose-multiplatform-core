@@ -55,14 +55,14 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.clipboard.ClipboardEvent
 import org.w3c.dom.events.Event
 
-internal interface BasicTextFieldTestSpec : OnCanvasTests {
+internal interface TextFieldTestSpec : OnCanvasTests {
+    fun currentHtmlInput() = getShadowRoot().querySelector("textarea") as HTMLTextAreaElement
 
     suspend fun createTestInputState(
         initialText: String = "",
         initialSelection: TextRange = TextRange(initialText.length)
     ): TestInputState
 
-    fun currentHtmlInput() = getShadowRoot().querySelector("textarea") as HTMLTextAreaElement
 
     suspend fun WebApplicationScope.createApplicationWithHolder(
         initialText: String = "",
@@ -81,14 +81,8 @@ internal interface BasicTextFieldTestSpec : OnCanvasTests {
         return textFieldStateHolder
     }
 
-
-    private fun sendToHtmlInput(vararg events: Event) {
+    fun sendToHtmlInput(vararg events: Event) {
         dispatchEvents(currentHtmlInput(), *events)
-    }
-
-    // delay in web tests called directly will be completely ignored
-    private suspend fun waitFor(millis: Long) {
-        withContext(Dispatchers.Default) { delay(millis) }
     }
 
     suspend fun WebApplicationScope.waitForHtmlInput(): HTMLTextAreaElement {
@@ -101,6 +95,16 @@ internal interface BasicTextFieldTestSpec : OnCanvasTests {
         }
         awaitIdle()
     }
+
+}
+
+internal interface BasicTextFieldTestSpec : TextFieldTestSpec {
+
+    // delay in web tests called directly will be completely ignored
+    private suspend fun waitFor(millis: Long) {
+        withContext(Dispatchers.Default) { delay(millis) }
+    }
+
 
     @Test
     fun positionInput() = runApplicationTest {
