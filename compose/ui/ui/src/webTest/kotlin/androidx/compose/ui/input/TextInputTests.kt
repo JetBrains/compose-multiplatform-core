@@ -59,16 +59,16 @@ import org.w3c.dom.clipboard.ClipboardEvent
 import org.w3c.dom.clipboard.ClipboardEventInit
 import org.w3c.dom.events.Event
 
-abstract class TextInputTests : OnCanvasTests {
+internal interface TextInputTests : OnCanvasTests {
 
-    internal abstract suspend fun createTestInputState(
+    suspend fun createTestInputState(
         initialText: String = "",
         initialSelection: TextRange = TextRange(initialText.length)
     ): TestInputState
 
-    internal fun currentHtmlInput() = getShadowRoot().querySelector("textarea") as HTMLTextAreaElement
+    fun currentHtmlInput() = getShadowRoot().querySelector("textarea") as HTMLTextAreaElement
 
-    internal suspend fun WebApplicationScope.createApplicationWithHolder(
+    suspend fun WebApplicationScope.createApplicationWithHolder(
         initialText: String = "",
         initialSelection: TextRange = TextRange(initialText.length)
     ): TestInputState {
@@ -95,7 +95,7 @@ abstract class TextInputTests : OnCanvasTests {
         withContext(Dispatchers.Default) { delay(millis) }
     }
 
-    internal suspend fun WebApplicationScope.waitForHtmlInput(): HTMLTextAreaElement {
+    suspend fun WebApplicationScope.waitForHtmlInput(): HTMLTextAreaElement {
         while (true) {
             val element = getShadowRoot().querySelector("textarea")
             if (element is HTMLTextAreaElement) {
@@ -506,7 +506,7 @@ abstract class TextInputTests : OnCanvasTests {
     }
 }
 
-class BasicTextFieldTests : TextInputTests() {
+internal class BasicTextFieldTests : TextInputTests {
 
     private class TextFieldValueHolder(private val textFieldValue: MutableState<TextFieldValue>) : TestInputState {
         override val text: String
@@ -533,7 +533,7 @@ class BasicTextFieldTests : TextInputTests() {
     )
 }
 
-class BasicTextFieldTests2 : TextInputTests() {
+internal class BasicTextFieldTests2 : TextInputTests {
     private class TextFieldStateHolder(private val textFieldState: TextFieldState) : TestInputState {
         override val text: CharSequence
             get() = textFieldState.text
