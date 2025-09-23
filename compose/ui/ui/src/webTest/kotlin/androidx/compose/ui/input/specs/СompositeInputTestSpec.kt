@@ -91,7 +91,28 @@ internal interface FirefoxCompositeInput : СompositeInputTestSpec {
             keyEvent( "Process", code  = typedKey.eventKeyCode()),
             beforeInput("insertCompositionText", triggeredKey, isComposing = true),
             compositionEnd(triggeredKey),
-            keyEvent(typedKey, type = "key up")
+            keyEvent(typedKey, type = "keyup")
+        )
+    }
+}
+
+internal interface WinCompositeInput : СompositeInputTestSpec {
+    override fun triggerComposingSequence(
+        triggerKey: String,
+        typedKey: String,
+        triggeredKey: String
+    ): List<Event> {
+        return listOf(
+            keyEvent("Process", code = triggerKey.eventKeyCode()),
+            compositionStart(),
+            beforeInput("insertCompositionText", triggerKey),
+            keyEvent("Process", code = triggerKey.eventKeyCode(), type = "keyup"),
+            keyEvent(triggerKey, type = "keyup"),
+            keyEvent("Process", code = typedKey),
+            beforeInput("insertCompositionText", triggeredKey, isComposing = true),
+            compositionEnd(triggeredKey),
+            keyEvent("Process", code = typedKey, type = "keyup"),
+            keyEvent("1", type = "keyup"),
         )
     }
 }

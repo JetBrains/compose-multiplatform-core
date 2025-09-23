@@ -32,6 +32,7 @@ import androidx.compose.ui.input.specs.IosCompositeInput
 import androidx.compose.ui.input.specs.RegularInputTestSpec
 import androidx.compose.ui.input.specs.SafariCompositeInput
 import androidx.compose.ui.input.specs.TextFieldTestSpec
+import androidx.compose.ui.input.specs.WinCompositeInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 
@@ -105,3 +106,6 @@ internal class SafariCompositeInputWithStateTests : SafariCompositeInput, BasicT
 
 internal class IosCompositeInputWithValueTests : IosCompositeInput, BasicTextFieldWithValue
 internal class IosCompositeInputWithStateTests : IosCompositeInput, BasicTextFieldWithState
+
+internal class WinCompositeInputWithValueTests : WinCompositeInput, BasicTextFieldWithValue
+internal class WinCompositeInputWithStateTests : WinCompositeInput, BasicTextFieldWithState

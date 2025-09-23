@@ -78,7 +78,7 @@ internal interface RegularInputTestSpec : TextFieldTestSpec {
         val clientRectUpdated = currentHtmlInput().getBoundingClientRect()
 
         // in Windows/Chrome we need to consider delta
-        assertTrue((clientRectUpdated.left - clientRectInitial.left - 50.0).absoluteValue < 0.1, "left position updated")
+        assertTrue((clientRectUpdated.left - clientRectInitial.left - 50.0).absoluteValue < deltaThreshold, "left position updated")
 
         focusRequester.requestFocus()
         awaitIdle()
