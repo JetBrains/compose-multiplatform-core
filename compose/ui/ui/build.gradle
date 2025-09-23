@@ -224,6 +224,7 @@ androidXMultiplatform {
 
         desktopMain {
             dependsOn(skikoMain)
+            implementation(libs.kotlinDesktopToolkit)
         }
 
         desktopTest {
