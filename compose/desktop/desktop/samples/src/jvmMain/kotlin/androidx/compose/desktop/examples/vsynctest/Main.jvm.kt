@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -43,6 +44,7 @@ fun main() = application {
     AppWindow()
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun ApplicationScope.AppWindow() {
     val state = remember {
@@ -83,7 +85,7 @@ private fun ApplicationScope.AppWindow() {
 
     Window(
         onCloseRequest = ::exitApplication,
-        state = rememberWindowState(size = DpSize(800.dp, 200.dp))
+        initialSize = DpSize(800.dp, 200.dp)
     ) {
         val width = (LocalDensity.current.density * window.width).toInt()
         val singleFrameMillis = remember {
