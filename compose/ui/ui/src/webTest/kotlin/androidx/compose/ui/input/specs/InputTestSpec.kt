@@ -159,10 +159,10 @@ internal interface InputTestSpec : TextFieldTestSpec {
             compositionStart(),
             beforeInput("insertCompositionText", "a"),
             keyEvent("a", type = "keyup", isComposing = true),
-            keyEvent("1", code = "Digit1", isComposing = true),
+            keyEvent("1", isComposing = true),
             beforeInput("insertCompositionText", "啊"),
             compositionEnd("啊"),
-            keyEvent("1", code = "Digit1", type = "keyup"),
+            keyEvent("1", type = "keyup"),
         )
 
         textFieldValue.awaitAndAssertTextEquals("啊")
@@ -180,7 +180,7 @@ internal interface InputTestSpec : TextFieldTestSpec {
     fun compositeInputWebkit() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
 
-        val keyEvent = keyEvent("1", code = "Digit1")
+        val keyEvent = keyEvent("1")
 
         // We can not change timestamp for js events, so we just add some delay to enforce it
         waitFor(50)
@@ -193,7 +193,7 @@ internal interface InputTestSpec : TextFieldTestSpec {
             beforeInput("insertFromComposition", "啊"),
             compositionEnd("啊"),
             keyEvent,
-            keyEvent("1", type = "keyup", code = "Digit1"),
+            keyEvent("1", type = "keyup"),
         )
 
         textFieldValue.awaitAndAssertTextEquals("啊")
@@ -309,9 +309,9 @@ internal interface InputTestSpec : TextFieldTestSpec {
             keyEvent("a", repeat = true),
             keyEvent("a", repeat = true),
             keyEvent("a", type = "keyup"),
-            keyEvent("1", code = "Digit1"),
+            keyEvent("1"),
             beforeInput(inputType = "insertText", data = "à"),
-            keyEvent("1", code = "Digit1", type = "keyup"),
+            keyEvent("1", type = "keyup"),
         )
 
         textFieldValue.awaitAndAssertTextEquals("à", "Choose symbol from Accent Menu")

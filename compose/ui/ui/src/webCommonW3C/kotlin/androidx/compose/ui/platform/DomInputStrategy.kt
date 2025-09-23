@@ -47,15 +47,18 @@ internal class DomInputStrategy(
     private fun initEvents() {
         htmlInput.addEventListener("keydown", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
+            println("[${evt.type}] key: [${evt.key}]")
         })
 
         htmlInput.addEventListener("keyup", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
+            println("[${evt.type}] key: [${evt.key}]")
         })
 
         htmlInput.addEventListener("beforeinput", { evt ->
             if (evt is InputEvent) {
                 htmlInput as HTMLElementWithValue
+                println("[${evt.type}] inputType: [${evt.inputType}] data: [${evt.data}] isComposing: [${evt.isComposing}]")
                 val deleteContentBackwardSize = htmlInput.selectionEnd - htmlInput.selectionStart
 
                 if (deleteContentBackwardSize > 0) {
@@ -67,10 +70,12 @@ internal class DomInputStrategy(
 
         htmlInput.addEventListener("compositionstart", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
+            println("[${evt.type}] compositionStart: [${evt.data}]")
         })
 
         htmlInput.addEventListener("compositionend", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
+            println("[${evt.type}] compositionEnd: [${evt.data}]")
         })
     }
 }

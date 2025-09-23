@@ -28,10 +28,11 @@ internal external interface KeyboardEventInitExtended : KeyboardEventInit {
 
 private fun KeyboardEventInit.keyEvent(type: String) = KeyboardEvent(type, this)
 
+
 @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
 internal fun keyEvent(
     key: String,
-    code: String = "Key${key.uppercase()}",
+    code: String = if (key.length == 1 && key[0] in '0'..'9') "Digit${key}" else "Key${key.uppercase()}",
     keyCode: Int = key.uppercase().first().code,
     type: String = "keydown",
     ctrlKey: Boolean = false,
@@ -66,8 +67,8 @@ internal fun compositionStart(data: String = "") =
 internal fun compositionEnd(data: String) =
     CompositionEvent("compositionend", CompositionEventInit(data = data))
 
-internal fun beforeInput(inputType: String, data: String?) =
-    InputEvent("beforeinput", InputEventInit(inputType = inputType, data = data))
+internal fun beforeInput(inputType: String, data: String?, isComposing: Boolean = false) =
+    InputEvent("beforeinput", InputEventInit(inputType = inputType, data = data, isComposing = isComposing))
 
 internal fun mobileKeyDown() = keyEvent(type = "keydown", key = "Unidentified", code = "")
 internal fun mobileKeyUp() = keyEvent(type = "keydown", key = "Unidentified", code = "")
