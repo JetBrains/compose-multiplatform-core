@@ -15,15 +15,15 @@
  */
 
 package androidx.compose.desktop.examples.layout
-
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.runtime.Composable
-
-@Composable
-fun NoriaContext.BottomNavigationUsage() {
-    BottomNavigation {
-        BottomNavigationItem(true, onClick = {}, icon = {})
-        BottomNavigationItem(false, onClick = {}, icon = {})
-    }
-}
+//
+//import androidx.compose.material.BottomNavigation
+//import androidx.compose.material.BottomNavigationItem
+//import androidx.compose.runtime.Composable
+//
+//@Composable
+//fun NoriaContext.BottomNavigationUsage() {
+//    BottomNavigation {
+//        BottomNavigationItem(true, onClick = {}, icon = {})
+//        BottomNavigationItem(false, onClick = {}, icon = {})
+//    }
+//}

@@ -16,23 +16,23 @@
 
 package androidx.compose.desktop.examples.layout
 
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun NoriaContext.AlertDialogUsage() {
-    AlertDialog(
-        onDismissRequest = {},
-        title = { Text("AlertDialog") },
-        text = { Text("Apply?") },
-        confirmButton = { Button(onClick = {}) { Text("Apply") } },
-        modifier = Modifier.size(100.dp, 100.dp)
-    )
-}
+//import androidx.compose.foundation.layout.size
+//import androidx.compose.material.AlertDialog
+//import androidx.compose.material.Button
+//import androidx.compose.material.ExperimentalMaterialApi
+//import androidx.compose.material.Text
+//import androidx.compose.runtime.Composable
+//import androidx.compose.ui.Modifier
+//import androidx.compose.ui.unit.dp
+//
+//@OptIn(ExperimentalMaterialApi::class)
+//@Composable
+//fun NoriaContext.AlertDialogUsage() {
+//    AlertDialog(
+//        onDismissRequest = {},
+//        title = { Text("AlertDialog") },
+//        text = { Text("Apply?") },
+//        confirmButton = { Button(onClick = {}) { Text("Apply") } },
+//        modifier = Modifier.size(100.dp, 100.dp)
+//    )
+//}

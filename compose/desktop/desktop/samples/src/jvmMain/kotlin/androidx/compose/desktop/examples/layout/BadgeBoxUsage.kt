@@ -16,17 +16,17 @@
 
 package androidx.compose.desktop.examples.layout
 
-import androidx.compose.material.BadgedBox
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-
-@Composable
-fun NoriaContext.BadgeBoxUsage() {
-    BadgedBox(
-        badge = {
-            Text("badge")
-        }
-    ) {
-        Text("content")
-    }
-}
+//import androidx.compose.material.BadgedBox
+//import androidx.compose.material.Text
+//import androidx.compose.runtime.Composable
+//
+//@Composable
+//fun NoriaContext.BadgeBoxUsage() {
+//    BadgedBox(
+//        badge = {
+//            Text("badge")
+//        }
+//    ) {
+//        Text("content")
+//    }
+//}
