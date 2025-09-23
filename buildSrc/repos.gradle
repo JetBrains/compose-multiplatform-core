@@ -70,6 +70,9 @@ def addMavenRepositories(RepositoryHandler handler) {
         handler.maven {
                url("https://maven.pkg.jetbrains.space/public/p/kotlinx-coroutines/maven")
         }
+        handler.maven {
+            url("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+        }
         // TODO(b/280646217): Remove after official release to gmaven.
         handler.maven {
             url("https://storage.googleapis.com/r8-releases/raw")
