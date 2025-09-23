@@ -17,7 +17,10 @@
 package androidx.compose.ui
 
 import kotlin.coroutines.CoroutineContext
-import org.jetbrains.skiko.MainUIDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
+import org.jetbrains.skiko.MainUIDispatcher as SwingDispatcher
+
+internal var ComposeUIDispatcher: CoroutineDispatcher = SwingDispatcher
 
 internal actual val PostDelayedDispatcher: CoroutineContext
-    get() = MainUIDispatcher
+    get() = ComposeUIDispatcher

@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.configureSwingGlobalsForCompose
@@ -197,7 +198,7 @@ suspend fun awaitApplication(
     }
     withContext(MainUIDispatcher) {
         withContext(YieldFrameClock) {
-            val globalSnapshotRegistration = GlobalSnapshotManager.register(MainUIDispatcher)
+            val globalSnapshotRegistration = GlobalSnapshotManager.register(ComposeUIDispatcher)
             val recomposer = Recomposer(coroutineContext)
             var isOpen by mutableStateOf(true)
 
