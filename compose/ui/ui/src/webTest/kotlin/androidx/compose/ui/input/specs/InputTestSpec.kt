@@ -67,6 +67,26 @@ internal interface InputTestSpec : TextFieldTestSpec {
     private fun standardKeyboardSequence(str: String): Array<Event> = standardKeyboardSequence(*str.toCharArray().map { it.toString() }.toTypedArray())
     private fun sendStandardKeyboardSequence(str: String) = sendToHtmlInput(*standardKeyboardSequence(str))
 
+    // type character in composite mode and trigger composition, Chrome behaviour
+    private fun standardComposingSequence(typedKey: String, triggeredKey: String): List<Event> {
+        return listOf(
+            keyEvent(typedKey),
+            beforeInput("insertCompositionText", typedKey, isComposing = true),
+            compositionEnd(triggeredKey),
+            keyEvent(typedKey, type = "keyup")
+        )
+    }
+
+    private fun standardTriggerComposingSequence(triggerKey: String, typedKey: String, triggeredKey: String): List<Event> {
+        return listOf(
+            keyEvent(triggerKey),
+            compositionStart(),
+            beforeInput("insertCompositionText", triggerKey),
+            keyEvent(triggerKey, type = "keyup", isComposing = true),
+            *standardComposingSequence(typedKey, triggeredKey).toTypedArray()
+        )
+    }
+
     @Test
     fun positionInput() = runApplicationTest {
         val focusRequester = FocusRequester()
@@ -155,14 +175,7 @@ internal interface InputTestSpec : TextFieldTestSpec {
         assertIs<HTMLTextAreaElement>(backingTextField)
 
         sendToHtmlInput(
-            keyEvent("a"),
-            compositionStart(),
-            beforeInput("insertCompositionText", "a"),
-            keyEvent("a", type = "keyup", isComposing = true),
-            keyEvent("1", isComposing = true),
-            beforeInput("insertCompositionText", "啊"),
-            compositionEnd("啊"),
-            keyEvent("1", type = "keyup"),
+        *standardTriggerComposingSequence("a", "1", "啊").toTypedArray()
         )
 
         textFieldValue.awaitAndAssertTextEquals("啊")
