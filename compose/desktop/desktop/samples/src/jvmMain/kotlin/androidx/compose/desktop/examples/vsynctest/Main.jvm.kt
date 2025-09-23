@@ -36,12 +36,16 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.jetbrains.skiko.MainUIDispatcher
 
 private val FrameLogCount = 1000
 
 fun main() = application {
     AppWindow()
-    AppWindow()
+//    AppWindow()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
