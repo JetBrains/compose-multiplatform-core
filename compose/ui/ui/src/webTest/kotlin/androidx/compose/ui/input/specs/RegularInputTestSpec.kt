@@ -130,41 +130,6 @@ internal interface RegularInputTestSpec : TextFieldTestSpec {
         )
     }
 
-
-    @Test
-    fun compositeInputWebkit() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder()
-
-        val keyEvent = keyEvent("1")
-
-        // We can not change timestamp for js events, so we just add some delay to enforce it
-        waitFor(50)
-
-        sendToHtmlInput(
-            compositionStart(),
-            keyEvent("a", isComposing = true),
-            keyEvent("a", type = "keyup", isComposing = true),
-            beforeInput("deleteCompositionText", null),
-            beforeInput("insertFromComposition", "啊"),
-            compositionEnd("啊"),
-            keyEvent,
-            keyEvent("1", type = "keyup"),
-        )
-
-        textFieldValue.awaitAndAssertTextEquals("啊")
-
-        // We can not change timestamp for js events, so we just add some delay to enforce it
-        waitFor(100)
-
-        sendToHtmlInput(
-            keyEvent("b"),
-            beforeInput(inputType = "insertText", data = "b"),
-            keyEvent("b", type = "keyup")
-        )
-
-        textFieldValue.awaitAndAssertTextEquals("啊b")
-    }
-
     @Test
     fun mobileInput() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()

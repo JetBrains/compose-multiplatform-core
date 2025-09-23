@@ -21,7 +21,6 @@ import androidx.compose.ui.events.compositionEnd
 import androidx.compose.ui.events.compositionStart
 import androidx.compose.ui.events.eventKeyCode
 import androidx.compose.ui.events.keyEvent
-import androidx.compose.ui.input.BasicTextFieldWithValue
 import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +52,7 @@ internal interface СompositeInputTestSpec : TextFieldTestSpec {
         textFieldValue.awaitAndAssertTextEquals("啊")
 
         sendStandardKeyboardSequence("x")
-        textFieldValue.awaitAndAssertTextEquals("啊xч")
+        textFieldValue.awaitAndAssertTextEquals("啊x")
     }
 }
 
@@ -92,7 +91,46 @@ internal interface FirefoxCompositeInput : СompositeInputTestSpec {
             keyEvent( "Process", code  = typedKey.eventKeyCode()),
             beforeInput("insertCompositionText", triggeredKey, isComposing = true),
             compositionEnd(triggeredKey),
+            keyEvent(typedKey, type = "key up")
+        )
+    }
+}
+
+internal interface SafariCompositeInput : СompositeInputTestSpec {
+    override fun triggerComposingSequence(
+        triggerKey: String,
+        typedKey: String,
+        triggeredKey: String
+    ): List<Event> {
+        return listOf(
+            compositionStart(),
+            beforeInput("insertCompositionText", triggerKey, isComposing = true),
+            keyEvent(triggerKey),
+            keyEvent(triggerKey, type = "keyup"),
+            beforeInput("deleteCompositionText", null, isComposing = true),
+            beforeInput("insertFromComposition", triggeredKey, isComposing = true),
+            compositionEnd(triggeredKey),
+            keyEvent(typedKey),
             keyEvent(typedKey, type = "keyup")
+        )
+    }
+}
+
+internal interface IosCompositeInput : СompositeInputTestSpec {
+    override fun triggerComposingSequence(
+        triggerKey: String,
+        typedKey: String,
+        triggeredKey: String
+    ): List<Event> {
+        return listOf(
+            keyEvent(triggerKey, keyCode = 229),
+            compositionStart(),
+            beforeInput("insertCompositionText", triggerKey,isComposing = true),
+            keyEvent(triggerKey, type = "keyup"),
+            beforeInput("insertCompositionText", triggeredKey, isComposing = true),
+            beforeInput("deleteCompositionText", null, isComposing = true),
+            beforeInput("insertFromComposition", triggeredKey, isComposing = true),
+            compositionEnd(triggeredKey),
         )
     }
 }
