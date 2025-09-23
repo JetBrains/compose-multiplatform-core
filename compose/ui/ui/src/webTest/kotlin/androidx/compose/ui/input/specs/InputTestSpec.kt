@@ -180,12 +180,7 @@ internal interface InputTestSpec : TextFieldTestSpec {
 
         textFieldValue.awaitAndAssertTextEquals("啊")
 
-        sendToHtmlInput(
-            keyEvent("x"),
-            beforeInput(inputType = "insertText", data = "x"),
-            keyEvent("x", type = "keyup")
-        )
-
+        sendStandardKeyboardSequence("x")
         textFieldValue.awaitAndAssertTextEquals("啊x")
     }
 
