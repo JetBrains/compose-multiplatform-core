@@ -23,7 +23,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.events.beforeInput
-import androidx.compose.ui.events.compositionEnd
 import androidx.compose.ui.events.compositionStart
 import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.events.mobileKeyDown
@@ -34,14 +33,11 @@ import kotlin.math.absoluteValue
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import org.w3c.dom.HTMLTextAreaElement
-import org.w3c.dom.events.Event
 
 internal interface RegularInputTestSpec : TextFieldTestSpec {
 
@@ -52,6 +48,8 @@ internal interface RegularInputTestSpec : TextFieldTestSpec {
 
     @Test
     fun positionInput() = runApplicationTest {
+        val deltaThreshold = 1.01
+
         val focusRequester = FocusRequester()
         val inputHolder = createTestInputState()
 
@@ -79,7 +77,8 @@ internal interface RegularInputTestSpec : TextFieldTestSpec {
 
         val clientRectUpdated = currentHtmlInput().getBoundingClientRect()
 
-        assertEquals(50.0, clientRectUpdated.left - clientRectInitial.left, "left position updated")
+        // in Windows/Chrome we need to consider delta
+        assertTrue((clientRectUpdated.left - clientRectInitial.left - 50.0).absoluteValue < 0.1, "left position updated")
 
         focusRequester.requestFocus()
         awaitIdle()
@@ -95,7 +94,6 @@ internal interface RegularInputTestSpec : TextFieldTestSpec {
 
         // TODO: In Firefox there's a 0.5 delta - may be this can be accounted precisely somehow
         val topDelta = clientRectSticky.top - expectedTopValue
-        val deltaThreshold = 1.01
         assertTrue(topDelta.absoluteValue < deltaThreshold, "top position sticky $topDelta")
 
         // intentionally huge, will never grow over viewport nevertheless
