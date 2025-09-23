@@ -16,16 +16,16 @@
 
 package androidx.compose.desktop.examples.layout
 
-import androidx.compose.material.BottomSheetScaffold
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun BottomSheetScaffoldUsage() {
-    BottomSheetScaffold(
-        sheetContent = { Text("sheetContent") },
-        content = { Text("content") }
-    )
-}
+//import androidx.compose.material.BottomSheetScaffold
+//import androidx.compose.material.ExperimentalMaterialApi
+//import androidx.compose.material.Text
+//import androidx.compose.runtime.Composable
+//
+//@OptIn(ExperimentalMaterialApi::class)
+//@Composable
+//fun NoriaContext.BottomSheetScaffoldUsage() {
+//    BottomSheetScaffold(
+//        sheetContent = { Text("sheetContent") },
+//        content = { Text("content") }
+//    )
+//}

@@ -26,6 +26,29 @@ plugins {
 dependencies {
 }
 
+configurations.all {
+    resolutionStrategy.dependencySubstitution {
+        // Required as long as we're on 0.0.0-SNAPSHOT releases because some other dependencies
+        // like would otherwise pull in 1.7.1 or higher which would win over 0.0.0
+        substitute(module("org.jetbrains.compose.runtime:runtime"))
+                .using(module("org.jetbrains.compose.runtime:runtime:0.0.0-SNAPSHOT"))
+        substitute(module("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose"))
+                .using(module("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:0.0.0-SNAPSHOT"))
+        substitute(module("org.jetbrains.compose.ui:ui-desktop"))
+                .using(module("org.jetbrains.compose.ui:ui-all-desktop:0.0.0-SNAPSHOT"))
+        substitute(module("org.jetbrains.compose.ui:ui-geometry-desktop"))
+                .using(module("org.jetbrains.compose.ui:ui-all-desktop:0.0.0-SNAPSHOT"))
+        substitute(module("org.jetbrains.compose.ui:ui-graphics-desktop"))
+                .using(module("org.jetbrains.compose.ui:ui-all-desktop:0.0.0-SNAPSHOT"))
+        substitute(module("org.jetbrains.compose.ui:ui-text-desktop"))
+                .using(module("org.jetbrains.compose.ui:ui-all-desktop:0.0.0-SNAPSHOT"))
+        substitute(module("org.jetbrains.compose.ui:ui-unit-desktop"))
+                .using(module("org.jetbrains.compose.ui:ui-all-desktop:0.0.0-SNAPSHOT"))
+        substitute(module("org.jetbrains.compose.ui:ui-util-desktop"))
+                .using(module("org.jetbrains.compose.ui:ui-all-desktop:0.0.0-SNAPSHOT"))
+    }
+}
+
 kotlin {
     jvm()
 

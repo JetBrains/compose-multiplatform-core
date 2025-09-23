@@ -50,6 +50,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.draw.clip
@@ -65,6 +66,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.TrayState
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.WindowState
@@ -558,11 +560,12 @@ fun SwingActionButton(text: String, action: (() -> Unit)? = null) {
     )
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SecondaryWindow(onCloseRequest: () -> Unit) = Window(
     onCloseRequest = onCloseRequest,
-    state = rememberWindowState(size = DpSize(400.dp, 200.dp)),
-    undecorated = AppState.undecorated.value,
+    initialSize = DpSize(400.dp, 200.dp),
+    decoration = WindowDecoration.Undecorated(),
 ) {
     WindowContent(
         amount = AppState.amount,
