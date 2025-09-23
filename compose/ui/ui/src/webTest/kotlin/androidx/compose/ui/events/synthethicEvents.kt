@@ -29,11 +29,22 @@ internal external interface KeyboardEventInitExtended : KeyboardEventInit {
 private fun KeyboardEventInit.keyEvent(type: String) = KeyboardEvent(type, this)
 
 
+internal fun String.eventKeyCode(): String {
+    return when {
+        length == 1 && this[0] in '0'..'9' -> "Digit${this}"
+        else -> "Key${this[0].uppercase()}"
+    }
+}
+
 @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
 internal fun keyEvent(
     key: String,
-    code: String = if (key.length == 1 && key[0] in '0'..'9') "Digit${key}" else "Key${key.uppercase()}",
-    keyCode: Int = key.uppercase().first().code,
+    code: String = key.eventKeyCode(),
+    keyCode: Int = when(key) {
+        // Happens in Firefox
+        "Process" -> 229
+        else -> key.uppercase().first().code
+    },
     type: String = "keydown",
     ctrlKey: Boolean = false,
     metaKey: Boolean = false,
