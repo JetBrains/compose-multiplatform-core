@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.ui.ComposeUIDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
-import org.jetbrains.skiko.MainUIDispatcher
 
-internal actual val GlobalSnapshotManagerDispatcher: CoroutineDispatcher = MainUIDispatcher
+internal actual val GlobalSnapshotManagerDispatcher: CoroutineDispatcher = ComposeUIDispatcher
