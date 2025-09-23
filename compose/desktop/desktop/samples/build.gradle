@@ -191,6 +191,58 @@ tasks.register('runFont', JavaExec) {
                     compilation.runtimeDependencyFiles
 }
 
+tasks.register('runKDT', JavaExec) {
+    dependsOn(":compose:desktop:desktop:jar", "downloadAndUnpackKDT")
+    mainClass = "androidx.compose.desktop.examples.kdt.Main_jvmKt"
+    def logFile = layout.buildDirectory.file("test-logs/desktop_native.log")
+    def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
+    environment("MTL_HUD_ENABLED", "1")
+    jvmArgs("--add-opens",
+            "java.desktop/sun.font=ALL-UNNAMED",
+            "--enable-preview",
+            "--enable-native-access=ALL-UNNAMED",
+            "-Dkdt.native.log.path=${logFile.get().asFile.absolutePath}",
+            "-Dkdt.library.folder.path=${kdtExtractedDir.get().asFile.absolutePath}",
+            "-Dkdt.debug=false")
+    def compilation = kotlin.jvm().compilations["main"]
+    classpath =
+            compilation.output.allOutputs +
+                    compilation.runtimeDependencyFiles
+}
+
+tasks.register('downloadAndUnpackKDT') {
+    description = "Downloads kotlinDesktopToolkitMacOSArm64 jar and unpacks its contents"
+    group = "build"
+
+    def extractedDir = layout.buildDirectory.dir("kdt-extracted")
+    outputs.dir(extractedDir)
+
+    doLast {
+        def kdtConfig = configurations.create("kdtDownload") {
+            canBeConsumed = false
+            canBeResolved = true
+        }
+
+        dependencies.add(kdtConfig.name, libs.kotlinDesktopToolkitMacOSArm64)
+        def jarFile = kdtConfig.files.find { it.name.contains("kotlin-desktop-toolkit-macos-arm64") }
+
+        if (jarFile != null) {
+            def extractDir = extractedDir.get().asFile
+            if (extractDir.exists()) {
+                extractDir.deleteDir()
+            }
+            extractDir.mkdirs()
+
+            copy {
+                from zipTree(jarFile)
+                into extractDir
+            }
+        } else {
+            throw new GradleException("Could not find kotlinDesktopToolkitMacOSArm64 jar file")
+        }
+    }
+}
+
 tasks.register('run') {
     dependsOn("run1")
 }
