@@ -297,7 +297,8 @@ skikoLinuxX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", ve
 skikoLinuxArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
 skikoWasmWasm = { module = "org.jetbrains.skiko:skiko-wasm-js", version.ref = "skiko" }
 skikoWasm = { module = "org.jetbrains.skiko:skiko-js-wasm-runtime", version.ref = "skiko" }
-kotlinDesktopToolkit = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-common", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitCommon = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-common", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitMacOSArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-macos-arm64", version.ref = "kotlinDesktopToolkit" }
 spdxGradlePluginz = { module = "org.spdx:spdx-gradle-plugin", version.ref = "spdxGradlePlugin" }
 sqldelightAndroid = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelightCoroutinesExt = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqldelight" }

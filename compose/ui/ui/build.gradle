@@ -218,7 +218,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             desktopMain {
                 dependsOn(notMobileMain)
                 dependencies {
-                    implementation(libs.kotlinDesktopToolkit)
+                    implementation(libs.kotlinDesktopToolkitCommon)
                     implementation(libs.kotlinStdlibJdk8)
 
                     // TODO revert after https://youtrack.jetbrains.com/issue/CMP-8582/androidx.lifecyclelifecycle-viewmodel-savedstate-desktop2.9.1-depend-on-an-Android-artifact-in-pom is fixed and the dependency is upgraded
