@@ -23,58 +23,72 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.TestInputState
+import androidx.compose.ui.events.beforeInput
+import androidx.compose.ui.events.compositionEnd
+import androidx.compose.ui.events.compositionStart
+import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.specs.ChromeCompositeInput
 import androidx.compose.ui.input.specs.CopyPasteTestSpec
-import androidx.compose.ui.input.specs.InputTestSpec
+import androidx.compose.ui.input.specs.FirefoxCompositeInput
+import androidx.compose.ui.input.specs.RegularInputTestSpec
+import androidx.compose.ui.input.specs.TextFieldTestSpec
+import androidx.compose.ui.input.specs.СompositeInputTestSpec
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import org.w3c.dom.events.Event
 
-internal interface BasicTextFieldTestSpec : InputTestSpec, CopyPasteTestSpec
 
-internal class BasicTextFieldWithValueTests : BasicTextFieldTestSpec {
+private class TextFieldValueHolder(private val textFieldValue: MutableState<TextFieldValue>) : TestInputState {
+    override val text: String
+        get() = textFieldValue.value.text
 
-    private class TextFieldValueHolder(private val textFieldValue: MutableState<TextFieldValue>) : TestInputState {
-        override val text: String
-            get() = textFieldValue.value.text
-
-        @Composable
-        override fun createBasicTextField(focusRequester: FocusRequester) {
-            BasicTextField(
-                value = textFieldValue.value,
-                onValueChange = { value ->
-                    textFieldValue.value = value
-                },
-                modifier = Modifier.focusRequester(focusRequester)
-            )
-        }
+    @Composable
+    override fun createBasicTextField(focusRequester: FocusRequester) {
+        BasicTextField(
+            value = textFieldValue.value,
+            onValueChange = { value ->
+                textFieldValue.value = value
+            },
+            modifier = Modifier.focusRequester(focusRequester)
+        )
     }
+}
 
+private class TextFieldStateHolder(private val textFieldState: TextFieldState) : TestInputState {
+    override val text: CharSequence
+        get() = textFieldState.text
+
+    @Composable
+    override fun createBasicTextField(focusRequester: FocusRequester) {
+        BasicTextField(
+            state = textFieldState,
+            modifier = Modifier.focusRequester(focusRequester)
+        )
+    }
+}
+
+
+internal interface BasicTextFieldWithValue : TextFieldTestSpec {
     override suspend fun createTestInputState(
         initialText: String,
         initialSelection: TextRange
-    ): TestInputState = TextFieldValueHolder(
-        mutableStateOf(
-            value = TextFieldValue(text = initialText, selection = initialSelection))
-    )
+    ): TestInputState = TextFieldValueHolder(mutableStateOf(TextFieldValue(text = initialText, selection = initialSelection)))
 }
 
-internal class BasicTextFieldWithStateTests : BasicTextFieldTestSpec {
-    private class TextFieldStateHolder(private val textFieldState: TextFieldState) : TestInputState {
-        override val text: CharSequence
-            get() = textFieldState.text
-
-        @Composable
-        override fun createBasicTextField(focusRequester: FocusRequester) {
-            BasicTextField(
-                state = textFieldState,
-                modifier = Modifier.focusRequester(focusRequester)
-            )
-        }
-    }
-
+internal interface BasicTextFieldWithState : TextFieldTestSpec {
     override suspend fun createTestInputState(
         initialText: String,
         initialSelection: TextRange
     ): TestInputState = TextFieldStateHolder(TextFieldState(initialText, initialSelection))
 }
+
+internal class RegularInputWithValueTests : RegularInputTestSpec, CopyPasteTestSpec, BasicTextFieldWithValue
+internal class RegularInputWithStateTests : RegularInputTestSpec, CopyPasteTestSpec, BasicTextFieldWithState
+
+internal class ChromeCompositeInputWithValueTests : ChromeCompositeInput, BasicTextFieldWithValue
+internal class ChromeCompositeInputWithStateTests : ChromeCompositeInput, BasicTextFieldWithState
+
+internal class FirefoxCompositeInputWithValueTests : FirefoxCompositeInput, BasicTextFieldWithValue
+internal class FirefoxCompositeInputWithStateTests : FirefoxCompositeInput, BasicTextFieldWithState

@@ -43,48 +43,11 @@ import kotlinx.coroutines.withContext
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.Event
 
-internal interface InputTestSpec : TextFieldTestSpec {
+internal interface RegularInputTestSpec : TextFieldTestSpec {
 
     // delay in web tests called directly will be completely ignored
     private suspend fun waitFor(millis: Long) {
         withContext(Dispatchers.Default) { delay(millis) }
-    }
-
-    // sends keydown / input sequence of events like in Chrome in normal mode
-    private fun standardKeyboardSequence(vararg keys: String): Array<Event> {
-        return keys.flatMap {  key ->
-            buildList {
-                add(keyEvent(key))
-                // we treat anything of size > 0 as a character that does not have type representation
-                if (key.length == 1) {
-                    add(beforeInput(inputType = "insertText", data = key))
-                }
-                add(keyEvent(key, type = "keyup"))
-            }
-        }.toTypedArray()
-    }
-
-    private fun standardKeyboardSequence(str: String): Array<Event> = standardKeyboardSequence(*str.toCharArray().map { it.toString() }.toTypedArray())
-    private fun sendStandardKeyboardSequence(str: String) = sendToHtmlInput(*standardKeyboardSequence(str))
-
-    // type character in composite mode and trigger composition, Chrome behaviour
-    private fun standardComposingSequence(typedKey: String, triggeredKey: String): List<Event> {
-        return listOf(
-            keyEvent(typedKey),
-            beforeInput("insertCompositionText", typedKey, isComposing = true),
-            compositionEnd(triggeredKey),
-            keyEvent(typedKey, type = "keyup")
-        )
-    }
-
-    private fun standardTriggerComposingSequence(triggerKey: String, typedKey: String, triggeredKey: String): List<Event> {
-        return listOf(
-            keyEvent(triggerKey),
-            compositionStart(),
-            beforeInput("insertCompositionText", triggerKey),
-            keyEvent(triggerKey, type = "keyup", isComposing = true),
-            *standardComposingSequence(typedKey, triggeredKey).toTypedArray()
-        )
     }
 
     @Test
@@ -167,22 +130,6 @@ internal interface InputTestSpec : TextFieldTestSpec {
         )
     }
 
-    @Test
-    fun compositeInput() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder()
-
-        val backingTextField = getShadowRoot().querySelector("textarea")
-        assertIs<HTMLTextAreaElement>(backingTextField)
-
-        sendToHtmlInput(
-        *standardTriggerComposingSequence("a", "1", "啊").toTypedArray()
-        )
-
-        textFieldValue.awaitAndAssertTextEquals("啊")
-
-        sendStandardKeyboardSequence("x")
-        textFieldValue.awaitAndAssertTextEquals("啊x")
-    }
 
     @Test
     fun compositeInputWebkit() = runApplicationTest {

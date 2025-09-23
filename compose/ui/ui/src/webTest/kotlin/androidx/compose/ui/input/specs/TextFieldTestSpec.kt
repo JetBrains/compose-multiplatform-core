@@ -19,6 +19,8 @@ package androidx.compose.ui.input.specs
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.TestInputState
 import androidx.compose.ui.WebApplicationScope
+import androidx.compose.ui.events.beforeInput
+import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.TextRange
 import kotlinx.coroutines.yield
@@ -65,5 +67,22 @@ internal interface TextFieldTestSpec : OnCanvasTests {
         }
         awaitIdle()
     }
+
+    // sends keydown / input sequence of events like in Chrome in normal mode
+    private fun standardKeyboardSequence(vararg keys: String): Array<Event> {
+        return keys.flatMap {  key ->
+            buildList {
+                add(keyEvent(key))
+                // we treat anything of size > 0 as a character that does not have type representation
+                if (key.length == 1) {
+                    add(beforeInput(inputType = "insertText", data = key))
+                }
+                add(keyEvent(key, type = "keyup"))
+            }
+        }.toTypedArray()
+    }
+
+    private fun standardKeyboardSequence(str: String): Array<Event> = standardKeyboardSequence(*str.toCharArray().map { it.toString() }.toTypedArray())
+    fun sendStandardKeyboardSequence(str: String) = sendToHtmlInput(*standardKeyboardSequence(str))
 
 }
