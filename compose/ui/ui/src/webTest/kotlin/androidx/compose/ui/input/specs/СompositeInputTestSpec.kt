@@ -155,3 +155,17 @@ internal interface IosCompositeInput : СompositeInputTestSpec {
         )
     }
 }
+
+internal interface AndroidCompositeInput : СompositeInputTestSpec {
+    override fun triggerComposingSequence(
+        triggerKey: String,
+        typedKey: String,
+        triggeredKey: String
+    ): List<Event> {
+        return listOf(
+            keyEvent("Unidentified", " ", keyCode = 229),
+            beforeInput("insertText", triggeredKey, isComposing = true),
+            keyEvent("Unidentified", " ", keyCode = 229)
+        )
+    }
+}

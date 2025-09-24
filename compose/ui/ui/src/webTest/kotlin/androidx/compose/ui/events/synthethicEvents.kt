@@ -43,6 +43,8 @@ internal fun keyEvent(
     keyCode: Int = when(key) {
         // Happens in Firefox
         "Process" -> 229
+        // Chrome in Android with virtual keyboard
+        "Unidentified" -> 229
         else -> key.uppercase().first().code
     },
     type: String = "keydown",

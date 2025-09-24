@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.TestInputState
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.specs.AndroidCompositeInput
 import androidx.compose.ui.input.specs.ChromeCompositeInput
 import androidx.compose.ui.input.specs.CopyPasteTestSpec
 import androidx.compose.ui.input.specs.FirefoxCompositeInput
@@ -109,3 +110,6 @@ internal class IosCompositeInputWithStateTests : IosCompositeInput, BasicTextFie
 
 internal class WinCompositeInputWithValueTests : WinCompositeInput, BasicTextFieldWithValue
 internal class WinCompositeInputWithStateTests : WinCompositeInput, BasicTextFieldWithState
+
+internal class AndroidCompositeInputWithValueTests : AndroidCompositeInput, BasicTextFieldWithValue
+internal class AndroidCompositeInputWithStateTests : AndroidCompositeInput, BasicTextFieldWithState

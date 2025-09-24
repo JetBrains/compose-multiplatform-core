@@ -47,12 +47,12 @@ internal class DomInputStrategy(
     private fun initEvents() {
         htmlInput.addEventListener("keydown", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
-            println("[${evt.type}] key: [${evt.key}] code：[${evt.code}] keyCode: [${evt.keyCode}]")
+            println("[${evt.type}] key: [${evt.key}] code：['${evt.code}'] keyCode: [${evt.keyCode}]")
         })
 
         htmlInput.addEventListener("keyup", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
-            println("[${evt.type}] key: [${evt.key}] code：[${evt.code}] keyCode: [${evt.keyCode}]")
+            println("[${evt.type}] key: [${evt.key}] code：['${evt.code}'] keyCode: [${evt.keyCode}]")
         })
 
         htmlInput.addEventListener("beforeinput", { evt ->
