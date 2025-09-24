@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import noria.NoriaContext
 import org.jetbrains.desktop.macos.Application
 import org.jetbrains.desktop.macos.Event
 import org.jetbrains.desktop.macos.EventHandlerResult
@@ -54,7 +55,7 @@ import org.jetbrains.desktop.macos.KotlinDesktopToolkit
  * Scope used by [application], [awaitApplication], [launchApplication]
  */
 @Stable
-interface ApplicationScope {
+interface ApplicationScope: NoriaContext {
     /**
      * Close all windows created inside the application and cancel all launched effects
      * (they launch via [LaunchedEffect] and [rememberCoroutineScope]).
