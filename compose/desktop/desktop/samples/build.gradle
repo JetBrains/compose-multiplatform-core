@@ -188,7 +188,18 @@ tasks.register('runFont', JavaExec) {
                     compilation.runtimeDependencyFiles
 }
 
-tasks.register('runKDT', JavaExec) {
+tasks.register('runVsync', JavaExec) {
+    dependsOn(":compose:desktop:desktop:jar")
+    mainClass = "androidx.compose.desktop.examples.vsynctest.Main_jvmKt"
+    environment("MTL_HUD_ENABLED", "1")
+    jvmArgs("-verbose:gc")
+    def compilation = kotlin.jvm().compilations["main"]
+    classpath =
+            compilation.output.allOutputs +
+                    compilation.runtimeDependencyFiles
+}
+
+tasks.register('runVsyncKDT', JavaExec) {
     dependsOn(":compose:desktop:desktop:jar", "downloadAndUnpackKDT")
     mainClass = "androidx.compose.desktop.examples.kdt.Main_jvmKt"
     def logFile = layout.buildDirectory.file("test-logs/desktop_native.log")
