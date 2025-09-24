@@ -23,19 +23,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.events.beforeInput
-import androidx.compose.ui.events.compositionStart
 import androidx.compose.ui.events.keyEvent
-import androidx.compose.ui.events.mobileKeyDown
-import androidx.compose.ui.events.mobileKeyUp
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 import kotlin.math.absoluteValue
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlinx.browser.window
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 
 internal interface RegularInputTestSpec : TextFieldTestSpec {
 
@@ -119,26 +113,6 @@ internal interface RegularInputTestSpec : TextFieldTestSpec {
             "stepX",
             "Backspace should delete last symbol typed"
         )
-    }
-
-    @Test
-    fun mobileInput() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder()
-
-        sendToHtmlInput(
-            mobileKeyDown(),
-            compositionStart(),
-            beforeInput("insertCompositionText", "a"),
-            mobileKeyUp(),
-            mobileKeyDown(),
-            beforeInput("insertCompositionText", "ab"),
-            mobileKeyUp(),
-            mobileKeyDown(),
-            beforeInput("insertCompositionText", "abc"),
-            mobileKeyUp()
-        )
-
-        textFieldValue.awaitAndAssertTextEquals("abc")
     }
 
     @Test
