@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.TestInputState
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.specs.AccentDialogTestSpec
 import androidx.compose.ui.input.specs.AndroidCompositeInput
 import androidx.compose.ui.input.specs.ChromeCompositeInput
 import androidx.compose.ui.input.specs.CopyPasteTestSpec
@@ -91,9 +92,11 @@ internal interface BasicTextFieldWithState : TextFieldTestSpec {
 }
 
 internal class RegularInputWithValueTests : RegularInputTestSpec, CopyPasteTestSpec,
+    AccentDialogTestSpec,
     BasicTextFieldWithValue
 
 internal class RegularInputWithStateTests : RegularInputTestSpec, CopyPasteTestSpec,
+    AccentDialogTestSpec,
     BasicTextFieldWithState
 
 internal class ChromeCompositeInputWithValueTests : ChromeCompositeInput, BasicTextFieldWithValue

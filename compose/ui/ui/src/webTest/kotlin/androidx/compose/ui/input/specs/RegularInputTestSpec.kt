@@ -30,9 +30,7 @@ import androidx.compose.ui.events.mobileKeyUp
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 import kotlin.math.absoluteValue
-import kotlin.test.Ignore
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
@@ -40,11 +38,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 internal interface RegularInputTestSpec : TextFieldTestSpec {
-
-    // delay in web tests called directly will be completely ignored
-    private suspend fun waitFor(millis: Long) {
-        withContext(Dispatchers.Default) { delay(millis) }
-    }
 
     @Test
     fun positionInput() = runApplicationTest {
@@ -147,138 +140,6 @@ internal interface RegularInputTestSpec : TextFieldTestSpec {
 
         textFieldValue.awaitAndAssertTextEquals("abc")
     }
-
-    @Ignore
-    @Test
-    fun repeatedAccent() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder()
-
-        sendToHtmlInput(
-            keyEvent("a"),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", type = "keyup"),
-            keyEvent("b"),
-            beforeInput("insertText", "b"),
-            keyEvent("b", type = "keyup"),
-            keyEvent("c"),
-            beforeInput("insertText", "c"),
-            keyEvent("c", type = "keyup")
-        )
-
-        // TODO: this does not behave as desktop, ideally we should have "abc" here
-        textFieldValue.awaitAndAssertTextEquals(
-            "bc",
-            "Repeat mode should be resolved as Accent Dialogue"
-        )
-
-        sendToHtmlInput(
-            keyEvent("a"),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", type = "keyup"),
-            keyEvent("b"),
-            beforeInput("insertText", "b"),
-            keyEvent("b", type = "keyup"),
-            keyEvent("c"),
-            beforeInput("insertText", "c"),
-            keyEvent("c", type = "keyup")
-        )
-
-    }
-
-    @Test
-    fun repeatedDefault() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder()
-
-        sendToHtmlInput(
-            keyEvent("a"),
-            beforeInput("insertText", "a"),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("b"),
-            beforeInput(inputType = "insertText", data = "b"),
-            keyEvent("c"),
-            beforeInput(inputType = "insertText", data = "c"),
-        )
-
-
-        textFieldValue.awaitAndAssertTextMatches( Regex("a+bc"), "Repeat mode should be resolved as Default")
-    }
-
-    @Test
-    fun repeatedAccentMenuPressed() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder()
-
-        sendToHtmlInput(
-            keyEvent("a"),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", type = "keyup"),
-            keyEvent("1"),
-            beforeInput(inputType = "insertText", data = "à"),
-            keyEvent("1", type = "keyup"),
-        )
-
-        textFieldValue.awaitAndAssertTextEquals("à", "Choose symbol from Accent Menu")
-    }
-
-    @Test
-    fun repeatedAccentMenuIgnoreNonTyped() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder()
-
-        sendToHtmlInput(
-            keyEvent("ArrowLeft", code = "ArrowLeft"),
-            keyEvent("ArrowLeft", code = "ArrowLeft", repeat = true),
-            keyEvent("ArrowLeft", code = "ArrowLeft", repeat = true),
-            keyEvent("ArrowLeft", code = "ArrowLeft", repeat = true),
-            keyEvent("ArrowLeft", code = "ArrowLeft", repeat = true),
-            keyEvent("ArrowLeft", code = "ArrowLeft", repeat = true),
-            keyEvent("ArrowLeft", code = "ArrowLeft", type = "keyup"),
-            keyEvent("a"),
-            beforeInput(inputType = "insertText", data = "a"),
-            keyEvent("a", type = "keyup"),
-            keyEvent("b"),
-            beforeInput(inputType = "insertText", data = "b"),
-            keyEvent("b", type = "keyup"),
-            keyEvent("c"),
-            beforeInput(inputType = "insertText", data = "c"),
-            keyEvent("c", type = "keyup"),
-        )
-
-        textFieldValue.awaitAndAssertTextEquals("abc", "XXX")
-    }
-
-    @Test
-    fun repeatedAccentMenuClicked() = runApplicationTest {
-        val textFieldValue =  createApplicationWithHolder()
-
-        sendToHtmlInput(
-            keyEvent("a"),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", repeat = true),
-            keyEvent("a", type = "keyup"),
-            beforeInput(inputType = "insertText", data = "æ"),
-        )
-
-        textFieldValue.awaitAndAssertTextEquals("æ", "Choose symbol from Accent Menu")
-    }
-
 
     @Test
     fun keyboardEventPassedToTextField() = runApplicationTest {
