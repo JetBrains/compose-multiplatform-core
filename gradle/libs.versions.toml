@@ -221,6 +221,10 @@ kotlinCoroutinesPlayServices = { module = "org.jetbrains.kotlinx:kotlinx-corouti
 kotlinCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinCoroutines" }
 kotlinCoroutinesRx2 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx2", version.ref = "kotlinCoroutines" }
 kotlinCoroutinesRx3 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx3", version.ref = "kotlinCoroutines" }
+kotlinDaemonEmbeddable = { module = "org.jetbrains.kotlin:kotlin-daemon-embeddable" }
+kotlinDesktopToolkitCommon = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-common", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitMacOsArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-macos-arm64", version.ref = "kotlinDesktopToolkit" }
+kotlinKlibCommonizer = { module = "org.jetbrains.kotlin:kotlin-klib-commonizer" }
 kotlinMetadataJvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 kotlinSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinSerialization" }
 kotlinSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerialization" }
@@ -293,7 +297,7 @@ robolectric = { module = "org.robolectric:robolectric", version = "4.16.1" }
 rxjava2 = { module = "io.reactivex.rxjava2:rxjava", version = "2.2.9" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.0" }
 sdklib = { module = "com.android.tools:sdklib", version.ref = "androidLint" }
-shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version = "8.3.7" }
+shadow = { module = "com.gradleup.shadow:com.gradleup.shadow.gradle.plugin", version.ref = "shadow" }
 skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 skikoAwt = { module = "org.jetbrains.skiko:skiko-awt", version.ref = "skiko" }
 skikoAwtRuntimeMacOsArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64", version.ref = "skiko" }
@@ -304,8 +308,6 @@ skikoAwtRuntimeLinuxX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linu
 skikoAwtRuntimeLinuxArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
 skikoJsWasmRuntime = { module = "org.jetbrains.skiko:skiko-js-wasm-runtime", version.ref = "skiko" }
 skikoWasmJs = { module = "org.jetbrains.skiko:skiko-wasm-js", version.ref = "skiko" }
-kotlinDesktopToolkitCommon = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-common", version.ref = "kotlinDesktopToolkit" }
-kotlinDesktopToolkitMacOSArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-macos-arm64", version.ref = "kotlinDesktopToolkit" }
 spdxGradlePluginz = { module = "org.spdx:spdx-gradle-plugin", version.ref = "spdxGradlePlugin" }
 sqldelightAndroid = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelightCoroutinesExt = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
