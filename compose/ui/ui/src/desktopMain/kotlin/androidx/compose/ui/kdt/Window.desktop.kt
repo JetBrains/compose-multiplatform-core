@@ -19,7 +19,6 @@ package androidx.compose.ui.kdt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ComposeUIDispatcher
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.toArgb
