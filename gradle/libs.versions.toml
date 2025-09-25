@@ -206,6 +206,8 @@ kotlinCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test
 kotlinCoroutinesRx2 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx2", version.ref = "kotlinCoroutines" }
 kotlinCoroutinesRx3 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx3", version.ref = "kotlinCoroutines" }
 kotlinDaemonEmbeddable = { module = "org.jetbrains.kotlin:kotlin-daemon-embeddable" }
+kotlinDesktopToolkitCommon = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-common", version.ref = "kotlinDesktopToolkit" }
+kotlinDesktopToolkitMacOsArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-macos-arm64", version.ref = "kotlinDesktopToolkit" }
 kotlinKlibCommonizer = { module = "org.jetbrains.kotlin:kotlin-klib-commonizer" }
 kotlinMetadataJvm = { module = "org.jetbrains.kotlinx:kotlinx-metadata-jvm", version = "0.9.0" }
 kotlinSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinSerialization" }
@@ -297,8 +299,6 @@ skikoLinuxX64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", ve
 skikoLinuxArm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
 skikoWasmWasm = { module = "org.jetbrains.skiko:skiko-wasm-js", version.ref = "skiko" }
 skikoWasm = { module = "org.jetbrains.skiko:skiko-js-wasm-runtime", version.ref = "skiko" }
-kotlinDesktopToolkitCommon = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-common", version.ref = "kotlinDesktopToolkit" }
-kotlinDesktopToolkitMacOSArm64 = { module = "org.jetbrains.kotlin-desktop-toolkit:kotlin-desktop-toolkit-macos-arm64", version.ref = "kotlinDesktopToolkit" }
 spdxGradlePluginz = { module = "org.spdx:spdx-gradle-plugin", version.ref = "spdxGradlePlugin" }
 sqldelightAndroid = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelightCoroutinesExt = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
