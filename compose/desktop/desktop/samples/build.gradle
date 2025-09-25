@@ -192,8 +192,8 @@ tasks.register('runVsync', JavaExec) {
                     compilation.runtimeDependencyFiles
 }
 
-tasks.register('runVsyncKDT', JavaExec) {
-    dependsOn(":compose:desktop:desktop:jar", "downloadAndUnpackKDT")
+tasks.register('runVsyncKdt', JavaExec) {
+    dependsOn(":compose:desktop:desktop:jar", "downloadAndUnpackKdt")
     mainClass = "androidx.compose.desktop.examples.kdt.Main_jvmKt"
     def logFile = layout.buildDirectory.file("test-logs/desktop_native.log")
     def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
@@ -211,7 +211,7 @@ tasks.register('runVsyncKDT', JavaExec) {
                     compilation.runtimeDependencyFiles
 }
 
-tasks.register('downloadAndUnpackKDT') {
+tasks.register('downloadAndUnpackKdt') {
     description = "Downloads kotlinDesktopToolkitMacOSArm64 jar and unpacks its contents"
     group = "build"
 
@@ -224,7 +224,7 @@ tasks.register('downloadAndUnpackKDT') {
             canBeResolved = true
         }
 
-        dependencies.add(kdtConfig.name, libs.kotlinDesktopToolkitMacOSArm64)
+        dependencies.add(kdtConfig.name, libs.kotlinDesktopToolkitMacOsArm64)
         def jarFile = kdtConfig.files.find { it.name.contains("kotlin-desktop-toolkit-macos-arm64") }
 
         if (jarFile != null) {
