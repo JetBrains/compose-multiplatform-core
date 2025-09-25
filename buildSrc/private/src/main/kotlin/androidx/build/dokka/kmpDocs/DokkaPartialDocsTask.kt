@@ -43,6 +43,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.workers.WorkerExecutor
+import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinSingleTargetExtension
@@ -254,7 +255,7 @@ internal abstract class DokkaPartialDocsTask @Inject constructor(
                         if (compilation.target.platformType == KotlinPlatformType.androidJvm) {
                             // This is a workaround for https://youtrack.jetbrains.com/issue/KT-33893
                             @Suppress("DEPRECATION") // for compatibility
-                            (compilation.compileKotlinTask as
+                            (compilation.compileTaskProvider as
                                 org.jetbrains.kotlin.gradle.tasks.KotlinCompile).libraries
                         } else {
                             compilation.compileDependencyFiles

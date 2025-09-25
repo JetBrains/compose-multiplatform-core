@@ -26,6 +26,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
+import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.mpp.AbstractKotlinTarget
@@ -191,6 +192,7 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
 
     ext.targets.all { target ->
         if (target.name.lowercase() in redirection.targetNames) {
+            @OptIn(InternalKotlinGradlePluginApi::class)
             project.publishAndroidxReference(target as AbstractKotlinTarget, newRootComponent)
         }
     }
