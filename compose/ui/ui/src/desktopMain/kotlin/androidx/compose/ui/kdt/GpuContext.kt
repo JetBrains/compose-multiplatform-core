@@ -33,6 +33,7 @@ data class MetalViewContext(
   val view: MetalView,
   private val onDisplayLayerCallbackReference: CallbackReference,
   val directContext: DirectContext,
+  val commandQueue: MetalCommandQueue,
 ) {
 
   var onDisplayLayer: () -> Unit
@@ -116,7 +117,7 @@ data class MetalViewContext(
                 surface.flushAndSubmit()
               }
             }
-            view.present(desktopGpuContext.metalCommandQueue,
+            view.present(commandQueue,
                          waitForCATransaction = waitForCATransaction)
           }
         }
@@ -152,7 +153,7 @@ data class DesktopGpuContext(
     })
     val directContext = DirectContext.makeMetal(metalDevice.pointerAddress,
                                                 metalCommandQueue.pointerAddress)
-    val metalViewContext = MetalViewContext(view, onDisplayLayerCallbackReference, directContext)
+    val metalViewContext = MetalViewContext(view, onDisplayLayerCallbackReference, directContext, metalCommandQueue)
     check(hostedViews.add(metalViewContext)) { "View already exists" }
     return metalViewContext
   }

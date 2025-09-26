@@ -30,26 +30,49 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import kotlinx.atomicfu.atomic
 import noria.NoriaContext
+import org.jetbrains.desktop.macos.Application
 import org.jetbrains.desktop.macos.DisplayLink
+import org.jetbrains.desktop.macos.Event
 import org.jetbrains.desktop.macos.GrandCentralDispatch
 import org.jetbrains.desktop.macos.LogicalSize
+import org.jetbrains.desktop.macos.Window
+import org.jetbrains.desktop.macos.WindowEvent
+import org.jetbrains.skia.Picture
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect
 
-
-@Composable
-fun WindowKDT(content: @Composable NoriaContext.() -> Unit) {
-    val window = remember { ComposeKDTWindow() }
-    window.setContent(content)
+interface KdtWindowScope: NoriaContext {
+    val window: KdtWindow
 }
 
-val desktopGpuContext by lazy { DesktopGpuContext() }
+interface KdtWindow {
+    val size: DpSize
+    val contentSize: DpSize
+    val isActive: Boolean
+    val isKey: Boolean
+//    var requestedConstraints: Constraints
+//    val decoration: WindowDecoration
+//    var preferredDecoration: WindowDecoration
+//    suspend fun requestPlacement(placement: WindowPlacement): Boolean
+//    fun showWindowMenu(position: DpOffset)
+//    val hasActiveAppearance: Boolean
+}
 
-var lastWindow: ComposeKDTWindow? = null
+@Composable
+fun NoriaContext.KdtWindow(content: @Composable KdtWindowScope.() -> Unit) {
+    val application = LocalKdtApplication.current
+    val composeWindow = remember { KdtComposeWindow(application) }
+    val windowScope = object: KdtWindowScope {
+        override val window: KdtWindow = composeWindow
+    }
+    composeWindow.setContent {
+        windowScope.content()
+    }
+}
 
-class ComposeKDTWindow {
-    val window = org.jetbrains.desktop.macos.Window.create()
-    val viewContext = desktopGpuContext.createMetalViewContext()
+class KdtComposeWindow(application: KdtComposeApplication): KdtWindow {
+    val window = Window.create()
+    val viewContext = application.desktopGpuContext.createMetalViewContext()
 
     init {
         window.attachView(viewContext.view)
@@ -60,8 +83,8 @@ class ComposeKDTWindow {
     internal val isFrameScheduled = atomic(false)
 
     val scene = CanvasLayersComposeScene(
-        density = Density(2f),
-        size = window.size.toIntSize(),
+        density = Density(window.scaleFactor().toFloat()),
+        size = window.contentSize.toIntSize(),
         coroutineContext = ComposeUIDispatcher,
         invalidate = {
             isFrameScheduled.compareAndSet(expect = false, update = true)
@@ -70,17 +93,21 @@ class ComposeKDTWindow {
 
     var displayLink: DisplayLink? = null
 
+    fun preparePicture(): PresentablePicture {
+        val size = viewContext.view.size()
+        val bounds = Rect.makeWH(size.width.toFloat(), size.height.toFloat())
+        val canvas = pictureRecorder.beginRecording(bounds)
+        canvas.clear(Color.White.toArgb())
+        scene.render(canvas.asComposeCanvas(), System.nanoTime())
+        return PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
+    }
+
     fun setupDisplayLink() {
         displayLink?.close()
         displayLink = DisplayLink.create(window.screenId()) {
             if (isFrameScheduled.compareAndSet(expect = true, update = false)) {
                 GrandCentralDispatch.dispatchOnMain(highPriority = true) {
-                    val size = viewContext.view.size()
-                    val bounds = Rect.makeWH(size.width.toFloat(), size.height.toFloat())
-                    val canvas = pictureRecorder.beginRecording(bounds)
-                    canvas.clear(Color.White.toArgb())
-                    scene.render(canvas.asComposeCanvas(), System.nanoTime())
-                    val presentablePicture = PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
+                    val presentablePicture = preparePicture()
                     viewContext.presentAsync(presentablePicture, waitForCATransaction = false, onComplete = {
                         presentablePicture.close()
                     })
@@ -90,18 +117,48 @@ class ComposeKDTWindow {
         displayLink!!.setRunning(true)
     }
 
+    fun repaintSynchronously() {
+        displayLink?.setRunning(false)
+        isFrameScheduled.value = false
+        preparePicture().use { picture ->
+            viewContext.presentSync(picture, waitForCATransaction = true)
+        }
+        displayLink?.setRunning(true)
+    }
+
+    fun setupDisplayLayerCallback() {
+        viewContext.onDisplayLayer = {
+            repaintSynchronously()
+        }
+    }
+
     init {
+        application.allWindows.put(window.windowId(), this)
         setupDisplayLink()
-        lastWindow = this
+        setupDisplayLayerCallback()
     }
 
     fun setContent(content: @Composable NoriaContext.() -> Unit) {
         scene.setContent(content)
     }
-}
 
-fun LogicalSize.toIntSize(density: Density = Density(2f)): IntSize {
-    return with(density) {
-        DpSize(width.dp, height.dp).toSize().toIntSize()
+    fun handleEvent(event: WindowEvent) {
+        when(event) {
+            is Event.WindowScreenChange -> {
+                setupDisplayLink()
+            }
+            is Event.WindowResize -> {
+                scene.size = window.contentSize.toIntSize()
+            }
+        }
     }
+
+    override val size: DpSize
+        get() = window.size.toDpSize()
+    override val contentSize: DpSize
+        get() = window.contentSize.toDpSize()
+    override val isActive: Boolean
+        get() = window.isMain
+    override val isKey: Boolean
+        get() = window.isKey
 }
