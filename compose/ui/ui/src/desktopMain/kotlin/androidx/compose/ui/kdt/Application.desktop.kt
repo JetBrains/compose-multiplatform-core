@@ -20,23 +20,18 @@ import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.window.GlobalDensity
 import androidx.compose.ui.window.GlobalLayoutDirection
-import androidx.compose.ui.window.application
-import androidx.compose.ui.window.awaitApplication
-import androidx.compose.ui.window.launchApplication
 import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 import kotlinx.coroutines.launch
@@ -49,32 +44,41 @@ import org.jetbrains.desktop.macos.Event
 import org.jetbrains.desktop.macos.EventHandlerResult
 import org.jetbrains.desktop.macos.GrandCentralDispatch
 import org.jetbrains.desktop.macos.KotlinDesktopToolkit
+import org.jetbrains.desktop.macos.WindowEvent
+import org.jetbrains.desktop.macos.WindowId
 
-/**
- * Scope used by [application], [awaitApplication], [launchApplication]
- */
-@Stable
-interface ApplicationScope: NoriaContext {
-    /**
-     * Close all windows created inside the application and cancel all launched effects
-     * (they launch via [LaunchedEffect] and [rememberCoroutineScope]).
-     */
+interface KdtApplication {
     fun exitApplication()
+
+//    val isActive: Boolean
+//    val keyWindow: KdtWindow?
+//    val mainWindow: KdtWindow?
+//    suspend fun yieldActivationTo(other: KdtApplication): Boolean
+//    // or
+//    fun requestActivation(): Boolean
 }
 
-fun applicationKDT(content: @Composable ApplicationScope.() -> Unit) {
-    KotlinDesktopToolkit.init()
+val LocalKdtApplication = staticCompositionLocalOf<KdtComposeApplication> {
+    error("No Application provided")
+}
+
+class KdtComposeApplication(): KdtApplication {
+    init {
+        KotlinDesktopToolkit.init()
+    }
     val applicationStarted = CountDownLatch(1)
+    val allWindows = mutableMapOf<WindowId, KdtComposeWindow>()
     val eventLoopThreadHandler = thread(start = true, name = "EventLoopWatcher") {
         GrandCentralDispatch.startOnMainThread {
             Application.init()
             Application.runEventLoop { event ->
                 when (event) {
+                    is WindowEvent -> {
+                        val window = allWindows[event.windowId]
+                        window?.handleEvent(event)
+                    }
                     is Event.ApplicationDidFinishLaunching -> {
                         applicationStarted.countDown()
-                    }
-                    is Event.WindowScreenChange -> {
-                        lastWindow?.setupDisplayLink()
                     }
                     else -> {}
                 }
@@ -82,7 +86,21 @@ fun applicationKDT(content: @Composable ApplicationScope.() -> Unit) {
             }
         }
     }
-    applicationStarted.await()
+    val desktopGpuContext by lazy { DesktopGpuContext() }
+
+    init {
+        applicationStarted.await()
+    }
+
+    override fun exitApplication() {
+        //todo close all resources including GPU context and all
+        Application.stopEventLoop()
+        eventLoopThreadHandler.join()
+    }
+}
+
+fun kdtApplication(content: @Composable NoriaContext.() -> Unit) {
+    val application = KdtComposeApplication()
     ComposeUIDispatcher = KDTUiDispatcher()
 
     runBlocking(ComposeUIDispatcher) {
@@ -91,13 +109,6 @@ fun applicationKDT(content: @Composable ApplicationScope.() -> Unit) {
 
             val recomposer = Recomposer(coroutineContext)
             var isOpen by mutableStateOf(true)
-
-            val applicationScope = object : ApplicationScope {
-                override fun exitApplication() {
-                    isOpen = false
-                    // todo stop event loop
-                }
-            }
 
             launch {
                 recomposer.runRecomposeAndApplyChanges()
@@ -110,12 +121,13 @@ fun applicationKDT(content: @Composable ApplicationScope.() -> Unit) {
                     composition.setContent {
                         if (isOpen) {
                             CompositionLocalProvider(
+                                LocalKdtApplication provides application,
                                 // Resources which are defined at the application level can use
                                 // density to calculate intrinsicSize
                                 LocalDensity provides GlobalDensity,
                                 LocalLayoutDirection provides GlobalLayoutDirection,
                             ) {
-                                applicationScope.content()
+                                content()
                             }
                         }
                     }
