@@ -18,20 +18,20 @@ package androidx.compose.desktop.examples.kdt
 
 import androidx.compose.desktop.examples.vsync.WindowContent
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.kdt.ApplicationScope
-import androidx.compose.ui.kdt.WindowKDT
-import androidx.compose.ui.kdt.applicationKDT
+import androidx.compose.ui.kdt.KdtWindow
+import androidx.compose.ui.kdt.kdtApplication
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import noria.NoriaContext
 
-fun main() = applicationKDT {
+fun main() = kdtApplication {
     AppWindow()
     AppWindow()
 }
 
 @Composable
-private fun ApplicationScope.AppWindow() {
-    WindowKDT {
-        WindowContent(windowSize = DpSize(640.dp, 480.dp), refreshRate = 120)
+private fun NoriaContext.AppWindow() {
+    KdtWindow {
+        WindowContent(windowSize = window.contentSize, refreshRate = 120)
     }
 }

@@ -16,11 +16,19 @@
 
 package androidx.compose.ui.kdt
 
-interface KdtApplication {
-    val isActive: Boolean
-    val keyWindow: KdtWindow?
-    val mainWindow: KdtWindow?
-    suspend fun yieldActivationTo(other: KdtApplication): Boolean
-    // or
-    fun requestActivation(): Boolean
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toIntSize
+import org.jetbrains.desktop.macos.LogicalSize
+
+fun LogicalSize.toIntSize(density: Density = Density(2f)): IntSize {
+    return with(density) {
+        DpSize(width.dp, height.dp).toSize().toIntSize()
+    }
+}
+
+fun LogicalSize.toDpSize(): DpSize {
+    return DpSize(width.dp, height.dp)
 }
