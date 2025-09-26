@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,9 +39,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
@@ -117,17 +123,139 @@ fun NoriaContext.RunningSquares(windowSize: DpSize, refreshRate: Int) {
 }
 
 @Composable
-fun NoriaContext.WindowContent(windowSize: DpSize, refreshRate: Int) {
+fun NoriaContext.FancyBorder(
+    modifier: Modifier = Modifier,
+    borderWidth: Float = 6f,
+    content: @Composable () -> Unit
+) {
     Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(4.dp)
-            .background(Color.Black)
-            .padding(2.dp)
-            .background(Color.White)
+        modifier = modifier.drawBehind {
+            val borderWidthPx = borderWidth.dp.toPx()
+            val colors = listOf(
+                Color(0xFF6A5ACD), // SlateBlue
+                Color(0xFF20B2AA), // LightSeaGreen
+                Color(0xFFFF6347)  // Tomato
+            )
+
+            val segmentSize = 150.dp.toPx() // Constant segment size
+
+            // Top border - 3 segments: left at start, middle at center, right at end
+            // Left segment at start
+            drawRect(
+                color = colors[0],
+                topLeft = Offset(0f, 0f),
+                size = Size(segmentSize, borderWidthPx)
+            )
+            // Middle segment at center
+            drawRect(
+                color = colors[1],
+                topLeft = Offset((size.width - segmentSize) / 2f, 0f),
+                size = Size(segmentSize, borderWidthPx)
+            )
+            // Right segment at end
+            drawRect(
+                color = colors[2],
+                topLeft = Offset(size.width - segmentSize, 0f),
+                size = Size(segmentSize, borderWidthPx)
+            )
+
+            // Bottom border - 3 segments: left at start, middle at center, right at end
+            // Left segment at start
+            drawRect(
+                color = colors[0],
+                topLeft = Offset(0f, size.height - borderWidthPx),
+                size = Size(segmentSize, borderWidthPx)
+            )
+            // Middle segment at center
+            drawRect(
+                color = colors[1],
+                topLeft = Offset((size.width - segmentSize) / 2f, size.height - borderWidthPx),
+                size = Size(segmentSize, borderWidthPx)
+            )
+            // Right segment at end
+            drawRect(
+                color = colors[2],
+                topLeft = Offset(size.width - segmentSize, size.height - borderWidthPx),
+                size = Size(segmentSize, borderWidthPx)
+            )
+
+            // Left border - 3 segments: top at start, middle at center, bottom at end
+            // Top segment at start
+            drawRect(
+                color = colors[0],
+                topLeft = Offset(0f, 0f),
+                size = Size(borderWidthPx, segmentSize)
+            )
+            // Middle segment at center
+            drawRect(
+                color = colors[1],
+                topLeft = Offset(0f, (size.height - segmentSize) / 2f),
+                size = Size(borderWidthPx, segmentSize)
+            )
+            // Bottom segment at end
+            drawRect(
+                color = colors[2],
+                topLeft = Offset(0f, size.height - segmentSize),
+                size = Size(borderWidthPx, segmentSize)
+            )
+
+            // Right border - 3 segments: top at start, middle at center, bottom at end
+            // Top segment at start
+            drawRect(
+                color = colors[0],
+                topLeft = Offset(size.width - borderWidthPx, 0f),
+                size = Size(borderWidthPx, segmentSize)
+            )
+            // Middle segment at center
+            drawRect(
+                color = colors[1],
+                topLeft = Offset(size.width - borderWidthPx, (size.height - segmentSize) / 2f),
+                size = Size(borderWidthPx, segmentSize)
+            )
+            // Bottom segment at end
+            drawRect(
+                color = colors[2],
+                topLeft = Offset(size.width - borderWidthPx, size.height - segmentSize),
+                size = Size(borderWidthPx, segmentSize)
+            )
+        }
     ) {
-        AnimatedTransitionExample(rpm = 10)
-        RunningSquares(windowSize, refreshRate)
+        Box(
+            modifier = Modifier
+                .padding(borderWidth.dp)
+                .background(Color.White)
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+fun NoriaContext.WindowContent(windowSize: DpSize, refreshRate: Int) {
+    FancyBorder(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(20.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            BasicText(
+                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
+                        "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " +
+                        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris " +
+                        "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in " +
+                        "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. " +
+                        "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui " +
+                        "officia deserunt mollit anim id est laborum.",
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            )
+        }
+//        AnimatedTransitionExample(rpm = 10)
+//        RunningSquares(windowSize, refreshRate)
     }
 }
