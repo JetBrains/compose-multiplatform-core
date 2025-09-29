@@ -33,6 +33,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.pdf.PdfDocument
 import androidx.pdf.R
 import androidx.pdf.content.ExternalLink
+import androidx.pdf.selection.ContextMenuComponent
 import androidx.pdf.view.PdfView
 import kotlin.random.Random
 
@@ -47,6 +48,10 @@ import kotlin.random.Random
  * @param fastScrollConfig a [FastScrollConfiguration] instance to customize the fast scoller's
  *   appearance
  * @param onUrlLinkClicked a callback to be invoked when the user taps a URL link in this PDF viewer
+ * @param appendContextMenuComponents a callback that can be used to add context menu items.
+ * @param filterContextMenuComponents a callback that can be used to filter context menu items. This
+ *   will be executed on the complete list of menu items after [appendContextMenuComponents] is
+ *   completed.
  */
 @Composable
 public fun PdfViewer(
@@ -57,6 +62,8 @@ public fun PdfViewer(
     maxZoom: Float = PdfView.DEFAULT_MAX_ZOOM,
     fastScrollConfig: FastScrollConfiguration =
         FastScrollConfiguration.withDrawableAndDimensionIds(),
+    appendContextMenuComponents: (PdfSelectionMenuBuilderScope.() -> Unit)? = null,
+    filterContextMenuComponents: ((ContextMenuComponent) -> Boolean)? = null,
     onUrlLinkClicked: ((Uri) -> Boolean)? = null,
 ) {
     // Create and remember an ID for PdfView so that it retains state across compositions and
@@ -81,6 +88,13 @@ public fun PdfViewer(
             PdfView(context).apply {
                 this.id = pdfViewId
                 state.pdfView = this
+                setLinkClickListener(PdfViewerLinkClickListener(onUrlLinkClicked))
+                addSelectionMenuItemPreparer(
+                    PdfViewerSelectionMenuPreparer(
+                        appendContextMenuComponents,
+                        filterContextMenuComponents,
+                    )
+                )
             }
         },
         onRelease = { view ->
@@ -96,7 +110,6 @@ public fun PdfViewer(
             view.fastScrollPageIndicatorBackgroundDrawable = pageIndicatorDrawable
             view.fastScrollPageIndicatorMarginEnd = pageIndicatorMarginEnd
             view.fastScrollVerticalThumbMarginEnd = verticalThumbMarginEnd
-            view.setLinkClickListener(PdfViewerLinkClickListener(onUrlLinkClicked))
         },
     )
 }
@@ -218,5 +231,29 @@ private class PdfViewerLinkClickListener(private val behavior: ((Uri) -> Boolean
     PdfView.LinkClickListener {
     override fun onLinkClicked(externalLink: ExternalLink): Boolean {
         return behavior?.invoke(externalLink.uri) ?: false
+    }
+}
+
+/**
+ * Bridge between the lambda-based [PdfViewer] API for custom selection menu, and the listener
+ * interface [PdfView] API for the same.
+ *
+ * If [appendSelectionMenuComponents] and [filterSelectionMenuComponents] lambdas are null, a
+ * default set of selection menu items will be shown, similar to the default behavior in [PdfView].
+ */
+private class PdfViewerSelectionMenuPreparer(
+    private val appendSelectionMenuComponents: (PdfSelectionMenuBuilderScope.() -> Unit)?,
+    private val filterSelectionMenuComponents: ((ContextMenuComponent) -> Boolean)?,
+) : PdfView.SelectionMenuItemPreparer {
+    override fun onPrepareSelectionMenuItems(components: MutableList<ContextMenuComponent>) {
+        PdfSelectionMenuBuilderScope().run {
+            appendSelectionMenuComponents?.invoke(this)
+            components.addAll(menuItems)
+            // The execution order of `append` and `filter` blocks is significant, as filtering
+            // applies to all components present at that time.
+            filterSelectionMenuComponents?.let {
+                components.removeAll { component -> !filterSelectionMenuComponents(component) }
+            }
+        }
     }
 }

@@ -365,13 +365,13 @@ class ScreenFlashTaskTest {
         @Suppress("UNCHECKED_CAST")
         fun notifyCaptureResultListeners(resultParameters: Map<CaptureResult.Key<*>, *>) {
             captureResultListeners.forEach { listener ->
-                val shadowCaptureResult = ShadowTotalCaptureResult()
-
-                resultParameters.forEach { (k, v) ->
-                    shadowCaptureResult.set(k as CaptureResult.Key<Any>, v as Any)
+                val totalCaptureResult = ShadowTotalCaptureResult.newTotalCaptureResult()
+                shadowOf(totalCaptureResult).apply {
+                    resultParameters.forEach { (k, v) ->
+                        set(k as CaptureResult.Key<Any>, v as Any)
+                    }
                 }
-
-                listener.onCaptureResult(ShadowTotalCaptureResult.newTotalCaptureResult())
+                listener.onCaptureResult(totalCaptureResult)
             }
         }
     }
@@ -391,6 +391,8 @@ class ScreenFlashTaskTest {
         private val RESULT_CONVERGED: Map<CaptureResult.Key<*>, *> =
             mapOf(
                 CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_AUTO,
+                CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
                 CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
                 CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
                 CaptureResult.CONTROL_AWB_STATE to CaptureResult.CONTROL_AWB_STATE_CONVERGED,

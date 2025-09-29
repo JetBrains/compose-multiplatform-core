@@ -397,6 +397,8 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
                 if (searchDeadlineExceeded(anchorCreationData.mAnchorSearchDeadline)) {
                     cancelAnchorSearch();
                 }
+                // Detach the found anchor since it is no longer needed.
+                mAnchor.detach();
                 return;
             }
             updateState(State.ANCHORED);
@@ -512,7 +514,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     @Override
-    public Pose getPoseInActivitySpace() {
+    public @NonNull Pose getPoseInActivitySpace() {
         synchronized (this) {
             if (mActivitySpace == null || mOpenXrActivityPoseHelper == null) {
                 throw new IllegalStateException(
@@ -556,7 +558,6 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     @Override
-    // TODO: b/440191514 - On dispose, verify any pending anchor entity ops are cancelled.
     public void dispose() {
         synchronized (this) {
             // Return early if it is already in the error state.

@@ -250,47 +250,4 @@ class CameraStateTest(
         assertThat(openLatch.await(3, TimeUnit.SECONDS)).isTrue()
         assertThat(observedOpen).isTrue() // Check if OPEN was observed after OPENING
     }
-
-    @Test
-    fun cameraTransitionsThroughClosingState(): Unit = runBlocking {
-        val preview = createPreview()
-
-        // Bind and wait for open
-        val camera =
-            withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
-            }
-        camera.assertCameraState(CameraState.Type.OPEN) // Wait until open
-
-        val closingLatch = CountDownLatch(1)
-        val closedLatch = CountDownLatch(1)
-        var observedClosing = false
-        var observedClosed = false
-
-        withContext(Dispatchers.Main) {
-            camera.cameraInfo.cameraState.observeForever { state ->
-                when (state.type) {
-                    CameraState.Type.CLOSING -> {
-                        observedClosing = true
-                        closingLatch.countDown()
-                    }
-                    CameraState.Type.CLOSED -> {
-                        if (observedClosing) { // Ensure CLOSING was seen first
-                            observedClosed = true
-                        }
-                        closedLatch.countDown()
-                    }
-                    else -> {}
-                }
-            }
-        }
-
-        // Trigger unbind
-        withContext(Dispatchers.Main) { cameraProvider.unbind(preview) }
-
-        assertThat(closingLatch.await(3, TimeUnit.SECONDS)).isTrue()
-        assertThat(observedClosing).isTrue()
-        assertThat(closedLatch.await(3, TimeUnit.SECONDS)).isTrue()
-        assertThat(observedClosed).isTrue()
-    }
 }

@@ -124,6 +124,13 @@ public class TraceSink(
         }
     }
 
+    override fun onDroppedTraceEvent() {
+        if (!closed && !queue.isDroppedTraceEvent) {
+            queue.setDroppedTraceEvent(droppedTraceEvent = true)
+            makeDrainRequest()
+        }
+    }
+
     override fun flush() {
         makeDrainRequest()
         while (queue.isNotEmpty()) {
@@ -144,9 +151,23 @@ public class TraceSink(
 
     private inline fun drainQueue() {
         while (queue.isNotEmpty()) {
+            // We are not trying to be accurate about exactly which specific event has the
+            // dropped flag set.
+            val reportDroppedTraceEvent = queue.isDroppedTraceEvent
+            queue.setDroppedTraceEvent(false)
             val pooledPacketArray = queue.firstOrNull()
             if (pooledPacketArray != null) {
-                pooledPacketArray.forEach { wireTraceEventSerializer.writeTraceEvent(it) }
+                var firstEventInBatch = true
+                pooledPacketArray.forEach {
+                    // Only emit the packet dropped signal as part of the first write in a batch.
+                    val reportDroppedEvent =
+                        if (firstEventInBatch) reportDroppedTraceEvent else false
+                    wireTraceEventSerializer.writeTraceEvent(
+                        event = it,
+                        reportDroppedTraceEvent = reportDroppedEvent,
+                    )
+                    firstEventInBatch = false
+                }
                 pooledPacketArray.recycle()
                 // Remove the item from the Queue to denote that we have written the underlying
                 // bytes to the proto stream.

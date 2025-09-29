@@ -20,7 +20,6 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.compat.workaround.CapturePipelineTorchCorrection
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
@@ -67,7 +66,6 @@ public abstract class UseCaseCameraModule {
 public class UseCaseCameraConfig(
     private val useCases: List<UseCase>,
     private val sessionConfigAdapter: SessionConfigAdapter,
-    private val cameraStateAdapter: CameraStateAdapter,
     private val cameraGraph: CameraGraph,
     private val streamConfigMap: Map<CameraStream.Config, DeferrableSurface>,
 ) {
@@ -103,18 +101,13 @@ public class UseCaseCameraConfig(
         }
 
         Log.debug { "Prepared UseCaseGraphConfig: $cameraGraph " }
-        return UseCaseGraphConfig(
-            graph = cameraGraph,
-            surfaceToStreamMap = surfaceToStreamMap,
-            cameraStateAdapter = cameraStateAdapter,
-        )
+        return UseCaseGraphConfig(graph = cameraGraph, surfaceToStreamMap = surfaceToStreamMap)
     }
 }
 
 public data class UseCaseGraphConfig(
     val graph: CameraGraph,
     val surfaceToStreamMap: Map<DeferrableSurface, StreamId>,
-    val cameraStateAdapter: CameraStateAdapter,
 ) {
     public fun getStreamIdsFromSurfaces(
         deferrableSurfaces: Collection<DeferrableSurface>

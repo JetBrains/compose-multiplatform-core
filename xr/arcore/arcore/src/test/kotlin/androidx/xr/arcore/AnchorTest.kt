@@ -388,6 +388,7 @@ class AnchorTest {
                 session =
                     (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)
                         .session
+                session.configure(Config(anchorPersistence = AnchorPersistenceMode.LOCAL))
                 xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
 
                 testBody()

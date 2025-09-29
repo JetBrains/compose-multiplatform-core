@@ -141,6 +141,7 @@ public interface SpatialEnvironment {
      * @param geometryAnimationName the name of the animation to play on the geometry. If null, the
      *   geometry will not play any animation. Note that the animation will be played in loop.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public class SpatialEnvironmentPreference
     @JvmOverloads
     constructor(
@@ -166,6 +167,7 @@ public interface SpatialEnvironment {
         }
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public companion object {
         /**
          * Passed into [preferredPassthroughOpacity] to clear the application's passthrough opacity

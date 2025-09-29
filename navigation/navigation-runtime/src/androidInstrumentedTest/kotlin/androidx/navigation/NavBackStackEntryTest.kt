@@ -282,7 +282,9 @@ class NavBackStackEntryTest {
 
         val extras =
             MutableCreationExtras(entry.defaultViewModelCreationExtras).apply {
-                this[DEFAULT_ARGS_KEY] = bundleOf("test" to "value")
+                this[DEFAULT_ARGS_KEY] =
+                    @Suppress("DEPRECATION") // bundleOf is deprecated
+                    bundleOf("test" to "value")
             }
 
         val actualValue =

@@ -48,6 +48,9 @@
         <include
             android:id="@+id/thumbnail_preview_switch"
             layout="@layout/preferences_switch_template"/>
+        <include
+            android:id="@+id/form_filling_switch"
+            layout="@layout/preferences_switch_template"/>
 
     </LinearLayout>
 </ScrollView>

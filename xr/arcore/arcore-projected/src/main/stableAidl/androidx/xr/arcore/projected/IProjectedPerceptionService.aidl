@@ -17,6 +17,9 @@
 package androidx.xr.arcore.projected;
 
 import androidx.xr.arcore.projected.IVpsAvailabilityCallback;
+import androidx.xr.arcore.projected.ProjectedEarthPose;
+import androidx.xr.arcore.projected.ProjectedPose;
+import androidx.xr.arcore.projected.ProjectedUpdateResult;
 
 /**
  * Projected Perception service interface.
@@ -33,5 +36,17 @@ interface IProjectedPerceptionService {
 
   /** Stops a perception session */
   void stop() = 2;
+
+  /** Converts a GeospatialPose to a Pose in GL world coordinates. */
+  ProjectedPose createPoseFromGeospatialPose(in ProjectedEarthPose geospatialPose) = 3;
+
+  /** Converts a Pose in GL world coordinates to a GeospatialPose. */
+  ProjectedEarthPose createGeospatialPoseFromPose(in ProjectedPose pose) = 4;
+
+  /** Gets the device's current GeospatialPose. */
+  ProjectedEarthPose createGeospatialPoseFromDevicePose() = 5;
+
+  /** Updates the session and returns tracking states. */
+  ProjectedUpdateResult update() = 6;
 }
 

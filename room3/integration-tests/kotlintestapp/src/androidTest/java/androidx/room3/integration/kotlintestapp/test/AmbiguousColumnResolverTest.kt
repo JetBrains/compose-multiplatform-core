@@ -33,6 +33,7 @@ import androidx.room3.RoomDatabase
 import androidx.room3.RoomWarnings
 import androidx.room3.SkipQueryVerification
 import androidx.room3.Transaction
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.collect.ImmutableMap
@@ -56,7 +57,10 @@ class AmbiguousColumnResolverTest {
     @Before
     fun setup() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
+        db =
+            Room.inMemoryDatabaseBuilder<TestDatabase>(context)
+                .setDriver(AndroidSQLiteDriver())
+                .build()
         dao = db.getDao()
         dao.insertUser(user1)
         dao.insertUser(user2)

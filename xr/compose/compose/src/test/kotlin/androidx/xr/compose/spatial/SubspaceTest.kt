@@ -53,7 +53,7 @@ import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestActivitySpace
-import androidx.xr.compose.testing.TestJxrPlatformAdapter
+import androidx.xr.compose.testing.TestSceneRuntime
 import androidx.xr.compose.testing.assertDepthIsAtLeast
 import androidx.xr.compose.testing.assertDepthIsEqualTo
 import androidx.xr.compose.testing.assertDepthIsNotEqualTo
@@ -98,7 +98,7 @@ class SubspaceTest {
     }
 
     /**
-     * Creates a TestJxrPlatformAdapter with a recommended content box of the given size.
+     * Creates a TestSceneRuntime with a recommended content box of the given size.
      *
      * Don't call this inside composeTestRule in a test. If it recomposes, a new Session will be
      * created when a previous one already exists for the activity.
@@ -107,10 +107,10 @@ class SubspaceTest {
         widthMeters: Float = DefaultTestRecommendedBoxSize.WIDTH_METERS,
         heightMeters: Float = DefaultTestRecommendedBoxSize.HEIGHT_METERS,
         depthMeters: Float = DefaultTestRecommendedBoxSize.DEPTH_METERS,
-    ): TestJxrPlatformAdapter {
+    ): TestSceneRuntime {
         val fakeRuntime = createFakeRuntime(composeTestRule.activity)
 
-        return TestJxrPlatformAdapter.create(fakeRuntime).apply {
+        return TestSceneRuntime.create(fakeRuntime).apply {
             activitySpace =
                 TestActivitySpace(
                     fakeRuntime.activitySpace,
@@ -391,9 +391,8 @@ class SubspaceTest {
     @Test
     fun subspace_onlyOneSceneExists_afterSpaceModeChanges() {
         val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        val testJxrPlatformAdapter = TestJxrPlatformAdapter.create(fakeRuntime)
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity, testJxrPlatformAdapter)
+        val testSceneRuntime = TestSceneRuntime.create(fakeRuntime)
+        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
 
         composeTestRule.setContentWithCompatibilityForXr {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
@@ -402,12 +401,12 @@ class SubspaceTest {
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
 
-        testJxrPlatformAdapter.requestHomeSpaceMode()
+        testSceneRuntime.requestHomeSpaceMode()
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
 
-        testJxrPlatformAdapter.requestFullSpaceMode()
+        testSceneRuntime.requestFullSpaceMode()
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
@@ -781,9 +780,8 @@ class SubspaceTest {
 
     @Test
     fun applicationSubspace_retainsState_whenSwitchingModes() {
-        val testJxrPlatformAdapter = createFakeRuntime(composeTestRule.activity)
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity, testJxrPlatformAdapter)
+        val testSceneRuntime = createFakeRuntime(composeTestRule.activity)
+        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
 
         composeTestRule.setContentWithCompatibilityForXr {
             ApplicationSubspace {
@@ -801,11 +799,11 @@ class SubspaceTest {
 
         composeTestRule.onNodeWithTag("state").assertTextContains("3")
 
-        testJxrPlatformAdapter.requestHomeSpaceMode()
+        testSceneRuntime.requestHomeSpaceMode()
 
         composeTestRule.onNodeWithTag("state").assertTextContains("3")
 
-        testJxrPlatformAdapter.requestFullSpaceMode()
+        testSceneRuntime.requestFullSpaceMode()
         composeTestRule.onNodeWithText("Increment").performClick().performClick()
 
         composeTestRule.onNodeWithTag("state").assertTextContains("5")

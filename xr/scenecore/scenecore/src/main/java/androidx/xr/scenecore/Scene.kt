@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.scenecore.internal.SpatialModeChangeListener as RtSpatialModeChangeListener
 import androidx.xr.scenecore.internal.SpatialVisibility as RtSpatialVisibility
@@ -48,7 +48,7 @@ public class Scene : SessionConnector {
 
     internal val entityManager = EntityManager()
 
-    internal lateinit var platformAdapter: JxrPlatformAdapter
+    internal lateinit var sceneRuntime: SceneRuntime
         private set
 
     /**
@@ -116,7 +116,7 @@ public class Scene : SessionConnector {
      */
     public var spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
         private set
-        get() = platformAdapter.spatialCapabilities.toSpatialCapabilities()
+        get() = sceneRuntime.spatialCapabilities.toSpatialCapabilities()
 
     /**
      * The primary [Entity] that acts as a spatial reference for the scene's content.
@@ -161,19 +161,15 @@ public class Scene : SessionConnector {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override fun initialize(runtimes: List<JxrRuntime>): Unit {
-        this.platformAdapter = runtimes.filterIsInstance<JxrPlatformAdapter>().first()
-        spatialEnvironment = SpatialEnvironment(platformAdapter)
-        perceptionSpace = PerceptionSpace.create(platformAdapter)
-        activitySpace = ActivitySpace.create(platformAdapter, entityManager)
+        this.sceneRuntime = runtimes.filterIsInstance<SceneRuntime>().first()
+        spatialEnvironment = SpatialEnvironment(sceneRuntime)
+        perceptionSpace = PerceptionSpace.create(sceneRuntime)
+        activitySpace = ActivitySpace.create(sceneRuntime, entityManager)
         val perceptionRuntime = runtimes.filterIsInstance<PerceptionRuntime>().first()
-        spatialUser = SpatialUser.create(perceptionRuntime.lifecycleManager, platformAdapter)
+        spatialUser = SpatialUser.create(perceptionRuntime.lifecycleManager, sceneRuntime)
         mainPanelEntity =
-            MainPanelEntity.create(
-                perceptionRuntime.lifecycleManager,
-                platformAdapter,
-                entityManager,
-            )
-        platformAdapter.spatialModeChangeListener =
+            MainPanelEntity.create(perceptionRuntime.lifecycleManager, sceneRuntime, entityManager)
+        sceneRuntime.spatialModeChangeListener =
             object : RtSpatialModeChangeListener {
                 override fun onSpatialModeChanged(
                     recommendedPose: Pose,
@@ -201,7 +197,7 @@ public class Scene : SessionConnector {
     public var panelClippingConfig: PanelClippingConfig = PanelClippingConfig()
         set(value) {
             field = value
-            platformAdapter.enablePanelDepthTest(value.isDepthTestEnabled)
+            sceneRuntime.enablePanelDepthTest(value.isDepthTestEnabled)
         }
 
     /**
@@ -227,7 +223,7 @@ public class Scene : SessionConnector {
         callbackExecutor: Executor,
         listener: Consumer<SpatialCapabilities>,
     ): Unit {
-        // wrap the client's listener in a callback that receives & converts the platformAdapter
+        // wrap the client's listener in a callback that receives & converts the sceneRuntime
         // SpatialCapabilities type.
         val rtListener: Consumer<RtSpatialCapabilities> =
             Consumer<RtSpatialCapabilities> { rtCaps: RtSpatialCapabilities ->
@@ -236,7 +232,7 @@ public class Scene : SessionConnector {
         spatialCapabilitiesListeners.compute(
             listener,
             { _, _ ->
-                platformAdapter.addSpatialCapabilitiesChangedListener(callbackExecutor, rtListener)
+                sceneRuntime.addSpatialCapabilitiesChangedListener(callbackExecutor, rtListener)
                 rtListener
             },
         )
@@ -254,7 +250,7 @@ public class Scene : SessionConnector {
         spatialCapabilitiesListeners.computeIfPresent(
             listener,
             { _, rtListener ->
-                platformAdapter.removeSpatialCapabilitiesChangedListener(rtListener)
+                sceneRuntime.removeSpatialCapabilitiesChangedListener(rtListener)
                 null
             },
         )
@@ -299,13 +295,13 @@ public class Scene : SessionConnector {
         callbackExecutor: Executor,
         listener: Consumer<@SpatialVisibilityValue Int>,
     ): Unit {
-        // Wrap client's listener in a callback that converts the platformAdapter's
+        // Wrap client's listener in a callback that converts the sceneRuntime's
         // SpatialVisibility.
         val rtListener =
             Consumer<RtSpatialVisibility> { rtVisibility: RtSpatialVisibility ->
                 listener.accept(rtVisibility.toSpatialVisibility())
             }
-        platformAdapter.setSpatialVisibilityChangedListener(callbackExecutor, rtListener)
+        sceneRuntime.setSpatialVisibilityChangedListener(callbackExecutor, rtListener)
     }
 
     /**
@@ -333,7 +329,7 @@ public class Scene : SessionConnector {
 
     /** Releases the listener previously added by [setSpatialVisibilityChangedListener]. */
     public fun clearSpatialVisibilityChangedListener(): Unit =
-        platformAdapter.clearSpatialVisibilityChangedListener()
+        sceneRuntime.clearSpatialVisibilityChangedListener()
 
     /**
      * Sets the listener to be invoked when the spatial mode for the scene has changed.
@@ -383,11 +379,11 @@ public class Scene : SessionConnector {
      * If the [Activity] has focus, causes the Activity to be placed in Full Space Mode. Otherwise,
      * this call does nothing.
      */
-    public fun requestFullSpaceMode(): Unit = platformAdapter.requestFullSpaceMode()
+    public fun requestFullSpaceMode(): Unit = sceneRuntime.requestFullSpaceMode()
 
     /**
      * If the [Activity] has focus, causes the Activity to be placed in Home Space Mode. Otherwise,
      * this call does nothing.
      */
-    public fun requestHomeSpaceMode(): Unit = platformAdapter.requestHomeSpaceMode()
+    public fun requestHomeSpaceMode(): Unit = sceneRuntime.requestHomeSpaceMode()
 }

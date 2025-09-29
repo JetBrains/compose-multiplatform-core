@@ -75,7 +75,6 @@ object RoomTypeNames {
     val TABLE_INFO_INDEX = XClassName.get("$ROOM_PACKAGE.util", "TableInfo", "Index")
     val FTS_TABLE_INFO = XClassName.get("$ROOM_PACKAGE.util", "FtsTableInfo")
     val VIEW_INFO = XClassName.get("$ROOM_PACKAGE.util", "ViewInfo")
-    val LIMIT_OFFSET_DATA_SOURCE = XClassName.get("$ROOM_PACKAGE.paging", "LimitOffsetDataSource")
     val DB_UTIL = XClassName.get("$ROOM_PACKAGE.util", "DBUtil")
     val CURSOR_UTIL = XClassName.get("$ROOM_PACKAGE.util", "CursorUtil")
     val MIGRATION = XClassName.get("$ROOM_PACKAGE.migration", "Migration")
@@ -137,6 +136,10 @@ object KotlinCollectionMemberNames {
     val MUTABLE_LIST_OF = KotlinTypeNames.COLLECTIONS_KT.packageMember("mutableListOf")
     val MUTABLE_SET_OF = KotlinTypeNames.SETS_KT.packageMember("mutableSetOf")
     val MUTABLE_MAP_OF = KotlinTypeNames.MAPS_KT.packageMember("mutableMapOf")
+}
+
+object KotlinPreconditionsMemberNames {
+    val CHECK_NOT_NULL = XClassName.get("kotlin", "PreconditionsKt").packageMember("checkNotNull")
 }
 
 object CommonTypeNames {

@@ -19,6 +19,7 @@ package androidx.xr.compose.subspace
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -113,11 +114,10 @@ private fun SpatialRow(
     content: @Composable @SubspaceComposable SpatialRowScope.() -> Unit,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val entityName = "SpatialRow-${currentCompositeKeyHashCode}"
 
     val coreGroupEntity = remember {
-        CoreGroupEntity(
-            GroupEntity.create(session, name = entityName("SpatialRow"), pose = Pose.Identity)
-        )
+        CoreGroupEntity(GroupEntity.create(session, name = entityName, pose = Pose.Identity))
     }
 
     SubspaceLayout(

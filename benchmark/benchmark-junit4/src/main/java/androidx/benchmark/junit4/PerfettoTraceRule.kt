@@ -65,7 +65,9 @@ import org.junit.runners.model.Statement
  * `BenchmarkRule`, `MacrobenchmarkRule`, or `PerfettoTrace.record`.
  */
 @ExperimentalPerfettoCaptureApi
-class PerfettoTraceRule(
+class PerfettoTraceRule
+@JvmOverloads
+constructor(
     /** Config used to record Perfetto trace. */
     val config: PerfettoConfig,
 
@@ -92,7 +94,7 @@ class PerfettoTraceRule(
     /** Callback for each captured trace. */
     val traceCallback: ((PerfettoTrace) -> Unit)? = null,
 ) : TestRule {
-
+    @JvmOverloads
     constructor(
         /**
          * Pass false to disable android.os.Trace API tracing in this process

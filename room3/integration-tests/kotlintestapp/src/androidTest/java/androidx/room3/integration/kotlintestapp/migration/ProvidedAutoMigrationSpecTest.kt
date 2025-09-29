@@ -15,6 +15,8 @@
  */
 package androidx.room3.integration.kotlintestapp.migration
 
+import androidx.kruth.assertThat
+import androidx.kruth.assertThrows
 import androidx.room3.AutoMigration
 import androidx.room3.ColumnInfo
 import androidx.room3.Database
@@ -25,14 +27,12 @@ import androidx.room3.RoomDatabase
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.testing.MigrationTestHelper
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.execSQL
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import java.io.IOException
-import org.hamcrest.CoreMatchers
-import org.hamcrest.MatcherAssert
-import org.junit.Rule
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -40,27 +40,25 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class ProvidedAutoMigrationSpecTest {
-    private val mProvidedSpec = ProvidedAutoMigrationDb.MyProvidedAutoMigration("Hi")
 
-    @JvmField @Rule var helperWithoutSpec: MigrationTestHelper
-    var helperWithSpec: MigrationTestHelper
-
-    init {
-        helperWithoutSpec =
-            MigrationTestHelper(
-                InstrumentationRegistry.getInstrumentation(),
-                ProvidedAutoMigrationDb::class.java,
-            )
-        val specs: MutableList<AutoMigrationSpec> = ArrayList()
-        specs.add(mProvidedSpec)
-        helperWithSpec =
-            MigrationTestHelper(
-                InstrumentationRegistry.getInstrumentation(),
-                ProvidedAutoMigrationDb::class.java,
-                specs,
-                FrameworkSQLiteOpenHelperFactory(),
-            )
-    }
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val context = instrumentation.targetContext
+    private val providedSpec = ProvidedAutoMigrationDb.MyProvidedAutoMigration()
+    val helperWithoutSpec =
+        MigrationTestHelper(
+            instrumentation = InstrumentationRegistry.getInstrumentation(),
+            file = context.getDatabasePath(TEST_DB),
+            driver = AndroidSQLiteDriver(),
+            databaseClass = ProvidedAutoMigrationDb::class,
+        )
+    val helperWithSpec =
+        MigrationTestHelper(
+            instrumentation = InstrumentationRegistry.getInstrumentation(),
+            file = context.getDatabasePath(TEST_DB),
+            driver = AndroidSQLiteDriver(),
+            databaseClass = ProvidedAutoMigrationDb::class,
+            autoMigrationSpecs = listOf(providedSpec),
+        )
 
     @Database(
         version = 2,
@@ -106,52 +104,48 @@ class ProvidedAutoMigrationSpecTest {
         }
 
         @ProvidedAutoMigrationSpec
-        internal class MyProvidedAutoMigration(private val mPrefString: String) :
-            AutoMigrationSpec {
-            var mOnPostMigrateCalled = false
+        internal class MyProvidedAutoMigration() : AutoMigrationSpec {
+            var onPostMigrateCalled = false
 
             override fun onPostMigrate(db: SupportSQLiteDatabase) {
-                mOnPostMigrateCalled = true
+                onPostMigrateCalled = true
             }
         }
     }
 
     // Run this to create the very 1st version of the db.
-    @Throws(IOException::class)
-    fun createFirstVersion() {
-        val db = helperWithoutSpec.createDatabase(TEST_DB, 1)
-        db.execSQL("INSERT INTO Entity1 (id, name) VALUES (1, 'row1')")
-        db.close()
+    private fun createFirstVersion() {
+        helperWithoutSpec.createDatabase(1).use {
+            it.execSQL("INSERT INTO Entity1 (id, name) VALUES (1, 'row1')")
+        }
+    }
+
+    @Before
+    fun setup() {
+        context.deleteDatabase(TEST_DB)
     }
 
     @Test
-    @Throws(IOException::class)
     fun testOnPostMigrate() {
         createFirstVersion()
-        val db = helperWithSpec.runMigrationsAndValidate(TEST_DB, 2, true)
-        MatcherAssert.assertThat(mProvidedSpec.mOnPostMigrateCalled, CoreMatchers.`is`(true))
-        db.close()
+        helperWithSpec.runMigrationsAndValidate(version = 2, migrations = emptyList()).use {
+            assertThat(providedSpec.onPostMigrateCalled).isTrue()
+        }
     }
 
-    /** Verifies that the user defined migration is selected over using an autoMigration. */
     @Test
-    @Throws(IOException::class)
     fun testNoSpecProvidedInConfig() {
         createFirstVersion()
-        try {
-            helperWithoutSpec.runMigrationsAndValidate(TEST_DB, 2, true)
-        } catch (exception: IllegalArgumentException) {
-            MatcherAssert.assertThat(
-                exception.message,
-                CoreMatchers.containsString(
-                    "A required auto migration spec (androidx.room3.integration." +
-                        "kotlintestapp" +
-                        ".migration.ProvidedAutoMigrationSpecTest" +
-                        ".ProvidedAutoMigrationDb.MyProvidedAutoMigration) has not " +
-                        "been provided."
-                ),
+
+        assertThrows<IllegalArgumentException> {
+                helperWithoutSpec.runMigrationsAndValidate(version = 2, migrations = emptyList())
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "A required auto migration spec (" +
+                    ProvidedAutoMigrationDb.MyProvidedAutoMigration::class.qualifiedName +
+                    ") has not been provided."
             )
-        }
     }
 
     companion object {

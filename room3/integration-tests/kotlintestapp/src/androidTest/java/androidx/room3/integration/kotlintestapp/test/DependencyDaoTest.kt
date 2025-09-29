@@ -15,23 +15,28 @@
  */
 package androidx.room3.integration.kotlintestapp.test
 
+import androidx.kruth.assertThat
 import androidx.room3.integration.kotlintestapp.dao.DependencyDao
 import androidx.room3.integration.kotlintestapp.vo.DataClassFromDependency
 import androidx.room3.integration.kotlintestapp.vo.EmbeddedFromDependency
 import androidx.room3.integration.kotlintestapp.vo.PojoFromDependency
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.CoreMatchers.notNullValue
-import org.hamcrest.CoreMatchers.nullValue
-import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
-@RunWith(AndroidJUnit4::class)
 @SmallTest
-class DependencyDaoTest : TestDatabaseTest() {
+@RunWith(Parameterized::class)
+class DependencyDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
+
+    private companion object {
+        @JvmStatic
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = arrayOf(UseDriver.BUNDLED, UseDriver.ANDROID)
+    }
+
     lateinit var dao: DependencyDao
 
     @Before
@@ -42,28 +47,28 @@ class DependencyDaoTest : TestDatabaseTest() {
     @Test
     fun insertAndGet() {
         val data = insertSample(3)
-        assertThat(dao.selectAll(), `is`(listOf(data)))
+        assertThat(dao.selectAll()).containsExactly(data)
     }
 
     @Test
     fun insertAndGetByQuery() {
         val data = insertSample(3)
-        assertThat(dao.findById(3), `is`(data))
-        assertThat(dao.findById(5), `is`(nullValue()))
+        assertThat(dao.findById(3)).isEqualTo(data)
+        assertThat(dao.findById(5)).isNull()
     }
 
     @Test
     fun insertAndGetByQuery_embedded() {
         val data = insertSample(3)
-        assertThat(dao.findEmbedded(3), `is`(EmbeddedFromDependency(data)))
-        assertThat(dao.findEmbedded(5), `is`(nullValue()))
+        assertThat(dao.findEmbedded(3)).isEqualTo(EmbeddedFromDependency(data))
+        assertThat(dao.findEmbedded(5)).isNull()
     }
 
     @Test
     fun insertAndGetByQuery_pojo() {
         val data = insertSample(3)
-        assertThat(dao.findPojo(3), `is`(PojoFromDependency(id = data.id, name = data.name)))
-        assertThat(dao.findPojo(5), `is`(nullValue()))
+        assertThat(dao.findPojo(3)).isEqualTo(PojoFromDependency(id = data.id, name = data.name))
+        assertThat(dao.findPojo(5)).isNull()
     }
 
     @Test
@@ -73,19 +78,19 @@ class DependencyDaoTest : TestDatabaseTest() {
         val bar = DataClassFromDependency(id = 5, name = "bar")
         dao.insert(foo1, foo2, bar)
         val fooList = dao.relation("foo")
-        assertThat(fooList, `is`(notNullValue()))
-        assertThat(fooList?.sharedName, `is`("foo"))
-        assertThat(fooList?.dataItems, `is`(listOf(foo1, foo2)))
+        assertThat(fooList).isNotNull()
+        assertThat(fooList?.sharedName).isEqualTo("foo")
+        assertThat(fooList?.dataItems).containsExactly(foo1, foo2)
 
         val barList = dao.relation("bar")
-        assertThat(barList, `is`(notNullValue()))
-        assertThat(barList?.sharedName, `is`("bar"))
-        assertThat(barList?.dataItems, `is`(listOf(bar)))
+        assertThat(barList).isNotNull()
+        assertThat(barList?.sharedName).isEqualTo("bar")
+        assertThat(barList?.dataItems).containsExactly(bar)
 
         val bazList = dao.relation("baz")
-        assertThat(bazList, `is`(notNullValue()))
-        assertThat(bazList?.sharedName, `is`("baz"))
-        assertThat(bazList?.dataItems, `is`(emptyList()))
+        assertThat(bazList).isNotNull()
+        assertThat(bazList?.sharedName).isEqualTo("baz")
+        assertThat(bazList?.dataItems).isEmpty()
     }
 
     private fun insertSample(id: Int): DataClassFromDependency {

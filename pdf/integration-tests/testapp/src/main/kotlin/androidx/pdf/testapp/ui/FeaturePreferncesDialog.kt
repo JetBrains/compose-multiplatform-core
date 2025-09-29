@@ -72,6 +72,12 @@ internal class FeaturePreferencesDialog(
                 FeatureFlagNames.THUMBNAIL_PREVIEW,
                 context.getString(R.string.thumbnail_preview),
             ),
+            FeatureFlagConfig(
+                R.id.form_filling_switch,
+                PdfFeatureFlags::isFormFillingEnabled,
+                FeatureFlagNames.FORM_FILLING,
+                context.getString(R.string.enable_form_filling),
+            ),
         )
     }
 
@@ -131,4 +137,5 @@ object FeatureFlagNames {
     const val EXTERNAL_HARDWARE_INTERACTION: String = "EXTERNAL_HARDWARE_INTERACTION"
     const val LINK_SELECTION: String = "LINK_SELECTION"
     const val THUMBNAIL_PREVIEW: String = "THUMBNAIL_PREVIEW"
+    const val FORM_FILLING: String = "FORM_FILLING"
 }

@@ -17,7 +17,6 @@
 package androidx.xr.glimmer.stack
 
 import androidx.compose.foundation.pager.VerticalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
@@ -32,20 +31,36 @@ import androidx.compose.ui.Modifier
  *
  * @sample androidx.xr.glimmer.samples.VerticalStackSample
  * @param modifier the modifier to apply to this layout.
+ * @param state the state of the stack.
  * @param content a block that describes the content. Inside this block you can use methods like
  *   [StackScope.item] to add a single item or [StackScope.items] to add a collection of items.
  */
 @Composable
-public fun VerticalStack(modifier: Modifier = Modifier, content: StackScope.() -> Unit) {
+public fun VerticalStack(
+    modifier: Modifier = Modifier,
+    state: StackState = rememberStackState(),
+    content: StackScope.() -> Unit,
+) {
     val latestContent = rememberUpdatedState(content)
-    val stackItemHolderState = remember {
-        // Re-run the DSL to parse items only when the content lambda instance changes.
-        derivedStateOf(referentialEqualityPolicy()) { StackItemHolder(latestContent.value) }
-    }
-    val pagerState = rememberPagerState(pageCount = { stackItemHolderState.value.itemCount })
+    val stackItemHolderState =
+        remember(state) {
+            // Re-run the DSL to parse items only when the content lambda instance changes.
+            derivedStateOf(referentialEqualityPolicy()) {
+                    StackItemHolder(latestContent.value).also {
+                        // Set the item count on the StackState immediately when the derived state
+                        // re-evaluates (i.e., when content changes), even before recomposition.
+                        state.itemCount = it.itemCount
+                    }
+                }
+                .also {
+                    // This second assignment is necessary to force the derivedStateOf lambda above
+                    // (which is executed lazily) to execute synchronously inside this block.
+                    state.itemCount = it.value.itemCount
+                }
+        }
 
     VerticalPager(
-        state = pagerState,
+        state = state.pagerState,
         modifier = modifier,
         key = { page -> stackItemHolderState.value.getKey(page) },
     ) { page ->

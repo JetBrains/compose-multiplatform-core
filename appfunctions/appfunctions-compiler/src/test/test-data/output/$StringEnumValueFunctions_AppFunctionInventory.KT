@@ -95,14 +95,6 @@ public class `$StringEnumValueFunctions_AppFunctionInventory` : AppFunctionInven
             description = ""
         )
 
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.StringEnumValueFunctions#stringEnumParamFunction",
@@ -110,7 +102,6 @@ public class `$StringEnumValueFunctions_AppFunctionInventory` : AppFunctionInven
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
         )
   }
 
@@ -132,14 +123,6 @@ public class `$StringEnumValueFunctions_AppFunctionInventory` : AppFunctionInven
             description = ""
         )
 
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.StringEnumValueFunctions#stringEnumReturnFunction",
@@ -147,7 +130,6 @@ public class `$StringEnumValueFunctions_AppFunctionInventory` : AppFunctionInven
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
         )
   }
 
@@ -184,41 +166,6 @@ public class `$StringEnumValueFunctions_AppFunctionInventory` : AppFunctionInven
             description = ""
         )
 
-    private val COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_STRINGPROP:
-        AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
-            isNullable = false,
-            description = "",
-            enumValues = setOf("ON", "OFF"),
-        )
-
-    private val COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
-        Map<String, AppFunctionDataTypeMetadata> = mapOf(
-      "stringProp" to COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_STRINGPROP,
-    )
-
-    private val COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
-        List<String> = listOf(
-      "stringProp",
-    )
-
-    private val COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE:
-        AppFunctionObjectTypeMetadata = AppFunctionObjectTypeMetadata(
-            properties = COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
-            required = COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
-            qualifiedName = "com.testdata.StringEnumPropSerializable",
-            isNullable = true,
-            description = ""
-        )
-
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      "com.testdata.StringEnumPropSerializable" to COM_TESTDATA_STRINGENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE,
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.StringEnumValueFunctions#stringEnumSerializableFunction",
@@ -226,7 +173,6 @@ public class `$StringEnumValueFunctions_AppFunctionInventory` : AppFunctionInven
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
         )
   }
 }

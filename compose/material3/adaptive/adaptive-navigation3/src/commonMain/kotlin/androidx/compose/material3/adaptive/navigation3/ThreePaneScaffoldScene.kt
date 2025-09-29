@@ -41,12 +41,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.ui.Scene
+import androidx.navigation3.scene.Scene
 import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.NavigationEventState
+import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.NavigationBackHandler
-import kotlinx.coroutines.flow.collectLatest
+import androidx.navigationevent.compose.rememberNavigationEventState
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 internal sealed interface ThreePaneScaffoldType {
@@ -205,8 +205,9 @@ internal class ThreePaneScaffoldScene<T : Any>(
 
         val previousScaffoldValue = onBackResult.previousScaffoldValue
 
+        val gestureState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
         NavigationBackHandler(
-            currentInfo = ThreePaneScaffoldSceneInfo,
+            state = gestureState,
             isBackEnabled = previousScaffoldValue != null,
             onBackCompleted = { onBack(allEntries.size - onBackResult.previousEntries.size) },
         )
@@ -217,29 +218,23 @@ internal class ThreePaneScaffoldScene<T : Any>(
                 }
                 .navigationEventDispatcher
 
-        LaunchedEffect(dispatcher) {
-            // Observe navigation gestures to drive the scaffold's animation. A coroutine scope is
-            // needed to call the suspend functions `seekTo` (during the gesture) and `animateTo`
-            // (when it completes or is cancelled).
-            dispatcher
-                .getState(scope = this, initialInfo = ThreePaneScaffoldSceneInfo)
-                .collectLatest { state ->
-                    // Update the scaffold based on the gesture's state:
-                    // - InProgress: Scrub the scaffold's position in real-time.
-                    // - Else (Completed/Cancelled): Animate back to the stable state.
-                    if (state is NavigationEventState.InProgress) {
-                        scaffoldState.seekTo(
-                            fraction =
-                                backProgressToStateProgress(
-                                    progress = state.progress,
-                                    scaffoldValue = scaffoldValue,
-                                ),
-                            targetState = previousScaffoldValue!!,
-                        )
-                    } else {
-                        scaffoldState.animateTo(targetState = scaffoldValue)
-                    }
-                }
+        val transitionState = gestureState.transitionState
+        LaunchedEffect(transitionState) {
+            // Update the scaffold based on the gesture's state:
+            if (transitionState is NavigationEventTransitionState.InProgress) {
+                // InProgress: Scrub the scaffold's position in real-time.
+                scaffoldState.seekTo(
+                    fraction =
+                        backProgressToStateProgress(
+                            progress = transitionState.latestEvent.progress,
+                            scaffoldValue = scaffoldValue,
+                        ),
+                    targetState = previousScaffoldValue!!,
+                )
+            } else {
+                // Completed/Cancelled: Animate back to the stable state.
+                scaffoldState.animateTo(targetState = scaffoldValue)
+            }
         }
 
         if (scaffoldType is ThreePaneScaffoldType.ListDetail) {
@@ -283,9 +278,43 @@ internal class ThreePaneScaffoldScene<T : Any>(
             extraPane = lastExtra?.let { { AnimatedPane { it.Content() } } },
         )
     }
-}
 
-private object ThreePaneScaffoldSceneInfo : NavigationEventInfo
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as ThreePaneScaffoldScene<*>
+
+        return key == other.key &&
+            backNavBehavior == other.backNavBehavior &&
+            directive == other.directive &&
+            adaptStrategies == other.adaptStrategies &&
+            allEntries == other.allEntries &&
+            previousEntries == other.previousEntries &&
+            scaffoldEntries == other.scaffoldEntries &&
+            scaffoldEntryIndices == scaffoldEntryIndices &&
+            entriesAsNavItems == other.entriesAsNavItems
+    }
+
+    override fun hashCode(): Int {
+        return key.hashCode() * 31 +
+            backNavBehavior.hashCode() * 31 +
+            directive.hashCode() * 31 +
+            adaptStrategies.hashCode() * 31 +
+            allEntries.hashCode() * 31 +
+            previousEntries.hashCode() * 31 +
+            scaffoldEntries.hashCode() * 31 +
+            scaffoldEntryIndices.hashCode() * 31 +
+            entriesAsNavItems.hashCode() * 31
+    }
+
+    override fun toString(): String {
+        return "ThreePaneScaffoldScene(key=$key, backNavBehavior=$backNavBehavior" +
+            ", directive=$directive, adaptStrategies=$adaptStrategies, allEntries=$allEntries, " +
+            "previousEntries=$previousEntries, scaffoldEntries=$scaffoldEntries, " +
+            "scaffoldEntryIndices=$scaffoldEntryIndices, entriesAsNavItems=$entriesAsNavItems)"
+    }
+}
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private fun backProgressToStateProgress(

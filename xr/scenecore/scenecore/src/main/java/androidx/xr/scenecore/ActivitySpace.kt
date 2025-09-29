@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executor
@@ -44,9 +44,9 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
 
     internal companion object {
         internal fun create(
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
-        ): ActivitySpace = ActivitySpace(adapter.activitySpace, entityManager)
+        ): ActivitySpace = ActivitySpace(sceneRuntime.activitySpace, entityManager)
     }
 
     private val boundsListeners:

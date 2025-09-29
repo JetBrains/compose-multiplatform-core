@@ -4,10 +4,10 @@ package androidx.xr.arcore.playservices {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCoreAnchor implements androidx.xr.arcore.internal.Anchor {
     method @SuppressCompatibility @androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi public com.google.ar.core.Anchor arCoreAnchor();
     method public void detach();
-    method public androidx.xr.arcore.internal.Anchor.PersistenceState getPersistenceState();
-    method public androidx.xr.runtime.math.Pose getPose();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
-    method public java.util.UUID? getUuid();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Anchor.PersistenceState getPersistenceState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public java.util.UUID? getUuid();
     method public void persist();
     property public androidx.xr.arcore.internal.Anchor.PersistenceState persistenceState;
     property public androidx.xr.runtime.math.Pose pose;
@@ -16,7 +16,7 @@ package androidx.xr.arcore.playservices {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCoreDevice implements androidx.xr.arcore.internal.ArDevice {
-    method public androidx.xr.runtime.math.Pose getDevicePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getDevicePose();
     method public void update(com.google.ar.core.Frame frame);
     property public androidx.xr.runtime.math.Pose devicePose;
   }
@@ -27,8 +27,8 @@ package androidx.xr.arcore.playservices {
     method public androidx.xr.arcore.internal.Earth.GeospatialPoseResult createGeospatialPoseFromDevicePose();
     method public androidx.xr.arcore.internal.Earth.GeospatialPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.math.Pose createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
-    method public com.google.ar.core.Earth? getArCoreEarth();
-    method public androidx.xr.arcore.internal.Earth.State getState();
+    method @InaccessibleFromKotlin public com.google.ar.core.Earth? getArCoreEarth();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Earth.State getState();
     method public void update(com.google.ar.core.Session session);
     property public com.google.ar.core.Earth? arCoreEarth;
     property public androidx.xr.arcore.internal.Earth.State state;
@@ -37,7 +37,7 @@ package androidx.xr.arcore.playservices {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCoreManager implements androidx.xr.runtime.internal.LifecycleManager {
     method public void configure(androidx.xr.runtime.Config config);
     method public void create();
-    method public androidx.xr.runtime.Config getConfig();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config getConfig();
     method public void pause();
     method public void resume();
     method @SuppressCompatibility @androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi public com.google.ar.core.Session session();
@@ -49,21 +49,21 @@ package androidx.xr.arcore.playservices {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCorePerceptionManager implements androidx.xr.arcore.internal.PerceptionManager {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public androidx.xr.arcore.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.arcore.playservices.ArCoreDevice getArDevice();
-    method public androidx.xr.arcore.playservices.ArCoreEarth getEarth();
-    method public androidx.xr.arcore.internal.DepthMap? getLeftDepthMap();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Eye? getLeftEye();
-    method public androidx.xr.arcore.internal.Hand? getLeftHand();
-    method public androidx.xr.arcore.internal.RenderViewpoint? getLeftRenderViewpoint();
-    method public androidx.xr.arcore.internal.DepthMap? getMonoDepthMap();
-    method public androidx.xr.arcore.internal.RenderViewpoint? getMonoRenderViewpoint();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.playservices.ArCoreDevice getArDevice();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.playservices.ArCoreEarth getEarth();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.DepthMap? getLeftDepthMap();
+    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Eye? getLeftEye();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Hand? getLeftHand();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.RenderViewpoint? getLeftRenderViewpoint();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.DepthMap? getMonoDepthMap();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.RenderViewpoint? getMonoRenderViewpoint();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
-    method public androidx.xr.arcore.internal.DepthMap? getRightDepthMap();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Eye? getRightEye();
-    method public androidx.xr.arcore.internal.Hand? getRightHand();
-    method public androidx.xr.arcore.internal.RenderViewpoint? getRightRenderViewpoint();
-    method public java.util.Collection<androidx.xr.arcore.internal.Trackable> getTrackables();
-    method public androidx.xr.arcore.internal.Face? getUserFace();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.DepthMap? getRightDepthMap();
+    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.internal.Eye? getRightEye();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Hand? getRightHand();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.RenderViewpoint? getRightRenderViewpoint();
+    method @InaccessibleFromKotlin public java.util.Collection<androidx.xr.arcore.internal.Trackable> getTrackables();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Face? getUserFace();
     method public java.util.List<androidx.xr.arcore.internal.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method @SuppressCompatibility @androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi public com.google.ar.core.Frame lastFrame();
     method public androidx.xr.arcore.internal.Anchor loadAnchor(java.util.UUID uuid);
@@ -89,13 +89,13 @@ package androidx.xr.arcore.playservices {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCorePlane implements androidx.xr.arcore.internal.Plane androidx.xr.arcore.internal.Trackable {
     method @SuppressCompatibility @androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi public com.google.ar.core.Plane arCorePlane();
     method public androidx.xr.arcore.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.FloatSize2d getExtents();
-    method public androidx.xr.arcore.internal.Plane.Label getLabel();
-    method public androidx.xr.arcore.internal.Plane? getSubsumedBy();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
-    method public androidx.xr.arcore.internal.Plane.Type getType();
-    method public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize2d getExtents();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Plane.Label getLabel();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Plane? getSubsumedBy();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Plane.Type getType();
+    method @InaccessibleFromKotlin public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     property public androidx.xr.runtime.math.Pose centerPose;
     property public androidx.xr.runtime.math.FloatSize2d extents;
     property public androidx.xr.arcore.internal.Plane.Label label;
@@ -106,8 +106,8 @@ package androidx.xr.arcore.playservices {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCoreRuntime implements androidx.xr.arcore.internal.PerceptionRuntime {
-    method public androidx.xr.arcore.playservices.ArCoreManager getLifecycleManager();
-    method public androidx.xr.arcore.playservices.ArCorePerceptionManager getPerceptionManager();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.playservices.ArCoreManager getLifecycleManager();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.playservices.ArCorePerceptionManager getPerceptionManager();
     method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark?>);
     property public androidx.xr.arcore.playservices.ArCoreManager lifecycleManager;
     property public androidx.xr.arcore.playservices.ArCorePerceptionManager perceptionManager;
@@ -116,19 +116,19 @@ package androidx.xr.arcore.playservices {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCoreRuntimeFactory implements androidx.xr.runtime.internal.PerceptionRuntimeFactory {
     ctor public ArCoreRuntimeFactory();
     method public androidx.xr.arcore.internal.PerceptionRuntime createRuntime(android.app.Activity activity, kotlin.coroutines.CoroutineContext coroutineContext);
-    method public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class CameraState {
-    method public androidx.xr.runtime.math.Pose? getCameraPose();
-    method public androidx.xr.runtime.math.Pose? getDisplayOrientedPose();
-    method public android.hardware.HardwareBuffer? getHardwareBuffer();
-    method public androidx.xr.runtime.math.Matrix4? getProjectionMatrix();
-    method public kotlin.time.ComparableTimeMark getTimeMark();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
-    method public kotlin.jvm.functions.Function1<java.nio.FloatBuffer,java.nio.FloatBuffer>? getTransformCoordinates2D();
-    method public androidx.xr.runtime.math.Matrix4? getViewMatrix();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCameraPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getDisplayOrientedPose();
+    method @InaccessibleFromKotlin public android.hardware.HardwareBuffer? getHardwareBuffer();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix4? getProjectionMatrix();
+    method @InaccessibleFromKotlin public kotlin.time.ComparableTimeMark getTimeMark();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<java.nio.FloatBuffer,java.nio.FloatBuffer>? getTransformCoordinates2D();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix4? getViewMatrix();
     property public androidx.xr.runtime.math.Pose? cameraPose;
     property public androidx.xr.runtime.math.Pose? displayOrientedPose;
     property public android.hardware.HardwareBuffer? hardwareBuffer;
@@ -140,7 +140,7 @@ package androidx.xr.arcore.playservices {
   }
 
   public final class CameraStateExtenderKt {
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.playservices.CameraState? getCameraState(androidx.xr.runtime.CoreState);
+    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.playservices.CameraState? getCameraState(androidx.xr.runtime.CoreState);
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.playservices.CameraState? androidx.xr.runtime.CoreState.cameraState;
   }
 

@@ -16,6 +16,7 @@
 
 package androidx.room3.support
 
+import androidx.room3.immediateTransaction
 import androidx.sqlite.SQLITE_DATA_BLOB
 import androidx.sqlite.SQLITE_DATA_FLOAT
 import androidx.sqlite.SQLITE_DATA_INTEGER
@@ -50,22 +51,26 @@ internal class RoomSupportSQLiteStatement(
     override fun executeUpdateDelete(): Int {
         throwIfClosed()
         return session.useWriterBlocking { connection ->
-            connection.usePrepared(sql) { stmt ->
-                stmt.bindArgs()
-                stmt.step()
+            connection.immediateTransaction {
+                usePrepared(sql) { stmt ->
+                    stmt.bindArgs()
+                    stmt.step()
+                }
+                getTotalChangedRows()
             }
-            connection.getTotalChangedRows()
         }
     }
 
     override fun executeInsert(): Long {
         throwIfClosed()
         return session.useWriterBlocking { connection ->
-            connection.usePrepared(sql) { stmt ->
-                stmt.bindArgs()
-                stmt.step()
+            connection.immediateTransaction {
+                usePrepared(sql) { stmt ->
+                    stmt.bindArgs()
+                    stmt.step()
+                }
+                getLastInsertedRowId()
             }
-            connection.getLastInsertedRowId()
         }
     }
 

@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+
 /*
  * Copyright (C) 2017 The Android Open Source Project
  *
@@ -24,6 +27,8 @@ buildscript {
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
     id("androidx.room3")
 }
 
@@ -34,28 +39,6 @@ android {
     sourceSets {
         androidTest.assets.srcDirs += files("$projectDir/databases".toString())
     }
-    flavorDimensions "processorConfiguration"
-    productFlavors {
-        withoutExpandProjection {
-            dimension "processorConfiguration"
-            javaCompileOptions {
-                annotationProcessorOptions {
-                    arguments = ["room.expandProjection"  : "false"]
-                }
-            }
-        }
-        withNullAwareTypeConverter {
-            dimension "processorConfiguration"
-            javaCompileOptions {
-                annotationProcessorOptions {
-                    arguments = [
-                            "room.expandProjection"  : "false",
-                            "room.useNullAwareTypeAnalysis": "true"
-                    ]
-                }
-            }
-        }
-    }
     compileOptions {
         // For testing Java records
         sourceCompatibility JavaVersion.VERSION_17
@@ -63,6 +46,13 @@ android {
         coreLibraryDesugaringEnabled = true
     }
     namespace = "androidx.room3.integration.testapp"
+}
+
+tasks.withType(KotlinCompilationTask).configureEach {
+    it.compilerOptions {
+        // For testing Java records
+        jvmTarget = JvmTarget.JVM_17
+    }
 }
 
 dependencies {
@@ -83,10 +73,8 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.3.1")
 
     // Annotation processor / compiler dependencies:
-    withoutExpandProjectionAnnotationProcessor(project(":room3:room3-compiler"))
-    withNullAwareTypeConverterAnnotationProcessor(project(":room3:room3-compiler"))
-    androidTestWithoutExpandProjectionAnnotationProcessor(project(":room3:room3-compiler"))
-    androidTestWithNullAwareTypeConverterAnnotationProcessor(project(":room3:room3-compiler"))
+    ksp(project(":room3:room3-compiler"))
+    kspAndroidTest(project(":room3:room3-compiler"))
 
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")
     androidTestImplementation("androidx.arch.core:core-common:2.2.0")

@@ -15,8 +15,17 @@
  */
 package androidx.xr.arcore.projected
 
+import androidx.xr.runtime.VpsAvailabilityAvailable
 import androidx.xr.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.runtime.VpsAvailabilityNetworkError
+import androidx.xr.runtime.VpsAvailabilityNotAuthorized
+import androidx.xr.runtime.VpsAvailabilityResourceExhausted
+import androidx.xr.runtime.VpsAvailabilityResult
+import androidx.xr.runtime.VpsAvailabilityUnavailable
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import kotlin.reflect.KClass
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -30,13 +39,36 @@ import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
-import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(RobolectricTestRunner::class)
+@RunWith(TestParameterInjector::class)
 class ProjectedPerceptionManagerTest {
     @Mock private lateinit var mockPerceptionService: IProjectedPerceptionService.Stub
     private lateinit var perceptionManager: ProjectedPerceptionManager
+
+    // vpsState is the enum VpsAvailability, see the code in
+    // third_party/arcore/java/com/google/ar/core/VpsAvailability.java
+    // and the onVpsAvailabilityChanged callback call in
+    // java/com/google/android/projection/core/modules/perception/PerceptionManagerService.java.
+    enum class VpsAvailabilityTestCase(
+        val vpsState: Int,
+        val expectedResult: KClass<out VpsAvailabilityResult>,
+    ) {
+        // VpsAvailability.AVAILABLE
+        AVAILABLE(1, VpsAvailabilityAvailable::class),
+        // VpsAvailability.UNAVAILABLE
+        UNAVAILABLE(2, VpsAvailabilityUnavailable::class),
+        // VpsAvailability.ERROR_NETWORK_CONNECTION
+        NETWORK_ERROR(-2, VpsAvailabilityNetworkError::class),
+        // VpsAvailability.ERROR_NOT_AUTHORIZED
+        NOT_AUTHORIZED(-3, VpsAvailabilityNotAuthorized::class),
+        // VpsAvailability.ERROR_RESOURCE_EXHAUSTED
+        RESOURCE_EXHAUSTED(-4, VpsAvailabilityResourceExhausted::class),
+        // VpsAvailability.ERROR_INTERNAL
+        INTERNAL_ERROR(-1, VpsAvailabilityErrorInternal::class),
+        // VpsAvailability.UNKNOWN
+        UNKNOWN(0, VpsAvailabilityErrorInternal::class),
+    }
 
     @Before
     fun setUp() {
@@ -48,11 +80,13 @@ class ProjectedPerceptionManagerTest {
     }
 
     @Test
-    fun checkVpsAvailability_callsServiceWithCorrectParameters() = runTest {
-        perceptionManager.service = mockPerceptionService
+    fun checkVpsAvailability_returnsCorrectResult(
+        @TestParameter testCase: VpsAvailabilityTestCase
+    ) = runTest {
+        perceptionManager.xrResources.service = mockPerceptionService
         doAnswer { invocation ->
                 val callback = invocation.getArgument<IVpsAvailabilityCallback>(2)
-                callback.onVpsAvailabilityChanged(0)
+                callback.onVpsAvailabilityChanged(testCase.vpsState)
                 null
             }
             .`when`(mockPerceptionService)
@@ -60,7 +94,7 @@ class ProjectedPerceptionManagerTest {
 
         val result = perceptionManager.checkVpsAvailability(1.0, 2.0)
 
-        assertThat(result).isInstanceOf(VpsAvailabilityErrorInternal::class.java)
+        assertThat(result).isInstanceOf(testCase.expectedResult.java)
         verify(mockPerceptionService)
             .checkVpsAvailability(eq(1.0), eq(2.0), any(IVpsAvailabilityCallback::class.java))
     }

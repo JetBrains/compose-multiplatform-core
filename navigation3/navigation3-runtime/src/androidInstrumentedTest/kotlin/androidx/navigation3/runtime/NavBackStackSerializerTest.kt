@@ -38,8 +38,7 @@ internal class NavBackStackSerializerTest {
     fun encodeDecode_withDefaultConfigAndMixedSubtypes_preservesValues() {
         val backStack = mutableStateListOf(Home("root"), Details(42L), Settings(dark = true))
 
-        val serializer =
-            NavBackStackSerializer<Screen>(configuration = SavedStateConfiguration.DEFAULT)
+        val serializer = NavBackStackSerializer<Screen>()
 
         val encoded = encodeToSavedState(serializer, backStack)
         val decoded = decodeFromSavedState(serializer, encoded)
@@ -89,8 +88,7 @@ internal class NavBackStackSerializerTest {
     @Test
     fun encodeDecode_withEmptyBackStack_returnsEmptyList() {
         val backStack = mutableStateListOf<Screen>()
-        val serializer =
-            NavBackStackSerializer<Screen>(configuration = SavedStateConfiguration.DEFAULT)
+        val serializer = NavBackStackSerializer<Screen>()
 
         val encoded = encodeToSavedState(serializer, backStack)
         val decoded = decodeFromSavedState(serializer, encoded)
@@ -101,9 +99,7 @@ internal class NavBackStackSerializerTest {
     @Test
     fun encodeDecode_withDefaultConfig_preservesOrder() {
         val backStack = mutableStateListOf(Home("a"), Details(1L), Home("b"), Details(2L))
-
-        val serializer =
-            NavBackStackSerializer<Screen>(configuration = SavedStateConfiguration.DEFAULT)
+        val serializer = NavBackStackSerializer<Screen>()
 
         val encoded = encodeToSavedState(serializer, backStack)
         val decoded = decodeFromSavedState(serializer, encoded)

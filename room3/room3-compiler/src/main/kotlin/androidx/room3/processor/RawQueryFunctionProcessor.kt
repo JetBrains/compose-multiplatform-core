@@ -154,9 +154,9 @@ class RawQueryFunctionProcessor(
     private fun findRuntimeQueryParameter(
         extractParams: List<XVariableElement>
     ): RawQueryFunction.RuntimeQueryParameter? {
+        val processingEnv = context.processingEnv
         if (extractParams.size == 1 && !executableElement.isVarArgs()) {
             val param = extractParams.first().asMemberOf(containing)
-            val processingEnv = context.processingEnv
             if (param.nullability == XNullability.NULLABLE) {
                 context.logger.e(
                     element = extractParams.first(),
@@ -172,6 +172,7 @@ class RawQueryFunctionProcessor(
                     return RawQueryFunction.RuntimeQueryParameter(
                         paramName = extractParams[0].name,
                         typeName = rawQueryType.asTypeName(),
+                        isNonNull = param.nullability == XNullability.NONNULL,
                     )
                 }
             }
@@ -181,6 +182,7 @@ class RawQueryFunctionProcessor(
                     return RawQueryFunction.RuntimeQueryParameter(
                         paramName = extractParams[0].name,
                         typeName = supportQueryType.asTypeName(),
+                        isNonNull = param.nullability == XNullability.NONNULL,
                     )
                 }
             }

@@ -40,7 +40,11 @@ data class RawQueryFunction(
 ) {
     val returnsValue by lazy { returnType.isNotVoid() && !returnType.isKotlinUnit() }
 
-    data class RuntimeQueryParameter(val paramName: String, val typeName: XTypeName) {
+    data class RuntimeQueryParameter(
+        val paramName: String,
+        val typeName: XTypeName,
+        val isNonNull: Boolean,
+    ) {
         fun isString() = CommonTypeNames.STRING == typeName
 
         fun isSupportQuery() = SupportDbTypeNames.QUERY == typeName

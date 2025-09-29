@@ -19,27 +19,118 @@ package androidx.xr.arcore.projected
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.internal.Anchor
 import androidx.xr.arcore.internal.Earth
+import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
+import androidx.xr.runtime.math.Vector3
 
 /** Currently unimplemented implementation of [androidx.xr.arcore.internal.Earth] on Projected. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedEarth internal constructor(private val xrResources: XrResources) : Earth {
-
     public override var state: Earth.State = Earth.State.STOPPED
         private set
 
+    private val service: IProjectedPerceptionService
+        get() = xrResources.service
+
+    private fun checkTrackingState() {
+        if (
+            xrResources.deviceTrackingState == TrackingState.STOPPED ||
+                xrResources.earthTrackingState == TrackingState.STOPPED
+        ) {
+            throw GeospatialPoseNotTrackingException()
+        }
+    }
+
     override public fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
-        throw NotImplementedError("Not implemented yet.")
+        checkTrackingState()
+        val projectedQuaternion =
+            ProjectedQuarternion().apply {
+                x = geospatialPose.eastUpSouthQuaternion.x
+                y = geospatialPose.eastUpSouthQuaternion.y
+                z = geospatialPose.eastUpSouthQuaternion.z
+                w = geospatialPose.eastUpSouthQuaternion.w
+            }
+        val projectedEarthPose =
+            ProjectedEarthPose().apply {
+                latitude = geospatialPose.latitude
+                longitude = geospatialPose.longitude
+                altitude = geospatialPose.altitude
+                eus = projectedQuaternion
+            }
+        val projectedPose = service.createPoseFromGeospatialPose(projectedEarthPose)
+        return Pose(
+            Vector3(projectedPose.vector.x, projectedPose.vector.y, projectedPose.vector.z),
+            Quaternion(projectedPose.q.x, projectedPose.q.y, projectedPose.q.z, projectedPose.q.w),
+        )
     }
 
     override public fun createGeospatialPoseFromPose(pose: Pose): Earth.GeospatialPoseResult {
-        throw NotImplementedError("Not implemented yet.")
+        checkTrackingState()
+        val projectedVector =
+            ProjectedVector3().apply {
+                x = pose.translation.x
+                y = pose.translation.y
+                z = pose.translation.z
+            }
+        val projectedQuaternion =
+            ProjectedQuarternion().apply {
+                x = pose.rotation.x
+                y = pose.rotation.y
+                z = pose.rotation.z
+                w = pose.rotation.w
+            }
+        val projectedPose =
+            ProjectedPose().apply {
+                vector = projectedVector
+                q = projectedQuaternion
+            }
+        val projectedEarthPose = service.createGeospatialPoseFromPose(projectedPose)
+        val geospatialPose =
+            GeospatialPose(
+                latitude = projectedEarthPose.latitude,
+                longitude = projectedEarthPose.longitude,
+                altitude = projectedEarthPose.altitude,
+                eastUpSouthQuaternion =
+                    Quaternion(
+                        projectedEarthPose.eus.x,
+                        projectedEarthPose.eus.y,
+                        projectedEarthPose.eus.z,
+                        projectedEarthPose.eus.w,
+                    ),
+            )
+        return Earth.GeospatialPoseResult(
+            geospatialPose = geospatialPose,
+            horizontalAccuracy = projectedEarthPose.locationAccuracyMeters,
+            verticalAccuracy = projectedEarthPose.altitudeAccuracyMeters,
+            orientationYawAccuracy = projectedEarthPose.orientationYawAccuracyDegrees,
+        )
     }
 
     override public fun createGeospatialPoseFromDevicePose(): Earth.GeospatialPoseResult {
-        throw NotImplementedError("Not implemented yet.")
+        checkTrackingState()
+        val projectedEarthPose = service.createGeospatialPoseFromDevicePose()
+        val geospatialPose =
+            GeospatialPose(
+                latitude = projectedEarthPose.latitude,
+                longitude = projectedEarthPose.longitude,
+                altitude = projectedEarthPose.altitude,
+                eastUpSouthQuaternion =
+                    Quaternion(
+                        projectedEarthPose.eus.x,
+                        projectedEarthPose.eus.y,
+                        projectedEarthPose.eus.z,
+                        projectedEarthPose.eus.w,
+                    ),
+            )
+        return Earth.GeospatialPoseResult(
+            geospatialPose = geospatialPose,
+            horizontalAccuracy = projectedEarthPose.locationAccuracyMeters,
+            verticalAccuracy = projectedEarthPose.altitudeAccuracyMeters,
+            orientationYawAccuracy = projectedEarthPose.orientationYawAccuracyDegrees,
+        )
     }
 
     override public fun createAnchor(

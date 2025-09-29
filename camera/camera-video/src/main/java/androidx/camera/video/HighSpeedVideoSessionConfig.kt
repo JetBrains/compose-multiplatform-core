@@ -52,7 +52,9 @@ import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
  * - [videoCapture] and [preview] must not have their target frame rates set explicitly.
  * - [videoCapture] must not have its mirror mode set.
  * - If [preview] is present, its resolution selector, target resolution and target aspect ratio
- *   must not be set. [preview] will get the same resolution as [videoCapture].
+ *   must not be set. [preview] will get the same resolution as [videoCapture]. Note that the
+ *   preview stream will not operate at the high frame rate as [VideoCapture]; instead, it is
+ *   typically limited to at least 30 FPS by the camera system to ensure a smooth display.
  * - [ViewPort] and [CameraEffect] are not supported.
  *
  * Recording a high-speed video follows the same process as recording a regular video. This involves

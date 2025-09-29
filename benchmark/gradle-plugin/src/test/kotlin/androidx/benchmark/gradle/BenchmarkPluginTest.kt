@@ -84,7 +84,7 @@ class BenchmarkPluginTest {
                     ${projectSetup.allRepositoryPaths.joinToString("\n") { """ maven { url "$it" } """ }}
                 }
                 dependencies {
-                    classpath "com.android.tools.build:gradle:8.1.1"
+                    classpath "com.android.tools.build:gradle:8.2.1"
                     classpath "androidx.benchmark:androidx.benchmark.gradle.plugin:+"
                 }
             }

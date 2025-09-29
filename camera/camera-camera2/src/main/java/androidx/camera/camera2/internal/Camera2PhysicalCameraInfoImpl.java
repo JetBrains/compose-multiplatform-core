@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.internal;
 
-import android.annotation.SuppressLint;
 import android.hardware.camera2.CameraCharacteristics;
 import android.util.Range;
 import android.view.Surface;
@@ -146,7 +145,6 @@ public class Camera2PhysicalCameraInfoImpl implements CameraInfo {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @ExperimentalZeroShutterLag
     @Override
     public boolean isZslSupported() {

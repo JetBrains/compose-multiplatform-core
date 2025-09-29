@@ -24,6 +24,7 @@ import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.AttachedSurfaceInfo
+import androidx.camera.core.impl.FrameRates.FRAME_RATE_UNLIMITED
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
@@ -369,6 +370,7 @@ class HighSpeedResolverTest {
         sessionType: Int = SESSION_TYPE_HIGH_SPEED,
         targetFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
         isStrictFrameRateRequired: Boolean = false,
+        customMaxFrameRate: Int = FRAME_RATE_UNLIMITED,
     ): AttachedSurfaceInfo =
         AttachedSurfaceInfo.create(
             surfaceConfig,
@@ -380,6 +382,7 @@ class HighSpeedResolverTest {
             sessionType,
             targetFrameRate,
             isStrictFrameRateRequired,
+            customMaxFrameRate,
         )
 
     private fun List<List<Size>>.toUseCaseSupportedSizeMap(): Map<UseCaseConfig<*>, List<Size>> {

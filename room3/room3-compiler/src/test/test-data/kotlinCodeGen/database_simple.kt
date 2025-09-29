@@ -24,7 +24,7 @@ import kotlin.reflect.KClass
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
 @Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
-public class MyDatabase_Impl : MyDatabase() {
+internal class MyDatabase_Impl : MyDatabase() {
   private val _myDao: Lazy<MyDao> = lazy {
     MyDao_Impl(this)
   }

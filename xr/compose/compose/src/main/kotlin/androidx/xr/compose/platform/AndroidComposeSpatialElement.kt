@@ -119,9 +119,6 @@ internal class AndroidComposeSpatialElement :
     override fun onAttach(node: SubspaceLayoutNode) {
         node.coreEntity?.let { entity ->
             if (entity is CoreMainPanelEntity) {
-                check(windowLeashLayoutNode == null) {
-                    "Cannot add $node as there is already another SubspaceLayoutNode for the Window Leash Node"
-                }
                 windowLeashLayoutNode = node
             }
         }
@@ -129,7 +126,7 @@ internal class AndroidComposeSpatialElement :
 
     override fun onDetach(node: SubspaceLayoutNode) {
         node.coreEntity?.let { entity ->
-            if (entity is CoreMainPanelEntity) {
+            if (entity is CoreMainPanelEntity && node == windowLeashLayoutNode) {
                 windowLeashLayoutNode = null
             }
         }

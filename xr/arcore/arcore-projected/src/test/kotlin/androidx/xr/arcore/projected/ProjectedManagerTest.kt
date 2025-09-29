@@ -16,7 +16,6 @@
 package androidx.xr.arcore.projected
 
 import android.app.Activity
-import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -74,24 +73,5 @@ class ProjectedManagerTest {
             .checkVpsAvailability(eq(1.0), eq(2.0), vpsAvailabilityCallbackCaptor.capture())
         vpsAvailabilityCallbackCaptor.value.onVpsAvailabilityChanged(0)
         advanceUntilIdle()
-    }
-
-    @Test
-    fun stop_clearsPerceptionManagerService() = runTest {
-        val manager =
-            ProjectedManager(
-                mockActivity,
-                perceptionManager,
-                ProjectedTimeSource(),
-                Dispatchers.IO,
-                testPerceptionService = mockPerceptionService,
-            )
-
-        manager.create()
-        check(perceptionManager.service == mockPerceptionService)
-
-        manager.stop()
-
-        assertThat(perceptionManager.service).isNull()
     }
 }

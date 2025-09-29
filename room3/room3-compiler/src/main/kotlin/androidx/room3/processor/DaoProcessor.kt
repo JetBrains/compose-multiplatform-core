@@ -26,6 +26,7 @@ import androidx.room3.Update
 import androidx.room3.Upsert
 import androidx.room3.compiler.processing.XConstructorElement
 import androidx.room3.compiler.processing.XMethodElement
+import androidx.room3.compiler.processing.XNullability
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.verifier.DatabaseVerifier
@@ -248,7 +249,7 @@ class DaoProcessor(
         val constructors = element.getConstructors()
         val goodConstructor =
             constructors.firstOrNull {
-                it.parameters.size == 1 && it.parameters[0].type.isAssignableFrom(dbType)
+                it.parameters.singleOrNull()?.type?.isAssignableFrom(dbType) == true
             }
         val constructorParamType =
             if (goodConstructor != null) {
@@ -257,6 +258,13 @@ class DaoProcessor(
                 validateEmptyConstructor(constructors)
                 null
             }
+
+        if (constructorParamType?.nullability == XNullability.NULLABLE) {
+            context.logger.e(
+                goodConstructor ?: element,
+                ProcessorErrors.INVALID_NULLABLE_DAO_CONSTRUCTOR_PARAM,
+            )
+        }
 
         context.checker.notUnbound(
             declaredType,

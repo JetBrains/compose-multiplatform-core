@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.scenecore.internal.SubspaceNodeEntity as RtSubspaceNodeEntity
-import com.google.androidxr.splitengine.SubspaceNode
 
 /**
  * Represents an entity that manages a subspace node.
@@ -48,23 +47,6 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
 
     public companion object {
         /**
-         * Creates a [SubspaceNodeEntity] from a [SubspaceNode] with a given [FloatSize3d].
-         *
-         * @param session The [Session].
-         * @param subspaceNode The [SubspaceNode] to create the [SubspaceNodeEntity] from.
-         * @param size The initial [FloatSize3d] of the [SubspaceNodeEntity] in meters in unscaled
-         *   local space.
-         * @deprecated Use [create(session, subspaceNodeHolder, size)] instead.
-         */
-        @JvmStatic
-        public fun create(
-            session: Session,
-            subspaceNode: SubspaceNode,
-            size: FloatSize3d,
-        ): SubspaceNodeEntity =
-            create(session, SubspaceNodeHolder(subspaceNode, SubspaceNode::class.java), size)
-
-        /**
          * Creates a [SubspaceNodeEntity] from a [SubspaceNodeHolder] with a given [FloatSize3d].
          *
          * @param session The [Session].
@@ -80,7 +62,7 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
             size: FloatSize3d,
         ): SubspaceNodeEntity =
             SubspaceNodeEntity(
-                session.platformAdapter.createSubspaceNodeEntity(
+                session.renderingRuntime.createSubspaceNodeEntity(
                     subspaceNodeHolder,
                     size.toRtDimensions(),
                 ),

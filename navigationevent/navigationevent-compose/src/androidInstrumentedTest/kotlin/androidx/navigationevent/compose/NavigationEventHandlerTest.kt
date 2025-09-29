@@ -29,7 +29,6 @@ import androidx.kruth.assertThat
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.NavigationEventState.InProgress
 import androidx.navigationevent.testing.TestNavigationEventDispatcherOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -48,44 +47,41 @@ internal class NavigationEventHandlerTest {
     private val input = DirectNavigationEventInput().also { dispatcher.addInput(it) }
 
     @Test
-    fun infoHandler_whenInfoChanges_providesUpdatedInfoToLambda() {
-        // This test verifies that when `currentInfo` and `previousInfo` change,
-        // the handler correctly uses the new values.
+    fun infoHandler_whenInfoChanges_updatesGlobalHistoryState() {
+        // This test verifies that when `currentInfo` and `backInfo` change on
+        // recomposition, the handler correctly updates the global dispatcher state.
         var currentInfo by mutableStateOf(TestInfo(id = 1))
         val backInfo = mutableStateListOf<TestInfo>()
 
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = currentInfo,
-                    backInfo = backInfo,
+                    state =
+                        rememberNavigationEventState(
+                            currentInfo = currentInfo,
+                            backInfo = backInfo,
+                        ),
                     onBackCompleted = {},
                 )
             }
         }
 
-        // 1. Trigger with initial state.
-        input.backStarted(NavigationEvent())
+        // Check the initial state after the handler registers.
         rule.runOnIdle {
-            @Suppress("UNCHECKED_CAST")
-            val state = owner.navigationEventDispatcher.state.value as InProgress<TestInfo>
-
-            assertThat(state.currentInfo).isEqualTo(TestInfo(id = 1))
-            assertThat(state.backInfo).isEmpty()
+            val history = owner.navigationEventDispatcher.history.value
+            assertThat(history.mergedHistory).isEqualTo(listOf(TestInfo(id = 1)))
         }
 
-        // 2. Update the state, which triggers a recomposition.
+        // Update the state, which triggers a recomposition and SideEffect update.
         currentInfo = TestInfo(id = 2)
         backInfo += TestInfo(id = 1)
         rule.waitForIdle() // Wait for recomposition to apply the SideEffect.
 
-        // 3. Verify the new, updated state is received.
+        // Verify the new, updated state is reflected in the global history flow.
+        // The merged stack should be [backInfo, currentInfo]
         rule.runOnIdle {
-            @Suppress("UNCHECKED_CAST")
-            val state = owner.navigationEventDispatcher.state.value as InProgress<TestInfo>
-
-            assertThat(state.currentInfo).isEqualTo(currentInfo)
-            assertThat(state.backInfo).containsExactly(TestInfo(id = 1))
+            val history = owner.navigationEventDispatcher.history.value
+            assertThat(history.mergedHistory).isEqualTo(listOf(TestInfo(id = 1), TestInfo(id = 2)))
         }
     }
 
@@ -96,7 +92,7 @@ internal class NavigationEventHandlerTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     onBackCancelled = { events += "cancelled" },
                     onBackCompleted = { events += "completed" },
                 )
@@ -122,7 +118,7 @@ internal class NavigationEventHandlerTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = false,
                     onBackCompleted = { handlerCalled = true },
                 )
@@ -133,7 +129,7 @@ internal class NavigationEventHandlerTest {
         input.backCompleted()
         rule.runOnIdle {
             assertThat(handlerCalled).isFalse()
-            assertThat(owner.fallbackOnBackPressedInvocations).isEqualTo(1)
+            assertThat(owner.onBackCompletedFallbackInvocations).isEqualTo(1)
         }
     }
 
@@ -145,7 +141,7 @@ internal class NavigationEventHandlerTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = isBackEnabled,
                     onBackCompleted = { results += "handler" },
                 )
@@ -157,7 +153,7 @@ internal class NavigationEventHandlerTest {
         input.backCompleted()
         rule.runOnIdle {
             assertThat(results).containsExactly("handler")
-            assertThat(owner.fallbackOnBackPressedInvocations).isEqualTo(0)
+            assertThat(owner.onBackCompletedFallbackInvocations).isEqualTo(0)
         }
 
         // Phase 2: Disabled, should call fallback
@@ -169,7 +165,7 @@ internal class NavigationEventHandlerTest {
         }
         rule.runOnIdle {
             assertThat(results).isEmpty()
-            assertThat(owner.fallbackOnBackPressedInvocations).isEqualTo(1)
+            assertThat(owner.onBackCompletedFallbackInvocations).isEqualTo(1)
         }
 
         // Phase 3: Re-enabled, should call handler again
@@ -189,7 +185,7 @@ internal class NavigationEventHandlerTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = true,
                     onBackCompleted = onBackCompleted,
                 )
@@ -215,13 +211,13 @@ internal class NavigationEventHandlerTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = true,
                     onBackCompleted = { result += "parent" },
                 )
                 Button(onClick = { input.backStarted(NavigationEvent()) }) {
                     NavigationEventHandler(
-                        currentInfo = TestInfo(),
+                        state = rememberNavigationEventState(currentInfo = TestInfo()),
                         isBackEnabled = true,
                         onBackCompleted = { result += "child" },
                     )
@@ -241,13 +237,13 @@ internal class NavigationEventHandlerTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = true,
                     onBackCompleted = { result += "parent" },
                 )
                 Button(onClick = { input.backStarted(NavigationEvent()) }) {
                     NavigationEventHandler(
-                        currentInfo = TestInfo(),
+                        state = rememberNavigationEventState(currentInfo = TestInfo()),
                         isBackEnabled = false,
                         onBackCompleted = { result += "child" },
                     )
@@ -267,12 +263,12 @@ internal class NavigationEventHandlerTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = true,
                     onBackCompleted = { result += "first" },
                 )
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = true,
                     onBackCompleted = { result += "second" },
                 )
@@ -290,12 +286,12 @@ internal class NavigationEventHandlerTest {
         rule.setContent {
             NavigationEventDispatcherOwner(parent = owner) {
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = true,
                     onBackCompleted = { result += "first" },
                 )
                 NavigationEventHandler(
-                    currentInfo = TestInfo(),
+                    state = rememberNavigationEventState(currentInfo = TestInfo()),
                     isBackEnabled = false,
                     onBackCompleted = { result += "second" },
                 )
@@ -308,5 +304,5 @@ internal class NavigationEventHandlerTest {
     }
 
     // A simple data class for testing the info-based handler.
-    private data class TestInfo(val id: Int = -1) : NavigationEventInfo
+    private data class TestInfo(val id: Int = -1) : NavigationEventInfo()
 }

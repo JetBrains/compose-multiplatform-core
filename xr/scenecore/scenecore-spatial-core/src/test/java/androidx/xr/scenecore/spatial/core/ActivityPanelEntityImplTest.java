@@ -145,7 +145,7 @@ public class ActivityPanelEntityImplTest {
     }
 
     @Test
-    public void activityPanelEntityLaunchActivity_callsActivityPanel() {
+    public void activityPanelEntityStartActivity_callsActivityPanel() {
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
         Intent launchIntent = mActivityController.getIntent();
         activityPanelEntity.launchActivity(launchIntent, null);
@@ -172,6 +172,7 @@ public class ActivityPanelEntityImplTest {
                                 .getActivityPanelForHost(mHostActivity));
 
         assertThat(panel.getActivity()).isEqualTo(mHostActivity);
+
         assertThat(panel.getBounds())
                 .isEqualTo(new Rect(0, 0, mWindowBoundsPx.width, mWindowBoundsPx.height));
     }

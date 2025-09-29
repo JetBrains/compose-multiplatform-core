@@ -119,7 +119,7 @@ public class CameraStateAdapter @Inject constructor() {
         currentCameraStateError = nextComboState.error
 
         // Now that the current graph state is updated, post the latest states.
-        Log.debug { "Updated current camera internal state to $currentCameraInternalState" }
+        Log.debug { "Updated current camera internal state to $nextComboState" }
         postCameraState(currentCameraInternalState, currentCameraStateError)
     }
 
@@ -238,8 +238,7 @@ public class CameraStateAdapter @Inject constructor() {
                     CameraError.ERROR_CAMERA_DISABLED -> CameraState.ERROR_CAMERA_DISABLED
                     CameraError.ERROR_CAMERA_DEVICE -> CameraState.ERROR_OTHER_RECOVERABLE_ERROR
                     CameraError.ERROR_CAMERA_SERVICE -> CameraState.ERROR_CAMERA_FATAL_ERROR
-                    CameraError.ERROR_CAMERA_DISCONNECTED ->
-                        CameraState.ERROR_OTHER_RECOVERABLE_ERROR
+                    CameraError.ERROR_CAMERA_DISCONNECTED -> CameraState.ERROR_CAMERA_IN_USE
                     CameraError.ERROR_ILLEGAL_ARGUMENT_EXCEPTION ->
                         CameraState.ERROR_CAMERA_FATAL_ERROR
                     CameraError.ERROR_SECURITY_EXCEPTION -> CameraState.ERROR_CAMERA_FATAL_ERROR
@@ -247,6 +246,8 @@ public class CameraStateAdapter @Inject constructor() {
                     CameraError.ERROR_DO_NOT_DISTURB_ENABLED ->
                         CameraState.ERROR_DO_NOT_DISTURB_MODE_ENABLED
                     CameraError.ERROR_UNKNOWN_EXCEPTION -> CameraState.ERROR_CAMERA_FATAL_ERROR
+                    CameraError.ERROR_CAMERA_OPENER -> CameraState.ERROR_CAMERA_FATAL_ERROR
+                    CameraError.ERROR_CAMERA_OPEN_TIMEOUT -> CameraState.ERROR_CAMERA_FATAL_ERROR
                     else -> throw IllegalArgumentException("Unexpected CameraError: $this")
                 }
             )

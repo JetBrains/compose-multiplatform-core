@@ -138,6 +138,17 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
             .contains("Extension '$extensionPath' is already added.")
     }
 
+    @Test
+    fun mathFunctionsAvailable() {
+        val connection = getDriver().open(":memory:")
+        val pi =
+            connection.prepare("SELECT pi()").use {
+                it.step()
+                it.getText(0)
+            }
+        assertThat(pi).startsWith("3.14159")
+    }
+
     companion object {
         const val EXPECTED_SQLITE_VERSION = "3.50.1"
     }

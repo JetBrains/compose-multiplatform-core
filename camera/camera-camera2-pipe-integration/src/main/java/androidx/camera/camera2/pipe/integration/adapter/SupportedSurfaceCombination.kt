@@ -53,6 +53,7 @@ import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.EncoderProfilesProvider
+import androidx.camera.core.impl.FrameRates.FRAME_RATE_UNLIMITED
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
@@ -1058,11 +1059,12 @@ public class SupportedSurfaceCombination(
         for (attachedSurfaceInfo in attachedSurfaces) {
             // get the fps ceiling for existing surfaces
             existingSurfaceFrameRateCeiling =
-                getUpdatedMaximumFps(
+                getCombinedMaximumFps(
                     existingSurfaceFrameRateCeiling,
                     attachedSurfaceInfo.imageFormat,
                     attachedSurfaceInfo.size,
                     isHighSpeedOn,
+                    attachedSurfaceInfo.customMaxFrameRate,
                 )
         }
         return existingSurfaceFrameRateCeiling
@@ -1087,11 +1089,13 @@ public class SupportedSurfaceCombination(
             val configSizeUniqueMaxFpsMap = mutableMapOf<ConfigSize, MutableSet<Int>>()
             for (size in newUseCaseConfigsSupportedSizeMap[useCaseConfig]!!) {
                 val imageFormat = useCaseConfig.inputFormat
+                val customMaxFps = useCaseConfig.getCustomMaxFrameRate(size)
                 val streamUseCase = useCaseConfig.streamUseCase
                 populateReducedSizeListAndUniqueMaxFpsMap(
                     featureSettings,
                     size,
                     imageFormat,
+                    customMaxFps,
                     streamUseCase,
                     forceUniqueMaxFpsFiltering,
                     configSizeUniqueMaxFpsMap,
@@ -1107,6 +1111,7 @@ public class SupportedSurfaceCombination(
         featureSettings: FeatureSettings,
         size: Size,
         imageFormat: Int,
+        customMaxFps: Int,
         streamUseCase: StreamUseCase,
         forceUniqueMaxFpsFiltering: Boolean,
         configSizeUniqueMaxFpsMap: MutableMap<ConfigSize, MutableSet<Int>>,
@@ -1134,7 +1139,7 @@ public class SupportedSurfaceCombination(
                 featureSettings.targetFpsRange != FRAME_RATE_RANGE_UNSPECIFIED ||
                     forceUniqueMaxFpsFiltering
             ) {
-                getMaxFrameRate(imageFormat, size, featureSettings.isHighSpeedOn)
+                getMaxFrameRate(imageFormat, size, featureSettings.isHighSpeedOn, customMaxFps)
             } else {
                 FRAME_RATE_UNLIMITED
             }
@@ -1528,23 +1533,31 @@ public class SupportedSurfaceCombination(
             // get the maximum fps of the new surface and update the maximum fps of the
             // proposed configuration
             newConfigFrameRateCeiling =
-                getUpdatedMaximumFps(
+                getCombinedMaximumFps(
                     newConfigFrameRateCeiling,
                     newUseCase.inputFormat,
                     size,
                     isHighSpeedOn,
+                    newUseCase.getCustomMaxFrameRate(size),
                 )
         }
         return newConfigFrameRateCeiling
     }
 
-    private fun getMaxFrameRate(imageFormat: Int, size: Size, isHighSpeedOn: Boolean): Int {
-        return if (isHighSpeedOn) {
-            check(imageFormat == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE)
-            highSpeedResolver.getMaxFrameRate(size)
-        } else {
-            getMaxFrameRate(imageFormat, size)
-        }
+    private fun getMaxFrameRate(
+        imageFormat: Int,
+        size: Size,
+        isHighSpeedOn: Boolean,
+        customMaxFps: Int,
+    ): Int {
+        val surfaceMaxFps =
+            if (isHighSpeedOn) {
+                check(imageFormat == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE)
+                highSpeedResolver.getMaxFrameRate(size)
+            } else {
+                getMaxFrameRate(imageFormat, size)
+            }
+        return min(customMaxFps, surfaceMaxFps)
     }
 
     private fun getMaxFrameRate(imageFormat: Int, size: Size): Int {
@@ -1804,18 +1817,25 @@ public class SupportedSurfaceCombination(
     }
 
     /**
-     * @param currentMaxFps the previously stored Max FPS
-     * @param imageFormat the image format of the incoming surface
-     * @param size the size of the incoming surface
-     * @param isHighSpeedOn whether high-speed session is enabled
+     * Calculates the new maximum FPS considering an incoming surface.
+     *
+     * @param combinedMaxFps the maximum FPS from previously considered surfaces.
+     * @param imageFormat the image format of the incoming surface.
+     * @param size the size of the incoming surface.
+     * @param isHighSpeedOn whether a high-speed session is enabled, which affects how the device's
+     *   supported maximum FPS is retrieved.
+     * @param customMaxFps a custom maximum FPS configured for this surface.
+     * @return The updated maximum FPS.
      */
-    private fun getUpdatedMaximumFps(
-        currentMaxFps: Int,
+    private fun getCombinedMaximumFps(
+        combinedMaxFps: Int,
         imageFormat: Int,
         size: Size,
         isHighSpeedOn: Boolean,
+        customMaxFps: Int,
     ): Int {
-        return min(currentMaxFps, getMaxFrameRate(imageFormat, size, isHighSpeedOn))
+        val surfaceMaxFps = getMaxFrameRate(imageFormat, size, isHighSpeedOn, customMaxFps)
+        return min(combinedMaxFps, surfaceMaxFps)
     }
 
     /**
@@ -2360,8 +2380,6 @@ public class SupportedSurfaceCombination(
     }
 
     public companion object {
-        private const val FRAME_RATE_UNLIMITED = Int.MAX_VALUE
-
         private fun isUltraHdrOn(
             attachedSurfaces: List<AttachedSurfaceInfo>,
             newUseCaseConfigsSupportedSizeMap: Map<UseCaseConfig<*>, List<Size>>,

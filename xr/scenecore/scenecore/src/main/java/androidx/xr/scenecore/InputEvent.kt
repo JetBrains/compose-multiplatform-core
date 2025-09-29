@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,9 +77,9 @@ public class InputEvent(
     }
 
     /*
-     * There's a possibility of ABI mismatch here when the concrete platformAdapter starts receiving
+     * There's a possibility of ABI mismatch here when the concrete sceneRuntime starts receiving
      * input events with an updated field, such as if a newer source or pointer type has been added
-     * to the underlying platform OS. We need to perform a version check when the platformAdapter is
+     * to the underlying platform OS. We need to perform a version check when the sceneRuntime is
      * constructed to ensure that the application doesn't receive anything it wasn't compiled
      * against.
      */

@@ -98,6 +98,10 @@ public fun TransformingLazyColumn(
     val layoutDirection = LocalLayoutDirection.current
     val density = LocalDensity.current
     val reduceMotionEnabled = LocalReduceMotion.current
+
+    // Use derivedStateOf to ensure remeasure is only triggered when the scroll state *changes*,
+    // preventing unnecessary work during an active scroll.
+    val isScrollingState = remember { derivedStateOf { state.isScrollInProgress } }
     val measurementStrategy =
         remember(contentPadding) {
             TransformingLazyColumnContentPaddingMeasurementStrategy(
@@ -106,6 +110,7 @@ public fun TransformingLazyColumn(
                 density = density,
                 graphicsContext = graphicsContext,
                 itemAnimator = state.animator,
+                isScrollInProgress = { isScrollingState.value },
             )
         }
 

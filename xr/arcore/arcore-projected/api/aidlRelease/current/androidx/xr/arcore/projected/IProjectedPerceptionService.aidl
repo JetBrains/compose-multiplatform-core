@@ -37,4 +37,8 @@ interface IProjectedPerceptionService {
   boolean checkVpsAvailability(double latDeg, double lonDeg, androidx.xr.arcore.projected.IVpsAvailabilityCallback callback) = 0;
   void start(boolean enableVps, String apiKey) = 1;
   void stop() = 2;
+  androidx.xr.arcore.projected.ProjectedPose createPoseFromGeospatialPose(in androidx.xr.arcore.projected.ProjectedEarthPose geospatialPose) = 3;
+  androidx.xr.arcore.projected.ProjectedEarthPose createGeospatialPoseFromPose(in androidx.xr.arcore.projected.ProjectedPose pose) = 4;
+  androidx.xr.arcore.projected.ProjectedEarthPose createGeospatialPoseFromDevicePose() = 5;
+  androidx.xr.arcore.projected.ProjectedUpdateResult update() = 6;
 }

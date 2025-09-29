@@ -23,7 +23,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -212,11 +211,11 @@ class OpenXrManagerTest {
     }
 
     @Test
-    fun configure_smoothAndRawDepth_throwsConfigurationNotSupportedException() =
+    fun configure_smoothAndRawDepth_throwsUnsupportedOperationException() =
         initOpenXrManagerAndRunTest {
             underTest.create()
 
-            assertFailsWith<ConfigurationNotSupportedException> {
+            assertFailsWith<UnsupportedOperationException> {
                 underTest.configure(
                     Config(depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW)
                 )

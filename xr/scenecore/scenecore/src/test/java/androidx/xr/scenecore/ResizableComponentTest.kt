@@ -28,12 +28,12 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.internal.Dimensions as RtDimensions
 import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
 import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.scenecore.internal.ResizableComponent as RtResizableComponent
 import androidx.xr.scenecore.internal.ResizeEvent as RtResizeEvent
 import androidx.xr.scenecore.internal.ResizeEventListener as RtResizeEventListener
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
@@ -57,7 +57,7 @@ class ResizableComponentTest {
     private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mockSceneRuntime = mock<SceneRuntime>()
 
     private lateinit var session: Session
     private val mockGroupEntity = mock<RtEntity>()
@@ -72,23 +72,19 @@ class ResizableComponentTest {
 
     @Before
     fun setUp() {
-        whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.headActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
-        whenever(mockPlatformAdapter.createGroupEntity(any(), any(), any()))
+        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.headActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mock())
+        whenever(mockSceneRuntime.createGroupEntity(any(), any(), any()))
             .thenReturn(mockGroupEntity)
-        whenever(mockPlatformAdapter.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
+        whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
         session =
             Session(
                 activity,
                 runtimes =
-                    listOf(
-                        fakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
-                    ),
+                    listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
     }
 
@@ -96,11 +92,11 @@ class ResizableComponentTest {
     fun addResizableComponent_addsRuntimeResizableComponent() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any())).thenReturn(mock())
+        whenever(mockSceneRuntime.createResizableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -108,7 +104,7 @@ class ResizableComponentTest {
             )
 
         assertThat(entity.addComponent(resizableComponent)).isTrue()
-        verify(mockPlatformAdapter).createResizableComponent(any(), any())
+        verify(mockSceneRuntime).createResizableComponent(any(), any())
         verify(mockGroupEntity).addComponent(any())
     }
 
@@ -116,13 +112,13 @@ class ResizableComponentTest {
     fun addResizableComponentDefaultArguments_addsRuntimeResizableComponentWithDefaults() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any())).thenReturn(mock())
+        whenever(mockSceneRuntime.createResizableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(session) {}
 
         assertThat(entity.addComponent(resizableComponent)).isTrue()
         val captor: ArgumentCaptor<RtDimensions> = ArgumentCaptor.forClass(RtDimensions::class.java)
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .createResizableComponent(MockitoHelper.capture(captor), MockitoHelper.capture(captor))
         val rtMinDimensions = captor.firstValue
         val rtMaxDimensions = captor.secondValue
@@ -139,11 +135,11 @@ class ResizableComponentTest {
     fun removeResizableComponent_removesRuntimeResizableComponent() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any())).thenReturn(mock())
+        whenever(mockSceneRuntime.createResizableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -160,11 +156,11 @@ class ResizableComponentTest {
         val entity = GroupEntity.create(session, "test")
         val entity2 = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any())).thenReturn(mock())
+        whenever(mockSceneRuntime.createResizableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -181,12 +177,12 @@ class ResizableComponentTest {
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -207,12 +203,12 @@ class ResizableComponentTest {
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -233,12 +229,12 @@ class ResizableComponentTest {
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -259,12 +255,12 @@ class ResizableComponentTest {
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -287,12 +283,12 @@ class ResizableComponentTest {
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -314,12 +310,12 @@ class ResizableComponentTest {
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -341,12 +337,12 @@ class ResizableComponentTest {
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -367,13 +363,13 @@ class ResizableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockResizeListener = mock<Consumer<ResizeEvent>>()
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -417,12 +413,12 @@ class ResizableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -465,13 +461,13 @@ class ResizableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockResizeListener = mock<Consumer<ResizeEvent>>()
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -508,13 +504,13 @@ class ResizableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockResizeListener = mock<Consumer<ResizeEvent>>()
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -550,11 +546,11 @@ class ResizableComponentTest {
     fun resizableComponent_canAttachAgainAfterDetach() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any())).thenReturn(mock())
+        whenever(mockSceneRuntime.createResizableComponent(any(), any())).thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -571,13 +567,13 @@ class ResizableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any()))
+        whenever(mockSceneRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockResizeListener = mock<Consumer<ResizeEvent>>()
         val resizableComponent =
             ResizableComponent.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 FloatSize3d(),
                 FloatSize3d(),
                 HandlerExecutor.mainThreadExecutor,
@@ -616,14 +612,14 @@ class ResizableComponentTest {
 
     @Test
     fun createResizableComponent_callsRuntimeCreateResizableComponent() {
-        whenever(mockPlatformAdapter.createResizableComponent(any(), any())).thenReturn(mock())
+        whenever(mockSceneRuntime.createResizableComponent(any(), any())).thenReturn(mock())
 
         val resizableComponent = ResizableComponent.create(session) {}
         val view = TextView(activity)
         val mockRtPanelEntity = mock<RtPanelEntity>()
         whenever(mockRtPanelEntity.size).thenReturn(RtDimensions(1f, 1f, 1f))
         whenever(
-                mockPlatformAdapter.createPanelEntity(
+                mockSceneRuntime.createPanelEntity(
                     any<Context>(),
                     any<Pose>(),
                     any<View>(),
@@ -637,6 +633,6 @@ class ResizableComponentTest {
         val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
         assertThat(panelEntity.addComponent(resizableComponent)).isTrue()
 
-        verify(mockPlatformAdapter).createResizableComponent(any(), any())
+        verify(mockSceneRuntime).createResizableComponent(any(), any())
     }
 }

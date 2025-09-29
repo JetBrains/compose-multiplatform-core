@@ -27,7 +27,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -162,7 +161,7 @@ public class ResizableComponentImplTest {
 
         assertThat(resizableComponent).isNotNull();
         assertThat(entity1.addComponent(resizableComponent)).isTrue();
-        assertThrows(IllegalStateException.class, () -> entity2.addComponent(resizableComponent));
+        assertThat(entity2.addComponent(resizableComponent)).isFalse();
     }
 
     @Test
@@ -277,7 +276,7 @@ public class ResizableComponentImplTest {
                         new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
         assertThat(resizableComponent).isNotNull();
 
-        assertThrows(IllegalStateException.class, () -> entity.addComponent(resizableComponent));
+        assertThat(entity.addComponent(resizableComponent)).isFalse();
     }
 
     @Test
@@ -291,7 +290,7 @@ public class ResizableComponentImplTest {
                         new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
         assertThat(resizableComponent).isNotNull();
 
-        assertThrows(IllegalStateException.class, () -> entity.addComponent(resizableComponent));
+        assertThat(entity.addComponent(resizableComponent)).isFalse();
     }
 
     @Test
@@ -301,11 +300,10 @@ public class ResizableComponentImplTest {
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
                         mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
+
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        resizableComponent.setSize(DEFAULT_SIZE);
 
         assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
         assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
@@ -753,7 +751,32 @@ public class ResizableComponentImplTest {
     }
 
     @Test
-    public void setForceShowResizeOverlayOnResizableComponent_setOnNodeReformOptions() {
+    public void setFixedAspectRatioOnResizableComponent_setsPanelAspectRatio() {
+        Dimensions panelDimensions = new Dimensions(2.0f, 1.0f, 0.0f);
+        PanelEntityImpl entity =
+                (PanelEntityImpl) createTestPanelEntity(new Pose(), panelDimensions);
+
+        assertThat(entity).isNotNull();
+
+        ResizableComponentImpl resizableComponent =
+                new ResizableComponentImpl(
+                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
+
+        assertThat(resizableComponent).isNotNull();
+
+        resizableComponent.setFixedAspectRatioEnabled(true);
+
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+
+        assertThat(options.getFixedAspectRatio())
+                .isEqualTo(panelDimensions.width / panelDimensions.height);
+    }
+
+    @Test
+    public void
+            setForceShowResizeOverlayOnResizableComponent_setsForceShowResizeOverlayOnNodeReformOptions() {
         AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
 
         assertThat(entity).isNotNull();
@@ -787,12 +810,11 @@ public class ResizableComponentImplTest {
         Dimensions testSize = new Dimensions(1f, 1f, 1f);
         Dimensions testMinSize = new Dimensions(0.25f, 0.25f, 0.25f);
         Dimensions testMaxSize = new Dimensions(5f, 5f, 5f);
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
         resizableComponent.setSize(testSize);
         resizableComponent.setMinimumSize(testMinSize);
         resizableComponent.setMaximumSize(testMaxSize);
+
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
 
         ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 

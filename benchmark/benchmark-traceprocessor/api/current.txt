@@ -9,9 +9,9 @@ package androidx.benchmark.traceprocessor {
 
   @SuppressCompatibility @androidx.benchmark.traceprocessor.ExperimentalInsightApi public final class Insight {
     ctor public Insight(androidx.benchmark.traceprocessor.Insight.Category category, String observedLabel, androidx.benchmark.traceprocessor.PerfettoTrace.Link traceLink);
-    method public androidx.benchmark.traceprocessor.Insight.Category getCategory();
-    method public String getObservedLabel();
-    method public androidx.benchmark.traceprocessor.PerfettoTrace.Link getTraceLink();
+    method @InaccessibleFromKotlin public androidx.benchmark.traceprocessor.Insight.Category getCategory();
+    method @InaccessibleFromKotlin public String getObservedLabel();
+    method @InaccessibleFromKotlin public androidx.benchmark.traceprocessor.PerfettoTrace.Link getTraceLink();
     property public androidx.benchmark.traceprocessor.Insight.Category category;
     property public String observedLabel;
     property public androidx.benchmark.traceprocessor.PerfettoTrace.Link traceLink;
@@ -19,9 +19,9 @@ package androidx.benchmark.traceprocessor {
 
   @SuppressCompatibility @androidx.benchmark.traceprocessor.ExperimentalInsightApi public static final class Insight.Category {
     ctor public Insight.Category(String title, String? titleUrl, String postTitleLabel);
-    method public String getPostTitleLabel();
-    method public String getTitle();
-    method public String? getTitleUrl();
+    method @InaccessibleFromKotlin public String getPostTitleLabel();
+    method @InaccessibleFromKotlin public String getTitle();
+    method @InaccessibleFromKotlin public String? getTitleUrl();
     property public String postTitleLabel;
     property public String title;
     property public String? titleUrl;
@@ -42,11 +42,11 @@ package androidx.benchmark.traceprocessor {
   @SuppressCompatibility @androidx.benchmark.traceprocessor.ExperimentalInsightApi public static final class PerfettoTrace.Link {
     ctor public PerfettoTrace.Link(String title, String path, String urlParamsEncoded);
     ctor public PerfettoTrace.Link(String title, String path, java.util.Map<java.lang.String,java.lang.String> urlParamMap);
-    method public String getMarkdownUriLink();
-    method public String getPath();
-    method public String getTitle();
-    method public String getUri();
-    method public String getUrlParamsEncoded();
+    method @InaccessibleFromKotlin public String getMarkdownUriLink();
+    method @InaccessibleFromKotlin public String getPath();
+    method @InaccessibleFromKotlin public String getTitle();
+    method @InaccessibleFromKotlin public String getUri();
+    method @InaccessibleFromKotlin public String getUrlParamsEncoded();
     property public String markdownUriLink;
     property public String path;
     property public String title;
@@ -136,7 +136,7 @@ package androidx.benchmark.traceprocessor {
   public static final class TraceProcessor.Handle implements java.lang.AutoCloseable {
     ctor public TraceProcessor.Handle(androidx.benchmark.traceprocessor.TraceProcessor traceProcessor);
     method public void close();
-    method public androidx.benchmark.traceprocessor.TraceProcessor getTraceProcessor();
+    method @InaccessibleFromKotlin public androidx.benchmark.traceprocessor.TraceProcessor getTraceProcessor();
     property public androidx.benchmark.traceprocessor.TraceProcessor traceProcessor;
   }
 
@@ -151,7 +151,7 @@ package androidx.benchmark.traceprocessor {
   public static final class TraceProcessor.Session.Handle implements java.lang.AutoCloseable {
     ctor public TraceProcessor.Session.Handle(androidx.benchmark.traceprocessor.TraceProcessor.Session session);
     method public void close();
-    method public androidx.benchmark.traceprocessor.TraceProcessor.Session getSession();
+    method @InaccessibleFromKotlin public androidx.benchmark.traceprocessor.TraceProcessor.Session getSession();
     property public androidx.benchmark.traceprocessor.TraceProcessor.Session session;
   }
 

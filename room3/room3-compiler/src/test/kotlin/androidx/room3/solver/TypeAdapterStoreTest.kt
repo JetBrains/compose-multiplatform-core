@@ -18,7 +18,6 @@ package androidx.room3.solver
 
 import COMMON
 import androidx.kruth.assertThat
-import androidx.paging.DataSource
 import androidx.paging.PagingSource
 import androidx.room3.Dao
 import androidx.room3.compiler.codegen.CodeLanguage
@@ -49,8 +48,6 @@ import androidx.room3.processor.CustomConverterProcessor
 import androidx.room3.processor.DaoProcessor
 import androidx.room3.processor.DaoProcessorTest
 import androidx.room3.processor.ProcessorErrors
-import androidx.room3.solver.binderprovider.DataSourceFactoryQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.DataSourceQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.ListenableFuturePagingSourceQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.LiveDataQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.PagingSourceQueryResultBinderProvider
@@ -1607,51 +1604,6 @@ class TypeAdapterStoreTest {
                     .rawType
             // make sure the actual returned type from Provider is a RxPagingSource
             assertThat(returnedXRawType).isEqualTo(rxPagingSourceXRawType)
-        }
-    }
-
-    @Test
-    fun findDataSource() {
-        runProcessorTest { invocation ->
-            val dataSource = invocation.processingEnv.requireTypeElement(DataSource::class)
-            assertThat(dataSource, notNullValue())
-            assertThat(
-                DataSourceQueryResultBinderProvider(invocation.context).matches(dataSource.type),
-                `is`(true),
-            )
-            invocation.assertCompilationResult {
-                hasError(ProcessorErrors.PAGING_SPECIFY_DATA_SOURCE_TYPE)
-            }
-        }
-    }
-
-    @Test
-    fun findPositionalDataSource() {
-        runProcessorTest { invocation ->
-            @Suppress("DEPRECATION")
-            val dataSource =
-                invocation.processingEnv.requireTypeElement(
-                    androidx.paging.PositionalDataSource::class
-                )
-            assertThat(dataSource, notNullValue())
-            assertThat(
-                DataSourceQueryResultBinderProvider(invocation.context).matches(dataSource.type),
-                `is`(true),
-            )
-        }
-    }
-
-    @Test
-    fun findDataSourceFactory() {
-        runProcessorTest(sources = listOf(COMMON.DATA_SOURCE_FACTORY)) { invocation ->
-            val pagedListProvider =
-                invocation.processingEnv.requireTypeElement(PagingTypeNames.DATA_SOURCE_FACTORY)
-            assertThat(pagedListProvider, notNullValue())
-            assertThat(
-                DataSourceFactoryQueryResultBinderProvider(invocation.context)
-                    .matches(pagedListProvider.type),
-                `is`(true),
-            )
         }
     }
 

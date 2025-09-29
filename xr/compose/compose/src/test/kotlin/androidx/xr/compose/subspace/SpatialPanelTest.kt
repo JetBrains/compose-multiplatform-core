@@ -30,8 +30,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -66,7 +69,6 @@ import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -335,30 +337,6 @@ class SpatialPanelTest {
     }
 
     @Test
-    fun mainPanel_addedTwice_asserts() {
-        assertThrows(IllegalStateException::class.java) {
-            composeTestRule.setContentWithCompatibilityForXr {
-                Subspace {
-                    SpatialMainPanel(SubspaceModifier.testTag("panel"))
-                    SpatialMainPanel(SubspaceModifier.testTag("panel2"))
-                }
-            }
-        }
-    }
-
-    @Test
-    fun mainPanel_addedTwiceInDifferentSubtrees_asserts() {
-        assertThrows(IllegalStateException::class.java) {
-            composeTestRule.setContentWithCompatibilityForXr {
-                Subspace {
-                    SpatialMainPanel(SubspaceModifier.testTag("panel"))
-                    SpatialMainPanel(SubspaceModifier.testTag("panel2"))
-                }
-            }
-        }
-    }
-
-    @Test
     fun spatialPanel_cornerRadius_dp() {
         composeTestRule.setContentWithCompatibilityForXr {
             Subspace {
@@ -513,6 +491,43 @@ class SpatialPanelTest {
         // Activity Panel
         // Main PanelEntity
         assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(2)
+    }
+
+    @Test
+    fun mainPanel_switchesActivePanel_onStateChange() {
+        var activePanelId by mutableStateOf("A")
+
+        @Composable
+        fun PanelContainer(id: String) {
+            if (activePanelId == id) {
+                SpatialMainPanel(SubspaceModifier.testTag("panel-$id"))
+            }
+        }
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                PanelContainer("A")
+                PanelContainer("B")
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel-A").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel-B").assertDoesNotExist()
+
+        activePanelId = "B"
+        composeTestRule.waitForIdle()
+        composeTestRule.onSubspaceNodeWithTag("panel-A").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("panel-B").assertExists()
+
+        activePanelId = "A"
+        composeTestRule.waitForIdle()
+        composeTestRule.onSubspaceNodeWithTag("panel-A").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel-B").assertDoesNotExist()
+
+        activePanelId = "C"
+        composeTestRule.waitForIdle()
+        composeTestRule.onSubspaceNodeWithTag("panel-A").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("panel-B").assertDoesNotExist()
     }
 
     private class SpatialPanelActivity : ComponentActivity() {}

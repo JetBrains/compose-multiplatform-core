@@ -79,7 +79,6 @@ class AggregatedAppFunctionInventoryTest {
                             AppFunctionResponseMetadata(
                                 valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                             ),
-                        components = AppFunctionComponentsMetadata(),
                     )
             )
         override val componentsMetadata: AppFunctionComponentsMetadata
@@ -99,7 +98,6 @@ class AggregatedAppFunctionInventoryTest {
                             AppFunctionResponseMetadata(
                                 valueType = AppFunctionUnitTypeMetadata(isNullable = false)
                             ),
-                        components = AppFunctionComponentsMetadata(),
                     )
             )
         override val componentsMetadata: AppFunctionComponentsMetadata

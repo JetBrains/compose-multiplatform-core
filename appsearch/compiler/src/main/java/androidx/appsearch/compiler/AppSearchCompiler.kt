@@ -48,7 +48,6 @@ import javax.tools.Diagnostic
     AppSearchCompiler.OUTPUT_DIR_OPTION,
     AppSearchCompiler.RESTRICT_GENERATED_CODE_TO_LIB_OPTION,
 )
-@Suppress("NullAnnotationGroup") // b/424469950
 @OptIn(ExperimentalProcessingApi::class)
 class AppSearchCompiler : JavacBasicAnnotationProcessor() {
     companion object {
@@ -78,7 +77,6 @@ class AppSearchCompiler : JavacBasicAnnotationProcessor() {
     }
 }
 
-@Suppress("NullAnnotationGroup") // b/424469950
 @OptIn(ExperimentalProcessingApi::class)
 private class AppSearchCompileStep(private val env: XProcessingEnv) : XProcessingStep {
     private val restrictGeneratedCodeToLibOption: Boolean =

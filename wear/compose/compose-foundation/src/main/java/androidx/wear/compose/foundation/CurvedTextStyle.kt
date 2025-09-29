@@ -499,7 +499,7 @@ public class CurvedTextStyle(
     public value class WarpOffset internal constructor(internal val option: Byte) {
         override fun toString(): String =
             when (this) {
-                Unspecified -> "Undefined"
+                Unspecified -> "Unspecified"
                 None -> "None"
                 Baseline -> "Baseline"
                 HalfAscent -> "Half Ascent"
@@ -527,7 +527,7 @@ public class CurvedTextStyle(
             if (isSpecified) this else block()
 
         public companion object {
-            /** Undefined, used for merging styles */
+            /** Unspecified, used for merging styles */
             public val Unspecified: WarpOffset = WarpOffset(0)
 
             /** Do not warp, use the standard Android rendering */

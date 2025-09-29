@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.SpatialEnvironment.Companion.NO_PASSTHROUGH_OPACITY_PREFERENCE
 import androidx.xr.scenecore.internal.MaterialResource as RtMaterial
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialEnvironment as RtSpatialEnvironment
 import androidx.xr.scenecore.internal.SpatialEnvironment.SpatialEnvironmentPreference as RtSpatialEnvironmentPreference
 import java.util.concurrent.Executor
@@ -49,9 +50,9 @@ import java.util.function.Consumer
  * preference that will be applied when the device enters a state where the XR background can be
  * changed.
  */
-public class SpatialEnvironment internal constructor(private val runtime: JxrPlatformAdapter) {
+public class SpatialEnvironment internal constructor(private val sceneRuntime: SceneRuntime) {
 
-    private val rtEnvironment: RtSpatialEnvironment = runtime.spatialEnvironment
+    private val rtEnvironment: RtSpatialEnvironment = sceneRuntime.spatialEnvironment
 
     /**
      * Represents the preferred spatial environment for the application.
@@ -335,7 +336,7 @@ internal fun RtSpatialEnvironmentPreference.toSpatialEnvironmentPreference():
             object : Material {
                 override val material: RtMaterial = rtMaterial
 
-                override fun dispose() {
+                override fun close() {
                     // The lifecycle of this material is managed by the SpatialEnvironment.
                 }
             }

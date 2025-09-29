@@ -22,18 +22,21 @@ import android.content.pm.PackageInfo
 import android.content.pm.ServiceInfo
 import android.os.IBinder
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.xr.projected.IProjectedService
 import androidx.xr.projected.ProjectedServiceBinding.ACTION_BIND
 import androidx.xr.projected.ProjectedServiceConnection
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.BeforeTest
 import kotlin.test.assertFailsWith
-import kotlinx.coroutines.async
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,28 +44,26 @@ import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ProjectedServiceConnectionTest {
 
+    private val dispatcher = UnconfinedTestDispatcher()
+
     private lateinit var context: Application
-    private lateinit var lifecycleOwner: LifecycleOwner
-    private lateinit var lifecycleRegistry: LifecycleRegistry
+    private lateinit var testScope: TestScope
+    private lateinit var lifecycleOwner: TestLifecycleOwner
+
+    @BeforeTest
+    fun setMainDispatcher() {
+        Dispatchers.setMain(dispatcher)
+    }
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        lifecycleOwner =
-            object : LifecycleOwner {
-                private val registry = LifecycleRegistry(this)
-
-                init {
-                    registry.currentState = Lifecycle.State.CREATED
-                }
-
-                override val lifecycle: Lifecycle
-                    get() = registry
-            }
-        lifecycleRegistry = lifecycleOwner.lifecycle as LifecycleRegistry
+        testScope = TestScope(dispatcher)
+        lifecycleOwner = TestLifecycleOwner(Lifecycle.State.INITIALIZED, dispatcher)
         shadowOf(context.packageManager).apply {
             addServiceIfNotPresent(COMPONENT_NAME)
             addOrUpdateService(SERVICE_INFO)
@@ -74,36 +75,37 @@ class ProjectedServiceConnectionTest {
     }
 
     @Test
-    fun connect_bindsAndConnects_returnsInstance() = runBlocking {
-        shadowOf(context).setBindServiceCallsOnServiceConnectedDirectly(true)
+    fun connect_bindsAndConnects_returnsInstance() =
+        testScope.runTest {
+            shadowOf(context).setBindServiceCallsOnServiceConnectedDirectly(true)
 
-        val service =
-            lifecycleOwner.lifecycleScope.async {
-                ProjectedServiceConnection.connect(context, lifecycleOwner)
-            }
-
-        assertThat(service.await()).isInstanceOf(IProjectedService::class.java)
-    }
-
-    @Test
-    fun connect_doesNotBind_throwsException() = runBlocking {
-        shadowOf(context).declareComponentUnbindable(COMPONENT_NAME)
-
-        val unused =
-            assertFailsWith<IllegalStateException> {
-                ProjectedServiceConnection.connect(context, lifecycleOwner)
-            }
-    }
-
-    @Test
-    fun onDestroy_unbinds() {
-        lifecycleOwner.lifecycleScope.launch {
-            val unused = ProjectedServiceConnection.connect(context, lifecycleOwner)
+            val service = ProjectedServiceConnection.connect(context, lifecycleOwner)
+            assertThat(service).isInstanceOf(IProjectedService::class.java)
         }
-        lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
 
-        assertThat(shadowOf(context).unboundServiceConnections).isNotEmpty()
-    }
+    @Test
+    fun connect_doesNotBind_throwsException() =
+        testScope.runTest {
+            shadowOf(context).declareComponentUnbindable(COMPONENT_NAME)
+
+            val unused =
+                assertFailsWith<IllegalStateException> {
+                    ProjectedServiceConnection.connect(context, lifecycleOwner)
+                }
+        }
+
+    @Test
+    fun onDestroy_unbinds() =
+        testScope.runTest {
+            lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+
+            backgroundScope.launch {
+                val unused = ProjectedServiceConnection.connect(context, lifecycleOwner)
+            }
+
+            lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+            assertThat(shadowOf(context).unboundServiceConnections).isNotEmpty()
+        }
 
     companion object {
         private const val SYSTEM_PACKAGE_NAME = "com.system.service"

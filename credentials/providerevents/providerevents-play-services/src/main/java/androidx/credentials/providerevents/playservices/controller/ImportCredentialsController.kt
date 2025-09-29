@@ -32,13 +32,13 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.core.os.BundleCompat.getParcelable
 import androidx.credentials.CredentialManagerCallback
+import androidx.credentials.providerevents.IntentHandler
 import androidx.credentials.providerevents.exception.ImportCredentialsCancellationException
 import androidx.credentials.providerevents.exception.ImportCredentialsException
 import androidx.credentials.providerevents.exception.ImportCredentialsSystemErrorException
 import androidx.credentials.providerevents.exception.ImportCredentialsUnknownErrorException
+import androidx.credentials.providerevents.internal.UriUtils.Companion.generateCredentialTransferFile
 import androidx.credentials.providerevents.playservices.HiddenActivity
-import androidx.credentials.providerevents.playservices.IntentHandler
-import androidx.credentials.providerevents.playservices.UriUtils.Companion.generateCredentialTransferFile
 import androidx.credentials.providerevents.playservices.controller.ProviderEventsBaseController.Companion.EXCEPTION_MESSAGE_TAG
 import androidx.credentials.providerevents.playservices.controller.ProviderEventsBaseController.Companion.EXTRA_CREDENTIAL_TRANSFER_INTENT
 import androidx.credentials.providerevents.playservices.controller.ProviderEventsBaseController.Companion.EXTRA_RESULT_RECEIVER
@@ -147,7 +147,6 @@ internal class ImportCredentialsController(
         ) {
             return
         }
-
         if (data == null) {
             cancelOrCallbackExceptionOrResult(cancellationSignal) {
                 executor.execute {
@@ -157,21 +156,24 @@ internal class ImportCredentialsController(
                 }
             }
         } else {
+            val providerException = IntentHandler.retrieveImportCredentialsException(data)
+            if (providerException != null) {
+                cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                    executor.execute { callback.onError(providerException) }
+                }
+                return
+            }
             val response =
-                IntentHandler.retrieveProviderImportCredentialsResponse(data, uri, context)
+                IntentHandler.retrieveProviderImportCredentialsResponse(context, data, uri)
             if (response != null) {
                 cancelOrCallbackExceptionOrResult(cancellationSignal) {
                     executor.execute { callback.onResult(response) }
                 }
             } else {
-                val providerException = IntentHandler.retrieveImportCredentialsException(data)
                 cancelOrCallbackExceptionOrResult(cancellationSignal) {
                     executor.execute {
                         callback.onError(
-                            providerException
-                                ?: ImportCredentialsUnknownErrorException(
-                                    "No provider data returned"
-                                )
+                            ImportCredentialsUnknownErrorException("No provider data returned")
                         )
                     }
                 }

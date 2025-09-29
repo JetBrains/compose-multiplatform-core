@@ -16,15 +16,9 @@
 
 package androidx.navigation3.runtime
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.StateObject
-import androidx.savedstate.serialization.SavedStateConfiguration
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import androidx.compose.runtime.snapshots.StateRecord
 
 /**
  * A mutable back stack of [NavKey] elements that integrates with Compose state.
@@ -48,43 +42,57 @@ import kotlinx.serialization.encoding.Encoder
  * @constructor Creates a new back stack backed by the provided [SnapshotStateList].
  * @see rememberNavBackStack for lifecycle-aware persistence.
  */
-@Serializable(with = NavBackStack.Serializer::class)
-public class NavBackStack<T : NavKey> public constructor(private val base: SnapshotStateList<T>) :
-    MutableList<T> by base, StateObject by base {
+public expect class NavBackStack<T : NavKey> : MutableList<T>, StateObject, RandomAccess {
 
-    public constructor() : this(base = mutableStateListOf())
+    public constructor(base: SnapshotStateList<T>)
 
-    public constructor(vararg elements: T) : this(base = mutableStateListOf(*elements))
+    public constructor()
 
-    /**
-     * A [KSerializer] for [NavBackStack].
-     *
-     * Delegates to [NavBackStackSerializer] to encode/decode the underlying [SnapshotStateList].
-     * This indirection allows [NavBackStack] itself to be annotated with `@Serializable` while
-     * still preserving Compose integration and delegating to [MutableList] and [StateObject].
-     *
-     * On Android, the default surrogate uses reflection to resolve subtypes of [NavKey]. On
-     * non-Android platforms, use [NavBackStackSerializer] with an explicit
-     * [SavedStateConfiguration] instead.
-     *
-     * @sample androidx.navigation3.runtime.samples.NavBackStack_Serializer
-     */
-    public class Serializer<T : NavKey> : KSerializer<NavBackStack<T>> {
+    public constructor(vararg elements: T)
 
-        private val surrogate = NavBackStackSerializer<NavKey>()
+    override fun add(element: T): Boolean
 
-        override val descriptor: SerialDescriptor
-            get() = surrogate.descriptor
+    override fun remove(element: T): Boolean
 
-        override fun deserialize(decoder: Decoder): NavBackStack<T> {
-            @Suppress("UNCHECKED_CAST")
-            val base = decoder.decodeSerializableValue(surrogate) as SnapshotStateList<T>
-            return NavBackStack(base)
-        }
+    override fun addAll(elements: Collection<T>): Boolean
 
-        override fun serialize(encoder: Encoder, value: NavBackStack<T>) {
-            @Suppress("UNCHECKED_CAST")
-            encoder.encodeSerializableValue(surrogate, value.base as SnapshotStateList<NavKey>)
-        }
-    }
+    override fun addAll(index: Int, elements: Collection<T>): Boolean
+
+    override fun removeAll(elements: Collection<T>): Boolean
+
+    override fun retainAll(elements: Collection<T>): Boolean
+
+    override fun clear()
+
+    override fun set(index: Int, element: T): T
+
+    override fun add(index: Int, element: T)
+
+    override fun removeAt(index: Int): T
+
+    override fun listIterator(): MutableListIterator<T>
+
+    override fun listIterator(index: Int): MutableListIterator<T>
+
+    override fun subList(fromIndex: Int, toIndex: Int): MutableList<T>
+
+    override val size: Int
+
+    override fun isEmpty(): Boolean
+
+    override fun contains(element: T): Boolean
+
+    override fun containsAll(elements: Collection<T>): Boolean
+
+    override fun get(index: Int): T
+
+    override fun indexOf(element: T): Int
+
+    override fun lastIndexOf(element: T): Int
+
+    override fun iterator(): MutableIterator<T>
+
+    override val firstStateRecord: StateRecord
+
+    override fun prependStateRecord(value: StateRecord)
 }

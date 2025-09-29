@@ -1453,15 +1453,18 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "companionProp_getterJvmStatic",
                     "companionProp_setterJvmStatic",
                 )
-            val expectedMethodNames =
-                listOf(
-                    "getMutableStatic",
-                    "setMutableStatic",
-                    "getImmutableStatic",
-                    "getCompanionProp_getterJvmStatic",
-                    "setCompanionProp_setterJvmStatic",
-                    "companionMethodWithJvmStatic",
-                )
+            val expectedSetterMethodNames =
+                listOf("setMutableStatic", "setCompanionProp_setterJvmStatic")
+            val expectedGetterMethodNames =
+                listOf("getMutableStatic", "getImmutableStatic", "getCompanionProp_getterJvmStatic")
+            val expectedPropertyMethodNames = buildList {
+                addAll(expectedGetterMethodNames)
+                addAll(expectedSetterMethodNames)
+            }
+            val expectedMethodNames = buildList {
+                addAll(expectedPropertyMethodNames)
+                add("companionMethodWithJvmStatic")
+            }
             assertThat(subject.getDeclaredMethods().jvmNames())
                 .containsExactlyElementsIn(expectedMethodNames)
             assertThat(subject.getAllMethods().jvmNames() - objectMethodNames)
@@ -1472,6 +1475,32 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             assertThat(subClass.getDeclaredMethods()).isEmpty()
             assertThat(subClass.getAllMethods().jvmNames() - objectMethodNames)
                 .containsExactlyElementsIn(expectedMethodNames)
+
+            // TODO(b/443344468): Skip these checks in KAPT because isKotlinProperty* methods are
+            //  currently broken for companion objects.
+            if (invocation.isKsp) {
+                subject
+                    .getDeclaredMethods()
+                    .filter { it.isKotlinPropertyMethod() }
+                    .let {
+                        assertThat(it.jvmNames())
+                            .containsExactlyElementsIn(expectedPropertyMethodNames)
+                    }
+                subject
+                    .getDeclaredMethods()
+                    .filter { it.isKotlinPropertyGetter() }
+                    .let {
+                        assertThat(it.jvmNames())
+                            .containsExactlyElementsIn(expectedGetterMethodNames)
+                    }
+                subject
+                    .getDeclaredMethods()
+                    .filter { it.isKotlinPropertySetter() }
+                    .let {
+                        assertThat(it.jvmNames())
+                            .containsExactlyElementsIn(expectedSetterMethodNames)
+                    }
+            }
 
             // make sure everything coming from companion is marked as static
             subject.getDeclaredFields().forEach {

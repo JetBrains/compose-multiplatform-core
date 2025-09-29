@@ -31,9 +31,11 @@ import androidx.room3.integration.testapp.vo.PetWithUser;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import io.reactivex.Flowable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+
+import io.reactivex.Flowable;
 
 @Dao
 public interface PetDao {
@@ -58,7 +60,7 @@ public interface PetDao {
     ListenableFuture<Optional<Pet>> petWithIdFuture(int id);
 
     @Query("SELECT * FROM Pet WHERE Pet.mPetId = :id")
-    Flowable<Pet> petWithIdFlowable(int id);
+    Flowable<@NonNull Pet> petWithIdFlowable(int id);
 
     @Query("SELECT * FROM Pet WHERE Pet.mPetId = :id")
     Pet petWithId(int id);

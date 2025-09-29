@@ -1,0 +1,3 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.core.performance.testing.FakeDevicePerformance#getMediaPerformanceClass():
+    Source breaking change: method androidx.core.performance.testing.FakeDevicePerformance.getMediaPerformanceClass() can no longer be resolved from Kotlin source

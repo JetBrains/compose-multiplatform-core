@@ -17,8 +17,10 @@
 package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.internal.PerceptionRuntime
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.ConfigMode
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -53,7 +55,38 @@ internal constructor(
         lifecycleManager.configure(config)
     }
 
+    override fun isSupported(configMode: ConfigMode): Boolean {
+        return SUPPORTED_CONFIG_MODES.contains(configMode)
+    }
+
     override fun destroy() {
         lifecycleManager.stop()
+    }
+
+    internal companion object {
+        @VisibleForTesting
+        internal val SUPPORTED_CONFIG_MODES: Set<ConfigMode> =
+            setOf(
+                Config.PlaneTrackingMode.DISABLED,
+                Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                Config.HandTrackingMode.DISABLED,
+                Config.HandTrackingMode.BOTH,
+                Config.DeviceTrackingMode.DISABLED,
+                Config.DeviceTrackingMode.LAST_KNOWN,
+                Config.HeadTrackingMode.DISABLED,
+                Config.HeadTrackingMode.LAST_KNOWN,
+                Config.DepthEstimationMode.DISABLED,
+                Config.DepthEstimationMode.RAW_ONLY,
+                Config.DepthEstimationMode.SMOOTH_ONLY,
+                Config.AnchorPersistenceMode.DISABLED,
+                Config.AnchorPersistenceMode.LOCAL,
+                Config.FaceTrackingMode.DISABLED,
+                Config.FaceTrackingMode.USER,
+                Config.GeospatialMode.DISABLED,
+                Config.EyeTrackingMode.DISABLED,
+                Config.EyeTrackingMode.COARSE_TRACKING,
+                Config.EyeTrackingMode.FINE_TRACKING,
+                Config.EyeTrackingMode.COARSE_AND_FINE_TRACKING,
+            )
     }
 }

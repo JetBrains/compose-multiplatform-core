@@ -58,10 +58,11 @@ public abstract class SliceTrack(
     ) {
         if (context.isEnabled) {
             synchronized(traceEventScope) {
-                emitTraceEvent { event ->
+                conditionalEmitTraceEvent { event ->
                     traceEventScope.event = event
                     event.setBeginSection(uuid, name)
                     metadataBlock.invoke(traceEventScope)
+                    true
                 }
             }
         }
@@ -89,10 +90,11 @@ public abstract class SliceTrack(
     ) {
         if (context.isEnabled) {
             synchronized(traceEventScope) {
-                emitTraceEvent { event ->
+                conditionalEmitTraceEvent { event ->
                     traceEventScope.event = event
                     event.setBeginSectionWithFlows(uuid, name, flowIds)
                     metadataBlock.invoke(traceEventScope)
+                    true
                 }
             }
         }
@@ -107,7 +109,12 @@ public abstract class SliceTrack(
     @Suppress("NOTHING_TO_INLINE")
     public inline fun endSection() {
         if (context.isEnabled) {
-            synchronized(traceEventScope) { emitTraceEvent { event -> event.setEndSection(uuid) } }
+            synchronized(traceEventScope) {
+                conditionalEmitTraceEvent { event ->
+                    event.setEndSection(uuid)
+                    true
+                }
+            }
         }
     }
 
@@ -125,7 +132,10 @@ public abstract class SliceTrack(
     public fun instant(name: String) {
         if (context.isEnabled) {
             synchronized(traceEventScope) {
-                emitTraceEvent { event -> event.setInstant(uuid, name) }
+                conditionalEmitTraceEvent { event ->
+                    event.setInstant(uuid, name)
+                    true
+                }
             }
         }
     }

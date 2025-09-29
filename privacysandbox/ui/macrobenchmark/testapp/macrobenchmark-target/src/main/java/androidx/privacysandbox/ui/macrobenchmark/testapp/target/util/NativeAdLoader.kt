@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.macrobenchmark.testapp.target.util
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -37,7 +36,6 @@ import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.SdkApi
 import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.SdkApiConstants.Companion.NativeAdAssetProperties
 import androidx.privacysandbox.ui.macrobenchmark.testapp.target.R
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class NativeAdLoader(context: Context) {
     val adView: SharedUiContainer = inflate(context, NATIVE_AD_LAYOUT_ID, null) as SharedUiContainer

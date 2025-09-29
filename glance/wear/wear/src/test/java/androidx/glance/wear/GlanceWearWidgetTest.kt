@@ -18,7 +18,7 @@ package androidx.glance.wear
 
 import android.content.ComponentName
 import android.content.Context
-import androidx.glance.wear.data.WidgetUpdateClient
+import androidx.glance.wear.parcel.WidgetUpdateClient
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Test

@@ -19,7 +19,6 @@ package androidx.xr.projected
 import android.companion.virtual.VirtualDeviceManager
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.Intent
 import android.hardware.display.VirtualDisplay
 import android.hardware.display.VirtualDisplayConfig
 import android.os.Build
@@ -100,16 +99,6 @@ class ProjectedContextTest {
         createVirtualDevice()
 
         assertThat(ProjectedContext.isProjectedDeviceContext(context)).isFalse()
-    }
-
-    @Test
-    fun addProjectedFlags_returnsIntentWithAddedFlags() {
-        val intent = Intent().setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-        val expectedFlags = intent.flags or ProjectedContext.REQUIRED_LAUNCH_FLAGS
-
-        ProjectedContext.addProjectedFlags(intent)
-
-        assertThat(intent.flags).isEqualTo(expectedFlags)
     }
 
     @Test

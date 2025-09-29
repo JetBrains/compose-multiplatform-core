@@ -21,8 +21,8 @@ import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XType
 import androidx.room3.ext.CommonTypeNames
-import androidx.room3.parser.expansion.isCoreSelect
 import java.util.Locale
+import org.antlr.v4.runtime.RuleContext
 import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.TerminalNode
 
@@ -82,6 +82,17 @@ class QueryVisitor(
         }
         return super.visitResult_column(ctx)
     }
+
+    /** Whether this [RuleContext] is the top SELECT statement. */
+    private val RuleContext.isCoreSelect: Boolean
+        get() {
+            return this is SQLiteParser.Select_coreContext &&
+                ancestors().none { it is SQLiteParser.Select_coreContext }
+        }
+
+    /** Returns the parent of this [RuleContext] recursively as a [Sequence]. */
+    private fun RuleContext.ancestors(): Sequence<RuleContext> =
+        generateSequence(parent) { c -> c.parent }
 
     /**
      * Check if a comma separated expression (where multiple binding parameters are accepted) is

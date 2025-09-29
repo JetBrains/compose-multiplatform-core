@@ -371,25 +371,44 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
 
     @Test
     public void getPoseRelativeToActivitySpace_returnsIdentity() {
-        assertPose(mActivitySpace.getPose(Space.ACTIVITY), mActivitySpace.getPoseInActivitySpace());
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
+        assertPose(
+                activitySpaceImpl.getPose(Space.ACTIVITY),
+                activitySpaceImpl.getPoseInActivitySpace());
     }
 
-    // TODO: b/434230591 getPoseRelativeToRealWorldSpace_returnsPerceptionSpacePose is removed.
+    @Test
+    public void getPoseRelativeToRealWorldSpace_returnsPerceptionSpacePose() {
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
+        assertPose(
+                activitySpaceImpl.getPose(Space.REAL_WORLD),
+                activitySpaceImpl.getPoseInPerceptionSpace());
+    }
 
     @Test
     public void getScaleRelativeToParentSpace_throwsException() throws Exception {
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
         assertThrows(
-                UnsupportedOperationException.class, () -> mActivitySpace.getScale(Space.PARENT));
+                UnsupportedOperationException.class,
+                () -> activitySpaceImpl.getScale(Space.PARENT));
     }
 
     @Test
     public void getScaleRelativeToActivitySpace_returnsActivitySpaceScale() {
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
         assertVector3(
-                mActivitySpace.getScale(Space.ACTIVITY), mActivitySpace.getActivitySpaceScale());
+                activitySpaceImpl.getScale(Space.ACTIVITY),
+                activitySpaceImpl.getActivitySpaceScale());
     }
 
     @Test
     public void getScaleRelativeToRealWorldSpace_returnsVector3One() {
-        assertVector3(mActivitySpace.getScale(Space.REAL_WORLD), new Vector3(1f, 1f, 1f));
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
+        assertVector3(activitySpaceImpl.getScale(Space.REAL_WORLD), new Vector3(1f, 1f, 1f));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.internal.SceneRuntime
 
 /**
  * PanelEntity contains an arbitrary 2D Android [View], within a spatialized XR scene.
@@ -34,7 +34,7 @@ import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
  *   [MainPanelEntity](https://developer.android.com/develop/xr/jetpack-xr-sdk/work-with-entities),
  *   false otherwise.
  */
-// TODO(ricknels): move isMainPanelEntity check to JxrPlatformAdapter and provide better kdocs
+// TODO(ricknels): move isMainPanelEntity check to SceneRuntime and provide better kdocs
 // for mainPanelEntity
 public open class PanelEntity
 internal constructor(
@@ -121,7 +121,7 @@ internal constructor(
         internal fun create(
             lifecycleManager: LifecycleManager,
             context: Context,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             view: View,
             dimensions: FloatSize2d,
@@ -130,13 +130,13 @@ internal constructor(
         ): PanelEntity =
             PanelEntity(
                 lifecycleManager,
-                adapter.createPanelEntity(
+                sceneRuntime.createPanelEntity(
                     context,
                     pose,
                     view,
                     dimensions.toRtDimensions(),
                     name,
-                    adapter.activitySpaceRootImpl,
+                    sceneRuntime.activitySpace,
                 ),
                 entityManager,
             )
@@ -144,7 +144,7 @@ internal constructor(
         internal fun create(
             lifecycleManager: LifecycleManager,
             context: Context,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             view: View,
             pixelDimensions: IntSize2d,
@@ -153,13 +153,13 @@ internal constructor(
         ): PanelEntity =
             PanelEntity(
                 lifecycleManager,
-                adapter.createPanelEntity(
+                sceneRuntime.createPanelEntity(
                     context,
                     pose,
                     view,
                     pixelDimensions.toRtPixelDimensions(),
                     name,
-                    adapter.activitySpaceRootImpl,
+                    sceneRuntime.activitySpace,
                 ),
                 entityManager,
             )
@@ -187,7 +187,7 @@ internal constructor(
             PanelEntity.create(
                 session.perceptionRuntime.lifecycleManager,
                 session.activity,
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 view,
                 dimensions,
@@ -218,7 +218,7 @@ internal constructor(
             PanelEntity.create(
                 session.perceptionRuntime.lifecycleManager,
                 session.activity,
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 view,
                 pixelDimensions,
@@ -229,12 +229,12 @@ internal constructor(
         /** Returns the PanelEntity backed by the main window for the Activity. */
         internal fun createMainPanelEntity(
             lifecycleManager: LifecycleManager,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
         ): PanelEntity =
             PanelEntity(
                 lifecycleManager,
-                adapter.mainPanelEntity,
+                sceneRuntime.mainPanelEntity,
                 entityManager,
                 isMainPanelEntity = true,
             )

@@ -46,9 +46,6 @@ import androidx.room3.processor.ProcessorErrors.DO_NOT_USE_GENERIC_IMMUTABLE_MUL
 import androidx.room3.processor.ProcessorErrors.invalidQueryForSingleColumnArray
 import androidx.room3.processor.PropertyProcessor
 import androidx.room3.solver.binderprovider.CoroutineFlowResultBinderProvider
-import androidx.room3.solver.binderprovider.CursorQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.DataSourceFactoryQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.DataSourceQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.GuavaListenableFutureQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.InstantQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.ListenableFuturePagingSourceQueryResultBinderProvider
@@ -207,13 +204,10 @@ private constructor(
 
     private val queryResultBinderProviders: List<QueryResultBinderProvider> =
         mutableListOf<QueryResultBinderProvider>().apply {
-            add(CursorQueryResultBinderProvider(context))
             add(LiveDataQueryResultBinderProvider(context))
             add(GuavaListenableFutureQueryResultBinderProvider(context))
             addAll(RxQueryResultBinderProvider.getAll(context))
             addAll(RxLambdaQueryResultBinderProvider.getAll(context))
-            add(DataSourceQueryResultBinderProvider(context))
-            add(DataSourceFactoryQueryResultBinderProvider(context))
             add(RxJava2PagingSourceQueryResultBinderProvider(context))
             add(RxJava3PagingSourceQueryResultBinderProvider(context))
             add(ListenableFuturePagingSourceQueryResultBinderProvider(context))
@@ -769,7 +763,7 @@ private constructor(
             extras.getData(ObservableQueryResultBinderProvider.OriginalTypeArg::class)?.original
                 ?: searchingType
 
-        if (collectionType.nullability != XNullability.NONNULL) {
+        if (collectionType.nullability == XNullability.NULLABLE) {
             context.logger.w(
                 Warning.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE,
                 ProcessorErrors.nullableCollectionOrArrayReturnTypeInDaoFunction(
@@ -780,7 +774,7 @@ private constructor(
         }
 
         // Since Array has typeArg in the componentType and not typeArguments, need a special check.
-        if (arrayComponentType != null && arrayComponentType.nullability != XNullability.NONNULL) {
+        if (arrayComponentType != null && arrayComponentType.nullability == XNullability.NULLABLE) {
             context.logger.w(
                 Warning.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE,
                 ProcessorErrors.nullableComponentInDaoFunctionReturnType(
@@ -791,7 +785,7 @@ private constructor(
         }
 
         collectionType.typeArguments.forEach { typeArg ->
-            if (typeArg.nullability != XNullability.NONNULL) {
+            if (typeArg.nullability == XNullability.NULLABLE) {
                 context.logger.w(
                     Warning.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE,
                     ProcessorErrors.nullableComponentInDaoFunctionReturnType(

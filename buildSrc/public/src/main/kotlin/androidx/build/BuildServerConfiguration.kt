@@ -31,7 +31,7 @@ import org.gradle.api.provider.ProviderFactory
  * The build server does not pass the build id so we infer it from the last folder of the
  * distribution directory name.
  */
-fun ProviderFactory.getBuildId(): Provider<String> = environmentVariable("BUILD_NUMBER")
+fun ProviderFactory.getBuildId(): Provider<String> = environmentVariable("BUILD_NUMBER").orElse("0")
 
 /**
  * Gets set to true when the build id is prefixed with P.

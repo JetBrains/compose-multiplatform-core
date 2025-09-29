@@ -24,7 +24,6 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.navigationevent.NavigationEvent
-import androidx.navigationevent.NavigationEventSwipeEdge
 
 /** Compat around the [BackEvent] class */
 class BackEventCompat
@@ -86,13 +85,7 @@ constructor(
         touchX = navigationEvent.touchX,
         touchY = navigationEvent.touchY,
         progress = navigationEvent.progress,
-        swipeEdge =
-            when (navigationEvent.swipeEdge) {
-                NavigationEventSwipeEdge.Left -> BackEvent.EDGE_LEFT
-                NavigationEventSwipeEdge.Right -> BackEvent.EDGE_RIGHT
-                NavigationEventSwipeEdge.None -> BackEvent.EDGE_NONE
-                else -> error("Unexpected 'swipeEdge' value: ${navigationEvent.swipeEdge}")
-            },
+        swipeEdge = navigationEvent.swipeEdge,
         frameTimeMillis = navigationEvent.frameTimeMillis,
     )
 
@@ -128,13 +121,7 @@ constructor(
             touchX = touchX,
             touchY = touchY,
             progress = progress,
-            swipeEdge =
-                when (swipeEdge) {
-                    BackEvent.EDGE_LEFT -> NavigationEventSwipeEdge.Left
-                    BackEvent.EDGE_RIGHT -> NavigationEventSwipeEdge.Right
-                    BackEvent.EDGE_NONE -> NavigationEventSwipeEdge.None
-                    else -> error("Unexpected 'swipeEdge' value: $swipeEdge")
-                },
+            swipeEdge = swipeEdge,
             frameTimeMillis = frameTimeMillis,
         )
     }

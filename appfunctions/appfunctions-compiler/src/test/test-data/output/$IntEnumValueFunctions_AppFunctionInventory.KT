@@ -95,14 +95,6 @@ public class `$IntEnumValueFunctions_AppFunctionInventory` : AppFunctionInventor
             description = ""
         )
 
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.IntEnumValueFunctions#intEnumParamFunction",
@@ -110,7 +102,6 @@ public class `$IntEnumValueFunctions_AppFunctionInventory` : AppFunctionInventor
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
         )
   }
 
@@ -132,14 +123,6 @@ public class `$IntEnumValueFunctions_AppFunctionInventory` : AppFunctionInventor
             description = ""
         )
 
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.IntEnumValueFunctions#intEnumReturnFunction",
@@ -147,7 +130,6 @@ public class `$IntEnumValueFunctions_AppFunctionInventory` : AppFunctionInventor
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
         )
   }
 
@@ -184,41 +166,6 @@ public class `$IntEnumValueFunctions_AppFunctionInventory` : AppFunctionInventor
             description = ""
         )
 
-    private val COM_TESTDATA_INTENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_INTPROP:
-        AppFunctionIntTypeMetadata = AppFunctionIntTypeMetadata(
-            isNullable = false,
-            description = "",
-            enumValues = setOf(0, 1),
-        )
-
-    private val COM_TESTDATA_INTENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
-        Map<String, AppFunctionDataTypeMetadata> = mapOf(
-      "intProp" to COM_TESTDATA_INTENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_INTPROP,
-    )
-
-    private val COM_TESTDATA_INTENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
-        List<String> = listOf(
-      "intProp",
-    )
-
-    private val COM_TESTDATA_INTENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata
-        = AppFunctionObjectTypeMetadata(
-            properties = COM_TESTDATA_INTENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
-            required = COM_TESTDATA_INTENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
-            qualifiedName = "com.testdata.IntEnumPropSerializable",
-            isNullable = true,
-            description = ""
-        )
-
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      "com.testdata.IntEnumPropSerializable" to COM_TESTDATA_INTENUMPROPSERIALIZABLE_OBJECT_DATA_TYPE,
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.IntEnumValueFunctions#intEnumSerializableFunction",
@@ -226,7 +173,6 @@ public class `$IntEnumValueFunctions_AppFunctionInventory` : AppFunctionInventor
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
         )
   }
 }

@@ -27,6 +27,7 @@ import androidx.credentials.providerevents.internal.ProviderEventsApiProviderFac
 import androidx.credentials.providerevents.transfer.ImportCredentialsRequest
 import androidx.credentials.providerevents.transfer.ProviderImportCredentialsResponse
 import androidx.credentials.providerevents.transfer.RegisterExportRequest
+import androidx.credentials.providerevents.transfer.RegisterExportResponse
 import java.util.concurrent.Executor
 
 internal class ProviderEventsManagerImpl(private val context: Context) : ProviderEventsManager {
@@ -56,7 +57,7 @@ internal class ProviderEventsManagerImpl(private val context: Context) : Provide
         request: RegisterExportRequest,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
-        callback: CredentialManagerCallback<Boolean, RegisterExportException>,
+        callback: CredentialManagerCallback<RegisterExportResponse, RegisterExportException>,
     ) {
         val provider: ProviderEventsApiProvider? =
             ProviderEventsApiProviderFactory().getBestAvailableProvider(context)

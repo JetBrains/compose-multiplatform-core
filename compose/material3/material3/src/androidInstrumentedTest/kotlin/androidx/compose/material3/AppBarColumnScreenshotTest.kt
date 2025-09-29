@@ -102,7 +102,7 @@ class AppBarColumnScreenshotTest {
                 IconButton(
                     modifier = Modifier.testTag("Overflow"),
                     onClick = {
-                        if (menuState.isExpanded) {
+                        if (menuState.isShowing) {
                             menuState.dismiss()
                         } else {
                             menuState.show()

@@ -19,16 +19,22 @@ package androidx.tracing.driver.wire
 import androidx.tracing.driver.AtomicInteger
 import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.PooledTracePacketArray
+import androidx.tracing.driver.TRACE_PACKET_BUFFER_SIZE
+import androidx.tracing.driver.TRACE_PACKET_POOL_ARRAY_POOL_SIZE
 import androidx.tracing.driver.TraceContext
 import androidx.tracing.driver.TraceSink
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import okio.blackholeSink
+import okio.buffer
 import perfetto.protos.MutableTracePacket
 import perfetto.protos.MutableTrackDescriptor
 import perfetto.protos.MutableTrackEvent
@@ -50,6 +56,7 @@ class TestSink : TraceSink() {
                         // to bother with proto serialization,
                         WireTraceEventSerializer.updateScratchPacketFromTraceEvent(
                             event = it,
+                            reportDroppedTraceEvent = false,
                             scratchTracePacket = this,
                             // this is mostly dropped and not used, but we don't care about extra
                             // allocations during this test
@@ -64,6 +71,10 @@ class TestSink : TraceSink() {
                     }
             )
         }
+    }
+
+    override fun onDroppedTraceEvent() {
+        // Does nothing
     }
 
     override fun flush() {
@@ -141,5 +152,61 @@ class TracingTest {
         assertNotNull(method2Begin) { "Cannot find packet with name method2" }
         assertContains(method1Begin.track_event?.flow_ids ?: emptyList(), flowId)
         assertContains(method2Begin.track_event?.flow_ids ?: emptyList(), flowId)
+    }
+
+    @Test
+    internal fun testDroppedPackets() {
+        val dispatcher = StandardTestDispatcher()
+        // Use a real sink to test for dropped packets.
+        val sink =
+            TraceSinkDelegate(
+                sink =
+                    TraceSink(
+                        sequenceId = 1,
+                        bufferedSink = blackholeSink().buffer(),
+                        // Use a test dispatcher to control exactly when trace events are being
+                        // drained from the queue.
+                        coroutineContext = dispatcher,
+                    )
+            )
+        val context = TraceContext(sink = sink, isEnabled = true)
+        // Don't use context.use { ... } here given it will wait indefinitely because the
+        // queue won't be empty unless we advance the test dispatcher.
+        val process = context.getOrCreateProcessTrack(id = 1, name = "process")
+        repeat(TRACE_PACKET_POOL_ARRAY_POOL_SIZE) {
+            repeat(16) {
+                process.trace("section") {} // 2 events per loop.
+            }
+        }
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue { sink.reportDroppedTracePacket }
+        assertEquals(
+            TRACE_PACKET_POOL_ARRAY_POOL_SIZE * TRACE_PACKET_BUFFER_SIZE,
+            sink.packetCountOnDroppedTracePacket,
+        )
+    }
+
+    internal class TraceSinkDelegate(private val sink: TraceSink) : TraceSink() {
+        internal var reportDroppedTracePacket = false
+        internal var packetCount: Int = 0
+        internal var packetCountOnDroppedTracePacket = 0
+
+        override fun enqueue(pooledPacketArray: PooledTracePacketArray) {
+            sink.enqueue(pooledPacketArray)
+            packetCount += pooledPacketArray.packets.size
+        }
+
+        override fun onDroppedTraceEvent() {
+            reportDroppedTracePacket = true
+            packetCountOnDroppedTracePacket = packetCount
+        }
+
+        override fun flush() {
+            sink.flush()
+        }
+
+        override fun close() {
+            sink.close()
+        }
     }
 }

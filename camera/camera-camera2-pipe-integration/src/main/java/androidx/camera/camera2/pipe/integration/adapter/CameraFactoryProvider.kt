@@ -55,7 +55,7 @@ public class CameraFactoryProvider(
     ): CameraFactory {
 
         val openRetryMaxTimeout =
-            if (cameraOpenRetryMaxTimeoutInMs != -1L) null
+            if (cameraOpenRetryMaxTimeoutInMs == -1L) null
             else DurationNs(cameraOpenRetryMaxTimeoutInMs)
 
         val lazyCameraPipe = lazy {

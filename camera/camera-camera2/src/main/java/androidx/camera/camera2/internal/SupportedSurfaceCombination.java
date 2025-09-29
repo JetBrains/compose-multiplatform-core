@@ -23,6 +23,7 @@ import static androidx.camera.camera2.internal.GuaranteedConfigurationsUtil.gene
 import static androidx.camera.camera2.internal.SupportedSurfaceCombination.CheckingMethod.WITHOUT_FEATURE_COMBO;
 import static androidx.camera.camera2.internal.SupportedSurfaceCombination.CheckingMethod.WITHOUT_FEATURE_COMBO_FIRST_AND_THEN_WITH_IT;
 import static androidx.camera.camera2.internal.SupportedSurfaceCombination.CheckingMethod.WITH_FEATURE_COMBO;
+import static androidx.camera.core.impl.FrameRates.FRAME_RATE_UNLIMITED;
 import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR;
 import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
@@ -121,7 +122,6 @@ import java.util.Set;
 @OptIn(markerClass = ExperimentalCamera2Interop.class)
 public final class SupportedSurfaceCombination {
     private static final String TAG = "SupportedSurfaceCombination";
-    private static final int FRAME_RATE_UNLIMITED = Integer.MAX_VALUE;
     private final List<SurfaceCombination> mSurfaceCombinations = new ArrayList<>();
     private final List<SurfaceCombination> mUltraHighSurfaceCombinations = new ArrayList<>();
     private final List<SurfaceCombination> mConcurrentSurfaceCombinations = new ArrayList<>();
@@ -441,11 +441,13 @@ public final class SupportedSurfaceCombination {
                 streamUseCase);
     }
 
-    private int getMaxFrameRate(int imageFormat, @NonNull Size size, boolean isHighSpeedOn) {
+    private int getMaxFrameRate(int imageFormat, @NonNull Size size, boolean isHighSpeedOn,
+            int customMaxFps) {
         checkState(!isHighSpeedOn
                 || imageFormat == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);
-        return isHighSpeedOn ? mHighSpeedResolver.getMaxFrameRate(size)
+        int surfaceMaxFps = isHighSpeedOn ? mHighSpeedResolver.getMaxFrameRate(size)
                 : getMaxFrameRate(mCharacteristics, imageFormat, size);
+        return Math.min(customMaxFps, surfaceMaxFps);
     }
 
     private int getMaxFrameRate(@NonNull CameraCharacteristicsCompat characteristics,
@@ -707,14 +709,20 @@ public final class SupportedSurfaceCombination {
     }
 
     /**
-     * @param currentMaxFps the previously stored Max FPS
-     * @param imageFormat   the image format of the incoming surface
-     * @param size          the size of the incoming surface
-     * @param isHighSpeedOn whether high-speed session is enabled
+     * Calculates the new maximum FPS considering an incoming surface.
+     *
+     * @param combinedMaxFps the maximum FPS from previously considered surfaces.
+     * @param imageFormat    the image format of the incoming surface.
+     * @param size           the size of the incoming surface.
+     * @param isHighSpeedOn  whether a high-speed session is enabled, which affects how the
+     *                       device's supported maximum FPS is retrieved.
+     * @param customMaxFps   a custom maximum FPS configured for this surface.
+     * @return The updated maximum FPS.
      */
-    private int getUpdatedMaximumFps(int currentMaxFps, int imageFormat, Size size,
-            boolean isHighSpeedOn) {
-        return Math.min(currentMaxFps, getMaxFrameRate(imageFormat, size, isHighSpeedOn));
+    private int getCombinedMaximumFps(int combinedMaxFps, int imageFormat, @NonNull Size size,
+            boolean isHighSpeedOn, int customMaxFps) {
+        int surfaceMaxFps = getMaxFrameRate(imageFormat, size, isHighSpeedOn, customMaxFps);
+        return Math.min(combinedMaxFps, surfaceMaxFps);
     }
 
     /**
@@ -1497,10 +1505,10 @@ public final class SupportedSurfaceCombination {
 
         for (AttachedSurfaceInfo attachedSurfaceInfo : attachedSurfaces) {
             //get the fps ceiling for existing surfaces
-            existingSurfaceFrameRateCeiling = getUpdatedMaximumFps(
+            existingSurfaceFrameRateCeiling = getCombinedMaximumFps(
                     existingSurfaceFrameRateCeiling,
                     attachedSurfaceInfo.getImageFormat(), attachedSurfaceInfo.getSize(),
-                    isHighSpeedOn);
+                    isHighSpeedOn, attachedSurfaceInfo.getCustomMaxFrameRate());
         }
 
         return existingSurfaceFrameRateCeiling;
@@ -1527,10 +1535,12 @@ public final class SupportedSurfaceCombination {
             for (Size size : requireNonNull(
                     newUseCaseConfigsSupportedSizeMap.get(useCaseConfig))) {
                 int imageFormat = useCaseConfig.getInputFormat();
+                int customMaxFps = useCaseConfig.getCustomMaxFrameRate(size);
                 StreamUseCase streamUseCase = useCaseConfig.getStreamUseCase();
                 populateReducedSizeListAndUniqueMaxFpsMap(featureSettings,
-                        featureSettings.getTargetFpsRange(), size, imageFormat, streamUseCase,
-                        forceUniqueMaxFpsFiltering, configSizeUniqueMaxFpsMap, reducedSizeList);
+                        featureSettings.getTargetFpsRange(), size, imageFormat, customMaxFps,
+                        streamUseCase, forceUniqueMaxFpsFiltering, configSizeUniqueMaxFpsMap,
+                        reducedSizeList);
             }
             filteredUseCaseConfigToSupportedSizesMap.put(useCaseConfig, reducedSizeList);
         }
@@ -1539,7 +1549,8 @@ public final class SupportedSurfaceCombination {
 
     private void populateReducedSizeListAndUniqueMaxFpsMap(@NonNull FeatureSettings featureSettings,
             @NonNull Range<Integer> targetFpsRange, @NonNull Size size, int imageFormat,
-            @NonNull StreamUseCase streamUseCase, boolean forceUniqueMaxFpsFiltering,
+            int customMaxFps, @NonNull StreamUseCase streamUseCase,
+            boolean forceUniqueMaxFpsFiltering,
             @NonNull Map<ConfigSize, Set<Integer>> configSizeToUniqueMaxFpsMap,
             @NonNull List<Size> reducedSizeList) {
         ConfigSize configSize = SurfaceConfig.transformSurfaceConfig(
@@ -1552,7 +1563,8 @@ public final class SupportedSurfaceCombination {
         int maxFrameRate = FRAME_RATE_UNLIMITED;
         // Filters the sizes with frame rate only if there is target FPS setting or force enabled.
         if (!FRAME_RATE_RANGE_UNSPECIFIED.equals(targetFpsRange) || forceUniqueMaxFpsFiltering) {
-            maxFrameRate = getMaxFrameRate(imageFormat, size, featureSettings.isHighSpeedOn());
+            maxFrameRate = getMaxFrameRate(imageFormat, size, featureSettings.isHighSpeedOn(),
+                    customMaxFps);
         }
 
         // For feature combination, target FPS range must be strictly supported, so we can filter
@@ -1630,6 +1642,7 @@ public final class SupportedSurfaceCombination {
                     newUseCaseConfigs.get(useCasesPriorityOrder.get(i));
             int imageFormat = newUseCase.getInputFormat();
             StreamUseCase streamUseCase = newUseCase.getStreamUseCase();
+            int customMaxFps = newUseCase.getCustomMaxFrameRate(size);
             // add new use case/size config to list of surfaces
             ConfigSource configSource =
                     featureSettings.requiresFeatureComboQuery() ? FEATURE_COMBINATION_TABLE
@@ -1647,10 +1660,12 @@ public final class SupportedSurfaceCombination {
             }
             // get the maximum fps of the new surface and update the maximum fps of the
             // proposed configuration
-            currentConfigFrameRateCeiling = getUpdatedMaximumFps(
+            currentConfigFrameRateCeiling = getCombinedMaximumFps(
                     currentConfigFrameRateCeiling,
-                    newUseCase.getInputFormat(),
-                    size, featureSettings.isHighSpeedOn());
+                    imageFormat,
+                    size,
+                    featureSettings.isHighSpeedOn(),
+                    customMaxFps);
         }
         return new Pair<>(surfaceConfigList, currentConfigFrameRateCeiling);
     }

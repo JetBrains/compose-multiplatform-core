@@ -15,7 +15,6 @@
  */
 package androidx.camera.integration.featurecombo.ui
 
-import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.provider.MediaStore
@@ -60,7 +59,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalSessionConfig::class)
 @androidx.annotation.OptIn(ExperimentalCameraProviderConfiguration::class)
 class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {

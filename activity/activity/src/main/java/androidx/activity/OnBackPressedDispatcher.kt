@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.activity
 
 import android.os.Build
@@ -28,7 +31,8 @@ import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInput
-import androidx.navigationevent.OnBackInvokedInput
+import androidx.navigationevent.OnBackInvokedDefaultInput
+import androidx.navigationevent.OnBackInvokedOverlayInput
 
 /**
  * Dispatcher that can be used to register [OnBackPressedCallback] instances for handling the
@@ -66,27 +70,28 @@ class OnBackPressedDispatcher(
     @Suppress("unused") private val onHasEnabledCallbacksChanged: Consumer<Boolean>?,
 ) {
 
+    private var hasEnabledCallbacks = false
+
     /**
      * This [OnBackPressedDispatcher] class will delegate all interactions to [eventDispatcher],
      * which provides a KMP-compatible API while preserving behavior compatibility with existing
      * callback mechanisms.
      *
-     * @see [OnBackPressedCallback.eventCallbacks]
+     * @see [OnBackPressedCallback.eventHandlers]
      */
     internal val eventDispatcher: NavigationEventDispatcher by lazy {
         val dispatcher =
-            NavigationEventDispatcher(fallbackOnBackPressed = { fallbackOnBackPressed?.run() })
+            NavigationEventDispatcher(onBackCompletedFallback = { fallbackOnBackPressed?.run() })
         // This is to implement `OnBackPressedDispatcher.onHasEnabledCallbacksChanged`, which
         // can be set through OnBackPressedDispatcher's public constructor.
-        onHasEnabledCallbacksChanged?.let { callback ->
-            dispatcher.addInput(
-                object : NavigationEventInput() {
-                    override fun onHasEnabledHandlerChanged(hasEnabledHandler: Boolean) {
-                        callback.accept(hasEnabledHandler)
-                    }
+        dispatcher.addInput(
+            object : NavigationEventInput() {
+                override fun onHasEnabledHandlersChanged(hasEnabledHandlers: Boolean) {
+                    hasEnabledCallbacks = hasEnabledHandlers
+                    onHasEnabledCallbacksChanged?.accept(hasEnabledHandlers)
                 }
-            )
-        }
+            }
+        )
         dispatcher
     }
 
@@ -106,8 +111,14 @@ class OnBackPressedDispatcher(
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun setOnBackInvokedDispatcher(invoker: OnBackInvokedDispatcher) {
-        val input = OnBackInvokedInput(invoker)
-        eventDispatcher.addInput(input)
+        eventDispatcher.addInput(
+            OnBackInvokedDefaultInput(invoker),
+            NavigationEventDispatcher.PRIORITY_DEFAULT,
+        )
+        eventDispatcher.addInput(
+            OnBackInvokedOverlayInput(invoker),
+            NavigationEventDispatcher.PRIORITY_OVERLAY,
+        )
     }
 
     /**
@@ -209,7 +220,7 @@ class OnBackPressedDispatcher(
      *
      * @return True if there is at least one enabled callback.
      */
-    @MainThread fun hasEnabledCallbacks(): Boolean = eventDispatcher.hasEnabledHandler()
+    @MainThread fun hasEnabledCallbacks(): Boolean = hasEnabledCallbacks
 
     @VisibleForTesting
     @MainThread

@@ -29,9 +29,14 @@ import java.time.Instant
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public class `$InstantFactory` : AppFunctionSerializableFactory<Instant> {
     override fun fromAppFunctionData(appFunctionData: AppFunctionData): Instant {
-
-        val epochSecond = checkNotNull(appFunctionData.getLongOrNull("epochSecond"))
-        val nanoAdjustment = checkNotNull(appFunctionData.getIntOrNull("nanoAdjustment"))
+        val appFunctionDataWithSpec =
+            getAppFunctionDataWithSpec(
+                appFunctionData = appFunctionData,
+                qualifiedName =
+                    "androidx.appfunctions.internal.serializableproxies.AppFunctionLocalDateTime",
+            )
+        val epochSecond = checkNotNull(appFunctionDataWithSpec.getLongOrNull("epochSecond"))
+        val nanoAdjustment = checkNotNull(appFunctionDataWithSpec.getIntOrNull("nanoAdjustment"))
 
         val resultAppFunctionInstant = AppFunctionInstant(epochSecond, nanoAdjustment)
         return resultAppFunctionInstant.toInstant()
@@ -42,7 +47,7 @@ public class `$InstantFactory` : AppFunctionSerializableFactory<Instant> {
             AppFunctionInstant.fromInstant(appFunctionSerializable)
 
         val builder =
-            AppFunctionData.Builder(
+            getAppFunctionDataBuilder(
                 "androidx.appfunctions.internal.serializableproxies.AppFunctionInstant"
             )
         val epochSecond = appFunctionInstant_appFunctionSerializable.epochSecond

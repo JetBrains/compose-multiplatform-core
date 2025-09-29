@@ -176,8 +176,8 @@ class TracingDriverBenchmark {
     }
 
     /**
-     * This benchmark runs a subset of basic32 in order to measure just the cost of enqeuing a batch
-     * to the sink
+     * This benchmark runs a subset of basic32 in order to measure just the cost of enqueuing a
+     * batch to the sink
      */
     @Test
     fun beginEnd_enqueue2() {

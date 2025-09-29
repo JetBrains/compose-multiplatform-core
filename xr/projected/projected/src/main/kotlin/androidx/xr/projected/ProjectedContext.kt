@@ -19,7 +19,6 @@ package androidx.xr.projected
 import android.app.ActivityOptions
 import android.companion.virtual.VirtualDeviceManager
 import android.content.Context
-import android.content.Intent
 import android.hardware.display.DisplayManager
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -27,10 +26,10 @@ import androidx.annotation.VisibleForTesting
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * Helper for accessing Projected device [Context] and its features.
@@ -51,12 +50,6 @@ public object ProjectedContext {
 
     @VisibleForTesting internal const val PROJECTED_DEVICE_NAME = "ProjectionDevice"
     @VisibleForTesting internal const val PROJECTED_DISPLAY_NAME = "ProjectionDisplay"
-
-    @VisibleForTesting
-    internal const val REQUIRED_LAUNCH_FLAGS =
-        (Intent.FLAG_ACTIVITY_NEW_TASK or
-            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
-            Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
     /**
      * Explicitly create the Projected device context from any context object.
@@ -109,15 +102,6 @@ public object ProjectedContext {
         getVirtualDevice(context)?.name?.startsWith(PROJECTED_DEVICE_NAME) == true
 
     /**
-     * Takes an [Intent] with the description of the activity to start and returns it with added
-     * flags to start the activity on the Projected device.
-     *
-     * @param intent The description of the activity to start.
-     */
-    @JvmStatic
-    public fun addProjectedFlags(intent: Intent): Intent = intent.addFlags(REQUIRED_LAUNCH_FLAGS)
-
-    /**
      * Creates [ActivityOptions] that should be used to start an activity on the Projected device.
      *
      * @param context any [Context] object. If the provided context is not a Projected device
@@ -151,9 +135,6 @@ public object ProjectedContext {
     /**
      * Observe whether a Projected device is connected to the host.
      *
-     * This method should only be used before an Activity is created. After that, use the Activity
-     * lifecycle as an Activity will be stopped when the Projected device disconnects.
-     *
      * @param context The context used to access the [VirtualDeviceManager]. It can be any context
      *   object.
      * @param coroutineContext The CoroutineContext that includes CoroutineDispatcher which is where
@@ -166,29 +147,37 @@ public object ProjectedContext {
     public fun isProjectedDeviceConnected(
         context: Context,
         coroutineContext: CoroutineContext,
-    ): StateFlow<Boolean> {
-        val coroutineDispatcher =
-            coroutineContext[CoroutineDispatcher]
-                ?: throw IllegalArgumentException(
-                    "CoroutineContext must contain a CoroutineDispatcher."
+    ): Flow<Boolean> =
+        callbackFlow {
+                val coroutineDispatcher =
+                    coroutineContext[CoroutineDispatcher]
+                        ?: throw IllegalArgumentException(
+                            "CoroutineContext must contain a CoroutineDispatcher."
+                        )
+                val listener =
+                    object : VirtualDeviceManager.VirtualDeviceListener {
+                        override fun onVirtualDeviceCreated(deviceId: Int) {
+                            trySend(getProjectedDeviceId(context) != null)
+                        }
+
+                        override fun onVirtualDeviceClosed(deviceId: Int) {
+                            val projectedDeviceId = getProjectedDeviceId(context)
+                            if (projectedDeviceId == null || projectedDeviceId == deviceId) {
+                                trySend(false)
+                            }
+                        }
+                    }
+                trySend(getProjectedDeviceId(context) != null)
+                val virtualDeviceManager =
+                    context.getSystemService(VirtualDeviceManager::class.java)
+                virtualDeviceManager.registerVirtualDeviceListener(
+                    coroutineDispatcher.asExecutor(),
+                    listener,
                 )
 
-        val isConnected = MutableStateFlow(getProjectedDeviceId(context) != null)
-        val virtualDeviceManager = context.getSystemService(VirtualDeviceManager::class.java)
-
-        val listener =
-            object : VirtualDeviceManager.VirtualDeviceListener {
-                override fun onVirtualDeviceCreated(deviceId: Int) {
-                    isConnected.update { getProjectedDeviceId(context) != null }
-                    virtualDeviceManager.unregisterVirtualDeviceListener(this)
-                }
+                awaitClose { virtualDeviceManager.unregisterVirtualDeviceListener(listener) }
             }
-        virtualDeviceManager.registerVirtualDeviceListener(
-            coroutineDispatcher.asExecutor(),
-            listener,
-        )
-        return isConnected.asStateFlow()
-    }
+            .distinctUntilChanged()
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun getProjectedDeviceId(context: Context) =

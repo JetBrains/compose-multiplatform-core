@@ -54,7 +54,7 @@ package androidx.wear.protolayout.testing {
   }
 
   public final class TestContext {
-    method public androidx.wear.protolayout.expression.DynamicDataMap getDynamicData();
+    method @InaccessibleFromKotlin public androidx.wear.protolayout.expression.DynamicDataMap getDynamicData();
     property public androidx.wear.protolayout.expression.DynamicDataMap dynamicData;
   }
 

@@ -32,10 +32,6 @@ import androidx.arch.core.executor.testing.CountingTaskExecutorRule;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.testing.TestLifecycleOwner;
-import androidx.paging.DataSource;
-import androidx.paging.LivePagedListBuilder;
-import androidx.paging.PagedList;
-import androidx.paging.PositionalDataSource;
 import androidx.room3.Dao;
 import androidx.room3.Database;
 import androidx.room3.Entity;
@@ -48,7 +44,6 @@ import androidx.room3.Room;
 import androidx.room3.RoomDatabase;
 import androidx.room3.RoomWarnings;
 import androidx.room3.Transaction;
-import androidx.room3.paging.LimitOffsetDataSource;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import androidx.sqlite.db.SupportSQLiteQuery;
@@ -205,75 +200,6 @@ public class QueryTransactionTest {
         assertTransactionCountWithChildren(result, expectedTransactionCount);
     }
 
-    @Test
-    public void pagedList() {
-        PagedList.Config config = new PagedList.Config.Builder()
-                .setPageSize(1)
-                .setInitialLoadSizeHint(3)
-                .setPrefetchDistance(2)
-                .setEnablePlaceholders(false)
-                .build();
-        LiveData<PagedList<Entity1>> pagedList =
-                new LivePagedListBuilder<>(mDao.pagedList(), config).build();
-        observeForever(pagedList);
-        drain();
-        assertThat(sStartedTransactionCount.get(), is(1));
-
-        mDao.insert(new Entity1(1, "foo"));
-        drain();
-        //noinspection ConstantConditions
-        assertThat(pagedList.getValue().size(), is(1));
-        assertTransactionCount(pagedList.getValue(), 3);
-
-        mDao.insert(
-                new Entity1(2, "bar"),
-                new Entity1(3, "baz"),
-                new Entity1(4, "bup"));
-        drain();
-        assertThat(pagedList.getValue().size(), is(3));
-        assertTransactionCount(pagedList.getValue(), 5);
-
-        // only loadRange is affected by transaction dao, since initial load requires transaction
-        pagedList.getValue().loadAround(2);
-        drain();
-        assertThat(pagedList.getValue().size(), is(4));
-        // note: we don't use assertTransactionCount here, since last item loaded separately
-        assertThat(sStartedTransactionCount.get(), is(mUseTransactionDao ? 7 : 5));
-    }
-
-    @Test
-    public void dataSourceRange() {
-        mDao.insert(new Entity1(2, "bar"));
-        drain();
-        resetTransactionCount();
-        LimitOffsetDataSource<Entity1> dataSource =
-                (LimitOffsetDataSource<Entity1>) mDao.dataSource();
-        dataSource.loadRange(0, 10);
-        assertThat(sStartedTransactionCount.get(), is(mUseTransactionDao ? 1 : 0));
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void dataSourceInitial() {
-        mDao.insert(new Entity1(2, "bar"));
-        drain();
-        resetTransactionCount();
-        LimitOffsetDataSource<Entity1> dataSource =
-                (LimitOffsetDataSource<Entity1>) mDao.dataSource();
-        dataSource.loadInitial(
-                new PositionalDataSource.LoadInitialParams(0, 30, 10, true),
-                new PositionalDataSource.LoadInitialCallback<Entity1>() {
-                    @Override
-                    public void onResult(@NonNull List<? extends Entity1> data, int position,
-                            int totalCount) {}
-
-                    @Override
-                    public void onResult(@NonNull List<? extends Entity1> data, int position) {}
-                });
-        // always use a transaction, since we're loading count + initial data
-        assertThat(sStartedTransactionCount.get(), is(1));
-    }
-
     private void assertTransactionCount(List<Entity1> allEntities, int expectedTransactionCount) {
         assertThat(sStartedTransactionCount.get(), is(expectedTransactionCount));
         assertThat(allEntities.isEmpty(), is(false));
@@ -414,10 +340,6 @@ public class QueryTransactionTest {
 
         List<Entity1WithChildren> withRelation();
 
-        DataSource.Factory<Integer, Entity1> pagedList();
-
-        PositionalDataSource<Entity1> dataSource();
-
         @Insert
         void insert(Entity1 entity1);
 
@@ -436,7 +358,7 @@ public class QueryTransactionTest {
 
         @Override
         @Query(SELECT_ALL)
-        Flowable<List<Entity1>> flowable();
+        Flowable<@NonNull List<Entity1>> flowable();
 
         @Override
         @Query(SELECT_ALL)
@@ -444,24 +366,17 @@ public class QueryTransactionTest {
 
         @Override
         @Query(SELECT_ALL)
-        Maybe<List<Entity1>> maybe();
+        Maybe<@NonNull List<Entity1>> maybe();
 
         @Override
         @Query(SELECT_ALL)
-        Single<List<Entity1>> single();
+        Single<@NonNull List<Entity1>> single();
 
         @Override
         @Query(SELECT_ALL)
         @SuppressWarnings(RoomWarnings.RELATION_QUERY_WITHOUT_TRANSACTION)
         List<Entity1WithChildren> withRelation();
 
-        @Override
-        @Query(SELECT_ALL)
-        DataSource.Factory<Integer, Entity1> pagedList();
-
-        @Override
-        @Query(SELECT_ALL)
-        PositionalDataSource<Entity1> dataSource();
     }
 
     @Dao
@@ -474,7 +389,7 @@ public class QueryTransactionTest {
         @Override
         @Transaction
         @Query(SELECT_ALL)
-        Flowable<List<Entity1>> flowable();
+        Flowable<@NonNull List<Entity1>> flowable();
 
         @Override
         @Transaction
@@ -484,27 +399,18 @@ public class QueryTransactionTest {
         @Override
         @Transaction
         @Query(SELECT_ALL)
-        Maybe<List<Entity1>> maybe();
+        Maybe<@NonNull List<Entity1>> maybe();
 
         @Override
         @Transaction
         @Query(SELECT_ALL)
-        Single<List<Entity1>> single();
+        Single<@NonNull List<Entity1>> single();
 
         @Override
         @Transaction
         @Query(SELECT_ALL)
         List<Entity1WithChildren> withRelation();
 
-        @Override
-        @Transaction
-        @Query(SELECT_ALL)
-        DataSource.Factory<Integer, Entity1> pagedList();
-
-        @Override
-        @Transaction
-        @Query(SELECT_ALL)
-        PositionalDataSource<Entity1> dataSource();
     }
 
     @Database(version = 1, entities = {Entity1.class, Child.class}, exportSchema = false)

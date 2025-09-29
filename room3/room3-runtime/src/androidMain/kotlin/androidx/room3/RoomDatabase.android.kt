@@ -93,13 +93,6 @@ import kotlinx.coroutines.withContext
  * @see Database
  */
 public actual abstract class RoomDatabase {
-    @Volatile
-    @JvmField
-    @Deprecated(
-        message = "This property is always null and will be removed in a future version.",
-        level = DeprecationLevel.ERROR,
-    )
-    protected var mDatabase: SupportSQLiteDatabase? = null
 
     private lateinit var configuration: DatabaseConfiguration
     private lateinit var coroutineScope: CoroutineScope

@@ -204,7 +204,7 @@ public abstract class BaseRoomConnectionManager {
         connection.execSQL(RoomMasterTable.CREATE_QUERY)
     }
 
-    protected fun onMigrate(connection: SQLiteConnection, oldVersion: Int, newVersion: Int) {
+    protected open fun onMigrate(connection: SQLiteConnection, oldVersion: Int, newVersion: Int) {
         var migrated = false
         val migrations = configuration.migrationContainer.findMigrationPath(oldVersion, newVersion)
         if (migrations != null) {

@@ -61,6 +61,8 @@ class HeadLockedUiActivity : AppCompatActivity() {
     private var sliderPositionY: Float = 0.0f
     private var sliderPositionX: Float = 0.0f
 
+    private val animationRunnable: Runnable = Runnable { updateHeadLockedPose() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -175,6 +177,12 @@ class HeadLockedUiActivity : AppCompatActivity() {
         createHeadLockedPanel()
     }
 
+    override fun onStop() {
+        super.onStop()
+        // Unregister the animation runnable when the activity is stopped.
+        this.mHeadLockedPanelView.removeCallbacks(animationRunnable)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         mHeadLockedPanel.parent = null
@@ -183,7 +191,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     private fun createHeadLockedPanel() {
         this.mHeadLockedPanelView = layoutInflater.inflate(R.layout.headlocked_star, null, false)
-        this.mHeadLockedPanelView.postOnAnimation(this::updateHeadLockedPose)
+        this.mHeadLockedPanelView.postOnAnimation(animationRunnable)
         this.mHeadLockedPanel =
             PanelEntity.create(
                 session = session!!,
@@ -220,7 +228,7 @@ class HeadLockedUiActivity : AppCompatActivity() {
                     if (mIsDebugPanelEnabled) updateDebugPanel(it)
                 }
         }
-        mHeadLockedPanelView.postOnAnimation(this::updateHeadLockedPose)
+        mHeadLockedPanelView.postOnAnimation(animationRunnable)
     }
 
     private fun updateDebugPanel(projectedPose: Pose) {

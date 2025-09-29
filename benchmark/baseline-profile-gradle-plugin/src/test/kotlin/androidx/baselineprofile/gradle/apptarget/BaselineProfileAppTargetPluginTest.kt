@@ -18,7 +18,6 @@ package androidx.baselineprofile.gradle.apptarget
 
 import androidx.baselineprofile.gradle.utils.BaselineProfileProjectSetupRule
 import androidx.baselineprofile.gradle.utils.TestAgpVersion
-import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_1_1
 import androidx.baselineprofile.gradle.utils.build
 import androidx.baselineprofile.gradle.utils.buildAndAssertThatOutput
 import androidx.baselineprofile.gradle.utils.containsOnly
@@ -115,12 +114,12 @@ private fun createBuildGradle(overrideExtendedBuildTypesForRelease: Boolean = fa
         .trimIndent()
 
 @RunWith(Parameterized::class)
-class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVersion) {
+class BaselineProfileAppTargetPluginTestWithAgp82AndAbove(agpVersion: TestAgpVersion) {
 
     companion object {
         @Parameterized.Parameters(name = "agpVersion={0}")
         @JvmStatic
-        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_1_1)
+        fun parameters() = TestAgpVersion.atLeast(TestAgpVersion.TEST_AGP_VERSION_8_2_1)
     }
 
     @get:Rule
@@ -304,21 +303,6 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
                 }
             }
     }
-}
-
-@RunWith(Parameterized::class)
-class BaselineProfileAppTargetPluginTestWithAgp80AndAbove(agpVersion: TestAgpVersion) {
-
-    companion object {
-        @Parameterized.Parameters(name = "agpVersion={0}")
-        @JvmStatic
-        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_1_1)
-    }
-
-    @get:Rule
-    val projectSetup = BaselineProfileProjectSetupRule(forceAgpVersion = agpVersion.versionString)
-
-    private val buildGradle = createBuildGradle()
 
     @Test
     fun testSrcSetAreAddedToVariantsForApplications() {
@@ -370,37 +354,4 @@ class BaselineProfileAppTargetPluginTestWithAgp80AndAbove(agpVersion: TestAgpVer
                 }
             }
     }
-
-    @Test
-    fun additionalBuildTypesShouldNotBeCreatedForExistingNonMinifiedAndBenchmarkBuildTypes() =
-        arrayOf(true, false).forEach { overrideExtendedBuildTypesForRelease ->
-            projectSetup.appTarget.setBuildGradle(
-                buildGradleContent =
-                    createBuildGradle(
-                        overrideExtendedBuildTypesForRelease = overrideExtendedBuildTypesForRelease
-                    )
-            )
-
-            projectSetup.appTarget.gradleRunner.build("printVariants") {
-                val variants =
-                    it.lines()
-                        .filter { l -> l.startsWith("print-variant:") }
-                        .map { l -> l.substringAfter("print-variant:").trim() }
-                        .toSet()
-                        .toList()
-
-                assertThat(
-                        variants.containsOnly(
-                            "debug",
-                            "release",
-                            "nonMinifiedRelease",
-                            "anotherRelease",
-                            "nonMinifiedAnotherRelease",
-                            "myCustomRelease",
-                            "nonMinifiedMyCustomRelease",
-                        )
-                    )
-                    .isTrue()
-            }
-        }
 }

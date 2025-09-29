@@ -41,10 +41,30 @@ import androidx.annotation.RestrictTo
 public class TextureSampler
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 constructor(
+    /**
+     * an [Int] which describes how neighboring texels are sampled when the rendered size is smaller
+     * than the texture.
+     */
     @MinificationFilter public val minificationFilter: Int = MINIFICATION_FILTER_LINEAR,
+    /**
+     * an [Int] which describes how neighboring texels are sampled when the rendered size is larger
+     * than the texture.
+     */
     @MagnificationFilter public val magnificationFilter: Int = MAGNIFICATION_FILTER_LINEAR,
+    /**
+     * an [Int] which describes how texture coordinates outside the [0-1] range are handled along
+     * the horizontal axis.
+     */
     @WrapMode public val wrapModeHorizontal: Int = WRAP_MODE_REPEAT,
+    /**
+     * an [Int] which describes how texture coordinates outside the [0-1] range are handled along
+     * the vertical axis.
+     */
     @WrapMode public val wrapModeVertical: Int = WRAP_MODE_REPEAT,
+    /**
+     * an [Int] which describes how texture coordinates outside the [0-1] range are handled along
+     * the depth axis.
+     */
     @WrapMode public val wrapModeDepth: Int = WRAP_MODE_REPEAT,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @CompareMode

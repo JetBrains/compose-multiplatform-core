@@ -16,6 +16,7 @@
 
 package androidx.pdf.compose
 
+import android.R
 import android.content.Context
 import android.graphics.Point
 import android.graphics.PointF
@@ -35,10 +36,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.pdf.PdfPoint
+import androidx.pdf.selection.PdfSelectionMenuKeys.CopyKey
 import androidx.pdf.selection.Selection
 import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.view.PdfView
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
@@ -545,6 +554,100 @@ class PdfViewerTest {
         val resIdsAndDpThumbBitmap =
             resIdsAndDpConfig.verticalThumbDrawable(context).toBitmap(width = 10, height = 10)
         assertThat(resIdsThumbBitmap.sameAs(resIdsAndDpThumbBitmap)).isTrue()
+    }
+
+    @Test
+    fun testCommentMenuItemAppended() {
+        val pdfDocument =
+            FakePdfDocument(List(10) { Point(425, 225) }, pageSelector = SIMPLE_SELECTOR)
+        val selections = mutableListOf<Selection?>()
+
+        lateinit var pdfViewerState: PdfViewerState
+        rule.setContent {
+            pdfViewerState = remember { PdfViewerState() }
+            // Only record the selection state when that state changes. Don't log it on every
+            // Composition
+            LaunchedEffect(pdfViewerState.currentSelection) {
+                selections.add(pdfViewerState.currentSelection)
+            }
+            PdfViewer(
+                modifier =
+                    Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
+                        .testTag(PDF_VIEW_TAG),
+                state = pdfViewerState,
+                pdfDocument = pdfDocument,
+                appendContextMenuComponents = {
+                    item(key = "Comment", label = "Comment", contentDescription = "Comment") {
+                        pdfViewerState.clearSelection()
+                        close()
+                    }
+                },
+            )
+        }
+
+        // PdfViewer will adjust zoom to fit the width of the content. Once this has happened we
+        // know the initial pages have been laid out.
+        rule.waitUntil { pdfViewerState.zoom == 2.0F }
+        // Somewhere around the middle of page 0
+        val longClickPosition =
+            requireNotNull(pdfViewerState.pdfPointToVisibleOffset(PdfPoint(0, PointF(212F, 112F))))
+        // b/418866416 - longClick() doesn't work w/ Android Views, so we send a down event without
+        // an up event and just wait.
+        rule.onNodeWithTag(PDF_VIEW_TAG).performTouchInput { down(longClickPosition) }
+        rule.waitUntil { selections.size > 1 }
+
+        // Assert comment item added to selection menu
+        onView(withText("Comment"))
+            .inRoot(RootMatchers.isPlatformPopup())
+            // Cheek comment menu item is added
+            .check(matches(isDisplayed()))
+            // Click comment menu item
+            .perform(click())
+    }
+
+    @Test
+    fun testCopyMenuItemFiltered() {
+        val pdfDocument =
+            FakePdfDocument(List(10) { Point(425, 225) }, pageSelector = SIMPLE_SELECTOR)
+        val selections = mutableListOf<Selection?>()
+
+        lateinit var pdfViewerState: PdfViewerState
+        rule.setContent {
+            pdfViewerState = remember { PdfViewerState() }
+            // Only record the selection state when that state changes. Don't log it on every
+            // Composition
+            LaunchedEffect(pdfViewerState.currentSelection) {
+                selections.add(pdfViewerState.currentSelection)
+            }
+            PdfViewer(
+                modifier =
+                    Modifier.requiredSize(width = 850.toDp(context), height = 550.toDp(context))
+                        .testTag(PDF_VIEW_TAG),
+                state = pdfViewerState,
+                pdfDocument = pdfDocument,
+                appendContextMenuComponents = {
+                    item(key = "Comment", label = "Comment", contentDescription = "Comment") {}
+                },
+                filterContextMenuComponents = { it.key != CopyKey },
+            )
+        }
+
+        // PdfViewer will adjust zoom to fit the width of the content. Once this has happened we
+        // know the initial pages have been laid out.
+        rule.waitUntil { pdfViewerState.zoom == 2.0F }
+        // Somewhere around the middle of page 0
+        val longClickPosition =
+            requireNotNull(pdfViewerState.pdfPointToVisibleOffset(PdfPoint(0, PointF(212F, 112F))))
+        // b/418866416 - longClick() doesn't work w/ Android Views, so we send a down event without
+        // an up event and just wait.
+        rule.onNodeWithTag(PDF_VIEW_TAG).performTouchInput { down(longClickPosition) }
+        rule.waitUntil { selections.size > 1 }
+
+        // Assert copy item is removed from selection menu
+        onView(withText(R.string.copy))
+            .inRoot(RootMatchers.isPlatformPopup())
+            // Cheek copy item does not exist
+            .check(doesNotExist())
     }
 }
 

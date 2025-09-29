@@ -125,11 +125,12 @@ class ImageCaptureStressTest(
 
     @After
     fun tearDown(): Unit = runBlocking {
+        device.pressHome()
+        device.waitForIdle(StressTestUtil.HOME_TIMEOUT_MS)
+
         // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
         // to other tests :)
         device.unfreezeRotation()
-        device.pressHome()
-        device.waitForIdle(StressTestUtil.HOME_TIMEOUT_MS)
 
         // shutdownAsync should be invoked at the very last step, e.g. device.unfreezeRotation() may
         // lead to onCreate invocation on test app which may depend on the camera provider still

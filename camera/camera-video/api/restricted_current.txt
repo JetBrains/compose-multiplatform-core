@@ -58,9 +58,9 @@ package androidx.camera.video {
     ctor public HighSpeedVideoSessionConfig(androidx.camera.video.VideoCapture<? extends java.lang.Object?> videoCapture, optional androidx.camera.core.Preview? preview);
     ctor public HighSpeedVideoSessionConfig(androidx.camera.video.VideoCapture<? extends java.lang.Object?> videoCapture, optional androidx.camera.core.Preview? preview, optional android.util.Range<java.lang.Integer> frameRateRange);
     ctor public HighSpeedVideoSessionConfig(androidx.camera.video.VideoCapture<? extends java.lang.Object?> videoCapture, optional androidx.camera.core.Preview? preview, optional android.util.Range<java.lang.Integer> frameRateRange, optional boolean isSlowMotionEnabled);
-    method public androidx.camera.core.Preview? getPreview();
-    method public androidx.camera.video.VideoCapture<? extends java.lang.Object?> getVideoCapture();
-    method public boolean isSlowMotionEnabled();
+    method @InaccessibleFromKotlin public androidx.camera.core.Preview? getPreview();
+    method @InaccessibleFromKotlin public androidx.camera.video.VideoCapture<? extends java.lang.Object?> getVideoCapture();
+    method @InaccessibleFromKotlin public boolean isSlowMotionEnabled();
     property public boolean isSlowMotionEnabled;
     property public androidx.camera.core.Preview? preview;
     property public androidx.camera.video.VideoCapture<? extends java.lang.Object?> videoCapture;

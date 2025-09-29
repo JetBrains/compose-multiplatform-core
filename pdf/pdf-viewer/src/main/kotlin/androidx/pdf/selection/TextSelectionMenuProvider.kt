@@ -22,6 +22,7 @@ import android.os.Build
 import android.os.LocaleList
 import android.view.textclassifier.TextClassificationManager
 import android.view.textclassifier.TextClassifier
+import androidx.pdf.R
 import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.ClipboardUtils
 import kotlinx.coroutines.coroutineScope
@@ -52,6 +53,7 @@ internal class TextSelectionMenuProvider(private val context: Context) :
                 DefaultSelectionMenuComponent(
                     key = PdfSelectionMenuKeys.CopyKey,
                     label = context.getString(android.R.string.copy),
+                    contentDescription = context.getString(R.string.desc_copy),
                 ) { pdfView ->
                     val localCurrentSelection = pdfView.currentSelection
                     if (localCurrentSelection is TextSelection) {
@@ -68,6 +70,7 @@ internal class TextSelectionMenuProvider(private val context: Context) :
                 DefaultSelectionMenuComponent(
                     key = PdfSelectionMenuKeys.SelectAllKey,
                     label = context.getString(android.R.string.selectAll),
+                    contentDescription = context.getString(R.string.desc_select_all),
                 ) { pdfView ->
                     val page = pdfView.currentSelection?.bounds?.first()?.pageNum
                     // We can't select all if we don't know what page the selection is on, or if

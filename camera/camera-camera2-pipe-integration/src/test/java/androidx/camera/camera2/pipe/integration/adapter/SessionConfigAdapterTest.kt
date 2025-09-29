@@ -22,7 +22,7 @@ import android.media.MediaCodec
 import android.util.Range
 import android.view.Surface
 import androidx.camera.camera2.pipe.OutputStream.StreamUseHint
-import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_HINT_OPTION
+import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.MutableOptionsBundle
@@ -42,7 +42,6 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
@@ -153,7 +152,10 @@ class SessionConfigAdapterTest {
                 surface = fakeSurface1,
                 options =
                     MutableOptionsBundle.create().apply {
-                        insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.DEFAULT.value)
+                        insertOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION,
+                            StreamUseHint.DEFAULT.value,
+                        )
                     },
             )
         val fakeSurface2 = createTestDeferrableSurface()
@@ -162,7 +164,10 @@ class SessionConfigAdapterTest {
                 surface = fakeSurface2,
                 options =
                     MutableOptionsBundle.create().apply {
-                        insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.VIDEO_RECORD.value)
+                        insertOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION,
+                            StreamUseHint.VIDEO_RECORD.value,
+                        )
                     },
             )
 
@@ -213,7 +218,10 @@ class SessionConfigAdapterTest {
                 surface = fakeSurface1,
                 options =
                     MutableOptionsBundle.create().apply {
-                        insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.VIDEO_RECORD.value)
+                        insertOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION,
+                            StreamUseHint.VIDEO_RECORD.value,
+                        )
                     },
             )
         val fakeSurface2 = createTestDeferrableSurface(containerClass = MediaCodec::class.java)
@@ -222,7 +230,10 @@ class SessionConfigAdapterTest {
                 surface = fakeSurface2,
                 options =
                     MutableOptionsBundle.create().apply {
-                        insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.DEFAULT.value)
+                        insertOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION,
+                            StreamUseHint.DEFAULT.value,
+                        )
                     },
             )
 

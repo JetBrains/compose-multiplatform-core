@@ -892,7 +892,6 @@ private fun Project.configureKotlinJsTests() {
                 )
             }
         }
-        task.testLogging.showStandardStreams = true
         // From: https://nodejs.org/api/cli.html
         task.nodeJsArgs.addAll(listOf("--trace-warnings", "--trace-uncaught", "--trace-sigint"))
     }

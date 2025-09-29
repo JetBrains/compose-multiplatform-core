@@ -59,17 +59,25 @@ internal constructor(
     }
 
     /**
-     * Returns a [ListenableFuture] to update the data using the provided [transform]. The
-     * [transform] is given the latest persisted data to produce its output, which is then persisted
-     * and returned. Concurrent updates are serialized (at most one update running at a time).
+     * Returns a [ListenableFuture] to update the data using the provided [dataTransform]. The
+     * [dataTransform] is given the latest persisted data to produce its output, which is then
+     * persisted and returned. Concurrent updates are serialized (at most one update running at a
+     * time).
+     *
+     * Ideally the shape of the [DataTransform] param would have been a `T -> R` but we choose to
+     * keep it as `T -> T` to match [DataStore.updateData].
      */
-    // TODO(b/433318718): Change parameter type to be Function<T, T> after g3 migration.
-    public fun updateDataAsync(transform: (input: T) -> T): ListenableFuture<T> {
-        return launchFuture(coroutineContext) { dataStore.updateData { transform.invoke(it) } }
+    public fun updateDataAsync(dataTransform: DataTransform<T, T>): ListenableFuture<T> {
+        return launchFuture(coroutineContext) {
+            dataStore.updateData { dataTransform.transform(it) }
+        }
     }
 
-    // TODO(b/433318718): Remove this function before we go to stable as we want users to use the
-    //  `Function<T, T>` function parameter version.
+    @Deprecated(
+        "Use updateDataAsync with DataTransform instead.",
+        replaceWith = ReplaceWith("updateDataAsync(DataTransform { transform.apply(it) })"),
+    )
+    // TODO(b/433318718): Remove this function as we no longer need it.
     @RequiresApi(Build.VERSION_CODES.N)
     public fun updateDataFunctionAsync(transform: Function<T, T>): ListenableFuture<T> {
         return launchFuture(coroutineContext) { dataStore.updateData { transform.apply(it) } }
@@ -229,4 +237,20 @@ internal constructor(
             )
         }
     }
+}
+
+/**
+ * A functional interface for transforming data within [GuavaDataStore].
+ *
+ * @param I The type of the input data.
+ * @param O The type of the output data.
+ */
+public fun interface DataTransform<I, O> {
+    /**
+     * Applies a transformation to the input data.
+     *
+     * @param input The input data to be transformed.
+     * @return The transformed output data.
+     */
+    public fun transform(input: I): O
 }

@@ -219,6 +219,7 @@ public class StreamSpecsCalculatorImpl(
                         useCase.currentConfig.getTargetFrameRate(FRAME_RATE_RANGE_UNSPECIFIED)
                     ),
                     useCase.currentConfig.isStrictFrameRateRequired,
+                    useCase.currentConfig.getCustomMaxFrameRate(useCase.attachedSurfaceResolution!!),
                 )
             existingSurfaces.add(attachedSurfaceInfo)
             surfaceInfoUseCaseMap.put(attachedSurfaceInfo, useCase)

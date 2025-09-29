@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize3d
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.ResizeEventListener as RtResizeEventListener
+import androidx.xr.scenecore.internal.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 import java.util.function.Consumer
@@ -40,7 +40,7 @@ import java.util.function.Consumer
  */
 public class ResizableComponent
 private constructor(
-    private val platformAdapter: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
     minimumSize: FloatSize3d,
     maximumSize: FloatSize3d,
     private val initialListenerExecutor: Executor,
@@ -143,7 +143,7 @@ private constructor(
         }
 
     private val rtResizableComponent by lazy {
-        platformAdapter.createResizableComponent(
+        sceneRuntime.createResizableComponent(
             minimumSize.toRtDimensions(),
             maximumSize.toRtDimensions(),
         )
@@ -215,14 +215,14 @@ private constructor(
 
         /** Factory function for creating [ResizableComponent] instance. */
         internal fun create(
-            platformAdapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             minimumSize: FloatSize3d,
             maximumSize: FloatSize3d,
             initialListenerExecutor: Executor,
             initialListener: Consumer<ResizeEvent>,
         ): ResizableComponent {
             return ResizableComponent(
-                platformAdapter,
+                sceneRuntime,
                 minimumSize,
                 maximumSize,
                 initialListenerExecutor,
@@ -265,7 +265,7 @@ private constructor(
             resizeEventListener: Consumer<ResizeEvent>,
         ): ResizableComponent =
             ResizableComponent.create(
-                session.platformAdapter,
+                session.sceneRuntime,
                 minimumSize,
                 maximumSize,
                 executor,

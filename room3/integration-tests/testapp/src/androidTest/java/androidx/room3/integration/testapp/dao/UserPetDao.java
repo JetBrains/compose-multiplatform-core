@@ -17,7 +17,6 @@
 package androidx.room3.integration.testapp.dao;
 
 import androidx.lifecycle.LiveData;
-import androidx.paging.DataSource;
 import androidx.room3.Dao;
 import androidx.room3.Delete;
 import androidx.room3.Insert;
@@ -38,6 +37,8 @@ import androidx.room3.integration.testapp.vo.UserIdAndPetIds;
 import androidx.room3.integration.testapp.vo.UserIdAndPetNames;
 import androidx.room3.integration.testapp.vo.UserWithPetsAndToys;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.List;
 
 @Dao
@@ -56,11 +57,6 @@ public interface UserPetDao {
 
     @Query("SELECT * FROM Pet p LEFT OUTER JOIN User u ON u.mId = p.mUserId")
     List<UserAndPet> loadPets();
-
-    @SuppressWarnings({RoomWarnings.QUERY_MISMATCH, RoomWarnings.CURSOR_MISMATCH})
-    @Transaction
-    @Query("SELECT * FROM User u LEFT OUTER JOIN Pet p ON u.mId = p.mUserId")
-    DataSource.Factory<Integer, UserAndAllPets> dataSourceFactoryMultiTable();
 
     @Transaction
     @Query("SELECT * FROM User u")
@@ -98,19 +94,19 @@ public interface UserPetDao {
 
     @Transaction
     @Query("SELECT * FROM User u where u.mId = :userId")
-    io.reactivex.Flowable<UserAndAllPets> rx2_flowableUserWithPets(int userId);
+    io.reactivex.Flowable<@NonNull UserAndAllPets> rx2_flowableUserWithPets(int userId);
 
     @Transaction
     @Query("SELECT * FROM User u where u.mId = :userId")
-    io.reactivex.rxjava3.core.Flowable<UserAndAllPets> rx3_flowableUserWithPets(int userId);
+    io.reactivex.rxjava3.core.Flowable<@NonNull UserAndAllPets> rx3_flowableUserWithPets(int userId);
 
     @Transaction
     @Query("SELECT * FROM User u where u.mId = :userId")
-    io.reactivex.Observable<UserAndAllPets> rx2_observableUserWithPets(int userId);
+    io.reactivex.Observable<@NonNull UserAndAllPets> rx2_observableUserWithPets(int userId);
 
     @Transaction
     @Query("SELECT * FROM User u where u.mId = :userId")
-    io.reactivex.rxjava3.core.Observable<UserAndAllPets> rx3_observableUserWithPets(int userId);
+    io.reactivex.rxjava3.core.Observable<@NonNull UserAndAllPets> rx3_observableUserWithPets(int userId);
 
     @Transaction
     @Query("SELECT * FROM User u where u.mId = :uid")

@@ -480,32 +480,37 @@ class OnBackPressedHandlerTest {
 
         val callbackA = dispatcher.addCallback(enabled = false) {}
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(0)
+        // The first call to `addCallback` triggers lazy initialization of the internal dispatcher.
+        // This causes an immediate "initial state" emission with the current value (`false`).
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(1)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isFalse()
 
+        // Enabling the callback flips the overall state from false to true, causing an update.
         callbackA.isEnabled = true
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(1)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(2)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
 
+        // Adding/removing callbacks while the overall state remains `true` does not update.
         val callbackB = dispatcher.addCallback {}
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(1)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(2)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
 
         callbackA.remove()
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(1)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(2)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
 
+        // Removing the LAST enabled callback flips the state from true to false, causing an update.
         callbackB.remove()
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(2)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(3)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isFalse()
 
         dispatcher.addCallback {}
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(3)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(4)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
     }
 

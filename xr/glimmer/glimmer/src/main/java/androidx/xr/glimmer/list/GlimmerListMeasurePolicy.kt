@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.util.fastForEach
-import kotlin.math.abs
 import kotlin.math.min
 
 @Composable
@@ -120,56 +119,24 @@ internal fun rememberGlimmerListMeasurePolicy(
 
             val density = this
             with(layoutProperties) {
-                val measureResult =
-                    measureGlimmerList(
-                        itemsCount = itemsCount,
-                        measuredItemProvider = measuredItemProvider,
-                        firstVisibleItemIndex = firstVisibleItemIndex,
-                        firstVisibleItemScrollOffset = firstVisibleScrollOffset,
-                        scrollToBeConsumed = state.scrollToBeConsumed,
-                        pinnedIndices = pinnedIndices,
-                        reverseLayout = reverseLayout,
-                        density = density,
-                        layout = { width, height, placement ->
-                            layout(
-                                containerConstraints.constrainWidth(width + totalHorizontalPadding),
-                                containerConstraints.constrainHeight(height + totalVerticalPadding),
-                                emptyMap(),
-                                placement,
-                            )
-                        },
-                    )
-                state.autoFocusBehaviour.applyMeasureResult(
-                    scrollToBeConsumed = state.scrollToBeConsumed,
-                    layoutProperties = layoutProperties,
-                    measureResult = measureResult,
+                applyMeasureResult(
+                    state = state,
+                    itemsCount = itemsCount,
+                    measuredItemProvider = measuredItemProvider,
+                    firstVisibleItemIndex = firstVisibleItemIndex,
+                    firstVisibleItemScrollOffset = firstVisibleScrollOffset,
+                    pinnedIndices = pinnedIndices,
+                    reverseLayout = reverseLayout,
+                    density = density,
+                    layout = { width, height, placement ->
+                        layout(
+                            containerConstraints.constrainWidth(width + totalHorizontalPadding),
+                            containerConstraints.constrainHeight(height + totalVerticalPadding),
+                            emptyMap(),
+                            placement,
+                        )
+                    },
                 )
-
-                val delta = state.scrollToBeConsumed - measureResult.consumedScroll
-                val consumedScroll =
-                    if (abs(delta) <= 0.5f) {
-                        // Delta is within rounding error - report that we consumed everything.
-                        state.scrollToBeConsumed
-                    } else {
-                        // Delta is larger than rounding error - report the actual consumed part.
-                        measureResult.consumedScroll
-                    }
-                val accumulatedScroll =
-                    if (abs(delta) <= 0.5f) {
-                        // The leftover/surplus will be used in the next pass.
-                        delta
-                    } else {
-                        // We consumed less scroll than what was provided, no need to accumulate.
-                        0f
-                    }
-
-                state.applyMeasureResult(
-                    result = measureResult,
-                    consumedScroll = consumedScroll,
-                    accumulatedScroll = accumulatedScroll,
-                )
-
-                measureResult
             }
         }
     }

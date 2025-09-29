@@ -16,12 +16,14 @@
 
 package androidx.sqlite.driver.test
 
+import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.sqlite.driver.SupportSQLiteDriver
+import androidx.sqlite.execSQL
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -107,6 +109,38 @@ class SupportSQLiteDriverTest : BaseConformanceTest() {
             )
 
         fileDriver.open("file_database.db").close()
+    }
+
+    @Test
+    fun walModeChangeMatchesFramework() {
+        context.deleteDatabase("test.db")
+        val path = context.getDatabasePath("test.db").path
+
+        val openHelper =
+            FrameworkSQLiteOpenHelperFactory().create(getDefaultConfigBuilder().name(path).build())
+        val frameworkDatabase = openHelper.writableDatabase
+        val fileDriver = SupportSQLiteDriver(openHelper)
+        val connection = fileDriver.open("test.db")
+
+        fun queryConnectionJournalMode(): String =
+            connection.prepare("PRAGMA journal_mode").use {
+                it.step()
+                it.getText(0).lowercase()
+            }
+
+        assertThat(frameworkDatabase.isWriteAheadLoggingEnabled).isFalse()
+        assertThat(queryConnectionJournalMode()).isEqualTo("truncate")
+
+        connection.execSQL("PRAGMA journal_mode = WAL")
+        assertThat(frameworkDatabase.isWriteAheadLoggingEnabled).isTrue()
+        assertThat(queryConnectionJournalMode()).isEqualTo("wal")
+
+        connection.execSQL("PRAGMA journal_mode = TRUNCATE")
+        assertThat(frameworkDatabase.isWriteAheadLoggingEnabled).isFalse()
+        assertThat(queryConnectionJournalMode()).isEqualTo("truncate")
+
+        connection.close()
+        openHelper.close()
     }
 
     private fun getDefaultConfigBuilder() =

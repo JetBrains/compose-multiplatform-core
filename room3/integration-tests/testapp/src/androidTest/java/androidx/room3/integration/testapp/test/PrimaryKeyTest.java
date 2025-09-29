@@ -22,8 +22,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
 
-import android.database.sqlite.SQLiteConstraintException;
-
 import androidx.room3.Room;
 import androidx.room3.integration.testapp.PKeyTestDatabase;
 import androidx.room3.integration.testapp.vo.IntAutoIncPKeyEntity;
@@ -140,7 +138,7 @@ public class PrimaryKeyTest {
             throwable = t;
         }
         assertNotNull("Was expecting an exception", throwable);
-        assertThat(throwable, instanceOf(SQLiteConstraintException.class));
+        assertThat(throwable, instanceOf(NullPointerException.class));
     }
 
     @Test

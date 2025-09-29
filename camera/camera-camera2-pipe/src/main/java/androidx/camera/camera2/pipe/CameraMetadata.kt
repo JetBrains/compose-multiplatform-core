@@ -32,6 +32,7 @@ import androidx.camera.camera2.pipe.compat.Api33Compat
 import androidx.camera.camera2.pipe.compat.Api34Compat
 import androidx.camera.camera2.pipe.compat.Api35Compat
 import androidx.camera.camera2.pipe.compat.Camera2ColorSpaceProfiles
+import androidx.camera.camera2.pipe.compat.Camera2MultiResolutionStreamConfigurationMap
 
 /**
  * [CameraMetadata] is a compatibility wrapper around [CameraCharacteristics].
@@ -80,6 +81,21 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
         @JvmStatic
         public val CAMERA_STREAM_CONFIGURATION_MAP: Metadata.Key<CameraStreamConfigurationMap> =
             Metadata.Key.create("androidx.camera.camera2.pipe.scalar.streamConfigurationMap")
+
+        /**
+         * Replacement for [CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP]
+         * in conjunction with the [CameraMetadata.multiResolutionStreamConfigurationMap] extension
+         * function.
+         *
+         * Associated android key name is
+         * `androidx.camera.camera2.pipe.scalar.multiResolutionStreamConfigurationMap`
+         */
+        @JvmStatic
+        public val CAMERA_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP:
+            Metadata.Key<CameraMultiResolutionStreamConfigurationMap> =
+            Metadata.Key.create(
+                "androidx.camera.camera2.pipe.scalar.multiResolutionStreamConfigurationMap"
+            )
 
         /**
          * Replacement for [CameraCharacteristics.REQUEST_AVAILABLE_COLOR_SPACE_PROFILES] in
@@ -238,6 +254,18 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
                 this[CAMERA_STREAM_CONFIGURATION_MAP]
                     ?: this[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]?.let {
                         Camera2StreamConfigurationMap(it)
+                    }
+
+        public val CameraMetadata.multiResolutionStreamConfigurationMap:
+            CameraMultiResolutionStreamConfigurationMap?
+            @JvmStatic
+            get() =
+                this[CAMERA_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP]
+                    ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        this[CameraCharacteristics.SCALER_MULTI_RESOLUTION_STREAM_CONFIGURATION_MAP]
+                            ?.let { Camera2MultiResolutionStreamConfigurationMap(it) }
+                    } else {
+                        null
                     }
 
         public val CameraMetadata.supportsAutoFocusTrigger: Boolean

@@ -1,0 +1,7 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.camera.lifecycle.ProcessCameraProvider#getAvailableCameraInfos():
+    Source breaking change: method androidx.camera.lifecycle.ProcessCameraProvider.getAvailableCameraInfos() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.camera.lifecycle.ProcessCameraProvider#getAvailableConcurrentCameraInfos():
+    Source breaking change: method androidx.camera.lifecycle.ProcessCameraProvider.getAvailableConcurrentCameraInfos() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.camera.lifecycle.ProcessCameraProvider#isConcurrentCameraModeOn():
+    Source breaking change: method androidx.camera.lifecycle.ProcessCameraProvider.isConcurrentCameraModeOn() can no longer be resolved from Kotlin source

@@ -22,7 +22,6 @@ import android.os.Build
 import androidx.annotation.RestrictTo
 import androidx.core.content.ContextCompat
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.manifest.HAND_TRACKING
@@ -87,7 +86,7 @@ internal constructor(
 
     override fun configure(config: Config) {
         if (config.depthEstimation == Config.DepthEstimationMode.SMOOTH_AND_RAW) {
-            throw ConfigurationNotSupportedException(
+            throw UnsupportedOperationException(
                 "Failed to configure session, runtime does not support raw and smooth depth simultaneously."
             )
         }
@@ -133,7 +132,7 @@ internal constructor(
                         "There was an unknown runtime error configuring the session."
                     ) // XR_ERROR_RUNTIME_FAILURE
                 -8L ->
-                    throw ConfigurationNotSupportedException(
+                    throw UnsupportedOperationException(
                         "Feature not supported."
                     ) // XR_ERROR_FEATURE_UNSUPPORTED
                 -12L ->

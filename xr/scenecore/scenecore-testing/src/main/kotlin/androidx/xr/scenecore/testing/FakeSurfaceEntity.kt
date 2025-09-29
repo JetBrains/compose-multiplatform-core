@@ -25,6 +25,7 @@ import androidx.xr.scenecore.internal.Dimensions
 import androidx.xr.scenecore.internal.PerceivedResolutionResult
 import androidx.xr.scenecore.internal.SurfaceEntity
 import androidx.xr.scenecore.internal.SurfaceEntity.Shape
+import androidx.xr.scenecore.internal.SurfaceFeature
 import androidx.xr.scenecore.internal.TextureResource
 
 /**
@@ -32,21 +33,46 @@ import androidx.xr.scenecore.internal.TextureResource
  *
  * Interface for a spatialized Entity which manages an Android Surface. Applications can render to
  * this Surface in various ways, such as via MediaPlayer, ExoPlayer, or custom rendering. The
- * Surface content is texture mapped to the geometric shape defined by the [CanvasShape]. The
- * application can render stereoscopic content into the Surface and specify how it is routed to the
- * User's eyes for stereo viewing using the [stereoMode] property.
+ * Surface content is texture mapped to the geometric shape defined by the [Shape]. The application
+ * can render stereoscopic content into the Surface and specify how it is routed to the User's eyes
+ * for stereo viewing using the [stereoMode] property.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
+public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
+    FakeEntity(), SurfaceEntity {
+    private var _stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE
+
     /**
      * Specifies how the surface content will be routed for stereo viewing. Applications must render
      * into the surface in accordance with what is specified here in order for the compositor to
      * correctly produce a stereoscopic view to the user.
      */
-    override var stereoMode: Int = SurfaceEntity.StereoMode.SIDE_BY_SIDE
+    override var stereoMode: Int
+        get() {
+            return feature?.stereoMode ?: _stereoMode
+        }
+        set(value) {
+            if (feature == null) {
+                _stereoMode = value
+            } else {
+                feature.stereoMode = value
+            }
+        }
+
+    private var _shape: Shape = Shape.Quad(FloatSize2d(0f, 0f))
 
     /** Specifies the shape of the spatial canvas which the surface is texture mapped to. */
-    override var shape: Shape = Shape.Quad(FloatSize2d(0f, 0f))
+    override var shape: Shape
+        get() {
+            return feature?.shape ?: _shape
+        }
+        set(value) {
+            if (feature == null) {
+                _shape = value
+            } else {
+                feature.shape = value
+            }
+        }
 
     /**
      * Retrieves the dimensions of the "spatial canvas" which the surface is mapped to. These values
@@ -55,10 +81,11 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
      * @return The canvas [androidx.xr.scenecore.internal.Dimensions].
      */
     override val dimensions: Dimensions
-        get() = shape.dimensions
+        get() {
+            return feature?.shape?.dimensions ?: shape.dimensions
+        }
 
-    private var _surface: Surface =
-        ImageReader.newInstance(1, 1, ImageFormat.YUV_420_888, 1).surface
+    private var _surface: Surface? = null
 
     /**
      * Retrieves the surface that the Entity will display. The app can write into this surface
@@ -67,7 +94,15 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
      * @return an Android [Surface]
      */
     override val surface: Surface
-        get() = _surface
+        get() {
+            if (feature == null) {
+                if (_surface == null)
+                    _surface = ImageReader.newInstance(1, 1, ImageFormat.YUV_420_888, 1).surface
+                return _surface!!
+            } else {
+                return feature.surface
+            }
+        }
 
     /**
      * For test purposes only. Sets or replaces the underlying [Surface] for this fake entity.
@@ -92,7 +127,8 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
      * @param alphaMask The primary alpha mask texture.
      */
     override fun setPrimaryAlphaMaskTexture(alphaMask: TextureResource?) {
-        primaryAlphaMask = alphaMask
+        if (feature == null) primaryAlphaMask = alphaMask
+        else feature.setPrimaryAlphaMaskTexture(alphaMask)
     }
 
     /** For test purposes only. Represents the result of [setAuxiliaryAlphaMaskTexture] */
@@ -106,7 +142,8 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
      * @param alphaMask The auxiliary alpha mask texture.
      */
     override fun setAuxiliaryAlphaMaskTexture(alphaMask: TextureResource?) {
-        auxiliaryAlphaMask = alphaMask
+        if (feature == null) auxiliaryAlphaMask = alphaMask
+        else feature.setAuxiliaryAlphaMaskTexture(alphaMask)
     }
 
     /**
@@ -151,8 +188,8 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
      * Indicates whether explicit color information has been set for the surface content. If
      * `false`, the runtime should signal the backend to use its best effort color correction and
      * tonemapping. If `true`, the runtime should inform the backend to use the values specified in
-     * [colorSpace], [colorTransfer], [colorRange], and [maxCLL] for color correction and
-     * tonemapping of the surface content.
+     * [colorSpace], [colorTransfer], [colorRange], and [maxContentLightLevel] for color correction
+     * and tonemapping of the surface content.
      *
      * This property is typically managed by the `setContentColorMetadata` and
      * `resetContentColorMetadata` methods.
@@ -209,7 +246,7 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
      *   [androidx.xr.scenecore.internal.SurfaceEntity.ColorTransfer.Companion.SRGB]).
      * @param colorRange The runtime color range value (e.g.,
      *   [androidx.xr.scenecore.internal.SurfaceEntity.ColorRange.Companion.FULL]).
-     * @param maxCLL The maximum content light level in nits.
+     * @param maxContentLightLevel The maximum content light level in nits.
      */
     override fun setContentColorMetadata(
         colorSpace: Int,
@@ -226,7 +263,7 @@ public class FakeSurfaceEntity() : FakeEntity(), SurfaceEntity {
     /**
      * Resets the color information to the runtime's default handling. This will set
      * [contentColorMetadataSet] to `false` and typically involves reverting [colorSpace],
-     * [colorTransfer], [colorRange], and [maxCLL] to their default runtime values.
+     * [colorTransfer], [colorRange], and [maxContentLightLevel] to their default runtime values.
      */
     override fun resetContentColorMetadata() {
         _colorSpace = SurfaceEntity.ColorSpace.BT709

@@ -132,13 +132,16 @@ internal class BluetoothProfileListener(
      * ============================================================================================
      */
     private fun getBluetoothDeviceName(device: BluetoothDevice): String {
-        var name: String = EndpointUtils.BLUETOOTH_DEVICE_DEFAULT_NAME
-        try {
-            name = device.name
+        return try {
+            // if device.name is null or empty, return null to trigger the Elvis operator
+            device.name?.ifEmpty { null }
         } catch (e: SecurityException) {
-            Log.e(TAG, "getBluetoothDeviceName: hit SecurityException while getting device name", e)
-        }
-        return name
+            Log.e(TAG, "getBluetoothDeviceName: Lacking BLUETOOTH_CONNECT permission", e)
+            null // Return null on exception
+        } catch (e: Exception) {
+            Log.e(TAG, "getBluetoothDeviceName: Encountered an exception", e)
+            null // Return null on exception
+        } ?: EndpointUtils.BLUETOOTH_DEVICE_DEFAULT_NAME // If the result is null, use the default
     }
 
     private fun getBluetoothDeviceAddress(device: BluetoothDevice): String {

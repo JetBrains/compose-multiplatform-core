@@ -50,6 +50,7 @@ import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.compat.CameraPipeKeys
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
+import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination
 import androidx.camera.camera2.pipe.integration.adapter.ZslControl
@@ -456,6 +457,7 @@ constructor(
             }
         }
 
+        val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter)
         val useCamera2Extension =
             sessionProcessor?.implementationType?.first == SessionProcessor.TYPE_CAMERA2_EXTENSION
 
@@ -476,6 +478,7 @@ constructor(
                     zslControl,
                     templateParamsOverride,
                     cameraMetadata,
+                    graphStateToCameraStateAdapter,
                     camera2ExtensionMode = sessionProcessor?.implementationType?.second,
                     isExtensions = true,
                     enableStreamUseCase = false,
@@ -486,17 +489,34 @@ constructor(
             sessionProcessor!!.initSession(cameraInfoInternal.get(), null)
 
             val useCaseManagerConfig =
-                UseCaseManagerConfig(useCases, sessionConfigAdapter, graphConfig, streamConfigMap)
-            this.tryResumeUseCaseManager(useCaseManagerConfig)
+                UseCaseManagerConfig(
+                    useCases,
+                    sessionConfigAdapter,
+                    graphConfig,
+                    streamConfigMap,
+                    graphStateToCameraStateAdapter,
+                )
+            tryResumeUseCaseManager(useCaseManagerConfig)
             return
         } else {
             val sessionConfigAdapter = SessionConfigAdapter(useCases, isPrimary = isPrimary)
             val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
-            val graphConfig = createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            val graphConfig =
+                createCameraGraphConfig(
+                    sessionConfigAdapter,
+                    streamConfigMap,
+                    graphStateToCameraStateAdapter,
+                )
 
             val useCaseManagerConfig =
-                UseCaseManagerConfig(useCases, sessionConfigAdapter, graphConfig, streamConfigMap)
-            this.tryResumeUseCaseManager(useCaseManagerConfig)
+                UseCaseManagerConfig(
+                    useCases,
+                    sessionConfigAdapter,
+                    graphConfig,
+                    streamConfigMap,
+                    graphStateToCameraStateAdapter,
+                )
+            tryResumeUseCaseManager(useCaseManagerConfig)
         }
     }
 
@@ -540,6 +560,8 @@ constructor(
         cameraGraph: CameraGraph,
     ) {
         with(useCaseManagerConfig) {
+            graphStateToCameraStateAdapter.cameraGraph = cameraGraph
+            cameraStateAdapter.onGraphUpdated(cameraGraph)
             // Create and configure the new camera component.
             _activeComponent =
                 builder
@@ -547,7 +569,6 @@ constructor(
                         UseCaseCameraConfig(
                             useCases,
                             sessionConfigAdapter,
-                            cameraStateAdapter,
                             cameraGraph,
                             streamConfigMap,
                         )
@@ -694,6 +715,7 @@ constructor(
     internal fun createCameraGraphConfig(
         sessionConfigAdapter: SessionConfigAdapter,
         streamConfigMap: MutableMap<CameraStream.Config, DeferrableSurface>,
+        graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
         isExtensions: Boolean = false,
     ): CameraGraph.Config {
         return createCameraGraphConfig(
@@ -713,6 +735,7 @@ constructor(
             zslControl,
             templateParamsOverride,
             cameraMetadata,
+            graphStateToCameraStateAdapter,
             camera2ExtensionMode = null,
             isExtensions = isExtensions,
             surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
@@ -825,6 +848,7 @@ constructor(
                         streamSpec.sessionType,
                         streamSpec.expectedFrameRateRange,
                         useCase.currentConfig.isStrictFrameRateRequired,
+                        useCase.currentConfig.getCustomMaxFrameRate(surfaceResolution),
                     )
                 )
             }
@@ -947,6 +971,7 @@ constructor(
             val sessionConfigAdapter: SessionConfigAdapter,
             val cameraGraphConfig: CameraGraph.Config,
             val streamConfigMap: MutableMap<CameraStream.Config, DeferrableSurface>,
+            val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
         )
 
         public fun SessionConfig.toCamera2ImplConfig(): Camera2ImplConfig {
@@ -983,6 +1008,7 @@ constructor(
             zslControl: ZslControl,
             templateParamsOverride: TemplateParamsOverride,
             cameraMetadata: CameraMetadata?,
+            graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter? = null,
             camera2ExtensionMode: Int? = null,
             isExtensions: Boolean = false,
             enableStreamUseCase: Boolean = true,
@@ -1182,6 +1208,7 @@ constructor(
                 defaultListeners = listOf(callbackMap, requestListener),
                 defaultParameters = defaultParameters,
                 flags = combinedFlags,
+                graphStateListeners = listOfNotNull(graphStateToCameraStateAdapter),
             )
         }
 

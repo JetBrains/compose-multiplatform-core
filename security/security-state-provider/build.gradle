@@ -32,7 +32,7 @@ plugins {
 
 dependencies {
     implementation(libs.kotlinSerializationJson)
-    implementation(project(":security:security-state"))
+    implementation("androidx.security:security-state:1.0.0-beta01")
 
     testImplementation(libs.testExtJunit)
     testImplementation(libs.mockitoKotlin4)

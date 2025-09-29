@@ -32,9 +32,9 @@ import androidx.xr.scenecore.internal.ActivityPanelEntity as RtActivityPanelEnti
 import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
 import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.scenecore.internal.SpatialModeChangeListener as RtSpatialModeChangeListener
 import androidx.xr.scenecore.internal.SpatialVisibility as RtSpatialVisibility
@@ -63,29 +63,25 @@ class SceneTest {
     private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
     private val activity = activityController.create().start().get()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mockSceneRuntime = mock<SceneRuntime>()
     private val mockAnchorEntity = mock<RtAnchorEntity>()
     lateinit var session: Session
 
     @Before
     fun setUp() {
-        whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
+        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
         val mockActivitySpace = mock<RtActivitySpace>()
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.headActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
-        whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.headActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mock())
+        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockAnchorEntity.state).thenReturn(RtAnchorEntity.State.UNANCHORED)
-        whenever(mockPlatformAdapter.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
+        whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
         session =
             Session(
                 activity,
                 runtimes =
-                    listOf(
-                        fakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
-                    ),
+                    listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
         session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
     }
@@ -137,7 +133,7 @@ class SceneTest {
         @Suppress("UNUSED_VARIABLE") val unused = session.scene.mainPanelEntity
         @Suppress("UNUSED_VARIABLE") val unusedAgain = session.scene.mainPanelEntity
 
-        verify(mockPlatformAdapter, times(1)).mainPanelEntity
+        verify(mockSceneRuntime, times(1)).mainPanelEntity
     }
 
     @Test
@@ -145,7 +141,7 @@ class SceneTest {
         val mockPanelEntity1 = mock<RtPanelEntity>()
         val mockActivityPanelEntity = mock<RtActivityPanelEntity>()
         whenever(
-                mockPlatformAdapter.createPanelEntity(
+                mockSceneRuntime.createPanelEntity(
                     any<Context>(),
                     any<Pose>(),
                     any<View>(),
@@ -155,7 +151,7 @@ class SceneTest {
                 )
             )
             .thenReturn(mockPanelEntity1)
-        whenever(mockPlatformAdapter.createActivityPanelEntity(any(), any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createActivityPanelEntity(any(), any(), any(), any(), any()))
             .thenReturn(mockActivityPanelEntity)
         val panelEntity =
             PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test1")
@@ -169,7 +165,7 @@ class SceneTest {
     fun getEntitiesBaseType_returnsAllEntities() {
         val mockPanelEntity = mock<RtPanelEntity>()
         whenever(
-                mockPlatformAdapter.createPanelEntity(
+                mockSceneRuntime.createPanelEntity(
                     any<Context>(),
                     any<Pose>(),
                     any<View>(),
@@ -179,7 +175,7 @@ class SceneTest {
                 )
             )
             .thenReturn(mockPanelEntity)
-        whenever(mockPlatformAdapter.createAnchorEntity(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
             .thenReturn(mockAnchorEntity)
         val panelEntity =
             PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test1")
@@ -194,9 +190,9 @@ class SceneTest {
     fun addAndRemoveSpatialCapabilitiesChangedListener_callsRuntimeAddAndRemove() {
         val listener = Consumer<SpatialCapabilities> { _ -> }
         session.scene.addSpatialCapabilitiesChangedListener(listener = listener)
-        verify(mockPlatformAdapter).addSpatialCapabilitiesChangedListener(any(), any())
+        verify(mockSceneRuntime).addSpatialCapabilitiesChangedListener(any(), any())
         session.scene.removeSpatialCapabilitiesChangedListener(listener)
-        verify(mockPlatformAdapter).removeSpatialCapabilitiesChangedListener(any())
+        verify(mockSceneRuntime).removeSpatialCapabilitiesChangedListener(any())
     }
 
     @Test
@@ -208,8 +204,7 @@ class SceneTest {
         // Test that it calls into the runtime and capture the runtime listener.
         val executor = directExecutor()
         session.scene.setSpatialVisibilityChangedListener(executor, listener)
-        verify(mockPlatformAdapter)
-            .setSpatialVisibilityChangedListener(eq(executor), captor.capture())
+        verify(mockSceneRuntime).setSpatialVisibilityChangedListener(eq(executor), captor.capture())
 
         // Simulate the runtime listener being called with any value.
         val rtListener = captor.firstValue
@@ -235,20 +230,20 @@ class SceneTest {
     fun setSpatialVisibilityChangedListener_withNoExecutor_callsRuntimeSetSpatialVisibilityChangedListenerWithMainThreadExecutor() {
         val listener = Consumer<Int> { _ -> }
         session.scene.setSpatialVisibilityChangedListener(listener)
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .setSpatialVisibilityChangedListener(eq(HandlerExecutor.mainThreadExecutor), any())
     }
 
     @Test
     fun clearSpatialVisibilityChangedListener_callsRuntimeClearSpatialVisibilityChangedListener() {
         session.scene.clearSpatialVisibilityChangedListener()
-        verify(mockPlatformAdapter).clearSpatialVisibilityChangedListener()
+        verify(mockSceneRuntime).clearSpatialVisibilityChangedListener()
     }
 
     @Test
     fun sceneInit_setsDefaultSpatialModeChangedListener() {
         // Verify that default handler is always set.
-        verify(mockPlatformAdapter).spatialModeChangeListener = any()
+        verify(mockSceneRuntime).spatialModeChangeListener = any()
     }
 
     @Test
@@ -258,7 +253,7 @@ class SceneTest {
         val captor = argumentCaptor<RtSpatialModeChangeListener>()
         // The listener is set during Scene initialization. We need to capture it to trigger
         // changes.
-        verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
+        verify(mockSceneRuntime).spatialModeChangeListener = captor.capture()
         val rtListener = captor.firstValue
 
         val executor = directExecutor()
@@ -278,7 +273,7 @@ class SceneTest {
         var receivedEvent: SpatialModeChangeEvent? = null
         val listener = Consumer<SpatialModeChangeEvent> { event -> receivedEvent = event }
         val captor = argumentCaptor<RtSpatialModeChangeListener>()
-        verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
+        verify(mockSceneRuntime).spatialModeChangeListener = captor.capture()
         val rtListener = captor.firstValue
 
         session.scene.setSpatialModeChangedListener(listener)
@@ -298,7 +293,7 @@ class SceneTest {
         var listenerCalled = false
         val listener = Consumer<SpatialModeChangeEvent> { _ -> listenerCalled = true }
         val captor = argumentCaptor<RtSpatialModeChangeListener>()
-        verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
+        verify(mockSceneRuntime).spatialModeChangeListener = captor.capture()
         val rtListener = captor.firstValue
 
         session.scene.setSpatialModeChangedListener(listener)
@@ -313,7 +308,7 @@ class SceneTest {
     @Test
     fun clearSpatialModeChangedListener_restoresDefaultKeyEntityBehavior() {
         val captor = argumentCaptor<RtSpatialModeChangeListener>()
-        verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
+        verify(mockSceneRuntime).spatialModeChangeListener = captor.capture()
         val rtListener = captor.firstValue
 
         val mockKeyEntity = mock<Entity>()
@@ -346,7 +341,7 @@ class SceneTest {
     @Test
     fun setSpatialModeChangedListener_overridesDefaultBehavior() {
         val captor = argumentCaptor<RtSpatialModeChangeListener>()
-        verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
+        verify(mockSceneRuntime).spatialModeChangeListener = captor.capture()
         val rtListener = captor.firstValue
 
         val mockKeyEntity = mock<Entity>()
@@ -367,29 +362,29 @@ class SceneTest {
     @Test
     fun getSpatialCapabilities_invokesAdapterGetSpatialCapabilities() {
         val expectedCapabilities = SpatialCapabilities(1)
-        whenever(mockPlatformAdapter.spatialCapabilities).thenReturn(RtSpatialCapabilities(1))
+        whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(1))
         val actualCapabilities = session.scene.spatialCapabilities
-        verify(mockPlatformAdapter).spatialCapabilities
+        verify(mockSceneRuntime).spatialCapabilities
         assertThat(actualCapabilities).isEqualTo(expectedCapabilities)
     }
 
     @Test
     fun requestFullSpaceMode_callsThrough() {
         session.scene.requestFullSpaceMode()
-        verify(mockPlatformAdapter).requestFullSpaceMode()
+        verify(mockSceneRuntime).requestFullSpaceMode()
     }
 
     @Test
     fun requestHomeSpaceMode_callsThrough() {
         session.scene.requestHomeSpaceMode()
-        verify(mockPlatformAdapter).requestHomeSpaceMode()
+        verify(mockSceneRuntime).requestHomeSpaceMode()
     }
 
     @Test
     fun panelClippingConfig_defaultValue_isTrue() {
         val defaultConfig = PanelClippingConfig(isDepthTestEnabled = true)
         assertThat(session.scene.panelClippingConfig).isEqualTo(defaultConfig)
-        verify(mockPlatformAdapter, never()).enablePanelDepthTest(false)
+        verify(mockSceneRuntime, never()).enablePanelDepthTest(false)
     }
 
     @Test
@@ -397,9 +392,9 @@ class SceneTest {
         val disabledConfig = PanelClippingConfig(isDepthTestEnabled = false)
         session.scene.panelClippingConfig = disabledConfig
 
-        verify(mockPlatformAdapter).enablePanelDepthTest(false)
+        verify(mockSceneRuntime).enablePanelDepthTest(false)
         assertThat(session.scene.panelClippingConfig).isEqualTo(disabledConfig)
-        verify(mockPlatformAdapter, never()).enablePanelDepthTest(true)
+        verify(mockSceneRuntime, never()).enablePanelDepthTest(true)
     }
 
     @Test
@@ -410,9 +405,9 @@ class SceneTest {
         val enabledConfig = PanelClippingConfig(isDepthTestEnabled = true)
         session.scene.panelClippingConfig = enabledConfig
 
-        val inOrder = inOrder(mockPlatformAdapter)
-        inOrder.verify(mockPlatformAdapter).enablePanelDepthTest(false)
-        inOrder.verify(mockPlatformAdapter).enablePanelDepthTest(true)
+        val inOrder = inOrder(mockSceneRuntime)
+        inOrder.verify(mockSceneRuntime).enablePanelDepthTest(false)
+        inOrder.verify(mockSceneRuntime).enablePanelDepthTest(true)
         assertThat(session.scene.panelClippingConfig).isEqualTo(enabledConfig)
     }
 
@@ -430,7 +425,7 @@ class SceneTest {
 
     @Test
     fun keyEntity_setWithAnchorEntity_throwsIllegalArgumentException() {
-        whenever(mockPlatformAdapter.createAnchorEntity(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
             .thenReturn(mockAnchorEntity)
         val anchorEntity =
             AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
@@ -467,7 +462,7 @@ class SceneTest {
     fun defaultSpatialModeChangedListener_withKeyEntity_updatesPoseAndScale() {
         val captor = argumentCaptor<RtSpatialModeChangeListener>()
         // The listener is set during Scene initialization. Capture it to trigger a change.
-        verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
+        verify(mockSceneRuntime).spatialModeChangeListener = captor.capture()
         val rtListener = captor.firstValue
 
         val mockKeyEntity = mock<Entity>()
@@ -486,7 +481,7 @@ class SceneTest {
     @Test
     fun defaultSpatialModeChangedListener_withNullKeyEntity_isNoOp() {
         val captor = argumentCaptor<RtSpatialModeChangeListener>()
-        verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
+        verify(mockSceneRuntime).spatialModeChangeListener = captor.capture()
         val rtListener = captor.firstValue
 
         // Ensure keyEntity is null (it is by default)

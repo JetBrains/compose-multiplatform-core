@@ -177,38 +177,51 @@ public final class SchemaToPlatformConverter {
                         longPropertyBuilder, longProperty.getIndexingType());
             }
             if (longProperty.isScoringEnabled()) {
-                // TODO(b/379743983): update once this feature is available.
-                throw new UnsupportedOperationException(
-                        Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
-                                + " is not available on this AppSearch implementation.");
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                    throw new UnsupportedOperationException(
+                            Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                                    + " is not available on this AppSearch implementation.");
+                }
+                ApiHelperForSdkExtensionBBase.setScoringEnabled(
+                        longPropertyBuilder, longProperty.isScoringEnabled());
             }
             return longPropertyBuilder.build();
         } else if (jetpackProperty instanceof AppSearchSchema.DoublePropertyConfig) {
             AppSearchSchema.DoublePropertyConfig doubleProperty =
                     (AppSearchSchema.DoublePropertyConfig) jetpackProperty;
+            android.app.appsearch.AppSearchSchema.DoublePropertyConfig.Builder
+                    doublePropertyBuilder =
+                    new android.app.appsearch.AppSearchSchema.DoublePropertyConfig.Builder(
+                         jetpackProperty.getName())
+                        .setCardinality(jetpackProperty.getCardinality());
             if (doubleProperty.isScoringEnabled()) {
-                // TODO(b/379743983): update once this feature is available.
-                throw new UnsupportedOperationException(
-                        Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
-                                + " is not available on this AppSearch implementation.");
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                    throw new UnsupportedOperationException(
+                            Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                                    + " is not available on this AppSearch implementation.");
+                }
+                ApiHelperForSdkExtensionBBase.setScoringEnabled(
+                        doublePropertyBuilder, doubleProperty.isScoringEnabled());
             }
-            return new android.app.appsearch.AppSearchSchema.DoublePropertyConfig.Builder(
-                    jetpackProperty.getName())
-                    .setCardinality(jetpackProperty.getCardinality())
-                    .build();
+            return doublePropertyBuilder.build();
         } else if (jetpackProperty instanceof AppSearchSchema.BooleanPropertyConfig) {
             AppSearchSchema.BooleanPropertyConfig booleanProperty =
                     (AppSearchSchema.BooleanPropertyConfig) jetpackProperty;
-            if (booleanProperty.isScoringEnabled()) {
-                // TODO(b/379743983): update once this feature is available.
-                throw new UnsupportedOperationException(
-                        Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
-                                + " is not available on this AppSearch implementation.");
-            }
-            return new android.app.appsearch.AppSearchSchema.BooleanPropertyConfig.Builder(
+            android.app.appsearch.AppSearchSchema.BooleanPropertyConfig.Builder
+                    booleanPropertyBuilder =
+                    new android.app.appsearch.AppSearchSchema.BooleanPropertyConfig.Builder(
                     jetpackProperty.getName())
-                    .setCardinality(jetpackProperty.getCardinality())
-                    .build();
+                    .setCardinality(jetpackProperty.getCardinality());
+            if (booleanProperty.isScoringEnabled()) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                    throw new UnsupportedOperationException(
+                            Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                                    + " is not available on this AppSearch implementation.");
+                }
+                ApiHelperForSdkExtensionBBase.setScoringEnabled(
+                        booleanPropertyBuilder, booleanProperty.isScoringEnabled());
+            }
+            return booleanPropertyBuilder.build();
         } else if (jetpackProperty instanceof AppSearchSchema.BytesPropertyConfig) {
             return new android.app.appsearch.AppSearchSchema.BytesPropertyConfig.Builder(
                     jetpackProperty.getName())
@@ -255,6 +268,7 @@ public final class SchemaToPlatformConverter {
     // Most stringProperty.get calls cause WrongConstant lint errors because the methods are not
     // defined as returning the same constants as the corresponding setter expects, but they do
     @SuppressLint({"WrongConstant", "NewApi"}) // EmbeddingPropertyConfig incorrectly flagged
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private static AppSearchSchema.@NonNull PropertyConfig toJetpackProperty(
             android.app.appsearch.AppSearchSchema.@NonNull PropertyConfig platformProperty) {
         Preconditions.checkNotNull(platformProperty);
@@ -278,10 +292,13 @@ public final class SchemaToPlatformConverter {
                 instanceof android.app.appsearch.AppSearchSchema.LongPropertyConfig) {
             android.app.appsearch.AppSearchSchema.LongPropertyConfig longProperty =
                     (android.app.appsearch.AppSearchSchema.LongPropertyConfig) platformProperty;
-            // TODO(b/379743983): call setScoringEnabled() once this feature is available.
             AppSearchSchema.LongPropertyConfig.Builder jetpackBuilder =
                     new AppSearchSchema.LongPropertyConfig.Builder(longProperty.getName())
                             .setCardinality(longProperty.getCardinality());
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                jetpackBuilder.setScoringEnabled(
+                        ApiHelperForSdkExtensionBBase.getScoringEnabled(longProperty));
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 jetpackBuilder.setIndexingType(
                         ApiHelperForU.getIndexingType(longProperty));
@@ -293,18 +310,31 @@ public final class SchemaToPlatformConverter {
                 instanceof android.app.appsearch.AppSearchSchema.DoublePropertyConfig) {
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
             // available in platform.
-            // TODO(b/379743983): call setScoringEnabled() once this feature is available.
-            return new AppSearchSchema.DoublePropertyConfig.Builder(platformProperty.getName())
-                    .setCardinality(platformProperty.getCardinality())
-                    .build();
+            android.app.appsearch.AppSearchSchema.DoublePropertyConfig doubleProperty =
+                    (android.app.appsearch.AppSearchSchema.DoublePropertyConfig) platformProperty;
+            AppSearchSchema.DoublePropertyConfig.Builder jetpackBuilder =
+                    new AppSearchSchema.DoublePropertyConfig.Builder(platformProperty.getName())
+                            .setCardinality(platformProperty.getCardinality());
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                jetpackBuilder.setScoringEnabled(
+                        ApiHelperForSdkExtensionBBase.getScoringEnabled(doubleProperty));
+            }
+
+            return jetpackBuilder.build();
         } else if (platformProperty
                 instanceof android.app.appsearch.AppSearchSchema.BooleanPropertyConfig) {
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
             // available in platform.
-            // TODO(b/379743983): call setScoringEnabled() once this feature is available.
-            return new AppSearchSchema.BooleanPropertyConfig.Builder(platformProperty.getName())
-                    .setCardinality(platformProperty.getCardinality())
-                    .build();
+            android.app.appsearch.AppSearchSchema.BooleanPropertyConfig booleanProperty =
+                    (android.app.appsearch.AppSearchSchema.BooleanPropertyConfig) platformProperty;
+            AppSearchSchema.BooleanPropertyConfig.Builder jetpackBuilder =
+                    new AppSearchSchema.BooleanPropertyConfig.Builder(platformProperty.getName())
+                            .setCardinality(platformProperty.getCardinality());
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                jetpackBuilder.setScoringEnabled(
+                        ApiHelperForSdkExtensionBBase.getScoringEnabled(booleanProperty));
+            }
+            return jetpackBuilder.build();
         } else if (platformProperty
                 instanceof android.app.appsearch.AppSearchSchema.BytesPropertyConfig) {
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
@@ -421,6 +451,53 @@ public final class SchemaToPlatformConverter {
                 android.app.appsearch.AppSearchSchema.DocumentPropertyConfig
                         platformDocumentProperty) {
             return platformDocumentProperty.getIndexableNestedProperties();
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.B_BASE)
+    private static class ApiHelperForSdkExtensionBBase {
+        private ApiHelperForSdkExtensionBBase() {
+            // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static void setScoringEnabled(
+                android.app.appsearch.AppSearchSchema.LongPropertyConfig.Builder platformBuilder,
+                boolean isScoringEnabled) {
+            platformBuilder.setScoringEnabled(isScoringEnabled);
+        }
+
+        @DoNotInline
+        static void setScoringEnabled(
+                android.app.appsearch.AppSearchSchema.DoublePropertyConfig.Builder platformBuilder,
+                boolean isScoringEnabled) {
+            platformBuilder.setScoringEnabled(isScoringEnabled);
+        }
+
+        @DoNotInline
+        static void setScoringEnabled(
+                android.app.appsearch.AppSearchSchema.BooleanPropertyConfig.Builder platformBuilder,
+                boolean isScoringEnabled) {
+            platformBuilder.setScoringEnabled(isScoringEnabled);
+        }
+
+        @DoNotInline
+        static boolean getScoringEnabled(
+                android.app.appsearch.AppSearchSchema.LongPropertyConfig platformProperty) {
+            return platformProperty.isScoringEnabled();
+        }
+
+        @DoNotInline
+        static boolean getScoringEnabled(
+                android.app.appsearch.AppSearchSchema.DoublePropertyConfig platformProperty) {
+            return platformProperty.isScoringEnabled();
+        }
+
+        @DoNotInline
+        static boolean getScoringEnabled(
+                android.app.appsearch.AppSearchSchema.BooleanPropertyConfig platformProperty) {
+            return platformProperty.isScoringEnabled();
         }
     }
 

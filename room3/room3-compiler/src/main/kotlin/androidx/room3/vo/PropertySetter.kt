@@ -47,7 +47,18 @@ data class PropertySetter(
                         }
                     addStatement(stmt, ownerVar, jvmName, inVar)
                 }
-                CodeLanguage.KOTLIN -> addStatement("%L.%L = %L", ownerVar, propertyName, inVar)
+                CodeLanguage.KOTLIN -> {
+                    when (callType) {
+                        CallType.PROPERTY,
+                        CallType.SYNTHETIC_FUNCTION -> {
+                            addStatement("%L.%L = %L", ownerVar, propertyName, inVar)
+                        }
+                        CallType.FUNCTION -> {
+                            addStatement("%L.%L(%L)", ownerVar, jvmName, inVar)
+                        }
+                        else -> error("Unknown call type: $callType")
+                    }
+                }
             }
         }
     }

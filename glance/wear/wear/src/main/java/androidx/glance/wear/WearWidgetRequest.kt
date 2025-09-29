@@ -18,7 +18,7 @@ package androidx.glance.wear
 
 import android.util.Log
 import androidx.annotation.RestrictTo
-import androidx.glance.wear.data.WearWidgetRequestData
+import androidx.glance.wear.parcel.WearWidgetRequestParcel
 import androidx.glance.wear.proto.WearWidgetRequestProto
 import java.io.IOException
 
@@ -31,20 +31,20 @@ import java.io.IOException
  */
 public class WearWidgetRequest(public val instanceId: Int) {
 
-    /** Convert this request to [WearWidgetRequestData]. */
+    /** Convert this request to [WearWidgetRequestParcel]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun toData(): WearWidgetRequestData {
+    public fun toParcel(): WearWidgetRequestParcel {
         val requestProto = WearWidgetRequestProto(instance_id = instanceId)
-        return WearWidgetRequestData().apply { payload = requestProto.encode() }
+        return WearWidgetRequestParcel().apply { payload = requestProto.encode() }
     }
 
     internal companion object {
-        fun fromData(requestData: WearWidgetRequestData): WearWidgetRequest? {
+        fun fromParcel(requestParcel: WearWidgetRequestParcel): WearWidgetRequest? {
             try {
-                val requestProto = WearWidgetRequestProto.ADAPTER.decode(requestData.payload)
+                val requestProto = WearWidgetRequestProto.ADAPTER.decode(requestParcel.payload)
                 return WearWidgetRequest(requestProto.instance_id)
             } catch (ex: IOException) {
-                Log.e(TAG, "Error deserializing WearWidgetRequestData payload.", ex)
+                Log.e(TAG, "Error deserializing WearWidgetRequestParcel payload.", ex)
             }
             return null
         }

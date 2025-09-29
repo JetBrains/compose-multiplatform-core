@@ -27,6 +27,7 @@ import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.TypeConverter
 import androidx.room3.TypeConverters
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -121,7 +122,9 @@ class EnumColumnTypeAdapterTest {
     fun initDb() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db =
-            Room.inMemoryDatabaseBuilder(context, EnumColumnTypeAdapterDatabase::class.java).build()
+            Room.inMemoryDatabaseBuilder<EnumColumnTypeAdapterDatabase>(context)
+                .setDriver(AndroidSQLiteDriver())
+                .build()
     }
 
     @After

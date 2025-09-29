@@ -23,12 +23,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
 import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.performIndirectTouchEvent
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 
 /** Synthetic indirect swipe. */
 @OptIn(ExperimentalIndirectTouchTypeApi::class)
-internal fun SemanticsNodeInteraction.performIndirectSwipe(distance: Float) {
+internal fun SemanticsNodeInteraction.performIndirectSwipe(rule: ComposeTestRule, distance: Float) {
     val currentTime = SystemClock.uptimeMillis()
 
     val down =
@@ -42,10 +42,11 @@ internal fun SemanticsNodeInteraction.performIndirectSwipe(distance: Float) {
         )
     down.source = SOURCE_TOUCH_NAVIGATION
     performIndirectTouchEvent(
+        rule,
         IndirectTouchEvent(
             motionEvent = down,
             primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-        )
+        ),
     )
 
     val move =
@@ -59,16 +60,18 @@ internal fun SemanticsNodeInteraction.performIndirectSwipe(distance: Float) {
         )
     move.source = SOURCE_TOUCH_NAVIGATION
     performIndirectTouchEvent(
+        rule,
         IndirectTouchEvent(
             motionEvent = move,
             primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-        )
+            previousMotionEvent = down,
+        ),
     )
 
     val up =
         MotionEvent.obtain(
-            currentTime + 200L,
-            currentTime + 200L,
+            currentTime + 400L,
+            currentTime + 400L,
             MotionEvent.ACTION_UP,
             distance,
             Offset.Zero.y,
@@ -76,9 +79,28 @@ internal fun SemanticsNodeInteraction.performIndirectSwipe(distance: Float) {
         )
     up.source = SOURCE_TOUCH_NAVIGATION
     performIndirectTouchEvent(
+        rule,
         IndirectTouchEvent(
             motionEvent = up,
             primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-        )
+            previousMotionEvent = move,
+        ),
     )
+}
+
+/**
+ * Send the specified [IndirectTouchEvent] to the focused component.
+ *
+ * @return true if the event was consumed. False otherwise.
+ */
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
+internal fun SemanticsNodeInteraction.performIndirectTouchEvent(
+    rule: ComposeTestRule,
+    indirectTouchEvent: IndirectTouchEvent,
+): Boolean {
+    val semanticsNode =
+        fetchSemanticsNode("Failed to send indirect touch event ($indirectTouchEvent)")
+    val root = semanticsNode.root
+    requireNotNull(root) { "Failed to find owner" }
+    return rule.runOnUiThread { root.sendIndirectTouchEvent(indirectTouchEvent) }
 }

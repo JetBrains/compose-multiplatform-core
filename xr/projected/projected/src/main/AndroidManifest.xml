@@ -27,4 +27,10 @@
             android:exported="false"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
     </application>
+
+    <queries>
+        <intent>
+            <action android:name="androidx.xr.projected.ACTION_BIND" />
+        </intent>
+    </queries>
 </manifest>

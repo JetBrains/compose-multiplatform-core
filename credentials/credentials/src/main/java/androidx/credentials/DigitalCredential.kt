@@ -52,12 +52,18 @@ class DigitalCredential private constructor(val credentialJson: String, data: Bu
 
         internal const val BUNDLE_KEY_REQUEST_JSON = "androidx.credentials.BUNDLE_KEY_REQUEST_JSON"
 
+        private const val BYTE_SIZE_500K = 500000
+
         @JvmStatic
+        @Suppress("DEPRECATION")
         internal fun createFrom(data: Bundle): DigitalCredential {
             try {
-                val credentialJson = data.getString(BUNDLE_KEY_REQUEST_JSON)
-                return DigitalCredential(credentialJson!!, data)
-            } catch (e: Exception) {
+                val credentialJson = data.get(BUNDLE_KEY_REQUEST_JSON)!!
+                return when (credentialJson) {
+                    is ByteArray -> DigitalCredential(String(credentialJson, Charsets.UTF_8), data)
+                    else -> DigitalCredential(credentialJson as String, data)
+                }
+            } catch (_: Exception) {
                 throw FrameworkClassParsingException()
             }
         }
@@ -65,7 +71,12 @@ class DigitalCredential private constructor(val credentialJson: String, data: Bu
         @JvmStatic
         internal fun toBundle(responseJson: String): Bundle {
             val bundle = Bundle()
-            bundle.putString(BUNDLE_KEY_REQUEST_JSON, responseJson)
+            val jsonBytes = responseJson.toByteArray(Charsets.UTF_8)
+            if (jsonBytes.size >= BYTE_SIZE_500K) {
+                bundle.putByteArray(BUNDLE_KEY_REQUEST_JSON, jsonBytes)
+            } else {
+                bundle.putString(BUNDLE_KEY_REQUEST_JSON, responseJson)
+            }
             return bundle
         }
     }

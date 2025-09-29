@@ -23,6 +23,8 @@ import android.os.IBinder
 import androidx.annotation.RestrictTo
 import androidx.xr.projected.ProjectedServiceBinding
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.GeospatialMode
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.LifecycleManager
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
@@ -69,7 +71,7 @@ internal constructor(
     override fun create() {
         checkProjectedSupportedAndUpToDate(activity)
         if (testPerceptionService != null) {
-            perceptionManager.service = testPerceptionService
+            perceptionManager.xrResources.service = testPerceptionService
             return
         }
 
@@ -78,13 +80,30 @@ internal constructor(
         }
     }
 
-    override fun configure(config: Config) {}
+    override fun configure(config: Config) {
+        perceptionManager.xrResources.config = config
+    }
 
     override fun resume() {}
 
+    internal fun updateTrackingStates(deviceTrackingState: Int, earthTrackingState: Int) {
+        perceptionManager.xrResources.deviceTrackingState = toTrackingState(deviceTrackingState)
+        perceptionManager.xrResources.earthTrackingState = toTrackingState(earthTrackingState)
+    }
+
+    private fun toTrackingState(value: Int): TrackingState {
+        return when (value) {
+            0 -> TrackingState.TRACKING
+            1 -> TrackingState.PAUSED
+            else -> TrackingState.STOPPED
+        }
+    }
+
     override suspend fun update(): ComparableTimeMark {
-        val now = timeSource.markNow()
         delay(30.milliseconds)
+        val result = perceptionManager.xrResources.service.update()
+        updateTrackingStates(result.deviceTrackingState.toInt(), result.earthTrackingState.toInt())
+        timeSource.update(result.currentTimeNanos)
         return timeSource.markNow()
     }
 
@@ -94,7 +113,6 @@ internal constructor(
         if (testPerceptionService == null) {
             activity.unbindService(serviceConnection)
         }
-        perceptionManager.service = null
     }
 
     internal suspend fun bindPerceptionService(context: Context): IBinder {
@@ -105,8 +123,11 @@ internal constructor(
                         println("ProjectedManager: onServiceConnected called")
                         val service = IProjectedPerceptionService.Stub.asInterface(binder)
                         serviceDeferred.complete(service)
-                        perceptionManager.service = service
-                        service.start(true /* enableVps*/, "" /* api key */)
+                        perceptionManager.xrResources.service = service
+                        val config = perceptionManager.xrResources.config
+                        val enableVps = config.geospatial != GeospatialMode.DISABLED
+                        // TODO: b/445567556 - Pass the API key to the service.
+                        service.start(enableVps, "" /* api key */)
 
                         // When the service connects, we resume the coroutine with the binder.
                         if (continuation.isActive) {
@@ -116,7 +137,7 @@ internal constructor(
 
                     override fun onServiceDisconnected(name: ComponentName?) {
                         println("onServiceDisconnected called")
-                        perceptionManager.service = null
+                        // TODO: b/444521361 - Handle glassescore service disconnect
                     }
 
                     override fun onBindingDied(name: ComponentName?) {

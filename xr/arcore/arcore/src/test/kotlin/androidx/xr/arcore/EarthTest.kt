@@ -24,8 +24,10 @@ import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
 import androidx.xr.arcore.internal.AnchorUnsupportedLocationException
 import androidx.xr.arcore.internal.Earth as RuntimeEarth
 import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
+import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionManager
 import androidx.xr.arcore.testing.FakeRuntimeEarth
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.GeospatialPose
@@ -88,6 +90,7 @@ class EarthTest {
                 session =
                     (Session.create(activity, coroutineDispatcher) as SessionCreateSuccess).session
                 xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
+                session.configure(Config(geospatial = Config.GeospatialMode.EARTH))
 
                 testBody()
             }
@@ -122,38 +125,40 @@ class EarthTest {
     }
 
     @Test
-    fun createGeospatialPoseFromDevicePose_success_returnsSuccessResult() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextGeospatialPoseResult =
-            RuntimeEarth.GeospatialPoseResult(
-                GEOSPATIAL_POSE,
-                HORIZONTAL_ACCURACY,
-                VERTICAL_ACCURACY,
-                ORIENTATION_YAW_ACCURACY,
-            )
+    fun createGeospatialPoseFromDevicePose_success_returnsSuccessResult() =
+        createTestSessionAndRunTest {
+            val underTest = Earth.getInstance(session)
+            getFakeRuntimeEarth().nextGeospatialPoseResult =
+                RuntimeEarth.GeospatialPoseResult(
+                    GEOSPATIAL_POSE,
+                    HORIZONTAL_ACCURACY,
+                    VERTICAL_ACCURACY,
+                    ORIENTATION_YAW_ACCURACY,
+                )
 
-        val result = underTest.createGeospatialPoseFromDevicePose()
-        val successResult = result as CreateGeospatialPoseFromPoseSuccess
+            val result = underTest.createGeospatialPoseFromDevicePose()
+            val successResult = result as CreateGeospatialPoseFromPoseSuccess
 
-        assertThat(successResult.pose).isEqualTo(GEOSPATIAL_POSE)
-        assertThat(successResult.horizontalAccuracy).isEqualTo(HORIZONTAL_ACCURACY)
-        assertThat(successResult.verticalAccuracy).isEqualTo(VERTICAL_ACCURACY)
-        assertThat(successResult.orientationYawAccuracy).isEqualTo(ORIENTATION_YAW_ACCURACY)
-    }
-
-    @Test
-    fun createGeospatialPoseFromDevicePose_notTracking_returnsNotTrackingResult() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = GeospatialPoseNotTrackingException()
-
-        val result = underTest.createGeospatialPoseFromDevicePose()
-        assertThat(result).isInstanceOf(CreateGeospatialPoseFromPoseNotTracking::class.java)
-    }
+            assertThat(successResult.pose).isEqualTo(GEOSPATIAL_POSE)
+            assertThat(successResult.horizontalAccuracy).isEqualTo(HORIZONTAL_ACCURACY)
+            assertThat(successResult.verticalAccuracy).isEqualTo(VERTICAL_ACCURACY)
+            assertThat(successResult.orientationYawAccuracy).isEqualTo(ORIENTATION_YAW_ACCURACY)
+        }
 
     @Test
-    fun createGeospatialPoseFromPose_success_returnsSuccessResult() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextGeospatialPoseResult =
+    fun createGeospatialPoseFromDevicePose_notTracking_returnsNotTrackingResult() =
+        createTestSessionAndRunTest {
+            val underTest = Earth.getInstance(session)
+            getFakeRuntimeEarth().nextException = GeospatialPoseNotTrackingException()
+
+            val result = underTest.createGeospatialPoseFromDevicePose()
+            assertThat(result).isInstanceOf(CreateGeospatialPoseFromPoseNotTracking::class.java)
+        }
+
+    @Test
+    fun createGeospatialPoseFromPose_success_returnsSuccessResult() = createTestSessionAndRunTest {
+        val underTest = Earth.getInstance(session)
+        getFakeRuntimeEarth().nextGeospatialPoseResult =
             RuntimeEarth.GeospatialPoseResult(
                 GEOSPATIAL_POSE,
                 HORIZONTAL_ACCURACY,
@@ -170,19 +175,20 @@ class EarthTest {
     }
 
     @Test
-    fun createGeospatialPoseFromPose_notTracking_returnsNotTrackingResult() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = GeospatialPoseNotTrackingException()
+    fun createGeospatialPoseFromPose_notTracking_returnsNotTrackingResult() =
+        createTestSessionAndRunTest {
+            val underTest = Earth.getInstance(session)
+            getFakeRuntimeEarth().nextException = GeospatialPoseNotTrackingException()
 
-        val result = underTest.createGeospatialPoseFromPose(Pose(Vector3(), Quaternion()))
+            val result = underTest.createGeospatialPoseFromPose(Pose(Vector3(), Quaternion()))
 
-        assertThat(result).isInstanceOf(CreateGeospatialPoseFromPoseNotTracking::class.java)
-    }
+            assertThat(result).isInstanceOf(CreateGeospatialPoseFromPoseNotTracking::class.java)
+        }
 
     @Test
-    fun createPoseFromGeospatialPose_success_returnsSuccessResult() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextPose = POSE
+    fun createPoseFromGeospatialPose_success_returnsSuccessResult() = createTestSessionAndRunTest {
+        val underTest = Earth.getInstance(session)
+        getFakeRuntimeEarth().nextPose = POSE
 
         val result = underTest.createPoseFromGeospatialPose(GeospatialPose())
         val successResult = result as CreatePoseFromGeospatialPoseSuccess
@@ -191,14 +197,15 @@ class EarthTest {
     }
 
     @Test
-    fun createPoseFromGeospatialPose_notTracking_returnsNotTrackingResult() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = GeospatialPoseNotTrackingException()
+    fun createPoseFromGeospatialPose_notTracking_returnsNotTrackingResult() =
+        createTestSessionAndRunTest {
+            val underTest = Earth.getInstance(session)
+            getFakeRuntimeEarth().nextException = GeospatialPoseNotTrackingException()
 
-        val result = underTest.createPoseFromGeospatialPose(GeospatialPose())
+            val result = underTest.createPoseFromGeospatialPose(GeospatialPose())
 
-        assertThat(result).isInstanceOf(CreatePoseFromGeospatialPoseNotTracking::class.java)
-    }
+            assertThat(result).isInstanceOf(CreatePoseFromGeospatialPoseNotTracking::class.java)
+        }
 
     @Test
     fun createAnchor_success_returnsSuccessResultWithAnchor() = createTestSessionAndRunTest {
@@ -217,19 +224,20 @@ class EarthTest {
     }
 
     @Test
-    fun createAnchor_resourceExhausted_returnsResourcesExhaustedResult() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = AnchorResourcesExhaustedException()
+    fun createAnchor_resourceExhausted_returnsResourcesExhaustedResult() =
+        createTestSessionAndRunTest {
+            val underTest = Earth.getInstance(session)
+            getFakeRuntimeEarth().nextException = AnchorResourcesExhaustedException()
 
-        val result = underTest.createAnchor(LATITUDE, LONGITUDE, ALTITUDE, EUS_QUATERNION)
+            val result = underTest.createAnchor(LATITUDE, LONGITUDE, ALTITUDE, EUS_QUATERNION)
 
-        assertThat(result).isInstanceOf(AnchorCreateResourcesExhausted::class.java)
-    }
+            assertThat(result).isInstanceOf(AnchorCreateResourcesExhausted::class.java)
+        }
 
     @Test
-    fun createAnchor_illegalState_returnsIllegalStateResult() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = IllegalStateException()
+    fun createAnchor_illegalState_returnsIllegalStateResult() = createTestSessionAndRunTest {
+        val underTest = Earth.getInstance(session)
+        getFakeRuntimeEarth().nextException = IllegalStateException()
 
         val result = underTest.createAnchor(LATITUDE, LONGITUDE, ALTITUDE, EUS_QUATERNION)
 
@@ -237,13 +245,32 @@ class EarthTest {
     }
 
     @Test
-    fun createAnchor_invalidLatitude_throwsIllegalArgumentException() {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = IllegalArgumentException()
+    fun createAnchor_invalidLatitude_throwsIllegalArgumentException() =
+        createTestSessionAndRunTest {
+            val underTest = Earth.getInstance(session)
+            getFakeRuntimeEarth().nextException = IllegalArgumentException()
 
-        assertFailsWith<IllegalArgumentException> {
-            underTest.createAnchor(90.0, LONGITUDE, ALTITUDE, EUS_QUATERNION)
+            assertFailsWith<IllegalArgumentException> {
+                underTest.createAnchor(90.0, LONGITUDE, ALTITUDE, EUS_QUATERNION)
+            }
         }
+
+    @Test
+    fun createPoseFromGeospatialPose_withVpsDisabled_throwsIllegalStateException() {
+        val newConfig = Config(geospatial = Config.GeospatialMode.DISABLED)
+        val fakeLifecycleManager = FakeLifecycleManager()
+        fakeLifecycleManager.config = newConfig
+        xrResourcesManager.lifecycleManager = fakeLifecycleManager
+        val underTest = Earth(runtimeEarth, xrResourcesManager)
+        val geospatialPose = GeospatialPose(1.0, 2.0, 3.0, Quaternion(0.1f, 0.2f, 0.3f, 0.4f))
+
+        val exception =
+            assertFailsWith<IllegalStateException> {
+                underTest.createPoseFromGeospatialPose(geospatialPose)
+            }
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("To use this function, Config.GeospatialMode must be set to EARTH.")
     }
 
     @Test
@@ -273,90 +300,109 @@ class EarthTest {
         }
 
     @Test
-    fun createAnchorOnSurface_illegalState_returnsIllegalStateResult() = doBlocking {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = IllegalStateException()
+    fun createAnchorOnSurface_illegalState_returnsIllegalStateResult() =
+        createTestSessionAndRunTest {
+            doBlocking {
+                val underTest = Earth.getInstance(session)
+                getFakeRuntimeEarth().nextException = IllegalStateException()
 
-        val result =
-            underTest.createAnchorOnSurface(
-                LATITUDE,
-                LONGITUDE,
-                ALTITUDE_ABOVE_SURFACE,
-                EUS_QUATERNION,
-                Earth.Surface.TERRAIN,
-            )
+                val result =
+                    underTest.createAnchorOnSurface(
+                        LATITUDE,
+                        LONGITUDE,
+                        ALTITUDE_ABOVE_SURFACE,
+                        EUS_QUATERNION,
+                        Earth.Surface.TERRAIN,
+                    )
 
-        assertThat(result).isInstanceOf(AnchorCreateIllegalState::class.java)
-    }
-
-    @Test
-    fun createAnchorOnSurface_resourceExhausted_returnsResourcesExhaustedResult() = doBlocking {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = AnchorResourcesExhaustedException()
-
-        val result =
-            underTest.createAnchorOnSurface(
-                LATITUDE,
-                LONGITUDE,
-                ALTITUDE_ABOVE_SURFACE,
-                EUS_QUATERNION,
-                Earth.Surface.TERRAIN,
-            )
-
-        assertThat(result).isInstanceOf(AnchorCreateResourcesExhausted::class.java)
-    }
-
-    @Test
-    fun createAnchorOnSurface_notAuthorized_returnsNotAuthorizedResult() = doBlocking {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = AnchorNotAuthorizedException()
-
-        val result =
-            underTest.createAnchorOnSurface(
-                LATITUDE,
-                LONGITUDE,
-                ALTITUDE_ABOVE_SURFACE,
-                EUS_QUATERNION,
-                Earth.Surface.TERRAIN,
-            )
-
-        assertThat(result).isInstanceOf(AnchorCreateNotAuthorized::class.java)
-    }
-
-    @Test
-    fun createAnchorOnSurface_unsupportedLocation_returnsUnsupportedLocationResult() = doBlocking {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = AnchorUnsupportedLocationException()
-
-        val result =
-            underTest.createAnchorOnSurface(
-                LATITUDE,
-                LONGITUDE,
-                ALTITUDE_ABOVE_SURFACE,
-                EUS_QUATERNION,
-                Earth.Surface.TERRAIN,
-            )
-
-        assertThat(result).isInstanceOf(AnchorCreateUnsupportedLocation::class.java)
-    }
-
-    @Test
-    fun createAnchorOnSurface_invalidLatitude_throwsIllegalArgumentException() = doBlocking {
-        val underTest = Earth(runtimeEarth, xrResourcesManager)
-        runtimeEarth.nextException = IllegalArgumentException()
-
-        assertFailsWith<IllegalArgumentException> {
-            underTest.createAnchorOnSurface(
-                90.0,
-                LONGITUDE,
-                ALTITUDE_ABOVE_SURFACE,
-                EUS_QUATERNION,
-                Earth.Surface.TERRAIN,
-            )
+                assertThat(result).isInstanceOf(AnchorCreateIllegalState::class.java)
+            }
         }
-    }
+
+    @Test
+    fun createAnchorOnSurface_resourceExhausted_returnsResourcesExhaustedResult() =
+        createTestSessionAndRunTest {
+            doBlocking {
+                val underTest = Earth.getInstance(session)
+                getFakeRuntimeEarth().nextException = AnchorResourcesExhaustedException()
+
+                val result =
+                    underTest.createAnchorOnSurface(
+                        LATITUDE,
+                        LONGITUDE,
+                        ALTITUDE_ABOVE_SURFACE,
+                        EUS_QUATERNION,
+                        Earth.Surface.TERRAIN,
+                    )
+
+                assertThat(result).isInstanceOf(AnchorCreateResourcesExhausted::class.java)
+            }
+        }
+
+    @Test
+    fun createAnchorOnSurface_notAuthorized_returnsNotAuthorizedResult() =
+        createTestSessionAndRunTest {
+            doBlocking {
+                val underTest = Earth.getInstance(session)
+                getFakeRuntimeEarth().nextException = AnchorNotAuthorizedException()
+
+                val result =
+                    underTest.createAnchorOnSurface(
+                        LATITUDE,
+                        LONGITUDE,
+                        ALTITUDE_ABOVE_SURFACE,
+                        EUS_QUATERNION,
+                        Earth.Surface.TERRAIN,
+                    )
+
+                assertThat(result).isInstanceOf(AnchorCreateNotAuthorized::class.java)
+            }
+        }
+
+    @Test
+    fun createAnchorOnSurface_unsupportedLocation_returnsUnsupportedLocationResult() =
+        createTestSessionAndRunTest {
+            doBlocking {
+                val underTest = Earth.getInstance(session)
+                getFakeRuntimeEarth().nextException = AnchorUnsupportedLocationException()
+
+                val result =
+                    underTest.createAnchorOnSurface(
+                        LATITUDE,
+                        LONGITUDE,
+                        ALTITUDE_ABOVE_SURFACE,
+                        EUS_QUATERNION,
+                        Earth.Surface.TERRAIN,
+                    )
+
+                assertThat(result).isInstanceOf(AnchorCreateUnsupportedLocation::class.java)
+            }
+        }
+
+    @Test
+    fun createAnchorOnSurface_invalidLatitude_throwsIllegalArgumentException() =
+        createTestSessionAndRunTest {
+            doBlocking {
+                val underTest = Earth.getInstance(session)
+                getFakeRuntimeEarth().nextException = IllegalArgumentException()
+
+                assertFailsWith<IllegalArgumentException> {
+                    underTest.createAnchorOnSurface(
+                        90.0,
+                        LONGITUDE,
+                        ALTITUDE_ABOVE_SURFACE,
+                        EUS_QUATERNION,
+                        Earth.Surface.TERRAIN,
+                    )
+                }
+            }
+        }
 
     private fun getFakePerceptionManager(): FakePerceptionManager {
         return session.perceptionRuntime.perceptionManager as FakePerceptionManager
+    }
+
+    private fun getFakeRuntimeEarth(): FakeRuntimeEarth {
+        return getFakePerceptionManager().earth as FakeRuntimeEarth
     }
 }

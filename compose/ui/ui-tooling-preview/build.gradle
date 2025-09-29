@@ -41,7 +41,7 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
+                implementation(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.9.1")
                 api(project(":compose:runtime:runtime"))
             }
@@ -54,8 +54,10 @@ androidXMultiplatform {
 
         jvmMain {
             dependsOn(commonMain)
-            dependencies {
-            }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
         }
 
         androidMain {
@@ -64,23 +66,30 @@ androidXMultiplatform {
             }
         }
 
-        jvmStubsMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
-        }
-
         androidInstrumentedTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
             }
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.junit)
             }
+        }
+
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+            dependsOn(jvmMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
     }
 }

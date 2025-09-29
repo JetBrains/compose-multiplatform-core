@@ -17,8 +17,7 @@
 package androidx.baselineprofile.gradle.utils
 
 enum class TestAgpVersion(val versionString: String?) {
-    TEST_AGP_VERSION_8_1_1("8.1.1"),
-    TEST_AGP_VERSION_8_2_0("8.2.0"),
+    TEST_AGP_VERSION_8_2_1("8.2.1"),
     TEST_AGP_VERSION_8_3_1("8.3.1"),
     TEST_AGP_VERSION_8_4_2("8.4.2"),
     TEST_AGP_VERSION_CURRENT(null);
@@ -27,7 +26,7 @@ enum class TestAgpVersion(val versionString: String?) {
 
     fun isAtMost(version: TestAgpVersion) = this in TestAgpVersion.atMost(version)
 
-    fun shouldUseLegacyGradle() = isAtMost(TEST_AGP_VERSION_8_2_0)
+    fun shouldUseLegacyGradle() = isAtMost(TEST_AGP_VERSION_8_2_1)
 
     companion object {
         fun fromVersionString(versionString: String?) =

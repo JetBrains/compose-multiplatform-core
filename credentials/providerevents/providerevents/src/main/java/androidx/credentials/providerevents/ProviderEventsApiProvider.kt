@@ -18,20 +18,16 @@ package androidx.credentials.providerevents
 
 import android.content.Context
 import android.os.CancellationSignal
-import androidx.annotation.RestrictTo
 import androidx.credentials.CredentialManagerCallback
 import androidx.credentials.providerevents.exception.ImportCredentialsException
 import androidx.credentials.providerevents.exception.RegisterExportException
 import androidx.credentials.providerevents.transfer.ImportCredentialsRequest
 import androidx.credentials.providerevents.transfer.ProviderImportCredentialsResponse
 import androidx.credentials.providerevents.transfer.RegisterExportRequest
+import androidx.credentials.providerevents.transfer.RegisterExportResponse
 import java.util.concurrent.Executor
 
-/**
- * Provider interface to be implemented by the credential providers that will support provider
- * events APIs.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+/** Provider interface to be implemented by the OEMs that will support provider events APIs. */
 public interface ProviderEventsApiProvider {
     /** Returns true if the provider is available on this device, or otherwise false. */
     public fun isAvailable(): Boolean
@@ -66,6 +62,6 @@ public interface ProviderEventsApiProvider {
         request: RegisterExportRequest,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
-        callback: CredentialManagerCallback<Boolean, RegisterExportException>,
+        callback: CredentialManagerCallback<RegisterExportResponse, RegisterExportException>,
     )
 }

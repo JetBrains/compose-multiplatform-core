@@ -44,7 +44,7 @@ import androidx.xr.runtime.Session
  *   configuration set.
  */
 public fun createBundleForFullSpaceModeLaunch(session: Session, bundle: Bundle): Bundle =
-    session.platformAdapter.setFullSpaceMode(bundle)
+    session.sceneRuntime.setFullSpaceMode(bundle)
 
 /**
  * Returns a [Bundle] with the necessary entries to request that a new [Activity] be launched
@@ -78,4 +78,4 @@ public fun createBundleForFullSpaceModeLaunch(session: Session, bundle: Bundle):
 public fun createBundleForFullSpaceModeLaunchWithEnvironmentInherited(
     session: Session,
     bundle: Bundle,
-): Bundle = session.platformAdapter.setFullSpaceModeWithEnvironmentInherited(bundle)
+): Bundle = session.sceneRuntime.setFullSpaceModeWithEnvironmentInherited(bundle)

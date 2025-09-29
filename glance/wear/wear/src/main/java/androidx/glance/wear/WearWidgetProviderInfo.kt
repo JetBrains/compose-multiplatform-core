@@ -75,10 +75,14 @@ internal class ContainerInfo(
 
 /** The container type of a widget. It defines the size and shape of the container. */
 @JvmInline
-internal value class ContainerType private constructor(private val value: Int) {
+public value class ContainerType private constructor(private val value: Int) {
     public companion object {
-        public val Large: ContainerType = ContainerType(1)
-        public val Small: ContainerType = ContainerType(2)
+        /** Represents a fullscreen widget container, equivalent to a Wear Tile. */
+        public val Fullscreen: ContainerType = ContainerType(0)
+
+        // TODO: Change these to public once they're ready.
+        internal val Large: ContainerType = ContainerType(1)
+        internal val Small: ContainerType = ContainerType(2)
     }
 }
 

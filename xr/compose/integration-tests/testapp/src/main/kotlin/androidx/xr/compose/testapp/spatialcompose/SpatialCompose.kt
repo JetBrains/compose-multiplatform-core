@@ -178,11 +178,14 @@ class SpatialCompose : ComponentActivity() {
                     Button(
                         onClick = {
                             val intent =
-                                Intent(this@SpatialCompose, NonCustomizableVideoPlayer::class.java)
+                                Intent(
+                                    this@SpatialCompose,
+                                    FragmentBasedVideoPlayerActivity::class.java,
+                                )
                             startActivity(intent)
                         }
                     ) {
-                        Text("Launch Non Customizable Video Player")
+                        Text("Launch Video Player Fragment")
                     }
 
                     Button(

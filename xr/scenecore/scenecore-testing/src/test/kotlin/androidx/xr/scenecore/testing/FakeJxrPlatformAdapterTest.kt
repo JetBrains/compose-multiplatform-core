@@ -29,6 +29,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
 import androidx.xr.scenecore.internal.AnchorPlacement
+import androidx.xr.scenecore.internal.CameraViewActivityPose
 import androidx.xr.scenecore.internal.Dimensions
 import androidx.xr.scenecore.internal.InputEvent
 import androidx.xr.scenecore.internal.InputEventListener
@@ -49,7 +50,6 @@ import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
-import kotlin.text.get
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -89,6 +89,28 @@ class FakeJxrPlatformAdapterTest {
         adapter.dispose()
 
         assertThat(adapter.state).isEqualTo(FakeJxrPlatformAdapter.State.DESTROYED)
+    }
+
+    @Test
+    fun getCameraViewActivityPose_returnsCameraViewActivityPoseWithCorrectType() {
+        val cameraViewActivityPose =
+            adapter.getCameraViewActivityPose(CameraViewActivityPose.CameraType.CAMERA_TYPE_UNKNOWN)
+        val cameraViewActivityPoseL =
+            adapter.getCameraViewActivityPose(
+                CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
+            )
+        val cameraViewActivityPoseR =
+            adapter.getCameraViewActivityPose(
+                CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE
+            )
+
+        assertThat(cameraViewActivityPose).isNull()
+        assertThat(cameraViewActivityPoseL).isNotNull()
+        assertThat((cameraViewActivityPoseL as FakeCameraViewActivityPose).cameraType)
+            .isEqualTo(CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE)
+        assertThat(cameraViewActivityPoseR).isNotNull()
+        assertThat((cameraViewActivityPoseR as FakeCameraViewActivityPose).cameraType)
+            .isEqualTo(CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE)
     }
 
     @Test
@@ -133,7 +155,7 @@ class FakeJxrPlatformAdapterTest {
                 anisotropyLog2 = 0,
             )
 
-        adapter.setReflectionMapOnWaterMaterial(material!!.get(), reflectionMap, sampler)
+        adapter.setReflectionMapOnWaterMaterial(material.get(), reflectionMap, sampler)
         adapter.setNormalMapOnWaterMaterial(material.get(), normalMap, sampler)
         adapter.setNormalTilingOnWaterMaterial(material.get(), 1.0f)
         adapter.setNormalSpeedOnWaterMaterial(material.get(), 2.0f)
@@ -197,7 +219,7 @@ class FakeJxrPlatformAdapterTest {
                 anisotropyLog2 = 0,
             )
 
-        adapter.setBaseColorTextureOnKhronosPbrMaterial(material!!.get(), baseColor, sampler)
+        adapter.setBaseColorTextureOnKhronosPbrMaterial(material.get(), baseColor, sampler)
         adapter.setBaseColorUvTransformOnKhronosPbrMaterial(material.get(), baseColorUvTransform)
         adapter.setBaseColorFactorsOnKhronosPbrMaterial(material.get(), baseColorFactors)
         adapter.setMetallicRoughnessTextureOnKhronosPbrMaterial(

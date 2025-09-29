@@ -16,12 +16,27 @@
 
 package androidx.xr.arcore.projected
 
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.TrackingState
+
 /** Object that holds resources that are used in the XR session. */
 internal class XrResources {
+
+    /** The session config. */
+    internal var config: Config = Config()
 
     /** Pose */
     val arDevice: ProjectedArDevice = ProjectedArDevice()
 
     /** The data of the Earth */
     val earth: ProjectedEarth = ProjectedEarth(this)
+
+    /** The perception service. */
+    lateinit internal var service: IProjectedPerceptionService
+
+    /** The tracking state of the device */
+    internal var deviceTrackingState: TrackingState = TrackingState.STOPPED
+
+    /** The tracking state of the earth */
+    internal var earthTrackingState: TrackingState = TrackingState.STOPPED
 }

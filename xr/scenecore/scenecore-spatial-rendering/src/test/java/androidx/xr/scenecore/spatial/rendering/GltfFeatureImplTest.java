@@ -191,5 +191,31 @@ public class GltfFeatureImplTest {
                 .isEmpty();
     }
 
+    @Test
+    public void dispose_clearsOverridesAndDeletesSubspace() throws Exception {
+        MaterialResource material = createWaterMaterial(/* isAlphaMapVersion= */ false);
+        assertThat(material).isNotNull();
+        long nativeHandle = ((Material) material).getNativeHandle();
+        String nodeName1 = "node1";
+        int primitiveIndex1 = 0;
+        String nodeName2 = "node2";
+        int primitiveIndex2 = 1;
+
+        mGltfFeature.setMaterialOverride(material, nodeName1, primitiveIndex1);
+        verify(mMockImpressApi)
+                .setMaterialOverride(mModelImpressNode, nativeHandle, nodeName1, primitiveIndex1);
+
+        mGltfFeature.setMaterialOverride(material, nodeName2, primitiveIndex2);
+        verify(mMockImpressApi)
+                .setMaterialOverride(mModelImpressNode, nativeHandle, nodeName2, primitiveIndex2);
+
+        mGltfFeature.dispose();
+        verify(mMockImpressApi)
+                .clearMaterialOverride(mModelImpressNode, nodeName1, primitiveIndex1);
+        verify(mMockImpressApi)
+                .clearMaterialOverride(mModelImpressNode, nodeName2, primitiveIndex2);
+        verify(mSplitEngineSubspaceManager).deleteSubspace(SUBSPACE_ID);
+    }
+
     // TODO: b/426594104 provide a fake SplitEngineSubspaceManager and cover the dispose() method
 }

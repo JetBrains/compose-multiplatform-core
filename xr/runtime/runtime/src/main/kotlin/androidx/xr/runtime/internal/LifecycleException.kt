@@ -26,13 +26,6 @@ import androidx.annotation.RestrictTo
 public open class LifecycleException(message: String, cause: Throwable? = null) :
     Exception(message, cause)
 
-/** A [Feature] attempting to be enabled is not supported by the current runtime. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ConfigurationNotSupportedException(
-    message: String = "Failed to configure session, requested configuration is not supported.",
-    cause: Throwable? = null,
-) : LifecycleException(message, cause)
-
 /** The Google Play Services Location Library is not linked. */
 @Suppress("MentionsGoogle")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)

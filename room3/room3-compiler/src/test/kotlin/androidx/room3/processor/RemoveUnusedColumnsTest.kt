@@ -52,30 +52,6 @@ class RemoveUnusedColumnsTest {
         compile(annotateDb = true) { result -> result.hasNoWarnings() }
     }
 
-    @Test
-    fun expandProjection_annotateDb() {
-        compile(annotateDb = true, enableExpandProjection = true) { result ->
-            result.hasWarningContaining(ProcessorErrors.EXPAND_PROJECTION_ALONG_WITH_REMOVE_UNUSED)
-            result.hasWarningCount(1)
-        }
-    }
-
-    @Test
-    fun expandProjection_annotateMethod() {
-        compile(annotateMethod = true, enableExpandProjection = true) { result ->
-            result.hasWarningContaining(ProcessorErrors.EXPAND_PROJECTION_ALONG_WITH_REMOVE_UNUSED)
-            result.hasWarningCount(1)
-        }
-    }
-
-    @Test
-    fun expandProjection_annotateDao() {
-        compile(annotateDao = true, enableExpandProjection = true) { result ->
-            result.hasWarningContaining(ProcessorErrors.EXPAND_PROJECTION_ALONG_WITH_REMOVE_UNUSED)
-            result.hasWarningCount(1)
-        }
-    }
-
     private fun compile(
         annotateDb: Boolean = false,
         annotateDao: Boolean = false,

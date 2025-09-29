@@ -31,7 +31,9 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.pdf.compose.PdfViewer
 import androidx.pdf.compose.PdfViewerState
+import androidx.pdf.testapp.R
 import androidx.pdf.testapp.databinding.FragmentComposeBinding
+import com.google.android.material.snackbar.Snackbar
 
 /**
  * [Fragment] with a [androidx.compose.runtime.Composable] content view, for testing of [PdfViewer]
@@ -48,6 +50,8 @@ class PdfComposeFragment() : Fragment() {
 
     private val filePicker: ActivityResultLauncher<String> =
         registerForActivityResult(GetContent()) { viewModel.documentUri = it }
+
+    private val CommentKey = Any()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,6 +71,24 @@ class PdfComposeFragment() : Fragment() {
                         state = pdfViewerState,
                         pdfDocument =
                             viewModel.loadedDocumentStateFlow.collectAsStateWithLifecycle().value,
+                        appendContextMenuComponents = {
+                            item(
+                                CommentKey,
+                                getString(R.string.comment_menu_item),
+                                getString(R.string.comment_menu_item),
+                            ) {
+                                container?.let {
+                                    Snackbar.make(
+                                            container,
+                                            "Comment item clicked",
+                                            Snackbar.LENGTH_SHORT,
+                                        )
+                                        .show()
+                                }
+                                close()
+                                pdfViewerState.clearSelection()
+                            }
+                        },
                     )
                 }
             }

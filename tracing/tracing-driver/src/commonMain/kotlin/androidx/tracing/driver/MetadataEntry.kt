@@ -28,8 +28,16 @@ import androidx.annotation.RestrictTo
 
 internal const val EMPTY: String = ""
 
+/**
+ * [TraceEvent]s can contain metadata. This is how that metadata is sent to the [TraceSink]. These
+ * objects are pooled, and we expose bare-fields because this is performance sensitive code.
+ *
+ * End users of tracing will never use this class directly. They will only interact with it using
+ * [TraceEventScope].
+ */
 // False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
 @Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+@DelicateTracingApi
 public class MetadataEntry
 internal constructor(
     @field:Suppress("MutableBareField") // public / mutable to minimize overhead

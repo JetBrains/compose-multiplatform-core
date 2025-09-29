@@ -39,6 +39,7 @@ dependencies {
     androidTestImplementation(project(":compose:runtime:runtime"))
     androidTestImplementation(project(":compose:ui:ui"))
     androidTestImplementation(project(":compose:material:material"))
+    androidTestImplementation(project(":compose:foundation:foundation-layout"))
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(project(":compose:test-utils"))

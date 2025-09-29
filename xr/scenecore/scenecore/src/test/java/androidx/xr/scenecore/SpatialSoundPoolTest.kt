@@ -23,8 +23,8 @@ import androidx.xr.runtime.Session
 import androidx.xr.scenecore.SpatializerConstants.Companion.AMBISONICS_ORDER_FIRST_ORDER
 import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SoundPoolExtensionsWrapper as RtSoundPoolExtensionsWrapper
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.scenecore.internal.SpatializerConstants as RtSpatializerConstants
@@ -48,7 +48,7 @@ import org.robolectric.RobolectricTestRunner
 class SpatialSoundPoolTest {
 
     private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
-    private var mockPlatformAdapter: JxrPlatformAdapter = mock()
+    private var mockSceneRuntime: SceneRuntime = mock()
 
     private var mockRtSoundPoolExtensions: RtSoundPoolExtensionsWrapper = mock()
 
@@ -61,10 +61,9 @@ class SpatialSoundPoolTest {
 
     @Before
     fun setUp() {
-        mockPlatformAdapter.stub {
+        mockSceneRuntime.stub {
             on { spatialEnvironment } doReturn mock()
             on { activitySpace } doReturn mockActivitySpace
-            on { activitySpaceRootImpl } doReturn mockActivitySpace
             on { headActivityPose } doReturn mock()
             on { perceptionSpaceActivityPose } doReturn mock()
             on { mainPanelEntity } doReturn mock()
@@ -73,16 +72,12 @@ class SpatialSoundPoolTest {
         }
 
         mockRtSoundPoolExtensions = mock()
-        whenever(mockPlatformAdapter.soundPoolExtensionsWrapper)
-            .thenReturn(mockRtSoundPoolExtensions)
+        whenever(mockSceneRuntime.soundPoolExtensionsWrapper).thenReturn(mockRtSoundPoolExtensions)
         session =
             Session(
                 activity,
                 runtimes =
-                    listOf(
-                        fakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
-                    ),
+                    listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
     }
 

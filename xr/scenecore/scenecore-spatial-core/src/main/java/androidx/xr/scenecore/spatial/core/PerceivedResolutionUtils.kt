@@ -18,6 +18,7 @@
 
 package androidx.xr.scenecore.spatial.core
 
+import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.internal.CameraViewActivityPose
 import androidx.xr.scenecore.internal.Dimensions
@@ -28,7 +29,7 @@ import kotlin.math.roundToInt
 import kotlin.math.tan
 
 /** A small constant value used for floating-point comparisons to account for precision errors. */
-internal const val PERCEIVED_RESOLUTION_EPSILON = 0.001f
+@VisibleForTesting internal const val PERCEIVED_RESOLUTION_EPSILON = 0.001f
 
 /**
  * Retrieves the [CameraViewActivityPose] used for all Perceived Resolution calculations.

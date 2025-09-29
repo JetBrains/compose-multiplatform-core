@@ -39,7 +39,6 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CaptureConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CaptureResultAdapter
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
@@ -243,7 +242,6 @@ class CapturePipelineTest {
         UseCaseGraphConfig(
             graph = FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession),
             surfaceToStreamMap = mapOf(fakeDeferrableSurface to fakeStreamId),
-            cameraStateAdapter = CameraStateAdapter(),
         )
     private val fakeZslControl =
         object : ZslControl {

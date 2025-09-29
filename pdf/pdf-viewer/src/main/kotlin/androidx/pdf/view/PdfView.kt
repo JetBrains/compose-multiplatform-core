@@ -59,6 +59,7 @@ import androidx.pdf.content.ExternalLink
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
 import androidx.pdf.exceptions.RequestFailedException
+import androidx.pdf.formfilling.FormFillingEditTextState
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.selection.ContextMenuComponent
 import androidx.pdf.selection.Selection
@@ -162,8 +163,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 formWidgetMetadataLoader?.let { loader ->
                     pageManager?.maybeLoadFormWidgetMetadata(loader)
                 }
+            } else {
+                // remove any existing edit text
+                formFillingEditText = null
             }
+            invalidate()
         }
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /**
+     * Used to determine whether a promotional tooltip for form-filling will be displayed or not
+     * when the user opens a PDF which is a form and form-filling is enabled.
+     */
+    public var isFormFillingTooltipEnabled: Boolean = false
 
     /** The maximum scaling factor that can be applied to this View using the [zoom] property */
     public var maxZoom: Float = DEFAULT_MAX_ZOOM
@@ -481,6 +494,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             if (value == FastScrollVisibility.ALWAYS_SHOW) fastScroller?.show { postInvalidate() }
             else if (value == FastScrollVisibility.ALWAYS_HIDE) fastScroller?.hide()
         }
+
+    /**
+     * Controls whether the fast scroller renders by default. If `false`, [drawFastScroller] must be
+     * called explicitly to render it.
+     */
+    internal var enableDefaultFastScrollerRendering: Boolean = true
 
     // Stores width set from onSizeChanged or while restoring state
     private var oldWidth: Int? = null
@@ -889,11 +908,22 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         // Fast scroller is non-content and shouldn't be affected by zoom. It's drawn after
         // restoring the Canvas to its unscaled state
+        if (!enableDefaultFastScrollerRendering) {
+            canvas.save()
+            // Adjust the canvas based on current scroll position to draw fast scroller in view
+            // coordinates.
+            canvas.translate(scrollX.toFloat(), scrollY.toFloat())
+            drawFastScroller(canvas)
+            canvas.restore()
+        }
+    }
+
+    /** Draws the fast scroller UI in view coordinates. */
+    internal fun drawFastScroller(canvas: Canvas) {
         val documentPageCount = pdfDocument?.pageCount ?: 0
         if (documentPageCount > 1) {
             fastScroller?.drawScroller(
                 canvas = canvas,
-                scrollX = scrollX,
                 scrollY = scrollY,
                 viewWidth = width,
                 viewHeight = height,
@@ -1149,6 +1179,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         oldWidth = null
     }
 
+    private fun getFormFillingEditTextState(): FormFillingEditTextState? {
+        return formFillingEditText?.let {
+            FormFillingEditTextState(it.editText.text.toString(), it.pageNum, it.formWidget)
+        }
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         stopCollectingData()
@@ -1191,11 +1227,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             state.contentCenterY = 0F
         }
         state.isFormFillingEnabled = isFormFillingEnabled
+        state.isFormFillingTooltipEnabled = isFormFillingTooltipEnabled
         state.documentUri = pdfDocument?.uri
         state.paginationModel = pageMetadataLoader?.paginationModel
         state.pdfFormFillingState = pageMetadataLoader?.pdfFormFillingState
         state.pdfFormEditRecords = pdfDocument?.formEditRecords
         state.selectionModel = selectionStateManager?.selectionModel?.value
+        state.pdfFormFillingEditTextState = getFormFillingEditTextState()
         return state
     }
 
@@ -1332,9 +1370,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         isFormFillingEnabled = localStateToRestore.isFormFillingEnabled
+        isFormFillingTooltipEnabled = localStateToRestore.isFormFillingTooltipEnabled
         setAccessibility()
 
         restoreFormFillingState()
+        restoreFormFillingEditText()
 
         stateToRestore = null
         return true
@@ -1349,6 +1389,18 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         pdfFormFillingStateManager?.restoreFormFillingState(localStateToRestore.pdfFormEditRecords)
+    }
+
+    private fun restoreFormFillingEditText() {
+        val localStateToRestore = stateToRestore ?: return
+        val formFillingEditTextState = localStateToRestore.pdfFormFillingEditTextState
+        if (formFillingEditTextState != null) {
+            formWidgetInteractionHandler?.handleInteractionWithTextWidget(
+                formFillingEditTextState.pageNumber,
+                formFillingEditTextState.formWidgetInfo!!,
+                formFillingEditTextState.currentText,
+            )
+        }
     }
 
     private fun scrollToRestoredPosition(position: PointF, zoom: Float) {
@@ -1670,7 +1722,28 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.showSoftInput(formFillingEditText?.editText, 0)
             }
+            adjustScroll(it.pageNum, it.formWidget)
         }
+    }
+
+    /**
+     * Adjusts the scroll to bring the top left of the edit text which overlays the [formWidget] to
+     * the center of the view.
+     */
+    private fun adjustScroll(pageNum: Int, formWidget: FormWidgetInfo) {
+        val widgetTopLeftViewCoordinates =
+            pdfToViewPoint(
+                PdfPoint(
+                    pageNum,
+                    formWidget.widgetRect.left.toFloat(),
+                    formWidget.widgetRect.top.toFloat(),
+                )
+            )
+        if (widgetTopLeftViewCoordinates == null) return
+
+        val xScrollOffset = (widgetTopLeftViewCoordinates.x - (width / 2)).roundToInt()
+        val yScrollOffset = (widgetTopLeftViewCoordinates.y - (height / 2)).roundToInt()
+        scrollBy(xScrollOffset, yScrollOffset)
     }
 
     private fun dispatchViewportChanged() {
@@ -1913,6 +1986,29 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private fun commitFormFillingEditText() {
         formFillingEditText?.let { formWidgetInteractionHandler?.commitEditTextValue(it) }
+    }
+
+    private val shouldShowFormFillingTooltip: Boolean
+        get() = isFormFillingTooltipEnabled && isFormFillingEnabled && isPdfValidForm
+
+    private val isPdfValidForm: Boolean
+        get() = pdfDocument?.formType != PdfDocument.PDF_FORM_TYPE_NONE
+
+    private fun getFirstVisibleAndEditableFormWidget(): Pair<Int, FormWidgetInfo>? {
+        val localPageMetadataLoader = pageMetadataLoader ?: return null
+        val visiblePageAreas = localPageMetadataLoader.visiblePageAreas
+
+        visiblePageAreas.keyIterator().forEach { pageNum ->
+            val editableFormWidgetsInPage =
+                pageManager?.pages[pageNum]?.formWidgetInfos?.filter { !it.readOnly }
+
+            editableFormWidgetsInPage?.forEach { widget ->
+                if (visiblePageAreas.get(pageNum).contains(widget.widgetRect.toRectF())) {
+                    return Pair(pageNum, widget)
+                }
+            }
+        }
+        return null
     }
 
     /** The height of the viewport, minus padding */

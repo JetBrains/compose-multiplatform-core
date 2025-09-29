@@ -3,14 +3,14 @@ package androidx.appfunctions.service {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface AppFunction {
     ctor @KotlinOnly public AppFunction(optional boolean isEnabled, optional boolean isDescribedByKdoc);
-    method public abstract boolean isDescribedByKdoc() default false;
-    method public abstract boolean isEnabled() default true;
+    method @InaccessibleFromKotlin public abstract boolean isDescribedByKdoc() default false;
+    method @InaccessibleFromKotlin public abstract boolean isEnabled() default true;
     property public abstract boolean isDescribedByKdoc;
     property public abstract boolean isEnabled;
   }
 
   public final class AppFunctionConfiguration {
-    method public java.util.Map<java.lang.Class<? extends java.lang.Object?>,kotlin.jvm.functions.Function0<java.lang.Object>> getEnclosingClassFactories();
+    method @InaccessibleFromKotlin public java.util.Map<java.lang.Class<? extends java.lang.Object?>,kotlin.jvm.functions.Function0<java.lang.Object>> getEnclosingClassFactories();
     property public java.util.Map<java.lang.Class<? extends java.lang.Object?>,kotlin.jvm.functions.Function0<java.lang.Object>> enclosingClassFactories;
   }
 
@@ -21,7 +21,7 @@ package androidx.appfunctions.service {
   }
 
   public static interface AppFunctionConfiguration.Provider {
-    method public androidx.appfunctions.service.AppFunctionConfiguration getAppFunctionConfiguration();
+    method @InaccessibleFromKotlin public androidx.appfunctions.service.AppFunctionConfiguration getAppFunctionConfiguration();
     property public abstract androidx.appfunctions.service.AppFunctionConfiguration appFunctionConfiguration;
   }
 

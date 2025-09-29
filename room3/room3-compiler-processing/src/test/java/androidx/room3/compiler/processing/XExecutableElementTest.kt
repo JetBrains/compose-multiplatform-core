@@ -18,6 +18,7 @@ package androidx.room3.compiler.processing
 
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
+import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.asClassName
 import androidx.room3.compiler.processing.util.CONTINUATION_JCLASS_NAME
@@ -37,14 +38,8 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.WildcardTypeName
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.UNIT
-import com.squareup.kotlinpoet.javapoet.JClassName
-import com.squareup.kotlinpoet.javapoet.JParameterizedTypeName
 import com.squareup.kotlinpoet.javapoet.JTypeName
-import com.squareup.kotlinpoet.javapoet.JTypeVariableName
-import com.squareup.kotlinpoet.javapoet.KClassName
-import com.squareup.kotlinpoet.javapoet.KTypeVariableName
 import java.io.File
 import java.io.IOException
 import org.junit.Test
@@ -1109,9 +1104,20 @@ class XExecutableElementTest {
                 suspend fun String.ext6(): String = TODO()
                 abstract fun T.ext7(): String
                 fun @receiver:MyAnnotation String.ext8(): String = TODO()
+
+                companion object {
+                    @JvmStatic
+                    fun String.extStatic(): String = TODO()
+                    fun String.extCompanion(): String = TODO()
+                }
             }
             class FooImpl : Foo<Int>() {
                 override fun Int.ext7(): String = TODO()
+            }
+            object FooObject {
+                fun String.ext(): String = TODO()
+                @JvmStatic
+                fun String.extStatic(): String = TODO()
             }
             """
                     .trimIndent(),
@@ -1138,28 +1144,17 @@ class XExecutableElementTest {
                     assertThat(method.parameters[1].name).isEqualTo("inputParam")
                 }
                 element.getDeclaredMethodByJvmName("ext3").let { method ->
-                    assertThat(method.parameters[0].type.typeName)
+                    assertThat(method.parameters[0].type.asTypeName())
                         .isEqualTo(
-                            ParameterizedTypeName.get(
-                                ClassName.get(pkg, "Foo"),
-                                String::class.typeName(),
-                            )
+                            XClassName.get(pkg, "Foo").parametrizedBy(String::class.asClassName())
                         )
                 }
                 element.getDeclaredMethodByJvmName("ext4").let { method ->
-                    assertThat(method.parameters[0].type.asTypeName().java)
+                    assertThat(method.parameters[0].type.asTypeName())
                         .isEqualTo(
-                            JParameterizedTypeName.get(
-                                JClassName.get(pkg, "Foo"),
-                                JTypeVariableName.get("T"),
-                            )
+                            XClassName.get(pkg, "Foo")
+                                .parametrizedBy(XTypeName.getTypeVariableName("T"))
                         )
-                    if (invocation.isKsp) {
-                        assertThat(method.parameters[0].type.asTypeName().kotlin)
-                            .isEqualTo(
-                                KClassName(pkg, "Foo").parameterizedBy(KTypeVariableName("T"))
-                            )
-                    }
                 }
                 element.getDeclaredMethodByJvmName("ext5").let { method ->
                     assertThat(method.parameters[0].type.asTypeName())
@@ -1192,9 +1187,6 @@ class XExecutableElementTest {
                         .isEqualTo(Int::class.asClassName())
                 }
                 element.getDeclaredMethodByJvmName("ext8").let { method ->
-                    // TODO: KSP bug where receiver annotation is not available from compiled code.
-                    //  see https://github.com/google/ksp/issues/1488
-                    if (invocation.isKsp && pkg == "lib") return@let
                     val receiverParam = method.parameters.single()
                     assertThat(receiverParam.getAllAnnotations()).isNotEmpty()
                 }
@@ -1209,6 +1201,63 @@ class XExecutableElementTest {
                     val fooImpl = invocation.processingEnv.requireTypeElement("$pkg.FooImpl")
                     assertThat(method.parameters[0].asMemberOf(fooImpl.type).asTypeName())
                         .isEqualTo(Int::class.asClassName())
+                }
+                element.getDeclaredMethodByJvmName("extStatic").let { method ->
+                    if (invocation.isKsp) {
+                        assertThat(method.isExtensionFunction()).isTrue()
+                    } else {
+                        // TODO(b/443344468): isExtensionFunction is broken in KAPT for companion
+                        //  objects.
+                        assertThat(method.isExtensionFunction()).isFalse()
+                    }
+                    assertThat(method.isStatic()).isTrue()
+                    if (!invocation.isKsp) {
+                        // TODO(b/443342969): Calling `.type` on a parameter throws an exception
+                        //  due to calling asMemberOf on a companion object function.
+                        assertThat(method.parameters[0].type.asTypeName())
+                            .isEqualTo(String::class.asClassName())
+                    }
+                }
+                val companionObject =
+                    element.getEnclosedTypeElements().single { it.isCompanionObject() }
+                companionObject.getDeclaredMethodByJvmName("extStatic").let { method ->
+                    assertThat(method.isExtensionFunction()).isTrue()
+                    if (invocation.isKsp) {
+                        // TODO(b/444730030): isStatic is broken in KSP for companion objects.
+                        assertThat(method.isStatic()).isTrue()
+                    } else {
+                        assertThat(method.isStatic()).isFalse()
+                    }
+                    if (!invocation.isKsp) {
+                        // TODO(b/443342969): Calling `.type` on a parameter throws an exception
+                        //  due to calling asMemberOf on a companion object function.
+                        assertThat(method.parameters[0].type.asTypeName())
+                            .isEqualTo(String::class.asClassName())
+                    }
+                }
+                companionObject.getDeclaredMethodByJvmName("extCompanion").let { method ->
+                    assertThat(method.isExtensionFunction()).isTrue()
+                    if (invocation.isKsp) {
+                        // TODO(b/444730030): isStatic is broken in KSP for companion objects.
+                        assertThat(method.isStatic()).isTrue()
+                    } else {
+                        assertThat(method.isStatic()).isFalse()
+                    }
+                    assertThat(method.parameters[0].type.asTypeName())
+                        .isEqualTo(String::class.asClassName())
+                }
+                val fooObject = invocation.processingEnv.requireTypeElement("$pkg.FooObject")
+                fooObject.getDeclaredMethodByJvmName("ext").let { method ->
+                    assertThat(method.isExtensionFunction()).isTrue()
+                    assertThat(method.isStatic()).isFalse()
+                    assertThat(method.parameters[0].type.asTypeName())
+                        .isEqualTo(String::class.asClassName())
+                }
+                fooObject.getDeclaredMethodByJvmName("extStatic").let { method ->
+                    assertThat(method.isExtensionFunction()).isTrue()
+                    assertThat(method.isStatic()).isTrue()
+                    assertThat(method.parameters[0].type.asTypeName())
+                        .isEqualTo(String::class.asClassName())
                 }
             }
         }

@@ -36,7 +36,7 @@ import kotlin.jvm.functions.Function1;
 public final class ComplexDao_Impl extends ComplexDao {
   private final RoomDatabase __db;
 
-  public ComplexDao_Impl(final ComplexDatabase __db) {
+  public ComplexDao_Impl(@NonNull final ComplexDatabase __db) {
     super(__db);
     this.__db = __db;
   }

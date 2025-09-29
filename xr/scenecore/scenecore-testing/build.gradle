@@ -39,7 +39,7 @@ dependencies {
     api(project(":xr:runtime:runtime-testing"))
     api(project(":xr:arcore:arcore-testing"))
 
-    implementation("com.google.ar:impress:0.0.6")
+    implementation("com.google.ar:impress:0.0.7")
     implementation(libs.testExtTruth)
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")

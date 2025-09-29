@@ -921,7 +921,7 @@ class ButtonGroupTest {
                         IconButton(
                             modifier = Modifier.testTag(overflowIndicator),
                             onClick = {
-                                if (menuState.isExpanded) {
+                                if (menuState.isShowing) {
                                     menuState.dismiss()
                                 } else {
                                     menuState.show()

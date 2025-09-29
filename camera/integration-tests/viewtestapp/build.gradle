@@ -28,15 +28,6 @@ android {
     defaultConfig {
         applicationId = "androidx.camera.integration.view"
     }
-
-    sourceSets {
-        main.manifest.srcFile "src/main/AndroidManifest.xml"
-        main.java.srcDirs = ["src/main/java"]
-        main.java.excludes = ["**/build/**"]
-        main.java.includes = ["**/*.java"]
-        main.res.srcDirs = ["src/main/res"]
-    }
-
     buildTypes {
         release {
             minifyEnabled = true
@@ -45,7 +36,6 @@ android {
                     "proguard-rules.pro")
         }
     }
-
     namespace = "androidx.camera.integration.view"
 }
 

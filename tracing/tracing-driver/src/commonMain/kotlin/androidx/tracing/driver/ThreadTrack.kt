@@ -27,7 +27,7 @@ public open class ThreadTrack(
 ) : SliceTrack(context = process.context, uuid = monotonicId()) {
 
     init {
-        emitTraceEvent(immediateDispatch = true) { packet ->
+        conditionalEmitTraceEvent(immediateDispatch = true) { packet ->
             packet.setPreamble(
                 TrackDescriptor(
                     name = name,
@@ -38,6 +38,7 @@ public open class ThreadTrack(
                     type = TRACK_DESCRIPTOR_TYPE_THREAD,
                 )
             )
+            true
         }
     }
 }

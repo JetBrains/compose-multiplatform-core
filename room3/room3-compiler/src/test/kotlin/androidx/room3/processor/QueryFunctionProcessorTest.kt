@@ -35,7 +35,6 @@ import androidx.room3.ext.CommonTypeNames.STRING
 import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
-import androidx.room3.ext.PagingTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
 import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
@@ -47,7 +46,6 @@ import androidx.room3.processor.ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_
 import androidx.room3.processor.ProcessorErrors.cannotFindQueryResultAdapter
 import androidx.room3.processor.ProcessorErrors.mayNeedMapColumn
 import androidx.room3.solver.query.result.DataClassRowAdapter
-import androidx.room3.solver.query.result.DataSourceFactoryQueryResultBinder
 import androidx.room3.solver.query.result.ListQueryResultAdapter
 import androidx.room3.solver.query.result.LiveDataQueryResultBinder
 import androidx.room3.solver.query.result.SingleColumnRowAdapter
@@ -586,61 +584,6 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testDataSourceFactoryQuery() {
-        singleQueryMethod<ReadQueryFunction>(
-            """
-                @Query("select name from user")
-                abstract ${PagingTypeNames.DATA_SOURCE_FACTORY.canonicalName}<Integer, String>
-                nameDataSourceFactory();
-                """
-        ) { parsedQuery, _ ->
-            assertThat(parsedQuery.returnType.asTypeName())
-                .isEqualTo(
-                    PagingTypeNames.DATA_SOURCE_FACTORY.parametrizedBy(
-                            XTypeName.BOXED_INT.copy(nullable = true),
-                            STRING.copy(nullable = true),
-                        )
-                        .copy(nullable = true)
-                )
-
-            assertThat(parsedQuery.queryResultBinder)
-                .isInstanceOf<DataSourceFactoryQueryResultBinder>()
-            val tableNames =
-                (parsedQuery.queryResultBinder as DataSourceFactoryQueryResultBinder)
-                    .positionalDataSourceQueryResultBinder
-                    .tableNames
-            assertThat(tableNames).containsExactly("user")
-        }
-    }
-
-    @Test
-    fun testMultiTableDataSourceFactoryQuery() {
-        singleQueryMethod<ReadQueryFunction>(
-            """
-                @Query("select name from User u LEFT OUTER JOIN Book b ON u.uid == b.uid")
-                abstract ${PagingTypeNames.DATA_SOURCE_FACTORY.canonicalName}<Integer, String>
-                nameDataSourceFactory();
-                """
-        ) { parsedQuery, _ ->
-            assertThat(parsedQuery.returnType.asTypeName())
-                .isEqualTo(
-                    PagingTypeNames.DATA_SOURCE_FACTORY.parametrizedBy(
-                            XTypeName.BOXED_INT.copy(nullable = true),
-                            STRING.copy(nullable = true),
-                        )
-                        .copy(nullable = true)
-                )
-            assertThat(parsedQuery.queryResultBinder)
-                .isInstanceOf<DataSourceFactoryQueryResultBinder>()
-            val tableNames =
-                (parsedQuery.queryResultBinder as DataSourceFactoryQueryResultBinder)
-                    .positionalDataSourceQueryResultBinder
-                    .tableNames
-            assertThat(tableNames).containsExactly("User", "Book")
-        }
-    }
-
-    @Test
     fun testBadChannelReturnForQuery() {
         singleQueryMethod<QueryFunction>(
             """
@@ -1169,24 +1112,6 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                     )
                 )
             }
-        }
-    }
-
-    @Test
-    fun dataClass_expandProjection() {
-        if (!enableVerification) return
-        dataClassTest(
-            """
-                String uid;
-                String name;
-            """,
-            listOf("*"),
-            options = mapOf("room.expandProjection" to "true"),
-        ) { adapter, _, invocation ->
-            adapter!!
-            assertThat(adapter.mapping.unusedColumns).isEmpty()
-            assertThat(adapter.mapping.unusedFields).isEmpty()
-            invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
 

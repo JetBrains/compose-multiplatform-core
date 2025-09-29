@@ -25,6 +25,7 @@ import androidx.room3.PrimaryKey
 import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -116,10 +117,10 @@ class DaoBoxedPrimitiveDelegateTest {
     @Test
     fun testLongFooDao() {
         val db =
-            Room.inMemoryDatabaseBuilder(
-                    InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                    TestDatabase::class.java,
+            Room.inMemoryDatabaseBuilder<TestDatabase>(
+                    InstrumentationRegistry.getInstrumentation().targetContext
                 )
+                .setDriver(AndroidSQLiteDriver())
                 .build()
 
         val foo = LongFoo(1, "Elif")
@@ -134,10 +135,10 @@ class DaoBoxedPrimitiveDelegateTest {
     @Test
     fun testStringFooDao() {
         val db =
-            Room.inMemoryDatabaseBuilder(
-                    InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                    TestDatabase::class.java,
+            Room.inMemoryDatabaseBuilder<TestDatabase>(
+                    InstrumentationRegistry.getInstrumentation().targetContext
                 )
+                .setDriver(AndroidSQLiteDriver())
                 .build()
 
         val foo = StringFoo("Key", "Elif")
@@ -152,10 +153,10 @@ class DaoBoxedPrimitiveDelegateTest {
     @Test
     fun testByteArrayFooDao() {
         val db =
-            Room.inMemoryDatabaseBuilder(
-                    InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                    TestDatabase::class.java,
+            Room.inMemoryDatabaseBuilder<TestDatabase>(
+                    InstrumentationRegistry.getInstrumentation().targetContext
                 )
+                .setDriver(AndroidSQLiteDriver())
                 .build()
         val foo = ByteArrayFoo(ByteArray(16), "Elif")
         db.byteArrayFooDao().insert(foo)

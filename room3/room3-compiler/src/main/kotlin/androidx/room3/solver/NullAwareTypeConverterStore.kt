@@ -34,8 +34,7 @@ import java.util.PriorityQueue
 
 /**
  * A [TypeConverterStore] implementation that generates better code when we have the nullability
- * information in types. It is enabled by default only in KSP backend but it can also be turned on
- * via the [Context.BooleanProcessorOptions.USE_NULL_AWARE_CONVERTER] flag.
+ * information in types.
  *
  * This [TypeConverterStore] tries to maintain the nullability of the input/output type when writing
  * into/reading from database. Even though nullability preservation is preferred, it is not strictly

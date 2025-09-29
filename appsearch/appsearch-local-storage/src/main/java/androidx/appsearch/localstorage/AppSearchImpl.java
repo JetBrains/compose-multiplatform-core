@@ -5428,7 +5428,7 @@ public final class AppSearchImpl implements Closeable {
         if (callStatsBuilder != null) {
             // This is a read operation, only write operation could be a blocker.
             callStatsBuilder.setJavaLockAcquisitionLatencyMillis(
-                            (int) (totalLatencyStartMillis - javaLockAcquisitionEndTimeMillis))
+                            (int) (javaLockAcquisitionEndTimeMillis - totalLatencyStartMillis))
                     .setUnblockedAppSearchLatencyMillis(executeTime);
         }
         mLastReadOrWriteOperationLocked = callType;

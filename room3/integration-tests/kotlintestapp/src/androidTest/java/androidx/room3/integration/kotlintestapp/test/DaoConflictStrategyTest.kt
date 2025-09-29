@@ -15,53 +15,48 @@
  */
 package androidx.room3.integration.kotlintestapp.test
 
-import android.content.Context
 import androidx.kruth.assertThat
-import androidx.room3.Room
-import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.integration.kotlintestapp.dao.PetDao
 import androidx.room3.integration.kotlintestapp.dao.ToyDao
 import androidx.room3.integration.kotlintestapp.vo.Pet
 import androidx.room3.integration.kotlintestapp.vo.Toy
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
 @SmallTest
-@RunWith(AndroidJUnit4::class)
-class DaoConflictStrategyTest {
-    private lateinit var mDb: TestDatabase
-    private lateinit var mToyDao: ToyDao
-    private lateinit var mOriginalToy: Toy
-    private lateinit var mPetDao: PetDao
-    private lateinit var mPet: Pet
+@RunWith(Parameterized::class)
+class DaoConflictStrategyTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
+
+    private companion object {
+        @JvmStatic
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = arrayOf(UseDriver.BUNDLED, UseDriver.ANDROID)
+    }
+
+    private lateinit var toyDao: ToyDao
+    private lateinit var originalToy: Toy
+    private lateinit var petDao: PetDao
+    private lateinit var pet: Pet
 
     @Before
     fun createDbAndSetUpToys() {
-        val context: Context = ApplicationProvider.getApplicationContext()
-        mDb = Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java).build()
-        mToyDao = mDb.toyDao()
-        mPetDao = mDb.petDao()
-        mPet = TestUtil.createPet(1)
-        mOriginalToy = Toy(10, "originalToy", 1)
-        mPetDao.insertOrReplace(mPet)
-        mToyDao.insert(mOriginalToy)
-    }
-
-    @After
-    fun teardown() {
-        mDb.close()
+        toyDao = database.toyDao()
+        petDao = database.petDao()
+        pet = TestUtil.createPet(1)
+        originalToy = Toy(10, "originalToy", 1)
+        petDao.insertOrReplace(pet)
+        toyDao.insert(originalToy)
     }
 
     @Test
     fun testInsertOnConflictReplace() {
         val newToy = Toy(10, "newToy", 1)
-        mToyDao.insertOrReplace(newToy)
-        val output: Toy? = mToyDao.getToy(10)
+        toyDao.insertOrReplace(newToy)
+        val output: Toy? = toyDao.getToy(10)
         assertThat(output).isNotNull()
         assertThat(output!!.mName).isEqualTo(newToy.mName)
     }
@@ -69,24 +64,24 @@ class DaoConflictStrategyTest {
     @Test
     fun testInsertOnConflictIgnore() {
         val newToy = Toy(10, "newToy", 1)
-        mToyDao.insertOrIgnore(newToy)
-        val output: Toy? = mToyDao.getToy(10)
+        toyDao.insertOrIgnore(newToy)
+        val output: Toy? = toyDao.getToy(10)
         assertThat(output).isNotNull()
-        assertThat(output!!.mName).isEqualTo(mOriginalToy.mName)
+        assertThat(output!!.mName).isEqualTo(originalToy.mName)
     }
 
     @Test
     fun testUpdateOnConflictReplace() {
         val newToy = Toy(11, "newToy", 1)
-        mToyDao.insert(newToy)
+        toyDao.insert(newToy)
         val conflictToy = Toy(11, "originalToy", 1)
-        mToyDao.updateOrReplace(conflictToy)
+        toyDao.updateOrReplace(conflictToy)
 
         // Conflicting row is deleted
-        assertThat(mToyDao.getToy(10)).isNull()
+        assertThat(toyDao.getToy(10)).isNull()
 
         // Row is updated
-        val output: Toy? = mToyDao.getToy(11)
+        val output: Toy? = toyDao.getToy(11)
         assertThat(output).isNotNull()
         assertThat(output!!.mName).isEqualTo(conflictToy.mName)
     }
@@ -94,15 +89,15 @@ class DaoConflictStrategyTest {
     @Test
     fun testUpdateOnConflictIgnore() {
         val newToy = Toy(11, "newToy", 1)
-        mToyDao.insert(newToy)
+        toyDao.insert(newToy)
         val conflictToy = Toy(11, "newToy", 1)
-        mToyDao.updateOrIgnore(conflictToy)
+        toyDao.updateOrIgnore(conflictToy)
 
         // Conflicting row is kept
-        assertThat(mToyDao.getToy(10)).isNotNull()
+        assertThat(toyDao.getToy(10)).isNotNull()
 
         // Row is not updated
-        val output: Toy? = mToyDao.getToy(11)
+        val output: Toy? = toyDao.getToy(11)
         assertThat(output).isNotNull()
         assertThat(output!!.mName).isEqualTo(newToy.mName)
     }

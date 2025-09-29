@@ -192,6 +192,7 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
                     "HiddenSuperclass",
                     "KotlinOperator",
                     "DataClassDefinition",
+                    "TypeParameterName",
                 )
                 .joinToString(),
         )
@@ -201,7 +202,8 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
         args.add("--api-lint-allowed-acronym")
         args.add(acronym)
     }
-    val javaOnlyIssues = listOf("MissingJvmstatic", "ArrayReturn", "ValueClassDefinition")
+    val javaOnlyIssues =
+        listOf("MissingJvmstatic", "ArrayReturn", "ValueClassDefinition", "FacadeClassJvmName")
     val javaOnlyErrorLevel =
         if (targetsJavaConsumers) {
             "--error"

@@ -28,9 +28,9 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@Suppress("DEPRECATION") // persistableBundleOf()
 @SmallTest
 class PersistableBundleTest {
-    @Suppress("DEPRECATION")
     @Test
     fun persistableBundleOfValid() {
         val bundle =

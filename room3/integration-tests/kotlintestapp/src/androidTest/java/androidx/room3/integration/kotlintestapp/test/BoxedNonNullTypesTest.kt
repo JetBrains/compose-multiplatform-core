@@ -28,6 +28,7 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.integration.kotlintestapp.assumeKsp
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -57,10 +58,8 @@ class BoxedNonNullTypesTest {
     @Before
     fun init() {
         db =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    MyDb::class.java,
-                )
+            Room.inMemoryDatabaseBuilder<MyDb>(ApplicationProvider.getApplicationContext())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
     }
 

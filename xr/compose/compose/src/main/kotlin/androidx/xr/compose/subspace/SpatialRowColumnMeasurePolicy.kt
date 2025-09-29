@@ -124,7 +124,7 @@ internal abstract class SpatialRowColumnMeasurePolicy {
         val resolvedMeasurables = measurables.fastMap { ResolvedMeasurable(it) }
 
         val contentSize =
-            measureMainAxisChildrenSize(
+            measureAndArrangeChildren(
                 resolvedMeasurables = resolvedMeasurables,
                 constraints = constraints,
                 arrangementSpacingInt = arrangementSpacingInt,
@@ -142,127 +142,75 @@ internal abstract class SpatialRowColumnMeasurePolicy {
     }
 
     /**
-     * Measures the children of a Row or Column.
-     *
-     * This method will measure the children of a Row or Column in two passes. In the first pass,
-     * children with no weight modifier will be measured. In the second pass, children with weight
-     * modifiers will be measured.
-     *
-     * After measuring, the placeable of each child will be set.
+     * Data class to hold the state and results of measuring children. This is passed around and
+     * updated during the different measurement passes.
      */
-    private fun measureMainAxisChildrenSize(
+    private data class ChildrenMeasureState(
+        // Space occupied by fixed-size (non-weighted) children, including their spacing.
+        var fixedSpace: Int = 0,
+        // Total weight sum of all weighted children.
+        var totalWeight: Float = 0f,
+        // Count of children that have a weight modifier.
+        var totalWeightedChildren: Int = 0,
+        // Arrangement spacing to be applied after the last measured non-weighted child,
+        // if followed by weighted children.
+        var spaceAfterLastNoWeight: Int = 0,
+        // Maximum cross-axis size encountered among all children.
+        var crossAxisSize: Int = 0,
+        // Maximum depth encountered among all children.
+        var depthSize: Int = 0,
+        // Accumulated main-axis space for weighted children, *excluding* their arrangement spacing.
+        var weightedChildrenSpace: Int = 0,
+        // Total main-axis space for weighted children, *including* their arrangement spacing.
+        var totalWeightedSpace: Int = 0,
+    )
+
+    /**
+     * Measures the children of a Row or Column, handling both weighted and non-weighted items, and
+     * then arranges them.
+     *
+     * This function orchestrates the measurement in two main passes:
+     * 1. Non-weighted children are measured to determine fixed space.
+     * 2. Weighted children are measured, distributing remaining space according to their weights.
+     *    Finally, it arranges all children based on the specified arrangement.
+     *
+     * @param resolvedMeasurables The list of [ResolvedMeasurable] children.
+     * @param constraints The [VolumeConstraints] for the parent layout.
+     * @param arrangementSpacingInt The spacing to apply between children, in pixels.
+     * @param subspaceMeasureScope The scope providing layout context.
+     * @param mainAxisMultiplier Multiplier for main axis positioning.
+     * @return The total [IntVolumeSize] occupied by the content.
+     */
+    private fun measureAndArrangeChildren(
         resolvedMeasurables: List<ResolvedMeasurable>,
         constraints: VolumeConstraints,
-        arrangementSpacingInt: Int = 0,
+        arrangementSpacingInt: Int,
         subspaceMeasureScope: SubspaceMeasureScope,
         mainAxisMultiplier: MainAxisMultiplier,
     ): IntVolumeSize {
-        // Space taken up on the main axis by children with no weight modifier.
-        var fixedSpace = 0
-        // The total amount of weight declared across all children.
-        var totalWeight = 0f
-        // The total number of weighted children
-        var totalWeightedChildren = 0
-
-        val arrangementSpacingPx = arrangementSpacingInt.toLong()
-        var spaceAfterLastNoWeight = 0
         val childrenMainAxisSize = IntArray(resolvedMeasurables.size)
+        val measureState = ChildrenMeasureState()
 
-        // Content's cross-axis and depth size are the max measured value of all children
-        var crossAxisSize = 0
-        var depthSize = 0
+        measureNonWeightedChildrenPass(
+            resolvedMeasurables,
+            constraints,
+            arrangementSpacingInt,
+            childrenMainAxisSize,
+            measureState,
+        )
 
-        // We will measure non-weighted children in this pass.
-        resolvedMeasurables.fastForEachIndexed { index, resolvedMeasurable ->
-            if (resolvedMeasurable.weightInfo.weight > 0f) {
-                // Children with weight will be measured after all others.
-                totalWeight += resolvedMeasurable.weightInfo.weight
-                totalWeightedChildren++
-            } else {
-                // Children without weight will be measured now.
-                val remaining = constraints.mainAxisTargetSpace - fixedSpace
-                resolvedMeasurable.placeable =
-                    resolvedMeasurable.measurable
-                        .measure(constraints.plusMainAxis(-fixedSpace))
-                        .also {
-                            childrenMainAxisSize[index] = it.mainAxisSize
-                            spaceAfterLastNoWeight =
-                                min(
-                                    arrangementSpacingInt,
-                                    (remaining - it.mainAxisSize).coerceAtLeast(0),
-                                )
-                            fixedSpace += it.mainAxisSize + spaceAfterLastNoWeight
-                        }
-                crossAxisSize = maxOf(crossAxisSize, resolvedMeasurable.placeable!!.crossAxisSize)
-                depthSize = maxOf(depthSize, resolvedMeasurable.placeable!!.measuredDepth)
-            }
-        }
+        measureWeightedChildrenPass(
+            resolvedMeasurables,
+            constraints,
+            arrangementSpacingInt.toLong(),
+            childrenMainAxisSize,
+            measureState,
+        )
 
-        // Now we can measure the weighted children (if any).
-        var weightedSpace = 0
-        if (totalWeightedChildren == 0) {
-            fixedSpace -= spaceAfterLastNoWeight
-        } else {
-            // Amount of space this Row/Column wants to fill up.
-            val targetSpace = constraints.mainAxisTargetSpace
-            val arrangementSpacingTotal = arrangementSpacingPx * (totalWeightedChildren - 1)
-            // Amount of space left (after the non-weighted children were measured).
-            val remainingToTarget =
-                (targetSpace - fixedSpace - arrangementSpacingTotal).coerceAtLeast(0)
-            // Amount of space that would be given to a weighted child with `.weight(1f)`.
-            val weightUnitSpace = if (totalWeight > 0) remainingToTarget / totalWeight else 0f
-
-            // Distribute rounding errors for weighted children
-            // Due to rounding, we may over/underfill the container.
-            //
-            // For example, if we have a 200dp row with 7 children, each with a weight of 1f:
-            // 200/7 ~= 28.57..., which gets rounded to 29. But 29*7 = 203, so we've overfilled our
-            // 200dp row by 3dp.
-            //
-            // The fix is to track this remainder N, and adjust the first N children by 1dp or -1dp
-            // so that the row/column will be the exact size we need.
-            var remainder = remainingToTarget
-            resolvedMeasurables.fastForEach { resolvedMeasurable ->
-                if (resolvedMeasurable.weightInfo.weight > 0f) {
-                    remainder -=
-                        (resolvedMeasurable.weightInfo.weight * weightUnitSpace).fastRoundToInt()
-                }
-            }
-
-            resolvedMeasurables.fastForEachIndexed { index, resolvedMeasurable ->
-                if (resolvedMeasurable.weightInfo.weight <= 0f) return@fastForEachIndexed
-                val childMainAxisSize = run {
-                    val remainderUnit = remainder.sign
-                    remainder -= remainderUnit
-                    val weightedSize = resolvedMeasurable.weightInfo.weight * weightUnitSpace
-                    weightedSize.fastRoundToInt() + remainderUnit
-                }
-                val childConstraints =
-                    buildConstraints(
-                        mainAxisMin =
-                            if (resolvedMeasurable.weightInfo.fill) childMainAxisSize else 0,
-                        mainAxisMax = childMainAxisSize,
-                        crossAxisMin = constraints.crossAxisMin,
-                        crossAxisMax = constraints.crossAxisMax,
-                        minDepth = constraints.minDepth,
-                        maxDepth = constraints.maxDepth,
-                    )
-                resolvedMeasurable.placeable =
-                    resolvedMeasurable.measurable.measure(childConstraints).also {
-                        childrenMainAxisSize[index] = it.mainAxisSize
-                        weightedSpace += it.mainAxisSize
-                    }
-                crossAxisSize = maxOf(crossAxisSize, resolvedMeasurable.placeable!!.crossAxisSize)
-                depthSize = maxOf(depthSize, resolvedMeasurable.placeable!!.measuredDepth)
-            }
-            weightedSpace =
-                (weightedSpace + arrangementSpacingTotal)
-                    .toInt()
-                    .coerceIn(0, constraints.mainAxisTargetSpace - fixedSpace)
-        }
-        val mainAxisSize = (fixedSpace + weightedSpace).coerceAtLeast(0)
+        val mainAxisSize =
+            (measureState.fixedSpace + measureState.totalWeightedSpace).coerceAtLeast(0)
         val mainAxisLayoutSize = max(mainAxisSize, constraints.mainAxisMin)
-        // Get children position on main axis based on arrangement
+
         val mainAxisPositions = IntArray(resolvedMeasurables.size)
         arrangeMainAxisPositions(
             mainAxisLayoutSize,
@@ -270,10 +218,194 @@ internal abstract class SpatialRowColumnMeasurePolicy {
             mainAxisPositions,
             subspaceMeasureScope,
         )
-        // Populate the main axis positions for each placeable
+
         resolvedMeasurables.populateMainAxisPositions(mainAxisPositions, mainAxisMultiplier)
 
-        return contentSize(mainAxisSize, crossAxisSize, depthSize)
+        return contentSize(mainAxisSize, measureState.crossAxisSize, measureState.depthSize)
+    }
+
+    /**
+     * Performs the first measurement pass for non-weighted children. It measures children that do
+     * not have a weight modifier, calculates the space they occupy (`fixedSpace`), and updates the
+     * overall `crossAxisSize` and `depthSize`. It also gathers information about weighted children
+     * (`totalWeight`, `totalWeightedChildren`).
+     */
+    private fun measureNonWeightedChildrenPass(
+        resolvedMeasurables: List<ResolvedMeasurable>,
+        constraints: VolumeConstraints,
+        arrangementSpacingInt: Int,
+        childrenMainAxisSize: IntArray, // Output
+        measureState: ChildrenMeasureState, // Input/Output
+    ) {
+        resolvedMeasurables.fastForEachIndexed { index, resolvedMeasurable ->
+            if (resolvedMeasurable.weightInfo.weight > 0f) {
+                measureState.totalWeight += resolvedMeasurable.weightInfo.weight
+                measureState.totalWeightedChildren++
+            } else {
+                val remainingMainAxisSpace =
+                    constraints.mainAxisTargetSpace - measureState.fixedSpace
+                val childConstraints = constraints.plusMainAxis(-measureState.fixedSpace)
+
+                resolvedMeasurable.placeable =
+                    resolvedMeasurable.measurable.measure(childConstraints).also { placeable ->
+                        childrenMainAxisSize[index] = placeable.mainAxisSize
+                        measureState.spaceAfterLastNoWeight =
+                            min(
+                                arrangementSpacingInt,
+                                (remainingMainAxisSpace - placeable.mainAxisSize).coerceAtLeast(0),
+                            )
+                        measureState.fixedSpace +=
+                            placeable.mainAxisSize + measureState.spaceAfterLastNoWeight
+                        measureState.crossAxisSize =
+                            maxOf(measureState.crossAxisSize, placeable.crossAxisSize)
+                        measureState.depthSize =
+                            maxOf(measureState.depthSize, placeable.measuredDepth)
+                    }
+            }
+        }
+    }
+
+    /**
+     * Calculates the total rounding remainder for weighted children. Due to float-to-int conversion
+     * when assigning space based on weights, the sum of rounded individual sizes might not exactly
+     * match the total intended space. This function calculates that difference (the remainder).
+     *
+     * @param resolvedMeasurables List of all resolved measurables.
+     * @param totalSpaceForWeightedChildren The total main axis space allocated for all weighted
+     *   children (excluding spacing).
+     * @param weightUnitSpace The amount of space allocated per unit of weight.
+     * @return The total rounding remainder. This value will be distributed among weighted children.
+     */
+    private fun calculateWeightedSpaceRoundingRemainder(
+        resolvedMeasurables: List<ResolvedMeasurable>,
+        totalSpaceForWeightedChildren: Long,
+        weightUnitSpace: Float,
+    ): Long {
+        var remainder = totalSpaceForWeightedChildren
+        resolvedMeasurables.fastForEach {
+            if (it.weightInfo.weight > 0f) {
+                remainder -= (it.weightInfo.weight * weightUnitSpace).fastRoundToInt()
+            }
+        }
+        return remainder
+    }
+
+    /**
+     * Measures a single weighted child, assigns it space considering rounding errors, and updates
+     * the overall measure state.
+     *
+     * @param resolvedMeasurable The specific weighted child to measure.
+     * @param index The index of this child in the `childrenMainAxisSize` array.
+     * @param remainder Mutable reference to the remaining rounding error to be distributed. This
+     *   function will consume one unit (1 or -1) of this remainder if it's non-zero.
+     * @param weightUnitSpace Space allocated per unit of weight.
+     * @param constraints Parent's volume constraints.
+     * @param childrenMainAxisSize Output array to store the measured main axis size of this child.
+     * @param measureState Mutable state object to update with this child's measurements
+     *   (`weightedChildrenSpace`, `crossAxisSize`, `depthSize`).
+     */
+    private fun measureAndRecordSingleWeightedChild(
+        resolvedMeasurable: ResolvedMeasurable,
+        index: Int,
+        remainder: MutableLong,
+        weightUnitSpace: Float,
+        constraints: VolumeConstraints,
+        childrenMainAxisSize: IntArray, // Output
+        measureState: ChildrenMeasureState, // Input/Output
+    ) {
+        val childAssignedMainAxisSize = run {
+            val remainderUnit = remainder.value.sign
+            remainder.value -= remainderUnit
+            val baseWeightedSize = resolvedMeasurable.weightInfo.weight * weightUnitSpace
+            baseWeightedSize.fastRoundToInt() + remainderUnit
+        }
+
+        val childConstraints =
+            buildConstraints(
+                mainAxisMin =
+                    if (resolvedMeasurable.weightInfo.fill) childAssignedMainAxisSize else 0,
+                mainAxisMax = childAssignedMainAxisSize,
+                crossAxisMin = constraints.crossAxisMin,
+                crossAxisMax = constraints.crossAxisMax,
+                minDepth = constraints.minDepth,
+                maxDepth = constraints.maxDepth,
+            )
+
+        resolvedMeasurable.placeable =
+            resolvedMeasurable.measurable.measure(childConstraints).also { placeable ->
+                childrenMainAxisSize[index] = placeable.mainAxisSize
+                measureState.weightedChildrenSpace += placeable.mainAxisSize
+                measureState.crossAxisSize =
+                    maxOf(measureState.crossAxisSize, placeable.crossAxisSize)
+                measureState.depthSize = maxOf(measureState.depthSize, placeable.measuredDepth)
+            }
+    }
+
+    /** Wrapper class for a mutable Long to pass by reference. */
+    private class MutableLong(var value: Long)
+
+    /**
+     * Performs the second measurement pass for weighted children. Distributes remaining main-axis
+     * space among children with weight modifiers, measures them, and updates `totalWeightedSpace`,
+     * `crossAxisSize`, and `depthSize`.
+     */
+    private fun measureWeightedChildrenPass(
+        resolvedMeasurables: List<ResolvedMeasurable>,
+        constraints: VolumeConstraints,
+        arrangementSpacingPx: Long,
+        childrenMainAxisSize: IntArray, // Input/Output
+        measureState: ChildrenMeasureState, // Input/Output
+    ) {
+        if (measureState.totalWeightedChildren == 0) {
+            measureState.fixedSpace -= measureState.spaceAfterLastNoWeight
+            return // totalWeightedSpace remains 0
+        }
+
+        val weightedArrangementSpacingTotal =
+            if (measureState.totalWeightedChildren > 0)
+                arrangementSpacingPx * (measureState.totalWeightedChildren - 1)
+            else 0
+
+        val spaceAvailableForWeightedChildrenAndTheirSpacing =
+            (constraints.mainAxisTargetSpace - measureState.fixedSpace).coerceAtLeast(0)
+
+        val totalSpaceForWeightedChildrenContent = // Space for content only, excluding their
+            // arrangement spacing
+            (spaceAvailableForWeightedChildrenAndTheirSpacing - weightedArrangementSpacingTotal)
+                .coerceAtLeast(0)
+
+        val weightUnitSpace =
+            if (measureState.totalWeight > 0)
+                totalSpaceForWeightedChildrenContent / measureState.totalWeight
+            else 0f
+
+        val remainder =
+            MutableLong(
+                calculateWeightedSpaceRoundingRemainder(
+                    resolvedMeasurables,
+                    totalSpaceForWeightedChildrenContent,
+                    weightUnitSpace,
+                )
+            )
+
+        resolvedMeasurables.fastForEachIndexed { index, child ->
+            if (child.weightInfo.weight > 0f) {
+                measureAndRecordSingleWeightedChild(
+                    resolvedMeasurable = child,
+                    index = index,
+                    remainder = remainder,
+                    weightUnitSpace = weightUnitSpace,
+                    constraints = constraints, // Pass parent constraints
+                    childrenMainAxisSize = childrenMainAxisSize,
+                    measureState = measureState,
+                )
+            }
+        }
+
+        measureState.totalWeightedSpace =
+            (measureState.weightedChildrenSpace + weightedArrangementSpacingTotal)
+                .toInt()
+                .coerceIn(0, spaceAvailableForWeightedChildrenAndTheirSpacing)
     }
 
     /** Populates the `mainAxisPosition` for each [ResolvedMeasurable]. */
@@ -299,7 +431,10 @@ internal abstract class SpatialRowColumnMeasurePolicy {
         return with(subspaceMeasureScope) {
             layout(containerSize.width, containerSize.height, containerSize.depth) {
                 resolvedMeasurables.fastForEach { resolvedMeasurable ->
-                    val placeable = resolvedMeasurable.placeable!!
+                    val placeable =
+                        checkNotNull(resolvedMeasurable.placeable) {
+                            "Placeable cannot be null during placement. Measurement pass might have failed."
+                        }
                     placeable.place(getPose(resolvedMeasurable, containerSize, mainAxisOffset))
                 }
             }

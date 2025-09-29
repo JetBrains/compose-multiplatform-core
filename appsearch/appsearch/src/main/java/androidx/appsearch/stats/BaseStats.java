@@ -88,6 +88,7 @@ public class BaseStats {
             INTERNAL_CALL_TYPE_HANDLE_PACKAGE_REMOVED,
             INTERNAL_CALL_TYPE_SCHEDULED_FLUSH,
             CALL_TYPE_MANUALLY_SCHEDULE_FLUSH,
+            INTERNAL_CALL_TYPE_APPS_INDEXER,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface CallType {
@@ -150,6 +151,7 @@ public class BaseStats {
     //   manually requests and schedules a flushing job.
     public static final int INTERNAL_CALL_TYPE_SCHEDULED_FLUSH = 45;
     public static final int CALL_TYPE_MANUALLY_SCHEDULE_FLUSH = 46;
+    public static final int INTERNAL_CALL_TYPE_APPS_INDEXER = 47;
 
     // These strings are for the subset of call types that correspond to an AppSearchManager API
     public static final String CALL_TYPE_STRING_INITIALIZE = "initialize";
@@ -201,6 +203,7 @@ public class BaseStats {
     public static final String INTERNAL_CALL_TYPE_STRING_SCHEDULED_FLUSH = "scheduledFlush";
     public static final String INTERNAL_CALL_TYPE_STRING_MANUALLY_SCHEDULE_FLUSH =
             "manuallyScheduleFlush";
+    public static final String INTERNAL_CALL_TYPE_STRING_APPS_INDEXER = "appsIndexer";
 
     // Enabled features bitmask with all features disabled.
     public static final long NO_FEATURES_ENABLED_BITMASK = 0;

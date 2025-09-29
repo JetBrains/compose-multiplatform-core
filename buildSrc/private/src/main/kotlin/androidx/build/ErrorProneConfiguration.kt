@@ -102,7 +102,6 @@ class CommandLineArgumentProviderAdapter(@get:Input val arguments: Provider<Map<
 private fun Project.createErrorProneConfiguration(): Configuration =
     configurations.findByName(ERROR_PRONE_CONFIGURATION)
         ?: configurations.create(ERROR_PRONE_CONFIGURATION).apply {
-            isVisible = false
             isCanBeConsumed = false
             isCanBeResolved = true
             exclude(group = "com.google.errorprone", module = "javac")

@@ -35,6 +35,7 @@ import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.InternalForInheritanceCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -276,6 +277,7 @@ private constructor(
      *   active transaction coroutine.
      * @property latch The latch to await for the completion of the transaction coroutine.
      */
+    @OptIn(InternalForInheritanceCoroutinesApi::class)
     private class TransactionCompletable(
         private val delegate: CompletableDeferred<Boolean>,
         private val latch: CountDownLatch,

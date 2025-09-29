@@ -19,6 +19,8 @@ package androidx.xr.scenecore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.scenecore.internal.SpatialEnvironment
 import androidx.xr.scenecore.internal.SpatialEnvironment.Companion.NO_PASSTHROUGH_OPACITY_PREFERENCE
+import androidx.xr.scenecore.internal.SpatialEnvironmentExt
+import androidx.xr.scenecore.internal.SpatialEnvironmentFeature
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -30,9 +32,10 @@ import java.util.function.Consumer
  * across passthrough mode changes.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeSpatialEnvironment : SpatialEnvironment {
+public class FakeSpatialEnvironment : SpatialEnvironment, SpatialEnvironmentExt {
     private var _currentPassthroughOpacity: Float = 0.0f
     private var _isPreferredSpatialEnvironmentActive: Boolean = false
+    private var renderingFeature: SpatialEnvironmentFeature? = null
 
     /**
      * A map storing the registered passthrough opacity listeners, keyed by their associated
@@ -73,8 +76,25 @@ public class FakeSpatialEnvironment : SpatialEnvironment {
     override val currentPassthroughOpacity: Float
         get() = _currentPassthroughOpacity
 
-    override var preferredSpatialEnvironment: SpatialEnvironment.SpatialEnvironmentPreference? =
-        null
+    override var preferredSpatialEnvironment: SpatialEnvironment.SpatialEnvironmentPreference?
+        get() {
+            if (renderingFeature == null) {
+                throw UnsupportedOperationException(
+                    "Did you forget to add scenecore-spatial-rendering in dependencies?"
+                )
+            }
+
+            return renderingFeature!!.preferredSpatialEnvironment
+        }
+        set(value) {
+            if (renderingFeature == null) {
+                throw UnsupportedOperationException(
+                    "Did you forget to add scenecore-spatial-rendering in dependencies?"
+                )
+            }
+
+            renderingFeature!!.preferredSpatialEnvironment = value
+        }
 
     override var preferredPassthroughOpacity: Float = NO_PASSTHROUGH_OPACITY_PREFERENCE
 
@@ -101,5 +121,9 @@ public class FakeSpatialEnvironment : SpatialEnvironment {
 
     override fun removeOnSpatialEnvironmentChangedListener(listener: Consumer<Boolean>) {
         spatialEnvironmentChangedListenerMap.values.remove(listener)
+    }
+
+    override fun onRenderingFeatureReady(feature: SpatialEnvironmentFeature) {
+        renderingFeature = feature
     }
 }

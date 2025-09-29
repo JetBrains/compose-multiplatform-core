@@ -20,7 +20,7 @@
 -keep,allowshrinking @androidx.appsearch.annotation.Document class ** {}
 
 # Keep AppSearchDocumentClassMap name for ServiceLoader
--keep,allowshrinking class androidx.appsearch.app.AppSearchDocumentClassMap {}
+-keep,allowshrinking,allowoptimization class androidx.appsearch.app.AppSearchDocumentClassMap {}
 
 # If AppSearchDocumentClassMap#getGlobalMap() is used, keep any implementing subclasses since
 # AppSearchDocumentClassMap#getMap() is used to populate the global map.

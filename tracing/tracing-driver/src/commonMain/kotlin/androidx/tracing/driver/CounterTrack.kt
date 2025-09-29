@@ -27,7 +27,7 @@ public open class CounterTrack(
 
     init {
         synchronized(packetLock) {
-            emitTraceEvent(immediateDispatch = true) { event ->
+            conditionalEmitTraceEvent(immediateDispatch = true) { event ->
                 event.setPreamble(
                     TrackDescriptor(
                         name = name,
@@ -38,6 +38,7 @@ public open class CounterTrack(
                         tid = DEFAULT_INT,
                     )
                 )
+                true
             }
         }
     }
@@ -45,7 +46,10 @@ public open class CounterTrack(
     public fun setCounter(value: Long) {
         if (context.isEnabled) {
             synchronized(packetLock) {
-                emitTraceEvent { packet -> packet.setCounterLong(uuid, value) }
+                conditionalEmitTraceEvent { packet ->
+                    packet.setCounterLong(uuid, value)
+                    true
+                }
             }
         }
     }
@@ -53,7 +57,10 @@ public open class CounterTrack(
     public fun setCounter(value: Double) {
         if (context.isEnabled) {
             synchronized(packetLock) {
-                emitTraceEvent { packet -> packet.setCounterDouble(uuid, value) }
+                conditionalEmitTraceEvent { packet ->
+                    packet.setCounterDouble(uuid, value)
+                    true
+                }
             }
         }
     }

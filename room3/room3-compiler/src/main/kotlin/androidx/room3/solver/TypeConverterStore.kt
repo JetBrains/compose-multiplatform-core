@@ -75,17 +75,10 @@ interface TypeConverterStore {
             typeConverters: List<TypeConverter>,
             knownColumnTypes: List<XType>,
         ) =
-            if (context.useNullAwareConverter) {
-                NullAwareTypeConverterStore(
-                    context = context,
-                    typeConverters = typeConverters,
-                    knownColumnTypes = knownColumnTypes,
-                )
-            } else {
-                TypeConverterStoreImpl(
-                    typeConverters = typeConverters,
-                    knownColumnTypes = knownColumnTypes,
-                )
-            }
+            NullAwareTypeConverterStore(
+                context = context,
+                typeConverters = typeConverters,
+                knownColumnTypes = knownColumnTypes,
+            )
     }
 }

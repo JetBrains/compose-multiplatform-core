@@ -34,6 +34,9 @@ Configuration cache entry reused\.
 [0-9]+ actionable tasks: [0-9]+ executed, [0-9]+ from cache
 Configuration cache entry stored\.
 Calculating task graph as no cached configuration is available for tasks.*
+Calculating task graph as configuration cache cannot be reused because the file system entry.*
+Calculating task graph as configuration cache cannot be reused because directory.*
+Calculating task graph as configuration cache cannot be reused because an input to plugin class.*
 See the profiling report at\: file\:\/\/\$OUT_DIR\/androidx\/build\/reports\/profile\/profile\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\.html
 # > Task :lifecycle:lifecycle-common:compileJava
 Note: \$[^ ]+ uses or overrides a deprecated API\.
@@ -419,3 +422,5 @@ WARNING: The option setting 'android\.builtInKotlin=false' is deprecated\.
 WARNING: The option setting 'android\.newDsl=false' is deprecated\.
 The current default is 'true'\.
 It will be removed in version 10\.0 of the Android Gradle plugin\.
+# b/439073627
+warning Waiting for the other yarn instance to finish.*

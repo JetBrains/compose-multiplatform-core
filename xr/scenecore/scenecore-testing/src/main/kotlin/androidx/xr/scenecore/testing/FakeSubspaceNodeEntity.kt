@@ -21,12 +21,10 @@ import androidx.xr.scenecore.internal.Dimensions
 import androidx.xr.scenecore.internal.SubspaceNodeEntity
 import androidx.xr.scenecore.internal.SubspaceNodeFeature
 
+/** Test-only implementation of [SubspaceNodeEntity]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSubspaceNodeEntity(
     private var mockSubspaceNodeFeature: SubspaceNodeFeature? = null,
-    /**
-     * The size of the [androidx.xr.scenecore.internal.SubspaceNodeEntity] in meters, in unscaled
-     * local space.
-     */
+    /** The size of the [SubspaceNodeEntity] in meters, in unscaled local space. */
     public override var size: Dimensions = mockSubspaceNodeFeature?.size ?: Dimensions(2f, 1f, 0f),
 ) : SubspaceNodeEntity, FakeEntity()

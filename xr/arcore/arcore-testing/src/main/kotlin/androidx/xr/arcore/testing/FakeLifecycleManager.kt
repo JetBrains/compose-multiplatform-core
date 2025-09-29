@@ -19,7 +19,6 @@ package androidx.xr.arcore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.LifecycleManager
 import kotlin.time.ComparableTimeMark
 import kotlin.time.TestTimeSource
@@ -105,11 +104,11 @@ public class FakeLifecycleManager(
         if (
             !shouldSupportPlaneTracking && config.planeTracking != Config.PlaneTrackingMode.DISABLED
         ) {
-            throw ConfigurationNotSupportedException()
+            throw UnsupportedOperationException()
         }
 
         if (!shouldSupportFaceTracking && config.faceTracking == Config.FaceTrackingMode.USER) {
-            throw ConfigurationNotSupportedException()
+            throw UnsupportedOperationException()
         }
 
         if (hasMissingPermission) throw SecurityException()

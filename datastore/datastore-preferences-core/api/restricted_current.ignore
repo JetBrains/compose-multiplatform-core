@@ -1,0 +1,5 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.datastore.preferences.core.Preferences.Key#getName():
+    Source breaking change: method androidx.datastore.preferences.core.Preferences.Key.getName() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.datastore.preferences.core.PreferencesSerializer#getDefaultValue():
+    Source breaking change: method androidx.datastore.preferences.core.PreferencesSerializer.getDefaultValue() can no longer be resolved from Kotlin source

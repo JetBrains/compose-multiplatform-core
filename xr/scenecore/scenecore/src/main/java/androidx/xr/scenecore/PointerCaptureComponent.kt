@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.internal.InputEventListener as RtInputEventListener
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PointerCaptureComponent as RtPointerCaptureComponent
+import androidx.xr.scenecore.internal.SceneRuntime
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -36,7 +36,7 @@ import java.util.function.Consumer
  */
 public class PointerCaptureComponent
 private constructor(
-    private val platformAdapter: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
     private val entityManager: EntityManager,
     private val executor: Executor,
     private val stateListener: Consumer<@PointerCaptureStateValue Int>,
@@ -105,11 +105,7 @@ private constructor(
         }
 
     private val rtComponent by lazy {
-        platformAdapter.createPointerCaptureComponent(
-            executor,
-            rtStateListener,
-            rtInputEventListener,
-        )
+        sceneRuntime.createPointerCaptureComponent(executor, rtStateListener, rtInputEventListener)
     }
 
     override fun onAttach(entity: Entity): Boolean {
@@ -149,7 +145,7 @@ private constructor(
             inputListener: Consumer<InputEvent>,
         ): PointerCaptureComponent =
             PointerCaptureComponent(
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 executor,
                 stateListener,

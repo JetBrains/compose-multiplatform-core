@@ -31,9 +31,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.snapFlingBehavior
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -92,12 +95,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.ScrollAxisRange
@@ -120,6 +134,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import kotlin.jvm.JvmInline
 import kotlin.math.max
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -1555,6 +1570,7 @@ private fun DatePickerContent(
 
     val coroutineScope = rememberCoroutineScope()
     var yearPickerVisible by rememberSaveable { mutableStateOf(false) }
+    val nextButtonFocusRequester = remember { FocusRequester() }
     Column {
         MonthsNavigation(
             modifier = Modifier.padding(horizontal = DatePickerHorizontalPadding),
@@ -1566,6 +1582,7 @@ private fun DatePickerContent(
                     monthMillis = displayedMonthMillis,
                     locale = calendarModel.locale,
                 ) ?: "-",
+            nextButtonModifier = Modifier.focusRequester(nextButtonFocusRequester),
             onNextClicked = {
                 coroutineScope.launch {
                     try {
@@ -1607,6 +1624,7 @@ private fun DatePickerContent(
                     dateFormatter = dateFormatter,
                     selectableDates = selectableDates,
                     colors = colors,
+                    onReturnFocus = { nextButtonFocusRequester.requestFocus() },
                 )
             }
             // TODO Load the motionScheme tokens from the component tokens file
@@ -1709,6 +1727,7 @@ private fun HorizontalMonthsList(
     dateFormatter: DatePickerFormatter,
     selectableDates: SelectableDates,
     colors: DatePickerColors,
+    onReturnFocus: () -> Unit,
 ) {
     val today = calendarModel.today
     val firstMonth =
@@ -1718,6 +1737,7 @@ private fun HorizontalMonthsList(
                 month = 1, // January
             )
         }
+    val focusManager = LocalFocusManager.current
     ProvideTextStyle(DatePickerModalTokens.DateLabelTextFont.value) {
         LazyRow(
             // Apply this to prevent the screen reader from scrolling to the next or previous month,
@@ -1744,6 +1764,9 @@ private fun HorizontalMonthsList(
                         selectableDates = selectableDates,
                         colors = colors,
                         locale = calendarModel.locale,
+                        lazyListState = lazyListState,
+                        focusManager = focusManager,
+                        onReturnFocus = onReturnFocus,
                     )
                 }
             }
@@ -1842,6 +1865,9 @@ internal fun Month(
     selectableDates: SelectableDates,
     colors: DatePickerColors,
     locale: CalendarLocale,
+    lazyListState: LazyListState,
+    focusManager: FocusManager?,
+    onReturnFocus: () -> Unit,
 ) {
     val rangeSelectionDrawModifier =
         if (rangeSelectionInfo != null) {
@@ -1852,6 +1878,7 @@ internal fun Month(
         } else {
             Modifier
         }
+    val coroutineScope = rememberCoroutineScope()
 
     var cellIndex = 0
     Column(
@@ -1922,25 +1949,58 @@ internal fun Month(
                                 locale,
                                 forContentDescription = true,
                             ) ?: ""
+                        val enabled =
+                            remember(dateInMillis, selectableDates) {
+                                // Disabled day in case its year is not selectable, or the date
+                                // itself is specifically not allowed by the state's SelectableDates
+                                with(selectableDates) {
+                                    isSelectableYear(month.year) && isSelectableDate(dateInMillis)
+                                }
+                            }
                         Day(
                             text = (dayNumber + 1).toLocalString(locale = locale),
-                            modifier = Modifier,
+                            modifier =
+                                Modifier.dayOnKeyEvent(
+                                        isFirstDay =
+                                            cellIndex == month.daysFromStartOfWeekToFirstOfMonth,
+                                        isLastDay =
+                                            cellIndex ==
+                                                (month.daysFromStartOfWeekToFirstOfMonth +
+                                                    month.numberOfDays) - 1,
+                                        isFirstColumn = ((cellIndex) % 7) == 0,
+                                        isLastColumn = ((cellIndex + 1) % 7) == 0,
+                                        state = lazyListState,
+                                        coroutineScope = coroutineScope,
+                                        focusManager = focusManager,
+                                        onReturnFocus = onReturnFocus,
+                                    )
+                                    .then(
+                                        // A disabled date is focusable for correct keyboard
+                                        // navigation.
+                                        if (!enabled) {
+                                            val interactionSource = remember {
+                                                MutableInteractionSource()
+                                            }
+                                            Modifier.indication(
+                                                    interactionSource,
+                                                    ripple(
+                                                        radius =
+                                                            DatePickerModalTokens
+                                                                .DateContainerWidth / 2
+                                                    ),
+                                                )
+                                                .focusable(interactionSource = interactionSource)
+                                        } else {
+                                            Modifier
+                                        }
+                                    ),
                             selected = startDateSelected || endDateSelected,
                             onClick = { onDateSelectionChange(dateInMillis) },
                             // Only animate on the first selected day. This is important to
                             // disable when drawing a range marker behind the days on an
                             // end-date selection.
                             animateChecked = startDateSelected,
-                            enabled =
-                                remember(dateInMillis, selectableDates) {
-                                    // Disabled a day in case its year is not selectable, or the
-                                    // date itself is specifically not allowed by the state's
-                                    // SelectableDates.
-                                    with(selectableDates) {
-                                        isSelectableYear(month.year) &&
-                                            isSelectableDate(dateInMillis)
-                                    }
-                                },
+                            enabled = enabled,
                             today = isToday,
                             inRange = inRange,
                             description =
@@ -1962,6 +2022,116 @@ internal fun Month(
 /** Returns the number of months within the given year range. */
 internal fun numberOfMonthsInRange(yearRange: IntRange) =
     (yearRange.last - yearRange.first + 1) * 12
+
+private fun Modifier.dayOnKeyEvent(
+    isFirstDay: Boolean,
+    isLastDay: Boolean,
+    isFirstColumn: Boolean,
+    isLastColumn: Boolean,
+    state: LazyListState,
+    coroutineScope: CoroutineScope,
+    focusManager: FocusManager?,
+    onReturnFocus: () -> Unit,
+): Modifier {
+    if (focusManager == null) {
+        // This happens for range date picker which doesn't need this keyboard navigation logic.
+        return this
+    }
+    if (isFirstDay) {
+        return this.onKeyEvent {
+            // Shift + tab should exit days selection back to next month button.
+            if (it.isShiftTab) {
+                onReturnFocus()
+                return@onKeyEvent true
+            }
+            if (state.isScrollInProgress) {
+                // Do nothing if scroll is currently happening. Like if left/right key was quickly
+                // pressed after right/left key, which could cause weird focus navigation behavior.
+                return@onKeyEvent true
+            }
+            // Make sure it scrolls if left key is pressed to go to previous month.
+            if (it.isDirectionLeft) {
+                goToMonth(-1, state, focusManager, FocusDirection.Previous, coroutineScope)
+                return@onKeyEvent true
+            }
+            if (isLastColumn) {
+                // If first day is the only number on its row then we should also check for right
+                // key press. Make sure it scrolls if right key is pressed to go to next month.
+                if (it.isDirectionRight) {
+                    goToMonth(+1, state, focusManager, FocusDirection.Right, coroutineScope)
+                    return@onKeyEvent true
+                }
+            }
+            false
+        }
+    } else if (isLastDay) {
+        return this.onKeyEvent {
+            // Tab should exit days selection and move focus down.
+            if (it.isTab) {
+                val moved = focusManager.moveFocus(FocusDirection.Down)
+                if (!moved && !state.isScrollInProgress) {
+                    // If focus didn't move, it's because there's no focus target down like an ok
+                    // or cancel button. So scroll and move focus forward instead to next month.
+                    goToMonth(+1, state, focusManager, FocusDirection.Next, coroutineScope)
+                }
+                return@onKeyEvent true
+            }
+            if (state.isScrollInProgress) {
+                // Do nothing if scroll is currently happening. Like if left/right key was quickly
+                // pressed after right/left key, which could cause weird focus navigation behavior.
+                return@onKeyEvent true
+            }
+            // Make sure it scrolls if right key is pressed to go to next month.
+            if (it.isDirectionRight) {
+                goToMonth(+1, state, focusManager, FocusDirection.Next, coroutineScope)
+                return@onKeyEvent true
+            }
+            if (isFirstColumn) {
+                // If last day is the only number on its row then we should also check for left key
+                // press. Make sure it scrolls if left key is pressed to go to previous month.
+                if (it.isDirectionLeft) {
+                    goToMonth(-1, state, focusManager, FocusDirection.Left, coroutineScope)
+                    return@onKeyEvent true
+                }
+            }
+            false
+        }
+    } else if (isFirstColumn || isLastColumn) {
+        return this.onKeyEvent {
+            if (state.isScrollInProgress) {
+                // Do nothing if scroll is currently happening. Like if left/right key was quickly
+                // pressed after right/left key, which could cause weird focus navigation behavior.
+                return@onKeyEvent true
+            }
+            // Make sure it scrolls if left key is pressed on first column to go to previous month.
+            if (isFirstColumn && it.isDirectionLeft) {
+                goToMonth(-1, state, focusManager, FocusDirection.Left, coroutineScope)
+                return@onKeyEvent true
+            } else if (isLastColumn && it.isDirectionRight) {
+                // Make sure it scrolls if right key is pressed on last column to go to next month.
+                goToMonth(+1, state, focusManager, FocusDirection.Right, coroutineScope)
+                return@onKeyEvent true
+            }
+            false
+        }
+    } else {
+        return this
+    }
+}
+
+/** Scrolls to given month and move focus according to the given focus direction. */
+private fun goToMonth(
+    month: Int,
+    state: LazyListState,
+    focusManager: FocusManager,
+    focusDirection: FocusDirection,
+    coroutineScope: CoroutineScope,
+) {
+    coroutineScope.launch {
+        state.animateScrollToItem(state.firstVisibleItemIndex + month)
+        focusManager.moveFocus(focusDirection)
+    }
+}
 
 @Composable
 private fun dayContentDescription(
@@ -2185,6 +2355,7 @@ private fun MonthsNavigation(
     previousAvailable: Boolean,
     yearPickerVisible: Boolean,
     yearPickerText: String,
+    nextButtonModifier: Modifier,
     onNextClicked: () -> Unit,
     onPreviousClicked: () -> Unit,
     onYearPickerButtonClicked: () -> Unit,
@@ -2227,6 +2398,7 @@ private fun MonthsNavigation(
                     )
 
                     IconButtonWithTooltip(
+                        modifier = nextButtonModifier,
                         onClick = onNextClicked,
                         enabled = nextAvailable,
                         icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -2302,3 +2474,12 @@ private val YearsVerticalPadding = 16.dp
 
 private const val MaxCalendarRows = 6
 private const val YearsInRow: Int = 3
+
+private val KeyEvent.isShiftTab: Boolean
+    get() = isShiftPressed && type == KeyEventType.KeyDown && key == Key.Tab
+private val KeyEvent.isTab: Boolean
+    get() = !isShiftPressed && type == KeyEventType.KeyDown && key == Key.Tab
+private val KeyEvent.isDirectionLeft: Boolean
+    get() = type == KeyEventType.KeyDown && key == Key.DirectionLeft
+private val KeyEvent.isDirectionRight: Boolean
+    get() = type == KeyEventType.KeyDown && key == Key.DirectionRight

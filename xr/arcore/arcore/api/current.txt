@@ -5,7 +5,7 @@ package androidx.xr.arcore {
     method public static androidx.xr.arcore.AnchorCreateResult create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.Pose pose);
     method public void detach();
     method public static java.util.List<java.util.UUID> getPersistedAnchorUuids(androidx.xr.runtime.Session session);
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Anchor.State> getState();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Anchor.State> getState();
     method public static androidx.xr.arcore.AnchorCreateResult load(androidx.xr.runtime.Session session, java.util.UUID uuid);
     method public suspend Object? persist(kotlin.coroutines.Continuation<? super java.util.UUID>);
     method public static void unpersist(androidx.xr.runtime.Session session, java.util.UUID uuid);
@@ -21,8 +21,8 @@ package androidx.xr.arcore {
   }
 
   public static final class Anchor.State {
-    method public androidx.xr.runtime.math.Pose getPose();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public androidx.xr.runtime.math.Pose pose;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
@@ -44,7 +44,7 @@ package androidx.xr.arcore {
 
   public final class AnchorCreateSuccess extends androidx.xr.arcore.AnchorCreateResult {
     ctor public AnchorCreateSuccess(androidx.xr.arcore.Anchor anchor);
-    method public androidx.xr.arcore.Anchor getAnchor();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Anchor getAnchor();
     property public androidx.xr.arcore.Anchor anchor;
   }
 
@@ -62,7 +62,7 @@ package androidx.xr.arcore {
 
   public final class ArDevice {
     method public static androidx.xr.arcore.ArDevice getInstance(androidx.xr.runtime.Session session);
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ArDevice.State> getState();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ArDevice.State> getState();
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.ArDevice.State> state;
     field public static final androidx.xr.arcore.ArDevice.Companion Companion;
   }
@@ -72,13 +72,13 @@ package androidx.xr.arcore {
   }
 
   public static final class ArDevice.State {
-    method public androidx.xr.runtime.math.Pose getDevicePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getDevicePose();
     property public androidx.xr.runtime.math.Pose devicePose;
   }
 
   public final class AugmentedObject implements androidx.xr.arcore.Trackable<androidx.xr.arcore.AugmentedObject.State> {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.AugmentedObject.State> getState();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.AugmentedObject.State> getState();
     method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.AugmentedObject>> subscribe(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.AugmentedObject.State> state;
     field public static final androidx.xr.arcore.AugmentedObject.Companion Companion;
@@ -89,10 +89,10 @@ package androidx.xr.arcore {
   }
 
   public static final class AugmentedObject.State implements androidx.xr.arcore.Trackable.State {
-    method public androidx.xr.runtime.AugmentedObjectCategory getCategory();
-    method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.FloatSize3d getExtents();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.AugmentedObjectCategory getCategory();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getExtents();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public androidx.xr.runtime.AugmentedObjectCategory category;
     property public androidx.xr.runtime.math.Pose centerPose;
     property public androidx.xr.runtime.math.FloatSize3d extents;
@@ -100,7 +100,7 @@ package androidx.xr.arcore {
   }
 
   public final class DepthMap {
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.DepthMap.State> getState();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.DepthMap.State> getState();
     method public static androidx.xr.arcore.DepthMap? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.DepthMap? mono(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.DepthMap? right(androidx.xr.runtime.Session session);
@@ -115,12 +115,12 @@ package androidx.xr.arcore {
   }
 
   public static final class DepthMap.State {
-    method public int getHeight();
-    method public java.nio.ByteBuffer? getRawConfidenceMap();
-    method public java.nio.FloatBuffer? getRawDepthMap();
-    method public java.nio.ByteBuffer? getSmoothConfidenceMap();
-    method public java.nio.FloatBuffer? getSmoothDepthMap();
-    method public int getWidth();
+    method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public java.nio.ByteBuffer? getRawConfidenceMap();
+    method @InaccessibleFromKotlin public java.nio.FloatBuffer? getRawDepthMap();
+    method @InaccessibleFromKotlin public java.nio.ByteBuffer? getSmoothConfidenceMap();
+    method @InaccessibleFromKotlin public java.nio.FloatBuffer? getSmoothDepthMap();
+    method @InaccessibleFromKotlin public int getWidth();
     property public int height;
     property public java.nio.ByteBuffer? rawConfidenceMap;
     property public java.nio.FloatBuffer? rawDepthMap;
@@ -130,7 +130,7 @@ package androidx.xr.arcore {
   }
 
   public final class Face {
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> getState();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> getState();
     method public static androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> state;
     field public static final androidx.xr.arcore.Face.Companion Companion;
@@ -141,9 +141,9 @@ package androidx.xr.arcore {
   }
 
   public static final class Face.State {
-    method public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> getBlendShapes();
+    method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> getBlendShapes();
     method public float getConfidence(androidx.xr.arcore.FaceConfidenceRegion region);
-    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.arcore.FaceBlendShapeType,java.lang.Float> blendShapes;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
@@ -306,7 +306,7 @@ package androidx.xr.arcore {
 
   public final class Hand {
     method public static androidx.xr.arcore.Hand.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
     method public static androidx.xr.arcore.Hand? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.Hand? right(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> state;
@@ -326,9 +326,9 @@ package androidx.xr.arcore {
   }
 
   public static final class Hand.State {
-    method public java.util.Map<androidx.xr.arcore.HandJointType,androidx.xr.runtime.math.Pose> getHandJoints();
-    method public java.nio.FloatBuffer getHandJointsBuffer();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public java.util.Map<androidx.xr.arcore.HandJointType,androidx.xr.runtime.math.Pose> getHandJoints();
+    method @InaccessibleFromKotlin public java.nio.FloatBuffer getHandJointsBuffer();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public java.util.Map<androidx.xr.arcore.HandJointType,androidx.xr.runtime.math.Pose> handJoints;
     property public java.nio.FloatBuffer handJointsBuffer;
     property public androidx.xr.runtime.TrackingState trackingState;
@@ -365,9 +365,9 @@ package androidx.xr.arcore {
 
   public final class HitResult {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor();
-    method public float getDistance();
-    method public androidx.xr.runtime.math.Pose getHitPose();
-    method public androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State> getTrackable();
+    method @InaccessibleFromKotlin public float getDistance();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getHitPose();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State> getTrackable();
     property public float distance;
     property public androidx.xr.runtime.math.Pose hitPose;
     property public androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State> trackable;
@@ -378,18 +378,18 @@ package androidx.xr.arcore {
   }
 
   public final class PerceptionState {
-    method public androidx.xr.arcore.ArDevice getArDevice();
-    method public androidx.xr.arcore.DepthMap? getLeftDepthMap();
-    method public androidx.xr.arcore.Hand? getLeftHand();
-    method public androidx.xr.arcore.RenderViewpoint? getLeftRenderViewpoint();
-    method public androidx.xr.arcore.DepthMap? getMonoDepthMap();
-    method public androidx.xr.arcore.RenderViewpoint? getMonoRenderViewpoint();
-    method public androidx.xr.arcore.DepthMap? getRightDepthMap();
-    method public androidx.xr.arcore.Hand? getRightHand();
-    method public androidx.xr.arcore.RenderViewpoint? getRightRenderViewpoint();
-    method public kotlin.time.ComparableTimeMark getTimeMark();
-    method public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> getTrackables();
-    method public androidx.xr.arcore.Face? getUserFace();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.ArDevice getArDevice();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.DepthMap? getLeftDepthMap();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Hand? getLeftHand();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.RenderViewpoint? getLeftRenderViewpoint();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.DepthMap? getMonoDepthMap();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.RenderViewpoint? getMonoRenderViewpoint();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.DepthMap? getRightDepthMap();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Hand? getRightHand();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.RenderViewpoint? getRightRenderViewpoint();
+    method @InaccessibleFromKotlin public kotlin.time.ComparableTimeMark getTimeMark();
+    method @InaccessibleFromKotlin public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> getTrackables();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Face? getUserFace();
     property public androidx.xr.arcore.ArDevice arDevice;
     property public androidx.xr.arcore.DepthMap? leftDepthMap;
     property public androidx.xr.arcore.Hand? leftHand;
@@ -406,8 +406,8 @@ package androidx.xr.arcore {
 
   public final class Plane implements androidx.xr.arcore.Trackable<androidx.xr.arcore.Plane.State> {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> getState();
-    method public androidx.xr.arcore.Plane.Type getType();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> getState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Plane.Type getType();
     method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.Plane>> subscribe(androidx.xr.runtime.Session session);
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Plane.State> state;
     property public androidx.xr.arcore.Plane.Type type;
@@ -436,12 +436,12 @@ package androidx.xr.arcore {
   }
 
   public static final class Plane.State implements androidx.xr.arcore.Trackable.State {
-    method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.FloatSize2d getExtents();
-    method public androidx.xr.arcore.Plane.Label getLabel();
-    method public androidx.xr.arcore.Plane? getSubsumedBy();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
-    method public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize2d getExtents();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Plane.Label getLabel();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Plane? getSubsumedBy();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     property public androidx.xr.runtime.math.Pose centerPose;
     property public androidx.xr.runtime.math.FloatSize2d extents;
     property public androidx.xr.arcore.Plane.Label label;
@@ -464,7 +464,7 @@ package androidx.xr.arcore {
   }
 
   public final class RenderViewpoint {
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.RenderViewpoint.State> getState();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.RenderViewpoint.State> getState();
     method public static androidx.xr.arcore.RenderViewpoint? left(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.RenderViewpoint? mono(androidx.xr.runtime.Session session);
     method public static androidx.xr.arcore.RenderViewpoint? right(androidx.xr.runtime.Session session);
@@ -479,9 +479,9 @@ package androidx.xr.arcore {
   }
 
   public static final class RenderViewpoint.State {
-    method public androidx.xr.runtime.FieldOfView getFieldOfView();
-    method public androidx.xr.runtime.math.Pose getLocalPose();
-    method public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getLocalPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     property public androidx.xr.runtime.FieldOfView fieldOfView;
     property public androidx.xr.runtime.math.Pose localPose;
     property public androidx.xr.runtime.math.Pose pose;
@@ -489,12 +489,12 @@ package androidx.xr.arcore {
 
   public interface Trackable<State> {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> getState();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> getState();
     property public abstract kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> state;
   }
 
   public static interface Trackable.State {
-    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public abstract androidx.xr.runtime.TrackingState trackingState;
   }
 

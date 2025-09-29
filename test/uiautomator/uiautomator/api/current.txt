@@ -243,9 +243,9 @@ package androidx.test.uiautomator {
   }
 
   public final class StableResult {
-    method public android.view.accessibility.AccessibilityNodeInfo getNode();
-    method public android.graphics.Bitmap? getScreenshot();
-    method public boolean isTimeout();
+    method @InaccessibleFromKotlin public android.view.accessibility.AccessibilityNodeInfo getNode();
+    method @InaccessibleFromKotlin public android.graphics.Bitmap? getScreenshot();
+    method @InaccessibleFromKotlin public boolean isTimeout();
     property public boolean isTimeout;
     property public android.view.accessibility.AccessibilityNodeInfo node;
     property public android.graphics.Bitmap? screenshot;
@@ -273,9 +273,9 @@ package androidx.test.uiautomator {
     ctor protected UiAutomatorTestScope();
     method public final android.view.accessibility.AccessibilityNodeInfo activeWindowRoot();
     method public final void clearAppData();
-    method public final androidx.test.uiautomator.UiDevice getDevice();
-    method public final android.app.Instrumentation getInstrumentation();
-    method public final android.app.UiAutomation getUiAutomation();
+    method @InaccessibleFromKotlin public final androidx.test.uiautomator.UiDevice getDevice();
+    method @InaccessibleFromKotlin public final android.app.Instrumentation getInstrumentation();
+    method @InaccessibleFromKotlin public final android.app.UiAutomation getUiAutomation();
     method public final androidx.test.uiautomator.UiObject2 onElement(kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method public final androidx.test.uiautomator.UiObject2 onElement(optional long timeoutMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method public final androidx.test.uiautomator.UiObject2 onElement(optional long timeoutMs, optional long pollIntervalMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);

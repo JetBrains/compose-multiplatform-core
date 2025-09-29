@@ -711,6 +711,33 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         assertAgainstGolden("appBarWithSearch_withoutNavigationIconAndActions_${scheme.name}")
     }
 
+    @Test
+    fun appBarWithSearch_withScrolledContainerColor() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            val searchBarState = rememberSearchBarState()
+            val scrollBehavior =
+                SearchBarDefaults.enterAlwaysSearchBarScrollBehavior(
+                    initialContentOffset = -Float.MAX_VALUE
+                )
+            val appBarWithSearchColors = SearchBarDefaults.appBarWithSearchColors()
+            AppBarWithSearch(
+                modifier = Modifier.testTag(testTag),
+                state = searchBarState,
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        searchBarState = searchBarState,
+                        textFieldState = rememberTextFieldState(),
+                        onSearch = {},
+                        placeholder = { Text("Hint") },
+                    )
+                },
+                scrollBehavior = scrollBehavior,
+                colors = appBarWithSearchColors,
+            )
+        }
+        assertAgainstGolden("appBarWithSearch_withScrolledContainerColor_${scheme.name}")
+    }
+
     private fun assertAgainstGolden(goldenName: String) {
         rule.onNodeWithTag(testTag).captureToImage().assertAgainstGolden(screenshotRule, goldenName)
     }

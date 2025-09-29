@@ -60,8 +60,8 @@ import org.robolectric.android.controller.ActivityController;
 
 @RunWith(RobolectricTestRunner.class)
 public class PanelEntityImplTest {
-    private static final Dimensions VGA_RESOLUTION_PX = new Dimensions(640f, 480f, 0f);
-    private static final Dimensions HD_RESOLUTION_PX = new Dimensions(1280f, 720f, 0f);
+    private static final Dimensions kVgaResolutionPx = new Dimensions(640f, 480f, 0f);
+    private static final Dimensions kHdResolutionPx = new Dimensions(1280f, 720f, 0f);
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);
@@ -145,7 +145,7 @@ public class PanelEntityImplTest {
 
     @Test
     public void getSizeForPanelEntity_returnsSizeInMeters() {
-        PanelEntityImpl panelEntity = createPanelEntity(VGA_RESOLUTION_PX);
+        PanelEntityImpl panelEntity = createPanelEntity(kVgaResolutionPx);
 
         // The (FakeXrExtensions) test default pixel density is 1 pixel per meter.
         assertThat(panelEntity.getSize().width).isEqualTo(640f);
@@ -155,14 +155,14 @@ public class PanelEntityImplTest {
 
     @Test
     public void setSizeForPanelEntity_setsSize() {
-        PanelEntityImpl panelEntity = createPanelEntity(HD_RESOLUTION_PX);
+        PanelEntityImpl panelEntity = createPanelEntity(kHdResolutionPx);
 
         // The (FakeXrExtensions) test default pixel density is 1 pixel per meter.
         assertThat(panelEntity.getSize().width).isEqualTo(1280f);
         assertThat(panelEntity.getSize().height).isEqualTo(720f);
         assertThat(panelEntity.getSize().depth).isEqualTo(0f);
 
-        panelEntity.setSize(VGA_RESOLUTION_PX);
+        panelEntity.setSize(kVgaResolutionPx);
 
         assertThat(panelEntity.getSize().width).isEqualTo(640f);
         assertThat(panelEntity.getSize().height).isEqualTo(480f);
@@ -171,14 +171,14 @@ public class PanelEntityImplTest {
 
     @Test
     public void setSizeForPanelEntity_updatesPixelDimensions() {
-        PanelEntityImpl panelEntity = createPanelEntity(HD_RESOLUTION_PX);
+        PanelEntityImpl panelEntity = createPanelEntity(kHdResolutionPx);
 
         // The (FakeXrExtensions) test default pixel density is 1 pixel per meter.
         assertThat(panelEntity.getSize().width).isEqualTo(1280f);
         assertThat(panelEntity.getSize().height).isEqualTo(720f);
         assertThat(panelEntity.getSize().depth).isEqualTo(0f);
 
-        panelEntity.setSize(VGA_RESOLUTION_PX);
+        panelEntity.setSize(kVgaResolutionPx);
 
         assertThat(panelEntity.getSize().width).isEqualTo(640f);
         assertThat(panelEntity.getSize().height).isEqualTo(480f);
@@ -189,7 +189,7 @@ public class PanelEntityImplTest {
 
     @Test
     public void createPanel_setsCornerRadius() {
-        PanelEntityImpl panelEntity = createPanelEntity(VGA_RESOLUTION_PX);
+        PanelEntityImpl panelEntity = createPanelEntity(kVgaResolutionPx);
 
         // The (FakeXrExtensions) test default pixel density is 1 pixel per meter.
         // Validate that the corner radius is set to 32dp.

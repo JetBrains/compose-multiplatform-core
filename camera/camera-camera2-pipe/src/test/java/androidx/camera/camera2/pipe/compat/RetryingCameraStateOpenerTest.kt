@@ -91,12 +91,33 @@ class RetryingCameraStateOpenerTest {
     // TODO(lnishan): Consider mocking this object when Mockito works well with value classes.
     private val cameraOpener =
         object : CameraOpener {
+            var toBlock: Boolean = false
             var toThrow: Throwable? = null
             var numberOfOpens = 0
+            var lastCameraId: CameraId? = null
+            var lastStateCallback: CameraDevice.StateCallback? = null
 
-            override fun openCamera(cameraId: CameraId, stateCallback: CameraDevice.StateCallback) {
+            override suspend fun openCamera(
+                cameraId: CameraId,
+                stateCallback: CameraDevice.StateCallback,
+            ) {
                 numberOfOpens++
+                if (toBlock) {
+                    delay(10_000L)
+                }
                 toThrow?.let { throw it }
+
+                lastCameraId = cameraId
+                lastStateCallback = stateCallback
+            }
+
+            fun simulateCameraOpen() {
+                val cameraId = checkNotNull(lastCameraId)
+                val stateCallback = checkNotNull(lastStateCallback)
+
+                val cameraDevice: CameraDevice = mock()
+                whenever(cameraDevice.id).thenReturn(cameraId.value)
+                stateCallback.onOpened(cameraDevice)
             }
         }
 
@@ -608,6 +629,70 @@ class RetryingCameraStateOpenerTest {
                 )
                 .isFalse()
         }
+    }
+
+    @Test
+    fun cameraStateOpenerOpensCamera() = runTest {
+        val resultDeferred = async {
+            cameraStateOpener.tryOpenCamera(
+                cameraId0,
+                1,
+                Timestamps.now(fakeTimeSource),
+                cameraDeviceCloser,
+                audioRestrictionController,
+            )
+        }
+
+        // Simulate the opening of a camera that takes 1s.
+        advanceTimeBy(1_000L)
+        cameraOpener.simulateCameraOpen()
+
+        advanceUntilIdle()
+        val result = resultDeferred.getCompleted()
+        assertThat(result.cameraState).isNotNull()
+        assertThat(result.errorCode).isNull()
+    }
+
+    @Test
+    fun cameraStateOpenerSucceedsOnLongCameraOpens() = runTest {
+        val resultDeferred = async {
+            cameraStateOpener.tryOpenCamera(
+                cameraId0,
+                1,
+                Timestamps.now(fakeTimeSource),
+                cameraDeviceCloser,
+                audioRestrictionController,
+            )
+        }
+
+        // Simulate the opening of a camera that takes 10s.
+        advanceTimeBy(10_000L)
+        cameraOpener.simulateCameraOpen()
+
+        advanceUntilIdle()
+        val result = resultDeferred.getCompleted()
+        assertThat(result.cameraState).isNotNull()
+        assertThat(result.errorCode).isNull()
+    }
+
+    @Test
+    fun cameraStateOpenerTimesOutWhenOpenCameraBlocks() = runTest {
+        cameraOpener.toBlock = true
+        val resultDeferred = async {
+            cameraStateOpener.tryOpenCamera(
+                cameraId0,
+                1,
+                Timestamps.now(fakeTimeSource),
+                cameraDeviceCloser,
+                audioRestrictionController,
+            )
+        }
+
+        advanceUntilIdle()
+        val result = resultDeferred.getCompleted()
+        assertThat(result.cameraState).isNull()
+        assertThat(result.errorCode).isNotNull()
+        assertThat(result.errorCode).isEqualTo(CameraError.ERROR_CAMERA_OPEN_TIMEOUT)
     }
 
     @Test

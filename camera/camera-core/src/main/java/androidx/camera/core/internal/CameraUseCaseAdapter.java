@@ -727,15 +727,14 @@ public final class CameraUseCaseAdapter implements Camera {
      * <p>StreamSharing is only allowed when the following conditions are met:
      * <ul>
      * <li>When extension is not enabled.</li>
-     * <li>When concurrent camera is not enabled.</li>
+     * <li>When concurrent camera v2(Same Preview/VideoCapture) is not enabled.</li>
      * <li>When high-speed session is not enabled.</li>
      * </ul>
      */
     @GuardedBy("mLock")
     private boolean isStreamSharingAllowed() {
         return !hasExtension()
-                && mCameraCoordinator.getCameraOperatingMode()
-                != CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT
+                && mSecondaryCameraInternal == null
                 && mSessionType != SESSION_TYPE_HIGH_SPEED;
     }
 

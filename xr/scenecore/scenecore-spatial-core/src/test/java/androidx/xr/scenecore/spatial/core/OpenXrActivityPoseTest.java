@@ -113,31 +113,26 @@ public final class OpenXrActivityPoseTest {
 
     /** Creates a HeadActivityPoseImpl instance. */
     private HeadActivityPoseImpl createHeadActivityPose(
-            ActivitySpaceImpl activitySpace, AndroidXrEntity activitySpaceRoot) {
-        return new HeadActivityPoseImpl(activitySpace, activitySpaceRoot, mPerceptionLibrary);
+            ActivitySpaceImpl activitySpace) {
+        return new HeadActivityPoseImpl(activitySpace, activitySpace, mPerceptionLibrary);
     }
 
     /** Creates a CameraViewActivityPoseImpl instance. */
     private CameraViewActivityPoseImpl createCameraViewActivityPose(
-            ActivitySpaceImpl activitySpace, AndroidXrEntity activitySpaceRoot) {
+            ActivitySpaceImpl activitySpace) {
         return new CameraViewActivityPoseImpl(
                 CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
                 activitySpace,
-                activitySpaceRoot,
+                activitySpace,
                 mPerceptionLibrary);
     }
 
     private BaseActivityPose createTestActivityPose() {
-        return createTestActivityPose(mActivitySpace, mActivitySpace);
-    }
-
-    private BaseActivityPose createTestActivityPose(
-            ActivitySpaceImpl activitySpace, AndroidXrEntity activitySpaceRoot) {
         switch (testActivityPoseType) {
             case HEAD_ACTIVITY_POSE:
-                return createHeadActivityPose(activitySpace, activitySpaceRoot);
+                return createHeadActivityPose(mActivitySpace);
             case CAMERA_ACTIVITY_POSE:
-                return createCameraViewActivityPose(activitySpace, activitySpaceRoot);
+                return createCameraViewActivityPose(mActivitySpace);
         }
         return null;
     }
@@ -341,15 +336,6 @@ public final class OpenXrActivityPoseTest {
     }
 
     // TODO: Add tests with children of these entities
-
-    @Test
-    public void getActivitySpacePose_whenAtSamePose_returnsIdentityPose() {
-        mTestActivityPose = createTestActivityPose();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1).toNormalized());
-        setPerceptionPose(pose);
-
-        assertPose(mTestActivityPose.getActivitySpacePose(), pose);
-    }
 
     @Test
     public void getActivitySpacePose_returnsDifferencePose() {

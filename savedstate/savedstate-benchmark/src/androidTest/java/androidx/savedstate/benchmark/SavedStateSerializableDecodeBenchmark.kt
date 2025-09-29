@@ -18,15 +18,22 @@ package androidx.savedstate.benchmark
 
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
-import androidx.savedstate.benchmark.utils.BooleanArrayData
-import androidx.savedstate.benchmark.utils.CharArrayData
-import androidx.savedstate.benchmark.utils.DoubleArrayData
-import androidx.savedstate.benchmark.utils.FloatArrayData
-import androidx.savedstate.benchmark.utils.IntArrayData
-import androidx.savedstate.benchmark.utils.ListIntData
-import androidx.savedstate.benchmark.utils.ListStringData
-import androidx.savedstate.benchmark.utils.LongArrayData
-import androidx.savedstate.benchmark.utils.StringArrayData
+import androidx.savedstate.benchmark.utils.BooleanData
+import androidx.savedstate.benchmark.utils.BoxData
+import androidx.savedstate.benchmark.utils.ByteData
+import androidx.savedstate.benchmark.utils.CharData
+import androidx.savedstate.benchmark.utils.DoubleData
+import androidx.savedstate.benchmark.utils.EnumData
+import androidx.savedstate.benchmark.utils.FloatData
+import androidx.savedstate.benchmark.utils.IntData
+import androidx.savedstate.benchmark.utils.LongData
+import androidx.savedstate.benchmark.utils.NullData
+import androidx.savedstate.benchmark.utils.ObjectData
+import androidx.savedstate.benchmark.utils.SealedData
+import androidx.savedstate.benchmark.utils.SealedImpl1
+import androidx.savedstate.benchmark.utils.SealedImpl2
+import androidx.savedstate.benchmark.utils.ShortData
+import androidx.savedstate.benchmark.utils.StringData
 import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
@@ -37,87 +44,136 @@ import org.junit.Test
 @LargeTest
 class SavedStateSerializableDecodeBenchmark {
     @get:Rule val benchmarkRule = BenchmarkRule()
-    private val sampleSize = 100
+    private val numericTestValue = 100
     private val savedStateConfiguration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT
 
     @Test
-    fun testDecodeListIntData() {
-        val data = ListIntData(List(sampleSize) { it })
+    fun testDecodeIntData() {
+        val data = IntData(numericTestValue)
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<ListIntData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<IntData>(encodedData, savedStateConfiguration)
         }
     }
 
     @Test
-    fun testDecodeListStringData() {
-        val data = ListStringData(List(sampleSize) { "item $it" })
+    fun testDecodeLongData() {
+        val data = LongData(numericTestValue.toLong())
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<ListStringData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<LongData>(encodedData, savedStateConfiguration)
         }
     }
 
     @Test
-    fun testDecodeBooleanArrayData() {
-        val data = BooleanArrayData(BooleanArray(sampleSize) { it % 2 == 0 })
+    fun testDecodeShortData() {
+        val data = ShortData(numericTestValue.toShort())
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<BooleanArrayData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<ShortData>(encodedData, savedStateConfiguration)
         }
     }
 
     @Test
-    fun testDecodeCharArrayData() {
-        val data = CharArrayData(CharArray(sampleSize) { (it % 26 + 'a'.code).toChar() })
+    fun testDecodeByteData() {
+        val data = ByteData(numericTestValue.toByte())
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<CharArrayData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<ByteData>(encodedData, savedStateConfiguration)
         }
     }
 
     @Test
-    fun testDecodeDoubleArrayData() {
-        val data = DoubleArrayData(DoubleArray(sampleSize) { it.toDouble() })
+    fun testDecodeBooleanData() {
+        val data = BooleanData(true)
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<DoubleArrayData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<BooleanData>(encodedData, savedStateConfiguration)
         }
     }
 
     @Test
-    fun testDecodeFloatArrayData() {
-        val data = FloatArrayData(FloatArray(sampleSize) { it.toFloat() })
+    fun testDecodeCharData() {
+        val data = CharData('a')
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<FloatArrayData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<CharData>(encodedData, savedStateConfiguration)
         }
     }
 
     @Test
-    fun testDecodeIntArrayData() {
-        val data = IntArrayData(IntArray(sampleSize) { it })
+    fun testDecodeFloatData() {
+        val data = FloatData(numericTestValue.toFloat())
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<IntArrayData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<FloatData>(encodedData, savedStateConfiguration)
         }
     }
 
     @Test
-    fun testDecodeLongArrayData() {
-        val data = LongArrayData(LongArray(sampleSize) { it.toLong() })
+    fun testDecodeDoubleData() {
+        val data = DoubleData(numericTestValue.toDouble())
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<LongArrayData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<DoubleData>(encodedData, savedStateConfiguration)
         }
     }
 
     @Test
-    fun testDecodeStringArrayData() {
-        val data = StringArrayData(Array(sampleSize) { "item $it" })
+    fun testDecodeStringData() {
+        val data = StringData("item $numericTestValue")
         val encodedData = encodeToSavedState(data, savedStateConfiguration)
         benchmarkRule.measureRepeated {
-            decodeFromSavedState<StringArrayData>(encodedData, savedStateConfiguration)
+            decodeFromSavedState<StringData>(encodedData, savedStateConfiguration)
+        }
+    }
+
+    @Test
+    fun testDecodeNullData() {
+        val data = NullData(null)
+        val encodedData = encodeToSavedState(data, savedStateConfiguration)
+        benchmarkRule.measureRepeated {
+            decodeFromSavedState<NullData>(encodedData, savedStateConfiguration)
+        }
+    }
+
+    @Test
+    fun testDecodeEnumData() {
+        val data =
+            EnumData(
+                androidx.savedstate.benchmark.utils.Enum.OptionA,
+                androidx.savedstate.benchmark.utils.Enum.OptionB,
+            )
+        val encodedData = encodeToSavedState(data, savedStateConfiguration)
+        benchmarkRule.measureRepeated {
+            decodeFromSavedState<EnumData>(encodedData, savedStateConfiguration)
+        }
+    }
+
+    @Test
+    fun testDecodeBoxData() {
+        val data = BoxData("test")
+        val encodedData = encodeToSavedState(data, savedStateConfiguration)
+        benchmarkRule.measureRepeated {
+            decodeFromSavedState<BoxData<String>>(encodedData, savedStateConfiguration)
+        }
+    }
+
+    @Test
+    fun testDecodeSealedData() {
+        val data = SealedData(SealedImpl1(1), SealedImpl2("test"))
+        val encodedData = encodeToSavedState(data, savedStateConfiguration)
+        benchmarkRule.measureRepeated {
+            decodeFromSavedState<SealedData>(encodedData, savedStateConfiguration)
+        }
+    }
+
+    @Test
+    fun testDecodeObjectData() {
+        val data = ObjectData
+        val encodedData = encodeToSavedState(data, savedStateConfiguration)
+        benchmarkRule.measureRepeated {
+            decodeFromSavedState<ObjectData>(encodedData, savedStateConfiguration)
         }
     }
 }

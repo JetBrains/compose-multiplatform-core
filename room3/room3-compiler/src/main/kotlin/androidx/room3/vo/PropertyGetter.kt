@@ -50,9 +50,8 @@ data class PropertyGetter(
     ) {
         val varExpr = getterExpression(ownerVar)
         // A temporary local val is needed in Kotlin whenever the getter function returns nullable
-        // or
-        // the property is nullable such that a smart cast can be properly performed. Even
-        // if the property are immutable (val), we still use a local val in case the
+        // or the property is nullable such that a smart cast can be properly performed. Even
+        // if the property is immutable (val), we still use a local val in case the
         // property is declared in another module, which would make the smart cast impossible.
         if (scope.language == CodeLanguage.KOTLIN && type.nullability != XNullability.NONNULL) {
             val tmpProperty = scope.getTmpVar("_tmp${propertyName.capitalize(Locale.US)}")

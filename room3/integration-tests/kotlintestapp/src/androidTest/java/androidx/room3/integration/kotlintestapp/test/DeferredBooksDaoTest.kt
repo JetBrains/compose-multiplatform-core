@@ -19,15 +19,26 @@ package androidx.room3.integration.kotlintestapp.test
 import androidx.test.filters.SmallTest
 import io.reactivex.observers.TestObserver
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
 @SmallTest
-class DeferredBooksDaoTest : TestDatabaseTest() {
+@RunWith(Parameterized::class)
+class DeferredBooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
+
+    private companion object {
+        @JvmStatic
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = arrayOf(UseDriver.BUNDLED, UseDriver.ANDROID)
+    }
 
     @Before
     fun setup() {
@@ -46,14 +57,12 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     }
 
     @Test
-    fun increaseBookSalesSuspend() {
-        runBlocking {
-            booksDao.increaseBookSalesSuspend(TestUtil.BOOK_1.bookId)
-            assertThat(
-                booksDao.getBookSuspend(TestUtil.BOOK_1.bookId).salesCnt,
-                `is`(TestUtil.BOOK_1.salesCnt + 1),
-            )
-        }
+    fun increaseBookSalesSuspend() = runTest {
+        booksDao.increaseBookSalesSuspend(TestUtil.BOOK_1.bookId)
+        assertThat(
+            booksDao.getBookSuspend(TestUtil.BOOK_1.bookId).salesCnt,
+            `is`(TestUtil.BOOK_1.salesCnt + 1),
+        )
     }
 
     @Test
@@ -150,11 +159,9 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     }
 
     @Test
-    fun deleteBookWithIdsSuspend() {
-        runBlocking {
-            booksDao.deleteBookWithIdsSuspend(TestUtil.BOOK_1.bookId)
-            assertThat(booksDao.getBookNullableSuspend(TestUtil.BOOK_1.bookId), nullValue())
-        }
+    fun deleteBookWithIdsSuspend() = runTest {
+        booksDao.deleteBookWithIdsSuspend(TestUtil.BOOK_1.bookId)
+        assertThat(booksDao.getBookNullableSuspend(TestUtil.BOOK_1.bookId), nullValue())
     }
 
     @Test

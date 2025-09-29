@@ -26,7 +26,6 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
-import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.appfunctions.internal.AppFunctionSerializableFactory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
@@ -73,15 +72,11 @@ public class AppFunctionData
 internal constructor(
     // TODO: Make it non-null once the constructor that takes qualifiedName has removed
     internal val spec: AppFunctionDataSpec?,
-    @get:VisibleForTesting
-    @get:RestrictTo(LIBRARY_GROUP)
-    public val genericDocument: GenericDocument,
+    internal val genericDocument: GenericDocument,
     internal val extras: Bundle,
 ) {
-
     // TODO: Remove this constructor
-    @RestrictTo(LIBRARY_GROUP)
-    public constructor(
+    internal constructor(
         genericDocument: GenericDocument,
         extras: Bundle,
     ) : this(null, genericDocument, extras)

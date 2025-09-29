@@ -96,6 +96,7 @@ public open class ActionCallbackBroadcastReceiver : BroadcastReceiver() {
         internal fun Intent.putParameterExtras(parameters: ActionParameters): Intent {
             val parametersPairs =
                 parameters.asMap().map { (key, value) -> key.name to value }.toTypedArray()
+            @Suppress("DEPRECATION") // bundleOf is deprecated
             putExtra(ExtraParameters, bundleOf(*parametersPairs))
             return this
         }

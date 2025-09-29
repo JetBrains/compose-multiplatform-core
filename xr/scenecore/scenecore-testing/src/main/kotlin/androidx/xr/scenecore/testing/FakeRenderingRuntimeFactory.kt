@@ -21,17 +21,14 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.internal.RenderingRuntimeFactory
-import androidx.xr.scenecore.internal.RenderingEntityFactory
 import androidx.xr.scenecore.internal.RenderingRuntime
 import androidx.xr.scenecore.internal.SceneRuntime
 
-/** Factory for creating test-only instances of [androidx.xr.scenecore.internal.SceneRuntime]. */
+/** Factory for creating test-only instances of [RenderingRuntime]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRenderingRuntimeFactory() : RenderingRuntimeFactory {
     override val requirements: Set<Feature> = emptySet()
 
     override fun create(runtimes: List<JxrRuntime>, activity: Activity): RenderingRuntime =
-        FakeRenderingRuntime(
-            runtimes.filterIsInstance<SceneRuntime>().first() as RenderingEntityFactory
-        )
+        FakeRenderingRuntime(runtimes.filterIsInstance<SceneRuntime>().first())
 }

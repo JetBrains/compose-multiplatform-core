@@ -85,6 +85,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         val defaultTemplate: RequestTemplate = RequestTemplate(1),
         val defaultParameters: Map<*, Any?> = emptyMap<Any, Any?>(),
         val defaultListeners: List<Request.Listener> = listOf(),
+        val graphStateListeners: List<GraphStateListener> = emptyList(),
         val requiredParameters: Map<*, Any?> = emptyMap<Any, Any?>(),
         val cameraBackendId: CameraBackendId? = null,
         val customCameraBackend: CameraBackendFactory? = null,

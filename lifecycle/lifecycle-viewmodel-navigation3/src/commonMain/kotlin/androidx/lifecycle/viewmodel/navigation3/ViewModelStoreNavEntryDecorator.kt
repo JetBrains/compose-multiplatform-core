@@ -51,13 +51,13 @@ import androidx.savedstate.compose.LocalSavedStateRegistryOwner
  *   entry's ViewModelStoreOwner will be removed.
  */
 @Composable
-public fun rememberViewModelStoreNavEntryDecorator(
+public fun <T : Any> rememberViewModelStoreNavEntryDecorator(
     viewModelStoreOwner: ViewModelStoreOwner =
         checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         },
     shouldRemoveStoreOwner: () -> Boolean = shouldRemoveViewModelStoreCallback(),
-): NavEntryDecorator<Any> = remember {
+): NavEntryDecorator<T> = remember {
     ViewModelStoreNavEntryDecorator(viewModelStoreOwner.viewModelStore, shouldRemoveStoreOwner)
 }
 
@@ -74,10 +74,10 @@ public fun rememberViewModelStoreNavEntryDecorator(
  *   [NavEntry] should be cleared when the [NavEntry] is popped from the backStack. If true, the
  *   entry's ViewModelStoreOwner will be removed.
  */
-public fun ViewModelStoreNavEntryDecorator(
+public fun <T : Any> ViewModelStoreNavEntryDecorator(
     viewModelStore: ViewModelStore,
     shouldRemoveStoreOwner: () -> Boolean,
-): NavEntryDecorator<Any> {
+): NavEntryDecorator<T> {
     val storeOwnerProvider: EntryViewModel = viewModelStore.getEntryViewModel()
     val onPop: (Any) -> Unit = { key ->
         if (shouldRemoveStoreOwner()) {

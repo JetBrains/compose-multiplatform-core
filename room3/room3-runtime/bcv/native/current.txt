@@ -94,8 +94,8 @@ abstract class androidx.room3/BaseRoomConnectionManager { // androidx.room3/Base
     final fun (androidx.room3/RoomDatabase.JournalMode).getMaxNumberOfReaders(): kotlin/Int // androidx.room3/BaseRoomConnectionManager.getMaxNumberOfReaders|getMaxNumberOfReaders@androidx.room3.RoomDatabase.JournalMode(){}[0]
     final fun (androidx.room3/RoomDatabase.JournalMode).getMaxNumberOfWriters(): kotlin/Int // androidx.room3/BaseRoomConnectionManager.getMaxNumberOfWriters|getMaxNumberOfWriters@androidx.room3.RoomDatabase.JournalMode(){}[0]
     final fun onCreate(androidx.sqlite/SQLiteConnection) // androidx.room3/BaseRoomConnectionManager.onCreate|onCreate(androidx.sqlite.SQLiteConnection){}[0]
-    final fun onMigrate(androidx.sqlite/SQLiteConnection, kotlin/Int, kotlin/Int) // androidx.room3/BaseRoomConnectionManager.onMigrate|onMigrate(androidx.sqlite.SQLiteConnection;kotlin.Int;kotlin.Int){}[0]
     final fun onOpen(androidx.sqlite/SQLiteConnection) // androidx.room3/BaseRoomConnectionManager.onOpen|onOpen(androidx.sqlite.SQLiteConnection){}[0]
+    open fun onMigrate(androidx.sqlite/SQLiteConnection, kotlin/Int, kotlin/Int) // androidx.room3/BaseRoomConnectionManager.onMigrate|onMigrate(androidx.sqlite.SQLiteConnection;kotlin.Int;kotlin.Int){}[0]
 
     final inner class DriverWrapper : androidx.sqlite/SQLiteDriver { // androidx.room3/BaseRoomConnectionManager.DriverWrapper|null[0]
         constructor <init>(androidx.sqlite/SQLiteDriver) // androidx.room3/BaseRoomConnectionManager.DriverWrapper.<init>|<init>(androidx.sqlite.SQLiteDriver){}[0]

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package androidx.xr.compose.testing
 
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -43,18 +44,15 @@ import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_AP
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_SPATIAL_AUDIO
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_UI
-import androidx.xr.scenecore.impl.JxrPlatformAdapterAxr
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
-import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl
-import androidx.xr.scenecore.impl.perception.PerceptionLibrary
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.scene
-import androidx.xr.scenecore.testing.FakeJxrPlatformAdapterFactory
+import androidx.xr.scenecore.testing.FakeRenderingRuntime
+import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.android.extensions.xr.ShadowConfig
-import com.google.androidxr.splitengine.SplitEngineSubspaceManager
-import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer
-import org.mockito.Mockito.mock
+import java.lang.reflect.Method
+import java.util.concurrent.ScheduledExecutorService
 
 private object SubspaceAndroidComposeTestRuleConstants {
     const val DEFAULT_DP_PER_METER = 1151.856f
@@ -209,40 +207,61 @@ public fun AndroidComposeTestRule<*, *>.onAllSubspaceNodesWithTag(
  * @param activity The [Activity] to use for the [Session].
  */
 private fun createTestSession(activity: Activity): Session =
-    Session(
-        activity,
-        runtimes =
-            listOf(
-                FakePerceptionRuntimeFactory().createRuntime(activity).apply {
-                    lifecycleManager.create()
-                },
-                createTestJxrPlatformAdapter(activity),
-            ),
-    )
-
-/**
- * Create a [JxrPlatformAdapter] for testing.
- *
- * @param activity The [Activity] to use for the [JxrPlatformAdapter].
- */
-private fun createTestJxrPlatformAdapter(activity: Activity): JxrPlatformAdapter =
-    if (shouldUseRealRuntime(activity)) {
-        JxrPlatformAdapterAxr.create(
-            /* activity = */ activity,
-            /* executor = */ FakeScheduledExecutorService(),
-            /* extensions = */ XrExtensionsProvider.getXrExtensions()!!,
-            /* impressApi = */ FakeImpressApiImpl(),
-            /* perceptionLibrary = */ PerceptionLibrary(),
-            /* splitEngineSubspaceManager = */ mock(SplitEngineSubspaceManager::class.java),
-            /* splitEngineRenderer = */ mock(ImpSplitEngineRenderer::class.java),
+    createTestRuntime(activity).let { sceneRuntime ->
+        Session(
+            activity,
+            runtimes =
+                listOf(
+                    FakePerceptionRuntimeFactory().createRuntime(activity).apply {
+                        lifecycleManager.create()
+                    },
+                    sceneRuntime,
+                    FakeRenderingRuntime(sceneRuntime),
+                ),
         )
-    } else {
-        FakeJxrPlatformAdapterFactory().createPlatformAdapter(activity)
     }
 
 /**
- * Check the AndroidManifest for a <meta-data> indicating that the real JxrPlatformAdapterImpl
- * should be used instead of the FakeJxrPlatformAdapter. By default, we will use the fake adapter.
+ * Create a fake [SceneRuntime] for testing.
+ *
+ * A convenience method that creates a fake SpatialSceneRuntime for testing.
+ *
+ * @param activity The [Activity] to use for the [SceneRuntime].
+ */
+private fun createTestRuntime(activity: Activity): SceneRuntime {
+    if (shouldUseRealRuntime(activity)) {
+        // Check version to pass lint rule, "BanUncheckedReflection".
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N) {
+            try {
+                // TODO (b/442359966): Use FakeSceneRuntime instead.
+                val spatialSceneRuntimeClass =
+                    Class.forName("androidx.xr.scenecore.spatial.core.SpatialSceneRuntime")
+
+                val createMethod: Method? =
+                    spatialSceneRuntimeClass.getDeclaredMethod(
+                        "create",
+                        Activity::class.java,
+                        ScheduledExecutorService::class.java,
+                    )
+                createMethod!!.isAccessible = true
+                return createMethod.invoke(null, activity, FakeScheduledExecutorService())
+                    as SceneRuntime
+            } catch (e: Exception) {
+                throw e
+            }
+        } else {
+            throw IllegalStateException(
+                "This method is not available on this SDK version" + Build.VERSION.SDK_INT
+            )
+        }
+    } else {
+        return FakeSceneRuntimeFactory().create(activity)
+    }
+}
+
+/**
+ * Check the AndroidManifest for a <meta-data> indicating that the real SceneRuntimeImpl should be
+ * used instead of the FakeSceneRuntime. By default, we will use the fake adapter.
  */
 private fun shouldUseRealRuntime(activity: Activity) =
     activity.packageManager

@@ -43,7 +43,6 @@ import javax.lang.model.element.Element
  *   getter and field definitions.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Suppress("NullAnnotationGroup") // b/424469950
 @OptIn(ExperimentalProcessingApi::class)
 internal class DocumentModel
 private constructor(

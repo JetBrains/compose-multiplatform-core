@@ -40,6 +40,7 @@
             android:exported="false" />
         <activity
             android:name=".fsmhsmtransition.FsmHsmTransitionActivity"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
             android:exported="true" />
         <activity
             android:name=".visibility.VisibilityActivity"
@@ -72,6 +73,9 @@
             android:name=".headlockedui.HeadLockedUiActivity"
             android:exported="true" />
         <activity
+            android:name=".model.GltfModelActivity"
+            android:exported="true" />
+        <activity
             android:name=".movable.MovableActivity"
             android:exported="true" />
         <activity
@@ -85,6 +89,9 @@
             android:exported="true" />
         <activity
             android:name=".accessibilitytest.AccessibilityTestActivity"
+            android:exported="true" />
+        <activity
+            android:name=".memoryleak.MemoryLeakActivity"
             android:exported="true" />
         <property
             android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"

@@ -171,8 +171,9 @@ constructor(
         )
     }
 
+    // This is restricted to LIBRARY_GROUP_PREFIX because the API is implemented in ARCore.
     /** Describes a specific value used to set the configuration via [Session.configure]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public interface ConfigMode {
         /**
          * Queries whether the [ConfigMode] is supported and is available to be configured for the

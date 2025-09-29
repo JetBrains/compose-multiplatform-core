@@ -140,14 +140,13 @@ fun VerticalText(text: Spanned, paint: TextPaint, modifier: Modifier = Modifier)
         content = {},
     ) { _, constraints ->
         vTextLayout =
-            VerticalTextLayout.Builder(
-                    text = text,
-                    start = 0,
-                    end = text.length,
-                    paint = paint,
-                    height = constraints.maxHeight.toFloat(),
-                )
-                .build()
+            VerticalTextLayout(
+                text = text,
+                start = 0,
+                end = text.length,
+                paint = paint,
+                height = constraints.maxHeight.toFloat(),
+            )
         layout(constraints.maxWidth, constraints.maxHeight) {}
     }
 }

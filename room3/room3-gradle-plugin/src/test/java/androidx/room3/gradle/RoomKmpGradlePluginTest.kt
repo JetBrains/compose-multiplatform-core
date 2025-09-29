@@ -56,7 +56,11 @@ class RoomKmpGradlePluginTest {
             |${projectSetup.androidProject}
             |
             |kotlin {
-            |  androidTarget()
+            |  androidTarget {
+            |    compilerOptions {
+            |      jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            |    }
+            |  }
             |  linuxX64()
             |  jvm()
             |  sourceSets {
@@ -84,9 +88,6 @@ class RoomKmpGradlePluginTest {
             |    compileOptions {
             |      sourceCompatibility = JavaVersion.VERSION_17
             |      targetCompatibility = JavaVersion.VERSION_17
-            |    }
-            |    kotlin {
-            |      jvmToolchain(17)
             |    }
             |}
             |

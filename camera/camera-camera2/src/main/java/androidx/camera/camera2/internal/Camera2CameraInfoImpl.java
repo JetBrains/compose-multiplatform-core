@@ -29,7 +29,6 @@ import static androidx.camera.camera2.internal.ZslUtil.isCapabilitySupported;
 import static androidx.camera.core.internal.StreamSpecsCalculator.NO_OP_STREAM_SPECS_CALCULATOR;
 import static androidx.core.util.Preconditions.checkArgument;
 
-import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
@@ -441,7 +440,6 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         }
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = androidx.camera.core.ExperimentalZeroShutterLag.class)
     @Override
     public boolean isZslSupported() {

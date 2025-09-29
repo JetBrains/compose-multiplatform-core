@@ -32,7 +32,6 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
@@ -420,7 +419,6 @@ internal class AdaptableCoreEntity<T : Entity>(
  */
 internal class CoreSphereSurfaceEntity(
     internal val surfaceEntity: SurfaceEntity,
-    private val headPose: Pose?,
     val initialDensity: Density,
 ) : CoreEntity(surfaceEntity) {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
@@ -459,18 +457,6 @@ internal class CoreSphereSurfaceEntity(
     // initialDensity.
     private val localDensity: Density
         get() = layout?.density ?: initialDensity
-
-    override val layoutPoseInPixels: Pose
-        get() =
-            super.layoutPoseInPixels.let {
-                it.copy(
-                    it.translation +
-                        (headPose?.translation?.convertMetersToPixels(localDensity) ?: Vector3())
-                )
-            }
-
-    /** The parent of spheres is always scene.activitySpace. Setting this has no affect. */
-    override var parent: CoreEntity? = null
 
     /** Radius in meters. */
     internal var radius: Float

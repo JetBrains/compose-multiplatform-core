@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import androidx.annotation.MainThread
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.internal.GltfEntity as RtGltfEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.internal.SceneRuntime
 
 /**
  * GltfModelEntity is a concrete implementation of Entity that hosts a glTF model.
@@ -67,18 +68,20 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
         /**
          * Factory method for GltfModelEntity.
          *
-         * @param adapter Jetpack XR platform adapter.
+         * @param sceneRuntime SceneRuntime.
+         * @param renderingRuntime RenderingRuntime.
          * @param model [GltfModel] which this entity will display.
          * @param pose Pose for this [GltfModelEntity], relative to its parent.
          */
         internal fun create(
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
+            renderingRuntime: RenderingRuntime,
             entityManager: EntityManager,
             model: GltfModel,
             pose: Pose = Pose.Identity,
         ): GltfModelEntity =
             GltfModelEntity(
-                adapter.createGltfEntity(pose, model.model, adapter.activitySpaceRootImpl),
+                renderingRuntime.createGltfEntity(pose, model.model, sceneRuntime.activitySpace),
                 entityManager,
             )
 
@@ -100,7 +103,13 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             model: GltfModel,
             pose: Pose = Pose.Identity,
         ): GltfModelEntity =
-            create(session.platformAdapter, session.scene.entityManager, model, pose)
+            create(
+                session.sceneRuntime,
+                session.renderingRuntime,
+                session.scene.entityManager,
+                model,
+                pose,
+            )
     }
 
     /**

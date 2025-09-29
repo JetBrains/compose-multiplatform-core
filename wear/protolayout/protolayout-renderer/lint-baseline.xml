@@ -1,50 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.0.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha01)" variant="all" version="9.0.0-alpha01">
-
-    <issue
-        id="ThreadConstraint"
-        message="Call must be from `@{Main,Ui}Thread`, but context is allowing `@WorkerThread`"
-        errorLine1="                handleLayoutDepthCheckFailure(inflaterStatsLogger);"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/protolayout/renderer/impl/ProtoLayoutViewInstance.java"/>
-    </issue>
-
-    <issue
-        id="ThreadConstraint"
-        message="Call must be from `@{Main,Ui}Thread`, but context is allowing `@WorkerThread`"
-        errorLine1="            checkLayoutDepth(layout.getRoot(), MAX_LAYOUT_ELEMENT_DEPTH, inflaterStatsLogger);"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/protolayout/renderer/impl/ProtoLayoutViewInstance.java"/>
-    </issue>
-
-    <issue
-        id="ThreadConstraint"
-        message="Call must be from `@{Main,Ui}Thread`, but context is allowing `@WorkerThread`"
-        errorLine1="                mutation = inflater.computeMutation(prevRenderedMetadata, layout, parentViewProp);"
-        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/protolayout/renderer/impl/ProtoLayoutViewInstance.java"/>
-    </issue>
-
-    <issue
-        id="ThreadConstraint"
-        message="Call must be from `@{Main,Ui}Thread`, but context is allowing `@WorkerThread`"
-        errorLine1="        InflateResult result = inflater.inflate(inflateParent);"
-        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/protolayout/renderer/impl/ProtoLayoutViewInstance.java"/>
-    </issue>
-
-    <issue
-        id="ThreadConstraint"
-        message="Argument must allow calling `logInflationFailed()` from `@WorkerThread`, but that call is requiring `@{Main,Ui}Thread`"
-        errorLine1="                                            inflaterStatsLogger));"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/protolayout/renderer/impl/ProtoLayoutViewInstance.java"/>
-    </issue>
+<issues format="6" by="lint 9.0.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha05)" variant="all" version="9.0.0-alpha05">
 
     <issue
         id="WrongThread"
@@ -89,6 +44,33 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/protolayout/renderer/impl/ProtoLayoutViewInstance.java"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="Overriding `@attr/anchorAngleDegrees` which is marked as private in androidx.wear:wear:1.3.0. If deliberate, use tools:override=&quot;true&quot;, otherwise pick a different name."
+        errorLine1="  &lt;attr name=&quot;anchorAngleDegrees&quot; format=&quot;float&quot;/>"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/attrs.xml"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="Overriding `@attr/anchorPosition` which is marked as private in androidx.wear:wear:1.3.0. If deliberate, use tools:override=&quot;true&quot;, otherwise pick a different name."
+        errorLine1="  &lt;attr name=&quot;anchorPosition&quot; format=&quot;enum&quot;>"
+        errorLine2="              ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/attrs.xml"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="Overriding `@attr/clockwise` which is marked as private in androidx.wear:wear:1.3.0. If deliberate, use tools:override=&quot;true&quot;, otherwise pick a different name."
+        errorLine1="  &lt;attr name=&quot;clockwise&quot; format=&quot;boolean&quot;/>"
+        errorLine2="              ~~~~~~~~~">
+        <location
+            file="src/main/res/values/attrs.xml"/>
     </issue>
 
 </issues>

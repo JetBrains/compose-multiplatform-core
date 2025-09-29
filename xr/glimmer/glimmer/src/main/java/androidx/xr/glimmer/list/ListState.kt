@@ -235,6 +235,10 @@ public class ListState(firstVisibleItemIndex: Int = 0, firstVisibleItemScrollOff
     }
 
     internal fun onScroll(distance: Float): Float {
+        if (distance < 0 && !canScrollForward || distance > 0 && !canScrollBackward) {
+            return 0f
+        }
+
         // Skip measure pass.
         if (abs(distance + accumulatedScroll) <= 0.5f) {
             // Inside measuring we do `scrollToBeConsumed.roundToInt()` so there will be no scroll

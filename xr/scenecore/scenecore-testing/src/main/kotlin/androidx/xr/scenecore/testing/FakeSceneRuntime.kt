@@ -63,9 +63,15 @@ import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
-/** Test-only implementation of [androidx.xr.scenecore.internal.SceneRuntime] */
+/**
+ * Test-only implementation of [SceneRuntime].
+ *
+ * @param executor This used to input [executor] for tests.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeSceneRuntime() : SceneRuntime, RenderingEntityFactory {
+public class FakeSceneRuntime(public val executor: Executor? = null) :
+    SceneRuntime, RenderingEntityFactory {
+
     override val spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
 
     override val activitySpace: ActivitySpace = FakeActivitySpace()
@@ -91,9 +97,21 @@ public class FakeSceneRuntime() : SceneRuntime, RenderingEntityFactory {
     override var spatialModeChangeListener: SpatialModeChangeListener? =
         FakeSpatialModeChangeListener()
 
+    private val cameraViewActivityPoseL: FakeCameraViewActivityPose =
+        FakeCameraViewActivityPose(CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE)
+
+    private val cameraViewActivityPoseR: FakeCameraViewActivityPose =
+        FakeCameraViewActivityPose(CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE)
+
     override fun getCameraViewActivityPose(
         @CameraViewActivityPose.CameraType cameraType: Int
-    ): CameraViewActivityPose? = FakeCameraViewActivityPose()
+    ): CameraViewActivityPose? {
+        return when (cameraType) {
+            CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE -> cameraViewActivityPoseL
+            CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE -> cameraViewActivityPoseR
+            else -> null
+        }
+    }
 
     override fun createPanelEntity(
         context: Context,
@@ -179,7 +197,9 @@ public class FakeSceneRuntime() : SceneRuntime, RenderingEntityFactory {
         pose: Pose,
         parentEntity: Entity,
     ): GltfEntity {
-        val gltfEntity = FakeGltfEntity()
+        if (executor == null) throw NullPointerException("Set executor before test")
+
+        val gltfEntity = FakeGltfEntity(feature, executor)
         gltfEntity.setPose(pose)
         gltfEntity.parent = parentEntity
 

@@ -97,8 +97,6 @@ import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onPointSourceParamsAvailable
-import androidx.xr.compose.subspace.layout.rotate
-import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.runtime.Config
@@ -129,7 +127,6 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
     private val menuState = mutableStateOf(VideoMenuState.HOME)
     private val videoPlayingState = mutableStateOf(false)
     private val mediaUriState: MutableState<Uri?> = mutableStateOf(null)
-    private val rotateSphereVideoState = mutableStateOf(false)
     private var oldFeatheringType = FeatheringType.PERCENT
 
     private val useDrmState = mutableStateOf(false)
@@ -231,10 +228,8 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
         }
 
         if (videoPlaying && surfaceType == SpatialExternalSurfaceType.HEMISPHERE) {
-            // Size and offset shouldn't get passed down from the box to the sphere, they are here
-            // just for verification purposes and should be a no-op.
-            SpatialBox(modifier = SubspaceModifier.size(500.dp).offset(x = 20000.dp)) {
-                // Simple animation to verify radius and layout recomposition.
+            SpatialBox {
+                // Simple animation to verify radius recomposition is efficient.
                 val animatedRadius = remember { Animatable(500f) }
                 val animatedOffset = remember { Animatable(initialValue = -1000f) }
                 LaunchedEffect(Unit) {
@@ -250,12 +245,8 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                         animationSpec = tween(durationMillis = 2000, easing = FastOutLinearInEasing),
                     )
                 }
-                var modifier = SubspaceModifier.offset(z = animatedOffset.value.dp)
-                if (rotateSphereVideoState.value) {
-                    modifier = modifier.rotate(Vector3(z = 1f), 15f)
-                }
                 SpatialExternalSurface180Hemisphere(
-                    modifier = modifier,
+                    modifier = SubspaceModifier.offset(z = animatedOffset.value.dp),
                     stereoMode = stereoMode,
                     radius = animatedRadius.value.dp,
                     featheringEffect = getFeatheringEffect(featheringValue, featheringType),
@@ -277,35 +268,33 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                         exoPlayer?.release()
                         exoPlayer = null
                     }
-
-                    SphereVideoControlPanel(includeAnimationPanel = true)
                 }
+                SphereVideoControlPanel()
             }
         } else if (videoPlaying && surfaceType == SpatialExternalSurfaceType.SPHERE) {
-            SpatialExternalSurface360Sphere(
-                modifier =
-                    if (rotateSphereVideoState.value) SubspaceModifier.rotate(Vector3(z = 1f), 15f)
-                    else SubspaceModifier,
-                stereoMode = stereoMode,
-                featheringEffect = getFeatheringEffect(featheringValue, featheringType),
-                surfaceProtection =
-                    if (useDrmState.value) SurfaceProtection.Protected else SurfaceProtection.None,
-            ) {
-                onSurfaceCreated {
-                    val player = ExoPlayer.Builder(this@SpatialComposeVideoPlayer).build()
-                    exoPlayer = player
-                    player.setVideoSurface(it)
-                    player.setMediaItem(getMediaItem())
-                    player.repeatMode = Player.REPEAT_MODE_ONE
-                    player.playWhenReady = true
-                    player.prepare()
-                }
+            SpatialBox {
+                SpatialExternalSurface360Sphere(
+                    stereoMode = stereoMode,
+                    featheringEffect = getFeatheringEffect(featheringValue, featheringType),
+                    surfaceProtection =
+                        if (useDrmState.value) SurfaceProtection.Protected
+                        else SurfaceProtection.None,
+                ) {
+                    onSurfaceCreated {
+                        val player = ExoPlayer.Builder(this@SpatialComposeVideoPlayer).build()
+                        exoPlayer = player
+                        player.setVideoSurface(it)
+                        player.setMediaItem(getMediaItem())
+                        player.repeatMode = Player.REPEAT_MODE_ONE
+                        player.playWhenReady = true
+                        player.prepare()
+                    }
 
-                onSurfaceDestroyed {
-                    exoPlayer?.release()
-                    exoPlayer = null
+                    onSurfaceDestroyed {
+                        exoPlayer?.release()
+                        exoPlayer = null
+                    }
                 }
-
                 SphereVideoControlPanel()
             }
         } else {
@@ -566,23 +555,6 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                                             }
                                         }
 
-                                        if (
-                                            surfaceType == SpatialExternalSurfaceType.HEMISPHERE ||
-                                                surfaceType == SpatialExternalSurfaceType.SPHERE
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text("Rotate sphere video and child content")
-                                                Switch(
-                                                    modifier = Modifier.padding(start = 8.dp),
-                                                    checked = rotateSphereVideoState.value,
-                                                    onCheckedChange = {
-                                                        rotateSphereVideoState.value =
-                                                            !rotateSphereVideoState.value
-                                                    },
-                                                )
-                                            }
-                                        }
-
                                         Text(
                                             modifier = Modifier.padding(top = 24.dp),
                                             fontSize = 20.sp,
@@ -732,7 +704,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
     }
 
     @Composable
-    fun SphereVideoControlPanel(includeAnimationPanel: Boolean = false) {
+    fun SphereVideoControlPanel() {
         SpatialBox(modifier = SubspaceModifier.fillMaxSize()) {
             val interactionSource = remember { MutableInteractionSource() }
             val isHovered by interactionSource.collectIsHoveredAsState()
@@ -740,7 +712,8 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
             // Having an alpha helps reduce depth perception issues with stereo video.
             SpatialPanel(
                 modifier =
-                    SubspaceModifier.width(600.dp)
+                    SubspaceModifier.offset(y = (-300).dp, z = (-600).dp)
+                        .width(600.dp)
                         .height(120.dp)
                         .alpha(if (isHovered) 0.9f else 0.3f)
             ) {
@@ -769,23 +742,6 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     Button(onClick = { videoPlayingState.value = false }) { Text("End Video") }
-                }
-            }
-            if (includeAnimationPanel) {
-                SpatialPanel(
-                    modifier =
-                        SubspaceModifier.size(1000.dp)
-                            .align(SpatialAlignment.CenterStart)
-                            .rotate(axisAngle = Vector3(y = 1.0f), 90f)
-                ) {
-                    Box(
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.5f))
-                                .padding(16.dp)
-                    ) {
-                        Text(text = "Animation\nTest", color = Color.White, fontSize = 200.sp)
-                    }
                 }
             }
         }

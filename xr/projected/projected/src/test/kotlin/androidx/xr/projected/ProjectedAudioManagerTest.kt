@@ -24,43 +24,32 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.ServiceInfo
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.xr.projected.ProjectedServiceBinding.ACTION_BIND
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ProjectedAudioManagerTest {
 
-    private lateinit var context: Application
-    private lateinit var lifecycleOwner: LifecycleOwner
-    private lateinit var lifecycleRegistry: LifecycleRegistry
-
     private val testProjectedService = TestProjectedService()
+    private lateinit var context: Application
+    private lateinit var lifecycleOwner: TestLifecycleOwner
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        lifecycleOwner =
-            object : LifecycleOwner {
-                private val registry = LifecycleRegistry(this)
-
-                init {
-                    registry.currentState = Lifecycle.State.CREATED
-                }
-
-                override val lifecycle: Lifecycle
-                    get() = registry
-            }
-        lifecycleRegistry = lifecycleOwner.lifecycle as LifecycleRegistry
+        lifecycleOwner = TestLifecycleOwner(Lifecycle.State.INITIALIZED, UnconfinedTestDispatcher())
         shadowOf(context.packageManager).apply {
             addServiceIfNotPresent(COMPONENT_NAME)
             addOrUpdateService(SERVICE_INFO)

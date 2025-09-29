@@ -29,7 +29,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
-import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_CASE_OPTION
+import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ExperimentalZeroShutterLag
 import androidx.camera.core.ImageCapture
@@ -177,10 +177,10 @@ public object StreamUseCaseUtil {
         useCaseConfig: UseCaseConfig<*>
     ): Camera2ImplConfig {
         val optionsBundle = MutableOptionsBundle.create()
-        if (useCaseConfig.containsOption(STREAM_USE_CASE_OPTION)) {
+        if (useCaseConfig.containsOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)) {
             optionsBundle.insertOption(
-                STREAM_USE_CASE_OPTION,
-                useCaseConfig.retrieveOption(STREAM_USE_CASE_OPTION),
+                Camera2ImplConfig.STREAM_USE_CASE_OPTION,
+                useCaseConfig.retrieveOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION),
             )
         }
         if (useCaseConfig.containsOption(UseCaseConfig.OPTION_ZSL_DISABLED)) {
@@ -276,7 +276,9 @@ public object StreamUseCaseUtil {
                 val oldImplementationOptions = attachedSurfaceInfo.implementationOptions
                 getUpdatedImplementationOptionsWithUseCaseStreamSpecOption(
                         oldImplementationOptions!!,
-                        oldImplementationOptions.retrieveOption(STREAM_USE_CASE_OPTION),
+                        oldImplementationOptions.retrieveOption(
+                            Camera2ImplConfig.STREAM_USE_CASE_OPTION
+                        ),
                     )
                     ?.also {
                         attachedSurfaceStreamSpecMap[attachedSurfaceInfo] =
@@ -288,7 +290,9 @@ public object StreamUseCaseUtil {
                 val oldImplementationOptions = oldStreamSpec!!.implementationOptions
                 getUpdatedImplementationOptionsWithUseCaseStreamSpecOption(
                         oldImplementationOptions!!,
-                        oldImplementationOptions.retrieveOption(STREAM_USE_CASE_OPTION),
+                        oldImplementationOptions.retrieveOption(
+                            Camera2ImplConfig.STREAM_USE_CASE_OPTION
+                        ),
                     )
                     ?.also {
                         suggestedStreamSpecMap[newUseCaseConfig] =
@@ -564,14 +568,16 @@ public object StreamUseCaseUtil {
         var hasDefaultOrNullStreamUseCase = false
         for (attachedSurfaceInfo: AttachedSurfaceInfo in attachedSurfaces) {
             if (
-                !attachedSurfaceInfo.implementationOptions!!.containsOption(STREAM_USE_CASE_OPTION)
+                !attachedSurfaceInfo.implementationOptions!!.containsOption(
+                    Camera2ImplConfig.STREAM_USE_CASE_OPTION
+                )
             ) {
                 hasDefaultOrNullStreamUseCase = true
                 break
             }
             val streamUseCaseOverride: Long =
                 (attachedSurfaceInfo.implementationOptions!!.retrieveOption(
-                    STREAM_USE_CASE_OPTION
+                    Camera2ImplConfig.STREAM_USE_CASE_OPTION
                 ))!!
             if ((streamUseCaseOverride == SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT.toLong())) {
                 hasDefaultOrNullStreamUseCase = true
@@ -581,14 +587,14 @@ public object StreamUseCaseUtil {
             break
         }
         for (useCaseConfig: UseCaseConfig<*> in newUseCaseConfigs) {
-            if (!useCaseConfig.containsOption(STREAM_USE_CASE_OPTION)) {
+            if (!useCaseConfig.containsOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)) {
                 hasDefaultOrNullStreamUseCase = true
                 if (hasNonDefaultStreamUseCase) {
                     throwInvalidCamera2InteropOverrideException()
                 }
             } else {
                 val streamUseCaseOverride: Long =
-                    useCaseConfig.retrieveOption(STREAM_USE_CASE_OPTION)!!
+                    useCaseConfig.retrieveOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)!!
                 if ((streamUseCaseOverride == SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT.toLong())) {
                     hasDefaultOrNullStreamUseCase = true
                     if (hasNonDefaultStreamUseCase) {

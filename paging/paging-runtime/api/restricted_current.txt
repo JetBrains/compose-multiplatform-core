@@ -7,9 +7,9 @@ package androidx.paging {
     method @Deprecated public void addLoadStateListener(kotlin.jvm.functions.Function2<? super androidx.paging.LoadType,? super androidx.paging.LoadState,kotlin.Unit> listener);
     method @Deprecated public void addPagedListListener(androidx.paging.AsyncPagedListDiffer.PagedListListener<T> listener);
     method @Deprecated public final void addPagedListListener(kotlin.jvm.functions.Function2<? super androidx.paging.PagedList<T>?,? super androidx.paging.PagedList<T>?,kotlin.Unit> callback);
-    method @Deprecated public androidx.paging.PagedList<T>? getCurrentList();
+    method @InaccessibleFromKotlin @Deprecated public androidx.paging.PagedList<T>? getCurrentList();
     method @Deprecated public T? getItem(int index);
-    method @Deprecated public int getItemCount();
+    method @InaccessibleFromKotlin @Deprecated public int getItemCount();
     method @Deprecated public void removeLoadStateListener(kotlin.jvm.functions.Function2<? super androidx.paging.LoadType,? super androidx.paging.LoadState,kotlin.Unit> listener);
     method @Deprecated public void removePagedListListener(androidx.paging.AsyncPagedListDiffer.PagedListListener<T> listener);
     method @Deprecated public final void removePagedListListener(kotlin.jvm.functions.Function2<? super androidx.paging.PagedList<T>?,? super androidx.paging.PagedList<T>?,kotlin.Unit> callback);
@@ -32,9 +32,9 @@ package androidx.paging {
     method public void addLoadStateListener(kotlin.jvm.functions.Function1<? super androidx.paging.CombinedLoadStates,kotlin.Unit> listener);
     method public void addOnPagesUpdatedListener(kotlin.jvm.functions.Function0<kotlin.Unit> listener);
     method @MainThread public T? getItem(@IntRange(from=0L) int index);
-    method public int getItemCount();
-    method public kotlinx.coroutines.flow.Flow<androidx.paging.CombinedLoadStates> getLoadStateFlow();
-    method public kotlinx.coroutines.flow.Flow<kotlin.Unit> getOnPagesUpdatedFlow();
+    method @InaccessibleFromKotlin public int getItemCount();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<androidx.paging.CombinedLoadStates> getLoadStateFlow();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<kotlin.Unit> getOnPagesUpdatedFlow();
     method @MainThread public T? peek(@IntRange(from=0L) int index);
     method public void refresh();
     method public void removeLoadStateListener(kotlin.jvm.functions.Function1<? super androidx.paging.CombinedLoadStates,kotlin.Unit> listener);
@@ -72,13 +72,13 @@ package androidx.paging {
     method public boolean displayLoadStateAsItem(androidx.paging.LoadState loadState);
     method public final int getItemCount();
     method public final int getItemViewType(int position);
-    method public final androidx.paging.LoadState getLoadState();
+    method @InaccessibleFromKotlin public final androidx.paging.LoadState getLoadState();
     method public int getStateViewType(androidx.paging.LoadState loadState);
     method public abstract void onBindViewHolder(VH holder, androidx.paging.LoadState loadState);
     method public final void onBindViewHolder(VH holder, int position);
     method public abstract VH onCreateViewHolder(android.view.ViewGroup parent, androidx.paging.LoadState loadState);
     method public final VH onCreateViewHolder(android.view.ViewGroup parent, int viewType);
-    method public final void setLoadState(androidx.paging.LoadState);
+    method @InaccessibleFromKotlin public final void setLoadState(androidx.paging.LoadState);
     property public final androidx.paging.LoadState loadState;
   }
 
@@ -86,7 +86,7 @@ package androidx.paging {
     ctor @Deprecated protected PagedListAdapter(androidx.recyclerview.widget.AsyncDifferConfig<T> config);
     ctor @Deprecated protected PagedListAdapter(androidx.recyclerview.widget.DiffUtil.ItemCallback<T> diffCallback);
     method @Deprecated public void addLoadStateListener(kotlin.jvm.functions.Function2<? super androidx.paging.LoadType,? super androidx.paging.LoadState,kotlin.Unit> listener);
-    method @Deprecated public androidx.paging.PagedList<T>? getCurrentList();
+    method @InaccessibleFromKotlin @Deprecated public androidx.paging.PagedList<T>? getCurrentList();
     method @Deprecated protected T? getItem(int position);
     method @Deprecated public int getItemCount();
     method @Deprecated public void onCurrentListChanged(androidx.paging.PagedList<T>? currentList);
@@ -111,8 +111,8 @@ package androidx.paging {
     method @MainThread protected final T? getItem(@IntRange(from=0L) int position);
     method public int getItemCount();
     method public final long getItemId(int position);
-    method public final kotlinx.coroutines.flow.Flow<androidx.paging.CombinedLoadStates> getLoadStateFlow();
-    method public final kotlinx.coroutines.flow.Flow<kotlin.Unit> getOnPagesUpdatedFlow();
+    method @InaccessibleFromKotlin public final kotlinx.coroutines.flow.Flow<androidx.paging.CombinedLoadStates> getLoadStateFlow();
+    method @InaccessibleFromKotlin public final kotlinx.coroutines.flow.Flow<kotlin.Unit> getOnPagesUpdatedFlow();
     method @MainThread public final T? peek(@IntRange(from=0L) int index);
     method public final void refresh();
     method public final void removeLoadStateListener(kotlin.jvm.functions.Function1<? super androidx.paging.CombinedLoadStates,kotlin.Unit> listener);
@@ -133,7 +133,7 @@ package androidx.paging {
     method public static <T> androidx.lifecycle.LiveData<androidx.paging.PagingData<T>> cachedIn(androidx.lifecycle.LiveData<androidx.paging.PagingData<T>>, androidx.lifecycle.Lifecycle lifecycle);
     method public static <T> androidx.lifecycle.LiveData<androidx.paging.PagingData<T>> cachedIn(androidx.lifecycle.LiveData<androidx.paging.PagingData<T>>, androidx.lifecycle.ViewModel viewModel);
     method public static <T> androidx.lifecycle.LiveData<androidx.paging.PagingData<T>> cachedIn(androidx.lifecycle.LiveData<androidx.paging.PagingData<T>>, kotlinx.coroutines.CoroutineScope scope);
-    method public static <Key, Value> androidx.lifecycle.LiveData<androidx.paging.PagingData<Value>> getLiveData(androidx.paging.Pager<Key,Value>);
+    method @InaccessibleFromKotlin public static <Key, Value> androidx.lifecycle.LiveData<androidx.paging.PagingData<Value>> getLiveData(androidx.paging.Pager<Key,Value>);
     property public static <Key, Value> androidx.lifecycle.LiveData<androidx.paging.PagingData<Value>> androidx.paging.Pager<Key,Value>.liveData;
   }
 

@@ -74,7 +74,7 @@ package androidx.camera.core {
   }
 
   public interface CameraProvider {
-    method public java.util.List<androidx.camera.core.CameraInfo> getAvailableCameraInfos();
+    method @InaccessibleFromKotlin public java.util.List<androidx.camera.core.CameraInfo> getAvailableCameraInfos();
     method public default androidx.camera.core.CameraInfo getCameraInfo(androidx.camera.core.CameraSelector cameraSelector);
     method @kotlin.jvm.Throws(exceptionClasses=CameraInfoUnavailableException::class) public boolean hasCamera(androidx.camera.core.CameraSelector cameraSelector) throws androidx.camera.core.CameraInfoUnavailableException;
     property public abstract java.util.List<androidx.camera.core.CameraInfo> availableCameraInfos;
@@ -641,14 +641,14 @@ package androidx.camera.core {
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup, optional java.util.List<? extends androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup);
-    method public final java.util.List<androidx.camera.core.CameraEffect> getEffects();
-    method public final androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> getFeatureSelectionListener();
-    method public final java.util.concurrent.Executor getFeatureSelectionListenerExecutor();
-    method public final android.util.Range<java.lang.Integer> getFrameRateRange();
-    method public final java.util.List<androidx.camera.core.featuregroup.GroupableFeature> getPreferredFeatureGroup();
-    method public final java.util.Set<androidx.camera.core.featuregroup.GroupableFeature> getRequiredFeatureGroup();
-    method public final java.util.List<androidx.camera.core.UseCase> getUseCases();
-    method public final androidx.camera.core.ViewPort? getViewPort();
+    method @InaccessibleFromKotlin public final java.util.List<androidx.camera.core.CameraEffect> getEffects();
+    method @InaccessibleFromKotlin public final androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> getFeatureSelectionListener();
+    method @InaccessibleFromKotlin public final java.util.concurrent.Executor getFeatureSelectionListenerExecutor();
+    method @InaccessibleFromKotlin public final android.util.Range<java.lang.Integer> getFrameRateRange();
+    method @InaccessibleFromKotlin public final java.util.List<androidx.camera.core.featuregroup.GroupableFeature> getPreferredFeatureGroup();
+    method @InaccessibleFromKotlin public final java.util.Set<androidx.camera.core.featuregroup.GroupableFeature> getRequiredFeatureGroup();
+    method @InaccessibleFromKotlin public final java.util.List<androidx.camera.core.UseCase> getUseCases();
+    method @InaccessibleFromKotlin public final androidx.camera.core.ViewPort? getViewPort();
     method public final void setFeatureSelectionListener(androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> listener);
     method public final void setFeatureSelectionListener(optional java.util.concurrent.Executor executor, androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> listener);
     property public final java.util.List<androidx.camera.core.CameraEffect> effects;
@@ -783,7 +783,7 @@ package androidx.camera.core {
 package @androidx.camera.core.ExperimentalSessionConfig androidx.camera.core.featuregroup {
 
   @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public abstract class GroupableFeature {
-    method public final int getFeatureType();
+    method @InaccessibleFromKotlin public final int getFeatureType();
     property public final int featureType;
     field public static final androidx.camera.core.featuregroup.GroupableFeature.Companion Companion;
     field public static final int FEATURE_TYPE_DYNAMIC_RANGE = 0; // 0x0

@@ -77,6 +77,8 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.junit.rules.ExpectedLogMessagesRule;
 
+import java.util.Objects;
+
 @RunWith(RobolectricTestRunner.class)
 public final class RuntimeUtilsTest {
 
@@ -431,24 +433,28 @@ public final class RuntimeUtilsTest {
     }
 
     @Test
-    public void getPassthroughOpacity_throwExceptionForInvalidValues() {
-        final PassthroughVisibilityState passthroughVisibilityHomeState =
+    public void getPassthroughOpacity_convertsInvalidValuesFromExtensionStateToOneAndLogsError() {
+        PassthroughVisibilityState passthroughVisibilityState =
                 ShadowPassthroughVisibilityState.create(PassthroughVisibilityState.HOME, 0.0f);
-        final PassthroughVisibilityState passthroughVisibilityAppState =
+
+        assertThat(RuntimeUtils.getPassthroughOpacity(passthroughVisibilityState)).isEqualTo(1.0f);
+
+        passthroughVisibilityState =
                 ShadowPassthroughVisibilityState.create(
                         PassthroughVisibilityState.APP, -0.0000001f);
-        final PassthroughVisibilityState passthroughVisibilitySystemState =
+
+        assertThat(RuntimeUtils.getPassthroughOpacity(passthroughVisibilityState)).isEqualTo(1.0f);
+
+        passthroughVisibilityState =
                 ShadowPassthroughVisibilityState.create(PassthroughVisibilityState.SYSTEM, -1.0f);
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> RuntimeUtils.getPassthroughOpacity(passthroughVisibilityHomeState));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> RuntimeUtils.getPassthroughOpacity(passthroughVisibilityAppState));
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> RuntimeUtils.getPassthroughOpacity(passthroughVisibilitySystemState));
+        assertThat(RuntimeUtils.getPassthroughOpacity(passthroughVisibilityState)).isEqualTo(1.0f);
+
+        // Log is removed from RuntimeUtils
+        //expectedLogMessagesRule.expectLogMessagePattern(
+        //        Log.ERROR,
+        //        "RuntimeUtils",
+        //        Pattern.compile(".* Opacity should be greater than zero.*"));
     }
 
     @Test
@@ -460,7 +466,6 @@ public final class RuntimeUtilsTest {
                 sceneRuntime.createGroupEntity(
                         new Pose(), "testGroup", sceneRuntime.getActivitySpace());
         Node testNode = ((AndroidXrEntity) testEntity).getNode();
-        entityManager.setEntityForNode(testNode, testEntity);
 
         float[] expectedTransform =
                 new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
@@ -473,7 +478,9 @@ public final class RuntimeUtilsTest {
                         1, testNode, transform, hitPosition);
         InputEvent.HitInfo hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
 
+        assertThat(hitInfo).isNotNull();
         assertThat(hitInfo.getInputEntity()).isEqualTo(testEntity);
+        assertThat(hitInfo.getHitPosition()).isNotNull();
         assertVector3(hitInfo.getHitPosition(), expectedHitPosition);
         assertThat(hitInfo.getTransform().getData())
                 .usingExactEquality()
@@ -496,7 +503,6 @@ public final class RuntimeUtilsTest {
                 sceneRuntime.createGroupEntity(
                         new Pose(), "testGroup", sceneRuntime.getActivitySpace());
         Node testNode = ((AndroidXrEntity) testEntity).getNode();
-        entityManager.setEntityForNode(testNode, testEntity);
 
         float[] transformData = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         Mat4f transform = new Mat4f(transformData);
@@ -518,7 +524,6 @@ public final class RuntimeUtilsTest {
                 sceneRuntime.createGroupEntity(
                         new Pose(), "testGroup", sceneRuntime.getActivitySpace());
         Node testNode = ((AndroidXrEntity) testEntity).getNode();
-        entityManager.setEntityForNode(testNode, testEntity);
 
         Vec3 hitPosition = new Vec3(1, 2, 3);
 
@@ -535,10 +540,6 @@ public final class RuntimeUtilsTest {
         // Create the entity manager but do not set the hit entity.
         EntityManager entityManager = new EntityManager();
         SpatialSceneRuntime sceneRuntime = createSceneRuntime(entityManager);
-        Entity testEntity =
-                sceneRuntime.createGroupEntity(
-                        new Pose(), "testGroup", sceneRuntime.getActivitySpace());
-        Node testNode = ((AndroidXrEntity) testEntity).getNode();
 
         float[] transformData = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         Mat4f transform = new Mat4f(transformData);
@@ -553,15 +554,34 @@ public final class RuntimeUtilsTest {
     }
 
     @Test
-    public void getHitInfo_nullHitPosition_convertsFromHitInfo() {
+    public void getHitInfo_unKnownNode_returnsNull() {
+        EntityManager entityManager = new EntityManager();
+        SpatialSceneRuntime sceneRuntime = createSceneRuntime(entityManager);
+        Entity testEntity =
+                sceneRuntime.createGroupEntity(
+                        new Pose(), "testGroup", sceneRuntime.getActivitySpace());
+        Node testNode = Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()).createNode();
 
+        float[] transformData = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        Mat4f transform = new Mat4f(transformData);
+        Vec3 hitPosition = new Vec3(1, 2, 3);
+
+        com.android.extensions.xr.node.InputEvent.HitInfo extensionHitInfo =
+                new com.android.extensions.xr.node.InputEvent.HitInfo(
+                        1, testNode, transform, hitPosition);
+        InputEvent.HitInfo hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+
+        assertThat(hitInfo).isNull();
+    }
+
+    @Test
+    public void getHitInfo_nullHitPosition_convertsFromHitInfo() {
         EntityManager entityManager = new EntityManager();
         SpatialSceneRuntime sceneRuntime = createSceneRuntime(entityManager);
         Entity testEntity =
                 sceneRuntime.createGroupEntity(
                         new Pose(), "testGroup", sceneRuntime.getActivitySpace());
         Node testNode = ((AndroidXrEntity) testEntity).getNode();
-        entityManager.setEntityForNode(testNode, testEntity);
 
         float[] expectedTransform =
                 new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
@@ -573,6 +593,8 @@ public final class RuntimeUtilsTest {
                         1, testNode, transform, hitPosition);
         InputEvent.HitInfo hitInfo = RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
 
+        assertThat(hitInfo).isNotNull();
+        assertThat(hitInfo.getInputEntity()).isNotNull();
         assertThat(hitInfo.getInputEntity()).isEqualTo(testEntity);
         assertThat(hitInfo.getHitPosition()).isNull();
         assertThat(hitInfo.getTransform().getData())
@@ -706,7 +728,9 @@ public final class RuntimeUtilsTest {
         HitTestResult hitTestResult = RuntimeUtils.getHitTestResult(extensionsHitTestResult);
 
         assertThat(hitTestResult.getDistance()).isEqualTo(distance);
+        assertThat(hitTestResult.getHitPosition()).isNotNull();
         assertVector3(hitTestResult.getHitPosition(), new Vector3(1, 2, 3));
+        assertThat(hitTestResult.getSurfaceNormal()).isNotNull();
         assertVector3(hitTestResult.getSurfaceNormal(), new Vector3(4, 5, 6));
         assertThat(hitTestResult.getSurfaceType())
                 .isEqualTo(HitTestResult.HitTestSurfaceType.HIT_TEST_RESULT_SURFACE_TYPE_PLANE);
@@ -768,6 +792,9 @@ public final class RuntimeUtilsTest {
 
     @Test
     public void convertSpatialVisibility_convertsFromExtensionVisibility() {
+        com.android.extensions.xr.space.PerceivedResolution perceivedResolution =
+                new com.android.extensions.xr.space.PerceivedResolution(0, 0);
+
         assertThat(RuntimeUtils.convertSpatialVisibility(VisibilityState.FULLY_VISIBLE))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.WITHIN_FOV));
 

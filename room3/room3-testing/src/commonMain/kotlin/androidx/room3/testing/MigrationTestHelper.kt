@@ -110,7 +110,7 @@ public expect class MigrationTestHelper {
 }
 
 internal typealias ConnectionManagerFactory =
-    (DatabaseConfiguration, RoomOpenDelegate) -> TestConnectionManager
+    (DatabaseConfiguration, TestOpenDelegate) -> TestConnectionManager
 
 internal typealias ConfigurationFactory = (RoomDatabase.MigrationContainer) -> DatabaseConfiguration
 
@@ -205,15 +205,25 @@ internal abstract class TestConnectionManager : BaseRoomConnectionManager() {
 
 private class DefaultTestConnectionManager(
     override val configuration: DatabaseConfiguration,
-    override val openDelegate: RoomOpenDelegate,
+    override val openDelegate: TestOpenDelegate,
 ) : TestConnectionManager() {
 
     private val driverWrapper = DriverWrapper(requireNotNull(configuration.sqliteDriver))
 
+    override fun onMigrate(connection: SQLiteConnection, oldVersion: Int, newVersion: Int) {
+        if (openDelegate is CreateOpenDelegate) {
+            error(
+                "A migration should never occur while creating a new database. A database at " +
+                    "the driver configured path likely already exists. Did you forget to delete it?"
+            )
+        }
+        super.onMigrate(connection, oldVersion, newVersion)
+    }
+
     override fun openConnection() = driverWrapper.open(configuration.name ?: ":memory:")
 }
 
-private sealed class TestOpenDelegate(databaseBundle: DatabaseBundle) :
+internal sealed class TestOpenDelegate(databaseBundle: DatabaseBundle) :
     RoomOpenDelegate(
         version = databaseBundle.version,
         identityHash = databaseBundle.identityHash,
@@ -241,6 +251,13 @@ private class CreateOpenDelegate(val databaseBundle: DatabaseBundle) :
             "Creation of tables didn't occur while creating a new database. A database at the " +
                 "driver configured path likely already exists. Did you forget to delete it?"
         }
+    }
+
+    override fun onPreMigrate(connection: SQLiteConnection) {
+        error(
+            "A migration should never occur while creating a new database. A database at the " +
+                "driver configured path likely already exists. Did you forget to delete it?"
+        )
     }
 
     override fun onValidateSchema(connection: SQLiteConnection): ValidationResult {

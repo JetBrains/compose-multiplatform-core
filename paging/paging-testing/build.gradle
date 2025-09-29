@@ -109,6 +109,13 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
+        wasmJsTest {
+            dependsOn(webTest)
+            dependencies {
+                implementation(libs.kotlinXw3c)
+            }
+        }
+
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {

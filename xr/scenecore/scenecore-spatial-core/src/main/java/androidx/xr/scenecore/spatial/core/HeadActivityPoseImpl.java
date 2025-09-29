@@ -49,7 +49,7 @@ class HeadActivityPoseImpl extends BaseActivityPose implements HeadActivityPose 
     }
 
     @Override
-    public Pose getPoseInActivitySpace() {
+    public @NonNull Pose getPoseInActivitySpace() {
         return mOpenXrActivityPoseHelper.getPoseInActivitySpace(getPoseInOpenXrReferenceSpace());
     }
 

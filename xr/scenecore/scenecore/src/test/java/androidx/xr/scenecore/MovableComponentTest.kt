@@ -33,7 +33,6 @@ import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.internal.AnchorPlacement as RtAnchorPlacement
 import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.MovableComponent as RtMovableComponent
 import androidx.xr.scenecore.internal.MoveEvent as RtMoveEvent
 import androidx.xr.scenecore.internal.MoveEventListener as RtMoveEventListener
@@ -41,6 +40,7 @@ import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
 import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.scenecore.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.scenecore.internal.PlaneType as RtPlaneType
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
@@ -63,7 +63,7 @@ class MovableComponentTest {
     private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mockSceneRuntime = mock<SceneRuntime>()
 
     private lateinit var session: Session
     private val mockActivitySpace = mock<RtActivitySpace>()
@@ -79,26 +79,22 @@ class MovableComponentTest {
 
     @Before
     fun setUp() {
-        whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.headActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
-        whenever(mockPlatformAdapter.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        whenever(mockPlatformAdapter.createGroupEntity(any(), any(), any()))
+        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.headActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mock())
+        whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
+        whenever(mockSceneRuntime.createGroupEntity(any(), any(), any()))
             .thenReturn(mockGroupEntity)
-        whenever(mockPlatformAdapter.createAnchorEntity(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
             .thenReturn(mockAnchorEntity)
         whenever(mockAnchorEntity.state).thenReturn(RtAnchorEntity.State.UNANCHORED)
         session =
             Session(
                 activity,
                 runtimes =
-                    listOf(
-                        fakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
-                    ),
+                    listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
         session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
     }
@@ -107,7 +103,7 @@ class MovableComponentTest {
     fun addMovableComponent_addsRuntimeMovableComponent() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockEntityMoveListener = mock<EntityMoveListener>()
@@ -121,7 +117,7 @@ class MovableComponentTest {
             )
 
         assertThat(entity.addComponent(movableComponent)).isTrue()
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .createMovableComponent(
                 systemMovable = false,
                 scaleInZ = false,
@@ -135,7 +131,7 @@ class MovableComponentTest {
     fun addAutoMovableComponent_addsRuntimeMovableComponent() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
 
@@ -143,7 +139,7 @@ class MovableComponentTest {
             MovableComponent.createSystemMovable(session = session, scaleInZ = false)
 
         assertThat(entity.addComponent(movableComponent)).isTrue()
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .createMovableComponent(
                 systemMovable = true,
                 scaleInZ = false,
@@ -158,11 +154,11 @@ class MovableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockAnchorPlacement = mock<RtAnchorPlacement>()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         whenever(
-                mockPlatformAdapter.createAnchorPlacementForPlanes(
+                mockSceneRuntime.createAnchorPlacementForPlanes(
                     setOf(RtPlaneType.HORIZONTAL),
                     setOf(RtPlaneSemantic.WALL),
                 )
@@ -183,7 +179,7 @@ class MovableComponentTest {
             )
 
         assertThat(entity.addComponent(movableComponent)).isTrue()
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .createMovableComponent(
                 systemMovable = true,
                 scaleInZ = false,
@@ -227,13 +223,13 @@ class MovableComponentTest {
     fun addMovableComponentDefaultArguments_addsRuntimeMovableComponentWithDefaults() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val movableComponent = MovableComponent.createSystemMovable(session)
 
         assertThat(entity.addComponent(movableComponent)).isTrue()
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .createMovableComponent(
                 systemMovable = true,
                 scaleInZ = true,
@@ -247,7 +243,7 @@ class MovableComponentTest {
     fun removeMovableComponent_removesRuntimeMovableComponent() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -262,7 +258,7 @@ class MovableComponentTest {
         val entity = GroupEntity.create(session, "test")
         val entity2 = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -277,7 +273,7 @@ class MovableComponentTest {
         assertThat(entity).isNotNull()
 
         val mockRtMovableComponent = mock<RtMovableComponent>()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mockRtMovableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -295,7 +291,7 @@ class MovableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtMovableComponent = mock<RtMovableComponent>()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mockRtMovableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -365,7 +361,7 @@ class MovableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtMovableComponent = mock<RtMovableComponent>()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mockRtMovableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -408,7 +404,7 @@ class MovableComponentTest {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtMovableComponent = mock<RtMovableComponent>()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mockRtMovableComponent)
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -461,7 +457,7 @@ class MovableComponentTest {
     fun movablecomponent_canAttachAgainAfterDetach() {
         val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mock())
         whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val movableComponent = MovableComponent.createSystemMovable(session)
@@ -473,14 +469,14 @@ class MovableComponentTest {
 
     @Test
     fun createMovableComponent_callsRuntimeCreateMovableComponent() {
-        whenever(mockPlatformAdapter.createMovableComponent(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createMovableComponent(any(), any(), any(), any()))
             .thenReturn(mock())
 
         val movableComponent = MovableComponent.createSystemMovable(session)
         val view = TextView(activity)
         val mockRtPanelEntity = mock<RtPanelEntity>()
         whenever(
-                mockPlatformAdapter.createPanelEntity(
+                mockSceneRuntime.createPanelEntity(
                     any<Context>(),
                     any<Pose>(),
                     any<View>(),
@@ -494,6 +490,6 @@ class MovableComponentTest {
         val panelEntity = PanelEntity.create(session, view, IntSize2d(720, 480), "test")
         assertThat(panelEntity.addComponent(movableComponent)).isTrue()
 
-        verify(mockPlatformAdapter).createMovableComponent(any(), any(), any(), any())
+        verify(mockSceneRuntime).createMovableComponent(any(), any(), any(), any())
     }
 }

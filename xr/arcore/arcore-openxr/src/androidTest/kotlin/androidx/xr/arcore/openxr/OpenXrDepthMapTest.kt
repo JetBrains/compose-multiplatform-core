@@ -22,7 +22,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -160,14 +159,13 @@ class OpenXrDepthMapTest {
     }
 
     @Test
-    fun configureSmoothAndRaw_throwsConfigurationNotSupportedException() =
-        initOpenXrManagerAndRunTest {
-            assertThrows(ConfigurationNotSupportedException::class.java) {
-                openXrManager.configure(
-                    Config(depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW)
-                )
-            }
+    fun configureSmoothAndRaw_throwsUnsupportedOperationException() = initOpenXrManagerAndRunTest {
+        assertThrows(UnsupportedOperationException::class.java) {
+            openXrManager.configure(
+                Config(depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW)
+            )
         }
+    }
 
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity { activity ->

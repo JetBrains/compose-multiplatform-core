@@ -168,7 +168,7 @@ package androidx.savedstate {
   public final class SavedStateRegistry {
     method @MainThread public android.os.Bundle? consumeRestoredStateForKey(String key);
     method public androidx.savedstate.SavedStateRegistry.SavedStateProvider? getSavedStateProvider(String key);
-    method @MainThread public boolean isRestored();
+    method @InaccessibleFromKotlin @MainThread public boolean isRestored();
     method @MainThread public void registerSavedStateProvider(String key, androidx.savedstate.SavedStateRegistry.SavedStateProvider provider);
     method @MainThread public void runOnNextRecreation(Class<? extends androidx.savedstate.SavedStateRegistry.AutoRecreated> clazz);
     method @MainThread public void unregisterSavedStateProvider(String key);
@@ -185,7 +185,7 @@ package androidx.savedstate {
 
   public final class SavedStateRegistryController {
     method public static androidx.savedstate.SavedStateRegistryController create(androidx.savedstate.SavedStateRegistryOwner owner);
-    method public androidx.savedstate.SavedStateRegistry getSavedStateRegistry();
+    method @InaccessibleFromKotlin public androidx.savedstate.SavedStateRegistry getSavedStateRegistry();
     method @MainThread public void performAttach();
     method @MainThread public void performRestore(android.os.Bundle? savedState);
     method @MainThread public void performSave(android.os.Bundle outBundle);
@@ -198,7 +198,7 @@ package androidx.savedstate {
   }
 
   public interface SavedStateRegistryOwner extends androidx.lifecycle.LifecycleOwner {
-    method public androidx.savedstate.SavedStateRegistry getSavedStateRegistry();
+    method @InaccessibleFromKotlin public androidx.savedstate.SavedStateRegistry getSavedStateRegistry();
     property public abstract androidx.savedstate.SavedStateRegistry savedStateRegistry;
   }
 
@@ -305,9 +305,9 @@ package androidx.savedstate.serialization {
   }
 
   public final class SavedStateConfiguration {
-    method public int getClassDiscriminatorMode();
-    method public boolean getEncodeDefaults();
-    method public kotlinx.serialization.modules.SerializersModule getSerializersModule();
+    method @InaccessibleFromKotlin public int getClassDiscriminatorMode();
+    method @InaccessibleFromKotlin public boolean getEncodeDefaults();
+    method @InaccessibleFromKotlin public kotlinx.serialization.modules.SerializersModule getSerializersModule();
     property public int classDiscriminatorMode;
     property public boolean encodeDefaults;
     property public kotlinx.serialization.modules.SerializersModule serializersModule;
@@ -316,12 +316,12 @@ package androidx.savedstate.serialization {
   }
 
   public static final class SavedStateConfiguration.Builder {
-    method public int getClassDiscriminatorMode();
-    method public boolean getEncodeDefaults();
-    method public kotlinx.serialization.modules.SerializersModule getSerializersModule();
-    method public void setClassDiscriminatorMode(int);
-    method public void setEncodeDefaults(boolean);
-    method public void setSerializersModule(kotlinx.serialization.modules.SerializersModule);
+    method @InaccessibleFromKotlin public int getClassDiscriminatorMode();
+    method @InaccessibleFromKotlin public boolean getEncodeDefaults();
+    method @InaccessibleFromKotlin public kotlinx.serialization.modules.SerializersModule getSerializersModule();
+    method @InaccessibleFromKotlin public void setClassDiscriminatorMode(int);
+    method @InaccessibleFromKotlin public void setEncodeDefaults(boolean);
+    method @InaccessibleFromKotlin public void setSerializersModule(kotlinx.serialization.modules.SerializersModule);
     property public int classDiscriminatorMode;
     property public boolean encodeDefaults;
     property public kotlinx.serialization.modules.SerializersModule serializersModule;
@@ -365,7 +365,7 @@ package androidx.savedstate.serialization.serializers {
   public abstract class JavaSerializableSerializer<T extends java.io.Serializable> implements kotlinx.serialization.KSerializer<T> {
     ctor public JavaSerializableSerializer();
     method public final T deserialize(kotlinx.serialization.encoding.Decoder decoder);
-    method public final kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public final kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
     method public final void serialize(kotlinx.serialization.encoding.Encoder encoder, T value);
     property public final kotlinx.serialization.descriptors.SerialDescriptor descriptor;
   }
@@ -373,7 +373,7 @@ package androidx.savedstate.serialization.serializers {
   public final class MutableStateFlowSerializer<T> implements kotlinx.serialization.KSerializer<kotlinx.coroutines.flow.MutableStateFlow<T>> {
     ctor public MutableStateFlowSerializer(kotlinx.serialization.KSerializer<T> valueSerializer);
     method public kotlinx.coroutines.flow.MutableStateFlow<T> deserialize(kotlinx.serialization.encoding.Decoder decoder);
-    method public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
     method public void serialize(kotlinx.serialization.encoding.Encoder encoder, kotlinx.coroutines.flow.MutableStateFlow<T> value);
     property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
   }
@@ -385,14 +385,14 @@ package androidx.savedstate.serialization.serializers {
   public abstract class ParcelableSerializer<T extends android.os.Parcelable> implements kotlinx.serialization.KSerializer<T> {
     ctor public ParcelableSerializer();
     method public final T deserialize(kotlinx.serialization.encoding.Decoder decoder);
-    method public final kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public final kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
     method public final void serialize(kotlinx.serialization.encoding.Encoder encoder, T value);
     property public final kotlinx.serialization.descriptors.SerialDescriptor descriptor;
   }
 
   public final class SavedStateSerializer implements kotlinx.serialization.KSerializer<android.os.Bundle> {
     method public android.os.Bundle deserialize(kotlinx.serialization.encoding.Decoder decoder);
-    method public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
     method public void serialize(kotlinx.serialization.encoding.Encoder encoder, android.os.Bundle value);
     property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
     field public static final androidx.savedstate.serialization.serializers.SavedStateSerializer INSTANCE;
@@ -400,7 +400,7 @@ package androidx.savedstate.serialization.serializers {
 
   public final class SizeFSerializer implements kotlinx.serialization.KSerializer<android.util.SizeF> {
     method public android.util.SizeF deserialize(kotlinx.serialization.encoding.Decoder decoder);
-    method public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
     method public void serialize(kotlinx.serialization.encoding.Encoder encoder, android.util.SizeF value);
     property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
     field public static final androidx.savedstate.serialization.serializers.SizeFSerializer INSTANCE;
@@ -408,7 +408,7 @@ package androidx.savedstate.serialization.serializers {
 
   public final class SizeSerializer implements kotlinx.serialization.KSerializer<android.util.Size> {
     method public android.util.Size deserialize(kotlinx.serialization.encoding.Decoder decoder);
-    method public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
     method public void serialize(kotlinx.serialization.encoding.Encoder encoder, android.util.Size value);
     property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
     field public static final androidx.savedstate.serialization.serializers.SizeSerializer INSTANCE;
@@ -417,7 +417,7 @@ package androidx.savedstate.serialization.serializers {
   public final class SparseArraySerializer<T> implements kotlinx.serialization.KSerializer<android.util.SparseArray<T>> {
     ctor public SparseArraySerializer(kotlinx.serialization.KSerializer<T> elementSerializer);
     method public android.util.SparseArray<T> deserialize(kotlinx.serialization.encoding.Decoder decoder);
-    method public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method @InaccessibleFromKotlin public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
     method public void serialize(kotlinx.serialization.encoding.Encoder encoder, android.util.SparseArray<T> value);
     property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
   }

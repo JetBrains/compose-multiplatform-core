@@ -33,6 +33,8 @@ import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.internal.MaterialResource
 import androidx.xr.scenecore.internal.RenderingEntityFactory
 import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.internal.SpatialEnvironmentExt
 import androidx.xr.scenecore.internal.SubspaceNodeEntity
 import androidx.xr.scenecore.internal.SurfaceEntity
 import androidx.xr.scenecore.internal.TextureResource
@@ -42,15 +44,24 @@ import com.google.common.util.concurrent.Futures.immediateFuture
 import com.google.common.util.concurrent.ListenableFuture
 
 /**
- * Test-only implementation of [androidx.xr.scenecore.internal.RenderingRuntime].
+ * Test-only implementation of [RenderingRuntime].
  *
  * @param entityFactory The factory used to create rendering-related entities. This is typically the
- *   [androidx.xr.scenecore.internal.SceneRuntime] instance, which must also implement
- *   [androidx.xr.scenecore.internal.RenderingEntityFactory].
+ *   [SceneRuntime] instance, which must also implement [RenderingEntityFactory].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeRenderingRuntime(private val entityFactory: RenderingEntityFactory) :
-    RenderingRuntime {
+public class FakeRenderingRuntime(
+    private val sceneRuntime: SceneRuntime,
+    private val entityFactory: RenderingEntityFactory = sceneRuntime as RenderingEntityFactory,
+) : RenderingRuntime {
+    private var spatialEnvironmentFeature: FakeSpatialEnvironmentFeature =
+        FakeSpatialEnvironmentFeature()
+
+    init {
+        (sceneRuntime.spatialEnvironment as SpatialEnvironmentExt).onRenderingFeatureReady(
+            spatialEnvironmentFeature
+        )
+    }
 
     @Suppress("AsyncSuffixFuture")
     override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =
@@ -104,8 +115,8 @@ public class FakeRenderingRuntime(private val entityFactory: RenderingEntityFact
     /**
      * For test purposes only.
      *
-     * A fake implementation of [androidx.xr.scenecore.internal.MaterialResource] used to simulate a
-     * water material within the test environment.
+     * A fake implementation of [MaterialResource] used to simulate a water material within the test
+     * senvironment.
      *
      * <p>Instances of this class are created by [createWaterMaterial] and can be accessed for
      * verification via the [createdWaterMaterials] list. Tests can inspect the public properties of
@@ -142,16 +153,16 @@ public class FakeRenderingRuntime(private val entityFactory: RenderingEntityFact
     /**
      * For test purposes only.
      *
-     * A fake implementation of [androidx.xr.scenecore.internal.MaterialResource] used to simulate a
-     * Khronos PBR material within the test environment.
+     * A fake implementation of [MaterialResource] used to simulate a Khronos PBR material within
+     * the test environment.
      *
      * <p>Instances of this class are created by [createKhronosPbrMaterial]. Tests can inspect the
      * public properties of this class (e.g., [baseColorTexture], [metallicFactor]) to confirm that
      * the code under test correctly configures the material's attributes according to the provided
      * specification.
      *
-     * @param spec The [androidx.xr.scenecore.internal.KhronosPbrMaterialSpec] provided during
-     *   creation, which defines the initial configuration of the material.
+     * @param spec The [KhronosPbrMaterialSpec] provided during creation, which defines the initial
+     *   configuration of the material.
      */
     public class FakeKhronosPbrMaterial(public val spec: KhronosPbrMaterialSpec) :
         MaterialResource {
@@ -271,7 +282,7 @@ public class FakeRenderingRuntime(private val entityFactory: RenderingEntityFact
     @Suppress("AsyncSuffixFuture")
     override fun createKhronosPbrMaterial(
         spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource>? {
+    ): ListenableFuture<MaterialResource> {
         val newMaterial = FakeKhronosPbrMaterial(spec)
         createdKhronosPbrMaterials.add(newMaterial)
         return immediateFuture(newMaterial)
@@ -557,9 +568,47 @@ public class FakeRenderingRuntime(private val entityFactory: RenderingEntityFact
         )
     }
 
-    override fun startRenderer() {}
+    /* Tracks the current state of the adapter according to where it is in its lifecycle. */
+    public enum class State {
+        CREATED,
+        STARTED,
+        PAUSED,
+        DESTROYED,
+    }
 
-    override fun stopRenderer() {}
+    private var _state: Enum<State> = State.CREATED
 
-    override fun dispose() {}
+    /**
+     * The current state of the adapter will transition based on the lifecycle of the adapter. It
+     * starts off as [State.CREATED] and transitions to [State.STARTED] when startRenderer is
+     * called. When stopRenderer is called, it transitions to [State.PAUSED]. When dispose is
+     * called, it transitions to [State.DESTROYED].
+     */
+    public fun getState(): Enum<State> {
+        return _state
+    }
+
+    override fun startRenderer() {
+        _state = State.STARTED
+    }
+
+    override fun stopRenderer() {
+        _state = State.PAUSED
+    }
+
+    override fun dispose() {
+        _state = State.DESTROYED
+    }
+
+    override fun resume() {
+        startRenderer()
+    }
+
+    override fun pause() {
+        stopRenderer()
+    }
+
+    override fun destroy() {
+        dispose()
+    }
 }

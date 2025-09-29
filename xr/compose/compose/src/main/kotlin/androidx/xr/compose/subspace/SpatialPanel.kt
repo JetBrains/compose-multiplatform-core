@@ -21,7 +21,6 @@ import android.content.Intent
 import android.graphics.Color
 import android.view.View
 import android.view.View.MeasureSpec
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.CornerSize
@@ -32,6 +31,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
@@ -427,6 +427,7 @@ public fun SpatialPanel(
     val view = rememberComposeView()
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val density = LocalDensity.current
+    val entityName = "SpatialPanel-${currentCompositeKeyHashCode}"
 
     val corePanelEntity: CorePanelEntity = remember {
         CorePanelEntity(
@@ -434,7 +435,7 @@ public fun SpatialPanel(
                     session = session,
                     view = view,
                     dimensions = SpatialPanelDimensions.minimumPanelDimension,
-                    name = entityName("SpatialPanel"),
+                    name = entityName,
                     pose = Pose.Identity,
                 )
             )
@@ -495,20 +496,49 @@ public fun SpatialPanel(
 }
 
 /**
- * Creates a [SpatialPanel] backed by the main Window content.
+ * A composable that renders the Activity's main window's 2D UI content, defined in
+ * [androidx.activity.compose.setContent], as a panel in a Subspace.
  *
- * This panel requires the following specific configuration in the Android Manifest for proper
- * sizing/resizing behavior:
- * ```
- * <activity
- * android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize>
- * <!--suppress AndroidElementNotAllowed -->
- * <layout android:defaultWidth="50dp" android:defaultHeight="50dp" android:minHeight="50dp"
- * android:minWidth="50dp"/>
+ * This composable acts as the bridge between the traditional 2D Android UI hierarchy and the 3D
+ * Subspace environment. Unlike [SpatialPanel], which renders its own specific composable content,
+ * [SpatialMainPanel] takes the entire view hierarchy from the Activity's main window and presents
+ * it on a movable, resizable panel in the Compose for XR's Spatial Scene Graph.
+ *
+ * For the main window to be visible when [androidx.xr.compose.spatial.Subspace] is present in the
+ * UI hierarchy, a [SpatialMainPanel] *must* be included in the Subspace composition. If it is not
+ * composed, the underlying main panel entity is disabled by default. When [SpatialMainPanel] is
+ * removed from the composition, it will again be disable (hidden).
+ *
+ * ### How It Works
+ * [SpatialMainPanel] is backed by a single shared instance that will move to the main content to
+ * its active usage. When the main content panel moves inside the composition, its state moves with
+ * it regardless of whether it is in a [MovableContent] block or not. Components that depend on the
+ * main panel's state (such as [androidx.xr.compose.spatial.Orbiter]), will always access a single
+ * deterministic instance of the panel.
+ *
+ * Note: It is crucial to ensure that only one [SpatialMainPanel] is active (composed) at any given
+ * time. The underlying system is designed around a single main panel instance, and having multiple
+ * active instances can lead to undefined behavior.
+ *
+ * The size of the panel in the Subspace is controlled by the standard Compose layout system, driven
+ * by the SubspaceModifier applied to it. Modifiers like SubspaceModifier.width directly dictate the
+ * panel's dimensions, following the same measurement and layout rules as other
+ * [SubspaceComposable]. To ensure stability, if the panel's layout size results in a width or
+ * height of zero, it will be automatically disabled to prevent crashes.
+ *
+ * ### Manifest Configuration
+ * This panel requires the following specific configuration in the `AndroidManifest.xml` on the
+ * *base* activity for proper sizing and resizing behavior. Without it, resizing the main panel will
+ * cause a crash.
+ *
+ * ```xml
+ * <activity android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize">
+ *   ...
  * </activity>
  * ```
  *
- * @param modifier SubspaceModifier to apply to the MainPanel.
+ * @param modifier The [SubspaceModifier] to be applied to this panel, controlling its layout, size,
+ *   and position within the parent.
  * @param shape The shape of this Spatial Panel.
  * @param dragPolicy An optional [DragPolicy] that defines the motion behavior of the
  *   [SpatialPanel]. This can be either a [MovePolicy] for free movement or an [AnchorPolicy] for
@@ -517,10 +547,10 @@ public fun SpatialPanel(
  * @param resizePolicy An optional [ResizePolicy] configuration object that resizing behavior of
  *   this [SpatialPanel]. The draggable UI controls will be shown that allow the user to resize the
  *   element in 3D space. If null, there is no resize behavior applied to the element.
+ * @sample androidx.xr.compose.samples.SpatialMainPanelSample
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialMainPanel(
     modifier: SubspaceModifier = SubspaceModifier,
     shape: SpatialShape = SpatialPanelDefaults.shape,
@@ -582,17 +612,12 @@ public fun SpatialActivityPanel(
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val dialogManager = LocalDialogManager.current
     val density = LocalDensity.current
+    val entityName = "ActivityPanel-${intent.action}-${currentCompositeKeyHashCode}"
 
     val pixelDimensions = IntSize2d(DEFAULT_SIZE_PX, DEFAULT_SIZE_PX)
 
     val corePanelEntity: CoreActivityPanelEntity = remember {
-        CoreActivityPanelEntity(
-            ActivityPanelEntity.create(
-                session,
-                pixelDimensions,
-                entityName("ActivityPanel-${intent.action}"),
-            )
-        )
+        CoreActivityPanelEntity(ActivityPanelEntity.create(session, pixelDimensions, entityName))
     }
 
     SideEffect { corePanelEntity.setShape(shape, density) }
@@ -614,6 +639,7 @@ public fun SpatialActivityPanel(
                     View(localContext).apply { foreground = DEFAULT_SCRIM_ALPHA.toDrawable() }
                 }
 
+            val entityName = "ScrimPanel-${currentCompositeKeyHashCode}"
             val scrimPanelEntity by
                 remember(session, scrimView) {
                     disposableValueOf(
@@ -623,7 +649,7 @@ public fun SpatialActivityPanel(
                                     view = scrimView,
                                     pixelDimensions =
                                         corePanelEntity.size.run { IntSize2d(width, height) },
-                                    name = entityName("ScrimPanel"),
+                                    name = entityName,
                                     pose = Pose.Identity,
                                 )
                             )

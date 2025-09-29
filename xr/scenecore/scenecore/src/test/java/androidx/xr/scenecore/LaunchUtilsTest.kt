@@ -21,7 +21,7 @@ import androidx.activity.ComponentActivity
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SceneRuntime
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,23 +37,22 @@ class LaunchUtilsTest {
     private val fakeRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
     private val activity: ComponentActivity = activityController.create().start().get()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mockSceneRuntime = mock<SceneRuntime>()
     private lateinit var session: Session
 
     @Before
     fun setUp() {
         // A minimal setup is needed to create a Session instance.
-        // The session needs access to the mockPlatformAdapter.
+        // The session needs access to the mockSceneRuntime.
         val mockActivitySpace = mock<RtActivitySpace>()
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
-        whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
-        whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mock())
+        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
+        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         session =
             Session(
                 activity,
-                runtimes = listOf(fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter),
+                runtimes = listOf(fakeRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
     }
 
@@ -61,20 +60,20 @@ class LaunchUtilsTest {
     fun configureBundleForFullSpaceMode_Launch_callsThrough() {
         // Test that Session calls into the runtime.
         val bundle = Bundle().apply { putString("testkey", "testval") }
-        whenever(mockPlatformAdapter.setFullSpaceMode(any())).thenReturn(bundle)
+        whenever(mockSceneRuntime.setFullSpaceMode(any())).thenReturn(bundle)
         @Suppress("UNUSED_VARIABLE")
         val unused = createBundleForFullSpaceModeLaunch(session, bundle)
-        verify(mockPlatformAdapter).setFullSpaceMode(bundle)
+        verify(mockSceneRuntime).setFullSpaceMode(bundle)
     }
 
     @Test
     fun configureBundleForFullSpaceModeLaunchWithEnvironmentInherited_callsThrough() {
         // Test that Session calls into the runtime.
         val bundle = Bundle().apply { putString("testkey", "testval") }
-        whenever(mockPlatformAdapter.setFullSpaceModeWithEnvironmentInherited(any()))
+        whenever(mockSceneRuntime.setFullSpaceModeWithEnvironmentInherited(any()))
             .thenReturn(bundle)
         @Suppress("UNUSED_VARIABLE")
         val unused = createBundleForFullSpaceModeLaunchWithEnvironmentInherited(session, bundle)
-        verify(mockPlatformAdapter).setFullSpaceModeWithEnvironmentInherited(bundle)
+        verify(mockSceneRuntime).setFullSpaceModeWithEnvironmentInherited(bundle)
     }
 }

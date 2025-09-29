@@ -269,7 +269,8 @@ val WearMaterial3Demos =
                         },
                     ),
                 ),
-                ComposableDemo("Text") { TextWeightDemo() },
+                ComposableDemo("Text Block") { TextBlockDemo() },
+                ComposableDemo("Text Weights") { TextWeightDemo() },
             )
             .sortedBy { it.title },
     )

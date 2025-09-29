@@ -38,10 +38,17 @@ import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.scene.DialogSceneStrategy
+import androidx.navigation3.scene.Scene
+import androidx.navigation3.scene.SceneStrategy
+import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEvent
+import androidx.navigationevent.compose.NavigationEventDispatcherOwner
+import androidx.navigationevent.testing.TestNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -378,9 +385,15 @@ class NavDisplayTest {
             val backStack1 = rememberNavBackStack(First)
             val backStack2 = rememberNavBackStack(Second)
             val decorator1 =
-                listOf(rememberSceneSetupNavEntryDecorator(), rememberSavedStateNavEntryDecorator())
+                listOf(
+                    rememberSceneSetupNavEntryDecorator<NavKey>(),
+                    rememberSavedStateNavEntryDecorator(),
+                )
             val decorator2 =
-                listOf(rememberSceneSetupNavEntryDecorator(), rememberSavedStateNavEntryDecorator())
+                listOf(
+                    rememberSceneSetupNavEntryDecorator<NavKey>(),
+                    rememberSavedStateNavEntryDecorator(),
+                )
             backStackState = remember { mutableStateOf(1) }
             decoratorState = remember { mutableStateOf(1) }
 
@@ -695,6 +708,61 @@ class NavDisplayTest {
         composeTestRule.onNodeWithText(leftText).assertIsNotDisplayed()
         composeTestRule.onNodeWithText(rightText).assertIsNotDisplayed()
         composeTestRule.onNodeWithText(singleText).assertIsDisplayed()
+    }
+
+    @Test
+    fun testNestedNavDisplayPredictiveBackStartWithSingleEntryDoesNotCrash() {
+        val outerBackStack = mutableStateListOf(first, second) // outer: Home -> Detail
+        val innerBackStack = mutableStateListOf(third) // inner has exactly 1 entry
+
+        val owner = TestNavigationEventDispatcherOwner()
+        val dispatcher = owner.navigationEventDispatcher
+        val input = DirectNavigationEventInput()
+        dispatcher.addInput(input)
+
+        composeTestRule.setContent {
+            NavigationEventDispatcherOwner(parent = owner) {
+                NavDisplay(
+                    backStack = outerBackStack,
+                    onBack = {
+                        // Back handlers are no-ops here: we only care about crash behavior.
+                    },
+                ) {
+                    NavEntry(first) { // Home
+                        Text("parent='$first',child='null'")
+                    }
+                    NavEntry(second) { // Detail
+                        NavDisplay(
+                            backStack = innerBackStack,
+                            onBack = {
+                                // Same rationale as above.
+                            },
+                        ) {
+                            NavEntry(third) { Text("parent='$second',child='$third'") }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Visible state: Detail with a single child entry.
+        composeTestRule.onNodeWithText("parent='$second',child='$third'").assertIsDisplayed()
+        composeTestRule.onNodeWithText("parent='$first',child='null'").assertDoesNotExist()
+
+        // b/441933162 — Regression: starting predictive back (backStarted) used to crash with
+        // NoSuchElementException from SinglePaneSceneStrategy.calculateScene(...) when the inner
+        // NavDisplay tried to build a peek scene despite empty previousEntries (child stack had 1
+        // item).
+        input.backStarted(NavigationEvent(progress = 0.1F))
+        composeTestRule.waitForIdle()
+        input.backProgressed(NavigationEvent(progress = 0.5F))
+        composeTestRule.waitForIdle()
+        input.backCompleted()
+        composeTestRule.waitForIdle()
+
+        // State remains unchanged, 'onBack' is no-op.
+        composeTestRule.onNodeWithText("parent='$second',child='$third'").assertIsDisplayed()
+        composeTestRule.onNodeWithText("parent='$first',child='null'").assertDoesNotExist()
     }
 }
 

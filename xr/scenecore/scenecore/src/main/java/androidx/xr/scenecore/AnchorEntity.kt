@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SceneRuntime
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.Executor
@@ -110,7 +110,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         /**
          * Factory method for AnchorEntity.
          *
-         * @param adapter JxrPlatformAdapter to use.
+         * @param sceneRuntime SceneRuntime to use.
          * @param minimumPlaneExtents The minimum extents (in meters) of the plane to which this
          *   AnchorEntity should attach.
          * @param planeType Orientation for the plane to which this Anchor should attach.
@@ -119,7 +119,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
          */
         internal fun create(
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             minimumPlaneExtents: FloatSize2d,
             planeType: @PlaneOrientationValue Int,
@@ -127,7 +127,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
             timeout: Duration = Duration.ZERO,
         ): AnchorEntity {
             val rtAnchorEntity =
-                adapter.createAnchorEntity(
+                sceneRuntime.createAnchorEntity(
                     minimumPlaneExtents.to3d().toRtDimensions(),
                     planeType.toRtPlaneType(),
                     planeSemantic.toRtPlaneSemantic(),
@@ -142,10 +142,11 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          * @param anchor Anchor to create an AnchorEntity for.
          */
         internal fun create(
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             anchor: Anchor,
-        ): AnchorEntity = create(adapter.createAnchorEntity(anchor.runtimeAnchor), entityManager)
+        ): AnchorEntity =
+            create(sceneRuntime.createAnchorEntity(anchor.runtimeAnchor), entityManager)
 
         /**
          * Factory method for AnchorEntity.
@@ -171,18 +172,18 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         /**
          * Factory method for AnchorEntity.
          *
-         * @param adapter JxrPlatformAdapter to use.
+         * @param sceneRuntime SceneRuntime to use.
          * @param uuid UUID of the persisted Anchor Entity to create.
          * @param timeout Maximum time to search for the anchor, if a persisted anchor isn't located
          *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
          */
         internal fun create(
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             uuid: UUID,
             timeout: Duration = Duration.ZERO,
         ): AnchorEntity {
-            val rtAnchorEntity = adapter.createPersistedAnchorEntity(uuid, timeout)
+            val rtAnchorEntity = sceneRuntime.createPersistedAnchorEntity(uuid, timeout)
             val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
             rtAnchorEntity.setOnStateChangedListener { newRtState ->
                 when (newRtState) {
@@ -228,7 +229,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
             }
 
             return create(
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 minimumPlaneExtents,
                 planeOrientation,
@@ -245,7 +246,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          */
         @JvmStatic
         public fun create(session: Session, anchor: Anchor): AnchorEntity {
-            return create(session.platformAdapter, session.scene.entityManager, anchor)
+            return create(session.sceneRuntime, session.scene.entityManager, anchor)
         }
     }
 

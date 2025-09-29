@@ -36,7 +36,6 @@ import androidx.appfunctions.compiler.core.metadata.AppFunctionStringTypeMetadat
 import androidx.appfunctions.compiler.core.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.APP_FUNCTION_METADATA_PROPERTY_NAME
-import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.COMPONENT_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.FUNCTION_ID_TO_METADATA_MAP_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.INVENTORY_COMPONENTS_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.PARAMETER_METADATA_LIST_PROPERTY_NAME
@@ -77,10 +76,6 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                 functionMetadataObjectClassBuilder,
                 functionMetadata.response,
             )
-            addPropertyForComponentsMetadata(
-                functionMetadataObjectClassBuilder,
-                functionMetadata.components,
-            )
             addPropertyForAppFunctionMetadata(functionMetadataObjectClassBuilder, functionMetadata)
             inventoryClassBuilder.addType(functionMetadataObjectClassBuilder.build())
         }
@@ -116,7 +111,6 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 schema =  %L,
                                 parameters = %L,
                                 response = %L,
-                                components = %L
                             )
                             """
                                 .trimIndent(),
@@ -126,41 +120,6 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             SCHEMA_METADATA_PROPERTY_NAME,
                             PARAMETER_METADATA_LIST_PROPERTY_NAME,
                             RESPONSE_METADATA_PROPERTY_NAME,
-                            COMPONENT_METADATA_PROPERTY_NAME,
-                        )
-                    }
-                )
-                .build()
-        )
-    }
-
-    private fun addPropertyForComponentsMetadata(
-        functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        appFunctionComponentsMetadata: AppFunctionComponentsMetadata,
-    ) {
-        val componentDataTypesPropertyName = COMPONENT_METADATA_PROPERTY_NAME + "_DATA_TYPES_MAP"
-        addPropertyForComponentsDataTypes(
-            componentDataTypesPropertyName,
-            functionMetadataObjectClassBuilder,
-            appFunctionComponentsMetadata.dataTypes,
-        )
-        functionMetadataObjectClassBuilder.addProperty(
-            PropertySpec.builder(
-                    COMPONENT_METADATA_PROPERTY_NAME,
-                    IntrospectionHelper.APP_FUNCTION_COMPONENTS_METADATA_CLASS,
-                )
-                .addModifiers(KModifier.PRIVATE)
-                .initializer(
-                    buildCodeBlock {
-                        addStatement(
-                            """
-                            %T(
-                                dataTypes = %L
-                            )
-                            """
-                                .trimIndent(),
-                            IntrospectionHelper.APP_FUNCTION_COMPONENTS_METADATA_CLASS,
-                            componentDataTypesPropertyName,
                         )
                     }
                 )

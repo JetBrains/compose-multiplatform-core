@@ -219,10 +219,11 @@ abstract class BaseMigrationTest {
             .hasMessageThat()
             .contains("Creation of tables didn't occur while creating a new database.")
 
-        // If trying to create at V2, migration will try to run and fail.
+        // If trying to create at V2, fail due to database file being already created and attempting
+        // to perform a migration.
         assertThrows<IllegalStateException> { migrationTestHelper.createDatabase(2) }
             .hasMessageThat()
-            .contains("A migration from 1 to 2 was required but not found.")
+            .contains("A migration should never occur while creating a new database.")
     }
 
     @Test

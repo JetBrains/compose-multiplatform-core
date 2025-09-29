@@ -27,6 +27,7 @@ import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
@@ -46,13 +47,16 @@ import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
  *   [AppFunctionResponseMetadata].
  */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-internal fun AppFunctionResponseMetadata.unsafeBuildReturnValue(result: Any?): AppFunctionData =
+internal fun AppFunctionResponseMetadata.unsafeBuildReturnValue(
+    result: Any?,
+    componentsMetadata: AppFunctionComponentsMetadata,
+): AppFunctionData =
     try {
         if (result == null) {
             check(valueType.isNullable) { "Unexpected null for non-null return type" }
             AppFunctionData.EMPTY
         } else {
-            valueType.unsafeBuildReturnValue(result)
+            valueType.unsafeBuildReturnValue(result, this, componentsMetadata)
         }
     } catch (e: Exception) {
         Log.d(APP_FUNCTIONS_TAG, "Something went wrong when building the return value", e)
@@ -60,8 +64,12 @@ internal fun AppFunctionResponseMetadata.unsafeBuildReturnValue(result: Any?): A
     }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(result: Any): AppFunctionData {
-    val builder = AppFunctionData.Builder("")
+private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(
+    result: Any,
+    responseMetadata: AppFunctionResponseMetadata,
+    componentsMetadata: AppFunctionComponentsMetadata,
+): AppFunctionData {
+    val builder = AppFunctionData.Builder(responseMetadata, componentsMetadata)
     return when (this) {
         is AppFunctionLongTypeMetadata -> {
             builder

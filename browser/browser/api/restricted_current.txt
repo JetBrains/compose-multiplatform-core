@@ -48,6 +48,12 @@ package androidx.browser.auth {
     field public final android.net.Uri? resultUri;
   }
 
+  public static class AuthTabIntent.AuthenticateUserResultContract extends androidx.activity.result.contract.ActivityResultContract<android.content.Intent!,androidx.browser.auth.AuthTabIntent.AuthResult!> {
+    ctor public AuthTabIntent.AuthenticateUserResultContract();
+    method public android.content.Intent createIntent(android.content.Context, android.content.Intent);
+    method public androidx.browser.auth.AuthTabIntent.AuthResult parseResult(int, android.content.Intent?);
+  }
+
   public static final class AuthTabIntent.Builder {
     ctor public AuthTabIntent.Builder();
     method public androidx.browser.auth.AuthTabIntent build();

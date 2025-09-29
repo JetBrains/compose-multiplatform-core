@@ -22,8 +22,8 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.MaterialResource as RtMaterial
+import androidx.xr.scenecore.internal.RenderingRuntime
 
 /**
  * Represents a lit PBR (Physically-Based Rendering) material, which defines the visual appearance
@@ -39,7 +39,6 @@ import androidx.xr.scenecore.internal.MaterialResource as RtMaterial
  * - [KHR_materials_sheen
  *   extension](https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_materials_sheen)
  */
-@Suppress("NotCloseable")
 public class KhronosPbrMaterial
 internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) override val material: RtMaterial,
@@ -48,13 +47,13 @@ internal constructor(
 ) : Material {
 
     /**
-     * Disposes the [Material] and releases its underlying graphics resources.
+     * Closes the [KhronosPbrMaterial] and releases its underlying graphics resources.
      *
-     * After disposal, the [Material] should not be used further.
+     * After being closed, the [KhronosPbrMaterial] should not be used further.
      */
     @MainThread
-    override public fun dispose() {
-        session.platformAdapter.destroyKhronosPbrMaterial(material)
+    override public fun close() {
+        session.renderingRuntime.destroyKhronosPbrMaterial(material)
     }
 
     /**
@@ -69,7 +68,7 @@ internal constructor(
     @JvmOverloads
     @MainThread
     public fun setBaseColorTexture(texture: Texture, sampler: TextureSampler = TextureSampler()) {
-        session.platformAdapter.setBaseColorTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setBaseColorTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
@@ -86,7 +85,7 @@ internal constructor(
      */
     @MainThread
     public fun setBaseColorFactor(factor: Vector4) {
-        session.platformAdapter.setBaseColorFactorsOnKhronosPbrMaterial(material, factor)
+        session.renderingRuntime.setBaseColorFactorsOnKhronosPbrMaterial(material, factor)
     }
 
     /**
@@ -106,7 +105,7 @@ internal constructor(
         texture: Texture,
         sampler: TextureSampler = TextureSampler(),
     ) {
-        session.platformAdapter.setMetallicRoughnessTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setMetallicRoughnessTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
@@ -121,7 +120,7 @@ internal constructor(
      */
     @MainThread
     public fun setMetallicFactor(@FloatRange(from = 0.0, to = 1.0) factor: Float) {
-        session.platformAdapter.setMetallicFactorOnKhronosPbrMaterial(material, factor)
+        session.renderingRuntime.setMetallicFactorOnKhronosPbrMaterial(material, factor)
     }
 
     /**
@@ -132,7 +131,7 @@ internal constructor(
      */
     @MainThread
     public fun setRoughnessFactor(@FloatRange(from = 0.0, to = 1.0) factor: Float) {
-        session.platformAdapter.setRoughnessFactorOnKhronosPbrMaterial(material, factor)
+        session.renderingRuntime.setRoughnessFactorOnKhronosPbrMaterial(material, factor)
     }
 
     /**
@@ -151,13 +150,13 @@ internal constructor(
         @FloatRange(from = 0.0) scale: Float = 1.0f,
         sampler: TextureSampler = TextureSampler(),
     ) {
-        session.platformAdapter.setNormalTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setNormalTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
         )
         // TODO(b/441548345): Combine these calls at the renderer level.
-        session.platformAdapter.setNormalFactorOnKhronosPbrMaterial(material, scale)
+        session.renderingRuntime.setNormalFactorOnKhronosPbrMaterial(material, scale)
     }
 
     /**
@@ -178,13 +177,13 @@ internal constructor(
         @FloatRange(from = 0.0, to = 1.0) strength: Float = 1.0f,
         sampler: TextureSampler = TextureSampler(),
     ) {
-        session.platformAdapter.setAmbientOcclusionTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setAmbientOcclusionTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
         )
         // TODO(b/441548345): Combine these calls at the renderer level.
-        session.platformAdapter.setAmbientOcclusionFactorOnKhronosPbrMaterial(material, strength)
+        session.renderingRuntime.setAmbientOcclusionFactorOnKhronosPbrMaterial(material, strength)
     }
 
     /**
@@ -199,7 +198,7 @@ internal constructor(
     @JvmOverloads
     @MainThread
     public fun setEmissiveTexture(texture: Texture, sampler: TextureSampler = TextureSampler()) {
-        session.platformAdapter.setEmissiveTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setEmissiveTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
@@ -216,7 +215,7 @@ internal constructor(
      */
     @MainThread
     public fun setEmissiveFactor(factor: Vector3) {
-        session.platformAdapter.setEmissiveFactorsOnKhronosPbrMaterial(material, factor)
+        session.renderingRuntime.setEmissiveFactorsOnKhronosPbrMaterial(material, factor)
     }
 
     /**
@@ -233,7 +232,7 @@ internal constructor(
     @JvmOverloads
     @MainThread
     public fun setClearcoatTexture(texture: Texture, sampler: TextureSampler = TextureSampler()) {
-        session.platformAdapter.setClearcoatTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setClearcoatTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
@@ -259,13 +258,18 @@ internal constructor(
         @FloatRange(from = 0.0) scale: Float = 1.0f,
         sampler: TextureSampler = TextureSampler(),
     ) {
-        session.platformAdapter.setClearcoatNormalTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setClearcoatNormalTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
         )
         // TODO(b/441548345): Combine these calls at the renderer level.
-        session.platformAdapter.setClearcoatFactorsOnKhronosPbrMaterial(material, 0.0f, 0.0f, scale)
+        session.renderingRuntime.setClearcoatFactorsOnKhronosPbrMaterial(
+            material,
+            0.0f,
+            0.0f,
+            scale,
+        )
     }
 
     /**
@@ -285,7 +289,7 @@ internal constructor(
         texture: Texture,
         sampler: TextureSampler = TextureSampler(),
     ) {
-        session.platformAdapter.setClearcoatRoughnessTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setClearcoatRoughnessTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
@@ -306,7 +310,7 @@ internal constructor(
      */
     @MainThread
     public fun setClearcoatFactor(@FloatRange(from = 0.0, to = 1.0) factor: Float) {
-        session.platformAdapter.setClearcoatFactorsOnKhronosPbrMaterial(
+        session.renderingRuntime.setClearcoatFactorsOnKhronosPbrMaterial(
             material,
             factor,
             0.0f,
@@ -322,7 +326,7 @@ internal constructor(
      */
     @MainThread
     public fun setClearcoatRoughnessFactor(@FloatRange(from = 0.0, to = 1.0) factor: Float) {
-        session.platformAdapter.setClearcoatFactorsOnKhronosPbrMaterial(
+        session.renderingRuntime.setClearcoatFactorsOnKhronosPbrMaterial(
             material,
             0.0f,
             factor,
@@ -342,7 +346,7 @@ internal constructor(
     @JvmOverloads
     @MainThread
     public fun setSheenColorTexture(texture: Texture, sampler: TextureSampler = TextureSampler()) {
-        session.platformAdapter.setSheenColorTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setSheenColorTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
@@ -359,7 +363,7 @@ internal constructor(
      */
     @MainThread
     public fun setSheenColorFactor(factor: Vector3) {
-        session.platformAdapter.setSheenColorFactorsOnKhronosPbrMaterial(material, factor)
+        session.renderingRuntime.setSheenColorFactorsOnKhronosPbrMaterial(material, factor)
     }
 
     /**
@@ -379,7 +383,7 @@ internal constructor(
         texture: Texture,
         sampler: TextureSampler = TextureSampler(),
     ) {
-        session.platformAdapter.setSheenRoughnessTextureOnKhronosPbrMaterial(
+        session.renderingRuntime.setSheenRoughnessTextureOnKhronosPbrMaterial(
             material,
             texture.texture,
             sampler.toRtTextureSampler(),
@@ -394,7 +398,7 @@ internal constructor(
      */
     @MainThread
     public fun setSheenRoughnessFactor(@FloatRange(from = 0.0, to = 1.0) factor: Float) {
-        session.platformAdapter.setSheenRoughnessFactorOnKhronosPbrMaterial(material, factor)
+        session.renderingRuntime.setSheenRoughnessFactorOnKhronosPbrMaterial(material, factor)
     }
 
     /**
@@ -411,17 +415,17 @@ internal constructor(
         check(alphaMode == AlphaMode.ALPHA_MODE_MASK) {
             "Alpha cutoff can only be set when the material's alpha mode is set to ALPHA_MODE_MASK."
         }
-        session.platformAdapter.setAlphaCutoffOnKhronosPbrMaterial(material, alphaCutoff)
+        session.renderingRuntime.setAlphaCutoffOnKhronosPbrMaterial(material, alphaCutoff)
     }
 
     public companion object {
         internal suspend fun createAsync(
-            platformAdapter: JxrPlatformAdapter,
+            renderingRuntime: RenderingRuntime,
             @AlphaModeValues alphaMode: Int,
             session: Session,
         ): KhronosPbrMaterial {
             val material =
-                platformAdapter
+                renderingRuntime
                     .createKhronosPbrMaterial(alphaMode.toRtKhronosPbrMaterialSpec())
                     .awaitSuspending()
             return KhronosPbrMaterial(material, alphaMode, session)
@@ -440,7 +444,7 @@ internal constructor(
             session: Session,
             @AlphaModeValues alphaMode: Int,
         ): KhronosPbrMaterial {
-            return createAsync(session.platformAdapter, alphaMode, session)
+            return createAsync(session.renderingRuntime, alphaMode, session)
         }
     }
 }

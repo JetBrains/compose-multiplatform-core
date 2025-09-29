@@ -251,10 +251,10 @@ public class InvalidationTrackerTest {
     @Dao
     interface ItemDao {
         @Query("select * from item where id = :id")
-        Flowable<Item> flowableItemById(int id);
+        Flowable<@NonNull Item> flowableItemById(int id);
 
         @Query("select * from item where id = :id")
-        Observable<Item> observableItemById(int id);
+        Observable<@NonNull Item> observableItemById(int id);
 
         @Query("select * from item where id = :id")
         Item itemById(int id);

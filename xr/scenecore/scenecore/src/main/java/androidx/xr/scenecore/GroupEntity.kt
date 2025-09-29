@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package androidx.xr.scenecore
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.SceneRuntime
 
 /**
  * An [Entity] that contains no content, but can have an arbitrary number of children. GroupEntity
@@ -30,13 +30,13 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
     public companion object {
         /** Factory method to create GroupEntity entities. */
         internal fun create(
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             name: String,
             pose: Pose = Pose.Identity,
         ): GroupEntity =
             GroupEntity(
-                adapter.createGroupEntity(pose, name, adapter.activitySpaceRootImpl),
+                sceneRuntime.createGroupEntity(pose, name, sceneRuntime.activitySpace),
                 entityManager,
             )
 
@@ -50,6 +50,6 @@ public class GroupEntity private constructor(rtEntity: RtEntity, entityManager: 
         @JvmOverloads
         @JvmStatic
         public fun create(session: Session, name: String, pose: Pose = Pose.Identity): GroupEntity =
-            create(session.platformAdapter, session.scene.entityManager, name, pose)
+            create(session.sceneRuntime, session.scene.entityManager, name, pose)
     }
 }

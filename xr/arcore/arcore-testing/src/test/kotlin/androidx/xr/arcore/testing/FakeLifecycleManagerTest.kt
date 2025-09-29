@@ -18,7 +18,6 @@ package androidx.xr.arcore.testing
 
 import androidx.kruth.assertThat
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
@@ -105,10 +104,10 @@ class FakeLifecycleManagerTest {
     }
 
     @Test
-    fun configure_withFaceTrackingEnabled_doesNotSupportFaceTracking_throwsConfigurationNotSupported() {
+    fun configure_withFaceTrackingEnabled_doesNotSupportFaceTracking_throwsUnsupportedOperationException() {
         underTest.create()
         underTest.shouldSupportFaceTracking = false
-        assertFailsWith<ConfigurationNotSupportedException> {
+        assertFailsWith<UnsupportedOperationException> {
             underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
         }
     }

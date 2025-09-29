@@ -215,21 +215,21 @@ package androidx.room3 {
     method @Deprecated protected androidx.sqlite.db.SupportSQLiteOpenHelper createOpenHelper(androidx.room3.DatabaseConfiguration config);
     method @Deprecated public void endTransaction();
     method @Deprecated @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @kotlin.jvm.JvmSuppressWildcards public java.util.List<androidx.room3.migration.Migration> getAutoMigrations(java.util.Map<java.lang.Class<? extends androidx.room3.migration.AutoMigrationSpec>,androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs);
-    method public androidx.room3.InvalidationTracker getInvalidationTracker();
-    method public androidx.sqlite.db.SupportSQLiteOpenHelper getOpenHelper();
-    method public java.util.concurrent.Executor getQueryExecutor();
+    method @InaccessibleFromKotlin public androidx.room3.InvalidationTracker getInvalidationTracker();
+    method @InaccessibleFromKotlin public androidx.sqlite.db.SupportSQLiteOpenHelper getOpenHelper();
+    method @InaccessibleFromKotlin public java.util.concurrent.Executor getQueryExecutor();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.Set<kotlin.reflect.KClass<? extends androidx.room3.migration.AutoMigrationSpec>> getRequiredAutoMigrationSpecClasses();
     method @Deprecated @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.Set<java.lang.Class<? extends androidx.room3.migration.AutoMigrationSpec>> getRequiredAutoMigrationSpecs();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected java.util.Map<kotlin.reflect.KClass<? extends java.lang.Object?>,java.util.List<kotlin.reflect.KClass<? extends java.lang.Object?>>> getRequiredTypeConverterClasses();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected java.util.Map<java.lang.Class<? extends java.lang.Object?>,java.util.List<java.lang.Class<? extends java.lang.Object?>>> getRequiredTypeConverters();
-    method public java.util.concurrent.Executor getTransactionExecutor();
+    method @InaccessibleFromKotlin public java.util.concurrent.Executor getTransactionExecutor();
     method @Deprecated public <T> T? getTypeConverter(Class<T> klass);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final <T> T getTypeConverter(kotlin.reflect.KClass<T> klass);
     method public boolean inTransaction();
     method @CallSuper public void init(androidx.room3.DatabaseConfiguration configuration);
     method @Deprecated protected void internalInitInvalidationTracker(androidx.sqlite.db.SupportSQLiteDatabase db);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected final void internalInitInvalidationTracker(androidx.sqlite.SQLiteConnection connection);
-    method public boolean isOpen();
+    method @InaccessibleFromKotlin public boolean isOpen();
     method public android.database.Cursor query(androidx.sqlite.db.SupportSQLiteQuery query);
     method public android.database.Cursor query(androidx.sqlite.db.SupportSQLiteQuery query, optional android.os.CancellationSignal? signal);
     method public android.database.Cursor query(String query, Object?[]? args);
@@ -239,14 +239,12 @@ package androidx.room3 {
     property public androidx.room3.InvalidationTracker invalidationTracker;
     property public boolean isOpen;
     property @Deprecated protected final java.util.List<androidx.room3.RoomDatabase.Callback>? mCallbacks;
-    property @Deprecated protected final androidx.sqlite.db.SupportSQLiteDatabase? mDatabase;
     property public androidx.sqlite.db.SupportSQLiteOpenHelper openHelper;
     property public java.util.concurrent.Executor queryExecutor;
     property public java.util.concurrent.Executor transactionExecutor;
     field public static final androidx.room3.RoomDatabase.Companion Companion;
     field @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final int MAX_BIND_PARAMETER_CNT = 999; // 0x3e7
     field @Deprecated @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected java.util.List<? extends androidx.room3.RoomDatabase.Callback>? mCallbacks;
-    field @Deprecated @kotlin.jvm.Volatile protected volatile androidx.sqlite.db.SupportSQLiteDatabase? mDatabase;
   }
 
   public static class RoomDatabase.Builder<T extends androidx.room3.RoomDatabase> {
@@ -336,9 +334,9 @@ package androidx.room3 {
     ctor public RoomOpenDelegate(int version, String identityHash, String legacyIdentityHash);
     method public abstract void createAllTables(androidx.sqlite.SQLiteConnection connection);
     method public abstract void dropAllTables(androidx.sqlite.SQLiteConnection connection);
-    method public final String getIdentityHash();
-    method public final String getLegacyIdentityHash();
-    method public final int getVersion();
+    method @InaccessibleFromKotlin public final String getIdentityHash();
+    method @InaccessibleFromKotlin public final String getLegacyIdentityHash();
+    method @InaccessibleFromKotlin public final int getVersion();
     method public abstract void onCreate(androidx.sqlite.SQLiteConnection connection);
     method public abstract void onOpen(androidx.sqlite.SQLiteConnection connection);
     method public abstract void onPostMigrate(androidx.sqlite.SQLiteConnection connection);
@@ -397,7 +395,7 @@ package androidx.room3 {
     ctor public RoomRawQuery(String sql);
     ctor public RoomRawQuery(String sql, optional kotlin.jvm.functions.Function1<? super androidx.sqlite.SQLiteStatement,kotlin.Unit> onBindStatement);
     method public kotlin.jvm.functions.Function1<androidx.sqlite.SQLiteStatement,kotlin.Unit> getBindingFunction();
-    method public String getSql();
+    method @InaccessibleFromKotlin public String getSql();
     property public String sql;
   }
 
@@ -415,9 +413,9 @@ package androidx.room3 {
     method public void close();
     method public void copyArgumentsFrom(androidx.room3.RoomSQLiteQuery other);
     method public static androidx.room3.RoomSQLiteQuery copyFrom(androidx.sqlite.db.SupportSQLiteQuery supportSQLiteQuery);
-    method public int getArgCount();
-    method public int getCapacity();
-    method public String getSql();
+    method @InaccessibleFromKotlin public int getArgCount();
+    method @InaccessibleFromKotlin public int getCapacity();
+    method @InaccessibleFromKotlin public String getSql();
     method public void init(String query, int initArgCount);
     method public void release();
     method public androidx.room3.RoomRawQuery toRoomRawQuery();
@@ -516,21 +514,6 @@ package androidx.room3.migration {
 
   public final class MigrationKt {
     method public static androidx.room3.migration.Migration Migration(int startVersion, int endVersion, kotlin.jvm.functions.Function1<? super androidx.sqlite.db.SupportSQLiteDatabase,kotlin.Unit> migrate);
-  }
-
-}
-
-package androidx.room3.paging {
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class LimitOffsetDataSource<T> extends androidx.paging.PositionalDataSource<T!> {
-    ctor protected LimitOffsetDataSource(androidx.room3.RoomDatabase, androidx.room3.RoomSQLiteQuery, boolean, boolean, java.lang.String!...);
-    ctor protected LimitOffsetDataSource(androidx.room3.RoomDatabase, androidx.room3.RoomSQLiteQuery, boolean, java.lang.String!...);
-    ctor protected LimitOffsetDataSource(androidx.room3.RoomDatabase, androidx.sqlite.db.SupportSQLiteQuery, boolean, boolean, java.lang.String!...);
-    ctor protected LimitOffsetDataSource(androidx.room3.RoomDatabase, androidx.sqlite.db.SupportSQLiteQuery, boolean, java.lang.String!...);
-    method protected java.util.List<T!> convertRows(android.database.Cursor);
-    method protected java.util.List<T!> convertRows(androidx.sqlite.SQLiteStatement);
-    method public void loadInitial(androidx.paging.PositionalDataSource.LoadInitialParams, androidx.paging.PositionalDataSource.LoadInitialCallback<T!>);
-    method public void loadRange(androidx.paging.PositionalDataSource.LoadRangeParams, androidx.paging.PositionalDataSource.LoadRangeCallback<T!>);
   }
 
 }
@@ -644,7 +627,7 @@ package androidx.room3.util {
     ctor @Deprecated public TableInfo.Column(String name, String type, boolean notNull, int primaryKeyPosition);
     ctor public TableInfo.Column(String name, String type, boolean notNull, int primaryKeyPosition, String? defaultValue, int createdFrom);
     method public static boolean defaultValueEquals(String current, String? other);
-    method public boolean isPrimaryKey();
+    method @InaccessibleFromKotlin public boolean isPrimaryKey();
     property @androidx.room3.ColumnInfo.SQLiteTypeAffinity public int affinity;
     property public int createdFrom;
     property public String? defaultValue;

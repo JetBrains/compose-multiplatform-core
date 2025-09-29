@@ -31,9 +31,10 @@ import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.internal.Entity as RtEntity
 import androidx.xr.scenecore.internal.GltfEntity as RtGltfEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
 import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
@@ -56,7 +57,8 @@ class EntityManagerTest {
     private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mockSceneRuntime = mock<SceneRuntime>()
+    private val mockRenderingRuntime = mock<RenderingRuntime>()
 
     private val mockActivitySpace = mock<RtActivitySpace>()
     private val mockGltfModelEntityImpl = mock<RtGltfEntity>()
@@ -76,18 +78,18 @@ class EntityManagerTest {
 
     @Before
     fun setUp() {
-        whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.headActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        whenever(mockPlatformAdapter.loadGltfByAssetName(Mockito.anyString()))
+        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.headActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
+        whenever(mockRenderingRuntime.loadGltfByAssetName(Mockito.anyString()))
             .thenReturn(Futures.immediateFuture(mock()))
-        whenever(mockPlatformAdapter.createGltfEntity(any(), any(), any()))
+        whenever(mockRenderingRuntime.createGltfEntity(any(), any(), any()))
             .thenReturn(mockGltfModelEntityImpl)
         whenever(
-                mockPlatformAdapter.createPanelEntity(
+                mockSceneRuntime.createPanelEntity(
                     any<Context>(),
                     any<Pose>(),
                     any<View>(),
@@ -97,24 +99,25 @@ class EntityManagerTest {
                 )
             )
             .thenReturn(mockPanelEntityImpl)
-        whenever(mockPlatformAdapter.createAnchorEntity(any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
             .thenReturn(mockAnchorEntityImpl)
         whenever(mockAnchorEntityImpl.state).thenReturn(RtAnchorEntity.State.UNANCHORED)
-        whenever(mockPlatformAdapter.createActivityPanelEntity(any(), any(), any(), any(), any()))
+        whenever(mockSceneRuntime.createActivityPanelEntity(any(), any(), any(), any(), any()))
             .thenReturn(mockActivityPanelEntity)
-        whenever(mockPlatformAdapter.createGroupEntity(any(), any(), any()))
+        whenever(mockSceneRuntime.createGroupEntity(any(), any(), any()))
             .thenReturn(mockGroupEntity)
-        whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mockPanelEntityImpl)
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mockPanelEntityImpl)
         session =
             Session(
                 activity,
                 runtimes =
                     listOf(
                         mFakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
+                        mockSceneRuntime,
+                        mockRenderingRuntime,
                     ),
             )
-        activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
+        activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
     }
 
     @Test
@@ -260,7 +263,7 @@ class EntityManagerTest {
             PanelEntity.create(
                 session.perceptionRuntime.lifecycleManager,
                 activity,
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 entityManager,
                 TextView(activity),
                 IntSize2d(720, 480),
@@ -272,13 +275,14 @@ class EntityManagerTest {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             gltfModel = GltfModel.create(session, Paths.get("test.glb"))
         }
-        gltfModelEntity = GltfModelEntity.create(mockPlatformAdapter, entityManager, gltfModel)
+        gltfModelEntity =
+            GltfModelEntity.create(mockSceneRuntime, mockRenderingRuntime, entityManager, gltfModel)
     }
 
     private fun createAnchorEntity() {
         anchorEntity =
             AnchorEntity.create(
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 entityManager,
                 FloatSize2d(),
                 PlaneOrientation.ANY,
@@ -291,7 +295,7 @@ class EntityManagerTest {
         activityPanelEntity =
             ActivityPanelEntity.create(
                 session.perceptionRuntime.lifecycleManager,
-                mockPlatformAdapter,
+                mockSceneRuntime,
                 entityManager,
                 IntSize2d(640, 480),
                 "test",
@@ -300,6 +304,6 @@ class EntityManagerTest {
     }
 
     private fun createGroupEntity() {
-        groupEntity = GroupEntity.create(mockPlatformAdapter, entityManager, "test")
+        groupEntity = GroupEntity.create(mockSceneRuntime, entityManager, "test")
     }
 }

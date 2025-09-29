@@ -41,6 +41,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
     layoutDirection: LayoutDirection,
     private val graphicsContext: GraphicsContext,
     private val itemAnimator: LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>,
+    private val isScrollInProgress: () -> Boolean,
 ) : TransformingLazyColumnMeasurementStrategy {
     override val rightContentPadding: Int =
         with(density) { contentPadding.calculateRightPadding(layoutDirection).roundToPx() }
@@ -263,8 +264,10 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         var canScrollBackward = true
         var anchorItem: TransformingLazyColumnMeasuredItem
         var actuallyVisibleItems: List<TransformingLazyColumnMeasuredItem>
-        // Operate on assumption that we either scroll or animate.
-        val shouldAnimate = abs(scrollToBeConsumed) < 0.5f
+        // It triggers a remeasure on state change: once at the start of a scroll
+        // (`shouldAnimate` = false), and once at the end to cache the final item state for
+        // subsequent animations (`shouldAnimate` = true).
+        val shouldAnimate = !isScrollInProgress()
 
         with(measurementScope) {
             this.itemsCount = itemsCount

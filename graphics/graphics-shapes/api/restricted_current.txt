@@ -4,8 +4,8 @@ package androidx.graphics.shapes {
   public final class CornerRounding {
     ctor public CornerRounding();
     ctor public CornerRounding(optional @FloatRange(from=0.0) float radius, optional @FloatRange(from=0.0, to=1.0) float smoothing);
-    method public float getRadius();
-    method public float getSmoothing();
+    method @InaccessibleFromKotlin public float getRadius();
+    method @InaccessibleFromKotlin public float getSmoothing();
     property public float radius;
     property public float smoothing;
     field public static final androidx.graphics.shapes.CornerRounding.Companion Companion;
@@ -20,14 +20,14 @@ package androidx.graphics.shapes {
     method public static final androidx.graphics.shapes.Cubic circularArc(float centerX, float centerY, float x0, float y0, float x1, float y1);
     method public final operator androidx.graphics.shapes.Cubic div(float x);
     method public final operator androidx.graphics.shapes.Cubic div(int x);
-    method public final float getAnchor0X();
-    method public final float getAnchor0Y();
-    method public final float getAnchor1X();
-    method public final float getAnchor1Y();
-    method public final float getControl0X();
-    method public final float getControl0Y();
-    method public final float getControl1X();
-    method public final float getControl1Y();
+    method @InaccessibleFromKotlin public final float getAnchor0X();
+    method @InaccessibleFromKotlin public final float getAnchor0Y();
+    method @InaccessibleFromKotlin public final float getAnchor1X();
+    method @InaccessibleFromKotlin public final float getAnchor1Y();
+    method @InaccessibleFromKotlin public final float getControl0X();
+    method @InaccessibleFromKotlin public final float getControl0Y();
+    method @InaccessibleFromKotlin public final float getControl1X();
+    method @InaccessibleFromKotlin public final float getControl1Y();
     method public final operator androidx.graphics.shapes.Cubic plus(androidx.graphics.shapes.Cubic o);
     method public final androidx.graphics.shapes.Cubic reverse();
     method public final kotlin.Pair<androidx.graphics.shapes.Cubic,androidx.graphics.shapes.Cubic> split(float t);
@@ -57,11 +57,11 @@ package androidx.graphics.shapes {
 
   public abstract class Feature {
     ctor public Feature(java.util.List<? extends androidx.graphics.shapes.Cubic> cubics);
-    method public final java.util.List<androidx.graphics.shapes.Cubic> getCubics();
-    method public abstract boolean isConcaveCorner();
-    method public abstract boolean isConvexCorner();
-    method public abstract boolean isEdge();
-    method public abstract boolean isIgnorableFeature();
+    method @InaccessibleFromKotlin public final java.util.List<androidx.graphics.shapes.Cubic> getCubics();
+    method @InaccessibleFromKotlin public abstract boolean isConcaveCorner();
+    method @InaccessibleFromKotlin public abstract boolean isConvexCorner();
+    method @InaccessibleFromKotlin public abstract boolean isEdge();
+    method @InaccessibleFromKotlin public abstract boolean isIgnorableFeature();
     method public abstract androidx.graphics.shapes.Feature reversed();
     method public abstract androidx.graphics.shapes.Feature transformed(androidx.graphics.shapes.PointTransformer f);
     property public final java.util.List<androidx.graphics.shapes.Cubic> cubics;
@@ -110,10 +110,10 @@ package androidx.graphics.shapes {
   }
 
   public interface MutablePoint {
-    method public float getX();
-    method public float getY();
-    method public void setX(float);
-    method public void setY(float);
+    method @InaccessibleFromKotlin public float getX();
+    method @InaccessibleFromKotlin public float getY();
+    method @InaccessibleFromKotlin public void setX(float);
+    method @InaccessibleFromKotlin public void setY(float);
     property public abstract float x;
     property public abstract float y;
   }
@@ -128,10 +128,10 @@ package androidx.graphics.shapes {
     method public float[] calculateBounds(optional float[] bounds);
     method public float[] calculateBounds(optional float[] bounds, optional boolean approximate);
     method public float[] calculateMaxBounds(optional float[] bounds);
-    method public float getCenterX();
-    method public float getCenterY();
-    method public java.util.List<androidx.graphics.shapes.Cubic> getCubics();
-    method public java.util.List<androidx.graphics.shapes.Feature> getFeatures();
+    method @InaccessibleFromKotlin public float getCenterX();
+    method @InaccessibleFromKotlin public float getCenterY();
+    method @InaccessibleFromKotlin public java.util.List<androidx.graphics.shapes.Cubic> getCubics();
+    method @InaccessibleFromKotlin public java.util.List<androidx.graphics.shapes.Feature> getFeatures();
     method public androidx.graphics.shapes.RoundedPolygon normalized();
     method public androidx.graphics.shapes.RoundedPolygon transformed(androidx.graphics.shapes.PointTransformer f);
     property public float centerX;

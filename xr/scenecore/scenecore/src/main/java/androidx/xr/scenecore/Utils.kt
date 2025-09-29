@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import androidx.xr.scenecore.internal.HitTestResult as RtHitTestResult
 import androidx.xr.scenecore.internal.HitTestResult.HitTestSurfaceType as RtHitTestSurfaceType
 import androidx.xr.scenecore.internal.InputEvent as RtInputEvent
 import androidx.xr.scenecore.internal.InputEvent.HitInfo as RtHitInfo
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec as RtKhronosPbrMaterialSpec
 import androidx.xr.scenecore.internal.MoveEvent as RtMoveEvent
 import androidx.xr.scenecore.internal.PerceivedResolutionResult as RtPerceivedResolutionResult
@@ -42,6 +41,7 @@ import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.scenecore.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.scenecore.internal.PlaneType as RtPlaneType
 import androidx.xr.scenecore.internal.ResizeEvent as RtResizeEvent
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.Space as RtSpace
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.scenecore.internal.SpatialPointerIcon as RtSpatialPointerIcon
@@ -99,7 +99,7 @@ internal fun RtPixelDimensions.toIntSize2d(): IntSize2d {
     return IntSize2d(width, height)
 }
 
-/** Extension function that converts [Int] to [JxrPlatformAdapter.planeOrientation]. */
+/** Extension function that converts [Int] to [SceneRuntime.planeOrientation]. */
 internal fun Int.toRtPlaneType(): RtPlaneType {
     return when (this) {
         PlaneOrientation.HORIZONTAL -> RtPlaneType.HORIZONTAL
@@ -109,7 +109,7 @@ internal fun Int.toRtPlaneType(): RtPlaneType {
     }
 }
 
-/** Extension function that converts [Int] to [JxrPlatformAdapter.PlaneSemantic]. */
+/** Extension function that converts [Int] to [SceneRuntime.PlaneSemantic]. */
 internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
     return when (this) {
         PlaneSemanticType.WALL -> RtPlaneSemantic.WALL
@@ -121,7 +121,7 @@ internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
     }
 }
 
-/** Extension function that converts [Space] value to [JxrPlatformAdapter.Space] value. */
+/** Extension function that converts [Space] value to [SceneRuntime.Space] value. */
 internal fun Int.toRtSpace(): Int {
     return when (this) {
         Space.PARENT -> RtSpace.PARENT
@@ -195,10 +195,10 @@ internal fun RtResizeEvent.toResizeEvent(entity: Entity): ResizeEvent {
 
 /**
  * Extension function that converts a [Set] of [AnchorPlacement] to a [Set] of
- * [JxrPlatformAdapter.AnchorPlacement].
+ * [SceneRuntime.AnchorPlacement].
  */
 internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
-    runtime: JxrPlatformAdapter
+    sceneRuntime: SceneRuntime
 ): Set<RtAnchorPlacement> {
     val rtAnchorPlacementSet = HashSet<RtAnchorPlacement>()
     for (placement in this) {
@@ -208,7 +208,7 @@ internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
             placement.anchorablePlaneSemanticTypes.map { it.toRtPlaneSemantic() }.toMutableSet()
 
         val rtAnchorPlacement =
-            runtime.createAnchorPlacementForPlanes(planeOrientationFilter, planeSemanticFilter)
+            sceneRuntime.createAnchorPlacementForPlanes(planeOrientationFilter, planeSemanticFilter)
         rtAnchorPlacementSet.add(rtAnchorPlacement)
     }
     return rtAnchorPlacementSet

@@ -56,7 +56,6 @@ class SchemaAppFunctionInventoryTest {
                     AppFunctionResponseMetadata(
                         AppFunctionReferenceTypeMetadata("test", isNullable = false)
                     ),
-                components = AppFunctionComponentsMetadata(emptyMap()),
                 description = "Creates a new note.",
             )
         val schemaInventory =
@@ -85,7 +84,6 @@ class SchemaAppFunctionInventoryTest {
                     AppFunctionResponseMetadata(
                         AppFunctionReferenceTypeMetadata("test", isNullable = false)
                     ),
-                components = AppFunctionComponentsMetadata(emptyMap()),
                 description = "Creates a new note.",
             )
         val schemaInventory =

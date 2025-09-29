@@ -57,6 +57,7 @@ class RawQueryFunctionProcessorTest {
                     RawQueryFunction.RuntimeQueryParameter(
                         paramName = "query",
                         typeName = SupportDbTypeNames.QUERY,
+                        isNonNull = false,
                     )
                 ),
             )
@@ -96,6 +97,7 @@ class RawQueryFunctionProcessorTest {
                     RawQueryFunction.RuntimeQueryParameter(
                         paramName = "query",
                         typeName = SupportDbTypeNames.QUERY,
+                        isNonNull = false,
                     )
                 ),
             )
@@ -119,38 +121,11 @@ class RawQueryFunctionProcessorTest {
                     RawQueryFunction.RuntimeQueryParameter(
                         paramName = "query",
                         typeName = SupportDbTypeNames.QUERY,
+                        isNonNull = false,
                     )
                 ),
             )
             assertThat(query.observedTableNames, `is`(emptySet()))
-            invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.OBSERVABLE_QUERY_NOTHING_TO_OBSERVE)
-            }
-        }
-    }
-
-    @Test
-    fun observableWithoutEntities_dataSourceFactory() {
-        singleQueryMethod(
-            """
-                @RawQuery
-                abstract public ${PagingTypeNames.DATA_SOURCE_FACTORY.canonicalName}<Integer, User> getOne();
-                """
-        ) { _, invocation ->
-            invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.OBSERVABLE_QUERY_NOTHING_TO_OBSERVE)
-            }
-        }
-    }
-
-    @Test
-    fun observableWithoutEntities_positionalDataSource() {
-        singleQueryMethod(
-            """
-                @RawQuery
-                abstract public ${PagingTypeNames.POSITIONAL_DATA_SOURCE.canonicalName}<User> getOne();
-                """
-        ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.OBSERVABLE_QUERY_NOTHING_TO_OBSERVE)
             }
@@ -191,6 +166,7 @@ class RawQueryFunctionProcessorTest {
                     RawQueryFunction.RuntimeQueryParameter(
                         paramName = "query",
                         typeName = SupportDbTypeNames.QUERY,
+                        isNonNull = false,
                     )
                 ),
             )

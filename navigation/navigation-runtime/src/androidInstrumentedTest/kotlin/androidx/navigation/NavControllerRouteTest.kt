@@ -67,6 +67,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 
+@Suppress("DEPRECATION") // bundleOf()
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class NavControllerRouteTest {

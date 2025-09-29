@@ -19,8 +19,8 @@ package androidx.glance.wear
 import android.content.ComponentName
 import android.content.Context
 import androidx.annotation.MainThread
-import androidx.glance.wear.data.WidgetUpdateClient
-import androidx.glance.wear.data.WidgetUpdateClientImpl
+import androidx.glance.wear.parcel.WidgetUpdateClient
+import androidx.glance.wear.parcel.WidgetUpdateClientImpl
 
 /**
  * Object that handles providing the contents of a Wear Widget.
@@ -49,6 +49,28 @@ internal constructor(private val updateClient: WidgetUpdateClient) {
         context: Context,
         request: WearWidgetRequest,
     ): WearWidgetContent
+
+    /**
+     * Called when a widget provider linked to this widget class becomes active in the host.
+     *
+     * This method is called from the main thread.
+     *
+     * @param context the context from which this method is called
+     * @param widgetHandle the handle of the active widget.
+     */
+    @MainThread
+    public open suspend fun onActivated(context: Context, widgetHandle: ActiveWearWidgetHandle) {}
+
+    /**
+     * Called when a widget provider linked to this widget class becomes deactivated in the host.
+     *
+     * This method is called from the main thread.
+     *
+     * @param context the context from which this method is called
+     * @param widgetHandle the handle of the widget.
+     */
+    @MainThread
+    public open suspend fun onDeactivated(context: Context, widgetHandle: ActiveWearWidgetHandle) {}
 
     /**
      * Notify the host that it should fetch a new layout for this widget.

@@ -71,9 +71,10 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
 
     private val scratchTrackEvent = MutableTrackEvent(track_uuid = DEFAULT_LONG)
 
-    fun writeTraceEvent(event: TraceEvent) {
+    fun writeTraceEvent(event: TraceEvent, reportDroppedTraceEvent: Boolean = false) {
         updateScratchPacketFromTraceEvent(
             event = event,
+            reportDroppedTraceEvent = reportDroppedTraceEvent,
             scratchTracePacket = scratchTracePacket,
             scratchTrackDescriptor = scratchTrackDescriptor,
             scratchTrackEvent = scratchTrackEvent,
@@ -118,6 +119,7 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
         @JvmStatic
         internal fun updateScratchPacketFromTraceEvent(
             event: TraceEvent,
+            reportDroppedTraceEvent: Boolean,
             scratchTracePacket: MutableTracePacket,
             scratchTrackDescriptor: MutableTrackDescriptor,
             scratchTrackEvent: MutableTrackEvent,
@@ -129,6 +131,7 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             // MutableTracePacket
             scratchTracePacket.track_event = null
             scratchTracePacket.track_descriptor = null
+            scratchTracePacket.previous_packet_dropped = reportDroppedTraceEvent
 
             if (event.trackDescriptor != null) {
                 // If the track_descriptor is needed, update and use the scratchTrackDescriptor to

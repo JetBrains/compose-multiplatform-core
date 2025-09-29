@@ -304,7 +304,10 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
         // For Map<Foo, Bar> it is Bar
         // For Map<Foo, List<Bar> it is ArrayList<Bar>
         override fun getDeclarationTypeName(): XTypeName {
-            return valueCollectionType?.className?.parametrizedBy(valueTypeArg.asTypeName())
+            return valueCollectionType
+                ?.className
+                ?.parametrizedBy(valueTypeArg.asTypeName())
+                ?.copy(nullable = valueTypeArg.nullability != XNullability.NONNULL)
                 ?: valueTypeArg.asTypeName()
         }
 
@@ -349,11 +352,18 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                 val tmpValueVarName = scope.getTmpVar("_value")
 
                 // If we have a collection type, then this means that we have a 1-to-many mapping
-                // as opposed to a 1-to-many mapping.
+                // as opposed to a 1-to-1 mapping.
                 if (valueCollectionType != null) {
                     addLocalVariable(tmpValueVarName, valueTypeArg.asTypeName())
                     valueRowAdapter.convert(tmpValueVarName, stmtVarName, scope)
-                    addStatement("%L.add(%L)", valuesVarName, tmpValueVarName)
+                    if (
+                        scope.language == CodeLanguage.JAVA ||
+                            getDeclarationTypeName().nullability == XNullability.NONNULL
+                    ) {
+                        addStatement("%L.add(%L)", valuesVarName, tmpValueVarName)
+                    } else {
+                        addStatement("%L?.add(%L)", valuesVarName, tmpValueVarName)
+                    }
                 } else {
                     check(valueRowAdapter is QueryMappedRowAdapter)
                     val valueIndexVars =

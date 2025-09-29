@@ -23,7 +23,6 @@ import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
-import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_HINT_OPTION
 import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -161,13 +160,17 @@ public class SessionConfigAdapter(
         for (sessionConfig in sessionConfigs) {
             for (surface in sessionConfig.surfaces) {
                 if (
-                    sessionConfig.implementationOptions.containsOption(STREAM_USE_HINT_OPTION) &&
+                    sessionConfig.implementationOptions.containsOption(
+                        Camera2ImplConfig.STREAM_USE_HINT_OPTION
+                    ) &&
                         sessionConfig.implementationOptions.retrieveOption(
-                            STREAM_USE_HINT_OPTION
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION
                         ) != null
                 ) {
                     mapping[surface] =
-                        sessionConfig.implementationOptions.retrieveOption(STREAM_USE_HINT_OPTION)!!
+                        sessionConfig.implementationOptions.retrieveOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION
+                        )!!
                     continue
                 }
 

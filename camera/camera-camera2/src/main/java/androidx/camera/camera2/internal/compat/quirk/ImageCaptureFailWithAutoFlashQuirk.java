@@ -32,16 +32,17 @@ import java.util.Locale;
 
 /**
  * <p>QuirkSummary
- *     Bug Id: 228800360
+ *     Bug Id: 228800360, 443619467
  *     Description: The image capturing may fail when the camera turns on the auto flash
  *                  mode, and the devices also fail to fire the flash on the flash on mode.
- *     Device(s): Samsung Galaxy J7 (sm-j700f, sm-j710f) front camera
+ *     Device(s): Samsung Galaxy J7 (sm-j700f, sm-j710f, sm-j700m) front camera
  */
 public class ImageCaptureFailWithAutoFlashQuirk implements Quirk {
-    // List of devices with the issue. See b/228800360.
+    // List of devices with the issue. See b/228800360, b/443619467.
     private static final List<String> BUILD_MODELS_FRONT_CAMERA = Arrays.asList(
             "sm-j700f",    // Samsung Galaxy J7
-            "sm-j710f"     // Samsung Galaxy J7
+            "sm-j710f",     // Samsung Galaxy J7
+            "sm-j700m"     // Samsung Galaxy J7
     );
 
     static boolean load(@NonNull CameraCharacteristicsCompat cameraCharacteristics) {

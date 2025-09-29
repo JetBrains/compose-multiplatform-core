@@ -34,6 +34,7 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_CAPTURE_CONFIG;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_SESSION_CONFIG;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_HIGH_RESOLUTION_DISABLED;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_RESOLUTION_TO_MAX_FRAME_RATES;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_CONFIG_UNPACKER;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_STREAM_USE_CASE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SURFACE_OCCUPANCY_PRIORITY;
@@ -148,6 +149,7 @@ import org.jspecify.annotations.Nullable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -1544,6 +1546,16 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                         videoCapabilities, sessionType, targetFrameRate,
                         config.getVideoEncoderInfoFinder(), selectedQualities);
 
+        if (sessionType == SESSION_TYPE_HIGH_SPEED) {
+            // Sets custom maximum frame rates for high-speed sessions to match the
+            // CamcorderProfile frame rate. This is to ensure CTS compliance (See
+            // cts/RecordingTest.java), as CTS tests for high-speed frame rates are only verified
+            // up to the rate advertised by the CamcorderProfile.
+            builder.getMutableConfig().insertOption(OPTION_RESOLUTION_TO_MAX_FRAME_RATES,
+                    createSizeToMaxFrameRateMap(supportedQualityToSizeMap, videoCapabilities,
+                            requestedDynamicRange));
+        }
+
         // set to custom ordered resolutions
         setCustomOrderedResolutions(builder, supportedQualityToSizeMap);
     }
@@ -1611,6 +1623,23 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         return filterOutEncoderUnsupportedResolutions(videoEncoderInfoFinder, mediaSpec,
                         requestedDynamicRange, videoCapabilities, orderedQualityToSizesMap,
                         supportedQualityToSizeMap);
+    }
+
+    @NonNull
+    private static Map<Size, Integer> createSizeToMaxFrameRateMap(
+            @NonNull Map<Quality, List<Size>> supportedQualityToSizeMap,
+            @NonNull VideoCapabilities videoCapabilities,
+            @NonNull DynamicRange requestedDynamicRange) {
+        Map<Size, Integer> sizeToMaxFps = new HashMap<>();
+        for (Map.Entry<Quality, List<Size>> entry : supportedQualityToSizeMap.entrySet()) {
+            Quality quality = entry.getKey();
+            int profileFrameRate = requireNonNull(videoCapabilities.getProfiles(quality,
+                    requestedDynamicRange)).getDefaultVideoProfile().getFrameRate();
+            for (Size size : entry.getValue()) {
+                sizeToMaxFps.put(size, profileFrameRate);
+            }
+        }
+        return sizeToMaxFps;
     }
 
     private void setCustomOrderedResolutions(

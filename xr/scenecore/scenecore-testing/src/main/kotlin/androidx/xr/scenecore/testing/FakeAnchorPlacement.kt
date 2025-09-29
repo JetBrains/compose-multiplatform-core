@@ -26,13 +26,8 @@ import androidx.xr.scenecore.internal.PlaneType
  * define and inspect anchor placement rules in tests.
  *
  * This class specifies the conditions under which an entity can be anchored to a real-world plane.
- * An entity is eligible for anchoring if it is released near a plane that matches the criteria
- * defined by both the [planeTypeFilter] and [planeSemanticFilter]. A plane is considered a match if
- * its type is present in the [planeTypeFilter] AND its semantic label is present in the
- * [planeSemanticFilter].
- *
- * By default, both filters are initialized to allow anchoring on any plane. If either filter set is
- * empty, no planes will match, and anchoring will not occur.
+ * An entity is eligible for anchoring if it is released near a plane that matches the predefined
+ * criteria for plane type and semantic labels.
  *
  * For plane-based anchoring to function, the [androidx.xr.runtime.Session] must be configured with
  * [androidx.xr.runtime.Config.PlaneTrackingMode.Companion.HORIZONTAL_AND_VERTICAL] to enable plane

@@ -30,22 +30,13 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class RoomIncrementalAnnotationProcessingTest(
-    private val withIncrementalRoom: Boolean,
-    private val useKsp: Boolean,
-) {
+class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
 
     companion object {
 
-        @Parameterized.Parameters(name = "incrementalRoom={0}_useKsp={1}")
+        @Parameterized.Parameters(name = "useKsp={0}")
         @JvmStatic
-        fun parameters() =
-            listOf(
-                arrayOf(true, false),
-                arrayOf(true, true),
-                arrayOf(false, false),
-                // we don't let users turn off incremental compilation in KSP.
-            )
+        fun parameters() = arrayOf(false, true)
 
         private const val SRC_DIR = "src/main/java"
         private const val GEN_RES_DIR = "schemas"
@@ -144,12 +135,10 @@ class RoomIncrementalAnnotationProcessingTest(
         val kspPluginBlock =
             if (useKsp) {
                 """
-                apply plugin: "kotlin-android"
                 apply plugin: "com.google.devtools.ksp"
             """
             } else {
                 """
-                apply plugin: "kotlin-android"
             """
             }
         val processorConfiguration =
@@ -162,7 +151,6 @@ class RoomIncrementalAnnotationProcessingTest(
             if (useKsp) {
                 """
             ksp {
-                arg('room.incremental', '$withIncrementalRoom')
                 arg('room.schemaLocation', '${projectRoot.resolve(GEN_RES_DIR).canonicalPath}')
                 arg('room.generateKotlin', 'false')
             }
@@ -225,7 +213,6 @@ class RoomIncrementalAnnotationProcessingTest(
                 defaultConfig {
                     javaCompileOptions {
                         annotationProcessorOptions {
-                            argument 'room.incremental', '$withIncrementalRoom'
                 compilerArgumentProvider new SchemaLocationArgumentProvider(file('$GEN_RES_DIR'))
                         }
                     }
@@ -277,11 +264,6 @@ class RoomIncrementalAnnotationProcessingTest(
             android.useAndroidX=true
             # TODO: Remove when we upgrade KSP
             ksp.version.check=false
-            # TODO: Remove this b/442016756
-            android.builtInKotlin=false
-            android.enableLegacyVariantApi=true
-            android.newDsl=false
-            android.compatibility.enableLegacyApi=true
             """
                     .trimIndent()
             )
@@ -430,47 +412,26 @@ class RoomIncrementalAnnotationProcessingTest(
         // Check annotation processing outputs:
         //   - Relevant files should be re-generated
         //   - Irrelevant files should not be re-generated (if Room is incremental)
-        if (withIncrementalRoom) {
-            assertChangedFiles(genDatabase1, genDao1, genSchema1)
-            assertUnchangedFiles(genDatabase2, genDao2, genSchema2)
-        } else {
-            assertChangedFiles(genDatabase1, genDao1, genSchema1, genDatabase2, genDao2)
-            // Room is able to avoid re-generating schema file 2 as its contents have not changed
-            assertUnchangedFiles(genSchema2)
-        }
+        assertChangedFiles(genDatabase1, genDao1, genSchema1)
+        assertUnchangedFiles(genDatabase2, genDao2, genSchema2)
 
         // Check compilation outputs:
         //   - Relevant files should be recompiled
         //   - Irrelevant files should not be recompiled (if Room is incremental)
-        if (withIncrementalRoom) {
-            assertChangedFiles(
-                classSrcDao1,
-                classSrcDatabase1,
-                classSrcEntity1,
-                classGenDatabase1,
-                classGenDao1,
-            )
-            assertUnchangedFiles(
-                classSrcDatabase2,
-                classSrcDao2,
-                classSrcEntity2,
-                classGenDatabase2,
-                classGenDao2,
-            )
-        } else {
-            assertChangedFiles(
-                classSrcDatabase1,
-                classSrcDao1,
-                classSrcEntity1,
-                classGenDatabase1,
-                classGenDao1,
-                classSrcDatabase2,
-                classSrcDao2,
-                classSrcEntity2,
-                classGenDatabase2,
-                classGenDao2,
-            )
-        }
+        assertChangedFiles(
+            classSrcDao1,
+            classSrcDatabase1,
+            classSrcEntity1,
+            classGenDatabase1,
+            classGenDao1,
+        )
+        assertUnchangedFiles(
+            classSrcDatabase2,
+            classSrcDao2,
+            classSrcEntity2,
+            classGenDatabase2,
+            classGenDao2,
+        )
     }
 
     @Test
@@ -483,69 +444,38 @@ class RoomIncrementalAnnotationProcessingTest(
         Files.delete(srcEntity1.toPath())
 
         val result = runIncrementalBuild()
-        if (withIncrementalRoom) {
-            // Gradle detects that nothing needs to be recompiled so it reports as UP-TO-DATE
-            expect.that(result.task(COMPILE_TASK)!!.outcome).isEqualTo(TaskOutcome.UP_TO_DATE)
-        } else {
-            expect.that(result.task(COMPILE_TASK)!!.outcome).isEqualTo(TaskOutcome.SUCCESS)
-        }
+        // Gradle detects that nothing needs to be recompiled so it reports as UP-TO-DATE
+        expect.that(result.task(COMPILE_TASK)!!.outcome).isEqualTo(TaskOutcome.UP_TO_DATE)
 
         // Check annotation processing outputs:
         //   - Relevant files should be re-generated (or deleted)
         //   - Irrelevant files should not be re-generated (if Room is incremental)
-        if (withIncrementalRoom) {
-            assertDeletedFiles(genDatabase1, genDao1)
-            assertUnchangedFiles(
-                // EXPECTATION-NOT-MET: Schema file 1 should be deleted but is not
-                // (https://issuetracker.google.com/134472065).
-                genSchema1,
-                genDatabase2,
-                genDao2,
-                genSchema2,
-            )
-        } else {
-            assertDeletedFiles(genDatabase1, genDao1)
+        assertDeletedFiles(genDatabase1, genDao1)
+        assertUnchangedFiles(
             // EXPECTATION-NOT-MET: Schema file 1 should be deleted but is not
-            // (https://github.com/gradle/gradle/issues/9401).
-            assertUnchangedFiles(genSchema1)
-            assertChangedFiles(genDatabase2, genDao2)
-            // Room is able to avoid re-generating schema file 2 as its contents have not changed
-            assertUnchangedFiles(genSchema2)
-        }
+            // (https://issuetracker.google.com/134472065).
+            genSchema1,
+            genDatabase2,
+            genDao2,
+            genSchema2,
+        )
 
         // Check compilation outputs:
         //   - Relevant files should be recompiled (or deleted)
         //   - Irrelevant files should not be recompiled (if Room is incremental)
-        if (withIncrementalRoom) {
-            assertDeletedFiles(
-                classSrcDatabase1,
-                classSrcDao1,
-                classSrcEntity1,
-                classGenDatabase1,
-                classGenDao1,
-            )
-            assertUnchangedFiles(
-                classSrcDatabase2,
-                classSrcDao2,
-                classSrcEntity2,
-                classGenDatabase2,
-                classGenDao2,
-            )
-        } else {
-            assertDeletedFiles(
-                classSrcDatabase1,
-                classSrcDao1,
-                classSrcEntity1,
-                classGenDatabase1,
-                classGenDao1,
-            )
-            assertChangedFiles(
-                classSrcDatabase2,
-                classSrcDao2,
-                classSrcEntity2,
-                classGenDatabase2,
-                classGenDao2,
-            )
-        }
+        assertDeletedFiles(
+            classSrcDatabase1,
+            classSrcDao1,
+            classSrcEntity1,
+            classGenDatabase1,
+            classGenDao1,
+        )
+        assertUnchangedFiles(
+            classSrcDatabase2,
+            classSrcDao2,
+            classSrcEntity2,
+            classGenDatabase2,
+            classGenDao2,
+        )
     }
 }

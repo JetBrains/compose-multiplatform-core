@@ -16,6 +16,7 @@
 package androidx.pdf.selection
 
 import android.content.Context
+import androidx.pdf.R
 import androidx.pdf.selection.model.HyperLinkSelection
 import androidx.pdf.util.ClipboardUtils
 
@@ -32,7 +33,8 @@ internal class HyperLinkSelectionMenuProvider(private val context: Context) :
     private fun getHyperLinkMenuItem(selection: HyperLinkSelection): ContextMenuComponent {
         return DefaultSelectionMenuComponent(
             key = PdfSelectionMenuKeys.SmartActionKey,
-            label = context.getString(android.R.string.copyUrl),
+            label = context.getString(R.string.label_copy_link),
+            contentDescription = context.getString(R.string.desc_copy_link),
         ) { pdfView ->
             val localCurrentSelection = pdfView.currentSelection
             if (localCurrentSelection is HyperLinkSelection) {

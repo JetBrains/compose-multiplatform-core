@@ -32,7 +32,7 @@ public open class ProcessTrack(
 
     init {
         synchronized(traceEventScope) {
-            emitTraceEvent(immediateDispatch = true) { event ->
+            conditionalEmitTraceEvent(immediateDispatch = true) { event ->
                 event.setPreamble(
                     TrackDescriptor(
                         name,
@@ -43,6 +43,7 @@ public open class ProcessTrack(
                         tid = DEFAULT_INT,
                     )
                 )
+                true
             }
         }
     }

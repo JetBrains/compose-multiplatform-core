@@ -17,6 +17,7 @@
 package androidx.appsearch.util;
 
 import android.os.Build;
+import android.os.Process;
 import android.util.Log;
 
 import androidx.annotation.RestrictTo;
@@ -71,7 +72,8 @@ public final class LogUtil {
         // (determined by system properties) so avoid using that level on other environments to
         // avoid crashing apps.
         if (AppSearchEnvironmentFactory.getEnvironmentInstance().getEnvironment()
-                == AppSearchEnvironment.FRAMEWORK_ENVIRONMENT) {
+                == AppSearchEnvironment.FRAMEWORK_ENVIRONMENT
+                && Process.myUid() == Process.SYSTEM_UID) {
             Log.wtf(tag, msg, tr);
         } else {
             Log.e(tag, msg, tr);

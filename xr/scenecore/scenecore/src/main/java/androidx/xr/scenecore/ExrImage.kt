@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.internal.ExrImageResource as RtExrImage
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.RenderingRuntime
 import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path
 
@@ -54,7 +54,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
                 "Can only retrieve reflection texture from preprocessed EXR images."
             )
         }
-        val reflectionTexture = session.platformAdapter.getReflectionTextureFromIbl(image)
+        val reflectionTexture = session.renderingRuntime.getReflectionTextureFromIbl(image)
         if (reflectionTexture == null) {
             throw IllegalStateException(
                 "Failed to retrieve reflection texture from the preprocessed EXR image."
@@ -65,7 +65,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
 
     public companion object {
         internal suspend fun createFromZip(
-            platformAdapter: JxrPlatformAdapter,
+            renderingRuntime: RenderingRuntime,
             name: String,
             session: Session,
         ): ExrImage {
@@ -73,18 +73,18 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
                 "Only preprocessed skybox files with the .zip extension are supported."
             }
 
-            return createExrImage(platformAdapter.loadExrImageByAssetName(name), session)
+            return createExrImage(renderingRuntime.loadExrImageByAssetName(name), session)
         }
 
         @SuppressWarnings("RestrictTo")
         internal suspend fun createFromZip(
-            platformAdapter: JxrPlatformAdapter,
+            renderingRuntime: RenderingRuntime,
             byteArray: ByteArray,
             assetKey: String,
             session: Session,
         ): ExrImage {
             return createExrImage(
-                platformAdapter.loadExrImageByByteArray(byteArray, assetKey),
+                renderingRuntime.loadExrImageByByteArray(byteArray, assetKey),
                 session,
             )
         }
@@ -112,7 +112,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             require(!path.isAbsolute) {
                 "ExrImage.createFromZip() expects a path relative to `assets/`, received absolute path $path."
             }
-            return createFromZip(session.platformAdapter, path.toString(), session)
+            return createFromZip(session.renderingRuntime, path.toString(), session)
         }
 
         /**
@@ -131,7 +131,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
         @MainThread
         @JvmStatic
         public suspend fun createFromZip(session: Session, uri: Uri): ExrImage =
-            createFromZip(session.platformAdapter, uri.toString(), session)
+            createFromZip(session.renderingRuntime, uri.toString(), session)
 
         /**
          * Public factory function for a preprocessed EXRImage, where the preprocessed EXRImage is
@@ -154,7 +154,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             assetData: ByteArray,
             assetKey: String,
         ): ExrImage {
-            return createFromZip(session.platformAdapter, assetData, assetKey, session)
+            return createFromZip(session.renderingRuntime, assetData, assetKey, session)
         }
 
         private suspend fun createExrImage(

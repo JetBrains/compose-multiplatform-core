@@ -25,7 +25,7 @@ import androidx.room3.paging.rxjava3.LimitOffsetRxPagingSource as Rxjava3LimitOf
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
 @Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
-public class MyDao_Impl(
+internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao() {
   private val __db: RoomDatabase

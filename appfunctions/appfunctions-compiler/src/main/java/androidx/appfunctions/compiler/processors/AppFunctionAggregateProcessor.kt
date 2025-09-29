@@ -96,7 +96,7 @@ class AppFunctionAggregateProcessor(
             .createNewFile(
                 // TODO: Collect all AppFunction files as source files set
                 Dependencies.ALL_FILES,
-                APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
+                APP_FUNCTIONS_INTERNAL_PACKAGE_NAME,
                 aggregatedInventoryClassName,
             )
             .bufferedWriter()

@@ -32,13 +32,13 @@ import androidx.xr.scenecore.internal.Entity as RuntimeEntity
 import androidx.xr.scenecore.internal.HitTestResult as RuntimeHitTestResult
 import androidx.xr.scenecore.internal.InputEvent as RuntimeInputEvent
 import androidx.xr.scenecore.internal.InputEvent.HitInfo as RuntimeHitInfo
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.MoveEvent as RuntimeMoveEvent
 import androidx.xr.scenecore.internal.PerceivedResolutionResult as RuntimePerceivedResolutionResult
 import androidx.xr.scenecore.internal.PixelDimensions as RuntimePixelDimensions
 import androidx.xr.scenecore.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.scenecore.internal.PlaneType as RtPlaneType
 import androidx.xr.scenecore.internal.ResizeEvent as RuntimeResizeEvent
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialCapabilities as RuntimeSpatialCapabilities
 import androidx.xr.scenecore.internal.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.scenecore.internal.SpatialVisibility as RuntimeSpatialVisibility
@@ -650,7 +650,7 @@ class UtilsTest {
 
     @Test
     fun anchorPlacementToRuntimeAnchorPlacement_setsCorrectly() {
-        val mockRuntime = mock<JxrPlatformAdapter>()
+        val mockRuntime = mock<SceneRuntime>()
         val mockAnchorPlacement1 = mock<RtAnchorPlacement>()
         val mockAnchorPlacement2 = mock<RtAnchorPlacement>()
         whenever(
@@ -687,7 +687,7 @@ class UtilsTest {
 
     @Test
     fun anchorPlacementToRuntimeAnchotPlacementEmptySet_returnsEmptySet() {
-        val mockRuntime = mock<JxrPlatformAdapter>()
+        val mockRuntime = mock<SceneRuntime>()
 
         val rtPlacementSet = emptySet<AnchorPlacement>().toRtAnchorPlacement(mockRuntime)
 

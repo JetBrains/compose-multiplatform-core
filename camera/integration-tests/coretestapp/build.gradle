@@ -85,6 +85,9 @@ dependencies {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")
     }
+    implementation(project(":camera:media3:media3-effect"))
+    implementation(libs.media3Common)
+    implementation(libs.media3Effect)
 
     debugImplementation(libs.testCore)
     // explicitly add runner here to force consistency with androidTestImplementation

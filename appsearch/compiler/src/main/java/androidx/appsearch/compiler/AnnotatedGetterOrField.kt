@@ -53,7 +53,6 @@ import java.util.stream.Collectors
  * }
  * </pre>
  */
-@Suppress("NullAnnotationGroup") // b/424469950
 @OptIn(ExperimentalProcessingApi::class)
 data class AnnotatedGetterOrField(
     /** The annotation that the getter or field is annotated with. */

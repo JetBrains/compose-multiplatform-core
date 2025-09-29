@@ -94,7 +94,7 @@ class ResizableComponentImpl implements ResizableComponent {
     @Override
     public boolean onAttach(@NonNull Entity entity) {
         if (mEntity != null) {
-            throw new IllegalStateException("Already attached to entity " + mEntity);
+            return false;
         }
         mEntity = entity;
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
@@ -114,8 +114,7 @@ class ResizableComponentImpl implements ResizableComponent {
                     || mCurrentSize.width > mMaxSize.width
                     || mCurrentSize.height < mMinSize.height
                     || mCurrentSize.height > mMaxSize.height) {
-                throw new IllegalStateException(
-                        "Size of attached panel entity is not within minsize and maxsize.");
+                return false;
             }
             if (mFixedAspectRatio != 0) {
                 updateFixedAspectRatio(true);
@@ -156,8 +155,7 @@ class ResizableComponentImpl implements ResizableComponent {
     @Override
     public Dimensions getSize() {
         if (mCurrentSize == null) {
-            throw new IllegalStateException(
-                    "This component isn't attached to a PanelEntity and never called setSize.");
+            return mDefaultSize;
         }
         return mCurrentSize;
     }
@@ -173,7 +171,7 @@ class ResizableComponentImpl implements ResizableComponent {
         }
         mCurrentSize = size;
         if (mEntity == null) {
-            throw new IllegalStateException("This component isn't attached to an entity.");
+            return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
         ReformOptions unused =
@@ -199,7 +197,7 @@ class ResizableComponentImpl implements ResizableComponent {
         }
         mMinSize = minSize;
         if (mEntity == null) {
-            throw new IllegalStateException("This component isn't attached to an entity.");
+            return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
         ReformOptions unused =
@@ -221,7 +219,7 @@ class ResizableComponentImpl implements ResizableComponent {
         }
         mMaxSize = maxSize;
         if (mEntity == null) {
-            throw new IllegalStateException("This component isn't attached to an entity.");
+            return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
         ReformOptions unused =
@@ -244,7 +242,7 @@ class ResizableComponentImpl implements ResizableComponent {
             return;
         }
         if (mEntity == null) {
-            throw new IllegalStateException("This component isn't attached to an entity.");
+            return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
         ReformOptions unused = reformOptions.setFixedAspectRatio(mFixedAspectRatio);
@@ -294,7 +292,7 @@ class ResizableComponentImpl implements ResizableComponent {
     public void setForceShowResizeOverlay(boolean show) {
         mForceShowResizeOverlay = show;
         if (mEntity == null) {
-            throw new IllegalStateException("This component isn't attached to an entity.");
+            return;
         }
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
         ReformOptions unused = reformOptions.setForceShowResizeOverlay(show);
@@ -370,7 +368,7 @@ class ResizableComponentImpl implements ResizableComponent {
         }
         mReformEventConsumer = this::reformEventConsumer;
         if (mEntity == null) {
-            throw new IllegalStateException("This component isn't attached to an entity.");
+            return;
         }
         ((AndroidXrEntity) mEntity).addReformEventConsumer(mReformEventConsumer, mExecutor);
     }

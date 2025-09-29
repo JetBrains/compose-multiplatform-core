@@ -15,10 +15,10 @@ package androidx.test.shell {
 
   public static final class Shell.CommandOutput {
     ctor public Shell.CommandOutput(String command, androidx.test.shell.ShellProcess shellProcess);
-    method public String getStdErr();
-    method public java.io.InputStream getStdErrStream();
-    method public String getStdOut();
-    method public java.io.InputStream getStdOutStream();
+    method @InaccessibleFromKotlin public String getStdErr();
+    method @InaccessibleFromKotlin public java.io.InputStream getStdErrStream();
+    method @InaccessibleFromKotlin public String getStdOut();
+    method @InaccessibleFromKotlin public java.io.InputStream getStdOutStream();
     method public boolean isRunning();
     property public String stdErr;
     property public java.io.InputStream stdErrStream;
@@ -28,9 +28,9 @@ package androidx.test.shell {
 
   public final class ShellProcess implements java.lang.AutoCloseable {
     method public void close();
-    method public java.io.InputStream getStdErr();
-    method public java.io.OutputStream getStdIn();
-    method public java.io.InputStream getStdOut();
+    method @InaccessibleFromKotlin public java.io.InputStream getStdErr();
+    method @InaccessibleFromKotlin public java.io.OutputStream getStdIn();
+    method @InaccessibleFromKotlin public java.io.InputStream getStdOut();
     method public boolean isClosed();
     method public void writeLine(String string);
     property public java.io.InputStream stdErr;
@@ -84,8 +84,8 @@ package androidx.test.shell.command {
 
   public final class ProcessPid {
     ctor public ProcessPid(String processName, int pid);
-    method public int getPid();
-    method public String getProcessName();
+    method @InaccessibleFromKotlin public int getPid();
+    method @InaccessibleFromKotlin public String getProcessName();
     property public int pid;
     property public String processName;
   }
@@ -102,7 +102,7 @@ package androidx.test.shell.command {
     method public boolean await();
     method public boolean await(optional long timeoutSeconds);
     method public void close();
-    method public int getPid();
+    method @InaccessibleFromKotlin public int getPid();
     method public boolean isRunning();
     property public int pid;
   }

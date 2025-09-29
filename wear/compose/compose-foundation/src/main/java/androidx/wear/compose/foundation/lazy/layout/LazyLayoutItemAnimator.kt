@@ -79,29 +79,16 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
         val previousFirstVisibleIndex = firstVisibleIndex
         firstVisibleIndex = positionedItems.firstOrNull()?.index ?: 0
 
+        // If `shouldAnimate` is false, a scroll is in progress. Prioritize performance by
+        // releasing all animation resources. They will be recreated when the scroll ends.
         if (!shouldAnimate) {
             releaseAnimations()
-            // After clearing all state for a non-animating pass (like a scroll), we must
-            // re-create an ItemInfo for every visible item. This is critical because creating an
-            // ItemInfo also prepares an underlying GraphicsLayer. For a disappearance animation
-            // to work, the item's content must be placed into this layer *before* it is removed.
-            // This block ensures the layer is created and ready for a potential animation in the
-            // next frame.
-            positionedItems.fastForEach { item ->
-                // TODO(b/423012476): Investigate if we could avoid unnecessary allocations.
-                val newItemInfo = ItemInfo()
-                newItemInfo.updateAnimation(
-                    item,
-                    coroutineScope,
-                    graphicsContext,
-                    layoutMinOffset,
-                    layoutMaxOffset,
-                )
-                keyToItemInfoMap[item.key] = newItemInfo
+            return
+        }
 
-                initializeAnimation(item, item.getOffset().y, newItemInfo)
-                newItemInfo.animation?.apply { finalOffset = rawOffset }
-            }
+        val hasAnimations = positionedItems.fastAny { it.hasAnimations() }
+        if (!hasAnimations && keyToItemInfoMap.isEmpty()) {
+            // no animations specified - no work needed
             return
         }
 
@@ -111,13 +98,6 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                 it.measuredHeight = item.measuredHeight
                 it.measurementDirection = item.measurementDirection
             }
-        }
-
-        val hasAnimations = positionedItems.fastAny { it.hasAnimations() }
-        if (!hasAnimations && keyToItemInfoMap.isEmpty()) {
-            // no animations specified - no work needed - clear animation info
-            releaseAnimations()
-            return
         }
 
         // first add all items we had in the previous run

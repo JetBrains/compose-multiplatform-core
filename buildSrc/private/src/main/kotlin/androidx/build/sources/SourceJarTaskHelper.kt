@@ -196,7 +196,6 @@ private fun Project.registerSourcesVariant(
     usage: Usage,
 ) =
     configurations.create(configurationName) { gradleVariant ->
-        gradleVariant.isVisible = false
         gradleVariant.isCanBeResolved = false
         gradleVariant.attributes.attribute(Usage.USAGE_ATTRIBUTE, usage)
         gradleVariant.attributes.attribute(

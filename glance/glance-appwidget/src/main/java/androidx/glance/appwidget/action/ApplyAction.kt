@@ -343,6 +343,7 @@ private fun getStartActivityIntent(
 
     val parametersPairs = params.asMap().map { (key, value) -> key.name to value }.toTypedArray()
 
+    @Suppress("DEPRECATION") // bundleOf is deprecated
     activityIntent.putExtras(bundleOf(*parametersPairs))
     return activityIntent
 }

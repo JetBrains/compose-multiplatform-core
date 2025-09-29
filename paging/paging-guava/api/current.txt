@@ -6,8 +6,8 @@ package androidx.paging {
     method public T? component1();
     method public T? component2();
     method public androidx.paging.AdjacentItems<T> copy(optional T? before, optional T? after);
-    method public T? getAfter();
-    method public T? getBefore();
+    method @InaccessibleFromKotlin public T? getAfter();
+    method @InaccessibleFromKotlin public T? getBefore();
     property public T? after;
     property public T? before;
   }

@@ -22,12 +22,7 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.camera.camera2.pipe.integration.impl.DEVICE_STATE_CALLBACK_OPTION
-import androidx.camera.camera2.pipe.integration.impl.SESSION_CAPTURE_CALLBACK_OPTION
-import androidx.camera.camera2.pipe.integration.impl.SESSION_PHYSICAL_CAMERA_ID_OPTION
-import androidx.camera.camera2.pipe.integration.impl.SESSION_STATE_CALLBACK_OPTION
-import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_CASE_OPTION
-import androidx.camera.camera2.pipe.integration.impl.TEMPLATE_TYPE_OPTION
+import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.createCaptureRequestOption
 import androidx.camera.core.ExtendableBuilder
 import androidx.camera.core.impl.Config
@@ -88,7 +83,10 @@ public class Camera2Interop private constructor() {
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         public fun setCaptureRequestTemplate(templateType: Int): Extender<T> {
-            baseBuilder.mutableConfig.insertOption(TEMPLATE_TYPE_OPTION, templateType)
+            baseBuilder.mutableConfig.insertOption(
+                Camera2ImplConfig.TEMPLATE_TYPE_OPTION,
+                templateType,
+            )
             return this
         }
 
@@ -112,7 +110,10 @@ public class Camera2Interop private constructor() {
          */
         @RequiresApi(33)
         public fun setStreamUseCase(streamUseCase: Long): Extender<T> {
-            baseBuilder.mutableConfig.insertOption(STREAM_USE_CASE_OPTION, streamUseCase)
+            baseBuilder.mutableConfig.insertOption(
+                Camera2ImplConfig.STREAM_USE_CASE_OPTION,
+                streamUseCase,
+            )
             return this
         }
 
@@ -132,7 +133,10 @@ public class Camera2Interop private constructor() {
          */
         @SuppressLint("ExecutorRegistration")
         public fun setDeviceStateCallback(stateCallback: CameraDevice.StateCallback): Extender<T> {
-            baseBuilder.mutableConfig.insertOption(DEVICE_STATE_CALLBACK_OPTION, stateCallback)
+            baseBuilder.mutableConfig.insertOption(
+                Camera2ImplConfig.DEVICE_STATE_CALLBACK_OPTION,
+                stateCallback,
+            )
             return this
         }
 
@@ -155,7 +159,10 @@ public class Camera2Interop private constructor() {
         public fun setSessionStateCallback(
             stateCallback: CameraCaptureSession.StateCallback
         ): Extender<T> {
-            baseBuilder.mutableConfig.insertOption(SESSION_STATE_CALLBACK_OPTION, stateCallback)
+            baseBuilder.mutableConfig.insertOption(
+                Camera2ImplConfig.SESSION_STATE_CALLBACK_OPTION,
+                stateCallback,
+            )
             return this
         }
 
@@ -178,7 +185,10 @@ public class Camera2Interop private constructor() {
          */
         @SuppressLint("ExecutorRegistration")
         public fun setSessionCaptureCallback(captureCallback: CaptureCallback): Extender<T> {
-            baseBuilder.mutableConfig.insertOption(SESSION_CAPTURE_CALLBACK_OPTION, captureCallback)
+            baseBuilder.mutableConfig.insertOption(
+                Camera2ImplConfig.SESSION_CAPTURE_CALLBACK_OPTION,
+                captureCallback,
+            )
             return this
         }
 
@@ -206,7 +216,10 @@ public class Camera2Interop private constructor() {
         public fun setPhysicalCameraId(
             @Suppress("UNUSED_PARAMETER") cameraId: String
         ): Extender<T> {
-            baseBuilder.mutableConfig.insertOption(SESSION_PHYSICAL_CAMERA_ID_OPTION, cameraId)
+            baseBuilder.mutableConfig.insertOption(
+                Camera2ImplConfig.SESSION_PHYSICAL_CAMERA_ID_OPTION,
+                cameraId,
+            )
             return this
         }
     }

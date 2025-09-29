@@ -17,7 +17,6 @@
 package androidx.credentials.providerevents.transfer
 
 import android.graphics.Bitmap
-import androidx.annotation.RestrictTo
 import androidx.credentials.providerevents.internal.MatcherUtil
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
@@ -33,7 +32,6 @@ import org.json.JSONObject
  * @param exportMatcher the optional matcher. By default, a matcher that filters on credential types
  *   will be used. The provider can provide a matcher to filter based on custom filters
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RegisterExportRequest(
     public val entries: List<ExportEntry>,
     public val exportMatcher: ByteArray = MatcherUtil.CREDENTIAL_TRANSFER_DEFAULT_MATCHER,

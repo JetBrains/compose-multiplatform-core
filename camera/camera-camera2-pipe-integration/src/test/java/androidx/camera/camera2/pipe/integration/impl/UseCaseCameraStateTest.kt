@@ -21,7 +21,6 @@ import android.hardware.camera2.CaptureRequest.CONTROL_CAPTURE_INTENT
 import android.hardware.camera2.CaptureRequest.CONTROL_CAPTURE_INTENT_PREVIEW
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.adapter.asListenableFuture
 import androidx.camera.camera2.pipe.integration.compat.quirk.CaptureIntentPreviewQuirk
@@ -76,11 +75,7 @@ class UseCaseCameraStateTest {
     private val fakeCameraGraphSession = FakeCameraGraphSession()
     private val fakeCameraGraph = FakeCameraGraph(fakeCameraGraphSession)
     private val fakeUseCaseGraphConfig =
-        UseCaseGraphConfig(
-            graph = fakeCameraGraph,
-            surfaceToStreamMap = surfaceToStreamMap,
-            cameraStateAdapter = CameraStateAdapter(),
-        )
+        UseCaseGraphConfig(graph = fakeCameraGraph, surfaceToStreamMap = surfaceToStreamMap)
 
     private val useCaseCameraState =
         UseCaseCameraState(

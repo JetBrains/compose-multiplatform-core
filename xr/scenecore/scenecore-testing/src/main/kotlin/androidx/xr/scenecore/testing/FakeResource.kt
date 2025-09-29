@@ -25,5 +25,5 @@ import androidx.xr.scenecore.internal.TextureResource
 
 /** Fake implementation of [androidx.xr.scenecore.internal.Resource] for testing. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-internal class FakeResource(internal val token: Long) :
+public data class FakeResource(internal val token: Long = 0) :
     Resource, ExrImageResource, GltfModelResource, TextureResource, MaterialResource {}

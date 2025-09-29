@@ -492,7 +492,9 @@ abstract class RouteDecoderTest(val source: ArgumentSource) {
         navArgs: List<NamedNavArgument> = emptyList(),
     ): T {
         val typeMap = mutableMapOf<String, NavType<Any?>>()
-        val finalBundle = bundleOf()
+        val finalBundle =
+            @Suppress("DEPRECATION") // bundleOf is deprecated
+            bundleOf()
         navArgs.forEach {
             val navType = it.argument.type
             typeMap[it.name] = navType

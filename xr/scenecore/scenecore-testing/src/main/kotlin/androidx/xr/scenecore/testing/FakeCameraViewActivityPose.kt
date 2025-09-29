@@ -27,10 +27,8 @@ import androidx.xr.scenecore.internal.PixelDimensions
  * field of view of the camera.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class FakeCameraViewActivityPose : CameraViewActivityPose, FakeActivityPose() {
-
-    /** Returns the type of camera that this space represents. */
-    @CameraType override var cameraType: Int = 0
+public open class FakeCameraViewActivityPose(@CameraType override val cameraType: Int = 0) :
+    CameraViewActivityPose, FakeActivityPose() {
 
     /** Returns the field of view for this camera. */
     override var fov: Fov = Fov(0.0f, 0.0f, 0.0f, 0.0f)

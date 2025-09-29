@@ -724,6 +724,9 @@ class PropertyProcessorTest {
                 ARRAY_CONVERTER,
             )
         runProcessorTest(sources = sources) { invocation ->
+            if (!invocation.isKsp) {
+                return@runProcessorTest
+            }
             val (owner, propertyElement) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Entity::class.qualifiedName!!)

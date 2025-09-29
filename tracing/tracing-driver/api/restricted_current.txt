@@ -19,8 +19,8 @@ package androidx.tracing.driver {
 
   public class CounterTrack extends androidx.tracing.driver.Track {
     ctor public CounterTrack(String name, androidx.tracing.driver.Track parent);
-    method public final String getName();
-    method public final androidx.tracing.driver.Track getParent();
+    method @InaccessibleFromKotlin public final String getName();
+    method @InaccessibleFromKotlin public final androidx.tracing.driver.Track getParent();
     method public final void setCounter(double value);
     method public final void setCounter(long value);
     property public final String name;
@@ -30,7 +30,7 @@ package androidx.tracing.driver {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="Marks declarations in the Tracing API that are delicate.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface DelicateTracingApi {
   }
 
-  public final class MetadataEntry {
+  @SuppressCompatibility @androidx.tracing.driver.DelicateTracingApi public final class MetadataEntry {
     method public void reset();
     property public boolean booleanValue;
     property public double doubleValue;
@@ -47,8 +47,8 @@ package androidx.tracing.driver {
   }
 
   @kotlin.PublishedApi internal abstract class PlatformThreadContextElement<S> extends kotlin.coroutines.AbstractCoroutineContextElement {
-    method public java.util.List<java.lang.Long> getFlowIds();
-    method public String getName();
+    method @InaccessibleFromKotlin public java.util.List<java.lang.Long> getFlowIds();
+    method @InaccessibleFromKotlin public String getName();
     method @BytecodeOnly @kotlin.PublishedApi internal final java.util.concurrent.atomic.AtomicInteger getStarted();
     method @kotlin.PublishedApi internal abstract void restoreThreadContext(kotlin.coroutines.CoroutineContext context, S oldState);
     method @kotlin.PublishedApi internal abstract S updateThreadContext(kotlin.coroutines.CoroutineContext context);
@@ -83,8 +83,8 @@ package androidx.tracing.driver {
 
   public class ProcessTrack extends androidx.tracing.driver.SliceTrack {
     ctor public ProcessTrack(androidx.tracing.driver.TraceContext context, int id, String name);
-    method public final int getId();
-    method public final String getName();
+    method @InaccessibleFromKotlin public final int getId();
+    method @InaccessibleFromKotlin public final String getName();
     method public androidx.tracing.driver.CounterTrack getOrCreateCounterTrack(String name);
     method public androidx.tracing.driver.ThreadTrack getOrCreateThreadTrack(int id, String name);
     property public final int id;
@@ -93,7 +93,7 @@ package androidx.tracing.driver {
 
   @kotlin.PublishedApi internal final class ProtoPool {
     ctor public ProtoPool(boolean isDebug);
-    method public androidx.tracing.driver.PooledTracePacketArray obtainTracePacketArray();
+    method public androidx.tracing.driver.PooledTracePacketArray? obtainTracePacketArray();
     method public long poolableCount();
   }
 
@@ -117,9 +117,9 @@ package androidx.tracing.driver {
 
   public class ThreadTrack extends androidx.tracing.driver.SliceTrack {
     ctor public ThreadTrack(int id, String name, androidx.tracing.driver.ProcessTrack process);
-    method public final int getId();
-    method public final String getName();
-    method public final androidx.tracing.driver.ProcessTrack getProcess();
+    method @InaccessibleFromKotlin public final int getId();
+    method @InaccessibleFromKotlin public final String getName();
+    method @InaccessibleFromKotlin public final androidx.tracing.driver.ProcessTrack getProcess();
     property public final int id;
     property public final String name;
     property public final androidx.tracing.driver.ProcessTrack process;
@@ -130,8 +130,8 @@ package androidx.tracing.driver {
     method public void close();
     method public final void flush();
     method public androidx.tracing.driver.ProcessTrack getOrCreateProcessTrack(int id, String name);
-    method public final androidx.tracing.driver.TraceSink getSink();
-    method public final boolean isEnabled();
+    method @InaccessibleFromKotlin public final androidx.tracing.driver.TraceSink getSink();
+    method @InaccessibleFromKotlin public final boolean isEnabled();
     property public final boolean isEnabled;
     property public final androidx.tracing.driver.TraceSink sink;
   }
@@ -139,7 +139,7 @@ package androidx.tracing.driver {
   public final class TraceDriver {
     ctor public TraceDriver(androidx.tracing.driver.TraceSink sink, optional boolean isEnabled);
     method public androidx.tracing.driver.ProcessTrack ProcessTrack(int id, String name);
-    method public androidx.tracing.driver.TraceContext getContext();
+    method @InaccessibleFromKotlin public androidx.tracing.driver.TraceContext getContext();
     property public androidx.tracing.driver.TraceContext context;
   }
 
@@ -209,6 +209,7 @@ package androidx.tracing.driver {
     method public abstract void close();
     method public abstract void enqueue(androidx.tracing.driver.PooledTracePacketArray pooledPacketArray);
     method public abstract void flush();
+    method public abstract void onDroppedTraceEvent();
   }
 
   public final class Tracing_androidKt {
@@ -217,33 +218,31 @@ package androidx.tracing.driver {
 
   public abstract class Track {
     ctor public Track(@kotlin.PublishedApi androidx.tracing.driver.TraceContext context, @kotlin.PublishedApi long uuid);
-    method @kotlin.PublishedApi internal final inline void emitTraceEvent(optional boolean immediateDispatch, kotlin.jvm.functions.Function1<? super androidx.tracing.driver.TraceEvent,kotlin.Unit> block);
+    method @kotlin.PublishedApi internal final inline void conditionalEmitTraceEvent(optional boolean immediateDispatch, kotlin.jvm.functions.Function1<? super androidx.tracing.driver.TraceEvent,java.lang.Boolean> block);
     method @kotlin.PublishedApi internal final void flush();
     method @BytecodeOnly @kotlin.PublishedApi internal final androidx.tracing.driver.ProtoPool getPool();
     property @kotlin.PublishedApi internal final androidx.tracing.driver.TraceContext context;
-    property @kotlin.PublishedApi internal final androidx.tracing.driver.PooledTracePacketArray currentPacketArray;
-    property @kotlin.PublishedApi internal final int currentPacketArraySize;
+    property @kotlin.PublishedApi internal final androidx.tracing.driver.PooledTracePacketArray? currentPacketArray;
     property @kotlin.PublishedApi internal final androidx.tracing.driver.ProtoPool pool;
     property @kotlin.PublishedApi internal final long uuid;
-    field @kotlin.PublishedApi internal androidx.tracing.driver.PooledTracePacketArray currentPacketArray;
-    field @kotlin.PublishedApi internal int currentPacketArraySize;
+    field @kotlin.PublishedApi internal androidx.tracing.driver.PooledTracePacketArray? currentPacketArray;
     field @kotlin.PublishedApi internal final androidx.tracing.driver.ProtoPool pool;
   }
 
   public final class TrackDescriptor {
     ctor public TrackDescriptor(String name, long uuid, long parentUuid, int type, int pid, int tid);
-    method public String getName();
-    method public long getParentUuid();
-    method public int getPid();
-    method public int getTid();
-    method public int getType();
-    method public long getUuid();
-    method public void setName(String);
-    method public void setParentUuid(long);
-    method public void setPid(int);
-    method public void setTid(int);
-    method public void setType(int);
-    method public void setUuid(long);
+    method @InaccessibleFromKotlin public String getName();
+    method @InaccessibleFromKotlin public long getParentUuid();
+    method @InaccessibleFromKotlin public int getPid();
+    method @InaccessibleFromKotlin public int getTid();
+    method @InaccessibleFromKotlin public int getType();
+    method @InaccessibleFromKotlin public long getUuid();
+    method @InaccessibleFromKotlin public void setName(String);
+    method @InaccessibleFromKotlin public void setParentUuid(long);
+    method @InaccessibleFromKotlin public void setPid(int);
+    method @InaccessibleFromKotlin public void setTid(int);
+    method @InaccessibleFromKotlin public void setType(int);
+    method @InaccessibleFromKotlin public void setUuid(long);
     property public String name;
     property public long parentUuid;
     property public int pid;

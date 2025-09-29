@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
@@ -28,7 +27,6 @@ import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.SdkApi
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.privacysandbox.ui.provider.toCoreLibInfo
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class MediateeSdkApiImpl() {
     companion object {

@@ -82,31 +82,6 @@ public class `$FunctionWithEmptySerializable_AppFunctionInventory` : AppFunction
             description = ""
         )
 
-    private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_PROPERTIES_MAP:
-        Map<String, AppFunctionDataTypeMetadata> = mapOf(
-    )
-
-    private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST: List<String> = listOf(
-    )
-
-    private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata =
-        AppFunctionObjectTypeMetadata(
-            properties = COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_PROPERTIES_MAP,
-            required = COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
-            qualifiedName = "com.testdata.Empty",
-            isNullable = true,
-            description = ""
-        )
-
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      "com.testdata.Empty" to COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE,
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.FunctionWithEmptySerializable#simpleFunctionWithEmptySerializable",
@@ -114,7 +89,6 @@ public class `$FunctionWithEmptySerializable_AppFunctionInventory` : AppFunction
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
         )
   }
 }

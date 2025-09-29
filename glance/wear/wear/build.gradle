@@ -29,20 +29,33 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("androidx.stableaidl")
     id("com.squareup.wire")
+    id("AndroidXComposePlugin")
 }
 
 dependencies {
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     api("androidx.annotation:annotation:1.9.1")
-    implementation("androidx.lifecycle:lifecycle-service:2.9.2")
+    api("androidx.lifecycle:lifecycle-service:2.9.2")
+
+    def composeVersion = "1.9.0"
+
+    implementation("androidx.compose.runtime:runtime:$composeVersion")
+    implementation(project(":compose:remote:remote-creation"))
+    implementation(project(":compose:remote:remote-frontend"))
 
     testImplementation("androidx.core:core-ktx:1.17.0")
+    testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+    androidTestImplementation("androidx.core:core-ktx:1.17.0")
+    androidTestImplementation(project(":compose:remote:test-utils"))
+    androidTestImplementation(project(":compose:remote:remote-player-view"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
+    androidTestImplementation("androidx.compose.foundation:foundation:$composeVersion")
 }
 
 wire {

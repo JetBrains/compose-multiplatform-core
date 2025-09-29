@@ -465,7 +465,7 @@ internal class AppSearchAppFunctionReader(
         return if (schemaMetadata == null) {
             null
         } else {
-            schemaAppFunctionInventory?.schemaFunctionsMap?.get(schemaMetadata)?.components
+            schemaAppFunctionInventory?.componentsMetadata
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import androidx.xr.scenecore.internal.ActivityPose as RtActivityPose
 import androidx.xr.scenecore.internal.CameraViewActivityPose as RtCameraViewActivityPose
 import androidx.xr.scenecore.internal.HeadActivityPose as RtHeadActivityPose
 import androidx.xr.scenecore.internal.HitTestResult as RtHitTestResult
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
+import androidx.xr.scenecore.internal.SceneRuntime
 
 /**
  * A [Pose] in the Scene graph, which can be transformed into a Pose relative to another ScenePose.
@@ -132,17 +132,17 @@ private constructor(private val rtCameraViewActivityPose: RtCameraViewActivityPo
     BaseScenePose<RtCameraViewActivityPose>(rtCameraViewActivityPose) {
 
     internal companion object {
-        internal fun createLeft(platformAdapter: JxrPlatformAdapter): CameraView? {
+        internal fun createLeft(sceneRuntime: SceneRuntime): CameraView? {
             val cameraViewActivityPose =
-                platformAdapter.getCameraViewActivityPose(
+                sceneRuntime.getCameraViewActivityPose(
                     RtCameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
                 )
             return cameraViewActivityPose?.let { CameraView(it) }
         }
 
-        internal fun createRight(platformAdapter: JxrPlatformAdapter): CameraView? {
+        internal fun createRight(sceneRuntime: SceneRuntime): CameraView? {
             val cameraViewActivityPose =
-                platformAdapter.getCameraViewActivityPose(
+                sceneRuntime.getCameraViewActivityPose(
                     RtCameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE
                 )
             return cameraViewActivityPose?.let { CameraView(it) }
@@ -181,8 +181,8 @@ public class Head private constructor(rtActivityPose: RtHeadActivityPose) :
     internal companion object {
 
         /** Factory function for creating [Head] instance. */
-        internal fun create(platformAdapter: JxrPlatformAdapter): Head? {
-            return platformAdapter.headActivityPose?.let { Head(it) }
+        internal fun create(sceneRuntime: SceneRuntime): Head? {
+            return sceneRuntime.headActivityPose?.let { Head(it) }
         }
     }
 }
@@ -197,7 +197,7 @@ public class PerceptionSpace private constructor(rtActivityPose: RtPerceptionSpa
     internal companion object {
 
         /** Factory function for creating [PerceptionSpace] instance. */
-        internal fun create(platformAdapter: JxrPlatformAdapter): PerceptionSpace =
-            PerceptionSpace(platformAdapter.perceptionSpaceActivityPose)
+        internal fun create(sceneRuntime: SceneRuntime): PerceptionSpace =
+            PerceptionSpace(sceneRuntime.perceptionSpaceActivityPose)
     }
 }

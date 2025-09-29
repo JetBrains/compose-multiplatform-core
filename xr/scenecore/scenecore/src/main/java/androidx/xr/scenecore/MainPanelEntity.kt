@@ -20,14 +20,14 @@ package androidx.xr.scenecore
 
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.internal.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
-// TODO: b/428764847 - Replace platformAdapter property with rtEntity when PerceivedResolution
+// TODO: b/428764847 - Replace sceneRuntime property with rtEntity when PerceivedResolution
 // methods are moved to MainPanelEntityImpl
 /**
  * Represents the main spatialized panel in a [Scene].
@@ -38,12 +38,12 @@ import java.util.function.Consumer
 public class MainPanelEntity
 internal constructor(
     private val lifecycleManager: LifecycleManager,
-    private val platformAdapter: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
     entityManager: EntityManager,
 ) :
     PanelEntity(
         lifecycleManager,
-        platformAdapter.mainPanelEntity,
+        sceneRuntime.mainPanelEntity,
         entityManager,
         isMainPanelEntity = true,
     ) {
@@ -84,7 +84,7 @@ internal constructor(
         perceivedResolutionListeners.compute(
             listener,
             { _, _ ->
-                platformAdapter.addPerceivedResolutionChangedListener(callbackExecutor, rtListener)
+                sceneRuntime.addPerceivedResolutionChangedListener(callbackExecutor, rtListener)
                 rtListener
             },
         )
@@ -124,7 +124,7 @@ internal constructor(
         perceivedResolutionListeners.computeIfPresent(
             listener,
             { _, rtListener ->
-                platformAdapter.removePerceivedResolutionChangedListener(rtListener)
+                sceneRuntime.removePerceivedResolutionChangedListener(rtListener)
                 null
             },
         )
@@ -134,8 +134,8 @@ internal constructor(
         /** Returns the MainPanelEntity backed by the main window for the Activity. */
         internal fun create(
             lifecycleManager: LifecycleManager,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
-        ): MainPanelEntity = MainPanelEntity(lifecycleManager, adapter, entityManager)
+        ): MainPanelEntity = MainPanelEntity(lifecycleManager, sceneRuntime, entityManager)
     }
 }

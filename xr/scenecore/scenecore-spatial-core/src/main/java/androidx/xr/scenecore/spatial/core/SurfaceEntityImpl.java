@@ -37,10 +37,10 @@ import org.jspecify.annotations.Nullable;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * Implementation of a RealityCore StereoSurfaceEntitySplitEngine.
+ * Implementation of a SceneCore SurfaceEntity.
  *
- * <p>This is used to create an entity that contains a StereoSurfacePanel using the Split Engine
- * route.
+ * <p>This is used to create an Entity that uses SplitEngine to render an Android Surface with
+ * support for stereoscopic rendering.
  */
 final class SurfaceEntityImpl extends BaseRenderingEntity implements SurfaceEntity {
     private final SurfaceFeature mSurfaceFeature;

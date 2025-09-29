@@ -27,28 +27,45 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
+/**
+ * Creates a [KSerializer] for a [SnapshotStateList] of [T] representing a back stack.
+ *
+ * This **no-configuration overload** uses an **Android-only reflective** strategy for polymorphic
+ * element serialization. It does **not** require a [SerializersModule] on the [Encoder]/[Decoder];
+ * the serializer is self-contained and resolves each element’s serializer reflectively at runtime.
+ *
+ * ### Platform behavior
+ * - **Android:** Uses reflection for polymorphic dispatch and works with any `@Serializable`
+ *   subtype of [T] (open or closed hierarchies). This path is convenient when keys are disparate
+ *   classes spread across modules and central registration would create undue coupling.
+ * - **Non-Android:** **Unsupported.** This overload will crash at runtime because no reflective
+ *   implementation is available. Any call to [NavBackStackSerializer] with no configuration —
+ *   including usage through `rememberSerializable` without explicitly providing a
+ *   [SavedStateConfiguration] — will fail.
+ *
+ * ### Caveats
+ * - Reflective lookup does **not** preserve generic type parameters (e.g., `List<Foo>` and
+ *   `List<Bar>` are treated as `List<*>`). If you need precise generic handling or want
+ *   cross-platform behavior, use the configuration overload with an explicit [SerializersModule].
+ *
+ * @sample androidx.navigation3.runtime.samples.NavBackStackSerializer_withReflection
+ * @param T Element type stored in the back stack.
+ * @return A [KSerializer] for a [SnapshotStateList] of [T] suitable for back stack persistence on
+ *   Android.
+ * @throws IllegalStateException if called on a non-Android platform, since reflection-based
+ *   serialization is unsupported outside Android.
+ */
 @Suppress("FunctionName") // Factory function.
-public actual inline fun <reified T : Any> NavBackStackSerializer(
-    configuration: SavedStateConfiguration
-): KSerializer<SnapshotStateList<T>> {
-    val elementSerializer =
-        if (configuration == SavedStateConfiguration.DEFAULT) {
-            // DEFAULT uses a reflective polymorphic strategy. This is self-contained and
-            // does not require registering subtypes or passing a SerializersModule when
-            // encoding/decoding. It uses reflection to resolve `.serializer()` for each type.
-            ReflectivePolymorphicSerializer()
-        } else {
-            // If a custom configuration is provided, we use its serializersModule to resolve
-            // the element serializer. In this path, you MUST also pass the same configuration
-            // (or at least its serializersModule) to your encode/decode calls. This is because
-            // polymorphic dispatch looks up subtypes in the Encoder/Decoder’s module, not in
-            // the KSerializer instance itself.
-            configuration.serializersModule.serializer<T>()
-        }
-
-    return SnapshotStateListSerializer(elementSerializer)
+public fun <T : Any> NavBackStackSerializer(): KSerializer<SnapshotStateList<T>> {
+    return SnapshotStateListSerializer(
+        // Uses the reflective polymorphic strategy: no subtype registration or
+        // SerializersModule needed. At runtime, reflection resolves `.serializer()`
+        // for each element type automatically.
+        elementSerializer = ReflectivePolymorphicSerializer()
+    )
 }
 
 /**
@@ -68,8 +85,7 @@ public actual inline fun <reified T : Any> NavBackStackSerializer(
  * This is an internal implementation detail and should not be used directly.
  */
 @OptIn(InternalSerializationApi::class)
-@PublishedApi
-internal class ReflectivePolymorphicSerializer<T : Any> : KSerializer<T> {
+private class ReflectivePolymorphicSerializer<T : Any> : KSerializer<T> {
 
     override val descriptor =
         buildClassSerialDescriptor("PolymorphicData") {

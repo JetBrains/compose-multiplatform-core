@@ -16,8 +16,10 @@
          <trust group="com.android.tools" name="desugar_jdk_libs_configuration" reason="b/215430394"/>
          <trust group="com.android.tools" name="r8" reason="b/215430394"/>
          <trust group="com.android.tools.build" name="aapt2" version="8.1.1-10154469" reason="old version, before signing"/>
+         <trust group="com.android.tools.build" name="aapt2" version="8.2.1-10154469" reason="old version, before signing"/>
          <trust group="com.android.tools.build" name="aapt2" version="8.5.0-alpha05-11315950" reason="old version, before signing"/>
          <trust group="com.android.tools.build" name="aapt2-proto" version="8.1.1-10154469" reason="old version, before signing"/>
+         <trust group="com.android.tools.build" name="aapt2-proto" version="8.2.1-10154469" reason="old version, before signing"/>
          <trust group="com.android.tools.build" name="aapt2-proto" version="8.5.0-alpha05-11315950" reason="old version, before signing"/>
          <trust group="com.android.tools.build" name="bundletool" reason="b/215430394"/>
          <trust group="com.android.tools.build" name="transform-api" reason="b/215430394"/>
@@ -44,8 +46,10 @@
          <trust file=".*[.]asc" regex="true"/>
          <trust group="^androidx\..*" regex="true" reason="jetpad does not yet drop signed artifacts b/320540559"/>
          <trust group="^com[.]android($|([.].*))" version="31.1.1" regex="true" reason="old version, before signing"/>
+         <trust group="^com[.]android($|([.].*))" version="31.2.1" regex="true" reason="old version, before signing"/>
          <trust group="^com[.]android($|([.].*))" version="31.5.0-alpha05" regex="true" reason="old version, before signing"/>
          <trust group="^com[.]android($|([.].*))" version="8.1.1" regex="true" reason="old version, before signing"/>
+         <trust group="^com[.]android($|([.].*))" version="8.2.1" regex="true" reason="old version, before signing"/>
          <trust group="^com[.]android($|([.].*))" version="8.5.0-alpha05" regex="true" reason="old version, before signing"/>
          <trust group="com.google.guava" name="guava" version=".*[-]android" file="guava.*[-]jre[.]jar" regex="true" reason="https://github.com/google/guava/issues/7154"/>
          <trust group="com.google.guava" name="guava" version=".*[-]jre" file="guava.*[-]android[.]jar" regex="true" reason="https://github.com/google/guava/issues/7154"/>

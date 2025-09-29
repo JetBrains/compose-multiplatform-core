@@ -20,17 +20,14 @@ import android.view.Surface
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.util.fastForEachIndexed
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.layout.CoreSphereSurfaceEntity
 import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
-import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialFeatheringEffect
 import androidx.xr.compose.subspace.layout.SubspaceLayout
@@ -39,21 +36,13 @@ import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
 import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
 import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.subspace.layout.ZeroFeatheringEffect
-import androidx.xr.compose.subspace.layout.fillMaxSize
-import androidx.xr.compose.subspace.layout.offset
-import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.compose.unit.toMeter
-import androidx.xr.runtime.Config.HeadTrackingMode
-import androidx.xr.runtime.SessionConfigureSuccess
-import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
-import kotlin.math.max
 
 /** Contains default values used by SpatialExternalSurface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -103,19 +92,8 @@ private class SpatialExternalSurfaceScopeInstance(private val entity: CoreSurfac
 private class SpatialExternalSphereSurfaceScopeInstance(
     private val entity: CoreSphereSurfaceEntity
 ) : SpatialExternalSurfaceScope {
-
-    private var executedInit = false
-    private var pendingOnCreate: ((Surface) -> Unit)? = null
-
     override fun onSurfaceCreated(onSurfaceCreated: (Surface) -> Unit) {
-        pendingOnCreate = onSurfaceCreated
-    }
-
-    internal fun executeOnCreate() {
-        if (!executedInit) {
-            executedInit = true
-            pendingOnCreate?.let { it(entity.surfaceEntity.getSurface()) }
-        }
+        onSurfaceCreated(entity.surfaceEntity.getSurface())
     }
 
     override fun onSurfaceDestroyed(onSurfaceDestroyed: (Surface) -> Unit) {
@@ -268,12 +246,12 @@ public fun SpatialExternalSurface(
  * A Composable that creates and owns an Android Surface into which the application can render
  * stereo image content inside a 180 degree hemisphere dome. This Surface is texture mapped to the
  * canvas, and if a stereoscopic StereoMode is specified, then the User will see left and right eye
- * content mapped to the appropriate display. This is an environment-like Composable that will
- * appear centered around the user's head position. If head tracking isn't already configured, an
- * attempt will be made to configure it. While this Composable is active, a temporary preferred
- * environment will be set, if one isn't already set, to put the user inside a boundary. In cases
- * where the user has not consented to the boundary or if passthrough is ever fully enabled, a
- * transparent feathered surface will display instead.
+ * content mapped to the appropriate display.
+ *
+ * This Composable orients itself to match the parent Pose and has no layout size. While this
+ * Composable is active, a temporary preferred environment will be set, if one isn't already set, to
+ * put the user inside a boundary. In cases where the user has not consented to the boundary or if
+ * passthrough is ever fully enabled, a transparent feathered surface will display instead.
  *
  * Note that this Surface does not capture input events. It is also not currently possible to
  * synchronize StereoMode changes with application rendering or video decoding.
@@ -290,22 +268,22 @@ public fun SpatialExternalSurface(
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated]. For hemisphere domes, vertical feathering
  *   applies to the top and bottom poles of the dome, while horizontal feathering applies to the
  *   left and right sides.
- * @param surfaceProtection Sets the Surface's protection from CPU access.
- * @param content Content block where the surface can be accessed using
- *   [SpatialExternalSurfaceScope.onSurfaceCreated]. Composable content will be rendered in front of
- *   the user, slightly below the current gaze level. This default location is scaled with radius.
+ * @param surfaceProtection Sets the Surface's content protection. Use this to redact content in
+ *   screen recordings. Setting this to [SurfaceProtection.Protected] is required if decoding DRM
+ *   media content.
+ * @param onSurface Lambda invoked when the surface is created through
+ *   [SpatialExternalSurfaceScope.onSurfaceCreated] and destroyed through
+ *   [SpatialExternalSurfaceScope.onSurfaceDestroyed].
  */
 @Composable
 @SubspaceComposable
-@ExperimentalComposeApi
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialExternalSurface180Hemisphere(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,
     radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
-    content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
+    onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     SpatialExternalSurfaceSphere(
         stereoMode = stereoMode,
@@ -314,7 +292,7 @@ public fun SpatialExternalSurface180Hemisphere(
         radius = radius,
         featheringEffect = featheringEffect,
         surfaceProtection = surfaceProtection,
-        content = content,
+        onSurface = onSurface,
     )
 }
 
@@ -322,12 +300,12 @@ public fun SpatialExternalSurface180Hemisphere(
  * A Composable that creates and owns an Android Surface into which the application can render
  * stereo image content inside a 360 degree sphere dome. This Surface is then texture mapped to the
  * canvas, and if a stereoscopic StereoMode is specified, then the User will see left and right eye
- * content mapped to the appropriate display. This is an environment-like Composable that will
- * appear centered around the user's head position. If head tracking isn't already configured, an
- * attempt will be made to configure it. While this Composable is active, a temporary preferred
- * environment will be set, if one isn't already set, to put the user inside a boundary. In cases
- * where the user has not consented to the boundary or if passthrough is ever fully enabled, a
- * transparent feathered surface will display instead.
+ * content mapped to the appropriate display.
+ *
+ * This Composable orients itself to match the parent Pose and has no layout size. While this
+ * Composable is active, a temporary preferred environment will be set, if one isn't already set, to
+ * put the user inside a boundary. In cases where the user has not consented to the boundary or if
+ * passthrough is ever fully enabled, a transparent feathered surface will display instead.
  *
  * Note that this Surface does not capture input events. It is also not currently possible to
  * synchronize StereoMode changes with application rendering or video decoding.
@@ -344,22 +322,22 @@ public fun SpatialExternalSurface180Hemisphere(
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated]. For sphere domes, vertical feathering
  *   applies to the top and bottom poles of the dome, while horizontal feathering applies to the
  *   left and right sides where the video is stitched together.
- * @param surfaceProtection Sets the Surface's protection from CPU access.
- * @param content Content block where the surface can be accessed using
- *   [SpatialExternalSurfaceScope.onSurfaceCreated]. Composable content will be rendered in front of
- *   the user, slightly below the current gaze level. This default location is scaled with radius.
+ * @param surfaceProtection Sets the Surface's content protection. Use this to redact content in
+ *   screen recordings. Setting this to [SurfaceProtection.Protected] is required if decoding DRM
+ *   media content.
+ * @param onSurface Lambda invoked when the surface is created through
+ *   [SpatialExternalSurfaceScope.onSurfaceCreated] and destroyed through
+ *   [SpatialExternalSurfaceScope.onSurfaceDestroyed].
  */
 @Composable
 @SubspaceComposable
-@ExperimentalComposeApi
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialExternalSurface360Sphere(
     stereoMode: StereoMode,
     modifier: SubspaceModifier = SubspaceModifier,
     radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
-    content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
+    onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     SpatialExternalSurfaceSphere(
         stereoMode = stereoMode,
@@ -368,7 +346,7 @@ public fun SpatialExternalSurface360Sphere(
         radius = radius,
         featheringEffect = featheringEffect,
         surfaceProtection = surfaceProtection,
-        content = content,
+        onSurface = onSurface,
     )
 }
 
@@ -381,7 +359,7 @@ private fun SpatialExternalSurfaceSphere(
     radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
-    content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
+    onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val density = LocalDensity.current
@@ -390,17 +368,6 @@ private fun SpatialExternalSurfaceSphere(
 
     val coreSurfaceEntity =
         remember(surfaceProtection) {
-            val headPose =
-                if (
-                    session.config.headTracking == HeadTrackingMode.LAST_KNOWN ||
-                        session.configure(
-                            config = session.config.copy(headTracking = HeadTrackingMode.LAST_KNOWN)
-                        ) is SessionConfigureSuccess
-                ) {
-                    session.scene.spatialUser.head?.activitySpacePose
-                } else {
-                    null
-                }
             CoreSphereSurfaceEntity(
                 SurfaceEntity.create(
                     session = checkNotNull(session) { "Session is required" },
@@ -413,7 +380,6 @@ private fun SpatialExternalSurfaceSphere(
                             SurfaceEntity.Shape.Sphere(meterRadius)
                         },
                 ),
-                headPose,
                 density,
             )
         }
@@ -425,7 +391,7 @@ private fun SpatialExternalSurfaceSphere(
     coreSurfaceEntity.radius = meterRadius
     coreSurfaceEntity.setFeatheringEffect(featheringEffect)
 
-    LaunchedEffect(instance) { instance.executeOnCreate() }
+    LaunchedEffect(instance) { instance.onSurface() }
 
     // Sets a black environment if a custom one isn't set. With a custom background at 0
     // passthrough set, the system will minimize the application if the user leaves the boundary for
@@ -462,71 +428,23 @@ private fun SpatialExternalSurfaceSphere(
     }
 
     key(coreSurfaceEntity) {
-        val density = LocalDensity.current
         SubspaceLayout(
             modifier = modifier,
             coreEntity = coreSurfaceEntity,
-            content = {
-                SpatialBox(
-                    modifier =
-                        SubspaceModifier.fillMaxSize()
-                            .offset(
-                                z = radius * SPHERE_CONTENT_Z_OFFSET_PERCENT,
-                                y = radius * SPHERE_CONTENT_Y_OFFSET_PERCENT,
-                            )
-                ) {
-                    instance.content()
-                }
-            },
-            measurePolicy = SphereMeasurePolicy(with(density) { radius.roundToPx() }),
+            measurePolicy = SphereMeasurePolicy(),
         )
     }
 }
 
-/** Uses [radius] to measure a cube out of the hemisphere or front half of a sphere. */
-internal class SphereMeasurePolicy(private val radius: Int) : SubspaceMeasurePolicy {
+/**
+ * A sphere's measured size is always 0 as it will render behind content and shouldn't occupy layout
+ * space.
+ */
+internal class SphereMeasurePolicy() : SubspaceMeasurePolicy {
     override fun SubspaceMeasureScope.measure(
         measurables: List<SubspaceMeasurable>,
         constraints: VolumeConstraints,
     ): SubspaceMeasureResult {
-        if (measurables.isEmpty()) {
-            return layout(radius * 2, radius * 2, radius) {}
-        }
-
-        val contentConstraints =
-            VolumeConstraints(maxWidth = radius * 2, maxHeight = radius * 2, maxDepth = radius)
-
-        val placeables = arrayOfNulls<SubspacePlaceable>(measurables.size)
-        var boxWidth = radius * 2
-        var boxHeight = radius * 2
-        var boxDepth = radius
-        measurables.fastForEachIndexed { index, measurable ->
-            val placeable = measurable.measure(contentConstraints)
-            placeables[index] = placeable
-            boxWidth = max(boxWidth, placeable.measuredWidth)
-            boxHeight = max(boxHeight, placeable.measuredHeight)
-            boxDepth = max(boxDepth, placeable.measuredDepth)
-        }
-
-        return layout(boxWidth, boxHeight, boxDepth) {
-            val space = IntVolumeSize(boxWidth, boxHeight, boxDepth)
-            placeables.forEachIndexed { index, placeable ->
-                placeable as SubspacePlaceable
-                val measurable = measurables[index]
-                val childSpatialAlignment =
-                    SphereParentData(SpatialAlignment.Center)
-                        .also { measurable.adjustParams(it) }
-                        .alignment
-                placeable.place(Pose(childSpatialAlignment.position(placeable.size(), space)))
-            }
-        }
+        return layout(0, 0, 0) {}
     }
-
-    private fun SubspacePlaceable.size() =
-        IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
 }
-
-private data class SphereParentData(var alignment: SpatialAlignment) : ParentLayoutParamsAdjustable
-
-private const val SPHERE_CONTENT_Z_OFFSET_PERCENT = -0.11f
-private const val SPHERE_CONTENT_Y_OFFSET_PERCENT = SPHERE_CONTENT_Z_OFFSET_PERCENT / 3

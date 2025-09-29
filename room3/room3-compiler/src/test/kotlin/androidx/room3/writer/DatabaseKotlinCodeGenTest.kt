@@ -158,7 +158,7 @@ class DatabaseKotlinCodeGenTest {
     }
 
     @Test
-    fun database_javaSource() {
+    fun database_java() {
         val dbSrc =
             Source.java(
                 "MyDatabase",
@@ -195,6 +195,56 @@ class DatabaseKotlinCodeGenTest {
 
             @Entity
             public class MyEntity {
+                @PrimaryKey
+                public int pk;
+            }
+            """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(dbSrc, daoSrc, entitySrc),
+            expectedFilePath = getTestGoldenPath(testName.methodName),
+        )
+    }
+
+    @Test
+    fun database_packagePrivateVisibility_java() {
+        val dbSrc =
+            Source.java(
+                "MyDatabase",
+                """
+            import androidx.room3.*;
+
+            @Database(entities = { MyEntity.class }, version = 1, exportSchema = false)
+            abstract class MyDatabase extends RoomDatabase {
+              abstract MyDao getDao();
+            }
+            """
+                    .trimIndent(),
+            )
+        val daoSrc =
+            Source.java(
+                "MyDao",
+                """
+            import androidx.annotation.NonNull;
+            import androidx.room3.*;
+
+            @Dao
+            interface MyDao {
+              @Query("SELECT * FROM MyEntity")
+              @NonNull MyEntity getEntity();
+            }
+            """
+                    .trimIndent(),
+            )
+        val entitySrc =
+            Source.java(
+                "MyEntity",
+                """
+            import androidx.room3.*;
+
+            @Entity
+            class MyEntity {
                 @PrimaryKey
                 public int pk;
             }
@@ -263,12 +313,9 @@ class DatabaseKotlinCodeGenTest {
                 // Set ROOM_TEST_WRITE_SRCS env variable to make tests write expected sources,
                 // handy for big sweeping code gen changes. ;)
                 if (System.getenv("ROOM_TEST_WRITE_SRCS") != null) {
-                    writeTestSource(
-                        checkNotNull(this.findGeneratedSource(expectedSrc.relativePath)) {
-                            "Couldn't find gen src: $expectedSrc"
-                        },
-                        expectedFilePath,
-                    )
+                    this.findGeneratedSource(expectedSrc.relativePath)?.let { expectedSrc ->
+                        writeTestSource(source = expectedSrc, fileName = expectedFilePath)
+                    }
                 }
                 this.generatedSource(expectedSrc)
                 this.hasNoWarnings()

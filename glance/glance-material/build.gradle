@@ -28,7 +28,7 @@ android {
 
 androidx {
     name = "Glance Material"
-    type = SoftwareType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2022"
     description = "Glance Material 2 integration library." +
             " This library provides interop APIs with Material 2."

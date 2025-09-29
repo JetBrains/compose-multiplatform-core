@@ -213,6 +213,13 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                                     typeName = functionInfo.returnInfo.typeName,
                                     expressionBlock = it,
                                 )
+                            } else if (
+                                scope.language == CodeLanguage.KOTLIN &&
+                                    functionInfo.returnInfo == ReturnInfo.ID_LIST &&
+                                    functionInfo.returnType.asTypeName().rawTypeName ==
+                                        CommonTypeNames.MUTABLE_LIST
+                            ) {
+                                XCodeBlock.of("%L.toMutableList()", it)
                             } else {
                                 it
                             }
@@ -243,8 +250,7 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                     CodeLanguage.KOTLIN -> {
                         if (resultVar != null) {
                             // if it has more than 1 parameter, we would've already printed the
-                            // error
-                            // so we don't care about re-declaring the variable here
+                            // error so we don't care about re-declaring the variable here
                             addLocalVariable(
                                 name = resultVar,
                                 typeName = returnType.asTypeName(),
@@ -252,6 +258,9 @@ class InsertOrUpsertFunctionAdapter private constructor(private val functionInfo
                             )
                         } else {
                             addStatement("%L", resultFormat)
+                        }
+                        if (functionInfo.returnInfo == ReturnInfo.VOID_OBJECT) {
+                            addStatement("null")
                         }
                     }
                 }

@@ -1663,8 +1663,8 @@ package androidx.wear.protolayout.types {
 
   public final class LayoutColor {
     ctor public LayoutColor(@ColorInt int staticArgb, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor? dynamicArgb);
-    method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor? getDynamicArgb();
-    method public int getStaticArgb();
+    method @InaccessibleFromKotlin public androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor? getDynamicArgb();
+    method @InaccessibleFromKotlin public int getStaticArgb();
     property public androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor? dynamicArgb;
     property public int staticArgb;
   }
@@ -1672,8 +1672,8 @@ package androidx.wear.protolayout.types {
   public final class LayoutColorUtil {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.types.LayoutColor createLayoutColor(androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor, @ColorInt int staticArgb);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.types.LayoutColor createLayoutColor(androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor, @ColorInt long staticArgb);
-    method public static androidx.wear.protolayout.types.LayoutColor createLayoutColor(int);
-    method public static androidx.wear.protolayout.types.LayoutColor createLayoutColor(long);
+    method @InaccessibleFromKotlin public static androidx.wear.protolayout.types.LayoutColor createLayoutColor(int);
+    method @InaccessibleFromKotlin public static androidx.wear.protolayout.types.LayoutColor createLayoutColor(long);
     property public static androidx.wear.protolayout.types.LayoutColor int.argb;
     property public static androidx.wear.protolayout.types.LayoutColor long.argb;
   }
@@ -1682,9 +1682,9 @@ package androidx.wear.protolayout.types {
     ctor public LayoutString(String staticValue);
     ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public LayoutString(String staticValue, androidx.wear.protolayout.expression.DynamicBuilders.DynamicString dynamicValue);
     ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public LayoutString(String staticValue, androidx.wear.protolayout.expression.DynamicBuilders.DynamicString dynamicValue, androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint layoutConstraint);
-    method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicString? getDynamicValue();
-    method public androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint? getLayoutConstraint();
-    method public String getStaticValue();
+    method @InaccessibleFromKotlin public androidx.wear.protolayout.expression.DynamicBuilders.DynamicString? getDynamicValue();
+    method @InaccessibleFromKotlin public androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint? getLayoutConstraint();
+    method @InaccessibleFromKotlin public String getStaticValue();
     property public androidx.wear.protolayout.expression.DynamicBuilders.DynamicString? dynamicValue;
     property public androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint? layoutConstraint;
     property public String staticValue;
@@ -1694,7 +1694,7 @@ package androidx.wear.protolayout.types {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint asLayoutConstraint(String, optional int alignment);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.types.LayoutString createLayoutString(androidx.wear.protolayout.expression.DynamicBuilders.DynamicString, String staticValue);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.types.LayoutString createLayoutString(androidx.wear.protolayout.expression.DynamicBuilders.DynamicString, String staticValue, androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint layoutConstraint);
-    method public static androidx.wear.protolayout.types.LayoutString createLayoutString(String);
+    method @InaccessibleFromKotlin public static androidx.wear.protolayout.types.LayoutString createLayoutString(String);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint stringLayoutConstraint(String longestPattern);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint stringLayoutConstraint(String longestPattern, optional int alignment);
     property public static androidx.wear.protolayout.types.LayoutString String.layoutString;

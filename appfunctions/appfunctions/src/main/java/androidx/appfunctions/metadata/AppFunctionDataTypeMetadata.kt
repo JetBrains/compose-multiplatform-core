@@ -18,7 +18,6 @@ package androidx.appfunctions.metadata
 
 import android.annotation.SuppressLint
 import androidx.annotation.IntDef
-import androidx.annotation.RestrictTo
 import androidx.appsearch.annotation.Document
 import java.util.Objects
 
@@ -846,72 +845,69 @@ constructor(
 
 /** Represents the persistent storage format of the schema of a data type and its name. */
 @Document
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class AppFunctionNamedDataTypeMetadataDocument(
-    @Document.Namespace public val namespace: String = APP_FUNCTION_NAMESPACE,
+internal data class AppFunctionNamedDataTypeMetadataDocument(
+    @Document.Namespace val namespace: String = APP_FUNCTION_NAMESPACE,
     /** The id of the data type. */
-    @Document.Id public val id: String = APP_FUNCTION_ID_EMPTY,
+    @Document.Id val id: String = APP_FUNCTION_ID_EMPTY,
     /** The name of the data type. */
-    @Document.StringProperty public val name: String,
+    @Document.StringProperty val name: String,
     /** The data type metadata. */
-    @Document.DocumentProperty public val dataTypeMetadata: AppFunctionDataTypeMetadataDocument,
+    @Document.DocumentProperty val dataTypeMetadata: AppFunctionDataTypeMetadataDocument,
 )
 
 /** Represents the persistent storage format of [AppFunctionDataTypeMetadata]. */
 @Document
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class AppFunctionDataTypeMetadataDocument(
-    @Document.Namespace public val namespace: String = APP_FUNCTION_NAMESPACE,
+internal data class AppFunctionDataTypeMetadataDocument(
+    @Document.Namespace val namespace: String = APP_FUNCTION_NAMESPACE,
     /** The id of the data type. */
-    @Document.Id public val id: String = APP_FUNCTION_ID_EMPTY,
+    @Document.Id val id: String = APP_FUNCTION_ID_EMPTY,
     /** The data type. */
-    @Document.LongProperty @AppFunctionDataType public val type: Int,
+    @Document.LongProperty @AppFunctionDataType val type: Int,
 
     /**
      * If the [type] is [AppFunctionDataTypeMetadata.TYPE_ARRAY], this specifies the array content
      * data type.
      */
-    @Document.DocumentProperty public val itemType: AppFunctionDataTypeMetadataDocument? = null,
+    @Document.DocumentProperty val itemType: AppFunctionDataTypeMetadataDocument? = null,
     /**
      * If the [type] is [AppFunctionDataTypeMetadata.TYPE_OBJECT], this specified the object's
      * properties.
      */
     @Document.DocumentProperty
-    public val properties: List<AppFunctionNamedDataTypeMetadataDocument> = emptyList(),
+    val properties: List<AppFunctionNamedDataTypeMetadataDocument> = emptyList(),
 
     /**
      * If the [type] is [AppFunctionDataTypeMetadata.TYPE_ALL_OF], this specified the object's
      * properties.
      */
-    @Document.DocumentProperty
-    public val allOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
+    @Document.DocumentProperty val allOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
 
     /**
      * If the [type] is [AppFunctionDataTypeMetadata.TYPE_OBJECT], this specified the object's
      * required properties' names.
      */
-    @Document.StringProperty public val required: List<String> = emptyList(),
+    @Document.StringProperty val required: List<String> = emptyList(),
     /**
      * If the [type] is [AppFunctionDataTypeMetadata.TYPE_REFERENCE], this specified the reference.
      */
-    @Document.StringProperty public val dataTypeReference: String? = null,
+    @Document.StringProperty val dataTypeReference: String? = null,
     /** Whether the type is nullable. */
-    @Document.BooleanProperty public val isNullable: Boolean = false,
+    @Document.BooleanProperty val isNullable: Boolean = false,
     /**
      * If the [type] is [AppFunctionDataTypeMetadata.TYPE_OBJECT], this specified the object's
      * qualified name if available.
      */
-    @Document.StringProperty public val objectQualifiedName: String? = null,
+    @Document.StringProperty val objectQualifiedName: String? = null,
     /** A description of the data type and its intended use. */
-    @Document.StringProperty public val description: String? = null,
+    @Document.StringProperty val description: String? = null,
     /** Enum values, that this data type is restricted to use. */
-    @Document.StringProperty public val enumValues: List<String> = emptyList(),
+    @Document.StringProperty val enumValues: List<String> = emptyList(),
 ) {
     @SuppressLint(
         // When doesn't handle @IntDef correctly.
         "WrongConstant"
     )
-    public fun toAppFunctionDataTypeMetadata(): AppFunctionDataTypeMetadata =
+    fun toAppFunctionDataTypeMetadata(): AppFunctionDataTypeMetadata =
         when (type) {
             AppFunctionDataTypeMetadata.TYPE_ARRAY -> {
                 val itemType = checkNotNull(itemType) { "Item type must be present for array type" }

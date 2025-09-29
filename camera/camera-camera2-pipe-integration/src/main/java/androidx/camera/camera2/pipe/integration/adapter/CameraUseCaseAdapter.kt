@@ -28,8 +28,6 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.setupHDRnet
 import androidx.camera.camera2.pipe.integration.compat.workaround.toggleHDRPlus
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.DisplayInfoManager
-import androidx.camera.camera2.pipe.integration.impl.SESSION_PHYSICAL_CAMERA_ID_OPTION
-import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_CASE_OPTION
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
 import androidx.camera.core.ExperimentalZeroShutterLag
 import androidx.camera.core.ImageCapture
@@ -255,11 +253,14 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
             val extendedConfig =
                 MutableOptionsBundle.create().apply {
                     camera2Config.getPhysicalCameraId()?.let { physicalCameraId ->
-                        insertOption(SESSION_PHYSICAL_CAMERA_ID_OPTION, physicalCameraId)
+                        insertOption(
+                            Camera2ImplConfig.SESSION_PHYSICAL_CAMERA_ID_OPTION,
+                            physicalCameraId,
+                        )
                     }
 
                     camera2Config.getStreamUseCase()?.let { streamUseCase ->
-                        insertOption(STREAM_USE_CASE_OPTION, streamUseCase)
+                        insertOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION, streamUseCase)
                     }
                 }
             builder.addImplementationOptions(extendedConfig)

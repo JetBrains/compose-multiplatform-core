@@ -102,15 +102,14 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override val activitySpace: ActivitySpace = FakeActivitySpace()
 
-    override val headActivityPose: HeadActivityPose? =
-        object : HeadActivityPose, FakeActivityPose() {}
+    override val headActivityPose: HeadActivityPose? = FakeHeadActivityPose()
 
     override val activitySpaceRootImpl: Entity = activitySpace
 
     override val spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
 
     override val perceptionSpaceActivityPose: PerceptionSpaceActivityPose =
-        object : PerceptionSpaceActivityPose, FakeActivityPose() {}
+        FakePerceptionSpaceActivityPose()
 
     override val soundPoolExtensionsWrapper: SoundPoolExtensionsWrapper =
         FakeSoundPoolExtensionsWrapper()
@@ -124,9 +123,21 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     override var spatialModeChangeListener: SpatialModeChangeListener =
         FakeSpatialModeChangeListener()
 
+    private val cameraViewActivityPoseL: FakeCameraViewActivityPose =
+        FakeCameraViewActivityPose(CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE)
+
+    private val cameraViewActivityPoseR: FakeCameraViewActivityPose =
+        FakeCameraViewActivityPose(CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE)
+
     override fun getCameraViewActivityPose(
         @CameraViewActivityPose.CameraType cameraType: Int
-    ): CameraViewActivityPose? = FakeCameraViewActivityPose()
+    ): CameraViewActivityPose? {
+        return when (cameraType) {
+            CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE -> cameraViewActivityPoseL
+            CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE -> cameraViewActivityPoseR
+            else -> null
+        }
+    }
 
     @Suppress("AsyncSuffixFuture")
     override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =

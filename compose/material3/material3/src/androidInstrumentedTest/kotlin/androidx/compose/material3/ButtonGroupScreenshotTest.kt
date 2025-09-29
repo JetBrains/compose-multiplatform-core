@@ -511,7 +511,7 @@ class ButtonGroupScreenshotTest {
                     overflowIndicator = { menuState ->
                         IconButton(
                             onClick = {
-                                if (menuState.isExpanded) {
+                                if (menuState.isShowing) {
                                     menuState.dismiss()
                                 } else {
                                     menuState.show()
@@ -557,7 +557,7 @@ class ButtonGroupScreenshotTest {
                     overflowIndicator = { menuState ->
                         IconButton(
                             onClick = {
-                                if (menuState.isExpanded) {
+                                if (menuState.isShowing) {
                                     menuState.dismiss()
                                 } else {
                                     menuState.show()

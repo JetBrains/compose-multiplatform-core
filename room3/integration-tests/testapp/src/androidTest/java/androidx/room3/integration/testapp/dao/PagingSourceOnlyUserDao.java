@@ -22,6 +22,8 @@ import androidx.room3.Query;
 import androidx.room3.integration.testapp.TestDatabase;
 import androidx.room3.integration.testapp.vo.User;
 
+import org.jspecify.annotations.NonNull;
+
 @SuppressWarnings("SameParameterValue")
 @Dao
 public abstract class PagingSourceOnlyUserDao {
@@ -33,5 +35,5 @@ public abstract class PagingSourceOnlyUserDao {
     }
 
     @Query("SELECT * FROM user where mAge > :age")
-    public abstract PagingSource<Integer, User> loadPagedByAgePagingSource(int age);
+    public abstract PagingSource<@NonNull Integer, @NonNull User> loadPagedByAgePagingSource(int age);
 }

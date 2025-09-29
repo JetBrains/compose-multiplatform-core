@@ -32,12 +32,12 @@ package androidx.xr.runtime {
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking);
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation);
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence);
-    method public androidx.xr.runtime.Config.AnchorPersistenceMode getAnchorPersistence();
-    method public androidx.xr.runtime.Config.DepthEstimationMode getDepthEstimation();
-    method public androidx.xr.runtime.Config.FaceTrackingMode getFaceTracking();
-    method public androidx.xr.runtime.Config.HandTrackingMode getHandTracking();
-    method public androidx.xr.runtime.Config.HeadTrackingMode getHeadTracking();
-    method public androidx.xr.runtime.Config.PlaneTrackingMode getPlaneTracking();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config.AnchorPersistenceMode getAnchorPersistence();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config.DepthEstimationMode getDepthEstimation();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config.FaceTrackingMode getFaceTracking();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config.HandTrackingMode getHandTracking();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config.HeadTrackingMode getHeadTracking();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config.PlaneTrackingMode getPlaneTracking();
     property public androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence;
     property public androidx.xr.runtime.Config.DepthEstimationMode depthEstimation;
     property public androidx.xr.runtime.Config.FaceTrackingMode faceTracking;
@@ -129,7 +129,7 @@ package androidx.xr.runtime {
 
   public final class CoreState {
     ctor public CoreState(kotlin.time.ComparableTimeMark timeMark);
-    method public kotlin.time.ComparableTimeMark getTimeMark();
+    method @InaccessibleFromKotlin public kotlin.time.ComparableTimeMark getTimeMark();
     property public kotlin.time.ComparableTimeMark timeMark;
   }
 
@@ -148,8 +148,8 @@ package androidx.xr.runtime {
     method public static androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity, androidx.lifecycle.LifecycleOwner lifecycleOwner);
     method public static androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity, androidx.lifecycle.LifecycleOwner lifecycleOwner, optional kotlin.coroutines.CoroutineContext coroutineContext);
     method public static androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity, optional kotlin.coroutines.CoroutineContext coroutineContext);
-    method public androidx.xr.runtime.Config getConfig();
-    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.runtime.CoreState> getState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config getConfig();
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.runtime.CoreState> getState();
     property public androidx.xr.runtime.Config config;
     property public kotlinx.coroutines.flow.StateFlow<androidx.xr.runtime.CoreState> state;
     field public static final androidx.xr.runtime.Session.Companion Companion;
@@ -164,12 +164,8 @@ package androidx.xr.runtime {
 
   public final class SessionConfigureCalibrationRequired extends androidx.xr.runtime.SessionConfigureResult {
     ctor public SessionConfigureCalibrationRequired(androidx.xr.runtime.RequiredCalibrationType calibrationType);
-    method public androidx.xr.runtime.RequiredCalibrationType getCalibrationType();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.RequiredCalibrationType getCalibrationType();
     property public androidx.xr.runtime.RequiredCalibrationType calibrationType;
-  }
-
-  public final class SessionConfigureConfigurationNotSupported extends androidx.xr.runtime.SessionConfigureResult {
-    ctor public SessionConfigureConfigurationNotSupported();
   }
 
   public final class SessionConfigureGooglePlayServicesLocationLibraryNotLinked extends androidx.xr.runtime.SessionConfigureResult {
@@ -185,7 +181,7 @@ package androidx.xr.runtime {
 
   public final class SessionCreateApkRequired extends androidx.xr.runtime.SessionCreateResult {
     ctor public SessionCreateApkRequired(String requiredApk);
-    method public String getRequiredApk();
+    method @InaccessibleFromKotlin public String getRequiredApk();
     property public String requiredApk;
   }
 
@@ -194,7 +190,7 @@ package androidx.xr.runtime {
 
   public final class SessionCreateSuccess extends androidx.xr.runtime.SessionCreateResult {
     ctor public SessionCreateSuccess(androidx.xr.runtime.Session session);
-    method public androidx.xr.runtime.Session getSession();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Session getSession();
     property public androidx.xr.runtime.Session session;
   }
 
@@ -228,8 +224,8 @@ package androidx.xr.runtime.math {
 
   public final class BoundingBox {
     ctor public BoundingBox(androidx.xr.runtime.math.Vector3 min, androidx.xr.runtime.math.Vector3 max);
-    method public androidx.xr.runtime.math.Vector3 getMax();
-    method public androidx.xr.runtime.math.Vector3 getMin();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getMax();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getMin();
     property public androidx.xr.runtime.math.Vector3 max;
     property public androidx.xr.runtime.math.Vector3 min;
   }
@@ -239,8 +235,8 @@ package androidx.xr.runtime.math {
     ctor public FloatSize2d(optional float width, optional float height);
     method public operator androidx.xr.runtime.math.FloatSize2d div(float divisor);
     method public operator androidx.xr.runtime.math.FloatSize2d div(int divisor);
-    method public float getHeight();
-    method public float getWidth();
+    method @InaccessibleFromKotlin public float getHeight();
+    method @InaccessibleFromKotlin public float getWidth();
     method public operator androidx.xr.runtime.math.FloatSize2d times(float scalar);
     method public operator androidx.xr.runtime.math.FloatSize2d times(int scalar);
     method public androidx.xr.runtime.math.FloatSize3d to3d(optional float depth);
@@ -253,9 +249,9 @@ package androidx.xr.runtime.math {
     ctor public FloatSize3d(optional float width, optional float height, optional float depth);
     method public operator androidx.xr.runtime.math.FloatSize3d div(float divisor);
     method public operator androidx.xr.runtime.math.FloatSize3d div(int divisor);
-    method public float getDepth();
-    method public float getHeight();
-    method public float getWidth();
+    method @InaccessibleFromKotlin public float getDepth();
+    method @InaccessibleFromKotlin public float getHeight();
+    method @InaccessibleFromKotlin public float getWidth();
     method public operator androidx.xr.runtime.math.FloatSize3d times(float scalar);
     method public operator androidx.xr.runtime.math.FloatSize3d times(int scalar);
     method public androidx.xr.runtime.math.FloatSize2d to2d();
@@ -267,8 +263,8 @@ package androidx.xr.runtime.math {
   public final class IntSize2d {
     ctor public IntSize2d();
     ctor public IntSize2d(optional int width, optional int height);
-    method public int getHeight();
-    method public int getWidth();
+    method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public int getWidth();
     property public int height;
     property public int width;
   }
@@ -287,12 +283,12 @@ package androidx.xr.runtime.math {
     method public static androidx.xr.runtime.math.Matrix3 fromQuaternion(androidx.xr.runtime.math.Quaternion quaternion);
     method public static androidx.xr.runtime.math.Matrix3 fromScale(androidx.xr.runtime.math.Vector3 scale);
     method public static androidx.xr.runtime.math.Matrix3 fromScale(float scale);
-    method public float[] getData();
-    method public androidx.xr.runtime.math.Matrix3 getInverse();
-    method public androidx.xr.runtime.math.Quaternion getRotation();
-    method public androidx.xr.runtime.math.Vector3 getScale();
-    method public androidx.xr.runtime.math.Matrix3 getTranspose();
-    method public boolean isTrs();
+    method @InaccessibleFromKotlin public float[] getData();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix3 getInverse();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Quaternion getRotation();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getScale();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix3 getTranspose();
+    method @InaccessibleFromKotlin public boolean isTrs();
     method public operator androidx.xr.runtime.math.Matrix3 times(androidx.xr.runtime.math.Matrix3 other);
     property public float[] data;
     property public androidx.xr.runtime.math.Matrix3 inverse;
@@ -323,14 +319,14 @@ package androidx.xr.runtime.math {
     method public static androidx.xr.runtime.math.Matrix4 fromScale(float scale);
     method public static androidx.xr.runtime.math.Matrix4 fromTranslation(androidx.xr.runtime.math.Vector3 translation);
     method public static androidx.xr.runtime.math.Matrix4 fromTrs(androidx.xr.runtime.math.Vector3 translation, androidx.xr.runtime.math.Quaternion rotation, androidx.xr.runtime.math.Vector3 scale);
-    method public float[] getData();
-    method public androidx.xr.runtime.math.Matrix4 getInverse();
-    method public androidx.xr.runtime.math.Pose getPose();
-    method public androidx.xr.runtime.math.Quaternion getRotation();
-    method public androidx.xr.runtime.math.Vector3 getScale();
-    method public androidx.xr.runtime.math.Vector3 getTranslation();
-    method public androidx.xr.runtime.math.Matrix4 getTranspose();
-    method public boolean isTrs();
+    method @InaccessibleFromKotlin public float[] getData();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix4 getInverse();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Quaternion getRotation();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getScale();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getTranslation();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Matrix4 getTranspose();
+    method @InaccessibleFromKotlin public boolean isTrs();
     method public operator androidx.xr.runtime.math.Matrix4 times(androidx.xr.runtime.math.Matrix4 other);
     method public androidx.xr.runtime.math.Matrix4 unscaled();
     property public float[] data;
@@ -369,15 +365,15 @@ package androidx.xr.runtime.math {
     method public static float distance(androidx.xr.runtime.math.Pose lhs, androidx.xr.runtime.math.Pose rhs);
     method public static androidx.xr.runtime.math.Pose fromLookAt(androidx.xr.runtime.math.Vector3 eye, androidx.xr.runtime.math.Vector3 target);
     method public static androidx.xr.runtime.math.Pose fromLookAt(androidx.xr.runtime.math.Vector3 eye, androidx.xr.runtime.math.Vector3 target, optional androidx.xr.runtime.math.Vector3 up);
-    method public inline androidx.xr.runtime.math.Vector3 getBackward();
-    method public inline androidx.xr.runtime.math.Vector3 getDown();
-    method public inline androidx.xr.runtime.math.Vector3 getForward();
-    method public androidx.xr.runtime.math.Pose getInverse();
-    method public inline androidx.xr.runtime.math.Vector3 getLeft();
-    method public inline androidx.xr.runtime.math.Vector3 getRight();
-    method public androidx.xr.runtime.math.Quaternion getRotation();
-    method public androidx.xr.runtime.math.Vector3 getTranslation();
-    method public inline androidx.xr.runtime.math.Vector3 getUp();
+    method @InaccessibleFromKotlin public inline androidx.xr.runtime.math.Vector3 getBackward();
+    method @InaccessibleFromKotlin public inline androidx.xr.runtime.math.Vector3 getDown();
+    method @InaccessibleFromKotlin public inline androidx.xr.runtime.math.Vector3 getForward();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getInverse();
+    method @InaccessibleFromKotlin public inline androidx.xr.runtime.math.Vector3 getLeft();
+    method @InaccessibleFromKotlin public inline androidx.xr.runtime.math.Vector3 getRight();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Quaternion getRotation();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getTranslation();
+    method @InaccessibleFromKotlin public inline androidx.xr.runtime.math.Vector3 getUp();
     method public static androidx.xr.runtime.math.Pose lerp(androidx.xr.runtime.math.Pose start, androidx.xr.runtime.math.Pose end, float ratio);
     method public androidx.xr.runtime.math.Pose rotate(androidx.xr.runtime.math.Quaternion rotation);
     method public infix androidx.xr.runtime.math.Vector3 transformPoint(androidx.xr.runtime.math.Vector3 point);
@@ -426,13 +422,13 @@ package androidx.xr.runtime.math {
     method public static androidx.xr.runtime.math.Quaternion fromLookTowards(androidx.xr.runtime.math.Vector3 forward, androidx.xr.runtime.math.Vector3 up);
     method public static androidx.xr.runtime.math.Quaternion fromRotation(androidx.xr.runtime.math.Quaternion start, androidx.xr.runtime.math.Quaternion end);
     method public static androidx.xr.runtime.math.Quaternion fromRotation(androidx.xr.runtime.math.Vector3 start, androidx.xr.runtime.math.Vector3 end);
-    method public kotlin.Pair<androidx.xr.runtime.math.Vector3,java.lang.Float> getAxisAngle();
-    method public androidx.xr.runtime.math.Vector3 getEulerAngles();
-    method public inline androidx.xr.runtime.math.Quaternion getInverse();
-    method public float getW();
-    method public float getX();
-    method public float getY();
-    method public float getZ();
+    method @InaccessibleFromKotlin public kotlin.Pair<androidx.xr.runtime.math.Vector3,java.lang.Float> getAxisAngle();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getEulerAngles();
+    method @InaccessibleFromKotlin public inline androidx.xr.runtime.math.Quaternion getInverse();
+    method @InaccessibleFromKotlin public float getW();
+    method @InaccessibleFromKotlin public float getX();
+    method @InaccessibleFromKotlin public float getY();
+    method @InaccessibleFromKotlin public float getZ();
     method public static androidx.xr.runtime.math.Quaternion lerp(androidx.xr.runtime.math.Quaternion start, androidx.xr.runtime.math.Quaternion end, float ratio);
     method public inline operator androidx.xr.runtime.math.Quaternion minus(androidx.xr.runtime.math.Quaternion other);
     method public inline operator androidx.xr.runtime.math.Quaternion plus(androidx.xr.runtime.math.Quaternion other);
@@ -471,8 +467,8 @@ package androidx.xr.runtime.math {
     ctor public Ray();
     ctor public Ray(androidx.xr.runtime.math.Ray other);
     ctor public Ray(optional androidx.xr.runtime.math.Vector3 origin, optional androidx.xr.runtime.math.Vector3 direction);
-    method public androidx.xr.runtime.math.Vector3 getDirection();
-    method public androidx.xr.runtime.math.Vector3 getOrigin();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getDirection();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getOrigin();
     property public androidx.xr.runtime.math.Vector3 direction;
     property public androidx.xr.runtime.math.Vector3 origin;
   }
@@ -492,10 +488,10 @@ package androidx.xr.runtime.math {
     method public static float distance(androidx.xr.runtime.math.Vector2 vector1, androidx.xr.runtime.math.Vector2 vector2);
     method public inline operator androidx.xr.runtime.math.Vector2 div(float c);
     method public inline infix float dot(androidx.xr.runtime.math.Vector2 other);
-    method public inline float getLength();
-    method public inline float getLengthSquared();
-    method public float getX();
-    method public float getY();
+    method @InaccessibleFromKotlin public inline float getLength();
+    method @InaccessibleFromKotlin public inline float getLengthSquared();
+    method @InaccessibleFromKotlin public float getX();
+    method @InaccessibleFromKotlin public float getY();
     method public androidx.xr.runtime.math.Vector2 inverse();
     method public static androidx.xr.runtime.math.Vector2 lerp(androidx.xr.runtime.math.Vector2 start, androidx.xr.runtime.math.Vector2 end, float ratio);
     method public inline operator androidx.xr.runtime.math.Vector2 minus(androidx.xr.runtime.math.Vector2 other);
@@ -548,11 +544,11 @@ package androidx.xr.runtime.math {
     method public operator androidx.xr.runtime.math.Vector3 div(float c);
     method public infix float dot(androidx.xr.runtime.math.Vector3 other);
     method public static androidx.xr.runtime.math.Vector3 fromValue(float value);
-    method public inline float getLength();
-    method public inline float getLengthSquared();
-    method public float getX();
-    method public float getY();
-    method public float getZ();
+    method @InaccessibleFromKotlin public inline float getLength();
+    method @InaccessibleFromKotlin public inline float getLengthSquared();
+    method @InaccessibleFromKotlin public float getX();
+    method @InaccessibleFromKotlin public float getY();
+    method @InaccessibleFromKotlin public float getZ();
     method public androidx.xr.runtime.math.Vector3 inverse();
     method public static androidx.xr.runtime.math.Vector3 lerp(androidx.xr.runtime.math.Vector3 start, androidx.xr.runtime.math.Vector3 end, float ratio);
     method public static androidx.xr.runtime.math.Vector3 max(androidx.xr.runtime.math.Vector3 a, androidx.xr.runtime.math.Vector3 b);
@@ -618,12 +614,12 @@ package androidx.xr.runtime.math {
     method public operator androidx.xr.runtime.math.Vector4 div(float c);
     method public infix float dot(androidx.xr.runtime.math.Vector4 other);
     method public static androidx.xr.runtime.math.Vector4 fromValue(float value);
-    method public inline float getLength();
-    method public inline float getLengthSquared();
-    method public float getW();
-    method public float getX();
-    method public float getY();
-    method public float getZ();
+    method @InaccessibleFromKotlin public inline float getLength();
+    method @InaccessibleFromKotlin public inline float getLengthSquared();
+    method @InaccessibleFromKotlin public float getW();
+    method @InaccessibleFromKotlin public float getX();
+    method @InaccessibleFromKotlin public float getY();
+    method @InaccessibleFromKotlin public float getZ();
     method public androidx.xr.runtime.math.Vector4 inverse();
     method public static androidx.xr.runtime.math.Vector4 lerp(androidx.xr.runtime.math.Vector4 start, androidx.xr.runtime.math.Vector4 end, float ratio);
     method public static androidx.xr.runtime.math.Vector4 max(androidx.xr.runtime.math.Vector4 a, androidx.xr.runtime.math.Vector4 b);

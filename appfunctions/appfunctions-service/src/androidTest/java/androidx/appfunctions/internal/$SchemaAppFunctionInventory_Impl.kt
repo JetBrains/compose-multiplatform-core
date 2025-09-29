@@ -53,7 +53,6 @@ class `$SchemaAppFunctionInventory_Impl` : SchemaAppFunctionInventory() {
             schema = this.schema,
             parameters = this.parameters,
             response = this.response,
-            components = this.components,
         )
     }
 }

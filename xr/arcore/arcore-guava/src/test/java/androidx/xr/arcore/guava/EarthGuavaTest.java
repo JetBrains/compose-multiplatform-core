@@ -42,6 +42,7 @@ import androidx.xr.arcore.internal.AnchorResourcesExhaustedException;
 import androidx.xr.arcore.internal.AnchorUnsupportedLocationException;
 import androidx.xr.arcore.testing.FakePerceptionManager;
 import androidx.xr.arcore.testing.FakeRuntimeEarth;
+import androidx.xr.runtime.Config;
 import androidx.xr.runtime.Session;
 import androidx.xr.runtime.SessionCreateSuccess;
 import androidx.xr.runtime.math.Pose;
@@ -261,6 +262,19 @@ public class EarthGuavaTest {
                         mSession =
                                 ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
                                         .getSession();
+                        mXrResourcesManager.setLifecycleManager$arcore_release(
+                                SessionExtKt.getPerceptionRuntime(mSession).getLifecycleManager());
+                        mSession.configure(
+                                new Config(
+                                        Config.PlaneTrackingMode.DISABLED,
+                                        java.util.Collections.emptyList(),
+                                        Config.HandTrackingMode.DISABLED,
+                                        Config.DeviceTrackingMode.DISABLED,
+                                        Config.DepthEstimationMode.DISABLED,
+                                        Config.AnchorPersistenceMode.DISABLED,
+                                        Config.FaceTrackingMode.DISABLED,
+                                        Config.GeospatialMode.EARTH,
+                                        Config.EyeTrackingMode.DISABLED));
 
                         try {
                             testBody.run();

@@ -32,15 +32,8 @@ import io.reactivex.Flowable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subscribers.TestSubscriber
 import java.util.Date
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.runBlocking
-import org.hamcrest.CoreMatchers
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.CoreMatchers.notNullValue
-import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -53,7 +46,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
     private companion object {
         @JvmStatic
         @Parameters(name = "useDriver={0}")
-        fun parameters() = UseDriver.entries.toTypedArray()
+        fun parameters() = arrayOf(UseDriver.BUNDLED, UseDriver.ANDROID)
     }
 
     @Test
@@ -66,7 +59,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
                 add(TestUtil.PUBLISHER2)
             }
         val result = booksDao.addPublisherReturnArray(publisherList)
-        assertEquals(result[1], 2)
+        assertThat(result[1]).isEqualTo(2)
     }
 
     @Test
@@ -75,7 +68,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        assertThat(booksDao.getBook(TestUtil.BOOK_1.bookId), `is`<Book>(TestUtil.BOOK_1))
+        assertThat(booksDao.getBook(TestUtil.BOOK_1.bookId)).isEqualTo(TestUtil.BOOK_1)
     }
 
     @SdkSuppress(minSdkVersion = 24)
@@ -85,19 +78,15 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        assertThat(
-            booksDao.getBookJavaOptional(TestUtil.BOOK_1.bookId),
-            `is`<java.util.Optional<Book>>(java.util.Optional.of(TestUtil.BOOK_1)),
-        )
+        assertThat(booksDao.getBookJavaOptional(TestUtil.BOOK_1.bookId))
+            .isEqualTo(java.util.Optional.of(TestUtil.BOOK_1))
     }
 
     @SdkSuppress(minSdkVersion = 24)
     @Test
     fun bookByIdJavaOptionalEmpty() {
-        assertThat(
-            booksDao.getBookJavaOptional(TestUtil.BOOK_1.bookId),
-            `is`<java.util.Optional<Book>>(java.util.Optional.empty()),
-        )
+        assertThat(booksDao.getBookJavaOptional(TestUtil.BOOK_1.bookId))
+            .isEqualTo(java.util.Optional.empty<Book>())
     }
 
     @Test
@@ -106,10 +95,8 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        assertThat(
-            booksDao.getBookListenableFuture(TestUtil.BOOK_1.bookId).get(),
-            `is`<Book>(TestUtil.BOOK_1),
-        )
+        assertThat(booksDao.getBookListenableFuture(TestUtil.BOOK_1.bookId).get())
+            .isEqualTo(TestUtil.BOOK_1)
     }
 
     @Test
@@ -118,10 +105,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        assertThat(
-            booksDao.getBookOptional(TestUtil.BOOK_1.bookId),
-            `is`<Optional<Book>>(Optional.of(TestUtil.BOOK_1)),
-        )
+        assertThat(booksDao.getBookOptional(TestUtil.BOOK_1.bookId)).hasValue(TestUtil.BOOK_1)
     }
 
     @Test
@@ -130,26 +114,19 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        assertThat(
-            booksDao.getBookOptionalListenableFuture(TestUtil.BOOK_1.bookId).get(),
-            `is`<Optional<Book>>(Optional.of(TestUtil.BOOK_1)),
-        )
+        assertThat(booksDao.getBookOptionalListenableFuture(TestUtil.BOOK_1.bookId).get())
+            .hasValue(TestUtil.BOOK_1)
     }
 
     @Test
     fun bookByIdOptionalListenableFutureAbsent() {
-        assertThat(
-            booksDao.getBookOptionalListenableFuture(TestUtil.BOOK_1.bookId).get(),
-            `is`<Optional<Book>>(Optional.absent()),
-        )
+        assertThat(booksDao.getBookOptionalListenableFuture(TestUtil.BOOK_1.bookId).get())
+            .isAbsent()
     }
 
     @Test
     fun bookByIdOptionalAbsent() {
-        assertThat(
-            booksDao.getBookOptional(TestUtil.BOOK_1.bookId),
-            `is`<Optional<Book>>(Optional.absent()),
-        )
+        assertThat(booksDao.getBookOptional(TestUtil.BOOK_1.bookId)).isAbsent()
     }
 
     @Test
@@ -165,8 +142,8 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
                 .observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
                 .subscribeWith(TestSubscriber())
         drain()
-        assertThat(subscriber.values().size, `is`(1))
-        assertThat(subscriber.values()[0], `is`(Optional.of(TestUtil.BOOK_1)))
+        assertThat(subscriber.values()).hasSize(1)
+        assertThat(subscriber.values()[0]).hasValue(TestUtil.BOOK_1)
     }
 
     @Test
@@ -178,8 +155,8 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
                 .observeOn(Schedulers.from(ArchTaskExecutor.getMainThreadExecutor()))
                 .subscribeWith(TestSubscriber())
         drain()
-        assertThat(subscriber.values().size, `is`(1))
-        assertThat(subscriber.values()[0], `is`(Optional.absent()))
+        assertThat(subscriber.values()).hasSize(1)
+        assertThat(subscriber.values()[0]).isAbsent()
     }
 
     @Test
@@ -193,10 +170,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         val expectedList = ArrayList<BookWithPublisher>()
         expectedList.add(expected)
 
-        assertThat(
-            database.booksDao().getBooksWithPublisher(),
-            `is`<List<BookWithPublisher>>(expectedList),
-        )
+        assertThat(database.booksDao().getBooksWithPublisher()).isEqualTo(expectedList)
     }
 
     @Test
@@ -210,10 +184,8 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         val expectedList = ArrayList<BookWithPublisher>()
         expectedList.add(expected)
 
-        assertThat(
-            database.booksDao().getBooksWithPublisherListenableFuture().get(),
-            `is`<List<BookWithPublisher>>(expectedList),
-        )
+        assertThat(database.booksDao().getBooksWithPublisherListenableFuture().get())
+            .isEqualTo(expectedList)
     }
 
     @Test
@@ -221,13 +193,12 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        try {
-            booksDao.updateBookTitle(TestUtil.BOOK_1.bookId, null)
-            fail("updateBookTitle should have failed")
-        } catch (ex: SQLiteConstraintException) {
-            // ignored on purpose
-        } catch (ex: SQLiteException) {
-            assertThat(ex).hasMessageThat().contains("NOT NULL constraint failed")
+        val exception =
+            assertFailsWith<SQLiteException> {
+                booksDao.updateBookTitle(TestUtil.BOOK_1.bookId, null)
+            }
+        if (exception !is SQLiteConstraintException) {
+            assertThat(exception).hasMessageThat().contains("NOT NULL constraint failed")
         }
     }
 
@@ -240,10 +211,10 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         val actualPublisherWithBooks =
             booksDao.getPublisherWithBooks(TestUtil.PUBLISHER.publisherId)
 
-        assertThat(actualPublisherWithBooks.publisher, `is`<Publisher>(TestUtil.PUBLISHER))
-        assertThat(actualPublisherWithBooks.books?.size, `is`(2))
-        assertThat(actualPublisherWithBooks.books?.get(0), `is`<Book>(TestUtil.BOOK_1))
-        assertThat(actualPublisherWithBooks.books?.get(1), `is`<Book>(TestUtil.BOOK_2))
+        assertThat(actualPublisherWithBooks.publisher).isEqualTo(TestUtil.PUBLISHER)
+        assertThat(actualPublisherWithBooks.books).hasSize(2)
+        assertThat(actualPublisherWithBooks.books?.get(0)).isEqualTo(TestUtil.BOOK_1)
+        assertThat(actualPublisherWithBooks.books?.get(1)).isEqualTo(TestUtil.BOOK_2)
     }
 
     @Test // b/68077506
@@ -254,11 +225,9 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         val actualPublisherWithBooks =
             booksDao.getPublisherWithBookSales(TestUtil.PUBLISHER.publisherId)
 
-        assertThat(actualPublisherWithBooks.publisher, `is`<Publisher>(TestUtil.PUBLISHER))
-        assertThat(
-            actualPublisherWithBooks.sales,
-            `is`(listOf(TestUtil.BOOK_1.salesCnt, TestUtil.BOOK_2.salesCnt)),
-        )
+        assertThat(actualPublisherWithBooks.publisher).isEqualTo(TestUtil.PUBLISHER)
+        assertThat(actualPublisherWithBooks.sales)
+            .isEqualTo(listOf(TestUtil.BOOK_1.salesCnt, TestUtil.BOOK_2.salesCnt))
     }
 
     @Test
@@ -268,7 +237,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         val authorDb = database.booksDao().getAuthor(author.authorId)
 
-        assertThat(authorDb, CoreMatchers.`is`<Author>(author))
+        assertThat(authorDb).isEqualTo(author)
     }
 
     @Test
@@ -277,7 +246,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         val author = database.derivedDao().getAuthor(TestUtil.AUTHOR_1.authorId)
 
-        assertThat(author, CoreMatchers.`is`<Author>(TestUtil.AUTHOR_1))
+        assertThat(author).isEqualTo(TestUtil.AUTHOR_1)
     }
 
     @Test
@@ -290,7 +259,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
             database
                 .booksDao()
                 .getBooksMultiLineQuery(arrayListOf(TestUtil.BOOK_1.bookId, TestUtil.BOOK_2.bookId))
-        assertThat(books, `is`(listOf(TestUtil.BOOK_2, TestUtil.BOOK_1)))
+        assertThat(books).containsExactly(TestUtil.BOOK_2, TestUtil.BOOK_1).inOrder()
     }
 
     @Test
@@ -305,7 +274,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
                 .getBooksMultiLineQueryWithComment(
                     arrayListOf(TestUtil.BOOK_1.bookId, TestUtil.BOOK_2.bookId)
                 )
-        assertThat(books, `is`(listOf(TestUtil.BOOK_2, TestUtil.BOOK_1)))
+        assertThat(books).containsExactly(TestUtil.BOOK_2, TestUtil.BOOK_1).inOrder()
     }
 
     @Test
@@ -316,16 +285,14 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         val book3 = TestUtil.BOOK_3.copy(languages = setOf(Lang.EN))
         booksDao.addBooks(book1, book2, book3)
 
-        assertThat(
-            booksDao.findByLanguages(setOf(Lang.EN, Lang.TR)),
-            `is`(listOf(book1, book2, book3)),
-        )
+        assertThat(booksDao.findByLanguages(setOf(Lang.EN, Lang.TR)))
+            .containsExactly(book1, book2, book3)
 
-        assertThat(booksDao.findByLanguages(setOf(Lang.TR)), `is`(listOf(book1, book2)))
+        assertThat(booksDao.findByLanguages(setOf(Lang.TR))).containsExactly(book1, book2)
 
-        assertThat(booksDao.findByLanguages(setOf(Lang.ES)), `is`(listOf(book2)))
+        assertThat(booksDao.findByLanguages(setOf(Lang.ES))).containsExactly(book2)
 
-        assertThat(booksDao.findByLanguages(setOf(Lang.EN)), `is`(listOf(book3)))
+        assertThat(booksDao.findByLanguages(setOf(Lang.EN))).containsExactly(book3)
     }
 
     @Test
@@ -334,7 +301,7 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         val author = database.derivedDao().getAuthor(TestUtil.AUTHOR_1.authorId)
 
-        assertThat(author, CoreMatchers.`is`<Author>(TestUtil.AUTHOR_1))
+        assertThat(author).isEqualTo(TestUtil.AUTHOR_1)
     }
 
     @Test
@@ -343,20 +310,20 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
 
         val author = database.derivedDao().getAuthor(TestUtil.AUTHOR_1.authorId)
 
-        assertThat(author, CoreMatchers.`is`<Author>(TestUtil.AUTHOR_1))
+        assertThat(author).isEqualTo(TestUtil.AUTHOR_1)
     }
 
     @Test
     fun deleteAndAddPublisher() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.getPublishers().run {
-            assertThat(this.size, `is`(1))
-            assertThat(this.first(), `is`(equalTo(TestUtil.PUBLISHER)))
+            assertThat(this).hasSize(1)
+            assertThat(this.first()).isEqualTo(TestUtil.PUBLISHER)
         }
         booksDao.deleteAndAddPublisher(TestUtil.PUBLISHER, TestUtil.PUBLISHER2)
         booksDao.getPublishers().run {
-            assertThat(this.size, `is`(1))
-            assertThat(this.first(), `is`(equalTo(TestUtil.PUBLISHER2)))
+            assertThat(this).hasSize(1)
+            assertThat(this.first()).isEqualTo(TestUtil.PUBLISHER2)
         }
     }
 
@@ -364,13 +331,13 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
     fun deleteAndAddPublisher_immutableList() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.getPublishersImmutable().run {
-            assertThat(this.size, `is`(1))
-            assertThat(this.first(), `is`(equalTo(TestUtil.PUBLISHER)))
+            assertThat(this).hasSize(1)
+            assertThat(this.first()).isEqualTo(TestUtil.PUBLISHER)
         }
         booksDao.deleteAndAddPublisher(TestUtil.PUBLISHER, TestUtil.PUBLISHER2)
         booksDao.getPublishers().run {
-            assertThat(this.size, `is`(1))
-            assertThat(this.first(), `is`(equalTo(TestUtil.PUBLISHER2)))
+            assertThat(this).hasSize(1)
+            assertThat(this.first()).isEqualTo(TestUtil.PUBLISHER2)
         }
     }
 
@@ -378,19 +345,15 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
     fun deleteAndAddPublisher_failure() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.getPublishers().run {
-            assertThat(this.size, `is`(1))
-            assertThat(this.first(), `is`(equalTo(TestUtil.PUBLISHER)))
+            assertThat(this).hasSize(1)
+            assertThat(this.first()).isEqualTo(TestUtil.PUBLISHER)
         }
-        var throwable: Throwable? = null
-        try {
+        assertFailsWith<RuntimeException> {
             booksDao.deleteAndAddPublisher(TestUtil.PUBLISHER, TestUtil.PUBLISHER2, true)
-        } catch (e: RuntimeException) {
-            throwable = e
         }
-        assertThat(throwable, `is`(notNullValue()))
         booksDao.getPublishers().run {
-            assertThat(this.size, `is`(1))
-            assertThat(this.first(), `is`(equalTo(TestUtil.PUBLISHER)))
+            assertThat(this).hasSize(1)
+            assertThat(this.first()).isEqualTo(TestUtil.PUBLISHER)
         }
     }
 
@@ -401,42 +364,41 @@ class BooksDaoTest(useDriver: UseDriver) : TestDatabaseTest(useDriver) {
         booksDao.addBooks(*books.toTypedArray())
 
         runBlocking {
-            assertThat(booksDao.deleteBooksWithZeroSales(), `is`(equalTo(books)))
-            assertThat(booksDao.getBooksSuspend(), `is`(equalTo(emptyList())))
+            assertThat(booksDao.deleteBooksWithZeroSales()).isEqualTo(books)
+            assertThat(booksDao.getBooksSuspend()).isEmpty()
         }
     }
 
     @Test
     fun addAuthorPublisherBooks_failure() {
         runBlocking {
-            try {
-                booksDao.addAuthorPublisherBooks(
-                    author = TestUtil.AUTHOR_1,
-                    publisher = TestUtil.PUBLISHER,
-                    books = arrayOf(TestUtil.BOOK_1, TestUtil.BOOK_1),
-                )
-                fail("addAuthorPublisherBooks should have failed")
-            } catch (ex: SQLiteConstraintException) {
-                // ignored on purpose
-            } catch (ex: SQLiteException) {
-                assertThat(ex).hasMessageThat().contains("UNIQUE constraint failed")
+            val exception =
+                assertFailsWith<SQLiteException> {
+                    booksDao.addAuthorPublisherBooks(
+                        author = TestUtil.AUTHOR_1,
+                        publisher = TestUtil.PUBLISHER,
+                        books = arrayOf(TestUtil.BOOK_1, TestUtil.BOOK_1),
+                    )
+                }
+            if (exception !is SQLiteConstraintException) {
+                assertThat(exception).hasMessageThat().contains("UNIQUE constraint failed")
             }
 
-            assertThat(booksDao.getBooksSuspend().isEmpty(), `is`(true))
+            assertThat(booksDao.getBooksSuspend()).isEmpty()
         }
     }
 
     @Test
     fun kotlinDefaultFunction() {
         booksDao.addAndRemovePublisher(TestUtil.PUBLISHER)
-        assertNull(booksDao.getPublisherNullable(TestUtil.PUBLISHER.publisherId))
+        assertThat(booksDao.getPublisherNullable(TestUtil.PUBLISHER.publisherId)).isNull()
 
-        assertEquals("", booksDao.concreteFunction())
-        assertEquals("1 - hello", booksDao.concreteFunctionWithParams(1, "hello"))
+        assertThat(booksDao.concreteFunction()).isEqualTo("")
+        assertThat(booksDao.concreteFunctionWithParams(1, "hello")).isEqualTo("1 - hello")
 
         runBlocking {
-            assertEquals("", booksDao.concreteSuspendFunction())
-            assertEquals("2 - hi", booksDao.concreteSuspendFunctionWithParams(2, "hi"))
+            assertThat(booksDao.concreteSuspendFunction()).isEqualTo("")
+            assertThat(booksDao.concreteSuspendFunctionWithParams(2, "hi")).isEqualTo("2 - hi")
         }
     }
 

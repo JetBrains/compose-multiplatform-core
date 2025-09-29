@@ -867,6 +867,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         assertThrows(IllegalStateException.class, anchorEntity::getPoseInActivitySpace);
     }
 
+    // Modified for no ActivitySpaceRoot case.
     @Test
     public void getActivitySpacePose_whenAtSamePose_returnsSamePose() {
         AnchorEntityImpl anchorEntity = createAndInitAnchorEntity();

@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.client.view
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
@@ -58,7 +57,6 @@ import kotlin.math.max
  */
 // OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
 @OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
-@SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
 public class SharedUiContainer
 @JvmOverloads

@@ -75,9 +75,11 @@ import kotlinx.coroutines.launch
  *
  * ## Timing Consideration
  * There are cases where a predictive back gesture may be dispatched within a rendering frame before
- * the [enabled] flag is updated, which can cause unexpected behavior (see b/375343407,
- * b/384186542). For example, if `enabled` is set to `false`, a gesture initiated in the same frame
- * may still trigger this handler because the system sees the stale `true` value.
+ * the [enabled] flag is updated, which can cause unexpected behavior (see
+ * [b/375343407](https://issuetracker.google.com/375343407),
+ * [b/384186542](https://issuetracker.google.com/384186542)). For example, if `enabled` is set to
+ * `false`, a gesture initiated in the same frame may still trigger this handler because the system
+ * sees the stale `true` value.
  *
  * @sample androidx.activity.compose.samples.PredictiveBack
  * @param enabled Controls whether this handler is active. **Important**: Due to the timing issue

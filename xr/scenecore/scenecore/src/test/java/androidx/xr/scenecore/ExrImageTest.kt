@@ -22,8 +22,9 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.internal.ExrImageResource as RtExrImage
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
@@ -44,7 +45,8 @@ import org.robolectric.Robolectric
 class ExrImageTest {
 
     private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mockSceneRuntime = mock<SceneRuntime>()
+    private val mockRenderingRuntime = mock<RenderingRuntime>()
 
     private val mockActivitySpace = mock<RtActivitySpace>()
     private val mockPanelEntityImpl = mock<RtPanelEntity>()
@@ -53,9 +55,8 @@ class ExrImageTest {
 
     @Before
     fun setUp() {
-        mockPlatformAdapter.stub {
+        mockSceneRuntime.stub {
             on { activitySpace }.thenReturn(mockActivitySpace)
-            on { activitySpaceRootImpl }.thenReturn(mockActivitySpace)
             on { perceptionSpaceActivityPose }.thenReturn(mock())
             on { spatialCapabilities }.thenReturn(RtSpatialCapabilities(0))
             on { mainPanelEntity }.thenReturn(mockPanelEntityImpl)
@@ -65,7 +66,7 @@ class ExrImageTest {
     @Test
     fun exrImage_createFromZip_failsForExrFile() {
         val mockRtExrImage = mock<RtExrImage>()
-        mockPlatformAdapter.stub {
+        mockRenderingRuntime.stub {
             on { loadExrImageByAssetName("test.exr") }
                 .thenReturn(Futures.immediateFuture(mockRtExrImage))
         }
@@ -75,7 +76,8 @@ class ExrImageTest {
                 runtimes =
                     listOf(
                         mFakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
+                        mockSceneRuntime,
+                        mockRenderingRuntime,
                     ),
             )
 
@@ -91,13 +93,13 @@ class ExrImageTest {
                 .hasMessageThat()
                 .contains("Only preprocessed skybox files with the .zip extension are supported.")
         }
-        verify(mockPlatformAdapter, never()).loadExrImageByAssetName("test.exr")
+        verify(mockRenderingRuntime, never()).loadExrImageByAssetName("test.exr")
     }
 
     @Test
     fun exrImage_createFromZip_withZipExtension_passes() {
         val mockRtExrImage = mock<RtExrImage>()
-        mockPlatformAdapter.stub {
+        mockRenderingRuntime.stub {
             on { loadExrImageByAssetName("test.zip") }
                 .thenReturn(Futures.immediateFuture(mockRtExrImage))
         }
@@ -107,7 +109,8 @@ class ExrImageTest {
                 runtimes =
                     listOf(
                         mFakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
+                        mockSceneRuntime,
+                        mockRenderingRuntime,
                     ),
             )
 
@@ -117,6 +120,6 @@ class ExrImageTest {
 
             assertIs<ExrImage>(exrImage)
         }
-        verify(mockPlatformAdapter).loadExrImageByAssetName("test.zip")
+        verify(mockRenderingRuntime).loadExrImageByAssetName("test.zip")
     }
 }

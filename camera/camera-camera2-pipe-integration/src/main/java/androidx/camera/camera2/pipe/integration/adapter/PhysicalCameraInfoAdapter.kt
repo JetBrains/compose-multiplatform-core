@@ -111,7 +111,6 @@ public class PhysicalCameraInfoAdapter(private val cameraProperties: CameraPrope
         throw UnsupportedOperationException("Physical camera doesn't support this function")
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @ExperimentalZeroShutterLag
     override fun isZslSupported(): Boolean {
         throw UnsupportedOperationException("Physical camera doesn't support this function")

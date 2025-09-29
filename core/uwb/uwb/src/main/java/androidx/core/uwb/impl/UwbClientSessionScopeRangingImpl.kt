@@ -34,6 +34,7 @@ import androidx.core.uwb.RangingMeasurement
 import androidx.core.uwb.RangingParameters
 import androidx.core.uwb.RangingPosition
 import androidx.core.uwb.RangingResult
+import androidx.core.uwb.RangingResult.Companion.fromId
 import androidx.core.uwb.UwbAddress
 import androidx.core.uwb.UwbClientSessionScope
 import androidx.core.uwb.UwbDevice
@@ -45,6 +46,7 @@ import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
@@ -94,6 +96,11 @@ internal abstract class UwbClientSessionScopeRangingImpl(
                 }
 
                 override fun onOpenFailed(reason: Int) {
+                    val uwbDevice = UwbDevice(localAddress)
+                    trySend(RangingResult.RangingResultFailure(uwbDevice, fromId(reason)))
+                        .onFailure { throwable ->
+                            Log.w(TAG, "Failed to send RangingResultFailure", throwable)
+                        }
                     channel.close(
                         IllegalStateException("Ranging session open failed with reason: $reason")
                     )
@@ -102,6 +109,9 @@ internal abstract class UwbClientSessionScopeRangingImpl(
                 override fun onOpened() {
                     val result =
                         trySend(RangingResult.RangingResultInitialized(UwbDevice(localAddress)))
+                            .onFailure { throwable ->
+                                Log.w(TAG, "Failed to send RangingResultInitialized", throwable)
+                            }
                     if (!result.isSuccess) {
                         Log.e(TAG, "Failed to send onOpened event: $result")
                     }
@@ -117,22 +127,25 @@ internal abstract class UwbClientSessionScopeRangingImpl(
                     uwbAddress.let {
                         val result =
                             trySend(
-                                RangingResult.RangingResultPosition(
-                                    UwbDevice(it),
-                                    RangingPosition(
-                                        data.distance?.measurement?.let { it1 ->
-                                            RangingMeasurement(it1.toFloat())
-                                        },
-                                        data.azimuth?.measurement?.let { it1 ->
-                                            RangingMeasurement(it1.toFloat())
-                                        },
-                                        data.elevation?.measurement?.let { it1 ->
-                                            RangingMeasurement(it1.toFloat())
-                                        },
-                                        data.timestampMillis * 1_000_000L,
-                                    ),
+                                    RangingResult.RangingResultPosition(
+                                        UwbDevice(it),
+                                        RangingPosition(
+                                            data.distance?.measurement?.let { it1 ->
+                                                RangingMeasurement(it1.toFloat())
+                                            },
+                                            data.azimuth?.measurement?.let { it1 ->
+                                                RangingMeasurement(it1.toFloat())
+                                            },
+                                            data.elevation?.measurement?.let { it1 ->
+                                                RangingMeasurement(it1.toFloat())
+                                            },
+                                            data.timestampMillis * 1_000_000L,
+                                        ),
+                                    )
                                 )
-                            )
+                                .onFailure { throwable ->
+                                    Log.w(TAG, "Failed to send RangingResultPosition", throwable)
+                                }
                         if (!result.isSuccess) {
                             Log.e(TAG, "Failed to send onResults event: $result")
                         }
@@ -167,7 +180,19 @@ internal abstract class UwbClientSessionScopeRangingImpl(
                     }
 
                     val result =
-                        trySend(RangingResult.RangingResultPeerDisconnected(UwbDevice(uwbAddress)))
+                        trySend(
+                                RangingResult.RangingResultPeerDisconnected(
+                                    UwbDevice(uwbAddress),
+                                    RangingResult.RANGING_FAILURE_REASON_STOPPED_BY_PEER,
+                                )
+                            )
+                            .onFailure { throwable ->
+                                Log.w(
+                                    TAG,
+                                    "Failed to send RangingResultPeerDisconnected",
+                                    throwable,
+                                )
+                            }
                     if (!result.isSuccess) {
                         Log.e(
                             TAG,

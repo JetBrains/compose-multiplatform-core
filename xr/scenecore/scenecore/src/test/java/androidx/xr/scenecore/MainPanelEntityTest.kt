@@ -21,8 +21,8 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.internal.SceneRuntime
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
@@ -45,27 +45,23 @@ class MainPanelEntityTest {
     private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)
     private val activity = activityController.create().start().get()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mockSceneRuntime = mock<SceneRuntime>()
 
     lateinit var session: Session
 
     @Before
     fun setUp() {
-        whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
+        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
         val mockActivitySpace = mock<RtActivitySpace>()
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.headActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.headActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mock())
         session =
             Session(
                 activity,
                 runtimes =
-                    listOf(
-                        fakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
-                    ),
+                    listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
     }
 
@@ -74,14 +70,14 @@ class MainPanelEntityTest {
         val listener = Consumer<IntSize2d> {}
         val executor = directExecutor()
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener)
-        verify(mockPlatformAdapter).addPerceivedResolutionChangedListener(eq(executor), any())
+        verify(mockSceneRuntime).addPerceivedResolutionChangedListener(eq(executor), any())
     }
 
     @Test
     fun addPerceivedResolutionChangedListener_withNoExecutor_callsRuntimeWithMainThreadExecutor() {
         val listener = Consumer<IntSize2d> {}
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(listener)
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .addPerceivedResolutionChangedListener(eq(HandlerExecutor.mainThreadExecutor), any())
     }
 
@@ -94,11 +90,11 @@ class MainPanelEntityTest {
             listener,
         )
         val rtListenerCaptor = argumentCaptor<Consumer<RtPixelDimensions>>()
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .addPerceivedResolutionChangedListener(any(), rtListenerCaptor.capture())
 
         session.scene.mainPanelEntity.removePerceivedResolutionChangedListener(listener)
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .removePerceivedResolutionChangedListener(eq(rtListenerCaptor.firstValue))
     }
 
@@ -110,7 +106,7 @@ class MainPanelEntityTest {
         val executor = directExecutor()
 
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener)
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .addPerceivedResolutionChangedListener(eq(executor), rtListenerCaptor.capture())
 
         val rtListener = rtListenerCaptor.firstValue
@@ -139,7 +135,7 @@ class MainPanelEntityTest {
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener1)
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener2)
 
-        verify(mockPlatformAdapter, times(2))
+        verify(mockSceneRuntime, times(2))
             .addPerceivedResolutionChangedListener(eq(executor), rtListenerCaptor.capture())
 
         val rtListeners = rtListenerCaptor.allValues

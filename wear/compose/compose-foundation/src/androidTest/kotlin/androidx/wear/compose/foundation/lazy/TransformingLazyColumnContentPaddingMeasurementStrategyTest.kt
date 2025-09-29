@@ -568,6 +568,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             layoutDirection = LayoutDirection.Ltr,
             mockGraphicContext,
             mockItemAnimator,
+            isScrollInProgress = { false },
         )
 
     private val strategy = measurementStrategy(PaddingValues())

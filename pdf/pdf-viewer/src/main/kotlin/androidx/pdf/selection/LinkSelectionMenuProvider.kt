@@ -16,6 +16,7 @@
 package androidx.pdf.selection
 
 import android.content.Context
+import androidx.pdf.R
 import androidx.pdf.util.ClipboardUtils
 
 /** Provides default menu items for link selections. */
@@ -26,6 +27,7 @@ internal object LinkSelectionMenuProvider {
                 DefaultSelectionMenuComponent(
                     key = PdfSelectionMenuKeys.CopyKey,
                     label = context.getString(android.R.string.copy),
+                    contentDescription = context.getString(R.string.desc_copy),
                 ) { pdfView ->
                     val localCurrentSelection = pdfView.currentSelection
                     if (localCurrentSelection is LinkSelection) {
@@ -42,6 +44,7 @@ internal object LinkSelectionMenuProvider {
                 DefaultSelectionMenuComponent(
                     key = PdfSelectionMenuKeys.SelectAllKey,
                     label = context.getString(android.R.string.selectAll),
+                    contentDescription = context.getString(R.string.desc_select_all),
                 ) { pdfView ->
                     val page = pdfView.currentSelection?.bounds?.first()?.pageNum
                     // We can't select all if we don't know what page the selection is on, or if

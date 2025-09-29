@@ -17,8 +17,10 @@
 package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.internal.PerceptionRuntime
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.ConfigMode
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -54,7 +56,28 @@ internal constructor(
         lifecycleManager.configure(config)
     }
 
+    override fun isSupported(configMode: ConfigMode): Boolean {
+        return SUPPORTED_CONFIG_MODES.contains(configMode)
+    }
+
     override fun destroy() {
         lifecycleManager.stop()
+    }
+
+    internal companion object {
+        @VisibleForTesting
+        internal val SUPPORTED_CONFIG_MODES: Set<ConfigMode> =
+            setOf(
+                Config.PlaneTrackingMode.DISABLED,
+                Config.HandTrackingMode.DISABLED,
+                Config.DeviceTrackingMode.DISABLED,
+                Config.HeadTrackingMode.DISABLED,
+                Config.DepthEstimationMode.DISABLED,
+                Config.AnchorPersistenceMode.DISABLED,
+                Config.FaceTrackingMode.DISABLED,
+                Config.GeospatialMode.DISABLED,
+                Config.GeospatialMode.EARTH,
+                Config.EyeTrackingMode.DISABLED,
+            )
     }
 }

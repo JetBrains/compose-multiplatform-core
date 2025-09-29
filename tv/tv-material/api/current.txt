@@ -2,12 +2,12 @@
 package androidx.tv.material3 {
 
   @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public final class AssistChipDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
     method @BytecodeOnly public float getContainerHeight-D9Ej5fM();
-    method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method public androidx.tv.material3.ClickableChipGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ClickableChipScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
@@ -23,9 +23,9 @@ package androidx.tv.material3 {
     ctor @BytecodeOnly public Border(androidx.compose.foundation.BorderStroke!, float, androidx.compose.ui.graphics.Shape!, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @KotlinOnly public androidx.tv.material3.Border copy(optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.ui.unit.Dp? inset, optional androidx.compose.ui.graphics.Shape? shape);
     method @BytecodeOnly public androidx.tv.material3.Border copy-ZCAqi1o(androidx.compose.foundation.BorderStroke?, androidx.compose.ui.unit.Dp?, androidx.compose.ui.graphics.Shape?);
-    method public androidx.compose.foundation.BorderStroke getBorder();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.BorderStroke getBorder();
     method @BytecodeOnly public float getInset-D9Ej5fM();
-    method public androidx.compose.ui.graphics.Shape getShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getShape();
     property public androidx.compose.foundation.BorderStroke border;
     property public androidx.compose.ui.unit.Dp inset;
     property public androidx.compose.ui.graphics.Shape shape;
@@ -33,7 +33,7 @@ package androidx.tv.material3 {
   }
 
   public static final class Border.Companion {
-    method public androidx.tv.material3.Border getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getNone();
     property public androidx.tv.material3.Border None;
   }
 
@@ -44,12 +44,12 @@ package androidx.tv.material3 {
   }
 
   public final class ButtonDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
-    method public androidx.compose.foundation.layout.PaddingValues getButtonWithIconContentPadding();
-    method public androidx.compose.foundation.layout.PaddingValues getContentPadding();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.layout.PaddingValues getButtonWithIconContentPadding();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.layout.PaddingValues getContentPadding();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method @BytecodeOnly public float getIconSpacing-D9Ej5fM();
     method public androidx.tv.material3.ButtonGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
@@ -77,7 +77,7 @@ package androidx.tv.material3 {
   }
 
   public static final class ButtonScale.Companion {
-    method public androidx.tv.material3.ButtonScale getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.ButtonScale getNone();
     property public androidx.tv.material3.ButtonScale None;
   }
 
@@ -100,20 +100,20 @@ package androidx.tv.material3 {
   }
 
   public final class CardContainerKt {
-    method @androidx.compose.runtime.Composable public static void StandardCardContainer(kotlin.jvm.functions.Function1<? super androidx.compose.foundation.interaction.MutableInteractionSource,kotlin.Unit> imageCard, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardContainerColors contentColor, optional androidx.compose.foundation.interaction.MutableInteractionSource interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void StandardCardContainer(kotlin.jvm.functions.Function1<androidx.compose.foundation.interaction.MutableInteractionSource,kotlin.Unit> imageCard, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardContainerColors contentColor, optional androidx.compose.foundation.interaction.MutableInteractionSource interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void StandardCardContainer(kotlin.jvm.functions.Function3<? super androidx.compose.foundation.interaction.MutableInteractionSource!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.tv.material3.CardContainerColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void WideCardContainer(kotlin.jvm.functions.Function1<? super androidx.compose.foundation.interaction.MutableInteractionSource,kotlin.Unit> imageCard, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardContainerColors contentColor, optional androidx.compose.foundation.interaction.MutableInteractionSource interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void WideCardContainer(kotlin.jvm.functions.Function1<androidx.compose.foundation.interaction.MutableInteractionSource,kotlin.Unit> imageCard, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardContainerColors contentColor, optional androidx.compose.foundation.interaction.MutableInteractionSource interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void WideCardContainer(kotlin.jvm.functions.Function3<? super androidx.compose.foundation.interaction.MutableInteractionSource!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.tv.material3.CardContainerColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class CardDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.CardBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.CardBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.CardBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.CardColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.CardColors colors-5tl4gsc(long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.CardColors compactCardColors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.CardColors compactCardColors-5tl4gsc(long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
-    method public androidx.compose.ui.graphics.Brush getScrimBrush();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Brush getScrimBrush();
     method public androidx.tv.material3.CardGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.CardScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale);
     method public androidx.tv.material3.CardShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape);
@@ -131,13 +131,13 @@ package androidx.tv.material3 {
   }
 
   public final class CardKt {
-    method @androidx.compose.runtime.Composable public static void Card(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional androidx.tv.material3.CardShape shape, optional androidx.tv.material3.CardColors colors, optional androidx.tv.material3.CardScale scale, optional androidx.tv.material3.CardBorder border, optional androidx.tv.material3.CardGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.ColumnScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Card(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional androidx.tv.material3.CardShape shape, optional androidx.tv.material3.CardColors colors, optional androidx.tv.material3.CardScale scale, optional androidx.tv.material3.CardBorder border, optional androidx.tv.material3.CardGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.ColumnScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void Card(kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, androidx.tv.material3.CardShape?, androidx.tv.material3.CardColors?, androidx.tv.material3.CardScale?, androidx.tv.material3.CardBorder?, androidx.tv.material3.CardGlow?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.ColumnScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void ClassicCard(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> image, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardShape shape, optional androidx.tv.material3.CardColors colors, optional androidx.tv.material3.CardScale scale, optional androidx.tv.material3.CardBorder border, optional androidx.tv.material3.CardGlow glow, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void ClassicCard(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.BoxScope,kotlin.Unit> image, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardShape shape, optional androidx.tv.material3.CardColors colors, optional androidx.tv.material3.CardScale scale, optional androidx.tv.material3.CardBorder border, optional androidx.tv.material3.CardGlow glow, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void ClassicCard(kotlin.jvm.functions.Function0<kotlin.Unit!>, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.BoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.tv.material3.CardShape?, androidx.tv.material3.CardColors?, androidx.tv.material3.CardScale?, androidx.tv.material3.CardBorder?, androidx.tv.material3.CardGlow?, androidx.compose.foundation.layout.PaddingValues?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int, int);
-    method @androidx.compose.runtime.Composable public static void CompactCard(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> image, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardShape shape, optional androidx.tv.material3.CardColors colors, optional androidx.tv.material3.CardScale scale, optional androidx.tv.material3.CardBorder border, optional androidx.tv.material3.CardGlow glow, optional androidx.compose.ui.graphics.Brush scrimBrush, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void CompactCard(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.BoxScope,kotlin.Unit> image, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardShape shape, optional androidx.tv.material3.CardColors colors, optional androidx.tv.material3.CardScale scale, optional androidx.tv.material3.CardBorder border, optional androidx.tv.material3.CardGlow glow, optional androidx.compose.ui.graphics.Brush scrimBrush, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void CompactCard(kotlin.jvm.functions.Function0<kotlin.Unit!>, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.BoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.tv.material3.CardShape?, androidx.tv.material3.CardColors?, androidx.tv.material3.CardScale?, androidx.tv.material3.CardBorder?, androidx.tv.material3.CardGlow?, androidx.compose.ui.graphics.Brush?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int, int);
-    method @androidx.compose.runtime.Composable public static void WideClassicCard(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> image, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardShape shape, optional androidx.tv.material3.CardColors colors, optional androidx.tv.material3.CardScale scale, optional androidx.tv.material3.CardBorder border, optional androidx.tv.material3.CardGlow glow, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void WideClassicCard(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.BoxScope,kotlin.Unit> image, kotlin.jvm.functions.Function0<kotlin.Unit> title, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit> subtitle, optional kotlin.jvm.functions.Function0<kotlin.Unit> description, optional androidx.tv.material3.CardShape shape, optional androidx.tv.material3.CardColors colors, optional androidx.tv.material3.CardScale scale, optional androidx.tv.material3.CardBorder border, optional androidx.tv.material3.CardGlow glow, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void WideClassicCard(kotlin.jvm.functions.Function0<kotlin.Unit!>, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.BoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.tv.material3.CardShape?, androidx.tv.material3.CardColors?, androidx.tv.material3.CardScale?, androidx.tv.material3.CardBorder?, androidx.tv.material3.CardGlow?, androidx.compose.foundation.layout.PaddingValues?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int, int);
   }
 
@@ -146,7 +146,7 @@ package androidx.tv.material3 {
   }
 
   public static final class CardScale.Companion {
-    method public androidx.tv.material3.CardScale getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.CardScale getNone();
     property public androidx.tv.material3.CardScale None;
   }
 
@@ -156,32 +156,31 @@ package androidx.tv.material3 {
   @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public final class CarouselDefaults {
     method @KotlinOnly @androidx.compose.runtime.Composable public void IndicatorRow(int itemCount, int activeItemIndex, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.unit.Dp spacing, optional kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit> indicator);
     method @BytecodeOnly @androidx.compose.runtime.Composable public void IndicatorRow-hGBTI10(int, int, androidx.compose.ui.Modifier?, float, kotlin.jvm.functions.Function3<? super java.lang.Boolean!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public androidx.compose.animation.ContentTransform getContentTransform();
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.compose.animation.ContentTransform getContentTransform(androidx.compose.runtime.Composer?, int);
     property public static long TimeToDisplayItemMillis;
-    property @androidx.compose.runtime.Composable public androidx.compose.animation.ContentTransform contentTransform;
+    property public androidx.compose.animation.ContentTransform contentTransform;
     field public static final androidx.tv.material3.CarouselDefaults INSTANCE;
     field public static final long TimeToDisplayItemMillis = 5000L; // 0x1388L
   }
 
   public final class CarouselKt {
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void Carousel(int itemCount, optional androidx.compose.ui.Modifier modifier, optional androidx.tv.material3.CarouselState carouselState, optional long autoScrollDurationMillis, optional androidx.compose.animation.ContentTransform contentTransformStartToEnd, optional androidx.compose.animation.ContentTransform contentTransformEndToStart, optional kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> carouselIndicator, kotlin.jvm.functions.Function2<? super androidx.compose.animation.AnimatedContentScope,? super java.lang.Integer,kotlin.Unit> content);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void Carousel(int itemCount, optional androidx.compose.ui.Modifier modifier, optional androidx.tv.material3.CarouselState carouselState, optional long autoScrollDurationMillis, optional androidx.compose.animation.ContentTransform contentTransformStartToEnd, optional androidx.compose.animation.ContentTransform contentTransformEndToStart, optional kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.BoxScope,kotlin.Unit> carouselIndicator, kotlin.jvm.functions.Function2<androidx.compose.animation.AnimatedContentScope,java.lang.Integer,kotlin.Unit> content);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void Carousel(int, androidx.compose.ui.Modifier?, androidx.tv.material3.CarouselState?, long, androidx.compose.animation.ContentTransform?, androidx.compose.animation.ContentTransform?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.BoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function4<? super androidx.compose.animation.AnimatedContentScope!,? super java.lang.Integer!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static androidx.tv.material3.CarouselState rememberCarouselState(optional int initialActiveItemIndex);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static androidx.tv.material3.CarouselState rememberCarouselState(optional int initialActiveItemIndex);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static androidx.tv.material3.CarouselState rememberCarouselState(int, androidx.compose.runtime.Composer?, int, int);
   }
 
   @SuppressCompatibility @androidx.compose.runtime.Stable @androidx.tv.material3.ExperimentalTvMaterial3Api public final class CarouselState {
     ctor public CarouselState();
     ctor public CarouselState(optional int initialActiveItemIndex);
-    method public int getActiveItemIndex();
+    method @InaccessibleFromKotlin public int getActiveItemIndex();
     method public androidx.tv.material3.ScrollPauseHandle pauseAutoScroll(int itemIndex);
     property public int activeItemIndex;
     field public static final androidx.tv.material3.CarouselState.Companion Companion;
   }
 
   public static final class CarouselState.Companion {
-    method public androidx.compose.runtime.saveable.Saver<androidx.tv.material3.CarouselState,? extends java.lang.Object?> getSaver();
+    method @InaccessibleFromKotlin public androidx.compose.runtime.saveable.Saver<androidx.tv.material3.CarouselState,? extends java.lang.Object?> getSaver();
     property public androidx.compose.runtime.saveable.Saver<androidx.tv.material3.CarouselState,? extends java.lang.Object?> Saver;
   }
 
@@ -217,7 +216,7 @@ package androidx.tv.material3 {
   }
 
   public final class CheckboxDefaults {
-    method @androidx.compose.runtime.Composable public androidx.tv.material3.CheckboxColors colors();
+    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.tv.material3.CheckboxColors colors();
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.tv.material3.CheckboxColors colors(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.tv.material3.CheckboxColors colors(optional androidx.compose.ui.graphics.Color checkedColor, optional androidx.compose.ui.graphics.Color uncheckedColor, optional androidx.compose.ui.graphics.Color checkmarkColor, optional androidx.compose.ui.graphics.Color disabledCheckedColor, optional androidx.compose.ui.graphics.Color disabledUncheckedColor, optional androidx.compose.ui.graphics.Color disabledIndeterminateColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.tv.material3.CheckboxColors colors-5tl4gsc(long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
@@ -225,20 +224,20 @@ package androidx.tv.material3 {
   }
 
   public final class CheckboxKt {
-    method @androidx.compose.runtime.Composable public static void Checkbox(boolean checked, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit>? onCheckedChange, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.tv.material3.CheckboxColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void Checkbox(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean!,kotlin.Unit!>?, androidx.compose.ui.Modifier?, boolean, androidx.tv.material3.CheckboxColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void TriStateCheckbox(androidx.compose.ui.state.ToggleableState state, kotlin.jvm.functions.Function0<kotlin.Unit>? onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.tv.material3.CheckboxColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Checkbox(boolean checked, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit>? onCheckedChange, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.tv.material3.CheckboxColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void TriStateCheckbox(androidx.compose.ui.state.ToggleableState state, kotlin.jvm.functions.Function0<kotlin.Unit>? onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.tv.material3.CheckboxColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void TriStateCheckbox(androidx.compose.ui.state.ToggleableState, kotlin.jvm.functions.Function0<kotlin.Unit!>?, androidx.compose.ui.Modifier?, boolean, androidx.tv.material3.CheckboxColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class ChipKt {
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void AssistChip(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional androidx.tv.material3.ClickableChipShape shape, optional androidx.tv.material3.ClickableChipColors colors, optional androidx.tv.material3.ClickableChipScale scale, optional androidx.tv.material3.ClickableChipBorder border, optional androidx.tv.material3.ClickableChipGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void AssistChip(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional androidx.tv.material3.ClickableChipShape shape, optional androidx.tv.material3.ClickableChipColors colors, optional androidx.tv.material3.ClickableChipScale scale, optional androidx.tv.material3.ClickableChipBorder border, optional androidx.tv.material3.ClickableChipGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void AssistChip(kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.tv.material3.ClickableChipShape?, androidx.tv.material3.ClickableChipColors?, androidx.tv.material3.ClickableChipScale?, androidx.tv.material3.ClickableChipBorder?, androidx.tv.material3.ClickableChipGlow?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void FilterChip(boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional androidx.tv.material3.SelectableChipShape shape, optional androidx.tv.material3.SelectableChipColors colors, optional androidx.tv.material3.SelectableChipScale scale, optional androidx.tv.material3.SelectableChipBorder border, optional androidx.tv.material3.SelectableChipGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void FilterChip(boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional androidx.tv.material3.SelectableChipShape shape, optional androidx.tv.material3.SelectableChipColors colors, optional androidx.tv.material3.SelectableChipScale scale, optional androidx.tv.material3.SelectableChipBorder border, optional androidx.tv.material3.SelectableChipGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void FilterChip(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.tv.material3.SelectableChipShape?, androidx.tv.material3.SelectableChipColors?, androidx.tv.material3.SelectableChipScale?, androidx.tv.material3.SelectableChipBorder?, androidx.tv.material3.SelectableChipGlow?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void InputChip(boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? avatar, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional androidx.tv.material3.SelectableChipShape shape, optional androidx.tv.material3.SelectableChipColors colors, optional androidx.tv.material3.SelectableChipScale scale, optional androidx.tv.material3.SelectableChipBorder border, optional androidx.tv.material3.SelectableChipGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void InputChip(boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? avatar, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional androidx.tv.material3.SelectableChipShape shape, optional androidx.tv.material3.SelectableChipColors colors, optional androidx.tv.material3.SelectableChipScale scale, optional androidx.tv.material3.SelectableChipBorder border, optional androidx.tv.material3.SelectableChipGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void InputChip(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.tv.material3.SelectableChipShape?, androidx.tv.material3.SelectableChipColors?, androidx.tv.material3.SelectableChipScale?, androidx.tv.material3.SelectableChipBorder?, androidx.tv.material3.SelectableChipGlow?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void SuggestionChip(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional androidx.tv.material3.ClickableChipShape shape, optional androidx.tv.material3.ClickableChipColors colors, optional androidx.tv.material3.ClickableChipScale scale, optional androidx.tv.material3.ClickableChipBorder border, optional androidx.tv.material3.ClickableChipGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void SuggestionChip(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional androidx.tv.material3.ClickableChipShape shape, optional androidx.tv.material3.ClickableChipColors colors, optional androidx.tv.material3.ClickableChipScale scale, optional androidx.tv.material3.ClickableChipBorder border, optional androidx.tv.material3.ClickableChipGlow glow, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.tv.material3.ExperimentalTvMaterial3Api public static void SuggestionChip(kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>?, androidx.tv.material3.ClickableChipShape?, androidx.tv.material3.ClickableChipColors?, androidx.tv.material3.ClickableChipScale?, androidx.tv.material3.ClickableChipBorder?, androidx.tv.material3.ClickableChipGlow?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
   }
 
@@ -256,7 +255,7 @@ package androidx.tv.material3 {
   }
 
   public static final class ClickableChipScale.Companion {
-    method public androidx.tv.material3.ClickableChipScale getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.ClickableChipScale getNone();
     property public androidx.tv.material3.ClickableChipScale None;
   }
 
@@ -270,13 +269,13 @@ package androidx.tv.material3 {
   }
 
   public final class ClickableSurfaceDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableSurfaceBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableSurfaceBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableSurfaceBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableSurfaceColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableSurfaceColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
     method public androidx.tv.material3.ClickableSurfaceGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ClickableSurfaceScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableSurfaceShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableSurfaceShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableSurfaceShape shape(androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.runtime.Composer?, int, int);
     field public static final androidx.tv.material3.ClickableSurfaceDefaults INSTANCE;
   }
@@ -289,7 +288,7 @@ package androidx.tv.material3 {
   }
 
   public static final class ClickableSurfaceScale.Companion {
-    method public androidx.tv.material3.ClickableSurfaceScale getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.ClickableSurfaceScale getNone();
     property public androidx.tv.material3.ClickableSurfaceScale None;
   }
 
@@ -375,21 +374,21 @@ package androidx.tv.material3 {
   }
 
   public final class ContentColorKt {
-    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> getLocalContentColor();
+    method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> getLocalContentColor();
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> LocalContentColor;
   }
 
   public final class DrawerState {
     ctor public DrawerState();
     ctor public DrawerState(optional androidx.tv.material3.DrawerValue initialValue);
-    method public androidx.tv.material3.DrawerValue getCurrentValue();
+    method @InaccessibleFromKotlin public androidx.tv.material3.DrawerValue getCurrentValue();
     method public void setValue(androidx.tv.material3.DrawerValue drawerValue);
     property public androidx.tv.material3.DrawerValue currentValue;
     field public static final androidx.tv.material3.DrawerState.Companion Companion;
   }
 
   public static final class DrawerState.Companion {
-    method public androidx.compose.runtime.saveable.Saver<androidx.tv.material3.DrawerState,androidx.tv.material3.DrawerValue> getSaver();
+    method @InaccessibleFromKotlin public androidx.compose.runtime.saveable.Saver<androidx.tv.material3.DrawerState,androidx.tv.material3.DrawerValue> getSaver();
     property public androidx.compose.runtime.saveable.Saver<androidx.tv.material3.DrawerState,androidx.tv.material3.DrawerValue> Saver;
   }
 
@@ -402,12 +401,12 @@ package androidx.tv.material3 {
   }
 
   @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public final class FilterChipDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border selectedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedSelectedBorder, optional androidx.tv.material3.Border focusedDisabledBorder, optional androidx.tv.material3.Border pressedSelectedBorder, optional androidx.tv.material3.Border selectedDisabledBorder, optional androidx.tv.material3.Border focusedSelectedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border selectedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedSelectedBorder, optional androidx.tv.material3.Border focusedDisabledBorder, optional androidx.tv.material3.Border pressedSelectedBorder, optional androidx.tv.material3.Border selectedDisabledBorder, optional androidx.tv.material3.Border focusedSelectedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color selectedContainerColor, optional androidx.compose.ui.graphics.Color selectedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor, optional androidx.compose.ui.graphics.Color focusedSelectedContainerColor, optional androidx.compose.ui.graphics.Color focusedSelectedContentColor, optional androidx.compose.ui.graphics.Color pressedSelectedContainerColor, optional androidx.compose.ui.graphics.Color pressedSelectedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipColors colors-u3YEpmA(long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
     method @BytecodeOnly public float getContainerHeight-D9Ej5fM();
-    method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method public androidx.tv.material3.SelectableChipGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.SelectableChipScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float selectedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedSelectedScale, optional @FloatRange(from=0.0) float focusedDisabledScale, optional @FloatRange(from=0.0) float pressedSelectedScale, optional @FloatRange(from=0.0) float selectedDisabledScale, optional @FloatRange(from=0.0) float focusedSelectedDisabledScale);
@@ -431,12 +430,12 @@ package androidx.tv.material3 {
   }
 
   public static final class Glow.Companion {
-    method public androidx.tv.material3.Glow getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getNone();
     property public androidx.tv.material3.Glow None;
   }
 
   public final class IconButtonDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
@@ -459,9 +458,9 @@ package androidx.tv.material3 {
   }
 
   public final class IconButtonKt {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable public static void IconButton(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional boolean enabled, optional androidx.tv.material3.ButtonScale scale, optional androidx.tv.material3.ButtonGlow glow, optional androidx.tv.material3.ButtonShape shape, optional androidx.tv.material3.ButtonColors colors, optional androidx.tv.material3.ButtonBorder border, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable public static void IconButton(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional boolean enabled, optional androidx.tv.material3.ButtonScale scale, optional androidx.tv.material3.ButtonGlow glow, optional androidx.tv.material3.ButtonShape shape, optional androidx.tv.material3.ButtonColors colors, optional androidx.tv.material3.ButtonBorder border, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.BoxScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void IconButton(kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, boolean, androidx.tv.material3.ButtonScale?, androidx.tv.material3.ButtonGlow?, androidx.tv.material3.ButtonShape?, androidx.tv.material3.ButtonColors?, androidx.tv.material3.ButtonBorder?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.BoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable public static void OutlinedIconButton(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional boolean enabled, optional androidx.tv.material3.ButtonScale scale, optional androidx.tv.material3.ButtonGlow glow, optional androidx.tv.material3.ButtonShape shape, optional androidx.tv.material3.ButtonColors colors, optional androidx.tv.material3.ButtonBorder border, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.NonRestartableComposable public static void OutlinedIconButton(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onLongClick, optional boolean enabled, optional androidx.tv.material3.ButtonScale scale, optional androidx.tv.material3.ButtonGlow glow, optional androidx.tv.material3.ButtonShape shape, optional androidx.tv.material3.ButtonColors colors, optional androidx.tv.material3.ButtonBorder border, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.BoxScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void OutlinedIconButton(kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, boolean, androidx.tv.material3.ButtonScale?, androidx.tv.material3.ButtonGlow?, androidx.tv.material3.ButtonShape?, androidx.tv.material3.ButtonColors?, androidx.tv.material3.ButtonBorder?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.BoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int, int);
   }
 
@@ -475,14 +474,14 @@ package androidx.tv.material3 {
   }
 
   @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public final class InputChipDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipBorder border(boolean hasAvatar, optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border selectedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedSelectedBorder, optional androidx.tv.material3.Border focusedDisabledBorder, optional androidx.tv.material3.Border pressedSelectedBorder, optional androidx.tv.material3.Border selectedDisabledBorder, optional androidx.tv.material3.Border focusedSelectedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipBorder border(boolean hasAvatar, optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border selectedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedSelectedBorder, optional androidx.tv.material3.Border focusedDisabledBorder, optional androidx.tv.material3.Border pressedSelectedBorder, optional androidx.tv.material3.Border selectedDisabledBorder, optional androidx.tv.material3.Border focusedSelectedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipBorder border(boolean, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color selectedContainerColor, optional androidx.compose.ui.graphics.Color selectedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor, optional androidx.compose.ui.graphics.Color focusedSelectedContainerColor, optional androidx.compose.ui.graphics.Color focusedSelectedContentColor, optional androidx.compose.ui.graphics.Color pressedSelectedContainerColor, optional androidx.compose.ui.graphics.Color pressedSelectedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipColors colors-u3YEpmA(long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
     method @BytecodeOnly public float getAvatarSize-D9Ej5fM();
     method @BytecodeOnly public float getContainerHeight-D9Ej5fM();
-    method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
-    method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShapeWithAvatar();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.RoundedCornerShape getContainerShapeWithAvatar();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method public androidx.tv.material3.SelectableChipGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.SelectableChipScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float selectedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedSelectedScale, optional @FloatRange(from=0.0) float focusedDisabledScale, optional @FloatRange(from=0.0) float pressedSelectedScale, optional @FloatRange(from=0.0) float selectedDisabledScale, optional @FloatRange(from=0.0) float focusedSelectedDisabledScale);
@@ -497,14 +496,14 @@ package androidx.tv.material3 {
 
   @androidx.compose.runtime.Immutable public final class ListItemBorder {
     ctor public ListItemBorder(androidx.tv.material3.Border border, androidx.tv.material3.Border focusedBorder, androidx.tv.material3.Border pressedBorder, androidx.tv.material3.Border selectedBorder, androidx.tv.material3.Border disabledBorder, androidx.tv.material3.Border focusedSelectedBorder, androidx.tv.material3.Border focusedDisabledBorder, androidx.tv.material3.Border pressedSelectedBorder);
-    method public androidx.tv.material3.Border getBorder();
-    method public androidx.tv.material3.Border getDisabledBorder();
-    method public androidx.tv.material3.Border getFocusedBorder();
-    method public androidx.tv.material3.Border getFocusedDisabledBorder();
-    method public androidx.tv.material3.Border getFocusedSelectedBorder();
-    method public androidx.tv.material3.Border getPressedBorder();
-    method public androidx.tv.material3.Border getPressedSelectedBorder();
-    method public androidx.tv.material3.Border getSelectedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getDisabledBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getFocusedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getFocusedDisabledBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getFocusedSelectedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getPressedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getPressedSelectedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getSelectedBorder();
     property public androidx.tv.material3.Border border;
     property public androidx.tv.material3.Border disabledBorder;
     property public androidx.tv.material3.Border focusedBorder;
@@ -549,7 +548,7 @@ package androidx.tv.material3 {
   }
 
   public final class ListItemDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border selectedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedSelectedBorder, optional androidx.tv.material3.Border focusedDisabledBorder, optional androidx.tv.material3.Border pressedSelectedBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border selectedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedSelectedBorder, optional androidx.tv.material3.Border focusedDisabledBorder, optional androidx.tv.material3.Border pressedSelectedBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color selectedContainerColor, optional androidx.compose.ui.graphics.Color selectedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor, optional androidx.compose.ui.graphics.Color focusedSelectedContainerColor, optional androidx.compose.ui.graphics.Color focusedSelectedContentColor, optional androidx.compose.ui.graphics.Color pressedSelectedContainerColor, optional androidx.compose.ui.graphics.Color pressedSelectedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemColors colors-u3YEpmA(long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
@@ -558,7 +557,7 @@ package androidx.tv.material3 {
     method @BytecodeOnly public float getTonalElevation-D9Ej5fM();
     method public androidx.tv.material3.ListItemGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.ListItemScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float selectedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedSelectedScale, optional @FloatRange(from=0.0) float focusedDisabledScale, optional @FloatRange(from=0.0) float pressedSelectedScale);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape selectedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape, optional androidx.compose.ui.graphics.Shape pressedSelectedShape);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape selectedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape, optional androidx.compose.ui.graphics.Shape pressedSelectedShape);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemShape shape(androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.runtime.Composer?, int, int);
     property public androidx.compose.ui.unit.Dp IconSize;
     property public androidx.compose.ui.unit.Dp IconSizeDense;
@@ -568,12 +567,12 @@ package androidx.tv.material3 {
 
   @androidx.compose.runtime.Immutable public final class ListItemGlow {
     ctor public ListItemGlow(androidx.tv.material3.Glow glow, androidx.tv.material3.Glow focusedGlow, androidx.tv.material3.Glow pressedGlow, androidx.tv.material3.Glow selectedGlow, androidx.tv.material3.Glow focusedSelectedGlow, androidx.tv.material3.Glow pressedSelectedGlow);
-    method public androidx.tv.material3.Glow getFocusedGlow();
-    method public androidx.tv.material3.Glow getFocusedSelectedGlow();
-    method public androidx.tv.material3.Glow getGlow();
-    method public androidx.tv.material3.Glow getPressedGlow();
-    method public androidx.tv.material3.Glow getPressedSelectedGlow();
-    method public androidx.tv.material3.Glow getSelectedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getFocusedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getFocusedSelectedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getPressedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getPressedSelectedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getSelectedGlow();
     property public androidx.tv.material3.Glow focusedGlow;
     property public androidx.tv.material3.Glow focusedSelectedGlow;
     property public androidx.tv.material3.Glow glow;
@@ -591,14 +590,14 @@ package androidx.tv.material3 {
 
   @androidx.compose.runtime.Immutable public final class ListItemScale {
     ctor public ListItemScale(@FloatRange(from=0.0) float scale, @FloatRange(from=0.0) float focusedScale, @FloatRange(from=0.0) float pressedScale, @FloatRange(from=0.0) float selectedScale, @FloatRange(from=0.0) float disabledScale, @FloatRange(from=0.0) float focusedSelectedScale, @FloatRange(from=0.0) float focusedDisabledScale, @FloatRange(from=0.0) float pressedSelectedScale);
-    method public float getDisabledScale();
-    method public float getFocusedDisabledScale();
-    method public float getFocusedScale();
-    method public float getFocusedSelectedScale();
-    method public float getPressedScale();
-    method public float getPressedSelectedScale();
-    method public float getScale();
-    method public float getSelectedScale();
+    method @InaccessibleFromKotlin public float getDisabledScale();
+    method @InaccessibleFromKotlin public float getFocusedDisabledScale();
+    method @InaccessibleFromKotlin public float getFocusedScale();
+    method @InaccessibleFromKotlin public float getFocusedSelectedScale();
+    method @InaccessibleFromKotlin public float getPressedScale();
+    method @InaccessibleFromKotlin public float getPressedSelectedScale();
+    method @InaccessibleFromKotlin public float getScale();
+    method @InaccessibleFromKotlin public float getSelectedScale();
     property public float disabledScale;
     property public float focusedDisabledScale;
     property public float focusedScale;
@@ -611,20 +610,20 @@ package androidx.tv.material3 {
   }
 
   public static final class ListItemScale.Companion {
-    method public androidx.tv.material3.ListItemScale getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.ListItemScale getNone();
     property public androidx.tv.material3.ListItemScale None;
   }
 
   @androidx.compose.runtime.Immutable public final class ListItemShape {
     ctor public ListItemShape(androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.Shape focusedShape, androidx.compose.ui.graphics.Shape pressedShape, androidx.compose.ui.graphics.Shape selectedShape, androidx.compose.ui.graphics.Shape disabledShape, androidx.compose.ui.graphics.Shape focusedSelectedShape, androidx.compose.ui.graphics.Shape focusedDisabledShape, androidx.compose.ui.graphics.Shape pressedSelectedShape);
-    method public androidx.compose.ui.graphics.Shape getDisabledShape();
-    method public androidx.compose.ui.graphics.Shape getFocusedDisabledShape();
-    method public androidx.compose.ui.graphics.Shape getFocusedSelectedShape();
-    method public androidx.compose.ui.graphics.Shape getFocusedShape();
-    method public androidx.compose.ui.graphics.Shape getPressedSelectedShape();
-    method public androidx.compose.ui.graphics.Shape getPressedShape();
-    method public androidx.compose.ui.graphics.Shape getSelectedShape();
-    method public androidx.compose.ui.graphics.Shape getShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getDisabledShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getFocusedDisabledShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getFocusedSelectedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getFocusedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getPressedSelectedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getPressedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getSelectedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getShape();
     property public androidx.compose.ui.graphics.Shape disabledShape;
     property public androidx.compose.ui.graphics.Shape focusedDisabledShape;
     property public androidx.compose.ui.graphics.Shape focusedSelectedShape;
@@ -636,33 +635,30 @@ package androidx.tv.material3 {
   }
 
   public final class MaterialTheme {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ColorScheme getColorScheme();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ColorScheme getColorScheme(androidx.compose.runtime.Composer?, int);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Shapes getShapes();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Shapes getShapes(androidx.compose.runtime.Composer?, int);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Typography getTypography();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Typography getTypography(androidx.compose.runtime.Composer?, int);
-    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ColorScheme colorScheme;
-    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Shapes shapes;
-    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Typography typography;
+    property public androidx.tv.material3.ColorScheme colorScheme;
+    property public androidx.tv.material3.Shapes shapes;
+    property public androidx.tv.material3.Typography typography;
     field public static final androidx.tv.material3.MaterialTheme INSTANCE;
   }
 
   public final class MaterialThemeKt {
-    method @androidx.compose.runtime.Composable public static void MaterialTheme(optional androidx.tv.material3.ColorScheme colorScheme, optional androidx.tv.material3.Shapes shapes, optional androidx.tv.material3.Typography typography, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void MaterialTheme(optional androidx.tv.material3.ColorScheme colorScheme, optional androidx.tv.material3.Shapes shapes, optional androidx.tv.material3.Typography typography, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void MaterialTheme(androidx.tv.material3.ColorScheme?, androidx.tv.material3.Shapes?, androidx.tv.material3.Typography?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
   @androidx.compose.runtime.Immutable public final class NavigationDrawerItemBorder {
     ctor public NavigationDrawerItemBorder(androidx.tv.material3.Border border, androidx.tv.material3.Border focusedBorder, androidx.tv.material3.Border pressedBorder, androidx.tv.material3.Border selectedBorder, androidx.tv.material3.Border disabledBorder, androidx.tv.material3.Border focusedSelectedBorder, androidx.tv.material3.Border focusedDisabledBorder, androidx.tv.material3.Border pressedSelectedBorder);
-    method public androidx.tv.material3.Border getBorder();
-    method public androidx.tv.material3.Border getDisabledBorder();
-    method public androidx.tv.material3.Border getFocusedBorder();
-    method public androidx.tv.material3.Border getFocusedDisabledBorder();
-    method public androidx.tv.material3.Border getFocusedSelectedBorder();
-    method public androidx.tv.material3.Border getPressedBorder();
-    method public androidx.tv.material3.Border getPressedSelectedBorder();
-    method public androidx.tv.material3.Border getSelectedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getDisabledBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getFocusedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getFocusedDisabledBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getFocusedSelectedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getPressedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getPressedSelectedBorder();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Border getSelectedBorder();
     property public androidx.tv.material3.Border border;
     property public androidx.tv.material3.Border disabledBorder;
     property public androidx.tv.material3.Border focusedBorder;
@@ -713,23 +709,21 @@ package androidx.tv.material3 {
   public final class NavigationDrawerItemDefaults {
     method @KotlinOnly @androidx.compose.runtime.Composable public void TrailingBadge(String text, optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void TrailingBadge-RIQooxk(String, long, long, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.NavigationDrawerItemBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border selectedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedSelectedBorder, optional androidx.tv.material3.Border focusedDisabledBorder, optional androidx.tv.material3.Border pressedSelectedBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.NavigationDrawerItemBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border selectedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedSelectedBorder, optional androidx.tv.material3.Border focusedDisabledBorder, optional androidx.tv.material3.Border pressedSelectedBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.NavigationDrawerItemBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.NavigationDrawerItemColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color inactiveContentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color selectedContainerColor, optional androidx.compose.ui.graphics.Color selectedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor, optional androidx.compose.ui.graphics.Color disabledInactiveContentColor, optional androidx.compose.ui.graphics.Color focusedSelectedContainerColor, optional androidx.compose.ui.graphics.Color focusedSelectedContentColor, optional androidx.compose.ui.graphics.Color pressedSelectedContainerColor, optional androidx.compose.ui.graphics.Color pressedSelectedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.NavigationDrawerItemColors colors-V1nXRL4(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
     method @BytecodeOnly public float getCollapsedDrawerItemWidth-D9Ej5fM();
     method @BytecodeOnly public float getContainerHeightOneLine-D9Ej5fM();
     method @BytecodeOnly public float getContainerHeightTwoLine-D9Ej5fM();
-    method public androidx.compose.animation.EnterTransition getContentAnimationEnter();
-    method public androidx.compose.animation.ExitTransition getContentAnimationExit();
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Border getDefaultBorder();
+    method @InaccessibleFromKotlin public androidx.compose.animation.EnterTransition getContentAnimationEnter();
+    method @InaccessibleFromKotlin public androidx.compose.animation.ExitTransition getContentAnimationExit();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Border getDefaultBorder(androidx.compose.runtime.Composer?, int);
     method @BytecodeOnly public float getExpandedDrawerItemWidth-D9Ej5fM();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method @BytecodeOnly public float getNavigationDrawerItemElevation-D9Ej5fM();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public long getTrailingBadgeContainerColor(androidx.compose.runtime.Composer?, int);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public long getTrailingBadgeContentColor(androidx.compose.runtime.Composer?, int);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.text.TextStyle getTrailingBadgeTextStyle();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.text.TextStyle getTrailingBadgeTextStyle(androidx.compose.runtime.Composer?, int);
     method public androidx.tv.material3.NavigationDrawerItemGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.NavigationDrawerItemScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float selectedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedSelectedScale, optional @FloatRange(from=0.0) float focusedDisabledScale, optional @FloatRange(from=0.0) float pressedSelectedScale);
@@ -739,24 +733,24 @@ package androidx.tv.material3 {
     property public androidx.compose.ui.unit.Dp ContainerHeightTwoLine;
     property public androidx.compose.animation.EnterTransition ContentAnimationEnter;
     property public androidx.compose.animation.ExitTransition ContentAnimationExit;
-    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Border DefaultBorder;
+    property public androidx.tv.material3.Border DefaultBorder;
     property public androidx.compose.ui.unit.Dp ExpandedDrawerItemWidth;
     property public androidx.compose.ui.unit.Dp IconSize;
     property public androidx.compose.ui.unit.Dp NavigationDrawerItemElevation;
     property public androidx.compose.ui.graphics.Color TrailingBadgeContainerColor;
     property public androidx.compose.ui.graphics.Color TrailingBadgeContentColor;
-    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.text.TextStyle TrailingBadgeTextStyle;
+    property public androidx.compose.ui.text.TextStyle TrailingBadgeTextStyle;
     field public static final androidx.tv.material3.NavigationDrawerItemDefaults INSTANCE;
   }
 
   @androidx.compose.runtime.Immutable public final class NavigationDrawerItemGlow {
     ctor public NavigationDrawerItemGlow(androidx.tv.material3.Glow glow, androidx.tv.material3.Glow focusedGlow, androidx.tv.material3.Glow pressedGlow, androidx.tv.material3.Glow selectedGlow, androidx.tv.material3.Glow focusedSelectedGlow, androidx.tv.material3.Glow pressedSelectedGlow);
-    method public androidx.tv.material3.Glow getFocusedGlow();
-    method public androidx.tv.material3.Glow getFocusedSelectedGlow();
-    method public androidx.tv.material3.Glow getGlow();
-    method public androidx.tv.material3.Glow getPressedGlow();
-    method public androidx.tv.material3.Glow getPressedSelectedGlow();
-    method public androidx.tv.material3.Glow getSelectedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getFocusedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getFocusedSelectedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getPressedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getPressedSelectedGlow();
+    method @InaccessibleFromKotlin public androidx.tv.material3.Glow getSelectedGlow();
     property public androidx.tv.material3.Glow focusedGlow;
     property public androidx.tv.material3.Glow focusedSelectedGlow;
     property public androidx.tv.material3.Glow glow;
@@ -772,14 +766,14 @@ package androidx.tv.material3 {
 
   @androidx.compose.runtime.Immutable public final class NavigationDrawerItemScale {
     ctor public NavigationDrawerItemScale(@FloatRange(from=0.0) float scale, @FloatRange(from=0.0) float focusedScale, @FloatRange(from=0.0) float pressedScale, @FloatRange(from=0.0) float selectedScale, @FloatRange(from=0.0) float disabledScale, @FloatRange(from=0.0) float focusedSelectedScale, @FloatRange(from=0.0) float focusedDisabledScale, @FloatRange(from=0.0) float pressedSelectedScale);
-    method public float getDisabledScale();
-    method public float getFocusedDisabledScale();
-    method public float getFocusedScale();
-    method public float getFocusedSelectedScale();
-    method public float getPressedScale();
-    method public float getPressedSelectedScale();
-    method public float getScale();
-    method public float getSelectedScale();
+    method @InaccessibleFromKotlin public float getDisabledScale();
+    method @InaccessibleFromKotlin public float getFocusedDisabledScale();
+    method @InaccessibleFromKotlin public float getFocusedScale();
+    method @InaccessibleFromKotlin public float getFocusedSelectedScale();
+    method @InaccessibleFromKotlin public float getPressedScale();
+    method @InaccessibleFromKotlin public float getPressedSelectedScale();
+    method @InaccessibleFromKotlin public float getScale();
+    method @InaccessibleFromKotlin public float getSelectedScale();
     property public float disabledScale;
     property public float focusedDisabledScale;
     property public float focusedScale;
@@ -792,20 +786,20 @@ package androidx.tv.material3 {
   }
 
   public static final class NavigationDrawerItemScale.Companion {
-    method public androidx.tv.material3.NavigationDrawerItemScale getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.NavigationDrawerItemScale getNone();
     property public androidx.tv.material3.NavigationDrawerItemScale None;
   }
 
   @androidx.compose.runtime.Immutable public final class NavigationDrawerItemShape {
     ctor public NavigationDrawerItemShape(androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.Shape focusedShape, androidx.compose.ui.graphics.Shape pressedShape, androidx.compose.ui.graphics.Shape selectedShape, androidx.compose.ui.graphics.Shape disabledShape, androidx.compose.ui.graphics.Shape focusedSelectedShape, androidx.compose.ui.graphics.Shape focusedDisabledShape, androidx.compose.ui.graphics.Shape pressedSelectedShape);
-    method public androidx.compose.ui.graphics.Shape getDisabledShape();
-    method public androidx.compose.ui.graphics.Shape getFocusedDisabledShape();
-    method public androidx.compose.ui.graphics.Shape getFocusedSelectedShape();
-    method public androidx.compose.ui.graphics.Shape getFocusedShape();
-    method public androidx.compose.ui.graphics.Shape getPressedSelectedShape();
-    method public androidx.compose.ui.graphics.Shape getPressedShape();
-    method public androidx.compose.ui.graphics.Shape getSelectedShape();
-    method public androidx.compose.ui.graphics.Shape getShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getDisabledShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getFocusedDisabledShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getFocusedSelectedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getFocusedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getPressedSelectedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getPressedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getSelectedShape();
+    method @InaccessibleFromKotlin public androidx.compose.ui.graphics.Shape getShape();
     property public androidx.compose.ui.graphics.Shape disabledShape;
     property public androidx.compose.ui.graphics.Shape focusedDisabledShape;
     property public androidx.compose.ui.graphics.Shape focusedSelectedShape;
@@ -817,26 +811,26 @@ package androidx.tv.material3 {
   }
 
   public final class NavigationDrawerKt {
-    method @androidx.compose.runtime.Composable public static void ModalNavigationDrawer(kotlin.jvm.functions.Function2<? super androidx.tv.material3.NavigationDrawerScope,? super androidx.tv.material3.DrawerValue,kotlin.Unit> drawerContent, optional androidx.compose.ui.Modifier modifier, optional androidx.tv.material3.DrawerState drawerState, optional androidx.compose.ui.graphics.Brush scrimBrush, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void ModalNavigationDrawer(kotlin.jvm.functions.Function2<androidx.tv.material3.NavigationDrawerScope,androidx.tv.material3.DrawerValue,kotlin.Unit> drawerContent, optional androidx.compose.ui.Modifier modifier, optional androidx.tv.material3.DrawerState drawerState, optional androidx.compose.ui.graphics.Brush scrimBrush, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void ModalNavigationDrawer(kotlin.jvm.functions.Function4<? super androidx.tv.material3.NavigationDrawerScope!,? super androidx.tv.material3.DrawerValue!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.Modifier?, androidx.tv.material3.DrawerState?, androidx.compose.ui.graphics.Brush?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void NavigationDrawer(kotlin.jvm.functions.Function2<? super androidx.tv.material3.NavigationDrawerScope,? super androidx.tv.material3.DrawerValue,kotlin.Unit> drawerContent, optional androidx.compose.ui.Modifier modifier, optional androidx.tv.material3.DrawerState drawerState, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void NavigationDrawer(kotlin.jvm.functions.Function2<androidx.tv.material3.NavigationDrawerScope,androidx.tv.material3.DrawerValue,kotlin.Unit> drawerContent, optional androidx.compose.ui.Modifier modifier, optional androidx.tv.material3.DrawerState drawerState, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void NavigationDrawer(kotlin.jvm.functions.Function4<? super androidx.tv.material3.NavigationDrawerScope!,? super androidx.tv.material3.DrawerValue!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.ui.Modifier?, androidx.tv.material3.DrawerState?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static androidx.tv.material3.DrawerState rememberDrawerState(androidx.tv.material3.DrawerValue initialValue);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.tv.material3.DrawerState rememberDrawerState(androidx.tv.material3.DrawerValue initialValue);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.tv.material3.DrawerState rememberDrawerState(androidx.tv.material3.DrawerValue, androidx.compose.runtime.Composer?, int);
   }
 
   public interface NavigationDrawerScope {
-    method public boolean getHasFocus();
+    method @InaccessibleFromKotlin public boolean getHasFocus();
     property public abstract boolean hasFocus;
   }
 
   public final class OutlinedButtonDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
-    method public androidx.compose.foundation.layout.PaddingValues getButtonWithIconContentPadding();
-    method public androidx.compose.foundation.layout.PaddingValues getContentPadding();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.layout.PaddingValues getButtonWithIconContentPadding();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.layout.PaddingValues getContentPadding();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method @BytecodeOnly public float getIconSpacing-D9Ej5fM();
     method public androidx.tv.material3.ButtonGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
@@ -850,7 +844,7 @@ package androidx.tv.material3 {
   }
 
   public final class OutlinedIconButtonDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
@@ -888,7 +882,7 @@ package androidx.tv.material3 {
   }
 
   public final class RadioButtonDefaults {
-    method @androidx.compose.runtime.Composable public androidx.tv.material3.RadioButtonColors colors();
+    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.tv.material3.RadioButtonColors colors();
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.tv.material3.RadioButtonColors colors(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.tv.material3.RadioButtonColors colors(optional androidx.compose.ui.graphics.Color selectedColor, optional androidx.compose.ui.graphics.Color unselectedColor, optional androidx.compose.ui.graphics.Color disabledSelectedColor, optional androidx.compose.ui.graphics.Color disabledUnselectedColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.tv.material3.RadioButtonColors colors-ro_MJ88(long, long, long, long, androidx.compose.runtime.Composer?, int, int);
@@ -896,7 +890,7 @@ package androidx.tv.material3 {
   }
 
   public final class RadioButtonKt {
-    method @androidx.compose.runtime.Composable public static void RadioButton(boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit>? onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.tv.material3.RadioButtonColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void RadioButton(boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit>? onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.tv.material3.RadioButtonColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void RadioButton(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>?, androidx.compose.ui.Modifier?, boolean, androidx.tv.material3.RadioButtonColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -918,7 +912,7 @@ package androidx.tv.material3 {
   }
 
   public static final class SelectableChipScale.Companion {
-    method public androidx.tv.material3.SelectableChipScale getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.SelectableChipScale getNone();
     property public androidx.tv.material3.SelectableChipScale None;
   }
 
@@ -937,7 +931,7 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableSurfaceColors colors-u3YEpmA(long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
     method public androidx.tv.material3.SelectableSurfaceGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.SelectableSurfaceScale scale(optional float scale, optional float focusedScale, optional float pressedScale, optional float selectedScale, optional float disabledScale, optional float focusedSelectedScale, optional float focusedDisabledScale, optional float pressedSelectedScale, optional float selectedDisabledScale, optional float focusedSelectedDisabledScale);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableSurfaceShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape selectedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape, optional androidx.compose.ui.graphics.Shape pressedSelectedShape, optional androidx.compose.ui.graphics.Shape selectedDisabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedDisabledShape);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableSurfaceShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape selectedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape, optional androidx.compose.ui.graphics.Shape pressedSelectedShape, optional androidx.compose.ui.graphics.Shape selectedDisabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedDisabledShape);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableSurfaceShape shape(androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.runtime.Composer?, int, int, int);
     field public static final androidx.tv.material3.SelectableSurfaceDefaults INSTANCE;
   }
@@ -950,7 +944,7 @@ package androidx.tv.material3 {
   }
 
   public static final class SelectableSurfaceScale.Companion {
-    method public androidx.tv.material3.SelectableSurfaceScale getNone();
+    method @InaccessibleFromKotlin public androidx.tv.material3.SelectableSurfaceScale getNone();
     property public androidx.tv.material3.SelectableSurfaceScale None;
   }
 
@@ -958,11 +952,11 @@ package androidx.tv.material3 {
   }
 
   public final class ShapeDefaults {
-    method public androidx.compose.foundation.shape.CornerBasedShape getExtraLarge();
-    method public androidx.compose.foundation.shape.CornerBasedShape getExtraSmall();
-    method public androidx.compose.foundation.shape.CornerBasedShape getLarge();
-    method public androidx.compose.foundation.shape.CornerBasedShape getMedium();
-    method public androidx.compose.foundation.shape.CornerBasedShape getSmall();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getExtraLarge();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getExtraSmall();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getLarge();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getMedium();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getSmall();
     property public androidx.compose.foundation.shape.CornerBasedShape ExtraLarge;
     property public androidx.compose.foundation.shape.CornerBasedShape ExtraSmall;
     property public androidx.compose.foundation.shape.CornerBasedShape Large;
@@ -975,11 +969,11 @@ package androidx.tv.material3 {
     ctor public Shapes();
     ctor public Shapes(optional androidx.compose.foundation.shape.CornerBasedShape extraSmall, optional androidx.compose.foundation.shape.CornerBasedShape small, optional androidx.compose.foundation.shape.CornerBasedShape medium, optional androidx.compose.foundation.shape.CornerBasedShape large, optional androidx.compose.foundation.shape.CornerBasedShape extraLarge);
     method public androidx.tv.material3.Shapes copy(optional androidx.compose.foundation.shape.CornerBasedShape extraSmall, optional androidx.compose.foundation.shape.CornerBasedShape small, optional androidx.compose.foundation.shape.CornerBasedShape medium, optional androidx.compose.foundation.shape.CornerBasedShape large, optional androidx.compose.foundation.shape.CornerBasedShape extraLarge);
-    method public androidx.compose.foundation.shape.CornerBasedShape getExtraLarge();
-    method public androidx.compose.foundation.shape.CornerBasedShape getExtraSmall();
-    method public androidx.compose.foundation.shape.CornerBasedShape getLarge();
-    method public androidx.compose.foundation.shape.CornerBasedShape getMedium();
-    method public androidx.compose.foundation.shape.CornerBasedShape getSmall();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getExtraLarge();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getExtraSmall();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getLarge();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getMedium();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.CornerBasedShape getSmall();
     property public androidx.compose.foundation.shape.CornerBasedShape extraLarge;
     property public androidx.compose.foundation.shape.CornerBasedShape extraSmall;
     property public androidx.compose.foundation.shape.CornerBasedShape large;
@@ -988,12 +982,12 @@ package androidx.tv.material3 {
   }
 
   @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public final class SuggestionChipDefaults {
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor, optional androidx.compose.ui.graphics.Color focusedContainerColor, optional androidx.compose.ui.graphics.Color focusedContentColor, optional androidx.compose.ui.graphics.Color pressedContainerColor, optional androidx.compose.ui.graphics.Color pressedContentColor, optional androidx.compose.ui.graphics.Color disabledContainerColor, optional androidx.compose.ui.graphics.Color disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
     method @BytecodeOnly public float getContainerHeight-D9Ej5fM();
-    method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
+    method @InaccessibleFromKotlin public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
     method public androidx.tv.material3.ClickableChipGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ClickableChipScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
     method public androidx.tv.material3.ClickableChipShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
@@ -1008,9 +1002,8 @@ package androidx.tv.material3 {
   public final class SurfaceDefaults {
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SurfaceColors colors(optional androidx.compose.ui.graphics.Color containerColor, optional androidx.compose.ui.graphics.Color contentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SurfaceColors colors-dgg9oW8(long, long, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.graphics.Shape getShape();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.graphics.Shape getShape(androidx.compose.runtime.Composer?, int);
-    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.graphics.Shape shape;
+    property public androidx.compose.ui.graphics.Shape shape;
     field public static final androidx.tv.material3.SurfaceDefaults INSTANCE;
   }
 
@@ -1063,7 +1056,7 @@ package androidx.tv.material3 {
   }
 
   public final class SwitchDefaults {
-    method @androidx.compose.runtime.Composable public androidx.tv.material3.SwitchColors colors();
+    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.tv.material3.SwitchColors colors();
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.tv.material3.SwitchColors colors(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.tv.material3.SwitchColors colors(optional androidx.compose.ui.graphics.Color checkedThumbColor, optional androidx.compose.ui.graphics.Color checkedTrackColor, optional androidx.compose.ui.graphics.Color checkedBorderColor, optional androidx.compose.ui.graphics.Color checkedIconColor, optional androidx.compose.ui.graphics.Color uncheckedThumbColor, optional androidx.compose.ui.graphics.Color uncheckedTrackColor, optional androidx.compose.ui.graphics.Color uncheckedBorderColor, optional androidx.compose.ui.graphics.Color uncheckedIconColor, optional androidx.compose.ui.graphics.Color disabledCheckedThumbColor, optional androidx.compose.ui.graphics.Color disabledCheckedTrackColor, optional androidx.compose.ui.graphics.Color disabledCheckedBorderColor, optional androidx.compose.ui.graphics.Color disabledCheckedIconColor, optional androidx.compose.ui.graphics.Color disabledUncheckedThumbColor, optional androidx.compose.ui.graphics.Color disabledUncheckedTrackColor, optional androidx.compose.ui.graphics.Color disabledUncheckedBorderColor, optional androidx.compose.ui.graphics.Color disabledUncheckedIconColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.tv.material3.SwitchColors colors-V1nXRL4(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
@@ -1073,8 +1066,8 @@ package androidx.tv.material3 {
   }
 
   public final class SwitchKt {
-    method @androidx.compose.runtime.Composable public static void Switch(boolean checked, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit>? onCheckedChange, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? thumbContent, optional boolean enabled, optional androidx.tv.material3.SwitchColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void Switch(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean!,kotlin.Unit!>?, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, boolean, androidx.tv.material3.SwitchColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Switch(boolean checked, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit>? onCheckedChange, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? thumbContent, optional boolean enabled, optional androidx.tv.material3.SwitchColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
   }
 
   public final class TabColors {
@@ -1089,14 +1082,14 @@ package androidx.tv.material3 {
   }
 
   public final class TabKt {
-    method @androidx.compose.runtime.Composable public static void Tab(androidx.tv.material3.TabRowScope, boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit> onFocus, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional boolean enabled, optional androidx.tv.material3.TabColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Tab(androidx.tv.material3.TabRowScope, boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit> onFocus, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional boolean enabled, optional androidx.tv.material3.TabColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource, kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void Tab(androidx.tv.material3.TabRowScope, boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.ui.Modifier?, kotlin.jvm.functions.Function0<kotlin.Unit!>?, boolean, androidx.tv.material3.TabColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.RowScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class TabRowDefaults {
     method @KotlinOnly @androidx.compose.runtime.Composable public void PillIndicator(androidx.compose.ui.unit.DpRect currentTabPosition, boolean doesTabRowHaveFocus, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.graphics.Color activeColor, optional androidx.compose.ui.graphics.Color inactiveColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void PillIndicator-jA1GFJw(androidx.compose.ui.unit.DpRect, boolean, androidx.compose.ui.Modifier?, long, long, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public void TabSeparator();
+    method @KotlinOnly @androidx.compose.runtime.Composable public void TabSeparator();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void TabSeparator(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public void UnderlinedIndicator(androidx.compose.ui.unit.DpRect currentTabPosition, boolean doesTabRowHaveFocus, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.graphics.Color activeColor, optional androidx.compose.ui.graphics.Color inactiveColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void UnderlinedIndicator-jA1GFJw(androidx.compose.ui.unit.DpRect, boolean, androidx.compose.ui.Modifier?, long, long, androidx.compose.runtime.Composer?, int, int);
@@ -1113,18 +1106,18 @@ package androidx.tv.material3 {
   }
 
   public interface TabRowScope {
-    method public boolean getHasFocus();
+    method @InaccessibleFromKotlin public boolean getHasFocus();
     property public abstract boolean hasFocus;
   }
 
   public final class TextKt {
-    method @androidx.compose.runtime.Composable public static void ProvideTextStyle(androidx.compose.ui.text.TextStyle value, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void ProvideTextStyle(androidx.compose.ui.text.TextStyle value, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void ProvideTextStyle(androidx.compose.ui.text.TextStyle, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public static void Text(androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.unit.TextUnit fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.unit.TextUnit letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional androidx.compose.ui.unit.TextUnit lineHeight, optional androidx.compose.ui.text.style.TextOverflow overflow, optional boolean softWrap, optional int maxLines, optional int minLines, optional java.util.Map<java.lang.String,androidx.compose.foundation.text.InlineTextContent> inlineContent, optional kotlin.jvm.functions.Function1<androidx.compose.ui.text.TextLayoutResult,kotlin.Unit> onTextLayout, optional androidx.compose.ui.text.TextStyle style);
     method @KotlinOnly @androidx.compose.runtime.Composable public static void Text(String text, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.unit.TextUnit fontSize, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.unit.TextUnit letterSpacing, optional androidx.compose.ui.text.style.TextDecoration? textDecoration, optional androidx.compose.ui.text.style.TextAlign? textAlign, optional androidx.compose.ui.unit.TextUnit lineHeight, optional androidx.compose.ui.text.style.TextOverflow overflow, optional boolean softWrap, optional int maxLines, optional int minLines, optional kotlin.jvm.functions.Function1<androidx.compose.ui.text.TextLayoutResult,kotlin.Unit> onTextLayout, optional androidx.compose.ui.text.TextStyle style);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void Text--4IGK_g(String, androidx.compose.ui.Modifier?, long, long, androidx.compose.ui.text.font.FontStyle?, androidx.compose.ui.text.font.FontWeight?, androidx.compose.ui.text.font.FontFamily?, long, androidx.compose.ui.text.style.TextDecoration?, androidx.compose.ui.text.style.TextAlign?, long, int, boolean, int, int, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult!,kotlin.Unit!>?, androidx.compose.ui.text.TextStyle?, androidx.compose.runtime.Composer?, int, int, int);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void Text-IbK3jfQ(androidx.compose.ui.text.AnnotatedString, androidx.compose.ui.Modifier?, long, long, androidx.compose.ui.text.font.FontStyle?, androidx.compose.ui.text.font.FontWeight?, androidx.compose.ui.text.font.FontFamily?, long, androidx.compose.ui.text.style.TextDecoration?, androidx.compose.ui.text.style.TextAlign?, long, int, boolean, int, int, java.util.Map<java.lang.String!,androidx.compose.foundation.text.InlineTextContent!>?, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.TextLayoutResult!,kotlin.Unit!>?, androidx.compose.ui.text.TextStyle?, androidx.compose.runtime.Composer?, int, int, int);
-    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.TextStyle> getLocalTextStyle();
+    method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.TextStyle> getLocalTextStyle();
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.text.TextStyle> LocalTextStyle;
   }
 
@@ -1132,21 +1125,21 @@ package androidx.tv.material3 {
     ctor public Typography();
     ctor public Typography(optional androidx.compose.ui.text.TextStyle displayLarge, optional androidx.compose.ui.text.TextStyle displayMedium, optional androidx.compose.ui.text.TextStyle displaySmall, optional androidx.compose.ui.text.TextStyle headlineLarge, optional androidx.compose.ui.text.TextStyle headlineMedium, optional androidx.compose.ui.text.TextStyle headlineSmall, optional androidx.compose.ui.text.TextStyle titleLarge, optional androidx.compose.ui.text.TextStyle titleMedium, optional androidx.compose.ui.text.TextStyle titleSmall, optional androidx.compose.ui.text.TextStyle bodyLarge, optional androidx.compose.ui.text.TextStyle bodyMedium, optional androidx.compose.ui.text.TextStyle bodySmall, optional androidx.compose.ui.text.TextStyle labelLarge, optional androidx.compose.ui.text.TextStyle labelMedium, optional androidx.compose.ui.text.TextStyle labelSmall);
     method public androidx.tv.material3.Typography copy(optional androidx.compose.ui.text.TextStyle displayLarge, optional androidx.compose.ui.text.TextStyle displayMedium, optional androidx.compose.ui.text.TextStyle displaySmall, optional androidx.compose.ui.text.TextStyle headlineLarge, optional androidx.compose.ui.text.TextStyle headlineMedium, optional androidx.compose.ui.text.TextStyle headlineSmall, optional androidx.compose.ui.text.TextStyle titleLarge, optional androidx.compose.ui.text.TextStyle titleMedium, optional androidx.compose.ui.text.TextStyle titleSmall, optional androidx.compose.ui.text.TextStyle bodyLarge, optional androidx.compose.ui.text.TextStyle bodyMedium, optional androidx.compose.ui.text.TextStyle bodySmall, optional androidx.compose.ui.text.TextStyle labelLarge, optional androidx.compose.ui.text.TextStyle labelMedium, optional androidx.compose.ui.text.TextStyle labelSmall);
-    method public androidx.compose.ui.text.TextStyle getBodyLarge();
-    method public androidx.compose.ui.text.TextStyle getBodyMedium();
-    method public androidx.compose.ui.text.TextStyle getBodySmall();
-    method public androidx.compose.ui.text.TextStyle getDisplayLarge();
-    method public androidx.compose.ui.text.TextStyle getDisplayMedium();
-    method public androidx.compose.ui.text.TextStyle getDisplaySmall();
-    method public androidx.compose.ui.text.TextStyle getHeadlineLarge();
-    method public androidx.compose.ui.text.TextStyle getHeadlineMedium();
-    method public androidx.compose.ui.text.TextStyle getHeadlineSmall();
-    method public androidx.compose.ui.text.TextStyle getLabelLarge();
-    method public androidx.compose.ui.text.TextStyle getLabelMedium();
-    method public androidx.compose.ui.text.TextStyle getLabelSmall();
-    method public androidx.compose.ui.text.TextStyle getTitleLarge();
-    method public androidx.compose.ui.text.TextStyle getTitleMedium();
-    method public androidx.compose.ui.text.TextStyle getTitleSmall();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getBodyLarge();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getBodyMedium();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getBodySmall();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getDisplayLarge();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getDisplayMedium();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getDisplaySmall();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getHeadlineLarge();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getHeadlineMedium();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getHeadlineSmall();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getLabelLarge();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getLabelMedium();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getLabelSmall();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getTitleLarge();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getTitleMedium();
+    method @InaccessibleFromKotlin public androidx.compose.ui.text.TextStyle getTitleSmall();
     property public androidx.compose.ui.text.TextStyle bodyLarge;
     property public androidx.compose.ui.text.TextStyle bodyMedium;
     property public androidx.compose.ui.text.TextStyle bodySmall;
@@ -1168,9 +1161,9 @@ package androidx.tv.material3 {
   }
 
   public final class WideButtonDefaults {
-    method @androidx.compose.runtime.Composable public void Background(boolean enabled, androidx.compose.foundation.interaction.MutableInteractionSource interactionSource);
+    method @KotlinOnly @androidx.compose.runtime.Composable public void Background(boolean enabled, androidx.compose.foundation.interaction.MutableInteractionSource interactionSource);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void Background(boolean, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.runtime.Composer?, int);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
+    method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(optional androidx.tv.material3.Border border, optional androidx.tv.material3.Border focusedBorder, optional androidx.tv.material3.Border pressedBorder, optional androidx.tv.material3.Border disabledBorder, optional androidx.tv.material3.Border focusedDisabledBorder);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.WideButtonContentColor contentColor(optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.graphics.Color focusedColor, optional androidx.compose.ui.graphics.Color pressedColor, optional androidx.compose.ui.graphics.Color disabledColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.WideButtonContentColor contentColor-ro_MJ88(long, long, long, long, androidx.compose.runtime.Composer?, int, int);

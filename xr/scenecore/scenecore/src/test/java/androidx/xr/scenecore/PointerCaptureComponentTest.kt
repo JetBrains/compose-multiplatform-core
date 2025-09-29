@@ -25,8 +25,8 @@ import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.internal.Entity as RtEntity
 import androidx.xr.scenecore.internal.InputEvent as RtInputEvent
 import androidx.xr.scenecore.internal.InputEventListener as RtInputEventListener
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.internal.PointerCaptureComponent as RtPointerCaptureComponent
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
@@ -47,7 +47,7 @@ class PointerCaptureComponentTest {
     private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =
         Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mockSceneRuntime = mock<SceneRuntime>()
 
     private lateinit var session: Session
     private val mockActivitySpace = mock<RtActivitySpace>()
@@ -74,27 +74,22 @@ class PointerCaptureComponentTest {
 
     @Before
     fun setUp() {
-        whenever(mockPlatformAdapter.spatialEnvironment).thenReturn(mock())
-        whenever(mockPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.activitySpaceRootImpl).thenReturn(mockActivitySpace)
-        whenever(mockPlatformAdapter.headActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
-        whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mock())
-        whenever(mockPlatformAdapter.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        whenever(mockPlatformAdapter.createGroupEntity(any(), any(), any()))
-            .thenReturn(mockRtEntity)
+        whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
+        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        whenever(mockSceneRuntime.headActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mock())
+        whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
+        whenever(mockSceneRuntime.createGroupEntity(any(), any(), any())).thenReturn(mockRtEntity)
         whenever(mockRtEntity.addComponent(any())).thenReturn(true)
-        whenever(mockPlatformAdapter.createPointerCaptureComponent(any(), any(), any()))
+        whenever(mockSceneRuntime.createPointerCaptureComponent(any(), any(), any()))
             .thenReturn(mockRtComponent)
 
         session =
             Session(
                 activity,
                 runtimes =
-                    listOf(
-                        mFakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockPlatformAdapter,
-                    ),
+                    listOf(mFakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
     }
 
@@ -108,7 +103,7 @@ class PointerCaptureComponentTest {
         assertThat(entity.addComponent(pointerCaptureComponent)).isTrue()
 
         verify(mockRtEntity).addComponent(any())
-        verify(mockPlatformAdapter).createPointerCaptureComponent(any(), any(), any())
+        verify(mockSceneRuntime).createPointerCaptureComponent(any(), any(), any())
     }
 
     @Test
@@ -130,7 +125,7 @@ class PointerCaptureComponentTest {
         val stateListenerCaptor = argumentCaptor<RtPointerCaptureComponent.StateListener>()
 
         assertThat(entity.addComponent(pointerCaptureComponent)).isTrue()
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .createPointerCaptureComponent(any(), stateListenerCaptor.capture(), any())
 
         // Verify all states are properly converted and propagated.
@@ -163,7 +158,7 @@ class PointerCaptureComponentTest {
         val inputListenerCaptor = argumentCaptor<RtInputEventListener>()
 
         assertThat(entity.addComponent(pointerCaptureComponent)).isTrue()
-        verify(mockPlatformAdapter)
+        verify(mockSceneRuntime)
             .createPointerCaptureComponent(any(), any(), inputListenerCaptor.capture())
 
         val inputEvent =

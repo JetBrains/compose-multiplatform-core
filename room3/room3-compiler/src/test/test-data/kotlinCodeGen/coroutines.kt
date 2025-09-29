@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
 @Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
-public class MyDao_Impl(
+internal class MyDao_Impl(
   __db: RoomDatabase,
 ) : MyDao {
   private val __db: RoomDatabase

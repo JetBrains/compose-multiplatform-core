@@ -2411,7 +2411,7 @@ package androidx.car.app.serialization {
   }
 
   @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public interface ListDelegate<T> {
-    method public int getSize();
+    method @InaccessibleFromKotlin public int getSize();
     method public void requestItemRange(int startIndex, int endIndex, androidx.car.app.OnDoneCallback callback);
     property public abstract int size;
   }

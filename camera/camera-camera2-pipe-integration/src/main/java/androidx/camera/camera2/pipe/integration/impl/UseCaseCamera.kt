@@ -18,8 +18,6 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraDevice
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.GraphState.GraphStateError
-import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
@@ -82,22 +80,6 @@ constructor(
 
     init {
         debug { "Configured $this for $useCases" }
-        useCaseGraphConfig.apply { cameraStateAdapter.onGraphUpdated(graph) }
-        threads.scope.launch {
-            useCaseGraphConfig.apply {
-                graph.graphState.collect {
-                    cameraStateAdapter.onGraphStateUpdated(graph, it)
-
-                    // Even if the UseCaseCamera is closed, we should still update the GraphState
-                    // before cancelling the job, because it could be the last UseCaseCamera created
-                    // (i.e., no new UseCaseCamera to update CameraStateAdapter that this one as
-                    // stopped/closed).
-                    if (closed.value && it is GraphStateStopped || it is GraphStateError) {
-                        this@launch.coroutineContext[Job]?.cancel()
-                    }
-                }
-            }
-        }
     }
 
     override fun start(): Unit =

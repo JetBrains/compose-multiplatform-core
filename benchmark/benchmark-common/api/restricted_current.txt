@@ -39,8 +39,8 @@ package androidx.benchmark {
   @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public final class ExperimentalConfig {
     ctor public ExperimentalConfig();
     ctor public ExperimentalConfig(optional androidx.benchmark.perfetto.PerfettoConfig? perfettoConfig, optional androidx.benchmark.StartupInsightsConfig? startupInsightsConfig);
-    method public androidx.benchmark.perfetto.PerfettoConfig? getPerfettoConfig();
-    method public androidx.benchmark.StartupInsightsConfig? getStartupInsightsConfig();
+    method @InaccessibleFromKotlin public androidx.benchmark.perfetto.PerfettoConfig? getPerfettoConfig();
+    method @InaccessibleFromKotlin public androidx.benchmark.StartupInsightsConfig? getStartupInsightsConfig();
     property public androidx.benchmark.perfetto.PerfettoConfig? perfettoConfig;
     property public androidx.benchmark.StartupInsightsConfig? startupInsightsConfig;
   }
@@ -51,7 +51,7 @@ package androidx.benchmark {
     method public abstract void captureResumed();
     method public abstract void captureStart(long timeNs);
     method public abstract void captureStop(long timeNs, long[] output, int offset);
-    method public final java.util.List<java.lang.String> getNames();
+    method @InaccessibleFromKotlin public final java.util.List<java.lang.String> getNames();
     property public final java.util.List<java.lang.String> names;
   }
 
@@ -63,12 +63,12 @@ package androidx.benchmark {
     ctor public MicrobenchmarkConfig(optional java.util.List<? extends androidx.benchmark.MetricCapture> metrics, optional boolean traceAppTagEnabled, optional boolean perfettoSdkTracingEnabled, optional androidx.benchmark.ProfilerConfig? profiler);
     ctor public MicrobenchmarkConfig(optional java.util.List<? extends androidx.benchmark.MetricCapture> metrics, optional boolean traceAppTagEnabled, optional boolean perfettoSdkTracingEnabled, optional androidx.benchmark.ProfilerConfig? profiler, optional Integer? warmupCount);
     ctor public MicrobenchmarkConfig(optional java.util.List<? extends androidx.benchmark.MetricCapture> metrics, optional boolean traceAppTagEnabled, optional boolean perfettoSdkTracingEnabled, optional androidx.benchmark.ProfilerConfig? profiler, optional Integer? warmupCount, optional Integer? measurementCount);
-    method public Integer? getMeasurementCount();
-    method public java.util.List<androidx.benchmark.MetricCapture> getMetrics();
-    method public androidx.benchmark.ProfilerConfig? getProfiler();
-    method public Integer? getWarmupCount();
-    method public boolean isPerfettoSdkTracingEnabled();
-    method public boolean isTraceAppTagEnabled();
+    method @InaccessibleFromKotlin public Integer? getMeasurementCount();
+    method @InaccessibleFromKotlin public java.util.List<androidx.benchmark.MetricCapture> getMetrics();
+    method @InaccessibleFromKotlin public androidx.benchmark.ProfilerConfig? getProfiler();
+    method @InaccessibleFromKotlin public Integer? getWarmupCount();
+    method @InaccessibleFromKotlin public boolean isPerfettoSdkTracingEnabled();
+    method @InaccessibleFromKotlin public boolean isTraceAppTagEnabled();
     property public Integer? measurementCount;
     property public java.util.List<androidx.benchmark.MetricCapture> metrics;
     property public boolean perfettoSdkTracingEnabled;
@@ -102,7 +102,7 @@ package androidx.benchmark {
 
   @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public final class StartupInsightsConfig {
     ctor public StartupInsightsConfig(boolean isEnabled);
-    method public boolean isEnabled();
+    method @InaccessibleFromKotlin public boolean isEnabled();
     property public boolean isEnabled;
   }
 
@@ -127,13 +127,13 @@ package androidx.benchmark.perfetto {
 
   public static final class PerfettoConfig.Binary extends androidx.benchmark.perfetto.PerfettoConfig {
     ctor public PerfettoConfig.Binary(byte[] bytes);
-    method public byte[] getBytes();
+    method @InaccessibleFromKotlin public byte[] getBytes();
     property public byte[] bytes;
   }
 
   public static final class PerfettoConfig.Text extends androidx.benchmark.perfetto.PerfettoConfig {
     ctor public PerfettoConfig.Text(String text);
-    method public String getText();
+    method @InaccessibleFromKotlin public String getText();
     property public String text;
   }
 

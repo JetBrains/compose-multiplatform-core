@@ -24,6 +24,8 @@ import androidx.annotation.RestrictTo
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 /** Establishes a connection to the projected service. */
@@ -64,13 +66,15 @@ internal object ProjectedServiceConnection {
                 override fun onServiceDisconnected(name: ComponentName?) {}
             }
 
-        lifecycleOwner.lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-                override fun onDestroy(owner: LifecycleOwner) {
-                    context.unbindService(serviceConnection)
+        withContext(Dispatchers.Main.immediate) {
+            lifecycleOwner.lifecycle.addObserver(
+                object : DefaultLifecycleObserver {
+                    override fun onDestroy(owner: LifecycleOwner) {
+                        context.unbindService(serviceConnection)
+                    }
                 }
-            }
-        )
+            )
+        }
 
         val isBindingPermitted = ProjectedServiceBinding.bind(context, serviceConnection)
         if (!isBindingPermitted) {

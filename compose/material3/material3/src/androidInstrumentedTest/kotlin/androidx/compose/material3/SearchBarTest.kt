@@ -51,7 +51,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -563,19 +562,6 @@ class SearchBarTest {
         // Click search bar
         rule.onNodeWithTag(SearchBarTestTag).performClick()
         rule.onNodeWithText("Content").assertIsDisplayed()
-    }
-
-    @Test
-    fun searchBarColors_containerColor_becomesContainerColorOfTextField() {
-        lateinit var colors: SearchBarColors
-
-        rule.setMaterialContent(lightColorScheme()) {
-            colors = SearchBarDefaults.colors(containerColor = Color.Red)
-        }
-
-        assertThat(colors.inputFieldColors.focusedContainerColor).isEqualTo(Color.Red)
-        assertThat(colors.inputFieldColors.unfocusedContainerColor).isEqualTo(Color.Red)
-        assertThat(colors.inputFieldColors.disabledContainerColor).isEqualTo(Color.Red)
     }
 
     // Tests for new search bar APIs below this section

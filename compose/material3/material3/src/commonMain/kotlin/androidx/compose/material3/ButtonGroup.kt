@@ -20,7 +20,6 @@ import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -207,7 +206,7 @@ fun ButtonGroup(
                     Box {
                         overflowIndicator(menuState)
                         DropdownMenu(
-                            expanded = menuState.isExpanded,
+                            expanded = menuState.isShowing,
                             onDismissRequest = { menuState.dismiss() },
                         ) {
                             for (i in
@@ -353,7 +352,7 @@ object ButtonGroupDefaults {
 
         FilledIconButton(
             onClick = {
-                if (menuState.isExpanded) {
+                if (menuState.isShowing) {
                     menuState.dismiss()
                 } else {
                     menuState.show()
@@ -374,17 +373,23 @@ object ButtonGroupDefaults {
 /** State class for the overflow menu in [ButtonGroup]. */
 class ButtonGroupMenuState(initialIsShowing: Boolean = false) {
     /** Indicates whether the overflow menu is currently expanded. */
-    var isExpanded by mutableStateOf(initialIsShowing)
+    @Deprecated("Keeping for binary compatibility", level = DeprecationLevel.HIDDEN)
+    var isExpanded = initialIsShowing
+        get() = isShowing
+        private set
+
+    /** Indicates whether the overflow menu is currently showing. */
+    var isShowing by mutableStateOf(initialIsShowing)
         private set
 
     /** Closes the overflow menu. */
     fun dismiss() {
-        isExpanded = false
+        isShowing = false
     }
 
     /** Show the overflow menu. */
     fun show() {
-        isExpanded = true
+        isShowing = true
     }
 }
 

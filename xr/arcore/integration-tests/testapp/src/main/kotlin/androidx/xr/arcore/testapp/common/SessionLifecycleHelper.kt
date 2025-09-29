@@ -25,7 +25,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureCalibrationRequired
-import androidx.xr.runtime.SessionConfigureConfigurationNotSupported
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
@@ -115,10 +114,6 @@ class SessionLifecycleHelper(
                     session = result.session
                     try {
                         when (val configResult = session.configure(config)) {
-                            is SessionConfigureConfigurationNotSupported -> {
-                                showErrorMessage("Session configuration not supported.")
-                                activity.finish()
-                            }
                             is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
                                 Log.e(
                                     TAG,
@@ -136,6 +131,9 @@ class SessionLifecycleHelper(
                         requestPermissionLauncher.launch(
                             getRequiredPermissions(config).toTypedArray()
                         )
+                    } catch (e: UnsupportedOperationException) {
+                        showErrorMessage("Session configuration not supported.")
+                        activity.finish()
                     }
                 }
                 is SessionCreateApkRequired -> {
@@ -158,10 +156,6 @@ class SessionLifecycleHelper(
         }
         try {
             when (val result = session.configure(config)) {
-                is SessionConfigureConfigurationNotSupported -> {
-                    showErrorMessage("Session configuration not supported.")
-                    activity.finish()
-                }
                 is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
                     Log.e(
                         TAG,
@@ -177,6 +171,9 @@ class SessionLifecycleHelper(
             }
         } catch (e: SecurityException) {
             requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
+        } catch (e: UnsupportedOperationException) {
+            showErrorMessage("Session configuration not supported.")
+            activity.finish()
         }
     }
 

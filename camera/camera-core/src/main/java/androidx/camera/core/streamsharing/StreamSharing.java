@@ -292,76 +292,88 @@ public class StreamSharing extends UseCase {
 
         if (secondaryStreamSpec == null) {
             // primary
-            createPrimaryCamera(cameraId, secondaryCameraId,
-                    config, primaryStreamSpec, null);
+            SurfaceEdge inputSurfaceEdge = createPrimaryCameraInputSurface(cameraId,
+                    secondaryCameraId, config, primaryStreamSpec, null);
 
             // sharing node
-            mSharingNode = getSharingNode(requireNonNull(getCamera()), primaryStreamSpec);
+            mSharingNode = createEffectOrCopyNode(requireNonNull(getCamera()), primaryStreamSpec);
 
-            boolean isViewportSet = getViewPortCropRect() != null;
-            Map<UseCase, OutConfig> outConfigMap =
-                    mVirtualCameraAdapter.getChildrenOutConfigs(mSharingInputEdge,
-                            getTargetRotationInternal(), isViewportSet);
-            SurfaceProcessorNode.Out out = mSharingNode.transform(
-                    SurfaceProcessorNode.In.of(mSharingInputEdge,
-                            new ArrayList<>(outConfigMap.values())));
-
-            Map<UseCase, SurfaceEdge> outputEdges = new HashMap<>();
-            for (Map.Entry<UseCase, OutConfig> entry : outConfigMap.entrySet()) {
-                outputEdges.put(entry.getKey(), out.get(entry.getValue()));
-            }
-
-            Map<UseCase, Size> selectedChildSizeMap = mVirtualCameraAdapter.getSelectedChildSizes(
-                    mSharingInputEdge, isViewportSet);
-
-            mVirtualCameraAdapter.setChildrenEdges(outputEdges, selectedChildSizeMap);
-
+            transformAndOutputToChildUseCases(inputSurfaceEdge, mSharingNode);
             return List.of(mSessionConfigBuilder.build());
         } else {
             // primary
-            createPrimaryCamera(cameraId, secondaryCameraId,
-                    config, primaryStreamSpec, secondaryStreamSpec);
+            SurfaceEdge inputSurfacePrimary =
+                    createPrimaryCameraInputSurface(cameraId, secondaryCameraId, config,
+                            primaryStreamSpec, secondaryStreamSpec);
 
             // secondary
-            createSecondaryCamera(cameraId, secondaryCameraId,
-                    config, primaryStreamSpec, secondaryStreamSpec);
+            SurfaceEdge inputSurfaceSecondary =
+                    createSecondaryCameraInputSurface(cameraId, secondaryCameraId, config,
+                            primaryStreamSpec, secondaryStreamSpec);
 
-            // sharing node
-            mDualSharingNode = getDualSharingNode(
+            // Dual sharing node
+            mDualSharingNode = createDualSharingNode(
                     getCamera(),
                     getSecondaryCamera(),
                     primaryStreamSpec, // use primary stream spec
                     mCompositionSettings,
                     mSecondaryCompositionSettings);
-            boolean isViewportSet = getViewPortCropRect() != null;
-            Map<UseCase, DualOutConfig> outConfigMap =
-                    mVirtualCameraAdapter.getChildrenOutConfigs(
-                            mSharingInputEdge,
-                            mSecondarySharingInputEdge,
-                            getTargetRotationInternal(),
-                            isViewportSet);
-            DualSurfaceProcessorNode.Out out = mDualSharingNode.transform(
-                    DualSurfaceProcessorNode.In.of(
-                            mSharingInputEdge,
-                            mSecondarySharingInputEdge,
-                            new ArrayList<>(outConfigMap.values())));
 
-            Map<UseCase, SurfaceEdge> outputEdges = new HashMap<>();
-            for (Map.Entry<UseCase, DualOutConfig> entry : outConfigMap.entrySet()) {
-                outputEdges.put(entry.getKey(), out.get(entry.getValue()));
-            }
-
-            Map<UseCase, Size> primarySelectedChildSizes =
-                    mVirtualCameraAdapter.getSelectedChildSizes(mSharingInputEdge, isViewportSet);
-
-            mVirtualCameraAdapter.setChildrenEdges(outputEdges, primarySelectedChildSizes);
-
+            transformDualSurfacesAndOutputToChildUseCases(inputSurfacePrimary,
+                    inputSurfaceSecondary, mDualSharingNode);
             return List.of(mSessionConfigBuilder.build(),
                     mSecondarySessionConfigBuilder.build());
         }
     }
 
-    private void createPrimaryCamera(
+    private void transformAndOutputToChildUseCases(SurfaceEdge inputSurfaceEdge,
+            SurfaceProcessorNode processorNode) {
+        boolean isViewportSet = getViewPortCropRect() != null;
+        Map<UseCase, OutConfig> outConfigMap =
+                mVirtualCameraAdapter.getChildrenOutConfigs(inputSurfaceEdge,
+                        getTargetRotationInternal(), isViewportSet);
+        SurfaceProcessorNode.Out out = processorNode.transform(
+                SurfaceProcessorNode.In.of(inputSurfaceEdge,
+                        new ArrayList<>(outConfigMap.values())));
+
+        Map<UseCase, SurfaceEdge> outputEdges = new HashMap<>();
+        for (Map.Entry<UseCase, OutConfig> entry : outConfigMap.entrySet()) {
+            outputEdges.put(entry.getKey(), out.get(entry.getValue()));
+        }
+
+        Map<UseCase, Size> selectedChildSizeMap = mVirtualCameraAdapter.getSelectedChildSizes(
+                inputSurfaceEdge, isViewportSet);
+
+        mVirtualCameraAdapter.setChildrenEdges(outputEdges, selectedChildSizeMap);
+    }
+
+    private void transformDualSurfacesAndOutputToChildUseCases(SurfaceEdge inputSurfacePrimary,
+            SurfaceEdge inputSurfaceSecondary, DualSurfaceProcessorNode dualProcessorNode) {
+        boolean isViewportSet = getViewPortCropRect() != null;
+        Map<UseCase, DualOutConfig> outConfigMap =
+                mVirtualCameraAdapter.getChildrenOutConfigs(
+                        inputSurfacePrimary,
+                        inputSurfaceSecondary,
+                        getTargetRotationInternal(),
+                        isViewportSet);
+        DualSurfaceProcessorNode.Out out = dualProcessorNode.transform(
+                DualSurfaceProcessorNode.In.of(
+                        inputSurfacePrimary,
+                        inputSurfaceSecondary,
+                        new ArrayList<>(outConfigMap.values())));
+
+        Map<UseCase, SurfaceEdge> outputEdges = new HashMap<>();
+        for (Map.Entry<UseCase, DualOutConfig> entry : outConfigMap.entrySet()) {
+            outputEdges.put(entry.getKey(), out.get(entry.getValue()));
+        }
+
+        Map<UseCase, Size> primarySelectedChildSizes =
+                mVirtualCameraAdapter.getSelectedChildSizes(inputSurfacePrimary, isViewportSet);
+
+        mVirtualCameraAdapter.setChildrenEdges(outputEdges, primarySelectedChildSizes);
+    }
+
+    private SurfaceEdge createPrimaryCameraInputSurface(
             @NonNull String cameraId,
             @Nullable String secondaryCameraId,
             @NonNull UseCaseConfig<?> config,
@@ -384,9 +396,10 @@ public class StreamSharing extends UseCase {
         addCameraErrorListener(mSessionConfigBuilder,
                 cameraId, secondaryCameraId, config,
                 primaryStreamSpec, secondaryStreamSpec);
+        return mSharingInputEdge;
     }
 
-    private void createSecondaryCamera(
+    private SurfaceEdge createSecondaryCameraInputSurface(
             @NonNull String cameraId,
             @Nullable String secondaryCameraId,
             @NonNull UseCaseConfig<?> config,
@@ -410,6 +423,7 @@ public class StreamSharing extends UseCase {
         addCameraErrorListener(mSecondarySessionConfigBuilder,
                 cameraId, secondaryCameraId, config,
                 primaryStreamSpec, secondaryStreamSpec);
+        return mSecondarySharingInputEdge;
     }
 
     private SessionConfig.@NonNull Builder createSessionConfigBuilder(
@@ -492,25 +506,31 @@ public class StreamSharing extends UseCase {
             return cameraEdge;
         }
         // Transform the camera edge to get the input edge.
+        return getEffectTransformedEdge(cameraEdge, camera);
+    }
+
+    private @NonNull SurfaceEdge getEffectTransformedEdge(@NonNull SurfaceEdge inputEdge,
+            @NonNull CameraInternal camera) {
+        // Transform the camera edge to get the input edge.
         mEffectNode = new SurfaceProcessorNode(camera,
                 getEffect().createSurfaceProcessorInternal());
         int rotationAppliedByEffect = getRotationAppliedByEffect();
-        Rect cropRectAppliedByEffect = getCropRectAppliedByEffect(cameraEdge);
+        Rect cropRectAppliedByEffect = getCropRectAppliedByEffect(inputEdge);
         OutConfig outConfig = OutConfig.of(
-                cameraEdge.getTargets(),
-                cameraEdge.getFormat(),
+                inputEdge.getTargets(),
+                inputEdge.getFormat(),
                 cropRectAppliedByEffect,
                 getRotatedSize(cropRectAppliedByEffect, rotationAppliedByEffect),
                 rotationAppliedByEffect,
                 getMirroringAppliedByEffect(),
                 /*shouldRespectInputCropRect=*/true);
-        SurfaceProcessorNode.In in = SurfaceProcessorNode.In.of(cameraEdge,
+        SurfaceProcessorNode.In in = SurfaceProcessorNode.In.of(inputEdge,
                 singletonList(outConfig));
         SurfaceProcessorNode.Out out = mEffectNode.transform(in);
         return requireNonNull(out.get(outConfig));
     }
 
-    private @NonNull SurfaceProcessorNode getSharingNode(@NonNull CameraInternal camera,
+    private @NonNull SurfaceProcessorNode createEffectOrCopyNode(@NonNull CameraInternal camera,
             @NonNull StreamSpec streamSpec) {
         if (getEffect() != null
                 && getEffect().getOutputOption()
@@ -520,13 +540,13 @@ public class StreamSharing extends UseCase {
                     getEffect().createSurfaceProcessorInternal());
             return mEffectNode;
         } else {
-            // Create an internal node for sharing.
+            // Create an internal node for copying.
             return new SurfaceProcessorNode(camera,
                     DefaultSurfaceProcessor.Factory.newInstance(streamSpec.getDynamicRange()));
         }
     }
 
-    private @NonNull DualSurfaceProcessorNode getDualSharingNode(
+    private @NonNull DualSurfaceProcessorNode createDualSharingNode(
             @NonNull CameraInternal primaryCamera,
             @NonNull CameraInternal secondaryCamera,
             @NonNull StreamSpec streamSpec,

@@ -228,11 +228,6 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         // Broken in 7.0.0-alpha15 due to b/187343720
         disable.add("UnusedResources")
 
-        // Disable NullAnnotationGroup check for :compose:ui:ui-text (b/233788571)
-        if (isLibrary && project.group == "androidx.compose.ui" && project.name == "ui-text") {
-            disable.add("NullAnnotationGroup")
-        }
-
         if (extension.type == SoftwareType.SAMPLES) {
             // TODO: b/190833328 remove if / when AGP will analyze dependencies by default
             //  This is needed because SampledAnnotationDetector uses partial analysis, and
@@ -279,6 +274,7 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         }
 
         fatal.add("CheckResult")
+        fatal.add("PrivateResource")
 
         val lintXmlPath =
             if (extension.type == SoftwareType.SAMPLES) {

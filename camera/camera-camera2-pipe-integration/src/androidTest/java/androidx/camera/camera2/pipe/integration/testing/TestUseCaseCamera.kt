@@ -29,7 +29,6 @@ import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
@@ -123,13 +122,7 @@ class TestUseCaseCamera(
         val cameraGraph = cameraPipe.createCameraGraph(cameraGraphConfig)
 
         useCaseCameraGraphConfig =
-            UseCaseCameraConfig(
-                    useCases,
-                    sessionConfigAdapter,
-                    CameraStateAdapter(),
-                    cameraGraph,
-                    streamConfigMap,
-                )
+            UseCaseCameraConfig(useCases, sessionConfigAdapter, cameraGraph, streamConfigMap)
                 .provideUseCaseGraphConfig(
                     useCaseSurfaceManager = useCaseSurfaceManager,
                     cameraInteropStateCallbackRepository = CameraInteropStateCallbackRepository(),

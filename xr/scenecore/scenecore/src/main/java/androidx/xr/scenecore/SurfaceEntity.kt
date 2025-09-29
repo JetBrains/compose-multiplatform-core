@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.internal.SceneRuntime
 import androidx.xr.scenecore.internal.SurfaceEntity as RtSurfaceEntity
 
 /**
@@ -398,7 +399,8 @@ private constructor(
          * Factory method for SurfaceEntity.
          *
          * @param lifecycleManager A SceneCore LifecycleManager
-         * @param adapter JxrPlatformAdapter to use.
+         * @param sceneRuntime SceneRuntime to use.
+         * @param renderingRuntime RenderingRuntime to use.
          * @param entityManager A SceneCore EntityManager
          * @param stereoMode An [Int] which defines how surface subregions map to eyes
          * @param pose Pose for this StereoSurface entity, relative to its parent.
@@ -413,7 +415,8 @@ private constructor(
          */
         internal fun create(
             lifecycleManager: LifecycleManager,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
+            renderingRuntime: RenderingRuntime,
             entityManager: EntityManager,
             @StereoModeValue stereoMode: Int = StereoMode.STEREO_MODE_MONO,
             pose: Pose = Pose.Identity,
@@ -433,13 +436,13 @@ private constructor(
             val surfaceEntity =
                 SurfaceEntity(
                     lifecycleManager,
-                    adapter.createSurfaceEntity(
+                    renderingRuntime.createSurfaceEntity(
                         getRtStereoMode(stereoMode),
                         pose,
                         rtShape,
                         getRtSurfaceProtection(surfaceProtection),
                         getRtSuperSampling(superSampling),
-                        adapter.activitySpaceRootImpl,
+                        sceneRuntime.activitySpace,
                     ),
                     entityManager,
                     shape,
@@ -475,7 +478,8 @@ private constructor(
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session.perceptionRuntime.lifecycleManager,
-                session.platformAdapter,
+                session.sceneRuntime,
+                session.renderingRuntime,
                 session.scene.entityManager,
                 stereoMode,
                 pose,

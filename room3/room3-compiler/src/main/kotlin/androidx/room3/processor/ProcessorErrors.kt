@@ -20,7 +20,6 @@ import androidx.room3.Delete
 import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.RawQuery
-import androidx.room3.RewriteQueriesToDropUnusedColumns
 import androidx.room3.Update
 import androidx.room3.Upsert
 import androidx.room3.ext.KotlinTypeNames
@@ -790,7 +789,7 @@ object ProcessorErrors {
         "Invalid table name. Room does not allow using ` or \" in table names"
 
     const val RAW_QUERY_BAD_PARAMS =
-        "RawQuery functions should have 1 and only 1 parameter with type" + " SupportSQLiteQuery"
+        "@RawQuery functions should have 1 and only 1 parameter with type RoomRawQuery"
 
     fun parameterCannotBeNullable(parameterName: String) =
         """
@@ -887,14 +886,6 @@ object ProcessorErrors {
         "If a DAO function has a " +
             "primitive array or an array of String return type, a single column must be returned. " +
             "Please check the query of the DAO function with the `$returnType` return type."
-
-    val EXPAND_PROJECTION_ALONG_WITH_REMOVE_UNUSED =
-        """
-        Using @${RewriteQueriesToDropUnusedColumns::class.simpleName} annotation when
-        room.expandProjection compiler flag is enabled will disable expandProjection for queries
-        covered with @${RewriteQueriesToDropUnusedColumns::class.simpleName}.
-    """
-            .trim()
 
     fun missingPrimaryKeysInPartialEntityForInsert(
         partialEntityName: String,
@@ -1296,4 +1287,7 @@ object ProcessorErrors {
 
     fun invalidConstructedBySuperInterface(expected: String) =
         "The @ConstructedBy definition must implement a single interface of type '$expected'."
+
+    const val INVALID_NULLABLE_DAO_CONSTRUCTOR_PARAM =
+        "The database parameter of a DAO constructor must not be nullable."
 }

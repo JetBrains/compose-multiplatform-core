@@ -16,16 +16,12 @@
 
 package androidx.room3.integration.testapp.dao;
 
-import android.database.Cursor;
-
 import androidx.lifecycle.LiveData;
-import androidx.paging.DataSource;
 import androidx.room3.Dao;
 import androidx.room3.Delete;
 import androidx.room3.Insert;
 import androidx.room3.OnConflictStrategy;
 import androidx.room3.Query;
-import androidx.room3.RawQuery;
 import androidx.room3.Transaction;
 import androidx.room3.Update;
 import androidx.room3.integration.testapp.TestDatabase;
@@ -38,14 +34,10 @@ import androidx.room3.integration.testapp.vo.User;
 import androidx.room3.integration.testapp.vo.UserAndFriends;
 import androidx.room3.integration.testapp.vo.UserSummary;
 import androidx.room3.integration.testapp.vo.Username;
-import androidx.sqlite.db.SupportSQLiteQuery;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import io.reactivex.Completable;
-import io.reactivex.Observable;
-import io.reactivex.Single;
-
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 
 import java.util.Collection;
@@ -54,6 +46,10 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
+import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 
 @SuppressWarnings("SameParameterValue")
 @Dao
@@ -121,10 +117,10 @@ public abstract class UserDao {
     public abstract Completable updateCompletable(User user);
 
     @Update
-    public abstract Single<Integer> updateSingle(User user);
+    public abstract Single<@NonNull Integer> updateSingle(User user);
 
     @Update
-    public abstract Single<Integer> updateSingleUsers(User user1, User user2);
+    public abstract Single<@NonNull Integer> updateSingleUsers(User user1, User user2);
 
     @Update
     public abstract int updateAll(List<User> users);
@@ -181,56 +177,53 @@ public abstract class UserDao {
     @Query("select * from user where mBirthday > :from AND mBirthday < :to")
     public abstract List<User> findByBirthdayRange(Date from, Date to);
 
-    @Query("select mId from user where mId IN (:ids)")
-    public abstract Cursor findUsersAsCursor(int... ids);
+    @Query("select * from user where mId = :id")
+    public abstract io.reactivex.Flowable<@NonNull User> rx2_flowableUserById(int id);
 
     @Query("select * from user where mId = :id")
-    public abstract io.reactivex.Flowable<User> rx2_flowableUserById(int id);
+    public abstract io.reactivex.rxjava3.core.Flowable<@NonNull User> rx3_flowableUserById(int id);
 
     @Query("select * from user where mId = :id")
-    public abstract io.reactivex.rxjava3.core.Flowable<User> rx3_flowableUserById(int id);
+    public abstract io.reactivex.Observable<@NonNull User> rx2_observableUserById(int id);
 
     @Query("select * from user where mId = :id")
-    public abstract io.reactivex.Observable<User> rx2_observableUserById(int id);
+    public abstract io.reactivex.rxjava3.core.Observable<@NonNull User> rx3_observableUserById(int id);
 
     @Query("select * from user where mId = :id")
-    public abstract io.reactivex.rxjava3.core.Observable<User> rx3_observableUserById(int id);
+    public abstract io.reactivex.Maybe<@NonNull User> rx2_maybeUserById(int id);
 
     @Query("select * from user where mId = :id")
-    public abstract io.reactivex.Maybe<User> rx2_maybeUserById(int id);
-
-    @Query("select * from user where mId = :id")
-    public abstract io.reactivex.rxjava3.core.Maybe<User> rx3_maybeUserById(int id);
+    public abstract io.reactivex.rxjava3.core.Maybe<@NonNull User> rx3_maybeUserById(int id);
 
     @Query("select * from user where mId IN (:ids)")
-    public abstract io.reactivex.Maybe<List<User>> rx2_maybeUsersByIds(int... ids);
+    public abstract io.reactivex.Maybe<@NonNull List<User>> rx2_maybeUsersByIds(int... ids);
 
     @Query("select * from user where mId IN (:ids)")
-    public abstract io.reactivex.rxjava3.core.Maybe<List<User>> rx3_maybeUsersByIds(int... ids);
+    public abstract io.reactivex.rxjava3.core.Maybe<@NonNull List<User>> rx3_maybeUsersByIds(int... ids);
 
     @Query("select * from user where mId = :id")
-    public abstract io.reactivex.Single<User> rx2_singleUserById(int id);
+    public abstract io.reactivex.Single<@NonNull User> rx2_singleUserById(int id);
 
     @Query("select * from user where mId = :id")
-    public abstract io.reactivex.rxjava3.core.Single<User> rx3_singleUserById(int id);
+    public abstract io.reactivex.rxjava3.core.Single<@NonNull User> rx3_singleUserById(int id);
 
     @Query("select * from user where mId IN (:ids)")
-    public abstract io.reactivex.Single<List<User>> rx2_singleUsersByIds(int... ids);
+    public abstract io.reactivex.Single<@NonNull List<User>> rx2_singleUsersByIds(int... ids);
 
     @Query("select * from user where mId IN (:ids)")
-    public abstract io.reactivex.rxjava3.core.Single<List<User>> rx3_singleUsersByIds(int... ids);
+    public abstract io.reactivex.rxjava3.core.Single<@NonNull List<User>> rx3_singleUsersByIds(int... ids);
 
     @Query("select COUNT(*) from user")
-    public abstract io.reactivex.Flowable<Integer> rx2_flowableCountUsers();
+    public abstract io.reactivex.Flowable<@NonNull Integer> rx2_flowableCountUsers();
 
     @Query("select COUNT(*) from user")
-    public abstract io.reactivex.rxjava3.core.Flowable<Integer> rx3_flowableCountUsers();
+    public abstract io.reactivex.rxjava3.core.Flowable<@NonNull Integer> rx3_flowableCountUsers();
 
     @Query("select COUNT(*) from user")
-    public abstract Publisher<Integer> publisherCountUsers();
+    public abstract Publisher<@NonNull Integer> publisherCountUsers();
 
     @Query("select COUNT(*) from user")
-    public abstract Observable<Integer> observableCountUsers();
+    public abstract Observable<@NonNull Integer> observableCountUsers();
 
     @Query("SELECT mBirthday from User where mId = :id")
     public abstract Date getBirthday(int id);
@@ -267,20 +260,6 @@ public abstract class UserDao {
             }
         });
     }
-
-    @Query("SELECT * FROM user where mAge > :age")
-    public abstract DataSource.Factory<Integer, User> loadPagedByAge(int age);
-
-    @Query("SELECT * FROM user where mLastName = :name")
-    public abstract DataSource.Factory<Integer, User> loadPagedByLastname(String name);
-
-    @RawQuery(observedEntities = User.class)
-    public abstract DataSource.Factory<Integer, User> loadPagedByAgeWithObserver(
-            SupportSQLiteQuery query);
-
-    // TODO: switch to PositionalDataSource once Room supports it
-    @Query("SELECT * FROM user ORDER BY mAge DESC")
-    public abstract DataSource.Factory<Integer, User> loadUsersByAgeDesc();
 
     @Query("DELETE FROM User WHERE mId IN (:ids) AND mAge == :age")
     public abstract int deleteByAgeAndIds(int age, List<Integer> ids);

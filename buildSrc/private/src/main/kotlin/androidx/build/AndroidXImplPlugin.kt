@@ -230,7 +230,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.validateLintVersionTestExists(androidXExtension)
             project.addTestLintK1Task(androidXExtension)
         }
-        project.disallowAccidentalAndroidDependenciesInKmpProject(androidXKmpExtension)
         TaskUpToDateValidator.setup(project, registry)
 
         project.workaroundAndroidXDependencyResolutions()
@@ -331,12 +330,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         val kotlinVersionStringProvider = androidXConfiguration.kotlinBomVersion
 
         // Resolve unspecified Kotlin versions to the target version.
+        // TODO(b/443037365): Remove when bug fixed as built-in Kotlin would handle this
         configurations.configureEach { configuration ->
             configuration.resolutionStrategy { strategy ->
                 strategy.eachDependency { details ->
                     if (
                         details.requested.group == "org.jetbrains.kotlin" &&
-                            details.requested.version == null
+                            details.requested.version.isNullOrBlank()
                     ) {
                         details.useVersion(kotlinVersionStringProvider.get())
                     }
@@ -738,7 +738,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.addToBuildOnServer("lint")
             // Created to be consumed by docs-tip-of-tree
             project.configurations.register("androidIntermediates") {
-                it.isVisible = false
                 it.isCanBeResolved = false
                 it.attributes.attribute(
                     Usage.USAGE_ATTRIBUTE,
@@ -1612,30 +1611,6 @@ fun Project.validateMultiplatformPluginHasNotBeenApplied() {
         throw GradleException(
             "The Kotlin multiplatform plugin should only be applied by the AndroidX plugin."
         )
-    }
-}
-
-/** Verifies we don't accidentially write "implementation" instead of "commonMainImplementation" */
-fun Project.disallowAccidentalAndroidDependenciesInKmpProject(
-    androidXKmpExtension: AndroidXMultiplatformExtension
-) {
-    project.afterEvaluate {
-        if (androidXKmpExtension.supportedPlatforms.isNotEmpty()) {
-            val androidConfiguration = project.configurations.findByName("implementation")
-            if (androidConfiguration != null) {
-                if (
-                    androidConfiguration.dependencies.isNotEmpty() ||
-                        androidConfiguration.dependencyConstraints.isNotEmpty()
-                ) {
-                    throw GradleException(
-                        "The 'implementation' Configuration should not be used in a " +
-                            "multiplatform project: this Configuration is declared by the " +
-                            "Android plugin rather than the kmp plugin. Did you mean " +
-                            "'commonMainImplementation'?"
-                    )
-                }
-            }
-        }
     }
 }
 

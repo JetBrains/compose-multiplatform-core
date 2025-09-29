@@ -29,11 +29,11 @@ package androidx.privacysandbox.ui.core {
   public final class SandboxedSdkViewUiInfo {
     ctor public SandboxedSdkViewUiInfo(int uiContainerWidth, int uiContainerHeight, android.graphics.Rect onScreenGeometry, float uiContainerOpacityHint, java.util.List<android.graphics.Rect> obstructedGeometry);
     method public static androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo fromBundle(android.os.Bundle bundle);
-    method public java.util.List<android.graphics.Rect> getObstructedGeometry();
-    method public android.graphics.Rect getOnScreenGeometry();
-    method public int getUiContainerHeight();
-    method public float getUiContainerOpacityHint();
-    method public int getUiContainerWidth();
+    method @InaccessibleFromKotlin public java.util.List<android.graphics.Rect> getObstructedGeometry();
+    method @InaccessibleFromKotlin public android.graphics.Rect getOnScreenGeometry();
+    method @InaccessibleFromKotlin public int getUiContainerHeight();
+    method @InaccessibleFromKotlin public float getUiContainerOpacityHint();
+    method @InaccessibleFromKotlin public int getUiContainerWidth();
     method public static android.os.Bundle toBundle(androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo sandboxedSdkViewUiInfo);
     property public java.util.List<android.graphics.Rect> obstructedGeometry;
     property public android.graphics.Rect onScreenGeometry;
@@ -54,8 +54,8 @@ package androidx.privacysandbox.ui.core {
 
   public static interface SandboxedUiAdapter.Session extends java.lang.AutoCloseable {
     method public void close();
-    method public java.util.Set<java.lang.String> getSignalOptions();
-    method public android.view.View getView();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getSignalOptions();
+    method @InaccessibleFromKotlin public android.view.View getView();
     method public void notifyConfigurationChanged(android.content.res.Configuration configuration);
     method public void notifyResized(int width, int height);
     method public void notifySessionRendered(java.util.Set<java.lang.String> supportedSignalOptions);
@@ -85,8 +85,8 @@ package androidx.privacysandbox.ui.core {
 
   public final class SessionData {
     ctor public SessionData();
-    method public android.window.InputTransferToken? getInputTransferToken();
-    method public android.os.IBinder? getWindowInputToken();
+    method @InaccessibleFromKotlin public android.window.InputTransferToken? getInputTransferToken();
+    method @InaccessibleFromKotlin public android.os.IBinder? getWindowInputToken();
     property public android.window.InputTransferToken? inputTransferToken;
     property public android.os.IBinder? windowInputToken;
     field public static final androidx.privacysandbox.ui.core.SessionData.Companion Companion;
@@ -103,15 +103,15 @@ package androidx.privacysandbox.ui.core {
 
   public final class SessionObserverContext {
     ctor public SessionObserverContext(android.view.View? view, java.util.Set<java.lang.String> supportedSignalOptions);
-    method public java.util.Set<java.lang.String> getSupportedSignalOptions();
-    method public android.view.View? getView();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getSupportedSignalOptions();
+    method @InaccessibleFromKotlin public android.view.View? getView();
     property public java.util.Set<java.lang.String> supportedSignalOptions;
     property public android.view.View? view;
   }
 
   public interface SessionObserverFactory {
     method public androidx.privacysandbox.ui.core.SessionObserver create();
-    method public default java.util.Set<java.lang.String> getSignalOptions();
+    method @InaccessibleFromKotlin public default java.util.Set<java.lang.String> getSignalOptions();
     property public default java.util.Set<java.lang.String> signalOptions;
   }
 

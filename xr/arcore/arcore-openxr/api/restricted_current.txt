@@ -7,8 +7,8 @@ package androidx.xr.arcore.openxr {
     method public androidx.xr.runtime.TrackingState component1();
     method public androidx.xr.runtime.math.Pose? component2();
     method public androidx.xr.arcore.openxr.AnchorState copy(optional androidx.xr.runtime.TrackingState trackingState, optional androidx.xr.runtime.math.Pose? pose);
-    method public androidx.xr.runtime.math.Pose? getPose();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     property public androidx.xr.runtime.math.Pose? pose;
     property public androidx.xr.runtime.TrackingState trackingState;
   }
@@ -23,20 +23,20 @@ package androidx.xr.arcore.openxr {
     method public androidx.xr.runtime.math.Pose component1();
     method public long component2();
     method public androidx.xr.arcore.openxr.HitData copy(optional androidx.xr.runtime.math.Pose pose, optional long id);
-    method public long getId();
-    method public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public long getId();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     property public long id;
     property public androidx.xr.runtime.math.Pose pose;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrAnchor implements androidx.xr.arcore.internal.ExportableAnchor {
     method public void detach();
-    method public android.os.IBinder getAnchorToken();
-    method public long getNativePointer();
-    method public androidx.xr.arcore.internal.Anchor.PersistenceState getPersistenceState();
-    method public androidx.xr.runtime.math.Pose getPose();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
-    method public java.util.UUID? getUuid();
+    method @InaccessibleFromKotlin public android.os.IBinder getAnchorToken();
+    method @InaccessibleFromKotlin public long getNativePointer();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Anchor.PersistenceState getPersistenceState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public java.util.UUID? getUuid();
     method public void persist();
     method public void update(long xrTime);
     property public android.os.IBinder anchorToken;
@@ -49,10 +49,10 @@ package androidx.xr.arcore.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrAugmentedObject implements androidx.xr.arcore.internal.AugmentedObject {
     method public androidx.xr.arcore.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.runtime.AugmentedObjectCategory getCategory();
-    method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.FloatSize3d getExtents();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.AugmentedObjectCategory getCategory();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize3d getExtents();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     method public void update(long xrTime);
     property public androidx.xr.runtime.AugmentedObjectCategory category;
     property public androidx.xr.runtime.math.Pose centerPose;
@@ -61,12 +61,12 @@ package androidx.xr.arcore.openxr {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrDepthMap implements androidx.xr.arcore.internal.DepthMap {
-    method public int getHeight();
-    method public java.nio.ByteBuffer? getRawConfidenceMap();
-    method public java.nio.FloatBuffer? getRawDepthMap();
-    method public java.nio.ByteBuffer? getSmoothConfidenceMap();
-    method public java.nio.FloatBuffer? getSmoothDepthMap();
-    method public int getWidth();
+    method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public java.nio.ByteBuffer? getRawConfidenceMap();
+    method @InaccessibleFromKotlin public java.nio.FloatBuffer? getRawDepthMap();
+    method @InaccessibleFromKotlin public java.nio.ByteBuffer? getSmoothConfidenceMap();
+    method @InaccessibleFromKotlin public java.nio.FloatBuffer? getSmoothDepthMap();
+    method @InaccessibleFromKotlin public int getWidth();
     property public int height;
     property public java.nio.ByteBuffer? rawConfidenceMap;
     property public java.nio.FloatBuffer? rawDepthMap;
@@ -80,7 +80,7 @@ package androidx.xr.arcore.openxr {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrDevice implements androidx.xr.arcore.internal.ArDevice {
-    method public androidx.xr.runtime.math.Pose getDevicePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getDevicePose();
     method public void update(long xrTime);
     property public androidx.xr.runtime.math.Pose devicePose;
   }
@@ -91,17 +91,17 @@ package androidx.xr.arcore.openxr {
     method public androidx.xr.arcore.internal.Earth.GeospatialPoseResult createGeospatialPoseFromDevicePose();
     method public androidx.xr.arcore.internal.Earth.GeospatialPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.math.Pose createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
-    method public androidx.xr.arcore.internal.Earth.State getState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Earth.State getState();
     method public void update(long xrTime);
     property public androidx.xr.arcore.internal.Earth.State state;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrEye implements androidx.xr.arcore.internal.Eye {
     ctor public OpenXrEye();
-    method public androidx.xr.runtime.math.Pose? getCoarsePose();
-    method public androidx.xr.arcore.EyeState? getCoarseState();
-    method public androidx.xr.runtime.math.Pose? getFinePose();
-    method public androidx.xr.arcore.EyeState? getFineState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCoarsePose();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getCoarseState();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getFinePose();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getFineState();
     property public androidx.xr.runtime.math.Pose? coarsePose;
     property public androidx.xr.arcore.EyeState? coarseState;
     property public androidx.xr.runtime.math.Pose? finePose;
@@ -110,11 +110,11 @@ package androidx.xr.arcore.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrFace implements androidx.xr.arcore.internal.Face {
     ctor public OpenXrFace();
-    method public float[] getBlendShapeValues();
-    method public float[] getConfidenceValues();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
-    method public boolean isValid();
-    method public void setValid(boolean);
+    method @InaccessibleFromKotlin public float[] getBlendShapeValues();
+    method @InaccessibleFromKotlin public float[] getConfidenceValues();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public boolean isValid();
+    method @InaccessibleFromKotlin public void setValid(boolean);
     method public void update(long xrTime);
     property public float[] blendShapeValues;
     property public float[] confidenceValues;
@@ -123,8 +123,8 @@ package androidx.xr.arcore.openxr {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrHand implements androidx.xr.arcore.internal.Hand {
-    method public java.nio.FloatBuffer getHandJointsBuffer();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public java.nio.FloatBuffer getHandJointsBuffer();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
     method public void update(long xrTime);
     property public java.nio.FloatBuffer handJointsBuffer;
     property public androidx.xr.runtime.TrackingState trackingState;
@@ -133,7 +133,7 @@ package androidx.xr.arcore.openxr {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrManager implements androidx.xr.runtime.internal.LifecycleManager {
     method public void configure(androidx.xr.runtime.Config config);
     method public void create();
-    method public androidx.xr.runtime.Config getConfig();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Config getConfig();
     method public void pause();
     method public void resume();
     method public void stop();
@@ -144,21 +144,21 @@ package androidx.xr.arcore.openxr {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrPerceptionManager implements androidx.xr.arcore.internal.PerceptionManager {
     method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public androidx.xr.arcore.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.arcore.openxr.OpenXrDevice getArDevice();
-    method public androidx.xr.arcore.openxr.OpenXrEarth getEarth();
-    method public androidx.xr.arcore.internal.DepthMap? getLeftDepthMap();
-    method public androidx.xr.arcore.internal.Eye getLeftEye();
-    method public androidx.xr.arcore.internal.Hand getLeftHand();
-    method public androidx.xr.arcore.internal.RenderViewpoint? getLeftRenderViewpoint();
-    method public androidx.xr.arcore.internal.DepthMap? getMonoDepthMap();
-    method public androidx.xr.arcore.internal.RenderViewpoint? getMonoRenderViewpoint();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrDevice getArDevice();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrEarth getEarth();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.DepthMap? getLeftDepthMap();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Eye getLeftEye();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Hand getLeftHand();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.RenderViewpoint? getLeftRenderViewpoint();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.DepthMap? getMonoDepthMap();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.RenderViewpoint? getMonoRenderViewpoint();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
-    method public androidx.xr.arcore.internal.DepthMap? getRightDepthMap();
-    method public androidx.xr.arcore.internal.Eye getRightEye();
-    method public androidx.xr.arcore.internal.Hand getRightHand();
-    method public androidx.xr.arcore.internal.RenderViewpoint? getRightRenderViewpoint();
-    method public java.util.Collection<androidx.xr.arcore.internal.Trackable> getTrackables();
-    method public androidx.xr.arcore.internal.Face? getUserFace();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.DepthMap? getRightDepthMap();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Eye getRightEye();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Hand getRightHand();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.RenderViewpoint? getRightRenderViewpoint();
+    method @InaccessibleFromKotlin public java.util.Collection<androidx.xr.arcore.internal.Trackable> getTrackables();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Face? getUserFace();
     method public java.util.List<androidx.xr.arcore.internal.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method public androidx.xr.arcore.internal.Anchor loadAnchor(java.util.UUID uuid);
     method public androidx.xr.arcore.internal.Anchor loadAnchorFromNativePointer(long nativePointer);
@@ -182,13 +182,13 @@ package androidx.xr.arcore.openxr {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrPlane implements androidx.xr.arcore.internal.Plane {
     method public androidx.xr.arcore.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.runtime.math.Pose getCenterPose();
-    method public androidx.xr.runtime.math.FloatSize2d getExtents();
-    method public androidx.xr.arcore.internal.Plane.Label getLabel();
-    method public androidx.xr.arcore.internal.Plane? getSubsumedBy();
-    method public androidx.xr.runtime.TrackingState getTrackingState();
-    method public androidx.xr.arcore.internal.Plane.Type getType();
-    method public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getCenterPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.FloatSize2d getExtents();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Plane.Label getLabel();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Plane? getSubsumedBy();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.internal.Plane.Type getType();
+    method @InaccessibleFromKotlin public java.util.List<androidx.xr.runtime.math.Vector2> getVertices();
     method public void update(long xrTime);
     property public androidx.xr.runtime.math.Pose centerPose;
     property public androidx.xr.runtime.math.FloatSize2d extents;
@@ -200,15 +200,15 @@ package androidx.xr.arcore.openxr {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrRenderViewpoint implements androidx.xr.arcore.internal.RenderViewpoint {
-    method public androidx.xr.runtime.FieldOfView getFieldOfView();
-    method public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     property public androidx.xr.runtime.FieldOfView fieldOfView;
     property public androidx.xr.runtime.math.Pose pose;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrRuntime implements androidx.xr.arcore.internal.PerceptionRuntime {
-    method public androidx.xr.arcore.openxr.OpenXrManager getLifecycleManager();
-    method public androidx.xr.arcore.openxr.OpenXrPerceptionManager getPerceptionManager();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrManager getLifecycleManager();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrPerceptionManager getPerceptionManager();
     method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark?>);
     property public androidx.xr.arcore.openxr.OpenXrManager lifecycleManager;
     property public androidx.xr.arcore.openxr.OpenXrPerceptionManager perceptionManager;
@@ -217,7 +217,7 @@ package androidx.xr.arcore.openxr {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrRuntimeFactory implements androidx.xr.runtime.internal.PerceptionRuntimeFactory {
     ctor public OpenXrRuntimeFactory();
     method public androidx.xr.arcore.internal.PerceptionRuntime createRuntime(android.app.Activity activity, kotlin.coroutines.CoroutineContext coroutineContext);
-    method public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
     field public static final androidx.xr.arcore.openxr.OpenXrRuntimeFactory.Companion Companion;
   }
@@ -232,8 +232,8 @@ package androidx.xr.arcore.openxr {
     method public androidx.xr.runtime.FieldOfView component2();
     method public androidx.xr.arcore.openxr.ViewCameraState copy(optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.runtime.FieldOfView fieldOfView);
     method internal boolean equals(Object? other);
-    method public androidx.xr.runtime.FieldOfView getFieldOfView();
-    method public androidx.xr.runtime.math.Pose getPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     method internal int hashCode();
     method internal String toString();
     property public androidx.xr.runtime.FieldOfView fieldOfView;

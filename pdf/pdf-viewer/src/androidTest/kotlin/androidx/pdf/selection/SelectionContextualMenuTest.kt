@@ -135,7 +135,7 @@ class SelectionContextualMenuTest {
     }
 
     @Test
-    fun testGoToLinkSelection_showsGotoOption() {
+    fun testGoToLinkSelection_showsJumptoOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 .check { view, _ ->
@@ -144,15 +144,15 @@ class SelectionContextualMenuTest {
                 }
                 // Create a selection by long-pressing the center of the view.
                 .perform(longClick())
-            // Verify that the long press selected started action mode showing Go to option
-            Espresso.onView(withText("Go to"))
+            // Verify that the long press selected started action mode showing Jump to option
+            Espresso.onView(withText("Jump to"))
                 .inRoot(RootMatchers.isPlatformPopup())
                 .check(matches(isDisplayed()))
         }
     }
 
     @Test
-    fun testHyperLinkSelection_showsCopyURLOption() {
+    fun testHyperLinkSelection_showsCopylinkOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
                 .check { view, _ ->
@@ -161,8 +161,8 @@ class SelectionContextualMenuTest {
                 }
                 // Create a selection by long-pressing the center of the view.
                 .perform(longClick())
-            // Verify that the long press selected started action mode showing Copy URL option
-            Espresso.onView(withText("Copy URL"))
+            // Verify that the long press selected started action mode showing Copy link option
+            Espresso.onView(withText("Copy link"))
                 .inRoot(RootMatchers.isPlatformPopup())
                 .check(matches(isDisplayed()))
         }

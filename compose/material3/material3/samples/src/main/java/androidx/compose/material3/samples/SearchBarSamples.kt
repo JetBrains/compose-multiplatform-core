@@ -61,6 +61,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -81,7 +82,9 @@ fun SimpleSearchBarSample() {
                 searchBarState = searchBarState,
                 textFieldState = textFieldState,
                 onSearch = { scope.launch { searchBarState.animateToCollapsed() } },
-                placeholder = { Text("Search...") },
+                placeholder = {
+                    Text(modifier = Modifier.clearAndSetSemantics {}, text = "Search...")
+                },
                 leadingIcon = {
                     if (searchBarState.currentValue == SearchBarValue.Expanded) {
                         TooltipBox(
@@ -128,6 +131,7 @@ fun FullScreenSearchBarScaffoldSample() {
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
     val scrollBehavior = SearchBarDefaults.enterAlwaysSearchBarScrollBehavior()
+    val appBarWithSearchColors = SearchBarDefaults.appBarWithSearchColors()
 
     val inputField =
         @Composable {
@@ -139,7 +143,7 @@ fun FullScreenSearchBarScaffoldSample() {
                 placeholder = {
                     if (searchBarState.currentValue == SearchBarValue.Collapsed) {
                         Text(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().clearAndSetSemantics {},
                             text = "Search",
                             textAlign = TextAlign.Center,
                         )
@@ -223,6 +227,7 @@ fun FullScreenSearchBarScaffoldSample() {
                         }
                     }
                 },
+                colors = appBarWithSearchColors,
             )
             ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField) {
                 SampleSearchResults(
@@ -262,7 +267,9 @@ fun DockedSearchBarScaffoldSample() {
                 searchBarState = searchBarState,
                 textFieldState = textFieldState,
                 onSearch = { scope.launch { searchBarState.animateToCollapsed() } },
-                placeholder = { Text("Search...") },
+                placeholder = {
+                    Text(modifier = Modifier.clearAndSetSemantics {}, text = "Search...")
+                },
                 leadingIcon = {
                     if (searchBarState.currentValue == SearchBarValue.Expanded) {
                         TooltipBox(
@@ -299,7 +306,9 @@ fun DockedSearchBarScaffoldSample() {
                 inputField = inputField,
                 colors =
                     SearchBarDefaults.appBarWithSearchColors(
-                        appBarContainerColor = Color.Transparent
+                        scrolledSearchBarContainerColor = Color.Unspecified,
+                        appBarContainerColor = Color.Transparent,
+                        scrolledAppBarContainerColor = Color.Unspecified,
                     ),
             )
             ExpandedDockedSearchBar(state = searchBarState, inputField = inputField) {

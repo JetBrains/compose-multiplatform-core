@@ -765,7 +765,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
     }
 
-    private fun computeDividerTargetRect(outRect: Rect, dividerPositionX: Int): Rect {
+    @VisibleForTesting
+    internal fun computeDividerTargetRect(outRect: Rect, dividerPositionX: Int): Rect {
         val divider = userResizingDividerDrawable
         if (divider == null) {
             outRect.setEmpty()
@@ -2258,6 +2259,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
             val bounds = computeDividerTargetRect(tmpRect, visualDividerPosition)
             if (parent.getChildVisibleRect(this@SlidingPaneLayout, bounds, null)) {
+                val windowLocation = IntArray(2)
+                val screenLocation = IntArray(2)
+                getLocationInWindow(windowLocation)
+                getLocationOnScreen(screenLocation)
+                bounds.offset(
+                    -windowLocation[0] + screenLocation[0],
+                    -windowLocation[1] + screenLocation[1],
+                )
                 node.isVisibleToUser = true
                 node.setBoundsInScreen(bounds)
             }

@@ -15,6 +15,7 @@
  */
 package androidx.room3.integration.kotlintestapp.test
 
+import androidx.kruth.assertThat
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Entity
@@ -23,11 +24,10 @@ import androidx.room3.PrimaryKey
 import androidx.room3.Query
 import androidx.room3.Room.inMemoryDatabaseBuilder
 import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import org.hamcrest.CoreMatchers
-import org.hamcrest.MatcherAssert
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -36,78 +36,48 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class DaoNameConflictTest {
-    private lateinit var mDb: ConflictDatabase
+    private lateinit var db: ConflictDatabase
 
     @Before
     fun init() {
-        mDb =
-            inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    ConflictDatabase::class.java,
-                )
+        db =
+            inMemoryDatabaseBuilder<ConflictDatabase>(ApplicationProvider.getApplicationContext())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
     }
 
     @After
     fun close() {
-        mDb.close()
+        db.close()
     }
 
     @Test
     fun readFromItem1() {
         val item1 = Item1(1, "a")
-        mDb.item1Dao().insert(item1)
+        db.item1Dao().insert(item1)
         val item2 = Item2(2, "b")
-        mDb.item2Dao().insert(item2)
-        MatcherAssert.assertThat(mDb.item1Dao().get(), CoreMatchers.`is`(item1))
-        MatcherAssert.assertThat(mDb.item2Dao().get(), CoreMatchers.`is`(item2))
+        db.item2Dao().insert(item2)
+        assertThat(db.item1Dao().get()).isEqualTo(item1)
+        assertThat(db.item2Dao().get()).isEqualTo(item2)
     }
 
     @Entity
-    class Item1(@field:PrimaryKey var id: Int, var name: String?) {
+    data class Item1(@field:PrimaryKey var id: Int, var name: String?) {
         @Dao
         interface Store {
             @Query("SELECT * FROM Item1 LIMIT 1") fun get(): Item1
 
             @Insert fun insert(vararg items: Item1)
         }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other == null || javaClass != other.javaClass) return false
-            val item1 = other as Item1
-            if (id != item1.id) return false
-            return if (name != null) name == item1.name else item1.name == null
-        }
-
-        override fun hashCode(): Int {
-            var result = id
-            result = 31 * result + if (name != null) name.hashCode() else 0
-            return result
-        }
     }
 
     @Entity
-    class Item2(@field:PrimaryKey var id: Int, var name: String?) {
+    data class Item2(@field:PrimaryKey var id: Int, var name: String?) {
         @Dao
         interface Store {
             @Query("SELECT * FROM Item2 LIMIT 1") fun get(): Item2
 
             @Insert fun insert(vararg items: Item2)
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other == null || javaClass != other.javaClass) return false
-            val item2 = other as Item2
-            if (id != item2.id) return false
-            return if (name != null) name == item2.name else item2.name == null
-        }
-
-        override fun hashCode(): Int {
-            var result = id
-            result = 31 * result + if (name != null) name.hashCode() else 0
-            return result
         }
     }
 

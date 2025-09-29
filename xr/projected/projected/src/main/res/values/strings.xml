@@ -1,4 +1,5 @@
 <resources>
+    <string name="display_category_xr_projected">xr_projected</string>
     <string name="continue_button">Continue</string>
     <string name="cancel_button">Cancel</string>
     <string name="go_to_host_projected_activity_text">Please review the permission request on your host device</string>

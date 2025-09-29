@@ -35,6 +35,7 @@ class FakeSpatialEnvironmentTest {
     @Before
     fun setUp() {
         underTest = FakeSpatialEnvironment()
+        underTest.onRenderingFeatureReady(FakeSpatialEnvironmentFeature())
 
         check(underTest.preferredSpatialEnvironment == null)
         check(

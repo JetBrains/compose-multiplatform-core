@@ -376,9 +376,9 @@ abstract class StudioTask : DefaultTask() {
     ) {
         val url =
             if (filename.contains("-mac")) {
-                "https://dl.google.com/dl/android/studio/install/$studioVersion/$filename"
+                "https://redirector.gvt1.com/edgedl/android/studio/install/$studioVersion/$filename"
             } else {
-                "https://dl.google.com/dl/android/studio/ide-zips/$studioVersion/$filename"
+                "https://redirector.gvt1.com/edgedl/android/studio/ide-zips/$studioVersion/$filename"
             }
         val tmpDownloadPath = File("$destinationPath.tmp").absolutePath
         println("Downloading $url to $tmpDownloadPath")

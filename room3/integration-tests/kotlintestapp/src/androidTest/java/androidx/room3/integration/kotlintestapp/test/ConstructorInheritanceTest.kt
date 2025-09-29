@@ -16,6 +16,7 @@
 
 package androidx.room3.integration.kotlintestapp.test
 
+import androidx.kruth.assertThat
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Embedded
@@ -27,14 +28,10 @@ import androidx.room3.Relation
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.Transaction
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
-import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.hasItems
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.hasSize
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -107,8 +104,8 @@ class ConstructorInheritanceTest {
         val dao = db.dao()
         dao.insert(Child2(1, Info("123")))
         val child = dao.loadById2(1)
-        assertThat(child.id, `is`(1L))
-        assertThat(child.info!!.code, `is`(equalTo("123")))
+        assertThat(child.id).isEqualTo(1L)
+        assertThat(child.info!!.code).isEqualTo("123")
         db.close()
     }
 
@@ -120,14 +117,17 @@ class ConstructorInheritanceTest {
         dao.insert(Child2(2, Info("123")))
         dao.insert(Child2(3, Info("123")))
         val childGroup = dao.loadGroupById2(1)
-        assertThat(childGroup.child1.id, `is`(1L))
-        assertThat(childGroup.children2, hasSize(2))
-        assertThat(childGroup.children2, hasItems(Child2(2, Info("123")), Child2(3, Info("123"))))
+        assertThat(childGroup.child1.id).isEqualTo(1L)
+        assertThat(childGroup.children2).hasSize(2)
+        assertThat(childGroup.children2)
+            .containsExactly(Child2(2, Info("123")), Child2(3, Info("123")))
         db.close()
     }
 
     private fun openDatabase(): EmbeddedDatabase {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        return Room.inMemoryDatabaseBuilder(context, EmbeddedDatabase::class.java).build()
+        return Room.inMemoryDatabaseBuilder<EmbeddedDatabase>(context)
+            .setDriver(AndroidSQLiteDriver())
+            .build()
     }
 }

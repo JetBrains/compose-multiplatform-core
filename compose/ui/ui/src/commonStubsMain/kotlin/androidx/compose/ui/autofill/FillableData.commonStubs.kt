@@ -26,7 +26,7 @@ import androidx.compose.ui.implementedInJetBrainsFork
  *
  * @param textValue The value to store in the [FillableData].
  */
-actual fun FillableData.Companion.createFrom(textValue: CharSequence): FillableData? {
+actual fun FillableData.Companion.createFromText(textValue: CharSequence): FillableData? {
     implementedInJetBrainsFork()
 }
 
@@ -38,7 +38,7 @@ actual fun FillableData.Companion.createFrom(textValue: CharSequence): FillableD
  *
  * @param booleanValue The value to store in the [FillableData].
  */
-actual fun FillableData.Companion.createFrom(booleanValue: Boolean): FillableData? {
+actual fun FillableData.Companion.createFromBoolean(booleanValue: Boolean): FillableData? {
     implementedInJetBrainsFork()
 }
 
@@ -50,7 +50,7 @@ actual fun FillableData.Companion.createFrom(booleanValue: Boolean): FillableDat
  *
  * @param listIndexValue The value to store in the [FillableData].
  */
-actual fun FillableData.Companion.createFrom(listIndexValue: Int): FillableData? {
+actual fun FillableData.Companion.createFromListIndex(listIndexValue: Int): FillableData? {
     implementedInJetBrainsFork()
 }
 
@@ -62,6 +62,6 @@ actual fun FillableData.Companion.createFrom(listIndexValue: Int): FillableData?
  *
  * @param dateMillisValue The value to store in the [FillableData].
  */
-actual fun FillableData.Companion.createFrom(dateMillisValue: Long): FillableData? {
+actual fun FillableData.Companion.createFromDateMillis(dateMillisValue: Long): FillableData? {
     implementedInJetBrainsFork()
 }

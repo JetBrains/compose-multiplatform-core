@@ -17,7 +17,6 @@
 package androidx.room3.solver
 
 import androidx.kruth.assertThat
-import androidx.room3.RoomKspProcessor
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XTypeName
@@ -25,11 +24,8 @@ import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.compiler.TestCompilationArguments
-import androidx.room3.compiler.processing.util.compiler.compile
 import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.compiler.processing.util.runProcessorTest
-import androidx.room3.processor.Context.BooleanProcessorOptions.USE_NULL_AWARE_CONVERTER
 import androidx.room3.processor.CustomConverterProcessor
 import androidx.room3.processor.DaoProcessor
 import androidx.room3.solver.types.CustomTypeConverterWrapper
@@ -38,7 +34,6 @@ import androidx.room3.testing.context
 import androidx.room3.vo.BuiltInConverterFlags
 import androidx.room3.writer.DaoWriter
 import androidx.room3.writer.TypeWriter
-import javax.tools.Diagnostic
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -457,10 +452,7 @@ class NullabilityAwareTypeConverterStoreTest {
         """
                     .trimIndent(),
             )
-        runProcessorTest(
-            sources = listOf(user, day, converters, dao),
-            options = mapOf(USE_NULL_AWARE_CONVERTER.argName to "true"),
-        ) { invocation ->
+        runProcessorTest(sources = listOf(user, day, converters, dao)) { invocation ->
             val daoProcessor =
                 DaoProcessor(
                     baseContext = invocation.context,
@@ -605,36 +597,6 @@ class NullabilityAwareTypeConverterStoreTest {
         }
     }
 
-    @Test
-    fun warnIfTurnedOffInKsp() {
-        val sources = Source.kotlin("Foo.kt", "")
-        arrayOf("", "true", "false").forEach { value ->
-            val result =
-                compile(
-                    workingDir = tmpFolder.newFolder(),
-                    arguments =
-                        TestCompilationArguments(
-                            sources = listOf(sources),
-                            symbolProcessorProviders = listOf(RoomKspProcessor.Provider()),
-                            processorOptions = mapOf(USE_NULL_AWARE_CONVERTER.argName to value),
-                        ),
-                )
-            val warnings =
-                result.diagnostics[Diagnostic.Kind.WARNING]
-                    ?.map { it.msg }
-                    ?.filter {
-                        it.contains("Disabling null-aware type analysis in KSP is a temporary flag")
-                    } ?: emptyList()
-            val expected =
-                if (value == "false") {
-                    1
-                } else {
-                    0
-                }
-            assertThat(warnings).hasSize(expected)
-        }
-    }
-
     /** Test converting a known column type into another type due to explicit affinity */
     @Test
     fun knownColumnTypeToExplicitType() {
@@ -653,10 +615,7 @@ class NullabilityAwareTypeConverterStoreTest {
         """
                     .trimIndent(),
             )
-        runProcessorTest(
-            sources = listOf(source),
-            options = mapOf(USE_NULL_AWARE_CONVERTER.argName to "true"),
-        ) { invocation ->
+        runProcessorTest(sources = listOf(source)) { invocation ->
             val byteArray =
                 invocation.processingEnv
                     .requireTypeElement("Subject")
@@ -729,10 +688,7 @@ class NullabilityAwareTypeConverterStoreTest {
         """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(converters),
-            options = mapOf(USE_NULL_AWARE_CONVERTER.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(converters)) { invocation ->
             val store = invocation.createStore("MyConverters")
             val aType = invocation.processingEnv.requireType("TypeA")
             val bType = invocation.processingEnv.requireType("TypeB")
@@ -821,10 +777,7 @@ class NullabilityAwareTypeConverterStoreTest {
         selectedConverters: List<String>,
     ): String {
         val result = StringBuilder()
-        runProcessorTest(
-            sources = listOf(kotlinSource, javaSource),
-            options = mapOf(USE_NULL_AWARE_CONVERTER.argName to "true"),
-        ) { invocation ->
+        runProcessorTest(sources = listOf(kotlinSource, javaSource)) { invocation ->
             val store = invocation.createStore(*selectedConverters.toTypedArray())
             assertThat(store).isInstanceOf<NullAwareTypeConverterStore>()
 
@@ -848,10 +801,7 @@ class NullabilityAwareTypeConverterStoreTest {
     /** Collect results for conversion from an unknown cursor type to our type */
     private fun collectCursorResults(vararg selectedConverters: String): String {
         val result = StringBuilder()
-        runProcessorTest(
-            sources = listOf(kotlinSource, javaSource),
-            options = mapOf(USE_NULL_AWARE_CONVERTER.argName to "true"),
-        ) { invocation ->
+        runProcessorTest(sources = listOf(kotlinSource, javaSource)) { invocation ->
             val store = invocation.createStore(*selectedConverters)
             assertThat(store).isInstanceOf<NullAwareTypeConverterStore>()
             val myClassTypeElement = invocation.processingEnv.requireTypeElement("MyClass")

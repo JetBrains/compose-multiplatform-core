@@ -19,92 +19,103 @@ import androidx.kruth.assertThat
 import androidx.room3.testing.MigrationTestHelper
 import androidx.room3.util.TableInfo.Companion.read
 import androidx.sqlite.SQLiteException
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.execSQL
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Test custom database migrations. */
-@RunWith(AndroidJUnit4::class)
 @LargeTest
+@RunWith(AndroidJUnit4::class)
 class AutoMigrationTest {
-    @JvmField
-    @Rule
-    var helper: MigrationTestHelper =
+
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val context = instrumentation.targetContext
+
+    @get:Rule
+    val helper: MigrationTestHelper =
         MigrationTestHelper(
-            InstrumentationRegistry.getInstrumentation(),
-            AutoMigrationDb::class.java,
+            instrumentation = instrumentation,
+            file = context.getDatabasePath(TEST_DB),
+            driver = AndroidSQLiteDriver(),
+            databaseClass = AutoMigrationDb::class,
         )
 
+    @Before
+    fun setup() {
+        context.deleteDatabase(TEST_DB)
+    }
+
     // Run this to create the very 1st version of the db.
-    fun createFirstVersion() {
-        val db = helper.createDatabase(TEST_DB, 1)
-        db.execSQL("INSERT INTO Entity9 (id, name) VALUES (1, 'row1')")
-        db.execSQL("INSERT INTO Entity9 (id, name) VALUES (2, 'row2')")
-        db.execSQL("INSERT INTO Entity27 (id27) VALUES (3)")
-        db.execSQL("INSERT INTO Entity27 (id27) VALUES (5)")
-        db.close()
+    private fun createFirstVersion() {
+        val connection = helper.createDatabase(1)
+        connection.execSQL("INSERT INTO Entity9 (id, name) VALUES (1, 'row1')")
+        connection.execSQL("INSERT INTO Entity9 (id, name) VALUES (2, 'row2')")
+        connection.execSQL("INSERT INTO Entity27 (id27) VALUES (3)")
+        connection.execSQL("INSERT INTO Entity27 (id27) VALUES (5)")
+        connection.close()
     }
 
     @Test
-    @Suppress("DEPRECATION") // Due to TableInfo.read()
     fun goFromV1ToV2() {
         createFirstVersion()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 2, true)
-        val info = read(db, AutoMigrationDb.Entity1.TABLE_NAME)
+        val connection = helper.runMigrationsAndValidate(version = 2, migrations = emptyList())
+        val info = read(connection, AutoMigrationDb.Entity1.TABLE_NAME)
         assertThat(info.columns.size).isEqualTo(3)
-        db.close()
+        connection.close()
     }
 
     @Test
-    @Suppress("DEPRECATION") // Due to TableInfo.read()
     fun goFromV1ToV3() {
         createFirstVersion()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 3, true)
-        val info = read(db, AutoMigrationDb.Entity1.TABLE_NAME)
+        val connection = helper.runMigrationsAndValidate(version = 3, migrations = emptyList())
+        val info = read(connection, AutoMigrationDb.Entity1.TABLE_NAME)
         assertThat(info.columns.size).isEqualTo(3)
-        db.close()
+        connection.close()
     }
 
     @Test
-    @Suppress("DEPRECATION") // Due to TableInfo.read()
     fun goFromV1ToV4() {
         createFirstVersion()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 4, true)
-        val info = read(db, AutoMigrationDb.Entity1.TABLE_NAME)
+        val connection = helper.runMigrationsAndValidate(version = 4, migrations = emptyList())
+        val info = read(connection, AutoMigrationDb.Entity1.TABLE_NAME)
         assertThat(info.columns.size).isEqualTo(3)
-        db.close()
+        connection.close()
     }
 
     @Test
     fun goFromV1ToV5() {
         createFirstVersion()
         try {
-            helper.runMigrationsAndValidate(TEST_DB, 5, true)
+            helper.runMigrationsAndValidate(version = 5, migrations = emptyList())
         } catch (e: SQLiteException) {
             assertThat(e.message).contains("""Foreign key violation(s) detected in 'Entity9'""")
         }
     }
 
     @Test
-    @Suppress("DEPRECATION") // Due to TableInfo.read()
     fun testAutoMigrationWithNewEmbeddedField() {
         val embeddedHelper =
             MigrationTestHelper(
-                InstrumentationRegistry.getInstrumentation(),
-                EmbeddedAutoMigrationDb::class.java,
+                instrumentation = instrumentation,
+                file = context.getDatabasePath("embedded-auto-migration-test"),
+                driver = AndroidSQLiteDriver(),
+                databaseClass = EmbeddedAutoMigrationDb::class,
             )
-        val db = embeddedHelper.createDatabase("embedded-auto-migration-test", 1)
-        db.execSQL("INSERT INTO Entity1 (id, name) VALUES (1, 'row1')")
-        db.close()
+        context.deleteDatabase("embedded-auto-migration-test")
+        embeddedHelper.createDatabase(1).use {
+            it.execSQL("INSERT INTO Entity1 (id, name) VALUES (1, 'row1')")
+        }
 
-        val migratedDb =
-            embeddedHelper.runMigrationsAndValidate("embedded-auto-migration-test", 2, true)
-        val info = read(migratedDb, EmbeddedAutoMigrationDb.EmbeddedEntity1.TABLE_NAME)
+        val connection =
+            embeddedHelper.runMigrationsAndValidate(version = 2, migrations = emptyList())
+        val info = read(connection, EmbeddedAutoMigrationDb.EmbeddedEntity1.TABLE_NAME)
         assertThat(info.columns.size).isEqualTo(3)
-        migratedDb.close()
+        connection.close()
     }
 
     companion object {

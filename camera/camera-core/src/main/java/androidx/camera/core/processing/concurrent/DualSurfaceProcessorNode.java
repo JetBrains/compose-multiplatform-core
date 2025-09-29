@@ -108,8 +108,8 @@ public class DualSurfaceProcessorNode implements
                     primaryInputSurfaceEdge,
                     config.getPrimaryOutConfig()));
         }
-        sendSurfaceRequest(mPrimaryCameraInternal, primaryInputSurfaceEdge, mOutput, true);
-        sendSurfaceRequest(mSecondaryCameraInternal, secondaryInputSurfaceEdge, mOutput, false);
+        sendSurfaceRequest(mPrimaryCameraInternal, primaryInputSurfaceEdge, true);
+        sendSurfaceRequest(mSecondaryCameraInternal, secondaryInputSurfaceEdge, false);
 
         sendSurfaceOutputs(mPrimaryCameraInternal, mSecondaryCameraInternal,
                 primaryInputSurfaceEdge, secondaryInputSurfaceEdge, mOutput);
@@ -161,11 +161,8 @@ public class DualSurfaceProcessorNode implements
     private void sendSurfaceRequest(
             @NonNull CameraInternal cameraInternal,
             @NonNull SurfaceEdge input,
-            @NonNull Map<DualOutConfig, SurfaceEdge> outputs,
             boolean isPrimary) {
         SurfaceRequest surfaceRequest = input.createSurfaceRequest(cameraInternal, isPrimary);
-        // TODO(b/348402401): Different from SurfaceProcessorNode, we don't support device rotation
-        //  for dual camera recording.
         try {
             mSurfaceProcessor.onInputSurface(surfaceRequest);
         } catch (ProcessingException e) {

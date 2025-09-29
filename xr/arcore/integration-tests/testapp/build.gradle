@@ -34,6 +34,7 @@ plugins {
 }
 
 android {
+    compileSdk = 35
     defaultConfig {
         minSdk = 31
     }
@@ -62,6 +63,8 @@ dependencies {
     implementation(project(":xr:assets"))
     implementation(project(":xr:compose:compose"))
     implementation(project(":xr:scenecore:scenecore"))
+    implementation(project(":xr:scenecore:scenecore-spatial-core"))
+    implementation(project(":xr:scenecore:scenecore-spatial-rendering"))
 
     implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesGuava)

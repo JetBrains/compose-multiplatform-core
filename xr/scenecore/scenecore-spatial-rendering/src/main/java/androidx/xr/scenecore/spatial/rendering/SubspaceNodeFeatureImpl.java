@@ -122,5 +122,6 @@ final class SubspaceNodeFeatureImpl extends BaseRenderingFeature implements Subs
 
     @Override
     public void dispose() {
+        super.dispose();
     }
 }

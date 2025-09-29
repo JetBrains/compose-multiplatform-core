@@ -47,6 +47,7 @@ dependencies {
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(project(":compose:test-utils"))
+    testImplementation(project(":lifecycle:lifecycle-runtime-testing"))
 }
 
 android {

@@ -33,6 +33,7 @@ import androidx.appfunctions.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.internal.Translator
 import androidx.appfunctions.internal.TranslatorSelector
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.service.internal.AggregatedAppFunctionInvoker
@@ -92,6 +93,7 @@ public class AppFunctionServiceDelegate(
                         executeAppFunctionRequest,
                         callingPackageName,
                         appFunctionMetadata,
+                        aggregatedInventory.componentsMetadata,
                         parameters,
                         translator,
                     )
@@ -155,6 +157,7 @@ public class AppFunctionServiceDelegate(
         request: ExecuteAppFunctionRequest,
         callingPackageName: String,
         appFunctionMetadata: CompileTimeAppFunctionMetadata,
+        componentsMetadata: AppFunctionComponentsMetadata,
         parameters: Map<String, Any?>,
         translator: Translator?,
     ): ExecuteAppFunctionResponse {
@@ -166,7 +169,8 @@ public class AppFunctionServiceDelegate(
                     parameters,
                 )
             }
-        val returnValue = appFunctionMetadata.response.unsafeBuildReturnValue(result)
+        val returnValue =
+            appFunctionMetadata.response.unsafeBuildReturnValue(result, componentsMetadata)
 
         returnValue.visitAppFunctionUriGrants { uriGrant ->
             appContext.grantUriPermission(

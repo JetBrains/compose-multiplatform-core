@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,28 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.internal.PerceptionRuntime
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.internal.SceneRuntime
 import java.util.Collections
 import java.util.WeakHashMap
+
+/**
+ * A generic extension function for Session to get or create an instance from a provided cache.
+ *
+ * @param T The type of the instance to retrieve.
+ * @param cache The thread-safe cache map to use.
+ * @param finder The lambda function to find the instance if it's not in the cache.
+ * @return The cached or newly created instance of type T.
+ */
+private inline fun <reified T> Session.getOrPutFromCache(
+    cache: MutableMap<Session, T>,
+    crossinline finder: Session.() -> T,
+): T {
+    check(this.activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+        "Session has been destroyed."
+    }
+    return cache.getOrPut(this) { this.finder() }
+}
 
 /**
  * A thread-safe, memory-safe cache to store the Scene for each Session instance.
@@ -54,7 +73,7 @@ private val Activity.lifecycle: Lifecycle
 public val Session.scene: Scene
     get() = checkAndGetScene(this)
 
-/** Checks whether the Session has been destroyed. */
+/** Gets the [Scene] associated with the given [Session], using a cache. */
 private fun checkAndGetScene(session: Session): Scene {
     return sceneCache.getOrPut(session) {
         // This lambda is executed only once per session instance.
@@ -76,34 +95,31 @@ internal fun removeSceneFromCache(scene: Scene) {
     }
 }
 
-private val platformAdapterCache =
-    Collections.synchronizedMap(WeakHashMap<Session, JxrPlatformAdapter>())
+private val sceneRuntimeCache = Collections.synchronizedMap(WeakHashMap<Session, SceneRuntime>())
 
-internal val Session.platformAdapter: JxrPlatformAdapter
-    get() = checkAndGetPlatformAdapter(this)
+internal val Session.sceneRuntime: SceneRuntime
+    get() =
+        getOrPutFromCache(sceneRuntimeCache) {
+            // This lambda is executed only once per session instance.
+            runtimes.filterIsInstance<SceneRuntime>().single()
+        }
 
-private fun checkAndGetPlatformAdapter(session: Session): JxrPlatformAdapter {
-    check(session.activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
-        "Session has been destroyed."
-    }
-    return platformAdapterCache.getOrPut(session) {
-        // This lambda is executed only once per session instance.
-        session.runtimes.filterIsInstance<JxrPlatformAdapter>().single()
-    }
-}
+private val renderingRuntimeCache =
+    Collections.synchronizedMap(WeakHashMap<Session, RenderingRuntime>())
+
+internal val Session.renderingRuntime: RenderingRuntime
+    get() =
+        getOrPutFromCache(renderingRuntimeCache) {
+            // This lambda is executed only once per session instance.
+            runtimes.filterIsInstance<RenderingRuntime>().single()
+        }
 
 private val perceptionRuntimeCache =
     Collections.synchronizedMap(WeakHashMap<Session, PerceptionRuntime>())
 
 internal val Session.perceptionRuntime: PerceptionRuntime
-    get() = checkAndGetPerceptionRuntime(this)
-
-private fun checkAndGetPerceptionRuntime(session: Session): PerceptionRuntime {
-    check(session.activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
-        "Session has been destroyed."
-    }
-    return perceptionRuntimeCache.getOrPut(session) {
-        // This lambda is executed only once per session instance.
-        session.runtimes.filterIsInstance<PerceptionRuntime>().single()
-    }
-}
+    get() =
+        getOrPutFromCache(perceptionRuntimeCache) {
+            // This lambda is executed only once per session instance.
+            runtimes.filterIsInstance<PerceptionRuntime>().single()
+        }

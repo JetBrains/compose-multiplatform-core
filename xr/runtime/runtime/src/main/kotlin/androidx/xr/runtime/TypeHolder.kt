@@ -86,7 +86,7 @@ public class SubspaceNodeHolder<T>(subspaceNode: T, type: Class<*>) :
 
 /**
  * SpatialStateHolder is used to decouple the dependency to rendering runtime. Pass the rendering
- * runtime SpatialState to rendering runtime through the JxrPlatformAdapter with SpatialStateHolder.
+ * runtime SpatialState to rendering runtime through the JXR SDK with SpatialStateHolder.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialStateHolder<T>(state: T, type: Class<*>) : TypeHolder<T>(state, type)

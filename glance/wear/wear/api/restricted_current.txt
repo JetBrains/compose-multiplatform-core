@@ -1,15 +1,39 @@
 // Signature format: 4.0
 package androidx.glance.wear {
 
+  public final class ActiveWearWidgetHandle {
+    ctor @KotlinOnly public ActiveWearWidgetHandle(android.content.ComponentName provider, int instanceId, androidx.glance.wear.ContainerType containerType);
+    ctor @BytecodeOnly public ActiveWearWidgetHandle(android.content.ComponentName!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method @BytecodeOnly public int getContainerType-fdHHBOo();
+    method @InaccessibleFromKotlin public int getInstanceId();
+    method @InaccessibleFromKotlin public android.content.ComponentName getProvider();
+    property public androidx.glance.wear.ContainerType containerType;
+    property public int instanceId;
+    property public android.content.ComponentName provider;
+  }
+
+  @kotlin.jvm.JvmInline public final value class ContainerType {
+    method @BytecodeOnly public static androidx.glance.wear.ContainerType! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.glance.wear.ContainerType.Companion Companion;
+  }
+
+  public static final class ContainerType.Companion {
+    method @BytecodeOnly public int getFullscreen-fdHHBOo();
+    property public androidx.glance.wear.ContainerType Fullscreen;
+  }
+
   public abstract class GlanceWearWidget {
     ctor public GlanceWearWidget();
+    method @MainThread public suspend Object? onActivated(android.content.Context context, androidx.glance.wear.ActiveWearWidgetHandle widgetHandle, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @MainThread public suspend Object? onDeactivated(android.content.Context context, androidx.glance.wear.ActiveWearWidgetHandle widgetHandle, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @MainThread public abstract suspend Object? provideWidgetContent(android.content.Context context, androidx.glance.wear.WearWidgetRequest request, kotlin.coroutines.Continuation<? super androidx.glance.wear.WearWidgetContent>);
     method public final void triggerUpdate(android.content.Context context, android.content.ComponentName provider, int instanceId);
   }
 
   public abstract class GlanceWearWidgetService extends androidx.lifecycle.LifecycleService {
     ctor public GlanceWearWidgetService();
-    method public abstract androidx.glance.wear.GlanceWearWidget getWidget();
+    method @InaccessibleFromKotlin public abstract androidx.glance.wear.GlanceWearWidget getWidget();
     method public final android.os.IBinder? onBind(android.content.Intent intent);
     property public abstract androidx.glance.wear.GlanceWearWidget widget;
     field public static final String ACTION_BIND_WIDGET_PROVIDER = "androidx.glance.wear.action.BIND_WIDGET_PROVIDER";
@@ -26,7 +50,7 @@ package androidx.glance.wear {
 
   public final class WearWidgetRequest {
     ctor public WearWidgetRequest(int instanceId);
-    method public int getInstanceId();
+    method @InaccessibleFromKotlin public int getInstanceId();
     property public int instanceId;
   }
 

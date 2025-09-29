@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.internal.lint.LintModelWriterTask
 import com.google.devtools.ksp.gradle.KspAATask
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
@@ -149,7 +150,6 @@ androidXMultiplatform {
                 api(libs.kotlinCoroutinesAndroid)
                 implementation("androidx.arch.core:core-runtime:2.2.0")
                 compileOnly("androidx.lifecycle:lifecycle-livedata-core:2.0.0")
-                compileOnly("androidx.paging:paging-common:2.0.0")
                 implementation("androidx.annotation:annotation-experimental:1.5.0")
             }
         }
@@ -243,4 +243,12 @@ tasks.withType(AndroidLintAnalysisTask).configureEach {
 // Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
 tasks.withType(LintModelWriterTask).configureEach {
     mustRunAfter(tasks.withType(KspAATask))
+}
+
+// TODO(b/430983364): Workaround KSP incremental issue
+tasks.withType(KotlinCompile).configureEach {
+    incremental = false
+}
+tasks.withType(KspAATask).configureEach {
+    it.kspConfig.incremental.set(false)
 }

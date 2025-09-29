@@ -18,18 +18,21 @@ package androidx.xr.glimmer.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
@@ -40,6 +43,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -93,7 +97,7 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
 
         // Scroll the first three elements.
         val scrollInPx = with(rule.density) { 50.dp.toPx() }
-        rule.runOnUiThread { runBlocking { state.scrollBy(scrollInPx) } }
+        rule.runOnUiThread { runBlocking { state.scrollContentBy(scrollInPx) } }
 
         // Check that the 4th element is almost first in the list.
         val childRect = rule.onNodeWithTag("item-tag-3").getBoundsInRoot()
@@ -135,11 +139,11 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
     @Test
     fun accumulatedPart_isApplied() = runTest {
         val state = ListState()
-        rule.setContentAndSaveScope {
+        rule.setContentWithInitialFocus {
             TestList(
                 state = state,
                 modifier = Modifier.size(100.dp),
-                itemContent = { Box(Modifier.size(20.dp).testTag("item-tag-$it")) },
+                itemContent = { index -> FocusableItem(index, Modifier.size(20.dp)) },
             )
         }
         // Set up the accumulated value. We expect it will be used in the next measure pass.
@@ -154,39 +158,137 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
         // Scroll by a single pixel - we expect that accumulated value will be added up.
         state.scrollByAndWaitForIdle(1.dp)
 
-        // Check that 4th item is the first one.
-        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(3)
+        // Check that 4th item is focused.
+        rule.onNodeWithTag("item-3").assertIsFocused()
     }
 
     @Test
     fun scrolling_and_nonScrolling_measurePasses_workTogether_correctly() = runTest {
         val state = ListState()
-        rule.setContentAndSaveScope {
+        rule.setContentWithInitialFocus {
             TestList(
                 state = state,
                 modifier = Modifier.size(100.dp).background(Color.Black),
-                itemContent = { Box(Modifier.size(20.dp).testTag("item-tag-$it")) { Text("$it") } },
+                itemContent = { index -> FocusableItem(index, Modifier.size(20.dp)) },
             )
         }
 
         // Scrolling measure pass (item-2).
         state.scrollByAndWaitForIdle(41.dp)
-        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(2)
+        rule.onNodeWithTag("item-2").assertIsFocused()
 
         // Non-scrolling measure pass (item-0).
         scope.launch { state.animateScrollToItem(0) }
         rule.waitForIdle()
-        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+        rule.onNodeWithTag("item-0").assertIsFocused()
 
         // Scrolling measure pass (item-1).
         state.scrollByAndWaitForIdle(21.dp)
-        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(1)
+        rule.onNodeWithTag("item-1").assertIsFocused()
     }
 
-    private suspend fun ListState.scrollByAndWaitForIdle(value: Dp) {
-        val valuePx = with(rule.density) { value.toPx() }
-        val job = rule.runOnIdle { scope.launch { scrollBy(valuePx) } }
-        job.join()
+    @Test
+    fun initialState_withNonZeroParameters_isAppliedCorrectly() {
+        // Set up list with non-trivial state.
+        val state = ListState(firstVisibleItemIndex = 50, firstVisibleItemScrollOffset = 42)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                TestList(
+                    state = state,
+                    itemsCount = 100,
+                    modifier = Modifier.size(400.dp),
+                    itemContent = { FocusableItem(it, Modifier.size(100.dp)) },
+                )
+            }
+        }
+
+        // Check the auto focus parameters were calculated correctly.
+        Truth.assertThat(state.autoFocusBehaviour.properties?.focusScroll).isEqualTo(200f)
+        Truth.assertThat(state.autoFocusBehaviour.properties?.contentScroll).isEqualTo(5042f)
+    }
+
+    @Test
+    fun scrollBy_reportsCorrectConsumedValue() = runTest {
+        val state = ListState()
+        rule.setContentWithInitialFocus {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                TestList(
+                    state = state,
+                    itemsCount = 100,
+                    modifier = Modifier.size(400.dp),
+                    itemContent = { FocusableItem(it, Modifier.size(100.dp)) },
+                )
+            }
+        }
+
+        state.scrollByAndCheckConsumedValue(0.2f)
+        state.scrollByAndCheckConsumedValue(0.5f)
+        state.scrollByAndCheckConsumedValue(200f)
+
+        state.scrollByAndCheckConsumedValue(-0.2f)
+        state.scrollByAndCheckConsumedValue(-0.5f)
+        state.scrollByAndCheckConsumedValue(-200f)
+
+        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+        Truth.assertThat(state.firstVisibleItemScrollOffset).isEqualTo(0)
+    }
+
+    @Test
+    @Ignore("b/444190961")
+    fun scrollBy_scrollOnTheEdge_doesNotConsumeAllTheDelta() = runTest {
+        val state = ListState()
+        rule.setContentWithInitialFocus {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                TestList(
+                    state = state,
+                    itemsCount = 100,
+                    modifier = Modifier.size(400.dp),
+                    itemContent = { FocusableItem(it, Modifier.size(25.dp)) },
+                )
+            }
+        }
+
+        // Scroll down 50dp
+        state.scrollByAndCheckConsumedValue(delta = 50f, consumed = 50f)
+        // Scroll up 100dp (even though only 50dp is available)
+        state.scrollByAndCheckConsumedValue(delta = -100f, consumed = -50f)
+    }
+
+    @Test
+    @Ignore("b/444190961")
+    fun scrollBy_tinyValues_areAccumulated() = runTest {
+        val state = ListState()
+        rule.setContentWithInitialFocus {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                TestList(
+                    state = state,
+                    itemsCount = 100,
+                    modifier = Modifier.size(500.dp),
+                    itemContent = { FocusableItem(it, Modifier.size(40.dp)) },
+                )
+            }
+        }
+
+        // These numbers are specifically chosen for the given parameters
+        // so that the rounding error is maximized (around 4dp for each scroll).
+        state.scrollByAndWaitForIdle(delta = 14f)
+        state.scrollByAndWaitForIdle(delta = 12f)
+        state.scrollByAndWaitForIdle(delta = 10f)
+        state.scrollByAndWaitForIdle(delta = 9f)
+
+        // This test checks that errors are correctly calculated and carried over to the next
+        // measure pass in order to be balanced. Otherwise, due to losing rounding errors, the
+        // line will not be at the right place. The total scroll was 45dp, it means that the
+        // seconds item must be focused now.
+        rule.onNodeWithTag("item-1").assertIsFocused()
+    }
+
+    private suspend fun ListState.scrollByAndCheckConsumedValue(
+        delta: Float,
+        consumed: Float = delta,
+    ) {
+        val actualConsumed = scrollByAndWaitForIdle(delta)
+        Truth.assertThat(actualConsumed).isWithin(1f).of(consumed)
         rule.waitForIdle()
     }
 

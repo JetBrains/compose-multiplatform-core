@@ -29,8 +29,12 @@ import androidx.appfunctions.`internal`.AppFunctionSerializableFactory
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public class `$UriFactory` : AppFunctionSerializableFactory<Uri> {
     override fun fromAppFunctionData(appFunctionData: AppFunctionData): Uri {
-
-        val uri = checkNotNull(appFunctionData.getStringOrNull("uri"))
+        val appFunctionDataWithSpec =
+            getAppFunctionDataWithSpec(
+                appFunctionData = appFunctionData,
+                qualifiedName = "androidx.appfunctions.internal.serializableproxies.AppFunctionUri",
+            )
+        val uri = checkNotNull(appFunctionDataWithSpec.getStringOrNull("uri"))
 
         val resultAppFunctionUri = AppFunctionUri(uri)
         return resultAppFunctionUri.toUri()
@@ -40,7 +44,7 @@ public class `$UriFactory` : AppFunctionSerializableFactory<Uri> {
         val appFunctionUri_appFunctionSerializable = AppFunctionUri.fromUri(appFunctionSerializable)
 
         val builder =
-            AppFunctionData.Builder(
+            getAppFunctionDataBuilder(
                 "androidx.appfunctions.internal.serializableproxies.AppFunctionUri"
             )
         val uri = appFunctionUri_appFunctionSerializable.uri

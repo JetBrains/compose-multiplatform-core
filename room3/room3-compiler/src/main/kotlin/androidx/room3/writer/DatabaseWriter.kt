@@ -55,13 +55,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
         return XTypeSpec.classBuilder(className).apply {
             addOriginatingElement(database.element)
             superclass(database.typeName)
-            setVisibility(
-                if (database.element.isInternal()) {
-                    VisibilityModifier.INTERNAL
-                } else {
-                    VisibilityModifier.PUBLIC
-                }
-            )
+            setVisibility(VisibilityModifier.INTERNAL)
             addFunction(createOpenDelegate())
             addFunction(createCreateInvalidationTracker())
             if (database.overrideClearAllTables) {

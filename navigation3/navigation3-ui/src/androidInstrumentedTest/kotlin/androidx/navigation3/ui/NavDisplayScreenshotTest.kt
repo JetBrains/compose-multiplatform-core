@@ -48,7 +48,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigationevent.NavigationEventSwipeEdge
+import androidx.navigationevent.NavigationEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -143,7 +143,7 @@ class NavDisplayScreenshotTest {
                     slideInHorizontally { it / 2 } togetherWith slideOutHorizontally { -it / 2 }
                 },
                 predictivePopTransitionSpec = { swipeEdge ->
-                    if (swipeEdge == NavigationEventSwipeEdge.Left) {
+                    if (swipeEdge == NavigationEvent.EDGE_LEFT) {
                         EnterTransition.None togetherWith slideOutHorizontally { it / 2 }
                     } else {
                         EnterTransition.None togetherWith slideOutHorizontally { -it / 2 }
@@ -211,7 +211,7 @@ class NavDisplayScreenshotTest {
                     slideInHorizontally { it / 2 } togetherWith slideOutHorizontally { -it / 2 }
                 },
                 predictivePopTransitionSpec = { swipeEdge ->
-                    if (swipeEdge == NavigationEventSwipeEdge.Left) {
+                    if (swipeEdge == NavigationEvent.EDGE_LEFT) {
                         EnterTransition.None togetherWith slideOutHorizontally { it / 2 }
                     } else {
                         EnterTransition.None togetherWith slideOutHorizontally { -it / 2 }

@@ -38,6 +38,7 @@ import androidx.pdf.content.ExternalLink
 import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.testapp.R
 import androidx.pdf.testapp.ui.FeatureFlagListener
+import androidx.pdf.testapp.ui.FeatureFlagNames.FORM_FILLING
 import androidx.pdf.testapp.ui.FeatureFlagNames.THUMBNAIL_PREVIEW
 import androidx.pdf.testapp.ui.OpCancellationHandler
 import androidx.pdf.view.PdfView
@@ -259,6 +260,9 @@ class PdfViewerFragmentExtended : PdfViewerFragment(), FeatureFlagListener {
                     generateThumbnails()
                     pdfView.addOnViewportChangedListener(thumbnailViewportListener)
                 }
+            }
+            FORM_FILLING -> {
+                pdfView.isFormFillingEnabled = enabled
             }
         }
     }

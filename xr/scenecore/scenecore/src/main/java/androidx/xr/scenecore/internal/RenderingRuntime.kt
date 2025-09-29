@@ -227,7 +227,7 @@ public interface RenderingRuntime : JxrRuntime {
      */
     public fun createKhronosPbrMaterial(
         spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource>?
+    ): ListenableFuture<MaterialResource>
 
     /**
      * Destroys the given Khronos PBR material resource.

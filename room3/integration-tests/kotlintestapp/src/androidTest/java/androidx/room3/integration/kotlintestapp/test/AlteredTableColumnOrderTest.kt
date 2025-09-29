@@ -28,8 +28,11 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.migration.Migration
+import androidx.room3.useReaderConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,8 +41,8 @@ import org.junit.Test
  * Verifies that Room mapping code works with both newly created tables and altered tables whose
  * star projections results in a different order of columns.
  *
- * For example, start with entity with properties: A, B, C. Then on the entity a new field and
- * column is added with the fields order being A, B, X, C and the migration is ALTER TABLE _ ADD
+ * For example, start with entity with properties: A, B, C. Then on the entity a new property and
+ * column is added with the property order being A, B, X, C and the migration is ALTER TABLE _ ADD
  * COLUMN X. The column result order for a star projection query will be different between these
  * two, but Room should be able to do the right mapping anyway.
  */
@@ -52,12 +55,20 @@ class AlteredTableColumnOrderTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
         context.deleteDatabase("foo.db")
-        cleanDb = Room.databaseBuilder(context, TestDatabase::class.java, "foo.db").build()
+        cleanDb =
+            Room.databaseBuilder<TestDatabase>(context, "foo.db")
+                .setDriver(AndroidSQLiteDriver())
+                .build()
 
         context.deleteDatabase("migrated_foo.db")
+        context.assets.open("databases/foo_v1.db").use { input ->
+            context.getDatabasePath("migrated_foo.db").outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
         migratedDb =
-            Room.databaseBuilder(context, TestDatabase::class.java, "migrated_foo.db")
-                .createFromAsset("databases/foo_v1.db")
+            Room.databaseBuilder<TestDatabase>(context, "migrated_foo.db")
+                .setDriver(AndroidSQLiteDriver())
                 .addMigrations(
                     object : Migration(1, 2) {
                         override fun migrate(db: SupportSQLiteDatabase) {
@@ -84,20 +95,19 @@ class AlteredTableColumnOrderTest {
     }
 
     @Test
-    fun verifyDifferentColumnOrder() {
-        val c1 = cleanDb.openHelper.writableDatabase.query("SELECT * FROM Foo")
-        val c2 = migratedDb.openHelper.writableDatabase.query("SELECT * FROM Foo")
-        try {
-            val columnNames1 = c1.columnNames
-            val columnNames2 = c2.columnNames
-            // Result order matches field order
-            assertThat(columnNames1).isEqualTo(arrayOf("id", "A", "B", "X", "C"))
-            // Result order is field order in v1 plus new column appended
-            assertThat(columnNames2).isEqualTo(arrayOf("id", "A", "B", "C", "X"))
-        } finally {
-            c1.close()
-            c2.close()
-        }
+    fun verifyDifferentColumnOrder() = runTest {
+        val columnNames1 =
+            cleanDb.useReaderConnection { connection ->
+                connection.usePrepared("SELECT * FROM Foo") { it.getColumnNames() }
+            }
+        val columnNames2 =
+            migratedDb.useReaderConnection { connection ->
+                connection.usePrepared("SELECT * FROM Foo") { it.getColumnNames() }
+            }
+        // Result order matches field order
+        assertThat(columnNames1).containsExactly("id", "A", "B", "X", "C").inOrder()
+        // Result order is field order in v1 plus new column appended
+        assertThat(columnNames2).containsExactly("id", "A", "B", "C", "X").inOrder()
     }
 
     @Database(entities = [Foo::class], version = 2, exportSchema = false)

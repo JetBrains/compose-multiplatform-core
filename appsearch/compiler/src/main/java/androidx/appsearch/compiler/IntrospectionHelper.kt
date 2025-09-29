@@ -43,7 +43,6 @@ import kotlin.metadata.isNullable
 import kotlin.metadata.jvm.KotlinClassMetadata
 
 /** Utilities for working with data structures representing parsed Java code. */
-@Suppress("NullAnnotationGroup") // b/424469950
 @OptIn(ExperimentalProcessingApi::class)
 class IntrospectionHelper internal constructor(private val env: XProcessingEnv) {
     // Non-boxable objects

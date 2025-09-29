@@ -23,7 +23,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.Earth
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionConfigureConfigurationNotSupported
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
@@ -67,23 +66,26 @@ class ProjectedTestAppActivity : ComponentActivity() {
         when (val result = Session.create(this)) {
             is SessionCreateSuccess -> {
                 session = result.session
-                when (val configResult = session.configure(config)) {
-                    is SessionConfigureConfigurationNotSupported -> {
-                        Log.e(TAG, "Session configuration not supported.")
-                        finish()
+                try {
+                    when (val configResult = session.configure(config)) {
+                        is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
+                            Log.e(
+                                TAG,
+                                "Google Play Services Location Library is not linked, this should not happen.",
+                            )
+                        }
+
+                        is SessionConfigureSuccess -> {
+                            Log.i(TAG, "Session created successfully!!")
+                        }
+
+                        else -> {
+                            Log.e(TAG, "Session creation error")
+                        }
                     }
-                    is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                        Log.e(
-                            TAG,
-                            "Google Play Services Location Library is not linked, this should not happen.",
-                        )
-                    }
-                    is SessionConfigureSuccess -> {
-                        Log.i(TAG, "Session created successfully!!")
-                    }
-                    else -> {
-                        Log.e(TAG, "Session creation error")
-                    }
+                } catch (e: UnsupportedOperationException) {
+                    Log.e(TAG, "Session configuration not supported.")
+                    this.finish()
                 }
             }
             is SessionCreateApkRequired -> {

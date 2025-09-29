@@ -48,12 +48,6 @@ public sealed class SessionConfigureResult
 public class SessionConfigureSuccess() : SessionConfigureResult()
 
 /**
- * Result of an unsuccessful [Session.configure] call. The session was not configured due to the
- * given [Config] not being supported.
- */
-public class SessionConfigureConfigurationNotSupported() : SessionConfigureResult()
-
-/**
  * Result of an unsuccessful [Session.configure] call. The Google Play Service Location Library is
  * not linked.
  */

@@ -162,10 +162,12 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     true ->
                         resizableActive =
                             session!!.scene.mainPanelEntity.addComponent(resizableComponent)
-                    false ->
-                        resizableActive.let {
+                    false -> {
+                        if (resizableActive) {
                             session!!.scene.mainPanelEntity.removeComponent(resizableComponent)
+                            resizableActive = false
                         }
+                    }
                 }
             }
         }
@@ -173,14 +175,18 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Resize to portrait in fsm
         findViewById<Button>(R.id.button_resize_in_fsm_portrait).also {
             it.setOnClickListener {
-                session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1200, 1600)
+                if (resizableActive) {
+                    session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1200, 1600)
+                }
             }
         }
 
         // Resize to landscape in fsm
         findViewById<Button>(R.id.button_resize_in_fsm_landscape).also {
             it.setOnClickListener {
-                session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1600, 1200)
+                if (resizableActive) {
+                    session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1600, 1200)
+                }
             }
         }
 

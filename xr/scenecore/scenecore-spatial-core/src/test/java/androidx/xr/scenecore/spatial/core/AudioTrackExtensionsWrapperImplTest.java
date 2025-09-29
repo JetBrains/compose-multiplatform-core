@@ -61,8 +61,7 @@ public class AudioTrackExtensionsWrapperImplTest {
 
         // Clear the sound fields before each test.
         // Because the mAudioTrackExtensions are fetched from the XrExtensions singleton it is
-        // reused
-        // across tests.
+        // reused across tests.
         // TODO(b/401557718): Consider adding a reset method to the XrExtensions shadow.
         ShadowAudioTrackExtensions.extract(mAudioTrackExtensions).setSoundFieldAttributes(null);
 

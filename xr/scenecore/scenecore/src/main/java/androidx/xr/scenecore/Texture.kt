@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.internal.RenderingRuntime
 import androidx.xr.scenecore.internal.TextureResource as RtTextureResource
 import java.io.File
 import java.nio.file.Path
@@ -29,36 +29,32 @@ import java.nio.file.Path
  * A texture is an image that can be applied to a 3D model to give it color, detail, and realism. It
  * can also be used as an alpha mask for a [StereoSurfaceEntity].
  *
- * It's important to dispose of the [Texture] when it's no longer needed to free up resources. This
- * can be done by calling the [dispose] method.
+ * It's important to close a [Texture] when it's no longer needed to free up resources. This can be
+ * done by calling the [close] method or letting it get garbage collected.
  */
-@Suppress("NotCloseable")
 public open class Texture
-internal constructor(internal val texture: RtTextureResource, internal val session: Session) {
+internal constructor(internal val texture: RtTextureResource, internal val session: Session) :
+    AutoCloseable {
 
     /**
-     * Disposes the given [Texture].
+     * Closes the given [Texture].
      *
-     * Currently, a glTF model (which this texture will be used with) can't be disposed. This means
-     * that calling dispose on the texture will lead to a crash if the call is made out of order,
-     * that is, if the texture is disposed before the glTF model that uses it.
-     *
-     * When using a texture as an alpha mask for stereoscopic content, the [StereoSurfaceEntity]
-     * should be disposed before the texture is disposed.
+     * The [Texture] can be explicitly closed at anytime or garbage collected. In both cases, its
+     * resources are freed and an exception will be thrown if the [Texture] is used after being
+     * closed.
      */
-    // TODO(b/376277201): Provide Session.GltfModel.dispose().
     @MainThread
-    public open fun dispose() {
-        session.runtimes.filterIsInstance<JxrPlatformAdapter>().single().destroyTexture(texture)
+    override public open fun close() {
+        session.runtimes.filterIsInstance<RenderingRuntime>().single().destroyTexture(texture)
     }
 
     public companion object {
         internal suspend fun createAsync(
-            platformAdapter: JxrPlatformAdapter,
+            renderingRuntime: RenderingRuntime,
             name: String,
             session: Session,
         ): Texture {
-            val textureResource = platformAdapter.loadTexture(name)!!.awaitSuspending()
+            val textureResource = renderingRuntime.loadTexture(name)!!.awaitSuspending()
             return Texture(textureResource, session)
         }
 
@@ -81,7 +77,7 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
             require(!File(path.toString()).isAbsolute) {
                 "Texture.create() expects a path relative to `assets/`, received absolute path $path."
             }
-            return createAsync(session.platformAdapter, path.toString(), session)
+            return createAsync(session.renderingRuntime, path.toString(), session)
         }
     }
 }

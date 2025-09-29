@@ -237,7 +237,6 @@ final class Camera2CameraImpl implements CameraInternal {
      * @throws CameraUnavailableException if the {@link CameraCharacteristics} is unavailable. This
      *                                    could occur if the camera was disconnected.
      */
-    @SuppressLint("NullAnnotationGroup")
     Camera2CameraImpl(
             @NonNull Context context,
             @NonNull CameraManagerCompat cameraManager,
@@ -1340,7 +1339,8 @@ final class Camera2CameraImpl implements CameraInternal {
                         useCaseInfo.getStreamSpec().getImplementationOptions(),
                         useCaseInfo.getStreamSpec().getSessionType(),
                         useCaseInfo.getStreamSpec().getExpectedFrameRateRange(),
-                        useCaseConfig.isStrictFrameRateRequired());
+                        useCaseConfig.isStrictFrameRateRequired(),
+                        useCaseConfig.getCustomMaxFrameRate(surface.getPrescribedSize()));
 
                 attachedSurfaces.add(attachedSurfaceInfo);
             }
