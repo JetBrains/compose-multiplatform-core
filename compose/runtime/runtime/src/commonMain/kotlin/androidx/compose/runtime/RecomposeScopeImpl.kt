@@ -75,7 +75,7 @@ internal interface RecomposeScopeOwner {
 
     fun recomposeScopeReleased(scope: RecomposeScopeImpl)
 
-    fun recordReadOf(value: Any)
+    fun recordReadOf(value: Any): Boolean
 }
 
 /**

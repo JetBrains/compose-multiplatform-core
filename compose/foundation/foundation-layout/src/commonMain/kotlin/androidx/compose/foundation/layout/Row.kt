@@ -95,7 +95,8 @@ inline fun Row(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    content: @Composable RowScope.() -> Unit,
+    propagateMinHeight: Boolean = true,
+    content: @Composable RowScope.() -> Unit
 ) {
     val measurePolicy = rowMeasurePolicy(horizontalArrangement, verticalAlignment)
     Layout(
@@ -108,21 +109,23 @@ inline fun Row(
 /** MeasureBlocks to use when horizontalArrangement and verticalAlignment are not provided. */
 @PublishedApi
 internal val DefaultRowMeasurePolicy: MeasurePolicy =
-    RowMeasurePolicy(horizontalArrangement = Arrangement.Start, verticalAlignment = Alignment.Top)
+    RowMeasurePolicy(horizontalArrangement = Arrangement.Start, verticalAlignment = Alignment.Top, propagateMinHeight = false)
 
 @PublishedApi
 @Composable
 internal fun rowMeasurePolicy(
     horizontalArrangement: Arrangement.Horizontal,
     verticalAlignment: Alignment.Vertical,
+    propagateMinHeight: Boolean = false,
 ): MeasurePolicy =
-    if (horizontalArrangement == Arrangement.Start && verticalAlignment == Alignment.Top) {
+    if (horizontalArrangement == Arrangement.Start && verticalAlignment == Alignment.Top && !propagateMinHeight) {
         DefaultRowMeasurePolicy
     } else {
         remember(horizontalArrangement, verticalAlignment) {
             RowMeasurePolicy(
                 horizontalArrangement = horizontalArrangement,
                 verticalAlignment = verticalAlignment,
+                propagateMinHeight = propagateMinHeight,
             )
         }
     }
@@ -130,7 +133,11 @@ internal fun rowMeasurePolicy(
 internal data class RowMeasurePolicy(
     private val horizontalArrangement: Arrangement.Horizontal,
     private val verticalAlignment: Alignment.Vertical,
+    private val propagateMinHeight: Boolean,
 ) : MeasurePolicy, RowColumnMeasurePolicy {
+    override val propagateCrossAxisMinConstraint: Boolean
+        get() = propagateMinHeight
+
     override fun Placeable.mainAxisSize() = width
 
     override fun Placeable.crossAxisSize() = height

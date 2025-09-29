@@ -608,6 +608,10 @@ includeProject(":test:screenshot:screenshot", "mpp/stub-project")
 includeProject(":window:window-core", "mpp/stub-project")
 includeProject(":window:window-testing", "mpp/stub-project")
 
+include(":fleet:compose:runtime:runtime-all-desktop")
+include(":fleet:compose:ui:ui-all-desktop")
+include(":fleet:lifecycle:lifecycle-all-desktop")
+
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----
 // ---------------------------------------------------------------------
