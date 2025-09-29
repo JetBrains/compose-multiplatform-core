@@ -128,13 +128,13 @@ public fun wrap(
     body: @Composable () -> Unit,
     wrap: @Composable (@Composable () -> Unit) -> Unit,
 ) {
-    lambda(alwaysDirty = true) {
+//    lambda(alwaysDirty = true) {
         wrap {
             lambda {
                 body()
             }
         }
-    }
+//    }
 }
 
 interface Noria {
