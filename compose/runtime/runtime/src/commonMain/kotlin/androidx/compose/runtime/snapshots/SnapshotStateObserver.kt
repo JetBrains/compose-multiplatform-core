@@ -21,6 +21,8 @@ import androidx.collection.MutableScatterMap
 import androidx.collection.MutableScatterSet
 import androidx.compose.runtime.ComputedState
 import androidx.compose.runtime.DerivedState
+import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.ObserverHandle
 import androidx.compose.runtime.TestOnly
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.ScopeMap
@@ -48,7 +50,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
     private val pendingChanges = AtomicReference<Any?>(null)
     private var sendingNotifications = false
 
-    private val applyObserver: (Set<Any>, Snapshot) -> Unit = { applied, _ ->
+    private val applyObserver: (Set<Any>) -> Unit = { applied ->
         addChanges(applied)
         if (drainChanges()) sendNotifications()
     }
@@ -162,9 +164,12 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
     private fun report(): Nothing = composeRuntimeError("Unexpected notification")
 
     /** The observer used by this [SnapshotStateObserver] during [observeReads]. */
-    private val readObserver: (Any) -> Unit = { state ->
+    private val readObserver: (Any) -> Boolean = { state ->
         if (!isPaused) {
             synchronized(observedScopeMapsLock) { currentMap!!.recordRead(state) }
+            true
+        } else {
+            false
         }
     }
 
@@ -324,7 +329,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
 
     /** Starts watching for state commits. */
     public fun start() {
-        applyUnsubscribe = Snapshot.registerApplyObserver(applyObserver)
+        applyUnsubscribe = DataSource.registerInvalidator(applyObserver)
     }
 
     /** Stops watching for state commits. */
@@ -333,12 +338,11 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
     }
 
     /**
-     * This method is only used for testing. It notifies that [changes] have been made on
-     * [snapshot].
+     * This method is only used for testing. It notifies that [changes] have been made.
      */
     @TestOnly
-    public fun notifyChanges(changes: Set<Any>, snapshot: Snapshot) {
-        applyObserver(changes, snapshot)
+    public fun notifyChanges(changes: Set<Any>) {
+        applyObserver(changes)
     }
 
     /** Remove all observations. */
@@ -508,7 +512,9 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
                         dependencyToIndirectStates.add(dependency, rootComputingState)
                     }
                 }
-                return
+                // Recorded against the state being computed rather than this scope; the scope that
+                // reads that state picks up the dependency through it.
+                return true
             }
 
             val previousToken = recordedValues.put(value, currentToken, -1)
@@ -541,7 +547,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
         @Suppress("NOTHING_TO_INLINE")
         inline fun observe(
             scope: Any,
-            noinline readObserver: (Any) -> Unit,
+            noinline readObserver: (Any) -> Boolean,
             noinline block: () -> Unit,
         ) {
             val previousScope = currentScope
@@ -555,7 +561,10 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
             }
 
             observeIndirectStateRecalculations(derivedStateObserver) {
-                Snapshot.observeInternal(readObserver, null, block)
+                DataSource.observe(
+                    recordDependency = readObserver,
+                    block = block,
+                )
             }
 
             clearObsoleteStateReads(currentScope!!)
@@ -672,15 +681,23 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
             val token = currentSnapshot().snapshotId.hashCode()
             if (indirectState is ComputedState<*>) {
                 Snapshot.observeInternal({
+                    // A read observer reports whether the read was recorded: here, by any scope
+                    // that reads the state being recomputed.
+                    var recorded = false
                     valueToScopes.forEachScopeOf(indirectState) { scope ->
-                        recordRead(
-                            value = it,
-                            currentToken = token,
-                            currentScope = scope,
-                            recordedValues =
-                                scopeToValues.getOrPut(scope) { MutableObjectIntMap() },
-                        )
+                        if (
+                            recordRead(
+                                value = it,
+                                currentToken = token,
+                                currentScope = scope,
+                                recordedValues =
+                                    scopeToValues.getOrPut(scope) { MutableObjectIntMap() },
+                            )
+                        ) {
+                            recorded = true
+                        }
                     }
+                    recorded
                 }) {
                     indirectState.value
                 }

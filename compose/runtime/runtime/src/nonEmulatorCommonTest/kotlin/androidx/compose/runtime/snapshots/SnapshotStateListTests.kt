@@ -811,7 +811,7 @@ class SnapshotStateListTests {
         val list = mutableStateListOf(0, 1, 2, 3)
         var count = 0
         var readCount = 0
-        val snapshot = Snapshot.takeSnapshot { readCount++ }
+        val snapshot = Snapshot.takeSnapshot { readCount++; true }
         snapshot.enter { list.forEach { count++ } }
         snapshot.dispose()
         assertEquals(list.size, count)

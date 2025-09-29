@@ -56,8 +56,8 @@ import kotlin.jvm.JvmName
 // TextStyleInvalidationTest to ensure the correct phase(s) get invalidated.
 @Immutable
 public class TextStyle
-internal constructor(
-    internal val spanStyle: SpanStyle,
+public constructor(
+    public val spanStyle: SpanStyle,
     internal val paragraphStyle: ParagraphStyle,
     public val platformStyle: PlatformTextStyle? = null,
 ) {

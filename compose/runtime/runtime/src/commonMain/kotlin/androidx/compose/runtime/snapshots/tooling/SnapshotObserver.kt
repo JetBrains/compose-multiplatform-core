@@ -27,6 +27,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.StateObject
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.sync
+import kotlin.jvm.JvmName
 
 /**
  * An observer for the snapshot system that notifies an observer when a snapshot is created,
@@ -113,7 +114,7 @@ public class SnapshotInstanceObservers(
      *
      * This method is called in the same thread that reads snapshot state.
      */
-    public val readObserver: ((Any) -> Unit)? = null,
+    public val readObserver: ((Any) -> Boolean)? = null,
 
     /**
      * Called just before a state object is written to the first time in the snapshot or a nested
@@ -160,10 +161,10 @@ public fun Snapshot.Companion.observeSnapshots(snapshotObserver: SnapshotObserve
 @ExperimentalComposeRuntimeApi
 internal inline fun <R : Snapshot> creatingSnapshot(
     parent: Snapshot?,
-    noinline readObserver: ((Any) -> Unit)?,
+    noinline readObserver: ((Any) -> Boolean)?,
     noinline writeObserver: ((Any) -> Unit)?,
     readonly: Boolean,
-    crossinline block: (readObserver: ((Any) -> Unit)?, writeObserver: ((Any) -> Unit)?) -> R,
+    crossinline block: (readObserver: ((Any) -> Boolean)?, writeObserver: ((Any) -> Unit)?) -> R,
 ): R {
     var observerMap: Map<SnapshotObserver, SnapshotInstanceObservers>? = null
     val observers = observers
@@ -185,7 +186,7 @@ internal inline fun <R : Snapshot> creatingSnapshot(
 internal fun PersistentList<SnapshotObserver>.mergeObservers(
     parent: Snapshot?,
     readonly: Boolean,
-    readObserver: ((Any) -> Unit)?,
+    readObserver: ((Any) -> Boolean)?,
     writeObserver: ((Any) -> Unit)?,
 ): Pair<SnapshotInstanceObservers, Map<SnapshotObserver, SnapshotInstanceObservers>?> {
     var currentReadObserver = readObserver
@@ -212,6 +213,15 @@ private fun mergeObservers(a: ((Any) -> Unit)?, b: ((Any) -> Unit)?): ((Any) -> 
         {
             a(it)
             b(it)
+        }
+    } else a ?: b
+}
+
+@JvmName("mergeObserversWithReturnValue")
+private fun mergeObservers(a: ((Any) -> Boolean)?, b: ((Any) -> Boolean)?): ((Any) -> Boolean)? {
+    return if (a != null && b != null) {
+        {
+            a(it) || b(it)
         }
     } else a ?: b
 }

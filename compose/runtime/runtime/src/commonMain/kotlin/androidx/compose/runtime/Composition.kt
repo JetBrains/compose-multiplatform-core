@@ -220,8 +220,9 @@ public sealed interface ControlledComposition : Composition {
      * changes.
      *
      * @param value the instance from which a property was read
+     * @return `true` if a read dependency was recorded, `false` otherwise
      */
-    public fun recordReadOf(value: Any)
+    public fun recordReadOf(value: Any): Boolean
 
     /**
      * Record that [value] has been modified. This is used primarily by the [Recomposer] to inform
@@ -1151,7 +1152,7 @@ internal class CompositionImpl(
         }
     }
 
-    override fun recordReadOf(value: Any) {
+    override fun recordReadOf(value: Any): Boolean {
         val currentComputingState = computingStates.lastOrNull()
         if (currentComputingState != null) {
             if (value is StateObjectImpl) {
@@ -1167,17 +1168,19 @@ internal class CompositionImpl(
                     indirectStates.add(dependency, currentComputingState)
                 }
             }
-            return
+            // Recorded against the state being computed rather than a recompose scope; the scope
+            // that reads that state picks up the dependency through it.
+            return true
         }
 
-        if (!areChildrenComposing) {
+        // Not acquiring lock since this happens during composition with it already held
+        return if (!areChildrenComposing) {
             composer.currentRecomposeScope?.let { scope ->
                 scope.used = true
 
                 val alreadyRead = scope.recordRead(value)
 
                 observer()?.onReadInScope(scope, value)
-
                 if (!alreadyRead) {
                     if (value is StateObjectImpl) {
                         value.recordReadIn(ReaderKind.Composition)
@@ -1198,7 +1201,10 @@ internal class CompositionImpl(
                         scope.recordDerivedStateValue(value, record.currentValue)
                     }
                 }
-            }
+                true
+            } ?: false
+        } else {
+            false
         }
     }
 

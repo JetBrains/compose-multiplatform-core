@@ -31,7 +31,7 @@ internal interface PlatformFocusOwner {
     fun requestOwnerFocus(focusDirection: FocusDirection?, previouslyFocusedRect: Rect?): Boolean
 
     /** Clear the focus from this owner. */
-    fun clearOwnerFocus()
+    fun clearOwnerFocus(isAutomatic: Boolean)
 
     /** Move focus in the specified direction. */
     fun moveFocusInChildren(focusDirection: FocusDirection): Boolean

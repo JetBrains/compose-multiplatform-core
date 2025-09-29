@@ -42,7 +42,6 @@ import androidx.compose.ui.window.DialogState
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
-import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
 import androidx.compose.ui.window.WindowPlacement
@@ -177,7 +176,7 @@ fun SwingDialog(
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
-    decoration: WindowDecoration = WindowDecoration.SystemDefault,
+    decoration: WindowDecoration = WindowDecoration.Decorated,
     transparent: Boolean = false,
     resizable: Boolean = true,
     enabled: Boolean = true,
@@ -286,7 +285,7 @@ fun SwingDialog(
             updater.update {
                 set(currentTitle, dialog::setTitle)
                 set(currentIcon, dialog::setIcon)
-                set(currentDecoration is UndecoratedWindowDecoration, dialog::setUndecoratedSafely)
+                set(currentDecoration is WindowDecoration.Undecorated, dialog::setUndecoratedSafely)
                 set(currentTransparent, dialog::isTransparent::set)
                 set(currentResizable, dialog::setResizable)
                 set(currentEnabled, dialog::setEnabled)

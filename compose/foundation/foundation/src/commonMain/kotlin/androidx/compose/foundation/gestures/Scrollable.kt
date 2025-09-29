@@ -565,7 +565,7 @@ public object ScrollableDefaults {
     }
 }
 
-internal interface ScrollConfig {
+interface ScrollConfig {
 
     /** Enables animated transition of scroll on mouse wheel events. */
     val isSmoothScrollingEnabled: Boolean

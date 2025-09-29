@@ -91,7 +91,7 @@ public class SpanStyle
  * @param platformStyle platform-specific parameters
  * @param drawStyle drawing style (fill or stroke)
  */
-internal constructor(
+public constructor(
     // The fill to draw text, a unified representation of Color and Brush.
     internal val textForegroundStyle: TextForegroundStyle,
     public val fontSize: TextUnit = TextUnit.Unspecified,

@@ -94,7 +94,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.bounds
 import androidx.compose.ui.unit.round
-import androidx.compose.ui.unit.toMaxConstraints
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.useSnapshotCache
 import androidx.compose.ui.util.fastAll
@@ -244,7 +243,7 @@ internal class RootNodeOwner(
             measureAndLayoutDelegate.measureOnly()
             block(owner.root)
         } finally {
-            measureAndLayoutDelegate.updateRootConstraints(size.toMaxConstraints())
+            measureAndLayoutDelegate.updateRootConstraints(size.toRootConstraints())
         }
     }
 
@@ -333,7 +332,7 @@ internal class RootNodeOwner(
     }
 
     private fun onRootSizeChanged(size: IntSize?) {
-        measureAndLayoutDelegate.updateRootConstraints(size.toMaxConstraints())
+        measureAndLayoutDelegate.updateRootConstraints(size.toRootConstraints())
         if (measureAndLayoutDelegate.hasPendingMeasureOrLayout) {
             requestMeasureAndLayout()
         }
@@ -430,7 +429,7 @@ internal class RootNodeOwner(
                 return platformContext.requestFocus()
             }
 
-            override fun clearOwnerFocus() {
+            override fun clearOwnerFocus(isAutomatic: Boolean) {
                 platformContext.parentFocusManager.clearFocus(true)
             }
 
@@ -994,6 +993,13 @@ internal class RootNodeOwner(
         }
     }
 }
+
+/**
+ * The root is laid out at exactly the size the platform gives it, so that content sized to
+ * `fillMaxSize`/the window is measured against a definite size rather than being free to shrink.
+ */
+private fun IntSize?.toRootConstraints() =
+    if (this == null) Constraints() else Constraints.fixed(width, height)
 
 private object IdentityPositionCalculator : PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen

@@ -86,7 +86,7 @@ internal class InputModeFilterIndication(
         interactionSource: InteractionSource
     ): IndicationInstance {
         val inputModeManager = LocalInputModeManager.current
-        return super.rememberUpdatedInstance(
+        return original.rememberUpdatedInstance(
             InputModeFilterInteractionSource(interactionSource, inputModeManager)
         )
     }
@@ -109,8 +109,9 @@ private class InputModeFilterInteractionSource(
     original: InteractionSource,
     var inputModeManager: InputModeManager? = null
 ) : InteractionSource {
-    private val isKeyboardMode get() = inputModeManager == null ||
-        inputModeManager?.inputMode == InputMode.Keyboard
+    private val isKeyboardMode
+        get() = inputModeManager == null ||
+            inputModeManager?.inputMode == InputMode.Keyboard
 
     override val interactions = flow {
         // keep tracking counts to always send symmetric Focus/Unfocus
@@ -124,7 +125,8 @@ private class InputModeFilterInteractionSource(
                 // if it is already focused, we always show indication for simplicity
                 // (otherwise we have to generate multiple synthetic Unfocus)
                 if (actualFocusCount > 0 && sentFocusCount > 0 ||
-                    actualFocusCount == 0 && isKeyboardMode) {
+                    actualFocusCount == 0 && isKeyboardMode
+                ) {
                     when (it) {
                         is FocusInteraction.Focus -> sentFocusCount++
                         is FocusInteraction.Unfocus -> sentFocusCount--
