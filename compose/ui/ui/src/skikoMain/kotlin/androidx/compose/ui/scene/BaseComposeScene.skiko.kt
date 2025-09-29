@@ -84,22 +84,23 @@ internal abstract class BaseComposeScene(
         private set
 
     private var isInvalidationDisabled = false
-    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T = trace(traceTag) {
-        check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
-        isInvalidationDisabled = true
-        return try {
-            // Try to get see the up-to-date state before running block
-            // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
-            // in a different thread than this code.
-            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-            snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
-        } finally {
-            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
-            isInvalidationDisabled = false
-        }.also {
-            updateInvalidations()
+    private inline fun <T> postponeInvalidation(traceTag: String, crossinline block: () -> T): T =
+        trace(traceTag) {
+            check(!isClosed) { "postponeInvalidation called after ComposeScene is closed" }
+            isInvalidationDisabled = true
+            return try {
+                // Try to get see the up-to-date state before running block
+                // Note that this doesn't guarantee it, if sendApplyNotifications is called concurrently
+                // in a different thread than this code.
+                snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
+                snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
+            } finally {
+                snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
+                isInvalidationDisabled = false
+            }.also {
+                updateInvalidations()
+            }
         }
-    }
 
     @Volatile
     private var hasPendingDraws = true
@@ -259,11 +260,12 @@ internal abstract class BaseComposeScene(
         inputHandler.cancelPointerInput()
     }
 
-    override fun sendKeyEvent(keyEvent: KeyEvent): Boolean = postponeInvalidation("BaseComposeScene:sendKeyEvent") {
-        inputHandler.onKeyEvent(keyEvent).also {
-            recomposer.performScheduledEffects()
+    override fun sendKeyEvent(keyEvent: KeyEvent): Boolean =
+        postponeInvalidation("BaseComposeScene:sendKeyEvent") {
+            inputHandler.onKeyEvent(keyEvent).also {
+                recomposer.performScheduledEffects()
+            }
         }
-    }
 
     override fun sendRotaryScrollEvent(
         verticalScrollPixels: Float,

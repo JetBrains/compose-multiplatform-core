@@ -57,7 +57,7 @@ private val WindowInsets.Companion.layoutMargins: WindowInsets
  * It is useless for iOS.
  */
 actual val WindowInsets.Companion.captionBar: WindowInsets
-    get() = ZeroInsets
+    @Composable get() = ZeroInsets
 
 /**
  * This [WindowInsets] represents the area with the display cutout (e.g. for camera).

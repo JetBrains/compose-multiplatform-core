@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.ComponentUpdater
 import androidx.compose.ui.util.componentListenerRef
+import androidx.compose.ui.util.setBackgroundColor
 import androidx.compose.ui.util.setIcon
 import androidx.compose.ui.util.setPositionSafely
 import androidx.compose.ui.util.setSizeSafely
@@ -38,7 +40,6 @@ import androidx.compose.ui.util.windowListenerRef
 import androidx.compose.ui.util.windowStateListenerRef
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.LocalWindowExceptionHandlerFactory
-import androidx.compose.ui.window.UndecoratedWindowDecoration
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowLocationTracker
@@ -173,11 +174,11 @@ fun SwingWindow(
 @Composable
 fun SwingWindow(
     onCloseRequest: () -> Unit,
-    state: WindowState = rememberWindowState(),
     visible: Boolean = true,
     title: String = "Untitled",
     icon: Painter? = null,
-    decoration: WindowDecoration = WindowDecoration.SystemDefault,
+    backgroundColor: Color = Color.Unspecified,
+    decoration: WindowDecoration = WindowDecoration.Decorated,
     transparent: Boolean = false,
     resizable: Boolean = true,
     enabled: Boolean = true,
@@ -188,9 +189,9 @@ fun SwingWindow(
     init: (ComposeWindow) -> Unit,
     content: @Composable FrameWindowScope.() -> Unit
 ) {
-    val currentState by rememberUpdatedState(state)
     val currentTitle by rememberUpdatedState(title)
     val currentIcon by rememberUpdatedState(icon)
+    val currentBackgroundColor by rememberUpdatedState(backgroundColor)
     val currentDecoration by rememberUpdatedState(decoration)
     val currentTransparent by rememberUpdatedState(transparent)
     val currentResizable by rememberUpdatedState(resizable)
@@ -201,26 +202,12 @@ fun SwingWindow(
 
     val updater = remember(::ComponentUpdater)
 
-    // the state applied to the window. exist to avoid races between WindowState changes and the state stored inside the native window
-    val appliedState = remember {
-        object {
-            var size: DpSize? = null
-            var position: WindowPosition? = null
-            var placement: WindowPlacement? = null
-            var isMinimized: Boolean? = null
-        }
-    }
-
     val listeners = remember {
         object {
             var windowListenerRef = windowListenerRef()
-            var windowStateListenerRef = windowStateListenerRef()
-            var componentListenerRef = componentListenerRef()
 
             fun removeFromAndClear(window: ComposeWindow) {
                 windowListenerRef.unregisterFromAndClear(window)
-                windowStateListenerRef.unregisterFromAndClear(window)
-                componentListenerRef.unregisterFromAndClear(window)
             }
         }
     }
@@ -242,31 +229,6 @@ fun SwingWindow(
                         }
                     }
                 )
-                listeners.windowStateListenerRef.registerWithAndSet(this) {
-                    currentState.placement = placement
-                    currentState.isMinimized = isMinimized
-                    appliedState.placement = currentState.placement
-                    appliedState.isMinimized = currentState.isMinimized
-                }
-                listeners.componentListenerRef.registerWithAndSet(
-                    this,
-                    object : ComponentAdapter() {
-                        override fun componentResized(e: ComponentEvent) {
-                            // we check placement here and in windowStateChanged,
-                            // because fullscreen changing doesn't
-                            // fire windowStateChanged, only componentResized
-                            currentState.placement = placement
-                            currentState.size = DpSize(width.dp, height.dp)
-                            appliedState.placement = currentState.placement
-                            appliedState.size = currentState.size
-                        }
-
-                        override fun componentMoved(e: ComponentEvent) {
-                            currentState.position = WindowPosition(x.dp, y.dp)
-                            appliedState.position = currentState.position
-                        }
-                    }
-                )
                 WindowLocationTracker.onWindowCreated(this)
 
                 init(this)
@@ -282,33 +244,14 @@ fun SwingWindow(
             updater.update {
                 set(currentTitle, window::setTitle)
                 set(currentIcon, window::setIcon)
-                set(currentDecoration is UndecoratedWindowDecoration, window::setUndecoratedSafely)
+                set(currentBackgroundColor, window::setBackgroundColor)
+                set(currentDecoration is WindowDecoration.Undecorated, window::setUndecoratedSafely)
                 set(currentTransparent, window::isTransparent::set)
                 set(currentResizable, window::setResizable)
                 set(currentEnabled, window::setEnabled)
                 set(currentFocusable, window::setFocusableWindowState)
                 set(currentAlwaysOnTop, window::setAlwaysOnTop)
                 set(currentDecoration.resizerThickness, window::undecoratedResizerThickness::set)
-            }
-            if (state.size != appliedState.size) {
-                window.setSizeSafely(state.size, state.placement)
-                appliedState.size = state.size
-            }
-            if (state.position != appliedState.position) {
-                window.setPositionSafely(
-                    state.position,
-                    state.placement,
-                    platformDefaultPosition = { WindowLocationTracker.getCascadeLocationFor(window) }
-                )
-                appliedState.position = state.position
-            }
-            if (state.placement != appliedState.placement) {
-                window.placement = state.placement
-                appliedState.placement = state.placement
-            }
-            if (state.isMinimized != appliedState.isMinimized) {
-                window.isMinimized = state.isMinimized
-                appliedState.isMinimized = state.isMinimized
             }
         },
         content = content

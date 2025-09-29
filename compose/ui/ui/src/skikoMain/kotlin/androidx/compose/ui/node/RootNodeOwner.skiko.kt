@@ -388,7 +388,7 @@ internal class RootNodeOwner(
                 return platformContext.requestFocus()
             }
 
-            override fun clearOwnerFocus() {
+            override fun clearOwnerFocus(isAutomatic: Boolean) {
                 platformContext.parentFocusManager.clearFocus(true)
             }
 
@@ -984,7 +984,7 @@ private fun MeasureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(
     )
 }
 
-private fun IntSize.toConstraints() = Constraints(maxWidth = width, maxHeight = height)
+private fun IntSize.toConstraints() = Constraints.fixed(width, height)
 
 private object IdentityPositionCalculator: PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen

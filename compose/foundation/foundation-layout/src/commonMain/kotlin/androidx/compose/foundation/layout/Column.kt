@@ -83,9 +83,11 @@ inline fun Column(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    propagateMinWidth: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val measurePolicy = columnMeasurePolicy(verticalArrangement, horizontalAlignment)
+    val measurePolicy =
+        columnMeasurePolicy(verticalArrangement, horizontalAlignment, propagateMinWidth)
     Layout(
         content = { ColumnScopeInstance.content() },
         measurePolicy = measurePolicy,
@@ -98,21 +100,23 @@ internal val DefaultColumnMeasurePolicy: MeasurePolicy =
     ColumnMeasurePolicy(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
+        propagateMinWidth = false,
     )
 
-@PublishedApi
 @Composable
-internal fun columnMeasurePolicy(
+fun columnMeasurePolicy(
     verticalArrangement: Arrangement.Vertical,
     horizontalAlignment: Alignment.Horizontal,
+    propagateMinWidth: Boolean = false,
 ): MeasurePolicy =
-    if (verticalArrangement == Arrangement.Top && horizontalAlignment == Alignment.Start) {
+    if (verticalArrangement == Arrangement.Top && horizontalAlignment == Alignment.Start && !propagateMinWidth) {
         DefaultColumnMeasurePolicy
     } else {
         remember(verticalArrangement, horizontalAlignment) {
             ColumnMeasurePolicy(
                 verticalArrangement = verticalArrangement,
                 horizontalAlignment = horizontalAlignment,
+                propagateMinWidth = propagateMinWidth,
             )
         }
     }
@@ -120,7 +124,10 @@ internal fun columnMeasurePolicy(
 internal data class ColumnMeasurePolicy(
     private val verticalArrangement: Arrangement.Vertical,
     private val horizontalAlignment: Alignment.Horizontal,
+    private val propagateMinWidth: Boolean,
 ) : MeasurePolicy, RowColumnMeasurePolicy {
+    override val propagateCrossAxisMinConstraint: Boolean
+        get() = propagateMinWidth
 
     override fun Placeable.mainAxisSize(): Int = height
 

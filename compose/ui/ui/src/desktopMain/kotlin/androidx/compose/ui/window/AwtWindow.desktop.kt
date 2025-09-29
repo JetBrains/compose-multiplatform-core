@@ -17,7 +17,13 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.awt.AwtWindow
+import androidx.compose.ui.node.Ref
+import androidx.compose.ui.util.UpdateEffect
 import java.awt.Window
+import kotlinx.coroutines.DelicateCoroutinesApi
 
 /**
  * Compose [Window] obtained from [create]. The [create] block will be called
@@ -53,10 +59,35 @@ import java.awt.Window
 )
 @Composable
 fun <T : Window> AwtWindow(
-    visible: Boolean = true,
+    visible: Boolean,
     create: () -> T,
     dispose: (T) -> Unit,
     update: (T) -> Unit = {}
 ) {
-    androidx.compose.ui.awt.AwtWindow(visible, create, dispose, update)
+    AwtWindow(visible, create, dispose, update)
+}
+
+
+@OptIn(DelicateCoroutinesApi::class)
+@Suppress("unused")
+@Composable
+fun <T> AwtWindow(
+    create: () -> T,
+    dispose: (T) -> Unit,
+    update: (T) -> Unit = {}
+) {
+    val windowRef = remember { Ref<T>() }
+    fun window() = windowRef.value!!
+
+    DisposableEffect(Unit) {
+        windowRef.value = create()
+        onDispose {
+            dispose(window())
+        }
+    }
+
+    UpdateEffect {
+        val window = window()
+        update(window)
+    }
 }

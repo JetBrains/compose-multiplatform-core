@@ -109,11 +109,12 @@ public fun <T : R, R> Flow<T>.collectAsState(
 public fun <T> snapshotFlow(block: () -> T): Flow<T> = flow {
     // Objects read the last time block was run
     val readSet = MutableScatterSet<Any>()
-    val readObserver: (Any) -> Unit = {
+    val readObserver: (Any) -> Boolean = {
         if (it is StateObjectImpl) {
             it.recordReadIn(ReaderKind.SnapshotFlow)
         }
         readSet.add(it)
+        true
     }
 
     // This channel may not block or lose data on a trySend call.

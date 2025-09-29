@@ -16,6 +16,7 @@
 
 package androidx.compose.runtime
 
+
 /**
  * Compose passes data through the composition tree explicitly through means of parameters to
  * composable functions. This is often times the simplest and best way to have data flow through the
@@ -72,7 +73,7 @@ public sealed class CompositionLocal<T>(defaultFactory: () -> T) {
      */
     @OptIn(InternalComposeApi::class)
     public inline val current: T
-        @ReadOnlyComposable @Composable get() = currentComposer.consume(this)
+        @ReadOnlyComposable @Composable get() = currentComposer.consume(this@CompositionLocal)
 }
 
 /**
@@ -271,6 +272,13 @@ public fun <T> compositionLocalOf(
  */
 public fun <T> staticCompositionLocalOf(defaultFactory: () -> T): ProvidableCompositionLocal<T> =
     StaticProvidableCompositionLocal(defaultFactory)
+
+@NoriaOnly
+fun <T> staticOptimizedCompositionLocalOf(
+    lookupIndex: Int,
+    capture: ((T) -> T)? = null,
+    defaultFactory: () -> T
+): ProvidableCompositionLocal<T> = staticCompositionLocalOf(defaultFactory)
 
 /**
  * Create a [CompositionLocal] that behaves like it was provided using

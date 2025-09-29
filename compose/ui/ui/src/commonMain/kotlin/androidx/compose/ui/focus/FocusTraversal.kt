@@ -77,7 +77,7 @@ internal fun FocusTargetNode.customFocusSearch(
         //  when the user presses the back button.
         Enter,
         Exit -> {
-            val scope = CancelIndicatingFocusBoundaryScope(focusDirection)
+            val scope = CancelIndicatingFocusBoundaryScope(focusDirection, isAutomatic = true)
             with(focusProperties) {
                 val focusOwner = requireOwner().focusOwner
                 val activeNodeBefore = focusOwner.activeFocusTargetNode

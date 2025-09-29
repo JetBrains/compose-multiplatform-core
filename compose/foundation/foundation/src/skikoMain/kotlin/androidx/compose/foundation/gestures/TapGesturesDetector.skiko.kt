@@ -189,7 +189,7 @@ suspend fun PointerInputScope.detectTapGestures(
 }
 
 
-internal suspend fun AwaitPointerEventScope.awaitPress(
+suspend fun AwaitPointerEventScope.awaitPress(
     filter: (PointerEvent) -> Boolean,
     requireUnconsumed: Boolean = true
 ): PointerEvent {

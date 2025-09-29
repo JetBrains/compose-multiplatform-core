@@ -124,8 +124,43 @@ fun SubcomposeLayout(
     modifier: Modifier = Modifier,
     measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult,
 ) {
+    SubcomposeLayout(
+        rememberCompositionContext(),
+        modifier = modifier,
+        state = state,
+        measurePolicy = measurePolicy,
+    )
+}
+
+/**
+ * Analogue of [Layout] which allows to subcompose the actual content during the measuring stage for
+ * example to use the values calculated during the measurement as params for the composition of the
+ * children.
+ *
+ * Possible use cases:
+ * * You need to know the constraints passed by the parent during the composition and can't solve
+ *   your use case with just custom [Layout] or [LayoutModifier]. See
+ *   [androidx.compose.foundation.layout.BoxWithConstraints].
+ * * You want to use the size of one child during the composition of the second child.
+ * * You want to compose your items lazily based on the available size. For example you have a list
+ *   of 100 items and instead of composing all of them you only compose the ones which are currently
+ *   visible(say 5 of them) and compose next items when the component is scrolled.
+ *
+ * @sample androidx.compose.ui.samples.SubcomposeLayoutSample
+ * @param state the state object to be used by the layout.
+ * @param modifier [Modifier] to apply for the layout.
+ * @param measurePolicy Measure policy which provides ability to subcompose during the measuring.
+ */
+@Composable
+@UiComposable
+fun SubcomposeLayout(
+    compositionContext: CompositionContext,
+    modifier: Modifier = Modifier,
+    state: SubcomposeLayoutState = remember { SubcomposeLayoutState() },
+    measurePolicy: SubcomposeMeasureScope.(Constraints) -> MeasureResult,
+)
+{
     val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
-    val compositionContext = rememberCompositionContext()
     val materialized = currentComposer.materialize(modifier)
     val localMap = currentComposer.currentCompositionLocalMap
     ReusableComposeNode<LayoutNode, Applier<Any>>(

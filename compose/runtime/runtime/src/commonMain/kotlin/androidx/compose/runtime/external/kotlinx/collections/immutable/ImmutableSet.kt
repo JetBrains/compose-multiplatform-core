@@ -16,7 +16,7 @@ package androidx.compose.runtime.external.kotlinx.collections.immutable
  *
  * @param E the type of elements contained in the set. The set is covariant on its element type.
  */
-internal interface ImmutableSet<out E>: Set<E>, ImmutableCollection<E>
+interface ImmutableSet<out E>: Set<E>, ImmutableCollection<E>
 
 /**
  * A generic persistent unordered collection of elements that does not support duplicate elements, and supports
@@ -26,7 +26,7 @@ internal interface ImmutableSet<out E>: Set<E>, ImmutableCollection<E>
  *
  * @param E the type of elements contained in the set. The persistent set is covariant on its element type.
  */
-internal interface PersistentSet<out E> : ImmutableSet<E>, PersistentCollection<E> {
+interface PersistentSet<out E> : ImmutableSet<E>, PersistentCollection<E> {
     /**
      * Returns the result of adding the specified [element] to this set.
      *

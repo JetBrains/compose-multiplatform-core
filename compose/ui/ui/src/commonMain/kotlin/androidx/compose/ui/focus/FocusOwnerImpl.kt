@@ -45,7 +45,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.internal.requirePrecondition
-import androidx.compose.ui.modifier.EmptyMap.set
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.NodeKind
@@ -144,8 +143,8 @@ internal class FocusOwnerImpl(
         rootFocusNode.clearFocus(forced = true, refreshFocusEvents = true)
     }
 
-    override fun clearOwnerFocus() {
-        platformFocusOwner.clearOwnerFocus()
+    override fun clearOwnerFocus(isAutomatic: Boolean) {
+        platformFocusOwner.clearOwnerFocus(isAutomatic)
     }
 
     /**
@@ -158,7 +157,13 @@ internal class FocusOwnerImpl(
      * component.
      */
     override fun clearFocus(force: Boolean) {
-        clearFocus(force, refreshFocusEvents = true, clearOwnerFocus = true, focusDirection = Exit)
+        clearFocus(
+            force,
+            refreshFocusEvents = true,
+            clearOwnerFocus = true,
+            focusDirection = Exit,
+            isAutomatic = false
+        )
     }
 
     override fun clearFocus(
@@ -166,14 +171,16 @@ internal class FocusOwnerImpl(
         refreshFocusEvents: Boolean,
         clearOwnerFocus: Boolean,
         focusDirection: FocusDirection,
+        isAutomatic: Boolean,
     ): Boolean {
         val clearedFocusSuccessfully =
             if (!force) {
                 // Don't clear focus if an item on the focused path has a custom exit specified.
-                when (rootFocusNode.performCustomClearFocus(focusDirection)) {
+                when (rootFocusNode.performCustomClearFocus(focusDirection, isAutomatic = true)) {
                     Redirected,
                     Cancelled,
                     RedirectCancelled -> false
+
                     None -> clearFocus(force, refreshFocusEvents)
                 }
             } else {
@@ -181,7 +188,7 @@ internal class FocusOwnerImpl(
             }
 
         if (clearedFocusSuccessfully && clearOwnerFocus) {
-            clearOwnerFocus()
+            clearOwnerFocus(isAutomatic)
         }
         return clearedFocusSuccessfully
     }
@@ -215,7 +222,7 @@ internal class FocusOwnerImpl(
         @OptIn(ExperimentalComposeUiApi::class)
         if (
             ComposeUiFlags.isViewFocusFixEnabled &&
-                platformFocusOwner.moveFocusInChildren(focusDirection)
+            platformFocusOwner.moveFocusInChildren(focusDirection)
         ) {
             return true
         }
@@ -246,6 +253,7 @@ internal class FocusOwnerImpl(
                     refreshFocusEvents = true,
                     clearOwnerFocus = false,
                     focusDirection = focusDirection,
+                    isAutomatic = false,
                 )
             return clearFocus && takeFocus(focusDirection, previouslyFocusedRect = null)
         }
@@ -274,6 +282,7 @@ internal class FocusOwnerImpl(
                     Default -> {
                         /* Do Nothing */
                     }
+
                     else -> return customDest.findFocusTargetNode(onFound)
                 }
             }
@@ -476,6 +485,7 @@ internal class FocusOwnerImpl(
                         ?: MutableLongSet(initialCapacity = 3).also { keysCurrentlyDown = it }
                 keysCurrentlyDown += keyCode
             }
+
             KeyUp -> {
                 if (keysCurrentlyDown?.contains(keyCode) != true) {
                     // An UP event for a key that was never DOWN is invalid, ignore it.
@@ -483,7 +493,7 @@ internal class FocusOwnerImpl(
                 }
                 keysCurrentlyDown?.remove(keyCode)
             }
-        // Always process Unknown event types.
+            // Always process Unknown event types.
         }
         return true
     }
@@ -498,5 +508,6 @@ internal fun FocusDirection.is1dFocusSearch(): Boolean =
     when (this) {
         Next,
         Previous -> true
+
         else -> false
     }

@@ -18,10 +18,9 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.DesktopPlatform
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.WindowDecoration.Companion.Undecorated
-import androidx.compose.ui.window.WindowDecoration.SystemDefault
 
 /**
  * Defines the options for window decoration.
@@ -29,34 +28,52 @@ import androidx.compose.ui.window.WindowDecoration.SystemDefault
 @ExperimentalComposeUiApi
 sealed interface WindowDecoration {
 
+    val isDecorated: Boolean
+
     /**
      * Specifies that the default system decoration should be used.
      */
-    data object SystemDefault : WindowDecoration
+    data object Decorated : WindowDecoration {
+        override val isDecorated: Boolean = true
+    }
 
-    companion object {
-        /**
-         * Specifies that the window should be undecorated.
-         *
-         * If it is resizable, the given thickness will be used for the edge resizers.
-         */
-        fun Undecorated(
-            resizerThickness: Dp = WindowDecorationDefaults.ResizerThickness
-        ) : WindowDecoration {
-            return UndecoratedWindowDecoration(resizerThickness)
+    /**
+     * Specifies that the window should be undecorated.
+     *
+     * If it is resizable, the given thickness will be used for the edge resizers.
+     */
+    @Immutable
+    class Undecorated(val resizerThickness: Dp = WindowDecorationDefaults.ResizerThickness) :
+        WindowDecoration {
+        override val isDecorated: Boolean = false
+
+        override fun equals(other: Any?): Boolean {
+            if (other !is Undecorated) return false
+            return other.resizerThickness == resizerThickness
+        }
+
+        override fun hashCode(): Int {
+            return resizerThickness.hashCode()
         }
     }
-}
 
-@Immutable
-internal class UndecoratedWindowDecoration(val resizerThickness: Dp): WindowDecoration {
-    override fun equals(other: Any?): Boolean {
-        if (other !is UndecoratedWindowDecoration) return false
-        return other.resizerThickness == resizerThickness
-    }
+    /**
+     * Specifies that the window should be decorated with a custom title bar.
+     *
+     * If it is resizable, the given thickness will be used for the edge resizers.
+     */
+    @Immutable
+    class CustomTitleBar(val height: Dp) : WindowDecoration {
+        override val isDecorated: Boolean = true
 
-    override fun hashCode(): Int {
-        return resizerThickness.hashCode()
+        override fun equals(other: Any?): Boolean {
+            if (other !is CustomTitleBar) return false
+            return other.height == height
+        }
+
+        override fun hashCode(): Int {
+            return height.hashCode()
+        }
     }
 }
 
@@ -69,6 +86,16 @@ object WindowDecorationDefaults {
      * The default thickness of the resizers in an undecorated window.
      */
     val ResizerThickness: Dp = 8.dp
+
+    /**
+     * The default height of the region at the top of an undecorated window
+     * where it can be drag-moved.
+     */
+    val CustomTitleBarHeight: Dp = when (DesktopPlatform.Current) {
+        DesktopPlatform.MacOS -> 28.dp
+        DesktopPlatform.Windows -> 32.dp
+        else -> 24.dp
+    }
 }
 
 /**
@@ -76,13 +103,13 @@ object WindowDecorationDefaults {
  */
 internal val WindowDecoration.resizerThickness: Dp
     get() = when {
-        this is UndecoratedWindowDecoration -> resizerThickness
+        this is WindowDecoration.Undecorated -> resizerThickness
         else -> WindowDecorationDefaults.ResizerThickness
     }
 
 /**
- * Returns [WindowDecoration.SystemDefault] if [undecorated] is `false`, or
- * [UndecoratedWindowDecoration] with default resizer thickness, if `true`.
+ * Returns [WindowDecoration.Decorated] if [undecorated] is `false`, or
+ * [WindowDecoration.Undecorated] with default resizer thickness, if `true`.
  */
 internal fun windowDecorationFromFlag(undecorated: Boolean): WindowDecoration =
-    if (undecorated) Undecorated() else SystemDefault
+    if (undecorated) WindowDecoration.Undecorated() else WindowDecoration.Decorated

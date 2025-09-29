@@ -270,42 +270,45 @@ internal enum class CustomDestinationResult {
 }
 
 internal fun FocusTargetNode.performCustomRequestFocus(
-    focusDirection: FocusDirection
+    focusDirection: FocusDirection,
+    isAutomatic: Boolean,
 ): CustomDestinationResult {
     when (focusState) {
         Active,
         Captured -> return None
-        ActiveParent -> return requireActiveChild().performCustomClearFocus(focusDirection)
+        ActiveParent -> return requireActiveChild().performCustomClearFocus(focusDirection, isAutomatic)
         Inactive -> {
             val focusParent = nearestAncestor(Nodes.FocusTarget) ?: return None
             return when (focusParent.focusState) {
                 Captured -> Cancelled
-                ActiveParent -> focusParent.performCustomRequestFocus(focusDirection)
-                Active -> focusParent.performCustomEnter(focusDirection)
+                ActiveParent -> focusParent.performCustomRequestFocus(focusDirection, isAutomatic)
+                Active -> focusParent.performCustomEnter(focusDirection, isAutomatic)
                 Inactive ->
-                    focusParent.performCustomRequestFocus(focusDirection).takeUnless { it == None }
-                        ?: focusParent.performCustomEnter(focusDirection)
+                    focusParent.performCustomRequestFocus(focusDirection, isAutomatic).takeUnless { it == None }
+                        ?: focusParent.performCustomEnter(focusDirection, isAutomatic)
             }
         }
     }
 }
 
 internal fun FocusTargetNode.performCustomClearFocus(
-    focusDirection: FocusDirection
+    focusDirection: FocusDirection,
+    isAutomatic: Boolean,
 ): CustomDestinationResult =
     when (focusState) {
         Active,
         Inactive -> None
         Captured -> Cancelled
         ActiveParent ->
-            requireActiveChild().performCustomClearFocus(focusDirection).takeUnless { it == None }
-                ?: performCustomExit(focusDirection)
+            requireActiveChild().performCustomClearFocus(focusDirection, isAutomatic).takeUnless { it == None }
+                ?: performCustomExit(focusDirection, isAutomatic)
     }
 
 private fun FocusTargetNode.performCustomEnter(
-    focusDirection: FocusDirection
+    focusDirection: FocusDirection,
+    isAutomatic: Boolean,
 ): CustomDestinationResult {
-    fetchCustomEnter(focusDirection) {
+    fetchCustomEnter(focusDirection, isAutomatic) {
         if (it === Cancel) return Cancelled else if (it === Redirect) return Redirected
         return if (it.requestFocus()) Redirected else RedirectCancelled
     }
@@ -313,9 +316,10 @@ private fun FocusTargetNode.performCustomEnter(
 }
 
 private fun FocusTargetNode.performCustomExit(
-    focusDirection: FocusDirection
+    focusDirection: FocusDirection,
+    isAutomatic: Boolean,
 ): CustomDestinationResult {
-    fetchCustomExit(focusDirection) {
+    fetchCustomExit(focusDirection, isAutomatic) {
         if (it === Cancel) return Cancelled else if (it === Redirect) return Redirected
         return if (it.requestFocus()) Redirected else RedirectCancelled
     }
