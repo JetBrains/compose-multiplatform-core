@@ -18,8 +18,8 @@ package androidx.compose.ui.node
 
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.mutableIntObjectMapOf
-import androidx.compose.runtime.ForgetfulRetainScope
-import androidx.compose.runtime.RetainScope
+import androidx.compose.runtime.retain.ForgetfulRetainScope
+import androidx.compose.runtime.retain.RetainScope
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
