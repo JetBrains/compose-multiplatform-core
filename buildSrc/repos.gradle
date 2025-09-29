@@ -60,8 +60,6 @@ def addMavenRepositories(RepositoryHandler handler) {
     def isJBFork = true
     if (isJBFork) {
         handler.mavenCentral()
-        // Keep mavenLocal() repository below mavenCentral to avoid issues with stdlib imports
-        handler.mavenLocal()
         handler.google()
         handler.gradlePluginPortal()
         handler.maven {
@@ -80,6 +78,7 @@ def addMavenRepositories(RepositoryHandler handler) {
                 includeModule("com.android.tools", "r8")
             }
         }
+        handler.mavenLocal()
     }
     // Ordering appears to be important: b/229733266
     def androidPluginRepoOverride = System.getenv("GRADLE_PLUGIN_REPO")

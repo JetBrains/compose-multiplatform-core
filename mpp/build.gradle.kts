@@ -38,6 +38,7 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-annotation", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
+        ComposeComponent(":compose:runtime:runtime-all-desktop", supportedPlatforms = setOf(ComposePlatforms.Desktop)),
         ComposeComponent(":compose:ui:ui"),
         ComposeComponent(":compose:ui:ui-geometry"),
         ComposeComponent(
@@ -66,6 +67,7 @@ val libraryToComponents = mapOf(
         ),
         ComposeComponent(":compose:ui:ui-unit"),
         ComposeComponent(":compose:ui:ui-util"),
+        ComposeComponent(":compose:ui:ui-all-desktop", supportedPlatforms = setOf(ComposePlatforms.Desktop)),
     ),
     "COMPOSE_MATERIAL_NAVIGATION" to listOf(
         ComposeComponent(":compose:material:material-navigation"),
@@ -104,6 +106,7 @@ val libraryToComponents = mapOf(
         ComposeComponent(":lifecycle:lifecycle-viewmodel-savedstate", supportedPlatforms = ComposePlatforms.ALL_AOSP),
         ComposeComponent(":lifecycle:lifecycle-runtime-compose", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":lifecycle:lifecycle-viewmodel-compose"),
+        ComposeComponent(":lifecycle:lifecycle-all-desktop", supportedPlatforms = setOf(ComposePlatforms.Desktop)),
     ),
     "NAVIGATION" to listOf(
         ComposeComponent(":navigation:navigation-compose"),

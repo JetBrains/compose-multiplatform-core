@@ -36,6 +36,7 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.GlobalDensity
 import androidx.compose.ui.window.GlobalLayoutDirection
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,6 +50,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import noria.CallbackInterceptorCompositionLocal
 import noria.ClosureContext
+import noria.impl.EffectCoroutineContextCompositionLocal
 import org.jetbrains.skiko.MainUIDispatcher
 
 interface RenderLoop : CoroutineContext.Element {
@@ -83,12 +85,21 @@ fun tryToInvalidateCurrentFrame(composer: Composer, f: () -> Boolean) {
 @Composable
 fun onFrameCompletion(block: ClosureContext.(RenderLoop.FrameInfo) -> Unit) {
     val interceptor = CallbackInterceptorCompositionLocal.current
-    currentComposer.recordSideEffect { interceptor.execute { ClosureContext.block(RenderLoop.FrameInfo(0L)) } }
+    currentComposer.recordSideEffect {
+        interceptor.execute {
+            ClosureContext.block(
+                RenderLoop.FrameInfo(
+                    0L
+                )
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun <T> withRenderLoopAndFrameClock(
     content: @Composable ApplicationScope.() -> Unit,
+    applyCoroutineContext: CoroutineContext = EmptyCoroutineContext,
     block: suspend CoroutineScope.() -> T,
 ): T {
     // todo Emit frames
@@ -137,6 +148,7 @@ suspend fun <T> withRenderLoopAndFrameClock(
                             CompositionLocalProvider(
                                 LocalDensity provides GlobalDensity,
                                 LocalLayoutDirection provides GlobalLayoutDirection,
+                                EffectCoroutineContextCompositionLocal provides applyCoroutineContext + MainUIDispatcher + applicationFrameClock
                             ) {
                                 applicationScope.content()
                             }

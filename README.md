@@ -1,28 +1,29 @@
-# Compose Mulltiplatform for Fleet
+# Compose Multiplatform for Fleet
 
-This repository contains changes needed to for Fleet.
+This version of Compose Multiplatform contains changes needed for Fleet UI Platform.
+This includes
+- A `DataSource` API for integration with the RhizomeDB
+- New desktop root components like `Window` etc., reimplemented on the Kotlin Desktop Toolkit (KDT)
+- Extensions and new parameters for existing APIs like `Box`, `Row`, etc.
 
 ## Publishing Compose for Fleet
 
 Since the official Compose modularization leads to JPMS-incompatible split packages,
-it is not possible to use the officially published modules of Compose Multiplatform in Fleet.
+it is not possible to use these individually published modules of Compose Multiplatform in Fleet.
 
-As a workaround, `publishLocalFleet.sh` can publish a single, merged module to the local Maven
-repository with the following packages:
+Specifically, the split packages exist within:
+- `:lifecycle` (`androidx.lifecycle` in both `lifecycle-common` and `lifecycle-runtime`)
+- `:compose:runtime` (`androidx.compose.runtime` in both `runtime` and `runtime-annotation`)
+- `:compose:ui` (`androidx.compose.ui.text` in both `ui` and `ui-text`)
 
-- org.jetbrains.compose.runtime:runtime-saveable-desktop,
-- org.jetbrains.compose.animation:animation-desktop,
-- org.jetbrains.compose.animation:animation-core-desktop,
-- org.jetbrains.compose.foundation:foundation-desktop,
-- org.jetbrains.compose.foundation:foundation-layout-desktop,
-- org.jetbrains.compose.ui:ui-desktop,
-- org.jetbrains.compose.ui:ui-geometry-desktop,
-- org.jetbrains.compose.ui:ui-graphics-desktop,
-- org.jetbrains.compose.ui:ui-text-desktop,
-- org.jetbrains.compose.ui:ui-unit-desktop,
-- org.jetbrains.compose.ui:ui-util-desktop,
+As a workaround, this branch will publish merged modules specifically for the desktop target:
 
-its fully qualified name is `org.jetbrains.compose:compose-ui-foundation-animation-desktop`.
+- `org.jetbrains.androidx.lifecycle:lifecycle-all-desktop`
+- `org.jetbrains.compose.runtime:runtime-all-desktop`
+- `org.jetbrains.compose.ui:ui-all-desktop`
+
+They are integrated with the existing publishing setup and will be published along with the other 
+artifacts via the `:mpp:publishComposeJb` and `:mpp:publishComposeJbToMavenLocal`, respectively.
 
 # Android Jetpack
 
