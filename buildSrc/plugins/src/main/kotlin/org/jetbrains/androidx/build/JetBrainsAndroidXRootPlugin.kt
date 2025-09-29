@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.events
+package org.jetbrains.androidx.build
 
-import org.w3c.dom.events.Event
+import androidx.build.getSupportRootFolder
+import org.gradle.api.Plugin
+import org.gradle.api.Project
 
-internal external interface InputEventInit {
-    val data: String
-    val inputType: String
+/**
+ * This plugin needs to be applied to the root of an AndroidX build
+ */
+abstract class JetBrainsAndroidXRootPlugin : Plugin<Project> {
+    override fun apply(project: Project) {
+        val supportRoot = project.getSupportRootFolder()
+        project.apply(
+            mapOf<String, String>(
+                "from" to "$supportRoot/buildSrc/apply/applyJetBrainsAndroidXRootImplPlugin.gradle"
+            )
+        )
+    }
 }
-
-internal fun InputEventInit(inputType: String, data: String?, isComposing: Boolean): InputEventInit = js("({data: data, inputType: inputType, isComposing: isComposing})")
-
-internal external class InputEvent(type: String, options: InputEventInit) : Event
