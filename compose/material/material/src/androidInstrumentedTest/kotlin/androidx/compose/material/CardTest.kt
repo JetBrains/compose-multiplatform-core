@@ -53,6 +53,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,7 +62,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CardTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
@@ -78,7 +79,7 @@ class CardTest {
                         Card(
                             modifier =
                                 Modifier.semantics(mergeDescendants = true) {}.testTag("card"),
-                            elevation = 0.dp
+                            elevation = 0.dp,
                         ) {
                             Box(Modifier.size(50.dp, 50.dp))
                         }
@@ -95,7 +96,7 @@ class CardTest {
                 shape = shape,
                 shapeColor = cardColor,
                 backgroundColor = background,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -145,7 +146,7 @@ class CardTest {
             Card(
                 modifier = Modifier.testTag("card"),
                 enabled = enabled.value,
-                onClick = { count.value += 1 }
+                onClick = { count.value += 1 },
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -171,7 +172,7 @@ class CardTest {
             Card(
                 modifier = Modifier.testTag("card"),
                 onClick = {},
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -208,7 +209,7 @@ class CardTest {
             Box(Modifier.fillMaxSize()) {
                 Button(
                     modifier = Modifier.fillMaxSize().testTag("clickable"),
-                    onClick = { state.value += 1 }
+                    onClick = { state.value += 1 },
                 ) {
                     Text("button fullscreen")
                 }

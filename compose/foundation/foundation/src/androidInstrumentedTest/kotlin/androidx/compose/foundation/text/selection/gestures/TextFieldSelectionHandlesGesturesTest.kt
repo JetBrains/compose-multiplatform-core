@@ -19,6 +19,7 @@ package androidx.compose.foundation.text.selection.gestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
 import androidx.compose.foundation.text.input.InputMethodInterceptor
 import androidx.compose.foundation.text.selection.HandlePressedScope
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
@@ -35,9 +36,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlin.test.fail
 import org.junit.Before
@@ -45,7 +44,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(ContextMenuFlagFlipperRunner::class)
 internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGesturesTest() {
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
@@ -75,8 +74,9 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
                 textContent = textContent,
                 rule = rule,
                 textToolbar = textToolbar,
+                spyTextActionModeCallback = spyTextActionModeCallback,
                 hapticFeedback = hapticFeedback,
-                getActual = { textFieldValue.value }
+                getActual = { textFieldValue.value },
             )
     }
 
@@ -119,7 +119,6 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
     // TODO(b/316940648)
     //  The TextToolbar at the top of the screen messes up the popup position calculations,
     //  so suppress SDKs that don't have the floating popup.
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun whenTouchHandle_thenDragLeftOutOfBounds_keepsFirstCharSelected() {
         var finalX: Float? = null
@@ -164,7 +163,6 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
     // TODO(b/316940648)
     //  The TextToolbar at the top of the screen messes up the popup position calculations,
     //  so suppress SDKs that don't have the floating popup.
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun whenTouchHandle_withWordSpanningMultipleLines_selectionCanShrinkWithinLine() {
         val content = "hello".repeat(100)

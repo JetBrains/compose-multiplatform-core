@@ -18,7 +18,6 @@ package androidx.datastore.core
 
 import android.annotation.SuppressLint
 import androidx.kruth.assertWithMessage
-import androidx.test.filters.LargeTest
 import java.io.File
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
@@ -49,7 +48,6 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-@LargeTest
 class MulticastFileObserverTest {
     // use real coroutines in this test as we need to rely on FileObserver behavior which
     // we cannot control

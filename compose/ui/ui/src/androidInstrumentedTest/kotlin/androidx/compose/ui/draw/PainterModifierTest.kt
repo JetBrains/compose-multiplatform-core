@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.DefaultAlpha
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.SolidColor
@@ -96,10 +97,10 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -111,7 +112,7 @@ class PainterModifierTest {
     val containerWidth = 100.0f
     private val containerHeight = 100.0f
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun before() {
@@ -146,7 +147,7 @@ class PainterModifierTest {
                             alpha = 0.5f,
                             red = Color.Red.red,
                             green = Color.Red.green,
-                            blue = Color.Red.blue
+                            blue = Color.Red.blue,
                         )
                         .compositeOver(Color.White)
 
@@ -181,8 +182,8 @@ class PainterModifierTest {
                             Modifier.paint(
                                 TestPainter(containerWidth * 2, containerHeight * 2),
                                 alignment = Alignment.Center,
-                                contentScale = ContentScale.Inside
-                            )
+                                contentScale = ContentScale.Inside,
+                            ),
                     ) {}
                 }
             }
@@ -191,19 +192,19 @@ class PainterModifierTest {
         rule.obtainScreenshotBitmap(containerSizePx, containerSizePx).apply {
             assertEquals(
                 Color.White.toArgb(),
-                getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1)
+                getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1),
             )
             assertEquals(
                 Color.Red.toArgb(),
-                getPixel(containerWidth.roundToInt() + 1, containerWidth.roundToInt() + 1)
+                getPixel(containerWidth.roundToInt() + 1, containerWidth.roundToInt() + 1),
             )
             assertEquals(
                 Color.Red.toArgb(),
-                getPixel(containerWidth.roundToInt() * 2 - 1, containerWidth.roundToInt() * 2 - 1)
+                getPixel(containerWidth.roundToInt() * 2 - 1, containerWidth.roundToInt() * 2 - 1),
             )
             assertEquals(
                 Color.White.toArgb(),
-                getPixel(containerWidth.roundToInt() * 2 + 1, containerHeight.roundToInt() * 2 + 1)
+                getPixel(containerWidth.roundToInt() * 2 + 1, containerHeight.roundToInt() * 2 + 1),
             )
         }
     }
@@ -220,8 +221,8 @@ class PainterModifierTest {
                         .paint(
                             TestPainter(containerWidth, containerHeight),
                             alignment = Alignment.BottomEnd,
-                            contentScale = ContentScale.Inside
-                        )
+                            contentScale = ContentScale.Inside,
+                        ),
             ) {
                 // Intentionally empty
             }
@@ -263,7 +264,7 @@ class PainterModifierTest {
                 assertEquals(Color.Red.toArgb(), getPixel(containerWidth.roundToInt() - 1, 0))
                 assertEquals(
                     Color.Red.toArgb(),
-                    getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1)
+                    getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1),
                 )
                 assertEquals(Color.Red.toArgb(), getPixel(0, containerHeight.roundToInt() - 1))
             }
@@ -283,7 +284,7 @@ class PainterModifierTest {
                         FixedSizeModifier(containerSize)
                             .paint(
                                 TestPainter(containerWidth, containerHeight),
-                                alignment = Alignment.TopStart
+                                alignment = Alignment.TopStart,
                             )
                     )
                 ) {
@@ -299,7 +300,7 @@ class PainterModifierTest {
                 assertEquals(Color.Red.toArgb(), getPixel(containerWidth.roundToInt() / 2 - 1, 0))
                 assertEquals(
                     Color.White.toArgb(),
-                    getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1)
+                    getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1),
                 )
                 assertEquals(Color.Red.toArgb(), getPixel(0, containerHeight.roundToInt() / 2 - 1))
 
@@ -308,8 +309,8 @@ class PainterModifierTest {
                     Color.White.toArgb(),
                     getPixel(
                         containerWidth.roundToInt() / 2 + 1,
-                        containerHeight.roundToInt() / 2 + 1
-                    )
+                        containerHeight.roundToInt() / 2 + 1,
+                    ),
                 )
             }
     }
@@ -341,7 +342,7 @@ class PainterModifierTest {
                         .paint(
                             TestPainter(containerWidth, containerHeight),
                             sizeToIntrinsics = false,
-                            alignment = Alignment.TopStart
+                            alignment = Alignment.TopStart,
                         )
                 ) {
                     // Intentionally empty
@@ -378,7 +379,7 @@ class PainterModifierTest {
                 assertEquals(Color.Red.toArgb(), getPixel(containerWidth.roundToInt() - 1, 0))
                 assertEquals(
                     Color.Red.toArgb(),
-                    getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1)
+                    getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1),
                 )
                 assertEquals(Color.Red.toArgb(), getPixel(0, containerHeight.roundToInt() - 1))
             }
@@ -405,7 +406,7 @@ class PainterModifierTest {
                 assertEquals(Color.Red.toArgb(), getPixel(containerWidth.roundToInt() - 1, 0))
                 assertEquals(
                     Color.Red.toArgb(),
-                    getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1)
+                    getPixel(containerWidth.roundToInt() - 1, containerHeight.roundToInt() - 1),
                 )
                 assertEquals(Color.Red.toArgb(), getPixel(0, containerHeight.roundToInt() - 1))
             }
@@ -430,7 +431,7 @@ class PainterModifierTest {
             ContentScale.Inside,
             Size(painterWidth, painterHeight),
             painterWidth / 2,
-            composableHeightPx
+            composableHeightPx,
         )
     }
 
@@ -453,7 +454,7 @@ class PainterModifierTest {
             ContentScale.Inside,
             Size(painterWidth, painterHeight),
             composableWidthPx,
-            painterHeight / 4
+            painterHeight / 4,
         )
     }
 
@@ -472,7 +473,7 @@ class PainterModifierTest {
                 ContentScale.Fit,
                 Size(painterWidth, painterHeight),
                 composableWidth,
-                composableHeight
+                composableHeight,
             )
         }
 
@@ -491,7 +492,7 @@ class PainterModifierTest {
             ContentScale.FillWidth,
             Size(painterWidth, painterHeight),
             composableWidthPx,
-            painterHeight * 2
+            painterHeight * 2,
         )
     }
 
@@ -511,7 +512,7 @@ class PainterModifierTest {
             ContentScale.Inside,
             Size(painterWidth, painterHeight),
             composableWidthPx,
-            painterHeight
+            painterHeight,
         )
     }
 
@@ -520,7 +521,7 @@ class PainterModifierTest {
         contentScale: ContentScale,
         painterSize: Size,
         composableWidthPx: Float,
-        composableHeightPx: Float
+        composableHeightPx: Float,
     ) =
         with(rule.density) {
             val composableWidth = composableWidthPx.toDp()
@@ -547,7 +548,6 @@ class PainterModifierTest {
                 .assertHeightIsEqualTo(composableHeight)
         }
 
-    @Ignore // b/265030745
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testBitmapPainterScalesContent(): Unit =
@@ -573,7 +573,11 @@ class PainterModifierTest {
                             .background(color = Color.Gray)
                             .requiredWidth(boxWidth.toDp())
                             .requiredHeight(boxHeight.toDp())
-                            .paint(BitmapPainter(srcImage), contentScale = ContentScale.FillHeight)
+                            // Using FilterQuality.None to avoid anti-aliasing
+                            .paint(
+                                BitmapPainter(srcImage, filterQuality = FilterQuality.None),
+                                contentScale = ContentScale.FillHeight,
+                            )
                 )
             }
 
@@ -583,12 +587,12 @@ class PainterModifierTest {
                 assertEquals(Color.Gray.toArgb(), getPixel(boxWidth / 2 - srcImage.width - 5, 0))
                 assertEquals(
                     Color.Gray.toArgb(),
-                    getPixel(boxWidth / 2 + srcImage.width + 5, boxHeight - 1)
+                    getPixel(boxWidth / 2 + srcImage.width + 5, boxHeight - 1),
                 )
                 assertEquals(Color.Red.toArgb(), getPixel(boxWidth / 2 - srcImage.width + 5, 0))
                 assertEquals(
                     Color.Red.toArgb(),
-                    getPixel(boxWidth / 2 + srcImage.width - 5, boxHeight - 1)
+                    getPixel(boxWidth / 2 + srcImage.width - 5, boxHeight - 1),
                 )
             }
         }
@@ -658,11 +662,11 @@ class PainterModifierTest {
                                                     verticalLineToRelative(viewportHeight)
                                                     horizontalLineToRelative(-viewportWidth)
                                                     close()
-                                                }
+                                                },
                                         )
-                                    }
+                                    },
                                 ),
-                                contentScale = ContentScale.FillHeight
+                                contentScale = ContentScale.FillHeight,
                             )
                 )
             }
@@ -673,12 +677,12 @@ class PainterModifierTest {
                 assertEquals(Color.Gray.toArgb(), getPixel(boxWidth / 2 - vectorWidth - 5, 0))
                 assertEquals(
                     Color.Gray.toArgb(),
-                    getPixel(boxWidth / 2 + vectorWidth + 5, boxHeight - 2)
+                    getPixel(boxWidth / 2 + vectorWidth + 5, boxHeight - 2),
                 )
                 assertEquals(Color.Red.toArgb(), getPixel(boxWidth / 2 - vectorWidth + 5, 0))
                 assertEquals(
                     Color.Red.toArgb(),
-                    getPixel(boxWidth / 2 + vectorWidth - 5, boxHeight - 2)
+                    getPixel(boxWidth / 2 + vectorWidth - 5, boxHeight - 2),
                 )
             }
         }
@@ -697,7 +701,7 @@ class PainterModifierTest {
                 ValueElement("alignment", Alignment.Center),
                 ValueElement("contentScale", ContentScale.Inside),
                 ValueElement("alpha", DefaultAlpha),
-                ValueElement("colorFilter", null)
+                ValueElement("colorFilter", null),
             )
     }
 
@@ -766,7 +770,7 @@ class PainterModifierTest {
     private fun TestPainter(
         alpha: Float = DefaultAlpha,
         colorFilter: ColorFilter? = null,
-        rtl: Boolean = false
+        rtl: Boolean = false,
     ) {
         val p = TestPainter(containerWidth, containerHeight)
         val layoutDirection = if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -775,7 +779,7 @@ class PainterModifierTest {
                 modifier =
                     Modifier.background(Color.White)
                         .paint(p, alpha = alpha, colorFilter = colorFilter),
-                size = containerWidth.roundToInt()
+                size = containerWidth.roundToInt(),
             ) {
                 // Intentionally empty
             }
@@ -839,7 +843,7 @@ fun NoIntrinsicSizeContainer(modifier: Modifier = Modifier, content: @Composable
 class FixedSizeModifier(val width: Int, val height: Int = width) : LayoutModifier {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable =
             measurable.measure(
@@ -847,7 +851,7 @@ class FixedSizeModifier(val width: Int, val height: Int = width) : LayoutModifie
                     minWidth = width,
                     minHeight = height,
                     maxWidth = width,
-                    maxHeight = height
+                    maxHeight = height,
                 )
             )
         return layout(width, height) { placeable.place(0, 0) }

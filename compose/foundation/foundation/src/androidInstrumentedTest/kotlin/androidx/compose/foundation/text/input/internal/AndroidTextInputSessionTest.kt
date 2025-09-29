@@ -49,6 +49,7 @@ import com.google.common.truth.Truth
 import kotlin.test.assertFalse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -58,7 +59,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidTextInputSessionTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var hostView: View
@@ -80,8 +81,7 @@ class AndroidTextInputSessionTest {
         val state = TextFieldState("hello", initialSelection = TextRange(0, 5))
         launchInputSessionWithDefaultsForTest(state)
         val editorInfo = EditorInfo()
-
-        rule.runOnUiThread { hostView.onCreateInputConnection(editorInfo) }
+        rule.runOnIdle { hostView.onCreateInputConnection(editorInfo) }
 
         Truth.assertThat(editorInfo.initialSelStart).isEqualTo(0)
         Truth.assertThat(editorInfo.initialSelEnd).isEqualTo(5)
@@ -125,7 +125,7 @@ class AndroidTextInputSessionTest {
 
         launchInputSessionWithDefaultsForTest(
             imeOptions = ImeOptions(imeAction = ImeAction.Done),
-            onImeAction = { imeActionFromOne = it }
+            onImeAction = { imeActionFromOne = it },
         )
 
         rule.runOnIdle {
@@ -139,7 +139,7 @@ class AndroidTextInputSessionTest {
 
         launchInputSessionWithDefaultsForTest(
             imeOptions = ImeOptions(imeAction = ImeAction.Go),
-            onImeAction = { imeActionFromTwo = it }
+            onImeAction = { imeActionFromTwo = it },
         )
 
         rule.runOnIdle {
@@ -161,7 +161,7 @@ class AndroidTextInputSessionTest {
                     keyboardType = KeyboardType.Email,
                     autoCorrect = false,
                     imeAction = ImeAction.Search,
-                    capitalization = KeyboardCapitalization.Words
+                    capitalization = KeyboardCapitalization.Words,
                 )
         )
         val editorInfo = EditorInfo()
@@ -197,7 +197,7 @@ class AndroidTextInputSessionTest {
         assertFalse(
             TIA_DEBUG,
             "Oops, looks like you accidentally enabled logging. Don't worry, we've all " +
-                "been there. Just remember to turn it off before you deploy your code."
+                "been there. Just remember to turn it off before you deploy your code.",
         )
     }
 
@@ -205,7 +205,7 @@ class AndroidTextInputSessionTest {
         state: TextFieldState = TextFieldState(),
         imeOptions: ImeOptions = ImeOptions.Default,
         onImeAction: (ImeAction) -> Unit = {},
-        composeImm: ComposeInputMethodManager? = null
+        composeImm: ComposeInputMethodManager? = null,
     ) {
         coroutineScope.launch {
             textInputNode.establishTextInputSession {
@@ -214,7 +214,7 @@ class AndroidTextInputSessionTest {
                         state,
                         imeOptions,
                         onImeAction,
-                        composeImm = composeImm
+                        composeImm = composeImm,
                     )
                 } else {
                     inputSessionWithDefaultsForTest(state, imeOptions, onImeAction)
@@ -228,14 +228,14 @@ class AndroidTextInputSessionTest {
         imeOptions: ImeOptions = ImeOptions.Default,
         onImeAction: (ImeAction) -> Unit = {},
         receiveContentConfiguration: ReceiveContentConfiguration? = null,
-        composeImm: ComposeInputMethodManager = ComposeInputMethodManager(view)
+        composeImm: ComposeInputMethodManager = ComposeInputMethodManager(view),
     ): Nothing =
         platformSpecificTextInputSession(
             state =
                 TransformedTextFieldState(
                     textFieldState = state,
                     inputTransformation = null,
-                    codepointTransformation = null
+                    codepointTransformation = null,
                 ),
             layoutState = TextLayoutState(),
             imeOptions = imeOptions,
@@ -244,7 +244,7 @@ class AndroidTextInputSessionTest {
             onImeAction = onImeAction,
             updateSelectionState = null,
             stylusHandwritingTrigger = null,
-            viewConfiguration = null
+            viewConfiguration = null,
         )
 
     private inner class TestTextElement : ModifierNodeElement<TestTextNode>() {

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,7 +38,7 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalMaterial3Api::class)
 class TimePickerSizeTest(val config: Config) {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun clockFace_size_resizesCorrectly() {
@@ -48,13 +49,13 @@ class TimePickerSizeTest(val config: Config) {
         rule
             .setMaterialContentForSizeAssertions(
                 parentMaxWidth = config.size.width,
-                parentMaxHeight = config.size.height
+                parentMaxHeight = config.size.height,
             ) {
                 ClockFace(
                     modifier = Modifier.then(ClockFaceSizeModifier()),
                     state = state,
                     colors = TimePickerDefaults.colors(),
-                    autoSwitchToMinute = true
+                    autoSwitchToMinute = true,
                 )
             }
             .assertIsSquareWithSize(config.expected)
@@ -73,7 +74,7 @@ class TimePickerSizeTest(val config: Config) {
                     modifier = Modifier,
                     state = state,
                     colors = TimePickerDefaults.colors(),
-                    autoSwitchToMinute = true
+                    autoSwitchToMinute = true,
                 )
             }
         }
@@ -101,7 +102,7 @@ class TimePickerSizeTest(val config: Config) {
             arrayOf(
                 Config(DpSize(384.dp, 384.dp), 256.dp),
                 Config(DpSize(350.dp, 350.dp), 238.dp),
-                Config(DpSize(300.dp, 300.dp), 200.dp)
+                Config(DpSize(300.dp, 300.dp), 200.dp),
             )
     }
 

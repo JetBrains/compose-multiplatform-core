@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,7 +53,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BasicTextBrushTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val TAG = "TAG"
 
@@ -68,9 +69,9 @@ class BasicTextBrushTest {
                         TextStyle(
                             brush = colorState.value,
                             fontFamily = TEST_FONT_FAMILY,
-                            fontSize = 20.sp
+                            fontSize = 20.sp,
                         ),
-                    modifier = Modifier.background(Color.Black).testTag(TAG)
+                    modifier = Modifier.background(Color.Black).testTag(TAG),
                 )
             }
         }
@@ -102,9 +103,9 @@ class BasicTextBrushTest {
                         TextStyle(
                             brush = brushState.value,
                             fontFamily = TEST_FONT_FAMILY,
-                            fontSize = 20.sp
+                            fontSize = 20.sp,
                         ),
-                    modifier = Modifier.background(Color.Black).testTag(TAG)
+                    modifier = Modifier.background(Color.Black).testTag(TAG),
                 )
             }
         }
@@ -144,7 +145,7 @@ class BasicTextBrushTest {
                     text = "Hello",
                     style =
                         TextStyle(brush = brush, fontFamily = TEST_FONT_FAMILY, fontSize = 20.sp),
-                    modifier = Modifier.background(Color.Black).testTag(TAG)
+                    modifier = Modifier.background(Color.Black).testTag(TAG),
                 )
             }
         }

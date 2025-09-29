@@ -4,14 +4,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.annotation:annotation",
-        "resolvedVersion": "1.8.1"
-      },
-      "fromConfiguration": "implementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "androidx.appcompat:appcompat",
         "resolvedVersion": "1.2.0"
       },

@@ -69,7 +69,7 @@ class ScrollToTest(private val config: TestConfig) {
         val viewportSize: ViewportSize,
         val startPosition: StartPosition,
         val expectScrolling: Boolean,
-        val expectedAlignment: ExpectedAlignment
+        val expectedAlignment: ExpectedAlignment,
     ) {
         val viewportSizePx: Int
             get() = viewportSize.sizePx
@@ -116,7 +116,7 @@ class ScrollToTest(private val config: TestConfig) {
                                     orientation,
                                     reverseScrolling,
                                     viewportSize,
-                                    startPosition
+                                    startPosition,
                                 )
                             }
                         }
@@ -128,7 +128,7 @@ class ScrollToTest(private val config: TestConfig) {
             orientation: Orientation,
             reverseScrolling: Boolean,
             viewportSize: ViewportSize,
-            startPosition: StartPosition
+            startPosition: StartPosition,
         ) {
             val isVertical = orientation == Vertical
             val expectScrolling = startPosition.expectScrolling
@@ -161,7 +161,7 @@ class ScrollToTest(private val config: TestConfig) {
                     viewportSize,
                     startPosition,
                     expectScrolling,
-                    expectedAlignment
+                    expectedAlignment,
                 )
                 .also { add(it) }
         }
@@ -269,12 +269,12 @@ class ScrollToTest(private val config: TestConfig) {
     enum class Orientation {
         HorizontalLtr,
         HorizontalRtl,
-        Vertical
+        Vertical,
     }
 
     enum class ViewportSize(val sizePx: Int) {
         SmallerThanItem(smallViewport),
-        BiggerThenItem(bigViewport)
+        BiggerThenItem(bigViewport),
     }
 
     enum class StartPosition(val smallViewportOffset: Int, val bigViewportOffset: Int) {

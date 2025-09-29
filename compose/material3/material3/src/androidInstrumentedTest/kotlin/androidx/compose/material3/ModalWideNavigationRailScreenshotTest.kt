@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -35,6 +34,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,10 +42,10 @@ import org.junit.runner.RunWith
 /** Tests for [ModalWideNavigationRail]. */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ModalWideNavigationRailScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -82,7 +82,6 @@ class ModalWideNavigationRailScreenshotTest {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DefaultModalWideNavigationRail() {
     ModalWideNavigationRail(
@@ -94,7 +93,7 @@ private fun DefaultModalWideNavigationRail() {
                     Icon(Icons.Filled.Menu, "Menu")
                 }
             }
-        }
+        },
     ) {
         WideNavigationRailItem(
             railExpanded = true,
@@ -108,14 +107,14 @@ private fun DefaultModalWideNavigationRail() {
             icon = { Icon(Icons.Filled.Home, null) },
             label = { Text("Home") },
             selected = false,
-            onClick = {}
+            onClick = {},
         )
         WideNavigationRailItem(
             railExpanded = true,
             icon = { Icon(Icons.Filled.Search, null) },
             label = { Text("Search") },
             selected = false,
-            onClick = {}
+            onClick = {},
         )
     }
 }

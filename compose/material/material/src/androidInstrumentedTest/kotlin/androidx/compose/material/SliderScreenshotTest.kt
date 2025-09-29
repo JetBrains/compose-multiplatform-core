@@ -16,7 +16,6 @@
 
 package androidx.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.wrapContentSize
@@ -37,16 +36,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class SliderScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
 
@@ -134,8 +134,8 @@ class SliderScreenshotTest {
                             thumbColor = Color.Red,
                             activeTrackColor = Color.Blue,
                             activeTickColor = Color.Yellow,
-                            inactiveTickColor = Color.Magenta
-                        )
+                            inactiveTickColor = Color.Magenta,
+                        ),
                 )
             }
         }
@@ -160,8 +160,8 @@ class SliderScreenshotTest {
                             disabledActiveTrackColor = Color.Red,
                             disabledInactiveTrackColor = Color.Yellow,
                             disabledActiveTickColor = Color.Magenta,
-                            disabledInactiveTickColor = Color.Cyan
-                        )
+                            disabledInactiveTickColor = Color.Cyan,
+                        ),
                 )
             }
         }
@@ -240,8 +240,8 @@ class SliderScreenshotTest {
                             activeTrackColor = Color.Red,
                             inactiveTrackColor = Color.Yellow,
                             activeTickColor = Color.Magenta,
-                            inactiveTickColor = Color.Cyan
-                        )
+                            inactiveTickColor = Color.Cyan,
+                        ),
                 )
             }
         }

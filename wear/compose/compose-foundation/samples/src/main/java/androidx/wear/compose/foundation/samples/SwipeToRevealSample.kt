@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalWearFoundationApi::class)
+@file:Suppress("DEPRECATION")
+
 package androidx.wear.compose.foundation.samples
 
 import androidx.annotation.Sampled
@@ -43,6 +46,7 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.RevealValue
 import androidx.wear.compose.foundation.SwipeToReveal
 import androidx.wear.compose.foundation.expandableItem
@@ -64,17 +68,6 @@ fun SwipeToRevealSample() {
     val state = rememberRevealState()
     val coroutineScope = rememberCoroutineScope()
     SwipeToReveal(
-        modifier =
-            Modifier.semantics {
-                // Use custom actions to make the primary and secondary actions accessible
-                customActions =
-                    listOf(
-                        CustomAccessibilityAction("Delete") {
-                            /* Add the primary action click handler */
-                            true
-                        }
-                    )
-            },
         state = state,
         primaryAction = {
             Box(
@@ -96,15 +89,25 @@ fun SwipeToRevealSample() {
                     coroutineScope.launch { state.animateTo(RevealValue.Covered) }
                 },
                 colors = ChipDefaults.secondaryChipColors(),
-                label = { Text(text = "Undo") }
+                label = { Text(text = "Undo") },
             )
-        }
+        },
     ) {
         Chip(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier.fillMaxWidth().semantics {
+                    // Use custom actions to make the primary and secondary actions accessible
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction("Delete") {
+                                /* Add the primary action click handler */
+                                true
+                            }
+                        )
+                },
             onClick = { /* the click action associated with chip */ },
             colors = ChipDefaults.secondaryChipColors(),
-            label = { Text(text = "Swipe Me") }
+            label = { Text(text = "Swipe Me") },
         )
     }
 }
@@ -115,17 +118,6 @@ fun SwipeToRevealWithDelayedText() {
     val state = rememberRevealState()
     val coroutineScope = rememberCoroutineScope()
     SwipeToReveal(
-        modifier =
-            Modifier.semantics {
-                // Use custom actions to make the primary and secondary actions accessible
-                customActions =
-                    listOf(
-                        CustomAccessibilityAction("Delete") {
-                            /* Add the primary action click handler */
-                            true
-                        }
-                    )
-            },
         state = state,
         primaryAction = {
             Row(
@@ -144,7 +136,7 @@ fun SwipeToRevealWithDelayedText() {
                         animateFloatAsState(
                             targetValue = 1f,
                             animationSpec = tween(durationMillis = 250, delayMillis = 250),
-                            label = "PrimaryActionTextAlpha"
+                            label = "PrimaryActionTextAlpha",
                         )
                     Box(modifier = Modifier.graphicsLayer { alpha = textAlpha.value }) {
                         Spacer(Modifier.size(5.dp))
@@ -161,15 +153,25 @@ fun SwipeToRevealWithDelayedText() {
                     coroutineScope.launch { state.animateTo(RevealValue.Covered) }
                 },
                 colors = ChipDefaults.secondaryChipColors(),
-                label = { Text(text = "Undo") }
+                label = { Text(text = "Undo") },
             )
-        }
+        },
     ) {
         Chip(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier.fillMaxWidth().semantics {
+                    // Use custom actions to make the primary and secondary actions accessible
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction("Delete") {
+                                /* Add the primary action click handler */
+                                true
+                            }
+                        )
+                },
             onClick = { /* the click action associated with chip */ },
             colors = ChipDefaults.secondaryChipColors(),
-            label = { Text(text = "Swipe Me") }
+            label = { Text(text = "Swipe Me") },
         )
     }
 }
@@ -190,26 +192,10 @@ fun SwipeToRevealWithExpandables() {
     ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
         item { ListHeader { Text("Scaling Lazy Column") } }
         repeat(itemCount) { current ->
-            expandableItem(
-                state = expandableStates[current],
-            ) { isExpanded ->
+            expandableItem(state = expandableStates[current]) { isExpanded ->
                 val revealState = rememberRevealState()
                 if (isExpanded) {
                     SwipeToReveal(
-                        modifier =
-                            Modifier.semantics {
-                                // Use custom actions to make the primary and secondary actions
-                                // accessible
-                                customActions =
-                                    listOf(
-                                        CustomAccessibilityAction("Delete") {
-                                            coroutineScope.launch {
-                                                revealState.animateTo(RevealValue.RightRevealed)
-                                            }
-                                            true
-                                        }
-                                    )
-                            },
                         state = revealState,
                         primaryAction = {
                             Box(
@@ -221,11 +207,11 @@ fun SwipeToRevealWithExpandables() {
                                                 revealState.animateTo(RevealValue.RightRevealed)
                                             }
                                         },
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Delete,
-                                    contentDescription = "Delete"
+                                    contentDescription = "Delete",
                                 )
                             }
                         },
@@ -235,11 +221,11 @@ fun SwipeToRevealWithExpandables() {
                                     Modifier.fillMaxSize()
                                         .background(Color.Gray, actionShape)
                                         .clickable { /* trigger the optional action */ },
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = "More Options"
+                                    contentDescription = "More Options",
                                 )
                             }
                         },
@@ -252,7 +238,7 @@ fun SwipeToRevealWithExpandables() {
                                     }
                                 },
                                 colors = ChipDefaults.secondaryChipColors(),
-                                label = { Text(text = "Undo") }
+                                label = { Text(text = "Undo") },
                             )
                         },
                         onFullSwipe = {
@@ -260,13 +246,31 @@ fun SwipeToRevealWithExpandables() {
                                 delay(1000)
                                 expandableStates[current].expanded = false
                             }
-                        }
+                        },
                     ) {
                         Chip(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier =
+                                Modifier.fillMaxWidth().semantics {
+                                    // Use custom actions to make the primary and secondary actions
+                                    // accessible
+                                    customActions =
+                                        listOf(
+                                            CustomAccessibilityAction("Delete") {
+                                                /* Add the primary action click handler */
+                                                coroutineScope.launch {
+                                                    revealState.animateTo(RevealValue.RightRevealed)
+                                                }
+                                                true
+                                            },
+                                            CustomAccessibilityAction("More Options") {
+                                                /* Add the secondary action click handler */
+                                                true
+                                            },
+                                        )
+                                },
                             onClick = { /* the click action associated with chip */ },
                             colors = ChipDefaults.secondaryChipColors(),
-                            label = { Text(text = "Swipe Me") }
+                            label = { Text(text = "Swipe Me") },
                         )
                     }
                 }

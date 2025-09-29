@@ -36,37 +36,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "com.linkedin.dexmaker:dexmaker-mockito-inline",
-        "resolvedVersion": "2.28.4"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlin:kotlin-test-junit",
-        "resolvedVersion": "1.8.22"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "org.jetbrains.kotlin:kotlin-test",
         "resolvedVersion": "1.8.22"
       },
       "toConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
     },
     {
       "coordinates": {

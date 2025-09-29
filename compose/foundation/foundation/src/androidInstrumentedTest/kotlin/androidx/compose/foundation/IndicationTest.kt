@@ -45,6 +45,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -55,7 +56,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class IndicationTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     val testTag = "indication"
 
@@ -269,7 +270,7 @@ class IndicationTest {
             mutableStateOf(
                 TestPressIndicationNodeFactory(
                     onCreate = { createCalls++ },
-                    onDraw = { drawnNode = 1 }
+                    onDraw = { drawnNode = 1 },
                 )
             )
 
@@ -289,7 +290,7 @@ class IndicationTest {
             indication =
                 TestPressIndicationNodeFactory(
                     onCreate = { createCalls++ },
-                    onDraw = { drawnNode = 2 }
+                    onDraw = { drawnNode = 2 },
                 )
         }
 
@@ -340,7 +341,7 @@ private class TestPressIndication(val onDraw: () -> Unit = {}) : Indication {
  */
 private class TestPressIndicationNodeFactory(
     val onCreate: (() -> Unit)?,
-    val onDraw: (() -> Unit)?
+    val onDraw: (() -> Unit)?,
 ) : IndicationNodeFactory {
     override fun create(interactionSource: InteractionSource): DelegatableNode {
         onCreate?.invoke()
@@ -377,8 +378,8 @@ private class TestPressIndicationNodeFactory(
         if (this === other) return true
         if (other !is TestPressIndicationNodeFactory) return false
 
-        if (onDraw != other.onDraw) return false
-        if (onCreate != other.onCreate) return false
+        if (onDraw !== other.onDraw) return false
+        if (onCreate !== other.onCreate) return false
 
         return true
     }

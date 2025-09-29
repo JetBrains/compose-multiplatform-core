@@ -57,6 +57,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,7 +66,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class AndroidEmbeddedExternalSurfaceTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     val size = 48.dp
 
@@ -327,7 +328,7 @@ class AndroidEmbeddedExternalSurfaceTest {
                 Canvas(modifier = Modifier.size(size)) { drawRect(Color.White) }
                 AndroidEmbeddedExternalSurface(
                     modifier = Modifier.size(size).testTag("EmbeddedExternalSurface"),
-                    isOpaque = false
+                    isOpaque = false,
                 ) {
                     onSurface { surface, _, _ ->
                         surface.lockHardwareCanvas().apply {
@@ -382,7 +383,7 @@ class AndroidEmbeddedExternalSurfaceTest {
                         translate(s, s)
                         rotateZ(180.0f)
                         translate(-s, -s)
-                    }
+                    },
             ) {
                 onSurface { surface, _, _ ->
                     // Draw the top half in red, the bottom half in blue

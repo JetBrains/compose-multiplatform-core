@@ -7,7 +7,23 @@
         "identifier": "androidx.datastore:datastore-core",
         "resolvedVersion": "1.0.0"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.datastore:datastore-core",
+        "resolvedVersion": "1.0.0"
+      },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.datastore:datastore-preferences-core",
+        "resolvedVersion": "1.0.0"
+      },
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {

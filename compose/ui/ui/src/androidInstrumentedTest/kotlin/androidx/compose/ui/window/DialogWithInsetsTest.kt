@@ -69,6 +69,7 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertNotEquals
 import org.junit.Before
@@ -79,7 +80,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DialogWithInsetsTest {
-    @get:Rule val rule = createAndroidComposeRule<ActivityWithInsets>()
+    @get:Rule val rule = createAndroidComposeRule<ActivityWithInsets>(StandardTestDispatcher())
 
     private val durationSetter =
         ValueAnimator::class.java.getDeclaredMethod("setDurationScale", Float::class.java)
@@ -104,7 +105,7 @@ class DialogWithInsetsTest {
         rule.setContent {
             Dialog(
                 onDismissRequest = {},
-                properties = DialogProperties(decorFitsSystemWindows = false)
+                properties = DialogProperties(decorFitsSystemWindows = false),
             ) {
                 val view = LocalView.current
                 SideEffect {
@@ -127,7 +128,7 @@ class DialogWithInsetsTest {
                             value = "Hello World",
                             onValueChange = {},
                             modifier =
-                                Modifier.focusRequester(focusRequester).align(Alignment.Center)
+                                Modifier.focusRequester(focusRequester).align(Alignment.Center),
                         )
                     }
                 }
@@ -192,8 +193,8 @@ class DialogWithInsetsTest {
                     properties =
                         DialogProperties(
                             decorFitsSystemWindows = false,
-                            usePlatformDefaultWidth = false
-                        )
+                            usePlatformDefaultWidth = false,
+                        ),
                 ) {
                     val insets = WindowInsets.safeDrawing
 
@@ -216,7 +217,7 @@ class DialogWithInsetsTest {
                             Modifier.align(Alignment.BottomStart).testTag("textField").onPlaced {
                                 layoutCoordinates ->
                                 textTop = layoutCoordinates.positionInRoot().y.roundToInt()
-                            }
+                            },
                         )
                     }
                 }
@@ -279,8 +280,8 @@ class DialogWithInsetsTest {
                     properties =
                         DialogProperties(
                             usePlatformDefaultWidth = false,
-                            decorFitsSystemWindows = false
-                        )
+                            decorFitsSystemWindows = false,
+                        ),
                 ) {
                     dialogView = LocalView.current
                     var view = dialogView
@@ -295,7 +296,7 @@ class DialogWithInsetsTest {
                         TextField(
                             "Hello World",
                             onValueChange = {},
-                            Modifier.focusRequester(focusRequester).safeDrawingPadding()
+                            Modifier.focusRequester(focusRequester).safeDrawingPadding(),
                         )
                         AndroidView(
                             modifier = Modifier.fillMaxSize(),
@@ -310,7 +311,7 @@ class DialogWithInsetsTest {
                                             override fun onProgress(
                                                 insets: WindowInsetsCompat,
                                                 runningAnimations:
-                                                    MutableList<WindowInsetsAnimationCompat>
+                                                    MutableList<WindowInsetsAnimationCompat>,
                                             ): WindowInsetsCompat {
                                                 insideImeInsets +=
                                                     insets.getInsets(WindowInsetsCompat.Type.ime())
@@ -319,15 +320,15 @@ class DialogWithInsetsTest {
 
                                             override fun onStart(
                                                 animation: WindowInsetsAnimationCompat,
-                                                bounds: BoundsCompat
+                                                bounds: BoundsCompat,
                                             ): BoundsCompat {
                                                 insideImeBounds = bounds
                                                 return bounds
                                             }
-                                        }
+                                        },
                                     )
                                 }
-                            }
+                            },
                         )
                     }
                 }
@@ -344,7 +345,7 @@ class DialogWithInsetsTest {
                 object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
                     override fun onProgress(
                         insets: WindowInsetsCompat,
-                        runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                        runningAnimations: MutableList<WindowInsetsAnimationCompat>,
                     ): WindowInsetsCompat {
                         outsideImeInsets += insets.getInsets(WindowInsetsCompat.Type.ime())
                         return insets
@@ -352,7 +353,7 @@ class DialogWithInsetsTest {
 
                     override fun onStart(
                         animation: WindowInsetsAnimationCompat,
-                        bounds: BoundsCompat
+                        bounds: BoundsCompat,
                     ): BoundsCompat {
                         outsideImeBounds = bounds
                         animationRunning = true
@@ -362,7 +363,7 @@ class DialogWithInsetsTest {
                     override fun onEnd(animation: WindowInsetsAnimationCompat) {
                         animationRunning = false
                     }
-                }
+                },
             )
         }
 

@@ -19,7 +19,7 @@ package androidx.savedstate.compose.serialization.serializers
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.kruth.assertThat
-import androidx.savedstate.serialization.SavedStateConfig
+import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -104,12 +104,12 @@ class MutableStateSerializerTest {
         testEncodeDecode(
             mutableStateOf(USER_JOHN_DOE),
             serializer = MutableStateSerializer(USER_SERIALIZER),
-            config =
-                SavedStateConfig {
+            configuration =
+                SavedStateConfiguration {
                     serializersModule = SerializersModule {
                         contextual(User::class, serializer<User>())
                     }
-                }
+                },
         )
     }
 
@@ -136,10 +136,14 @@ class MutableStateSerializerTest {
     private inline fun <reified T : Any> testEncodeDecode(
         mutableState: MutableState<T>,
         serializer: KSerializer<MutableState<T>> = MutableStateSerializer<T>(),
-        config: SavedStateConfig = SavedStateConfig.DEFAULT
+        configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
     ) {
         val encoded =
-            encodeToSavedState(serializer = serializer, config = config, value = mutableState)
+            encodeToSavedState(
+                serializer = serializer,
+                configuration = configuration,
+                value = mutableState,
+            )
         val decoded =
             decodeFromSavedState<MutableState<T>>(deserializer = serializer, savedState = encoded)
 
@@ -157,7 +161,7 @@ class MutableStateSerializerTest {
     @Serializable
     private enum class MyEnum {
         A,
-        B
+        B,
     }
 
     @Serializable

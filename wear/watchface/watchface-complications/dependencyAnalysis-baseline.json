@@ -28,15 +28,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "junit:junit",
         "resolvedVersion": "4.13.2"
       },
@@ -45,11 +36,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlin:kotlin-reflect",
-        "resolvedVersion": "1.8.22"
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "resolvedVersion": "1.7.3"
       },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {
@@ -58,6 +48,14 @@
         "resolvedVersion": "1.7.3"
       },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "resolvedVersion": "1.7.3"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

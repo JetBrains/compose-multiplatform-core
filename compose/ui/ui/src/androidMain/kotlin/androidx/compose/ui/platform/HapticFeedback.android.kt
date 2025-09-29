@@ -87,7 +87,7 @@ internal object HapticDefaults {
                 vibrator.areAllPrimitivesSupported(
                     VibrationEffect.Composition.PRIMITIVE_CLICK,
                     VibrationEffect.Composition.PRIMITIVE_TICK,
-                    VibrationEffect.Composition.PRIMITIVE_THUD
+                    VibrationEffect.Composition.PRIMITIVE_THUD,
                 )
             ) {
                 return true

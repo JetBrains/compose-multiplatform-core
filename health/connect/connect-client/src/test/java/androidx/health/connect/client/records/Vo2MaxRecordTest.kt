@@ -21,11 +21,37 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
+import java.time.ZoneOffset
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
+@Config(minSdk = 28)
 @RunWith(AndroidJUnit4::class)
 class Vo2MaxRecordTest {
+
+    @Test
+    fun validRecord_equals() {
+        assertThat(
+                Vo2MaxRecord(
+                    time = Instant.ofEpochMilli(1678900000L),
+                    zoneOffset = ZoneOffset.UTC,
+                    metadata = Metadata.manualEntry(),
+                    vo2MillilitersPerMinuteKilogram = 45.5,
+                    measurementMethod = Vo2MaxRecord.MEASUREMENT_METHOD_METABOLIC_CART,
+                )
+            )
+            .isEqualTo(
+                Vo2MaxRecord(
+                    time = Instant.ofEpochMilli(1678900000L),
+                    zoneOffset = ZoneOffset.UTC,
+                    metadata = Metadata.manualEntry(),
+                    vo2MillilitersPerMinuteKilogram = 45.5,
+                    measurementMethod = Vo2MaxRecord.MEASUREMENT_METHOD_METABOLIC_CART,
+                )
+            )
+    }
+
     @Test
     fun measurementMethodEnums_existMapping() {
         val allEnums = getAllIntDefEnums<Vo2MaxRecord>("""MEASUREMENT_METHOD.*""")

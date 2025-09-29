@@ -46,6 +46,7 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,7 +56,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RippleContainerTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     @Test
     fun cachesViews() {
@@ -173,7 +174,7 @@ class RippleContainerTest {
                 bounded = true,
                 radius = Dp.Unspecified,
                 color = { Color.Red },
-                rippleAlpha = { RippleAlpha(0.2f, 0.2f, 0.2f, 0.2f) }
+                rippleAlpha = { RippleAlpha(0.2f, 0.2f, 0.2f, 0.2f) },
             )
         }
 
@@ -204,7 +205,7 @@ class RippleContainerTest {
                             .size(40.dp)
                             .indication(
                                 interactionSource = interactionSource1,
-                                indication = TestRipple
+                                indication = TestRipple,
                             )
                     )
                     Box(
@@ -212,7 +213,7 @@ class RippleContainerTest {
                             .size(40.dp)
                             .indication(
                                 interactionSource = interactionSource2,
-                                indication = TestRipple
+                                indication = TestRipple,
                             )
                     )
                 }

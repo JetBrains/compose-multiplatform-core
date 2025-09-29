@@ -18,7 +18,6 @@ package androidx.camera.core.impl
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.params.SessionConfiguration
-import android.os.Build
 import android.util.Range
 import android.view.Surface
 import androidx.camera.camera2.impl.Camera2ImplConfig
@@ -37,12 +36,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SessionConfigTest {
     private var mMockSurface0: DeferrableSurface? = null
     private var mMockSurface1: DeferrableSurface? = null
@@ -195,14 +192,14 @@ class SessionConfigTest {
     fun builderDefaultSessionTypeIsRegular() {
         val builder = SessionConfig.Builder()
         val sessionConfig = builder.build()
-        assertThat(sessionConfig.sessionType == SessionConfiguration.SESSION_REGULAR)
+        assertThat(sessionConfig.sessionType).isEqualTo(SessionConfiguration.SESSION_REGULAR)
     }
 
     @Test
     fun builderSetSessionType() {
         val builder = SessionConfig.Builder().setSessionType(2)
         val sessionConfig = builder.build()
-        assertThat(sessionConfig.sessionType == 2)
+        assertThat(sessionConfig.sessionType).isEqualTo(2)
     }
 
     @Test
@@ -374,18 +371,20 @@ class SessionConfigTest {
     fun addImplementationOptionForStreamUseCase() {
         val validatingBuilder = ValidatingBuilder()
         assertThat(
-            !validatingBuilder
-                .build()
-                .implementationOptions
-                .containsOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)
-        )
+                !validatingBuilder
+                    .build()
+                    .implementationOptions
+                    .containsOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)
+            )
+            .isTrue()
         validatingBuilder.addImplementationOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION, 1L)
         assertThat(
-            validatingBuilder
-                .build()
-                .implementationOptions
-                .retrieveOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION) == 1L
-        )
+                validatingBuilder
+                    .build()
+                    .implementationOptions
+                    .retrieveOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)
+            )
+            .isEqualTo(1L)
     }
 
     @Test
@@ -931,13 +930,13 @@ class SessionConfigTest {
                 repeatingCallback0,
                 cameraCallback0,
                 repeatingCallback1,
-                cameraCallback1
+                cameraCallback1,
             )
         assertThat(sessionConfig.singleCameraCaptureCallbacks)
             .containsExactly(cameraCallback0, cameraCallback1)
         sessionConfig.errorListener!!.onError(
             sessionConfig,
-            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET
+            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET,
         )
         assertThat(errorCallbackInvoked0).isTrue()
         assertThat(errorCallbackInvoked1).isTrue()
@@ -1088,7 +1087,7 @@ class SessionConfigTest {
         // listeners
         sessionConfig.errorListener!!.onError(
             sessionConfig,
-            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET
+            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET,
         )
         assertThat(errorCallbackInvoked1).isTrue()
     }

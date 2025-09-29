@@ -28,7 +28,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.os.Build;
 import android.util.Base64;
 import android.util.Rational;
 import android.util.Size;
@@ -42,7 +41,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.nio.ByteBuffer;
@@ -52,7 +50,6 @@ import java.nio.ByteBuffer;
  */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class ImageUtilTest {
     private static final int WIDTH = 160;
     private static final int HEIGHT = 120;

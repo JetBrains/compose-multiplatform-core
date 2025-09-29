@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.toOffset
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,7 +72,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CoreTextFieldInputServiceIntegrationTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private lateinit var focusManager: FocusManager
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
@@ -86,7 +87,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 capitalization = KeyboardCapitalization.Words,
                 autoCorrect = false,
                 keyboardType = KeyboardType.Phone,
-                imeAction = ImeAction.Search
+                imeAction = ImeAction.Search,
             )
 
         setContent {
@@ -94,7 +95,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 value = value,
                 imeOptions = imeOptions,
                 modifier = Modifier.testTag(testTag),
-                onValueChange = {}
+                onValueChange = {},
             )
         }
 
@@ -121,12 +122,12 @@ class CoreTextFieldInputServiceIntegrationTest {
                 CoreTextField(
                     value = value,
                     onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester1)
+                    modifier = Modifier.focusRequester(focusRequester1),
                 )
                 CoreTextField(
                     value = value,
                     onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester2)
+                    modifier = Modifier.focusRequester(focusRequester2),
                 )
             }
         }
@@ -146,7 +147,7 @@ class CoreTextFieldInputServiceIntegrationTest {
             CoreTextField(
                 value = TextFieldValue("Hello"),
                 onValueChange = {},
-                modifier = Modifier.testTag("TextField1")
+                modifier = Modifier.testTag("TextField1"),
             )
         }
 
@@ -165,7 +166,7 @@ class CoreTextFieldInputServiceIntegrationTest {
             CoreTextField(
                 value = TextFieldValue("Hello"),
                 onValueChange = {},
-                modifier = Modifier.focusRequester(focusRequester)
+                modifier = Modifier.focusRequester(focusRequester),
             )
         }
 
@@ -184,7 +185,7 @@ class CoreTextFieldInputServiceIntegrationTest {
             CoreTextField(
                 value = TextFieldValue("Hello"),
                 onValueChange = {},
-                modifier = Modifier.focusRequester(focusRequester)
+                modifier = Modifier.focusRequester(focusRequester),
             )
         }
         // Request focus and wait for keyboard.
@@ -220,7 +221,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 CoreTextField(
                     value = TextFieldValue("Hello"),
                     onValueChange = {},
-                    modifier = Modifier.testTag("TextField1")
+                    modifier = Modifier.testTag("TextField1"),
                 )
             }
         }
@@ -242,12 +243,12 @@ class CoreTextFieldInputServiceIntegrationTest {
                 CoreTextField(
                     value = TextFieldValue("Hello"),
                     onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester1)
+                    modifier = Modifier.focusRequester(focusRequester1),
                 )
                 CoreTextField(
                     value = TextFieldValue("Hello"),
                     onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester2)
+                    modifier = Modifier.focusRequester(focusRequester2),
                 )
             }
         }
@@ -271,7 +272,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 CoreTextField(
                     value = TextFieldValue("Hello"),
                     onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
         }
@@ -296,7 +297,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 value = TextFieldValue("Hello"),
                 onValueChange = {},
                 modifier = Modifier.focusRequester(focusRequester),
-                enabled = enabled
+                enabled = enabled,
             )
         }
         // Request focus and wait for keyboard.
@@ -320,7 +321,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 value = TextFieldValue("Hello"),
                 onValueChange = {},
                 modifier = Modifier.focusRequester(focusRequester),
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
         // Request focus and wait for keyboard.
@@ -344,7 +345,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 value = TextFieldValue("Hello"),
                 onValueChange = {},
                 modifier = Modifier.focusRequester(focusRequester),
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
         // Request focus and wait for keyboard.
@@ -369,7 +370,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 value = value,
                 modifier = Modifier.focusRequester(focusRequester),
                 onValueChange = {},
-                onTextLayout = { textLayoutResult = it }
+                onTextLayout = { textLayoutResult = it },
             )
         }
 
@@ -391,7 +392,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                     value = value,
                     modifier = Modifier.focusRequester(focusRequester),
                     onValueChange = {},
-                    onTextLayout = { textLayoutResult = it }
+                    onTextLayout = { textLayoutResult = it },
                 )
             }
         }
@@ -420,7 +421,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 value = value,
                 modifier = Modifier.testTag(tag),
                 onValueChange = { value = it },
-                onTextLayout = { textLayoutResult = it }
+                onTextLayout = { textLayoutResult = it },
             )
         }
 
@@ -470,7 +471,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                     selectionStart: Int,
                     selectionEnd: Int,
                     compositionStart: Int,
-                    compositionEnd: Int
+                    compositionEnd: Int,
                 ) {}
             }
         inputMethodManagerFactory = { fakeInputMethodManager }
@@ -518,7 +519,7 @@ class CoreTextFieldInputServiceIntegrationTest {
                 CoreTextField(
                     value = value,
                     onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
         }
@@ -547,7 +548,7 @@ class CoreTextFieldInputServiceIntegrationTest {
 
     private fun setContent(
         extraItemForInitialFocus: Boolean = true,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setFocusableContent(extraItemForInitialFocus) {
             inputMethodInterceptor.Content {

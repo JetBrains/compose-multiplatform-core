@@ -24,6 +24,7 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.FrameLayout;
 
 import androidx.annotation.AttrRes;
@@ -49,17 +50,8 @@ import java.util.List;
  * view constructor.
  *
  * <p>If this view will be attached to a hierarchy owned by a {@link android.view.Window Window}, it
- * is strongly recommended to call the following APIs or equivalent ones to make sure the view can
- * reach the edges of the window and the framework color views are removed:
- * <pre>
- * WindowCompat.setDecorFitsSystemWindows(window, false);
- * window.setStatusBarColor(Color.TRANSPARENT);
- * window.setNavigationBarColor(Color.TRANSPARENT);
- * if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
- *     window.setStatusBarContrastEnforced(false);
- *     window.setNavigationBarContrastEnforced(false);
- * }
- * </pre>
+ * is strongly recommended to call {@link androidx.core.view.WindowCompat#enableEdgeToEdge(Window)}
+ * to make sure the view can reach the edges of the window and the framework color views are gone.
  */
 public class ProtectionLayout extends FrameLayout {
 
@@ -107,7 +99,6 @@ public class ProtectionLayout extends FrameLayout {
         mProtections.clear();
         mProtections.addAll(protections);
         if (isAttachedToWindow()) {
-            removeProtectionViews();
             addProtectionViews();
             requestApplyInsets();
         }
@@ -125,7 +116,21 @@ public class ProtectionLayout extends FrameLayout {
         return monitor;
     }
 
-
+    private void maybeUninstallSystemBarStateMonitor() {
+        final ViewGroup rootView = (ViewGroup) getRootView();
+        final Object tag = rootView.getTag(R.id.tag_system_bar_state_monitor);
+        if (!(tag instanceof SystemBarStateMonitor)) {
+            // The monitor hasn't been installed.
+            return;
+        }
+        final SystemBarStateMonitor monitor = (SystemBarStateMonitor) tag;
+        if (monitor.hasCallback()) {
+            // Don't uninstall the monitor because other ProtectionLayout still needs it.
+            return;
+        }
+        monitor.detachFromWindow();
+        rootView.setTag(R.id.tag_system_bar_state_monitor, null);
+    }
 
     @Override
     protected void onAttachedToWindow() {
@@ -138,15 +143,16 @@ public class ProtectionLayout extends FrameLayout {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         removeProtectionViews();
-        final SystemBarStateMonitor monitor = getOrInstallSystemBarStateMonitor();
-        if (!monitor.hasCallback()) {
-            // This was the last ProtectionLayout in the window.
-            monitor.detachFromWindow();
-        }
+        maybeUninstallSystemBarStateMonitor();
     }
 
     private void addProtectionViews() {
+        if (mProtections.isEmpty()) {
+            removeProtectionViews();
+            return;
+        }
         final SystemBarStateMonitor monitor = getOrInstallSystemBarStateMonitor();
+        removeProtectionViews();
         mGroup = new ProtectionGroup(monitor, mProtections);
         final int nonProtectionChildCount = getChildCount();
         for (int i = 0, size = mGroup.size(); i < size; i++) {
@@ -209,7 +215,7 @@ public class ProtectionLayout extends FrameLayout {
         view.setTranslationX(attrs.getTranslationX());
         view.setTranslationY(attrs.getTranslationY());
         view.setAlpha(attrs.getAlpha());
-        view.setVisibility(attrs.isVisible() ? View.VISIBLE : View.INVISIBLE);
+        view.setVisibility(attrs.isVisible() ? View.VISIBLE : View.GONE);
         view.setBackground(attrs.getDrawable());
         final Protection.Attributes.Callback callback =
                 new Protection.Attributes.Callback() {
@@ -237,7 +243,7 @@ public class ProtectionLayout extends FrameLayout {
 
                     @Override
                     public void onVisibilityChanged(boolean visible) {
-                        view.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+                        view.setVisibility(visible ? View.VISIBLE : View.GONE);
                     }
 
                     @Override

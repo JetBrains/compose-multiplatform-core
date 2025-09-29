@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +43,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DragHandleTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun verticalDragHandle_defaultAccessibilitySize() {
@@ -86,7 +87,7 @@ class DragHandleTest {
             { pressedVisualShape },
             { pressedVisualSize },
             { pressedColor },
-            { press() }
+            { press() },
         ) {
             VerticalDragHandle()
         }
@@ -109,7 +110,7 @@ class DragHandleTest {
             { pressedVisualShape },
             { customPressedSize },
             { pressedColor },
-            { press() }
+            { press() },
         ) {
             VerticalDragHandle(
                 sizes = VerticalDragHandleDefaults.sizes(pressedSize = customPressedSize)
@@ -147,7 +148,7 @@ class DragHandleTest {
             { customPressedShape },
             { pressedVisualSize },
             { pressedColor },
-            { press() }
+            { press() },
         ) {
             VerticalDragHandle(
                 shapes = VerticalDragHandleDefaults.shapes(pressedShape = customPressedShape)
@@ -172,7 +173,7 @@ class DragHandleTest {
             { pressedVisualShape },
             { pressedVisualSize },
             { customColor },
-            { press() }
+            { press() },
         ) {
             VerticalDragHandle(
                 colors = VerticalDragHandleDefaults.colors(pressedColor = customColor)

@@ -19,8 +19,6 @@ package androidx.camera.testing.mocks;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import android.os.Build;
-
 import androidx.camera.testing.impl.mocks.MockConsumer;
 import androidx.camera.testing.impl.mocks.helpers.ArgumentCaptor;
 import androidx.camera.testing.impl.mocks.helpers.ArgumentMatcher;
@@ -29,9 +27,7 @@ import androidx.camera.testing.impl.mocks.helpers.CallTimesAtLeast;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.robolectric.annotation.Config;
 
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class MockConsumerTest {
     public static final String DUMMY_STRING_1 = "dummy1";
     public static final String DUMMY_STRING_2 = "dummy2";

@@ -7,6 +7,14 @@
         "identifier": "androidx.annotation:annotation",
         "resolvedVersion": "1.7.0-beta01"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.annotation:annotation",
+        "resolvedVersion": "1.7.0-beta01"
+      },
       "toConfiguration": "implementation"
     },
     {
@@ -31,16 +39,15 @@
         "identifier": "androidx.core:core",
         "resolvedVersion": "1.12.0"
       },
-      "toConfiguration": "implementation"
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.room:room-runtime",
-        "resolvedVersion": "2.6.1"
+        "identifier": "androidx.core:core",
+        "resolvedVersion": "1.12.0"
       },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
+      "toConfiguration": "implementation"
     },
     {
       "coordinates": {
@@ -85,11 +92,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
         "resolvedVersion": "1.7.3"
       },
-      "fromConfiguration": "api",
-      "toConfiguration": "runtimeOnly"
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {

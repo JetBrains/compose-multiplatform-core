@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +44,7 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class KeyboardActionsTest(param: Param) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     // We need to wrap the inline class parameter in another class because Java can't instantiate
     // the inline class.
@@ -64,7 +65,7 @@ class KeyboardActionsTest(param: Param) {
                 Param(Send),
                 Param(Previous),
                 Param(Next),
-                Param(Done)
+                Param(Done),
             )
     }
 
@@ -89,8 +90,8 @@ class KeyboardActionsTest(param: Param) {
                         onNext = { actionTriggerLog[Next] = true },
                         onPrevious = { actionTriggerLog[Previous] = true },
                         onSearch = { actionTriggerLog[Search] = true },
-                        onSend = { actionTriggerLog[Send] = true }
-                    )
+                        onSend = { actionTriggerLog[Send] = true },
+                    ),
             )
         }
 
@@ -124,10 +125,7 @@ class KeyboardActionsTest(param: Param) {
                 onValueChange = {},
                 modifier = Modifier.testTag(initialTextField),
                 imeOptions = ImeOptions(imeAction = Done),
-                keyboardActions =
-                    KeyboardActions(
-                        onDone = { wasCallbackTriggered = true },
-                    )
+                keyboardActions = KeyboardActions(onDone = { wasCallbackTriggered = true }),
             )
         }
 

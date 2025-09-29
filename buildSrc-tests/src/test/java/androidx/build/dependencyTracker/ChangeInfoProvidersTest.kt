@@ -31,8 +31,7 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class ChangeInfoProvidersTest {
-    @get:Rule
-    var folder: TemporaryFolder = TemporaryFolder()
+    @get:Rule var folder: TemporaryFolder = TemporaryFolder()
 
     @Test
     fun findChangedFilesSince_oneChange() {
@@ -56,7 +55,7 @@ class ChangeInfoProvidersTest {
               ]
             }
             """,
-            listOf("core/core-remoteviews/src/androidTest/res/layout/remote_views_text.xml")
+            listOf("core/core-remoteviews/src/androidTest/res/layout/remote_views_text.xml"),
         )
     }
 
@@ -95,7 +94,7 @@ class ChangeInfoProvidersTest {
               ]
             }
             """,
-            listOf("path1", "path2")
+            listOf("path1", "path2"),
         )
     }
 
@@ -134,7 +133,7 @@ class ChangeInfoProvidersTest {
               ]
             }
             """,
-            listOf("supportPath")
+            listOf("supportPath"),
         )
     }
 
@@ -154,7 +153,7 @@ class ChangeInfoProvidersTest {
               ]
             }
             """,
-            listOf()
+            listOf(),
         )
     }
 
@@ -165,7 +164,7 @@ class ChangeInfoProvidersTest {
             {
             }
             """,
-            listOf()
+            listOf(),
         )
     }
 
@@ -191,7 +190,7 @@ class ChangeInfoProvidersTest {
               ]
             }
             """,
-            listOf("Gone")
+            listOf("Gone"),
         )
     }
 
@@ -218,7 +217,7 @@ class ChangeInfoProvidersTest {
               ]
             }
             """,
-            listOf("PrevPath", "NewPath")
+            listOf("PrevPath", "NewPath"),
         )
     }
 
@@ -227,20 +226,18 @@ class ChangeInfoProvidersTest {
         checkChangedFiles("{", listOf())
     }
 
-    private fun checkChangedFiles(
-        changeInfoContent: String,
-        expectedChangedFiles: List<String>
-    ) {
+    private fun checkChangedFiles(changeInfoContent: String, expectedChangedFiles: List<String>) {
         val manifestFile = folder.newFile()
         manifestFile.writeText(basicManifest)
         val changeInfoFile = folder.newFile()
         changeInfoFile.writeText(changeInfoContent)
         val project = ProjectBuilder.builder().build()
-        val changedFilesProvider = project.getChangedFilesFromChangeInfoProvider(
-            manifestFile.absolutePath,
-            changeInfoFile.absolutePath,
-            frameworksSupportPath
-        )
+        val changedFilesProvider =
+            project.getChangedFilesFromChangeInfoProvider(
+                project.providers.provider { manifestFile.absolutePath },
+                project.providers.provider { changeInfoFile.absolutePath },
+                frameworksSupportPath,
+            )
         val changedFiles = changedFilesProvider.get()
         assertEquals(expectedChangedFiles, changedFiles)
     }
@@ -250,10 +247,11 @@ class ChangeInfoProvidersTest {
         val manifestFile = folder.newFile()
         manifestFile.writeText(basicManifest)
         val project = ProjectBuilder.builder().build()
-        val headShaProvider = project.getHeadShaFromManifestProvider(
-            manifestFile.absolutePath,
-            frameworksSupportPath
-        )
+        val headShaProvider =
+            project.getHeadShaFromManifestProvider(
+                project.providers.provider { manifestFile.absolutePath },
+                frameworksSupportPath,
+            )
         assertEquals(frameworksSupportSha, headShaProvider.get())
     }
 
@@ -262,19 +260,19 @@ class ChangeInfoProvidersTest {
         val manifestFile = folder.newFile()
         manifestFile.writeText(basicManifest)
         val project = ProjectBuilder.builder().build()
-        val headShaProvider = project.getHeadShaFromManifestProvider(
-            manifestFile.absolutePath,
-            "missing/project/path"
-        )
-        assertThrows(GradleException::class.java) {
-            headShaProvider.get()
-        }
+        val headShaProvider =
+            project.getHeadShaFromManifestProvider(
+                project.providers.provider { manifestFile.absolutePath },
+                "missing/project/path",
+            )
+        assertThrows(GradleException::class.java) { headShaProvider.get() }
     }
 }
 
 private const val frameworksSupportPath = "frameworks/support"
 private const val frameworksSupportSha = "bbcf23f3ee42fc9e59e0cf5fbca71f526f760dba"
-private const val basicManifest = """<?xml version='1.0' encoding='UTF-8'?>
+private const val basicManifest =
+    """<?xml version='1.0' encoding='UTF-8'?>
 <manifest>
   <remote name="aosp" fetch="https://android.googlesource.com/" review="https://android.googlesource.com/" />
   <default revision="androidx-main" remote="aosp" />

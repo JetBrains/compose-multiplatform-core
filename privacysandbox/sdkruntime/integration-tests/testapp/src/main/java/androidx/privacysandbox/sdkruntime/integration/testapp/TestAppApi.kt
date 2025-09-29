@@ -16,26 +16,58 @@
 
 package androidx.privacysandbox.sdkruntime.integration.testapp
 
-import android.content.Context
+import android.app.Activity
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
+import androidx.privacysandbox.sdkruntime.client.SdkSandboxProcessDeathCallbackCompat
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SandboxedSdkInfo
+import androidx.privacysandbox.sdkruntime.integration.testaidl.IMediateeSdkApi
 import androidx.privacysandbox.sdkruntime.integration.testaidl.ISdkApi
+import androidx.privacysandbox.sdkruntime.integration.testaidl.LoadedSdkInfo
+import kotlinx.coroutines.Runnable
 
 /**
  * Wrapper around test app functionality.
  *
  * Shared between UI in test app and functional/integration tests.
  */
-class TestAppApi(appContext: Context) {
+class TestAppApi(private val activity: Activity) {
 
-    private val sdkSandboxManager = SdkSandboxManagerCompat.from(appContext)
+    private val sdkSandboxManager = SdkSandboxManagerCompat.from(activity.applicationContext)
 
-    suspend fun loadTestSdk(): ISdkApi {
-        val loadedSdk = loadSdk(TEST_SDK_NAME)
+    private val registeredSandboxDeathCallbacks =
+        mutableSetOf<SdkSandboxProcessDeathCallbackCompat>()
+
+    suspend fun loadTestSdk(params: Bundle = Bundle()): ISdkApi {
+        val loadedSdk = loadSdk(TEST_SDK_NAME, params)
         return ISdkApi.Stub.asInterface(loadedSdk.getInterface())
+    }
+
+    suspend fun loadMediateeSdk(params: Bundle = Bundle()): IMediateeSdkApi {
+        val loadedSdk = loadSdk(MEDIATEE_SDK_NAME, params)
+        return IMediateeSdkApi.Stub.asInterface(loadedSdk.getInterface())
+    }
+
+    suspend fun getOrLoadTestSdk(): ISdkApi {
+        val sdkInterface = getOrLoadSdk(TEST_SDK_NAME)
+        return ISdkApi.Stub.asInterface(sdkInterface)
+    }
+
+    suspend fun getOrLoadMediateeSdk(): IMediateeSdkApi {
+        val sdkInterface = getOrLoadSdk(MEDIATEE_SDK_NAME)
+        return IMediateeSdkApi.Stub.asInterface(sdkInterface)
+    }
+
+    suspend fun getOrLoadSdk(sdkName: String): IBinder {
+        val loadedSdk = getSandboxedSdks().firstOrNull { it.sdkName == sdkName }?.sdkInterface
+        if (loadedSdk != null) {
+            return loadedSdk
+        }
+        return loadSdk(sdkName).getInterface()!!
     }
 
     suspend fun loadSdk(sdkName: String, params: Bundle = Bundle()): SandboxedSdkCompat {
@@ -46,6 +78,8 @@ class TestAppApi(appContext: Context) {
     }
 
     fun unloadTestSdk() = unloadSdk(TEST_SDK_NAME)
+
+    fun unloadMediateeSdk() = unloadSdk(MEDIATEE_SDK_NAME)
 
     fun unloadSdk(sdkName: String) {
         sdkSandboxManager.unloadSdk(sdkName)
@@ -59,14 +93,73 @@ class TestAppApi(appContext: Context) {
         sdkSandboxManager.unregisterAppOwnedSdkSandboxInterface(appOwnedSdkName)
     }
 
-    fun getSandboxedSdks() = sdkSandboxManager.getSandboxedSdks()
+    fun registerSandboxDeathCallback(callback: SdkSandboxProcessDeathCallbackCompat) {
+        sdkSandboxManager.addSdkSandboxProcessDeathCallback(Runnable::run, callback)
+        synchronized(registeredSandboxDeathCallbacks) {
+            registeredSandboxDeathCallbacks.add(callback)
+        }
+    }
 
-    fun getAppOwnedSdks() = sdkSandboxManager.getAppOwnedSdkSandboxInterfaces()
+    fun unregisterSandboxDeathCallback(callback: SdkSandboxProcessDeathCallbackCompat) {
+        sdkSandboxManager.removeSdkSandboxProcessDeathCallback(callback)
+        synchronized(registeredSandboxDeathCallbacks) {
+            registeredSandboxDeathCallbacks.remove(callback)
+        }
+    }
+
+    fun getSandboxedSdks(): List<LoadedSdkInfo> {
+        return sdkSandboxManager.getSandboxedSdks().map { sdk ->
+            LoadedSdkInfo(
+                sdkInterface = sdk.getInterface()!!,
+                sdkName = sdk.getSdkInfo()?.name,
+                sdkVersion = sdk.getSdkInfo()?.version,
+            )
+        }
+    }
+
+    fun getAppOwnedSdks(): List<LoadedSdkInfo> {
+        return sdkSandboxManager.getAppOwnedSdkSandboxInterfaces().map { sdk ->
+            LoadedSdkInfo(
+                sdkInterface = sdk.getInterface(),
+                sdkName = sdk.getName(),
+                sdkVersion = sdk.getVersion(),
+            )
+        }
+    }
+
+    fun startSdkActivity(sdkActivityToken: IBinder) {
+        sdkSandboxManager.startSdkSandboxActivity(activity, sdkActivityToken)
+    }
+
+    fun resetTestState() {
+        // Unregister AppOwned SDKs
+        sdkSandboxManager
+            .getAppOwnedSdkSandboxInterfaces()
+            .map(AppOwnedSdkSandboxInterfaceCompat::getName)
+            .forEach(sdkSandboxManager::unregisterAppOwnedSdkSandboxInterface)
+
+        // Unload all SDKs
+        sdkSandboxManager
+            .getSandboxedSdks()
+            .mapNotNull(SandboxedSdkCompat::getSdkInfo)
+            .map(SandboxedSdkInfo::name)
+            .forEach(sdkSandboxManager::unloadSdk)
+
+        // Remove all SandboxDeath callbacks
+        synchronized(registeredSandboxDeathCallbacks) {
+            registeredSandboxDeathCallbacks.forEach(
+                sdkSandboxManager::removeSdkSandboxProcessDeathCallback
+            )
+            registeredSandboxDeathCallbacks.clear()
+        }
+    }
 
     companion object {
         private const val TAG = "TestAppApi"
 
         /** Name of the Test SDK to be loaded. */
-        private const val TEST_SDK_NAME = "androidx.privacysandbox.sdkruntime.integrationtest.sdk"
+        const val TEST_SDK_NAME = "androidx.privacysandbox.sdkruntime.integrationtest.sdk"
+        const val MEDIATEE_SDK_NAME =
+            "androidx.privacysandbox.sdkruntime.integrationtest.mediateesdk"
     }
 }

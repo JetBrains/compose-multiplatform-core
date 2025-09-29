@@ -16,13 +16,11 @@
 
 package androidx.compose.material3.pulltorefresh
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.CircularAnimationProgressDuration
 import androidx.compose.material3.CircularIndicatorDiameter
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.GOLDEN_MATERIAL3
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -37,17 +35,17 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalMaterial3Api::class)
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class PullRefreshIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -62,7 +60,7 @@ class PullRefreshIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper)
                 PullToRefreshDefaults.Indicator(
                     state = mockState,
                     isRefreshing = true,
-                    threshold = CircularIndicatorDiameter,
+                    maxDistance = CircularIndicatorDiameter,
                 )
             }
         }
@@ -77,8 +75,8 @@ class PullRefreshIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper)
             Box(wrap.testTag(testTag)) {
                 PullToRefreshDefaults.Indicator(
                     state = mockState,
-                    threshold = CircularIndicatorDiameter,
-                    isRefreshing = false
+                    maxDistance = CircularIndicatorDiameter,
+                    isRefreshing = false,
                 )
             }
         }

@@ -88,6 +88,7 @@ public final class PropertyConfigParcel extends AbstractSafeParcelable {
     private final String mDescription;
 
     @Field(id = 10, getter = "getEmbeddingIndexingConfigParcel")
+    @Nullable
     private final EmbeddingIndexingConfigParcel mEmbeddingIndexingConfigParcel;
 
     @Field(id = 11, getter = "isScoringEnabled")

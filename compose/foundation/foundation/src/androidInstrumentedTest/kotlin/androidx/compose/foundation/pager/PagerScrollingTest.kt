@@ -32,13 +32,14 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @LargeTest
 class PagerScrollingTest : SingleParamBasePagerTest() {
 
     private fun resetTestCase(initialPage: Int = 0) {
-        rule.runOnIdle { runBlocking { pagerState.scrollToPage(initialPage) } }
+        rule.runOnIdle { runTest(testDispatcher) { pagerState.scrollToPage(initialPage) } }
     }
 
     @Test
@@ -51,7 +52,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -76,7 +77,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     with(param) {
                         swipeWithVelocityAcrossMainAxis(
                             0.5f * MinFlingVelocityDp.toPx(),
-                            delta * -1
+                            delta * -1,
                         )
                     }
                 }
@@ -100,7 +101,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
                     useLookahead = it.useLookahead,
-                    layoutDirection = it.layoutDirection
+                    layoutDirection = it.layoutDirection,
                 )
             }
             val ParamsWithRtl = ParamsToTest.map { it.copy(layoutDirection = LayoutDirection.Rtl) }
@@ -154,7 +155,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     snapPositionalThreshold = 0.2f,
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -181,7 +182,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                         with(param) {
                             swipeWithVelocityAcrossMainAxis(
                                 0.5f * MinFlingVelocityDp.toPx(),
-                                delta * -1
+                                delta * -1,
                             )
                         }
                     }
@@ -205,7 +206,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     snapPositionalThreshold = 0.8f,
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -232,7 +233,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                         with(param) {
                             swipeWithVelocityAcrossMainAxis(
                                 0.5f * MinFlingVelocityDp.toPx(),
-                                delta * -1
+                                delta * -1,
                             )
                         }
                     }
@@ -256,7 +257,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     pageSize = PageSize.Fixed(200.dp),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -279,7 +280,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     with(param) {
                         swipeWithVelocityAcrossMainAxis(
                             0.5f * MinFlingVelocityDp.toPx(),
-                            delta * -1
+                            delta * -1,
                         )
                     }
                 }
@@ -304,7 +305,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     pageSize = PageSize.Fixed(50.dp),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -339,7 +340,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -364,7 +365,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     with(param) {
                         swipeWithVelocityAcrossMainAxis(
                             0.5f * MinFlingVelocityDp.toPx(),
-                            delta * -1
+                            delta * -1,
                         )
                     }
                 }
@@ -388,7 +389,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     snapPositionalThreshold = 0.2f,
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -413,7 +414,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     with(param) {
                         swipeWithVelocityAcrossMainAxis(
                             0.5f * MinFlingVelocityDp.toPx(),
-                            delta * -1
+                            delta * -1,
                         )
                     }
                 }
@@ -435,7 +436,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -448,19 +449,19 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     moveBy(
                         Offset(
                             if (param.vertical) 0.0f else delta,
-                            if (param.vertical) delta else 0.0f
+                            if (param.vertical) delta else 0.0f,
                         )
                     )
                     moveBy(
                         Offset(
                             if (param.vertical) 0.0f else delta,
-                            if (param.vertical) delta else 0.0f
+                            if (param.vertical) delta else 0.0f,
                         )
                     )
                     moveBy(
                         Offset(
                             if (param.vertical) 0.0f else delta,
-                            if (param.vertical) delta else 0.0f
+                            if (param.vertical) delta else 0.0f,
                         )
                     )
 
@@ -468,7 +469,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     moveBy(
                         Offset(
                             if (param.vertical) 0.0f else -delta,
-                            if (param.vertical) -delta else 0.0f
+                            if (param.vertical) -delta else 0.0f,
                         )
                     )
                     up()
@@ -492,7 +493,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     initialPage = DefaultPageCount - 1,
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
             forEachParameter(ParamsToTest) { param ->
@@ -504,19 +505,19 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     moveBy(
                         Offset(
                             if (param.vertical) 0.0f else delta,
-                            if (param.vertical) delta else 0.0f
+                            if (param.vertical) delta else 0.0f,
                         )
                     )
                     moveBy(
                         Offset(
                             if (param.vertical) 0.0f else delta,
-                            if (param.vertical) delta else 0.0f
+                            if (param.vertical) delta else 0.0f,
                         )
                     )
                     moveBy(
                         Offset(
                             if (param.vertical) 0.0f else delta,
-                            if (param.vertical) delta else 0.0f
+                            if (param.vertical) delta else 0.0f,
                         )
                     )
 
@@ -524,7 +525,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     moveBy(
                         Offset(
                             if (param.vertical) 0.0f else -delta,
-                            if (param.vertical) -delta else 0.0f
+                            if (param.vertical) -delta else 0.0f,
                         )
                     )
                     up()
@@ -549,7 +550,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     pageSize = PageSize.Fixed(200.dp),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -573,7 +574,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     with(param) {
                         swipeWithVelocityAcrossMainAxis(
                             0.5f * MinFlingVelocityDp.toPx(),
-                            delta * -1
+                            delta * -1,
                         )
                     }
                 }
@@ -597,7 +598,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     snapPositionalThreshold = 0.8f,
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -624,7 +625,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                         with(param) {
                             swipeWithVelocityAcrossMainAxis(
                                 0.5f * MinFlingVelocityDp.toPx(),
-                                delta * -1
+                                delta * -1,
                             )
                         }
                     }
@@ -647,7 +648,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
             forEachParameter(ParamsToTest) { param ->
@@ -673,7 +674,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                         with(param) {
                             swipeWithVelocityAcrossMainAxis(
                                 1.1f * MinFlingVelocityDp.toPx(),
-                                delta * -1
+                                delta * -1,
                             )
                         }
                     }
@@ -696,7 +697,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
             forEachParameter(ParamsToTest) { param ->
@@ -722,7 +723,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                         with(param) {
                             swipeWithVelocityAcrossMainAxis(
                                 1.1f * MinFlingVelocityDp.toPx(),
-                                delta * -1
+                                delta * -1,
                             )
                         }
                     }
@@ -748,7 +749,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     contentPadding = it.mainAxisContentPadding,
                     snapPosition = it.snapPosition.first,
                     useLookahead = it.useLookahead,
-                    pageSize = PageSize.Fixed(200.dp)
+                    pageSize = PageSize.Fixed(200.dp),
                 )
             }
 
@@ -763,7 +764,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                                             orientation = orientation,
                                             pageSpacing = pageSpacing,
                                             mainAxisContentPadding = contentPadding,
-                                            snapPosition = snapPosition
+                                            snapPosition = snapPosition,
                                         )
                                     )
                                 }
@@ -796,7 +797,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                         with(param) {
                             swipeWithVelocityAcrossMainAxis(
                                 1.1f * MinFlingVelocityDp.toPx(),
-                                delta * -1
+                                delta * -1,
                             )
                         }
                     }
@@ -868,7 +869,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     snappingPage = PagerSnapDistance.atMost(3),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -924,7 +925,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     snappingPage = PagerSnapDistance.atMost(3),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
-                    useLookahead = it.useLookahead
+                    useLookahead = it.useLookahead,
                 )
             }
 
@@ -977,7 +978,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
                     useLookahead = it.useLookahead,
-                    contentPadding = PaddingValues(1.dp)
+                    contentPadding = PaddingValues(1.dp),
                 )
             }
 
@@ -1002,7 +1003,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     with(param) {
                         swipeWithVelocityAcrossMainAxis(
                             0.5f * MinFlingVelocityDp.toPx(),
-                            delta * -1
+                            delta * -1,
                         )
                     }
                 }
@@ -1028,7 +1029,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     SingleParamConfig(
                         orientation = TestOrientation[0],
                         pageSpacing = TestPageSpacing[0],
-                        useLookahead = true
+                        useLookahead = true,
                     )
                 )
             }

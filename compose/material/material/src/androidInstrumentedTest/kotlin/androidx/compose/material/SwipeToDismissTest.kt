@@ -35,6 +35,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -45,7 +46,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterialApi::class)
 class SwipeToDismissTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val backgroundTag = "background"
     private val dismissContentTag = "dismissContent"
@@ -61,7 +62,7 @@ class SwipeToDismissTest {
             SwipeToDismiss(
                 state = rememberDismissState(DismissValue.Default),
                 background = {},
-                dismissContent = { Box(Modifier.fillMaxSize().testTag(dismissContentTag)) }
+                dismissContent = { Box(Modifier.fillMaxSize().testTag(dismissContentTag)) },
             )
         }
 
@@ -74,7 +75,7 @@ class SwipeToDismissTest {
             SwipeToDismiss(
                 state = rememberDismissState(DismissValue.DismissedToEnd),
                 background = {},
-                dismissContent = { Box(Modifier.fillMaxSize().testTag(dismissContentTag)) }
+                dismissContent = { Box(Modifier.fillMaxSize().testTag(dismissContentTag)) },
             )
         }
 
@@ -88,7 +89,7 @@ class SwipeToDismissTest {
             SwipeToDismiss(
                 state = rememberDismissState(DismissValue.DismissedToStart),
                 background = {},
-                dismissContent = { Box(Modifier.fillMaxSize().testTag(dismissContentTag)) }
+                dismissContent = { Box(Modifier.fillMaxSize().testTag(dismissContentTag)) },
             )
         }
 
@@ -102,7 +103,7 @@ class SwipeToDismissTest {
             SwipeToDismiss(
                 state = rememberDismissState(DismissValue.Default),
                 background = { Box(Modifier.fillMaxSize().testTag(backgroundTag)) },
-                dismissContent = { Box(Modifier.size(100.dp)) }
+                dismissContent = { Box(Modifier.size(100.dp)) },
             )
         }
 
@@ -118,7 +119,7 @@ class SwipeToDismissTest {
             SwipeToDismiss(
                 state = dismissState,
                 background = {},
-                dismissContent = { Box(Modifier.fillMaxSize().testTag(dismissContentTag)) }
+                dismissContent = { Box(Modifier.fillMaxSize().testTag(dismissContentTag)) },
             )
         }
 
@@ -161,7 +162,7 @@ class SwipeToDismissTest {
                 state = dismissState,
                 directions = setOf(DismissDirection.StartToEnd),
                 background = {},
-                dismissContent = { Box(Modifier.fillMaxSize()) }
+                dismissContent = { Box(Modifier.fillMaxSize()) },
             )
         }
 
@@ -184,7 +185,7 @@ class SwipeToDismissTest {
                 state = dismissState,
                 directions = setOf(DismissDirection.EndToStart),
                 background = {},
-                dismissContent = { Box(Modifier.fillMaxSize()) }
+                dismissContent = { Box(Modifier.fillMaxSize()) },
             )
         }
 
@@ -208,7 +209,7 @@ class SwipeToDismissTest {
                     state = dismissState,
                     directions = setOf(DismissDirection.StartToEnd),
                     background = {},
-                    dismissContent = { Box(Modifier.fillMaxSize()) }
+                    dismissContent = { Box(Modifier.fillMaxSize()) },
                 )
             }
         }
@@ -233,7 +234,7 @@ class SwipeToDismissTest {
                     state = dismissState,
                     directions = setOf(DismissDirection.EndToStart),
                     background = {},
-                    dismissContent = { Box(Modifier.fillMaxSize()) }
+                    dismissContent = { Box(Modifier.fillMaxSize()) },
                 )
             }
         }
@@ -257,7 +258,7 @@ class SwipeToDismissTest {
                 state = dismissState,
                 directions = setOf(),
                 background = {},
-                dismissContent = { Box(Modifier.fillMaxSize()) }
+                dismissContent = { Box(Modifier.fillMaxSize()) },
             )
         }
 

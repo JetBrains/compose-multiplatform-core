@@ -33,6 +33,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -42,7 +43,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class AndroidAutoFillTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private var autofill: @Suppress("Deprecation") Autofill? = null
     private lateinit var autofillTree: @Suppress("Deprecation") AutofillTree
@@ -85,7 +86,7 @@ class AndroidAutoFillTest {
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += autofillNode
 
@@ -102,6 +103,7 @@ class AndroidAutoFillTest {
                         bounds = android.graphics.Rect(0, 0, 0, 0)
                         packageName = currentPackageName
                         virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                        dataIsSensitive = true
                     }
                     children.add(
                         FakeViewStructure().apply {
@@ -128,7 +130,7 @@ class AndroidAutoFillTest {
             AutofillNode(
                 onFill = { autoFilledValue = it },
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         val autofillValues =
             SparseArray<AutofillValue>().apply {

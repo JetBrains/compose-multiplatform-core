@@ -47,6 +47,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +55,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class SelectionHandlesTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val handleColor = Color.Black
     private val backgroundColor = Color.White
@@ -200,7 +201,7 @@ class SelectionHandlesTest {
         assertThat(
                 isHandleLtrDirection(
                     direction = ResolvedTextDirection.Ltr,
-                    areHandlesCrossed = false
+                    areHandlesCrossed = false,
                 )
             )
             .isTrue()
@@ -212,7 +213,7 @@ class SelectionHandlesTest {
         assertThat(
                 isHandleLtrDirection(
                     direction = ResolvedTextDirection.Ltr,
-                    areHandlesCrossed = true
+                    areHandlesCrossed = true,
                 )
             )
             .isFalse()
@@ -224,7 +225,7 @@ class SelectionHandlesTest {
         assertThat(
                 isHandleLtrDirection(
                     direction = ResolvedTextDirection.Rtl,
-                    areHandlesCrossed = false
+                    areHandlesCrossed = false,
                 )
             )
             .isFalse()
@@ -236,7 +237,7 @@ class SelectionHandlesTest {
         assertThat(
                 isHandleLtrDirection(
                     direction = ResolvedTextDirection.Rtl,
-                    areHandlesCrossed = true
+                    areHandlesCrossed = true,
                 )
             )
             .isTrue()

@@ -57,6 +57,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,7 +66,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CheckboxTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val defaultTag = "myCheckbox"
 
@@ -128,7 +129,7 @@ class CheckboxTest {
                     checked,
                     {},
                     enabled = false,
-                    modifier = Modifier.testTag(defaultTag).semantics { focused = true }
+                    modifier = Modifier.testTag(defaultTag).semantics { focused = true },
                 )
             }
         }
@@ -179,7 +180,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = true,
-            minimumTouchTarget = true
+            minimumTouchTarget = true,
         )
     }
 
@@ -188,7 +189,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = true,
-            minimumTouchTarget = false
+            minimumTouchTarget = false,
         )
     }
 
@@ -217,7 +218,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = false,
-            minimumTouchTarget = true
+            minimumTouchTarget = true,
         )
     }
 
@@ -226,7 +227,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = false,
-            minimumTouchTarget = false
+            minimumTouchTarget = false,
         )
     }
 
@@ -234,7 +235,7 @@ class CheckboxTest {
     private fun materialSizeTestForValue(
         checkboxValue: ToggleableState,
         clickable: Boolean,
-        minimumTouchTarget: Boolean
+        minimumTouchTarget: Boolean,
     ) {
         rule
             .setMaterialContentForSizeAssertions {
@@ -247,7 +248,7 @@ class CheckboxTest {
                             if (clickable) {
                                 {}
                             } else null,
-                        enabled = false
+                        enabled = false,
                     )
                 }
             }
@@ -271,7 +272,7 @@ class CheckboxTest {
                     TriStateCheckbox(
                         state = state,
                         onClick = { state = On },
-                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag)
+                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag),
                     )
                 }
             }

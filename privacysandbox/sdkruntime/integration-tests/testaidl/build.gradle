@@ -20,6 +20,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+dependencies {
+    api(libs.kotlinStdlib)
+}
+
 android {
     namespace = "androidx.privacysandbox.sdkruntime.integration.testaidl"
 

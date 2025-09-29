@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
@@ -42,6 +41,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Ignore
 import org.junit.Rule
@@ -50,10 +50,10 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class RadioButtonScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -172,7 +172,7 @@ class RadioButtonScreenshotTest {
                 RadioButton(
                     selected = false,
                     onClick = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
         }
@@ -196,7 +196,7 @@ class RadioButtonScreenshotTest {
                 RadioButton(
                     selected = false,
                     onClick = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
         }
@@ -256,7 +256,7 @@ class RadioButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 RadioButton(
                     selected = isSelected.value,
-                    onClick = { isSelected.value = !isSelected.value }
+                    onClick = { isSelected.value = !isSelected.value },
                 )
             }
         }
@@ -290,7 +290,7 @@ class RadioButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 RadioButton(
                     selected = isSelected.value,
-                    onClick = { isSelected.value = !isSelected.value }
+                    onClick = { isSelected.value = !isSelected.value },
                 )
             }
         }
@@ -324,7 +324,7 @@ class RadioButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 RadioButton(
                     selected = isSelected.value,
-                    onClick = { isSelected.value = !isSelected.value }
+                    onClick = { isSelected.value = !isSelected.value },
                 )
             }
         }
@@ -358,7 +358,7 @@ class RadioButtonScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 RadioButton(
                     selected = isSelected.value,
-                    onClick = { isSelected.value = !isSelected.value }
+                    onClick = { isSelected.value = !isSelected.value },
                 )
             }
         }

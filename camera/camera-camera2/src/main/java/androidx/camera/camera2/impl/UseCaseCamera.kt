@@ -1,0 +1,140 @@
+/*
+ * Copyright 2020 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.camera.camera2.impl
+
+import android.hardware.camera2.CameraDevice
+import androidx.camera.camera2.adapter.SessionConfigAdapter
+import androidx.camera.camera2.config.UseCaseCameraScope
+import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.core.Log.debug
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.UseCase
+import androidx.camera.core.imagecapture.CameraCapturePipeline
+import androidx.camera.core.impl.Config
+import dagger.Binds
+import dagger.Module
+import java.util.concurrent.CancellationException
+import javax.inject.Inject
+import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+
+internal val useCaseCameraIds = atomic(0)
+internal val defaultOptionPriority = Config.OptionPriority.OPTIONAL
+internal const val defaultTemplate = CameraDevice.TEMPLATE_PREVIEW
+
+@JvmDefaultWithCompatibility
+public interface UseCaseCamera {
+    // RequestControl of the UseCaseCamera
+    public val requestControl: UseCaseCameraRequestControl
+
+    public fun start()
+
+    public suspend fun getCameraCapturePipeline(
+        @ImageCapture.CaptureMode captureMode: Int,
+        @ImageCapture.FlashMode flashMode: Int,
+        @ImageCapture.FlashType flashType: Int,
+    ): CameraCapturePipeline
+
+    public fun setActiveResumeMode(enabled: Boolean) {}
+
+    // Lifecycle
+    public fun close(): Job
+}
+
+/** API for interacting with a [CameraGraph] that has been configured with a set of [UseCase]'s */
+@UseCaseCameraScope
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+// Java version required for Dagger
+public class UseCaseCameraImpl
+@Inject
+constructor(
+    private val useCaseGraphConfig: UseCaseGraphConfig,
+    private val useCases: java.util.ArrayList<UseCase>,
+    private val useCaseSurfaceManager: UseCaseSurfaceManager,
+    private val threads: UseCaseThreads,
+    private val sessionConfigAdapter: SessionConfigAdapter,
+    override val requestControl: UseCaseCameraRequestControl,
+    private val capturePipeline: CapturePipeline,
+) : UseCaseCamera {
+    private val debugId = useCaseCameraIds.incrementAndGet()
+    private val closed = atomic(false)
+
+    init {
+        debug { "Configured $this for $useCases" }
+    }
+
+    override fun start(): Unit =
+        with(useCaseGraphConfig) {
+            // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and
+            // we will close the CameraGraph when that happens, and we cannot start a closed
+            // CameraGraph.
+            graph.start()
+
+            debug { "Setting up Surfaces with UseCaseSurfaceManager" }
+            if (sessionConfigAdapter.isSessionConfigValid()) {
+                useCaseSurfaceManager
+                    .setupAsync(graph, sessionConfigAdapter, surfaceToStreamMap)
+                    .invokeOnCompletion { throwable ->
+                        // Only show logs for error cases, ignore CancellationException since the
+                        // task could be cancelled by UseCaseSurfaceManager#stopAsync().
+                        if (throwable != null && throwable !is CancellationException) {
+                            Log.error(throwable) { "Surface setup error!" }
+                        }
+                    }
+            } else {
+                Log.error { "Unable to create capture session due to conflicting configurations" }
+            }
+        }
+
+    override fun close(): Job {
+        return if (closed.compareAndSet(expect = false, update = true)) {
+            threads.scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                debug { "Closing $this" }
+                requestControl.close()
+                useCaseGraphConfig.graph.close()
+                useCaseSurfaceManager.stopAsync().await()
+            }
+        } else {
+            CompletableDeferred(Unit)
+        }
+    }
+
+    override fun setActiveResumeMode(enabled: Boolean) {
+        useCaseGraphConfig.graph.isForeground = enabled
+    }
+
+    override fun toString(): String = "UseCaseCamera-$debugId"
+
+    override suspend fun getCameraCapturePipeline(
+        @ImageCapture.CaptureMode captureMode: Int,
+        @ImageCapture.FlashMode flashMode: Int,
+        @ImageCapture.FlashType flashType: Int,
+    ): CameraCapturePipeline =
+        capturePipeline.getCameraCapturePipeline(captureMode, flashMode, flashType)
+
+    @Module
+    public abstract class Bindings {
+        @UseCaseCameraScope
+        @Binds
+        public abstract fun provideUseCaseCamera(useCaseCamera: UseCaseCameraImpl): UseCaseCamera
+    }
+}

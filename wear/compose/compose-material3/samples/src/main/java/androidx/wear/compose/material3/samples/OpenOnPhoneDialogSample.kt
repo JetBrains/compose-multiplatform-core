@@ -26,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.OpenOnPhoneDialog
 import androidx.wear.compose.material3.OpenOnPhoneDialogDefaults
@@ -38,22 +37,19 @@ import androidx.wear.compose.material3.openOnPhoneDialogCurvedText
 fun OpenOnPhoneDialogSample() {
     var showConfirmation by remember { mutableStateOf(false) }
 
-    // Use AppScaffold to improve OpenOnPhoneDialog's Performance
-    AppScaffold {
-        Box(Modifier.fillMaxSize()) {
-            FilledTonalButton(
-                modifier = Modifier.align(Alignment.Center),
-                onClick = { showConfirmation = true },
-                label = { Text("Open on phone") }
-            )
-        }
-
-        val text = OpenOnPhoneDialogDefaults.text
-        val style = OpenOnPhoneDialogDefaults.curvedTextStyle
-        OpenOnPhoneDialog(
-            visible = showConfirmation,
-            onDismissRequest = { showConfirmation = false },
-            curvedText = { openOnPhoneDialogCurvedText(text = text, style = style) }
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showConfirmation = true },
+            label = { Text("Open on phone") },
         )
     }
+
+    val text = OpenOnPhoneDialogDefaults.text
+    val style = OpenOnPhoneDialogDefaults.curvedTextStyle
+    OpenOnPhoneDialog(
+        visible = showConfirmation,
+        onDismissRequest = { showConfirmation = false },
+        curvedText = { openOnPhoneDialogCurvedText(text = text, style = style) },
+    )
 }

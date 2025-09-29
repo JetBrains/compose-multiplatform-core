@@ -31,6 +31,7 @@ import androidx.ink.brush.BrushPaint.TextureWrap
 import androidx.ink.brush.BrushTip
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
+import androidx.ink.brush.SelfOverlap
 import androidx.ink.brush.StockBrushes
 import androidx.ink.geometry.Angle
 import androidx.ink.rendering.test.R
@@ -43,13 +44,16 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
+import kotlin.math.PI
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Emulator-based screenshot test of [CanvasStrokeRenderer] for Stroke and InProgressStroke. */
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalInkCustomBrushApi::class)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -69,7 +73,7 @@ class CanvasStrokeRendererTest {
                         "Solid",
                         finishedInProgressStroke(
                             brush(color = TestColors.AVOCADO_GREEN),
-                            INPUTS_ZIGZAG
+                            INPUTS_ZIGZAG,
                         ),
                     ),
                     Pair(
@@ -182,7 +186,7 @@ class CanvasStrokeRendererTest {
                         finishedInProgressStroke(
                             brush(
                                 BrushFamily(BrushTip(particleGapDistanceScale = 2f)),
-                                TestColors.RED
+                                TestColors.RED,
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -210,13 +214,13 @@ class CanvasStrokeRendererTest {
                         ),
                     ),
                     Pair(
-                        "Winding",
+                        "Stamping",
                         finishedInProgressStroke(
                             texturedBrush(
                                 particleGapDistanceScale = 2f,
                                 textureSizeUnit = TextureSizeUnit.BRUSH_SIZE,
                                 textureSize = 1f,
-                                textureMapping = TextureMapping.WINDING,
+                                textureMapping = TextureMapping.STAMPING,
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -236,7 +240,7 @@ class CanvasStrokeRendererTest {
                         "STROKE_SPACE_ORIGIN",
                         finishedInProgressStroke(
                             texturedBrush(
-                                textureUri = CanvasStrokeRendererTestActivity.TEXTURE_URI_CIRCLE,
+                                textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_CIRCLE,
                                 textureSize = 1f,
                                 textureSizeUnit = TextureSizeUnit.BRUSH_SIZE,
                                 textureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
@@ -251,7 +255,7 @@ class CanvasStrokeRendererTest {
                         "FIRST_STROKE_INPUT",
                         finishedInProgressStroke(
                             texturedBrush(
-                                textureUri = CanvasStrokeRendererTestActivity.TEXTURE_URI_CIRCLE,
+                                textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_CIRCLE,
                                 textureSize = 1f,
                                 textureSizeUnit = TextureSizeUnit.BRUSH_SIZE,
                                 textureOrigin = TextureOrigin.FIRST_STROKE_INPUT,
@@ -266,7 +270,7 @@ class CanvasStrokeRendererTest {
                         "LAST_STROKE_INPUT",
                         finishedInProgressStroke(
                             texturedBrush(
-                                textureUri = CanvasStrokeRendererTestActivity.TEXTURE_URI_CIRCLE,
+                                textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_CIRCLE,
                                 textureSize = 1f,
                                 textureSizeUnit = TextureSizeUnit.BRUSH_SIZE,
                                 textureOrigin = TextureOrigin.LAST_STROKE_INPUT,
@@ -346,7 +350,7 @@ class CanvasStrokeRendererTest {
                         finishedInProgressStroke(
                             texturedBrush(
                                 textureSize = 5f,
-                                textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES
+                                textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -644,6 +648,163 @@ class CanvasStrokeRendererTest {
         assertScreenshot("TextureOffset")
     }
 
+    @Test
+    fun supportsTextureRotation() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.addStrokeRows(
+                listOf(
+                    Pair(
+                        """
+              offsetX=0.0
+              offsetY=0.0
+              rotation=45
+            """
+                            .trimIndent(),
+                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.0f, rotation = 45f),
+                    ),
+                    Pair(
+                        """
+              offsetX=0.5
+              offsetY=0.0
+              rotation=45
+            """
+                            .trimIndent(),
+                        textureRotationStroke(offsetX = 0.5f, offsetY = 0.0f, rotation = 45f),
+                    ),
+                    Pair(
+                        """
+              offsetX=0.0
+              offsetY=0.0
+              rotation=180
+            """
+                            .trimIndent(),
+                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.0f, rotation = 180f),
+                    ),
+                    Pair(
+                        """
+              offsetX=0.0
+              offsetY=0.5
+              rotation=180
+            """
+                            .trimIndent(),
+                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.5f, rotation = 180f),
+                    ),
+                )
+            )
+        }
+        assertScreenshot("TextureRotation")
+    }
+
+    @Test
+    fun paintPreferences() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.addStrokeRows(
+                listOf(
+                    Pair(
+                        """
+              Texture=none
+              SelfOverlap=any
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = null,
+                            selfOverlap = SelfOverlap.ANY,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=none
+              SelfOverlap=accumulate
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = null,
+                            selfOverlap = SelfOverlap.ACCUMULATE,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=none
+              SelfOverlap=discard
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = null,
+                            selfOverlap = SelfOverlap.DISCARD,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=tiled
+              SelfOverlap=any
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.TILING,
+                            selfOverlap = SelfOverlap.ANY,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=tiled
+              SelfOverlap=accumulate
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.TILING,
+                            selfOverlap = SelfOverlap.ACCUMULATE,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=tiled
+              SelfOverlap=discard
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.TILING,
+                            selfOverlap = SelfOverlap.DISCARD,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=stamped
+              SelfOverlap=any
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.STAMPING,
+                            selfOverlap = SelfOverlap.ANY,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=stamped
+              SelfOverlap=accumulate
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.STAMPING,
+                            selfOverlap = SelfOverlap.ACCUMULATE,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=stamped
+              SelfOverlap=discard
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.STAMPING,
+                            selfOverlap = SelfOverlap.DISCARD,
+                        ),
+                    ),
+                )
+            )
+        }
+        assertScreenshot("PaintPreferences")
+    }
+
     private fun assertScreenshot(filename: String) {
         onView(withId(R.id.stroke_grid))
             .perform(
@@ -658,48 +819,48 @@ class CanvasStrokeRendererTest {
 
         val INPUTS_ZIGZAG =
             MutableStrokeInputBatch()
-                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
-                .addOrThrow(InputToolType.UNKNOWN, x = 13F, y = 13F, elapsedTimeMillis = 117)
-                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 27F, elapsedTimeMillis = 133)
-                .addOrThrow(InputToolType.UNKNOWN, x = 40F, y = 40F, elapsedTimeMillis = 150)
-                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 50F, elapsedTimeMillis = 167)
-                .addOrThrow(InputToolType.UNKNOWN, x = 13F, y = 60F, elapsedTimeMillis = 183)
-                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 70F, elapsedTimeMillis = 200)
-                .addOrThrow(InputToolType.UNKNOWN, x = 10F, y = 80F, elapsedTimeMillis = 217)
-                .addOrThrow(InputToolType.UNKNOWN, x = 20F, y = 90F, elapsedTimeMillis = 233)
-                .addOrThrow(InputToolType.UNKNOWN, x = 30F, y = 100F, elapsedTimeMillis = 250)
-                .asImmutable()
+                .add(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
+                .add(InputToolType.UNKNOWN, x = 13F, y = 13F, elapsedTimeMillis = 117)
+                .add(InputToolType.UNKNOWN, x = 27F, y = 27F, elapsedTimeMillis = 133)
+                .add(InputToolType.UNKNOWN, x = 40F, y = 40F, elapsedTimeMillis = 150)
+                .add(InputToolType.UNKNOWN, x = 27F, y = 50F, elapsedTimeMillis = 167)
+                .add(InputToolType.UNKNOWN, x = 13F, y = 60F, elapsedTimeMillis = 183)
+                .add(InputToolType.UNKNOWN, x = 0F, y = 70F, elapsedTimeMillis = 200)
+                .add(InputToolType.UNKNOWN, x = 10F, y = 80F, elapsedTimeMillis = 217)
+                .add(InputToolType.UNKNOWN, x = 20F, y = 90F, elapsedTimeMillis = 233)
+                .add(InputToolType.UNKNOWN, x = 30F, y = 100F, elapsedTimeMillis = 250)
+                .toImmutable()
 
         val INPUTS_ZAGZIG =
             MutableStrokeInputBatch()
-                .addOrThrow(InputToolType.UNKNOWN, x = 30F, y = 0F, elapsedTimeMillis = 100)
-                .addOrThrow(InputToolType.UNKNOWN, x = 20F, y = 13F, elapsedTimeMillis = 117)
-                .addOrThrow(InputToolType.UNKNOWN, x = 10F, y = 27F, elapsedTimeMillis = 133)
-                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 40F, elapsedTimeMillis = 150)
-                .addOrThrow(InputToolType.UNKNOWN, x = 13F, y = 50F, elapsedTimeMillis = 167)
-                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 60F, elapsedTimeMillis = 183)
-                .addOrThrow(InputToolType.UNKNOWN, x = 40F, y = 70F, elapsedTimeMillis = 200)
-                .addOrThrow(InputToolType.UNKNOWN, x = 28F, y = 77F, elapsedTimeMillis = 217)
-                .addOrThrow(InputToolType.UNKNOWN, x = 17F, y = 83F, elapsedTimeMillis = 233)
-                .addOrThrow(InputToolType.UNKNOWN, x = 5F, y = 90F, elapsedTimeMillis = 250)
-                .asImmutable()
+                .add(InputToolType.UNKNOWN, x = 30F, y = 0F, elapsedTimeMillis = 100)
+                .add(InputToolType.UNKNOWN, x = 20F, y = 13F, elapsedTimeMillis = 117)
+                .add(InputToolType.UNKNOWN, x = 10F, y = 27F, elapsedTimeMillis = 133)
+                .add(InputToolType.UNKNOWN, x = 0F, y = 40F, elapsedTimeMillis = 150)
+                .add(InputToolType.UNKNOWN, x = 13F, y = 50F, elapsedTimeMillis = 167)
+                .add(InputToolType.UNKNOWN, x = 27F, y = 60F, elapsedTimeMillis = 183)
+                .add(InputToolType.UNKNOWN, x = 40F, y = 70F, elapsedTimeMillis = 200)
+                .add(InputToolType.UNKNOWN, x = 28F, y = 77F, elapsedTimeMillis = 217)
+                .add(InputToolType.UNKNOWN, x = 17F, y = 83F, elapsedTimeMillis = 233)
+                .add(InputToolType.UNKNOWN, x = 5F, y = 90F, elapsedTimeMillis = 250)
+                .toImmutable()
 
         val INPUTS_TWIST =
             MutableStrokeInputBatch()
-                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
-                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 33F, elapsedTimeMillis = 117)
-                .addOrThrow(InputToolType.UNKNOWN, x = 53F, y = 67F, elapsedTimeMillis = 133)
-                .addOrThrow(InputToolType.UNKNOWN, x = 80F, y = 100F, elapsedTimeMillis = 150)
-                .addOrThrow(InputToolType.UNKNOWN, x = 53F, y = 100F, elapsedTimeMillis = 167)
-                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 100F, elapsedTimeMillis = 183)
-                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 100F, elapsedTimeMillis = 200)
-                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 67F, elapsedTimeMillis = 217)
-                .addOrThrow(InputToolType.UNKNOWN, x = 53F, y = 33F, elapsedTimeMillis = 233)
-                .addOrThrow(InputToolType.UNKNOWN, x = 80F, y = 0F, elapsedTimeMillis = 250)
-                .asImmutable()
+                .add(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
+                .add(InputToolType.UNKNOWN, x = 27F, y = 33F, elapsedTimeMillis = 117)
+                .add(InputToolType.UNKNOWN, x = 53F, y = 67F, elapsedTimeMillis = 133)
+                .add(InputToolType.UNKNOWN, x = 80F, y = 100F, elapsedTimeMillis = 150)
+                .add(InputToolType.UNKNOWN, x = 53F, y = 100F, elapsedTimeMillis = 167)
+                .add(InputToolType.UNKNOWN, x = 27F, y = 100F, elapsedTimeMillis = 183)
+                .add(InputToolType.UNKNOWN, x = 0F, y = 100F, elapsedTimeMillis = 200)
+                .add(InputToolType.UNKNOWN, x = 27F, y = 67F, elapsedTimeMillis = 217)
+                .add(InputToolType.UNKNOWN, x = 53F, y = 33F, elapsedTimeMillis = 233)
+                .add(InputToolType.UNKNOWN, x = 80F, y = 0F, elapsedTimeMillis = 250)
+                .toImmutable()
 
         fun brush(
-            family: BrushFamily = StockBrushes.markerLatest,
+            family: BrushFamily = StockBrushes.marker(),
             @ColorInt color: Int = TestColors.BLACK,
             size: Float = 15F,
             epsilon: Float = 0.1F,
@@ -707,12 +868,13 @@ class CanvasStrokeRendererTest {
 
         fun texturedBrush(
             particleGapDistanceScale: Float = 0f,
-            textureUri: String = CanvasStrokeRendererTestActivity.TEXTURE_URI_CHECKERBOARD,
+            textureId: String = CanvasStrokeRendererTestActivity.TEXTURE_ID_CHECKERBOARD,
             textureSizeUnit: TextureSizeUnit,
             textureSize: Float,
             textureOrigin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             textureOffsetX: Float = 0f,
             textureOffsetY: Float = 0f,
+            textureRotationDegrees: Float = 0f,
             textureMapping: TextureMapping = TextureMapping.TILING,
             textureWrapX: TextureWrap = TextureWrap.REPEAT,
             textureWrapY: TextureWrap = TextureWrap.REPEAT,
@@ -723,7 +885,7 @@ class CanvasStrokeRendererTest {
             val tip = BrushTip(particleGapDistanceScale = particleGapDistanceScale)
             val paint =
                 texturedBrushPaint(
-                    textureUri = textureUri,
+                    textureId = textureId,
                     textureWrapX = textureWrapX,
                     textureWrapY = textureWrapY,
                     textureSizeUnit = textureSizeUnit,
@@ -731,6 +893,7 @@ class CanvasStrokeRendererTest {
                     textureOrigin = textureOrigin,
                     textureOffsetX = textureOffsetX,
                     textureOffsetY = textureOffsetY,
+                    textureRotationDegrees = textureRotationDegrees,
                     textureMapping = textureMapping,
                 )
             return brush(
@@ -741,23 +904,25 @@ class CanvasStrokeRendererTest {
         }
 
         fun texturedBrushPaint(
-            textureUri: String = CanvasStrokeRendererTestActivity.TEXTURE_URI_CHECKERBOARD,
+            textureId: String = CanvasStrokeRendererTestActivity.TEXTURE_ID_CHECKERBOARD,
             textureSizeUnit: TextureSizeUnit,
             textureSize: Float,
             textureOrigin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             textureOffsetX: Float = 0f,
             textureOffsetY: Float = 0f,
+            textureRotationDegrees: Float = 0f,
             textureMapping: TextureMapping = TextureMapping.TILING,
             textureWrapX: TextureWrap = TextureWrap.REPEAT,
             textureWrapY: TextureWrap = TextureWrap.REPEAT,
         ): BrushPaint {
             val textureLayer =
                 BrushPaint.TextureLayer(
-                    colorTextureUri = textureUri,
+                    clientTextureId = textureId,
                     sizeX = textureSize,
                     sizeY = textureSize,
                     offsetX = textureOffsetX,
                     offsetY = textureOffsetY,
+                    rotationDegrees = textureRotationDegrees,
                     sizeUnit = textureSizeUnit,
                     origin = textureOrigin,
                     mapping = textureMapping,
@@ -779,18 +944,36 @@ class CanvasStrokeRendererTest {
                 INPUTS_ZIGZAG,
             )
 
+        fun textureRotationStroke(
+            offsetX: Float,
+            offsetY: Float,
+            rotation: Float,
+        ): InProgressStroke =
+            finishedInProgressStroke(
+                texturedBrush(
+                    textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_AIRPLANE_EMOJI,
+                    textureSize = 30f,
+                    textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
+                    textureOffsetX = offsetX,
+                    textureOffsetY = offsetY,
+                    textureRotationDegrees = rotation,
+                    brushSize = 30f,
+                ),
+                INPUTS_ZIGZAG,
+            )
+
         fun finishedInProgressStroke(brush: Brush, inputs: ImmutableStrokeInputBatch) =
             InProgressStroke().apply {
                 start(brush)
-                enqueueInputs(inputs, NO_PREDICTION).getOrThrow()
+                enqueueInputs(inputs, NO_PREDICTION)
                 finishInput()
-                updateShape(inputs.getDurationMillis()).getOrThrow()
+                updateShape(inputs.getDurationMillis())
             }
 
         fun colorBlendedStroke(blendMode: BlendMode, @ColorInt color: Int): InProgressStroke {
             val textureLayer =
                 BrushPaint.TextureLayer(
-                    CanvasStrokeRendererTestActivity.TEXTURE_URI_POOP_EMOJI,
+                    CanvasStrokeRendererTestActivity.TEXTURE_ID_POOP_EMOJI,
                     sizeX = 1f,
                     sizeY = 1f,
                     sizeUnit = TextureSizeUnit.BRUSH_SIZE,
@@ -804,7 +987,7 @@ class CanvasStrokeRendererTest {
         fun textureBlendedStroke(blendMode: BlendMode): InProgressStroke {
             val textureLayer1 =
                 BrushPaint.TextureLayer(
-                    CanvasStrokeRendererTestActivity.TEXTURE_URI_AIRPLANE_EMOJI,
+                    CanvasStrokeRendererTestActivity.TEXTURE_ID_AIRPLANE_EMOJI,
                     sizeX = 1f,
                     sizeY = 1f,
                     sizeUnit = TextureSizeUnit.BRUSH_SIZE,
@@ -812,7 +995,7 @@ class CanvasStrokeRendererTest {
                 )
             val textureLayer2 =
                 BrushPaint.TextureLayer(
-                    CanvasStrokeRendererTestActivity.TEXTURE_URI_POOP_EMOJI,
+                    CanvasStrokeRendererTestActivity.TEXTURE_ID_POOP_EMOJI,
                     sizeX = 1f,
                     sizeY = 1f,
                     sizeUnit = TextureSizeUnit.BRUSH_SIZE,
@@ -820,6 +1003,57 @@ class CanvasStrokeRendererTest {
             val paint = BrushPaint(listOf(textureLayer1, textureLayer2))
             val brush = brush(BrushFamily(paint = paint), color = TestColors.WHITE, size = 40f)
             return finishedInProgressStroke(brush, INPUTS_ZIGZAG)
+        }
+
+        fun textureMappingAndSelfOverlapStroke(
+            textureMapping: TextureMapping?,
+            selfOverlap: SelfOverlap,
+        ): InProgressStroke {
+            val textureLayers = buildList {
+                if (textureMapping != null) {
+                    add(
+                        BrushPaint.TextureLayer(
+                            CanvasStrokeRendererTestActivity.TEXTURE_ID_POOP_EMOJI,
+                            mapping = textureMapping,
+                            sizeX = 1f,
+                            sizeY = 1f,
+                            sizeUnit = TextureSizeUnit.BRUSH_SIZE,
+                        )
+                    )
+                }
+            }
+            val paint = BrushPaint(textureLayers = textureLayers, selfOverlap = selfOverlap)
+            val tip =
+                BrushTip(
+                    cornerRounding = 0.2f,
+                    particleGapDistanceScale = 1.5f,
+                    behaviors =
+                        listOf(
+                            BrushBehavior(
+                                terminalNodes =
+                                    listOf(
+                                        BrushBehavior.TargetNode(
+                                            target =
+                                                BrushBehavior.Target.ROTATION_OFFSET_IN_RADIANS,
+                                            targetModifierRangeStart = -PI.toFloat(),
+                                            targetModifierRangeEnd = PI.toFloat(),
+                                            input =
+                                                BrushBehavior.SourceNode(
+                                                    source =
+                                                        BrushBehavior.Source
+                                                            .DIRECTION_ABOUT_ZERO_IN_RADIANS,
+                                                    sourceValueRangeStart = -PI.toFloat(),
+                                                    sourceValueRangeEnd = PI.toFloat(),
+                                                    sourceOutOfRangeBehavior =
+                                                        BrushBehavior.OutOfRange.REPEAT,
+                                                ),
+                                        )
+                                    )
+                            )
+                        ),
+                )
+            val brush = brush(family = BrushFamily(tip, paint), color = 0x7733fc66)
+            return finishedInProgressStroke(brush, INPUTS_TWIST)
         }
 
         @ColorInt

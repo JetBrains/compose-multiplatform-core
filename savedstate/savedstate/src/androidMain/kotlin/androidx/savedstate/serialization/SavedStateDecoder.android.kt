@@ -24,7 +24,16 @@ import androidx.savedstate.serialization.serializers.DefaultParcelableSerializer
 import androidx.savedstate.serialization.serializers.IBinderSerializer
 import androidx.savedstate.serialization.serializers.ParcelableArraySerializer
 import androidx.savedstate.serialization.serializers.ParcelableListSerializer
+import androidx.savedstate.serialization.serializers.SparseParcelableArraySerializer
+import java.util.Arrays
+import kotlin.reflect.KClass
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.AbstractDecoder
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
 
 @Suppress("UNCHECKED_CAST", "IMPLICIT_CAST_TO_ANY")
 internal actual fun <T> SavedStateDecoder.decodeFormatSpecificTypesOnPlatform(
@@ -35,11 +44,45 @@ internal actual fun <T> SavedStateDecoder.decodeFormatSpecificTypesOnPlatform(
         polymorphicParcelableDescriptor -> DefaultParcelableSerializer.deserialize(this)
         polymorphicJavaSerializableDescriptor -> DefaultJavaSerializableSerializer.deserialize(this)
         polymorphicIBinderDescriptor -> IBinderSerializer.deserialize(this)
-        parcelableArrayDescriptor -> ParcelableArraySerializer.deserialize(this)
-        parcelableListDescriptor -> ParcelableListSerializer.deserialize(this)
-        charSequenceArrayDescriptor -> CharSequenceArraySerializer.deserialize(this)
-        charSequenceListDescriptor -> CharSequenceListSerializer.deserialize(this)
+        charSequenceArrayDescriptor,
+        polymorphicCharSequenceArrayDescriptor -> CharSequenceArraySerializer.deserialize(this)
+        charSequenceListDescriptor,
+        polymorphicCharSequenceListDescriptor -> CharSequenceListSerializer.deserialize(this)
+        parcelableArrayDescriptor -> {
+            val parcelableArr = ParcelableArraySerializer.deserialize(this)
+            val arrayKClass = getArrayKClass(strategy)
+            Arrays.copyOf(parcelableArr, parcelableArr.size, arrayKClass.java)
+        }
+        polymorphicParcelableArrayDescriptor -> ParcelableArraySerializer.deserialize(this)
+        parcelableListDescriptor,
+        polymorphicParcelableListDescriptor -> ParcelableListSerializer.deserialize(this)
+        sparseParcelableArrayDescriptor,
+        polymorphicSparseParcelableArrayDescriptor,
+        nullablePolymorphicSparseParcelableArrayDescriptor ->
+            SparseParcelableArraySerializer.deserialize(this)
         else -> null
     }
         as T?
+}
+
+// Get the array class with the element class captured by a
+// `kotlinx.serialization.internal.ReferenceArraySerializer`, e.g. it returns
+// `Array<MyParcelable>::class` if the captured class is `MyParcelable::class`.
+private fun getArrayKClass(
+    referenceArraySerializer: DeserializationStrategy<*>
+): KClass<Array<out Any?>> {
+    @Suppress("UNCHECKED_CAST")
+    return referenceArraySerializer.deserialize(EmptyArrayDecoder)!!::class
+        as KClass<Array<out Any?>>
+}
+
+// Used with `kotlinx.serialization.internal.ReferenceArraySerializer.deserialize()` to create an
+// empty array.
+@OptIn(ExperimentalSerializationApi::class)
+private object EmptyArrayDecoder : AbstractDecoder() {
+    override val serializersModule: SerializersModule = EmptySerializersModule()
+
+    override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
+        return CompositeDecoder.DECODE_DONE
+    }
 }

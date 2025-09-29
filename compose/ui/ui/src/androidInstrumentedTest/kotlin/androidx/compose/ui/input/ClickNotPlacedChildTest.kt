@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -40,7 +41,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ClickNotPlacedChildTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -53,7 +54,7 @@ class ClickNotPlacedChildTest {
                     Box(Modifier.fillMaxSize().clickable { firstClickedTimes++ })
                     Box(Modifier.fillMaxSize().clickable { secondClickedTimes++ })
                 },
-                modifier = Modifier.requiredSize(100.dp).testTag("parent")
+                modifier = Modifier.requiredSize(100.dp).testTag("parent"),
             ) { measutables, constraints ->
                 val first = measutables[0].measure(constraints)
                 measutables[1].measure(constraints)

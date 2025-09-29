@@ -30,9 +30,6 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     namespace = "androidx.car.app.sample.showcase.common"
 }
 
@@ -45,5 +42,3 @@ dependencies {
     implementation("androidx.core:core:1.7.0")
     implementation(project(":annotation:annotation-experimental"))
 }
-
-

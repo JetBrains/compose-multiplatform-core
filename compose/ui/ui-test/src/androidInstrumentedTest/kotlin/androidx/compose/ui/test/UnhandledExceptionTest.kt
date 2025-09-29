@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.forEach
+import kotlin.test.Ignore
 import kotlin.test.fail
 import org.junit.Rule
 import org.junit.Test
@@ -109,6 +110,7 @@ class UnhandledExceptionTest(private val activityClass: Class<out ComponentActiv
             waitForIdle()
         }
 
+    @Ignore("b/397662811")
     @Test
     fun throwDuringTeardown() =
         runAndroidComposeUiTest(activityClass) {

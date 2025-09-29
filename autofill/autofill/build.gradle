@@ -26,12 +26,13 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(libs.jspecify)
     implementation("androidx.core:core:1.1.0")
+    implementation(libs.kotlinStdlib)
 
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)

@@ -29,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.wear.compose.integration.demos.common.ComposableDemo
-import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ConfirmationDialog
 import androidx.wear.compose.material3.ConfirmationDialogDefaults
 import androidx.wear.compose.material3.FilledTonalButton
@@ -56,28 +55,25 @@ val ComfirmationDialogDemos =
 fun ConfirmationWithoutText() {
     var showConfirmation by remember { mutableStateOf(false) }
 
-    // Use AppScaffold to improve ConfirmationDialog's Performance
-    AppScaffold {
-        Box(Modifier.fillMaxSize()) {
-            FilledTonalButton(
-                modifier = Modifier.align(Alignment.Center),
-                onClick = { showConfirmation = true },
-                label = { Text("Show Confirmation") }
-            )
-        }
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showConfirmation = true },
+            label = { Text("Show Confirmation") },
+        )
+    }
 
-        ConfirmationDialog(
-            visible = showConfirmation,
-            onDismissRequest = { showConfirmation = false },
-            curvedText = null
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = null,
-                modifier = Modifier.size(ConfirmationDialogDefaults.IconSize),
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
+    ConfirmationDialog(
+        visible = showConfirmation,
+        onDismissRequest = { showConfirmation = false },
+        curvedText = null,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = null,
+            modifier = Modifier.size(ConfirmationDialogDefaults.IconSize),
+            tint = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 
@@ -85,33 +81,30 @@ fun ConfirmationWithoutText() {
 fun ConfirmationWithCustomColors() {
     var showConfirmation by remember { mutableStateOf(false) }
 
-    // Use AppScaffold to improve ConfirmationDialog's Performance
-    AppScaffold {
-        Box(Modifier.fillMaxSize()) {
-            FilledTonalButton(
-                modifier = Modifier.align(Alignment.Center),
-                onClick = { showConfirmation = true },
-                label = { Text("Show Confirmation") }
-            )
-        }
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showConfirmation = true },
+            label = { Text("Show Confirmation") },
+        )
+    }
 
-        val curvedTextStyle = ConfirmationDialogDefaults.curvedTextStyle
-        ConfirmationDialog(
-            visible = showConfirmation,
-            onDismissRequest = { showConfirmation = false },
-            colors =
-                ConfirmationDialogDefaults.colors(
-                    iconColor = MaterialTheme.colorScheme.tertiary,
-                    iconContainerColor = MaterialTheme.colorScheme.onTertiary,
-                    textColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-            curvedText = { confirmationDialogCurvedText("Custom confirmation", curvedTextStyle) }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = null,
-                modifier = Modifier.size(ConfirmationDialogDefaults.IconSize),
-            )
-        }
+    val curvedTextStyle = ConfirmationDialogDefaults.curvedTextStyle
+    ConfirmationDialog(
+        visible = showConfirmation,
+        onDismissRequest = { showConfirmation = false },
+        colors =
+            ConfirmationDialogDefaults.colors(
+                iconColor = MaterialTheme.colorScheme.tertiary,
+                iconContainerColor = MaterialTheme.colorScheme.onTertiary,
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        curvedText = { confirmationDialogCurvedText("Custom confirmation", curvedTextStyle) },
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = null,
+            modifier = Modifier.size(ConfirmationDialogDefaults.IconSize),
+        )
     }
 }

@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":camera:camera-camera2"))
     implementation(project(":camera:camera-lifecycle"))
     implementation(project(":camera:camera-view"))
+    implementation(project(":concurrent:concurrent-futures-ktx"))
     compileOnly(project(":annotation:annotation-sampled"))
 }
 

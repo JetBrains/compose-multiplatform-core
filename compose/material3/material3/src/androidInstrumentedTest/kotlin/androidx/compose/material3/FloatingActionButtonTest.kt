@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
@@ -80,6 +81,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,7 +90,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FloatingActionButtonTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun fabDefaultSemantics() {
@@ -181,7 +183,7 @@ class FloatingActionButtonTest {
                         null,
                         modifier =
                             Modifier.size(FloatingActionButtonDefaults.LargeIconSize)
-                                .testTag("icon")
+                                .testTag("icon"),
                     )
                 }
             }
@@ -200,7 +202,7 @@ class FloatingActionButtonTest {
                 modifier = Modifier.testTag("FAB"),
                 text = { Text("Extended FAB Text") },
                 icon = { Icon(Icons.Filled.Favorite, null) },
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -246,7 +248,7 @@ class FloatingActionButtonTest {
                         fontSize = it.layoutInput.style.fontSize
                         lineHeight = it.layoutInput.style.lineHeight
                         letterSpacing = it.layoutInput.style.letterSpacing
-                    }
+                    },
                 )
             }
             expectedTextStyle = ExtendedFabPrimaryTokens.LabelTextFont.value
@@ -279,7 +281,7 @@ class FloatingActionButtonTest {
                         fontSize = it.layoutInput.style.fontSize
                         lineHeight = it.layoutInput.style.lineHeight
                         letterSpacing = it.layoutInput.style.letterSpacing
-                    }
+                    },
                 )
             }
             expectedTextStyle = ExtendedFabPrimaryTokens.LabelTextFont.value
@@ -310,7 +312,7 @@ class FloatingActionButtonTest {
                     modifier =
                         Modifier.weight(1f).onGloballyPositioned {
                             buttonBounds = it.boundsInRoot()
-                        }
+                        },
                 ) {
                     Text("Button")
                 }
@@ -391,7 +393,7 @@ class FloatingActionButtonTest {
                         Box(Modifier.size(10.dp).onGloballyPositioned { iconCoordinates = it })
                     },
                     onClick = {},
-                    modifier = Modifier.onGloballyPositioned { buttonCoordinates = it }
+                    modifier = Modifier.onGloballyPositioned { buttonCoordinates = it },
                 )
             }
         }
@@ -416,7 +418,7 @@ class FloatingActionButtonTest {
                 val halfPadding = 6.dp.roundToPx().toFloat()
                 assertWithinOnePixel(
                     iconBounds.center.x + iconBounds.width / 2 + halfPadding,
-                    textBounds.center.x - textBounds.width / 2 - halfPadding
+                    textBounds.center.x - textBounds.width / 2 - halfPadding,
                 )
                 // Assert that text and icon have 12.dp padding between them.
                 assertThat(textBounds.left - iconBounds.right)
@@ -431,13 +433,7 @@ class FloatingActionButtonTest {
             ExtendedFloatingActionButton(
                 expanded = true,
                 onClick = {},
-                icon = {
-                    Icon(
-                        Icons.Filled.Favorite,
-                        "Add",
-                        modifier = Modifier.testTag("icon"),
-                    )
-                },
+                icon = { Icon(Icons.Filled.Favorite, "Add", modifier = Modifier.testTag("icon")) },
                 text = { Text(text = "FAB", modifier = Modifier.testTag("text")) },
                 modifier = Modifier.testTag("FAB"),
             )
@@ -555,7 +551,7 @@ class FloatingActionButtonTest {
                         "Add",
                         modifier =
                             Modifier.size(FloatingActionButtonDefaults.LargeIconSize)
-                                .testTag("icon")
+                                .testTag("icon"),
                     )
                 },
                 text = { Text(text = "FAB", modifier = Modifier.testTag("text")) },
@@ -590,7 +586,7 @@ class FloatingActionButtonTest {
                         "Add",
                         modifier =
                             Modifier.size(FloatingActionButtonDefaults.LargeIconSize)
-                                .testTag("icon")
+                                .testTag("icon"),
                     )
                 },
                 text = { Text(text = "FAB", modifier = Modifier.testTag("text")) },
@@ -626,7 +622,7 @@ class FloatingActionButtonTest {
                     defaultElevation = defaultElevation,
                     pressedElevation = pressedElevation,
                     hoveredElevation = hoveredElevation,
-                    focusedElevation = focusedElevation
+                    focusedElevation = focusedElevation,
                 )
 
             tonalElevation = fabElevation.tonalElevation()
@@ -662,7 +658,7 @@ class FloatingActionButtonTest {
                     defaultElevation = defaultElevation,
                     pressedElevation = pressedElevation,
                     hoveredElevation = hoveredElevation,
-                    focusedElevation = focusedElevation
+                    focusedElevation = focusedElevation,
                 )
 
             tonalElevation = fabElevation.tonalElevation()
@@ -698,7 +694,7 @@ class FloatingActionButtonTest {
                     defaultElevation = defaultElevation,
                     pressedElevation = pressedElevation,
                     hoveredElevation = hoveredElevation,
-                    focusedElevation = focusedElevation
+                    focusedElevation = focusedElevation,
                 )
 
             tonalElevation = fabElevation.tonalElevation()
@@ -748,7 +744,7 @@ class FloatingActionButtonTest {
                                 alignment = Alignment.BottomEnd,
                                 targetScale = 0.2f,
                                 scaleAnimationSpec = tween(100, easing = LinearEasing),
-                                alphaAnimationSpec = tween(100, easing = LinearEasing)
+                                alphaAnimationSpec = tween(100, easing = LinearEasing),
                             )
                             .background(Color.Blue, CircleShape)
                             .fillMaxSize()
@@ -774,7 +770,7 @@ class FloatingActionButtonTest {
                     Color(
                         ColorUtils.compositeColors(
                             Color.Blue.copy(alpha = 0.5f).toArgb(),
-                            Color.Red.toArgb()
+                            Color.Red.toArgb(),
                         )
                     ),
                 backgroundColor = Color.Red,
@@ -782,7 +778,7 @@ class FloatingActionButtonTest {
                 shapeSize = with(rule.density) { DpSize(60.dp, 60.dp).toSize() },
                 shapeCenter = with(rule.density) { Offset(70.dp.toPx(), 70.dp.toPx()) },
                 backgroundCenter = with(rule.density) { Offset(70.dp.toPx(), 70.dp.toPx()) },
-                antiAliasingGap = with(rule.density) { 3.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 3.dp.toPx() },
             )
     }
 
@@ -808,7 +804,7 @@ class FloatingActionButtonTest {
                                 alignment = Alignment.Center,
                                 targetScale = 0.2f,
                                 scaleAnimationSpec = tween(100, easing = LinearEasing),
-                                alphaAnimationSpec = tween(100, easing = LinearEasing)
+                                alphaAnimationSpec = tween(100, easing = LinearEasing),
                             )
                             .background(Color.Blue, CircleShape)
                             .fillMaxSize()
@@ -834,7 +830,7 @@ class FloatingActionButtonTest {
                     Color(
                         ColorUtils.compositeColors(
                             Color.Blue.copy(alpha = 0.5f).toArgb(),
-                            Color.Red.toArgb()
+                            Color.Red.toArgb(),
                         )
                     ),
                 backgroundColor = Color.Red,
@@ -842,7 +838,7 @@ class FloatingActionButtonTest {
                 shapeSize = with(rule.density) { DpSize(60.dp, 60.dp).toSize() },
                 shapeCenter = with(rule.density) { Offset(50.dp.toPx(), 50.dp.toPx()) },
                 backgroundCenter = with(rule.density) { Offset(50.dp.toPx(), 50.dp.toPx()) },
-                antiAliasingGap = with(rule.density) { 2.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 2.dp.toPx() },
             )
     }
 
@@ -868,7 +864,7 @@ class FloatingActionButtonTest {
                                 alignment = Alignment.TopStart,
                                 targetScale = 0.2f,
                                 scaleAnimationSpec = tween(100, easing = LinearEasing),
-                                alphaAnimationSpec = tween(100, easing = LinearEasing)
+                                alphaAnimationSpec = tween(100, easing = LinearEasing),
                             )
                             .background(Color.Blue, CircleShape)
                             .fillMaxSize()
@@ -894,7 +890,7 @@ class FloatingActionButtonTest {
                     Color(
                         ColorUtils.compositeColors(
                             Color.Blue.copy(alpha = 0.5f).toArgb(),
-                            Color.Red.toArgb()
+                            Color.Red.toArgb(),
                         )
                     ),
                 backgroundColor = Color.Red,
@@ -902,7 +898,7 @@ class FloatingActionButtonTest {
                 shapeSize = with(rule.density) { DpSize(60.dp, 60.dp).toSize() },
                 shapeCenter = with(rule.density) { Offset(30.dp.toPx(), 30.dp.toPx()) },
                 backgroundCenter = with(rule.density) { Offset(30.dp.toPx(), 30.dp.toPx()) },
-                antiAliasingGap = with(rule.density) { 2.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 2.dp.toPx() },
             )
     }
 
@@ -928,7 +924,7 @@ class FloatingActionButtonTest {
                                 alignment = Alignment.BottomEnd,
                                 targetScale = 0.2f,
                                 scaleAnimationSpec = tween(100, easing = LinearEasing),
-                                alphaAnimationSpec = tween(100, easing = LinearEasing)
+                                alphaAnimationSpec = tween(100, easing = LinearEasing),
                             )
                             .background(Color.Blue, CircleShape)
                             .fillMaxSize()
@@ -957,7 +953,7 @@ class FloatingActionButtonTest {
                 shapeSize = with(rule.density) { DpSize(100.dp, 100.dp).toSize() },
                 shapeCenter = with(rule.density) { Offset(50.dp.toPx(), 50.dp.toPx()) },
                 backgroundCenter = with(rule.density) { Offset(50.dp.toPx(), 50.dp.toPx()) },
-                antiAliasingGap = with(rule.density) { 2.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 2.dp.toPx() },
             )
     }
 
@@ -981,7 +977,7 @@ class FloatingActionButtonTest {
                                 alignment = Alignment.BottomEnd,
                                 targetScale = 0.2f,
                                 scaleAnimationSpec = tween(100, easing = LinearEasing),
-                                alphaAnimationSpec = tween(100, easing = LinearEasing)
+                                alphaAnimationSpec = tween(100, easing = LinearEasing),
                             )
                             .background(Color.Blue, CircleShape)
                             .fillMaxSize()
@@ -1001,8 +997,94 @@ class FloatingActionButtonTest {
                 shapeSize = with(rule.density) { DpSize(100.dp, 100.dp).toSize() },
                 shapeCenter = with(rule.density) { Offset(50.dp.toPx(), 50.dp.toPx()) },
                 backgroundCenter = with(rule.density) { Offset(50.dp.toPx(), 50.dp.toPx()) },
-                antiAliasingGap = with(rule.density) { 2.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 2.dp.toPx() },
             )
+    }
+
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun animateFloatingActionButton_show_consumesClick() {
+        var contentBoxClicked = false
+        var fabBoxClicked = false
+
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(
+                modifier =
+                    Modifier.background(Color.Red)
+                        .size(100.dp)
+                        .testTag(AnimateFloatingActionButtonTestTag)
+            ) {
+                Box(
+                    modifier =
+                        Modifier.background(Color.Green)
+                            .fillMaxSize()
+                            .clickable(onClick = { contentBoxClicked = true })
+                )
+
+                Box(
+                    modifier =
+                        Modifier.animateFloatingActionButton(
+                                visible = true,
+                                alignment = Alignment.BottomEnd,
+                                targetScale = 0.2f,
+                                scaleAnimationSpec = tween(100, easing = LinearEasing),
+                                alphaAnimationSpec = tween(100, easing = LinearEasing),
+                            )
+                            .background(Color.Blue)
+                            .fillMaxSize()
+                            .clickable(onClick = { fabBoxClicked = true })
+                )
+            }
+        }
+
+        rule.onNodeWithTag(AnimateFloatingActionButtonTestTag).performClick()
+
+        assertThat(contentBoxClicked).isFalse()
+        assertThat(fabBoxClicked).isTrue()
+    }
+
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun animateFloatingActionButton_hide_doesNotConsumesClick() {
+        var contentBoxClicked = false
+        var fabBoxClicked = false
+
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(
+                modifier =
+                    Modifier.background(Color.Red)
+                        .size(100.dp)
+                        .testTag(AnimateFloatingActionButtonTestTag)
+            ) {
+                Box(
+                    modifier =
+                        Modifier.background(Color.Green)
+                            .fillMaxSize()
+                            .clickable(onClick = { contentBoxClicked = true })
+                )
+
+                Box(
+                    modifier =
+                        Modifier.animateFloatingActionButton(
+                                visible = false,
+                                alignment = Alignment.BottomEnd,
+                                targetScale = 0.2f,
+                                scaleAnimationSpec = tween(100, easing = LinearEasing),
+                                alphaAnimationSpec = tween(100, easing = LinearEasing),
+                            )
+                            .background(Color.Blue)
+                            .fillMaxSize()
+                            .clickable(onClick = { fabBoxClicked = true })
+                )
+            }
+        }
+
+        rule.onNodeWithTag(AnimateFloatingActionButtonTestTag).performClick()
+
+        assertThat(contentBoxClicked).isTrue()
+        assertThat(fabBoxClicked).isFalse()
     }
 }
 

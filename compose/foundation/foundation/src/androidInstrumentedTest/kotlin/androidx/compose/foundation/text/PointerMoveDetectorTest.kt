@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.DpSize
 import com.google.common.truth.Correspondence
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -53,7 +54,7 @@ private const val TargetTag = "TargetLayout"
 @RunWith(JUnit4::class)
 class PointerMoveDetectorTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val actualMoves = mutableListOf<Offset>()
 
@@ -70,12 +71,12 @@ class PointerMoveDetectorTest {
     }
 
     private fun layoutWithGestureDetector(
-        gestureDetector: suspend PointerInputScope.() -> Unit,
+        gestureDetector: suspend PointerInputScope.() -> Unit
     ): @Composable () -> Unit = {
         CompositionLocalProvider(
             LocalDensity provides Density(1f),
             LocalViewConfiguration provides
-                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero)
+                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero),
         ) {
             with(LocalDensity.current) {
                 Box(
@@ -107,7 +108,7 @@ class PointerMoveDetectorTest {
     private fun performTouch(
         initialPass: PointerInputChange.() -> Unit = nothingHandler,
         finalPass: PointerInputChange.() -> Unit = nothingHandler,
-        block: TouchInjectionScope.() -> Unit
+        block: TouchInjectionScope.() -> Unit,
     ) {
         this.initialPass = initialPass
         this.finalPass = finalPass
@@ -133,14 +134,7 @@ class PointerMoveDetectorTest {
         }
 
         assertThat(actualMoves)
-            .hasEqualOffsets(
-                listOf(
-                    Offset(4f, 4f),
-                    Offset(3f, 3f),
-                    Offset(2f, 2f),
-                    Offset(1f, 1f),
-                )
-            )
+            .hasEqualOffsets(listOf(Offset(4f, 4f), Offset(3f, 3f), Offset(2f, 2f), Offset(1f, 1f)))
     }
 
     @Test
@@ -168,14 +162,7 @@ class PointerMoveDetectorTest {
         }
 
         assertThat(actualMoves)
-            .hasEqualOffsets(
-                listOf(
-                    Offset(4f, 4f),
-                    Offset(3f, 3f),
-                    Offset(2f, 2f),
-                    Offset(1f, 1f),
-                )
-            )
+            .hasEqualOffsets(listOf(Offset(4f, 4f), Offset(3f, 3f), Offset(2f, 2f), Offset(1f, 1f)))
     }
 
     @Test
@@ -202,14 +189,7 @@ class PointerMoveDetectorTest {
         }
 
         assertThat(actualMoves)
-            .hasEqualOffsets(
-                listOf(
-                    Offset(4f, 4f),
-                    Offset(3f, 3f),
-                    Offset(2f, 2f),
-                    Offset(1f, 1f),
-                )
-            )
+            .hasEqualOffsets(listOf(Offset(4f, 4f), Offset(3f, 3f), Offset(2f, 2f), Offset(1f, 1f)))
     }
 
     private fun IterableSubject.hasEqualOffsets(expectedMoves: List<Offset>) {
@@ -219,8 +199,5 @@ class PointerMoveDetectorTest {
     }
 
     private val offsetCorrespondence: Correspondence<Offset, Offset> =
-        Correspondence.from(
-            { o1, o2 -> o1!!.x == o2!!.x && o1.y == o2.y },
-            "has the offset of",
-        )
+        Correspondence.from({ o1, o2 -> o1!!.x == o2!!.x && o1.y == o2.y }, "has the offset of")
 }

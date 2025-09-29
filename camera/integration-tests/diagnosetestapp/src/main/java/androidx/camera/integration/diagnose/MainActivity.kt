@@ -33,6 +33,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.mlkit.vision.MlKitAnalyzer
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
@@ -60,7 +61,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@SuppressLint("NullAnnotationGroup", "MissingPermission")
+@SuppressLint("MissingPermission")
 class MainActivity : AppCompatActivity() {
 
     private lateinit var cameraController: LifecycleCameraController
@@ -82,6 +83,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        EdgeToEdgeUtil.enableEdgeToEdge(this, R.id.root_layout, emptyList())
         previewView = findViewById(R.id.preview_view)
         overlayView = findViewById(R.id.overlay_view)
         overlayView.visibility = View.INVISIBLE
@@ -160,7 +162,7 @@ class MainActivity : AppCompatActivity() {
                 ImageCapture.OutputFileOptions.Builder(
                         contentResolver,
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        contentValues
+                        contentValues,
                     )
                     .build()
 
@@ -179,7 +181,7 @@ class MainActivity : AppCompatActivity() {
                         val msg = "Photo capture succeeded: ${output.savedUri}"
                         showToast(msg)
                     }
-                }
+                },
             )
         }
 
@@ -205,7 +207,7 @@ class MainActivity : AppCompatActivity() {
                 val outputOptions =
                     MediaStoreOutputOptions.Builder(
                             contentResolver,
-                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
                         )
                         .setContentValues(contentValues)
                         .build()
@@ -252,7 +254,7 @@ class MainActivity : AppCompatActivity() {
                                 baseContext,
                                 taskList,
                                 cameraController,
-                                isAggregated
+                                isAggregated,
                             )
                         }
                     val msg: String =
@@ -274,7 +276,7 @@ class MainActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
@@ -338,7 +340,7 @@ class MainActivity : AppCompatActivity() {
             MlKitAnalyzer(
                 listOf(barcodeScanner),
                 ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED,
-                calibrationExecutor
+                calibrationExecutor,
             ) { result ->
                 // validating thread
                 checkCalibrationThread()
@@ -366,7 +368,7 @@ class MainActivity : AppCompatActivity() {
     private fun checkCalibrationThread() {
         Preconditions.checkState(
             calibrationThreadId == Thread.currentThread().id,
-            "Not working on Calibration Thread"
+            "Not working on Calibration Thread",
         )
     }
 

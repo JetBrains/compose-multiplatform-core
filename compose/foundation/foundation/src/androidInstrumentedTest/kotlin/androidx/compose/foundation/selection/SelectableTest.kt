@@ -17,6 +17,7 @@
 package androidx.compose.foundation.selection
 
 import android.os.Build.VERSION.SDK_INT
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.TapIndicationDelay
 import androidx.compose.foundation.TestIndication
 import androidx.compose.foundation.TestIndicationNodeFactory
@@ -32,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.setFocusableContent
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,6 +81,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -89,7 +92,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SelectableTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun before() {
@@ -131,8 +134,8 @@ class SelectableTest {
                 modifier =
                     Modifier.selectable(
                         selected = state.value,
-                        onClick = { state.value = !state.value }
-                    )
+                        onClick = { state.value = !state.value },
+                    ),
             )
         }
 
@@ -151,7 +154,7 @@ class SelectableTest {
             val (selected, _) = remember { mutableStateOf(false) }
             BasicText(
                 "Text in item",
-                modifier = Modifier.selectable(selected = selected, onClick = {})
+                modifier = Modifier.selectable(selected = selected, onClick = {}),
             )
         }
 
@@ -168,7 +171,7 @@ class SelectableTest {
                 Modifier.testTag("outerBox")
                     .selectable(
                         selected = outerState.value,
-                        onClick = { outerState.value = !outerState.value }
+                        onClick = { outerState.value = !outerState.value },
                     )
             ) {
                 BasicText(
@@ -177,8 +180,8 @@ class SelectableTest {
                         Modifier.selectable(
                             selected = state.value,
                             onClick = { state.value = !state.value },
-                            enabled = enabled.value
-                        )
+                            enabled = enabled.value,
+                        ),
                 )
             }
         }
@@ -213,7 +216,7 @@ class SelectableTest {
                         selected = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = {}
+                        onClick = {},
                     )
                 ) {
                     BasicText("SelectableText")
@@ -263,7 +266,7 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = {}
+                            onClick = {},
                         )
                     ) {
                         BasicText("SelectableText")
@@ -315,7 +318,7 @@ class SelectableTest {
                         selected = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = {}
+                        onClick = {},
                     )
                 ) {
                     BasicText("SelectableText")
@@ -368,7 +371,7 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = {}
+                            onClick = {},
                         )
                     ) {
                         BasicText("SelectableText")
@@ -421,7 +424,7 @@ class SelectableTest {
                         selected = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = {}
+                        onClick = {},
                     )
                 ) {
                     BasicText("SelectableText")
@@ -469,7 +472,7 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = {}
+                            onClick = {},
                         )
                 ) {
                     BasicText("SelectableText")
@@ -511,7 +514,7 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = {}
+                            onClick = {},
                         )
                 ) {
                     BasicText("SelectableText")
@@ -557,7 +560,14 @@ class SelectableTest {
             assertThat(modifier.nameFallback).isEqualTo("selectable")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
-                .containsExactly("selected", "enabled", "role", "onClick")
+                .containsExactly(
+                    "selected",
+                    "interactionSource",
+                    "indicationNodeFactory",
+                    "enabled",
+                    "role",
+                    "onClick",
+                )
         }
     }
 
@@ -568,7 +578,7 @@ class SelectableTest {
                 Modifier.selectable(
                         false,
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
                     ) {}
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("selectable")
@@ -580,7 +590,7 @@ class SelectableTest {
                     "indicationNodeFactory",
                     "enabled",
                     "role",
-                    "onClick"
+                    "onClick",
                 )
         }
     }
@@ -601,7 +611,7 @@ class SelectableTest {
                         selected = false
                     ) {
                         counter++
-                    }
+                    },
             )
         }
 
@@ -635,7 +645,7 @@ class SelectableTest {
                         selected = false
                     ) {
                         counter++
-                    }
+                    },
             )
         }
 
@@ -669,7 +679,7 @@ class SelectableTest {
                         selected = false
                     ) {
                         counter++
-                    }
+                    },
             )
         }
 
@@ -705,8 +715,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -753,8 +763,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -801,8 +811,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -850,8 +860,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -886,8 +896,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -956,7 +966,7 @@ class SelectableTest {
                                 selected = true,
                                 interactionSource = interactionSource,
                                 indication = null,
-                            ) {}
+                            ) {},
                 )
             }
         }
@@ -1012,8 +1022,8 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            enabled = enabled.value
-                        ) {}
+                            enabled = enabled.value,
+                        ) {},
                 )
             }
         }
@@ -1060,6 +1070,28 @@ class SelectableTest {
     }
 
     @Test
+    fun selectableTest_localIndication_interactionSource_eagerlyCreated() {
+        val interactionSource = MutableInteractionSource()
+        var created = false
+        val indication = TestIndicationNodeFactory { _, _ -> created = true }
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "SelectableText",
+                        modifier =
+                            Modifier.testTag("selectable").selectable(
+                                selected = false,
+                                interactionSource = interactionSource,
+                            ) {},
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(created).isTrue() }
+    }
+
+    @Test
     fun selectableTest_noInteractionSource_lazilyCreated_pointerInput() {
         var created = false
         lateinit var interactionSource: InteractionSource
@@ -1082,8 +1114,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").selectable(
                             selected = false,
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -1101,13 +1133,24 @@ class SelectableTest {
     }
 
     @Test
-    fun composedOverload_nonEquality() {
+    fun nullInteractionSource_equality() {
         val onClick = {}
-        val modifier1 = Modifier.selectable(selected = true, onClick = onClick)
-        val modifier2 = Modifier.selectable(selected = true, onClick = onClick)
+        assertModifierIsPure { toggleInput ->
+            Modifier.selectable(selected = toggleInput, interactionSource = null, onClick = onClick)
+        }
+    }
 
-        // The composed overload can never compare equal
-        assertThat(modifier1).isNotEqualTo(modifier2)
+    @Test
+    fun nonNullInteractionSource_equality() {
+        val onClick = {}
+        val interactionSource = MutableInteractionSource()
+        assertModifierIsPure { toggleInput ->
+            Modifier.selectable(
+                selected = toggleInput,
+                interactionSource = interactionSource,
+                onClick = onClick,
+            )
+        }
     }
 
     @Test
@@ -1118,7 +1161,7 @@ class SelectableTest {
                 selected = toggleInput,
                 interactionSource = null,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1132,7 +1175,7 @@ class SelectableTest {
                 selected = toggleInput,
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1146,7 +1189,7 @@ class SelectableTest {
                 selected = toggleInput,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1160,14 +1203,14 @@ class SelectableTest {
                 selected = true,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.selectable(
                 selected = true,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -1184,7 +1227,7 @@ class SelectableTest {
                 selected = toggleInput,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1199,14 +1242,14 @@ class SelectableTest {
                 selected = true,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.selectable(
                 selected = true,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal

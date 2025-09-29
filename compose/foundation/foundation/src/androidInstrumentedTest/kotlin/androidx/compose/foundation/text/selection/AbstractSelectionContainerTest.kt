@@ -54,11 +54,13 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.mockito.kotlin.mock
 
 internal abstract class AbstractSelectionContainerTest {
-    @get:Rule val rule = createComposeRule().also { it.mainClock.autoAdvance = false }
+    @get:Rule
+    val rule = createComposeRule(StandardTestDispatcher()).also { it.mainClock.autoAdvance = false }
 
     protected val textContent = "Text Demo Text"
     protected val fontFamily = TEST_FONT_FAMILY
@@ -84,7 +86,7 @@ internal abstract class AbstractSelectionContainerTest {
         anchorInfo: Selection.AnchorInfo?,
         resolvedTextDirection: ResolvedTextDirection = ResolvedTextDirection.Ltr,
         offset: Int = 0,
-        selectableId: Long = 0
+        selectableId: Long = 0,
     ) {
         assertThat(anchorInfo)
             .isEqualTo(Selection.AnchorInfo(resolvedTextDirection, offset, selectableId))
@@ -92,18 +94,18 @@ internal abstract class AbstractSelectionContainerTest {
 
     protected fun createSelectionContainer(
         isRtl: Boolean = false,
-        content: (@Composable () -> Unit)? = null
+        content: (@Composable () -> Unit)? = null,
     ) {
         val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
         rule.setContent {
             CompositionLocalProvider(
                 LocalHapticFeedback provides hapticFeedback,
-                LocalLayoutDirection provides layoutDirection
+                LocalLayoutDirection provides layoutDirection,
             ) {
                 TestParent(Modifier.testTag("selectionContainer").gestureSpy(log)) {
                     SelectionContainer(
                         selection = selection.value,
-                        onSelectionChange = { selection.value = it }
+                        onSelectionChange = { selection.value = it },
                     ) {
                         content?.invoke() ?: TestText(textContent, Modifier.fillMaxSize())
                     }
@@ -124,7 +126,7 @@ internal abstract class AbstractSelectionContainerTest {
             overflow = TextOverflow.Clip,
             maxLines = Int.MAX_VALUE,
             inlineContent = mapOf(),
-            onTextLayout = {}
+            onTextLayout = {},
         )
     }
 
@@ -132,7 +134,7 @@ internal abstract class AbstractSelectionContainerTest {
     protected fun TestButton(
         modifier: Modifier = Modifier,
         onClick: () -> Unit,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         Box(
             modifier.clickable(onClick = onClick), // It marks this node as focusable
@@ -167,7 +169,7 @@ internal class PointerInputChangeLog : (PointerEvent, PointerEventPass) -> Unit 
 
 internal data class PointerInputChangeLogEntry(
     val changes: List<PointerInputChange>,
-    val pass: PointerEventPass
+    val pass: PointerEventPass,
 )
 
 private fun Modifier.gestureSpy(
@@ -187,7 +189,7 @@ private class GestureSpy : PointerInputModifier {
             override fun onPointerEvent(
                 pointerEvent: PointerEvent,
                 pass: PointerEventPass,
-                bounds: IntSize
+                bounds: IntSize,
             ) {
                 onPointerInput(pointerEvent, pass)
             }

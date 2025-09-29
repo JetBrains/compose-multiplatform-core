@@ -294,7 +294,7 @@ class StrokeInputPoolTest {
                         gestureStartTime,
                         outBatch = outBatchBuilder,
                     )
-                    val outBatch = outBatchBuilder.asImmutable()
+                    val outBatch = outBatchBuilder.toImmutable()
                     val pointerId = it.getPointerId(pointerIndex)
                     val pointerInputList =
                         pointerIdsToStrokeInputs.calculateIfAbsent(pointerId) { mutableListOf() }

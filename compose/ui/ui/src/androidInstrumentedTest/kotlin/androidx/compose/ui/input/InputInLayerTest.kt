@@ -37,12 +37,13 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.IntSize
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 @MediumTest
 class InputInLayerTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun reusedLayerIsReset() {
@@ -69,7 +70,7 @@ class InputInLayerTest {
                                     val matrix = Matrix()
                                     outerLayoutCoordinates.transformFrom(it, matrix)
                                     rootPoint = matrix.map(Offset.Zero)
-                                },
+                                }
                     )
                 } else {
                     Spacer(
@@ -82,7 +83,7 @@ class InputInLayerTest {
                                     val matrix = Matrix()
                                     outerLayoutCoordinates.transformFrom(it, matrix)
                                     rootPoint = matrix.map(Offset.Zero)
-                                },
+                                }
                     )
                 }
             }

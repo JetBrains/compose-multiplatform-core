@@ -32,12 +32,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 class NodeChainOwnerTests {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun getModifierNode_returnsLayers_whenGraphicsLayerIsTail() {
@@ -62,7 +63,7 @@ class NodeChainOwnerTests {
                 // test this, with no graphicsLayers added externally
                 Layout(
                     modifier = Modifier.graphicsLayer().semantics {}.testTag("tag"),
-                    EmptyMeasurePolicy()
+                    EmptyMeasurePolicy(),
                 )
             }
         }
@@ -80,7 +81,7 @@ class NodeChainOwnerTests {
                 // test this, with no graphicsLayers added externally
                 Layout(
                     modifier = Modifier.graphicsLayer().size(30.dp).testTag("tag"),
-                    EmptyMeasurePolicy()
+                    EmptyMeasurePolicy(),
                 )
             }
         }
@@ -94,7 +95,7 @@ class NodeChainOwnerTests {
 class EmptyMeasurePolicy : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return layout(constraints.maxWidth, constraints.maxHeight, placementBlock = {})
     }

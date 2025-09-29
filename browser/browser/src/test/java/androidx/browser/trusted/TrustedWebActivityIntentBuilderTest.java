@@ -36,6 +36,7 @@ import androidx.browser.trusted.TrustedWebActivityDisplayMode.ImmersiveMode;
 import androidx.browser.trusted.sharing.ShareData;
 import androidx.browser.trusted.sharing.ShareTarget;
 import androidx.browser.trusted.splashscreens.SplashScreenParamKey;
+import androidx.core.content.IntentCompat;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,7 +77,18 @@ public class TrustedWebActivityIntentBuilderTest {
         ShareTarget shareTarget = new ShareTarget("action", null, null,
                 new ShareTarget.Params(null, null, null));
 
+        Uri originalLaunchUrl = Uri.parse("web+test://page");
+
+        FileHandlingData fileHandlingData = new FileHandlingData(
+                Arrays.asList(Uri.parse("content://test.uri")));
+
+        @LaunchHandlerClientMode.ClientMode int launchHandlerClientMode =
+                LaunchHandlerClientMode.NAVIGATE_EXISTING;
+
         CustomTabsSession session = TestUtil.makeMockSession();
+
+        List<TrustedWebActivityDisplayMode> displayOverride =
+                Arrays.asList(new TrustedWebActivityDisplayMode.WindowControlsOverlayMode());
 
         ImmersiveMode displayMode = new ImmersiveMode(true,
                 LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES);
@@ -90,6 +102,10 @@ public class TrustedWebActivityIntentBuilderTest {
                         .setSplashScreenParams(splashScreenParams)
                         .setShareParams(shareTarget, shareData)
                         .setDisplayMode(displayMode)
+                        .setOriginalLaunchUrl(originalLaunchUrl)
+                        .setFileHandlingData(fileHandlingData)
+                        .setLaunchHandlerClientMode(launchHandlerClientMode)
+                        .setDisplayOverrideList(displayOverride)
                         .build(session)
                         .getIntent();
 
@@ -132,5 +148,25 @@ public class TrustedWebActivityIntentBuilderTest {
         assertEquals(displayMode.isSticky(), ((ImmersiveMode) displayModeFromIntent).isSticky());
         assertEquals(displayMode.layoutInDisplayCutoutMode(),
                 ((ImmersiveMode) displayModeFromIntent).layoutInDisplayCutoutMode());
+
+        assertEquals(originalLaunchUrl, intent.getParcelableExtra(
+                TrustedWebActivityIntentBuilder.EXTRA_ORIGINAL_LAUNCH_URL));
+
+        FileHandlingData fileHandlingDataFromIntent =
+                FileHandlingData.fromBundle(intent.getBundleExtra(
+                        TrustedWebActivityIntentBuilder.EXTRA_FILE_HANDLING_DATA));
+        assertEquals(fileHandlingData.uris.get(0), fileHandlingDataFromIntent.uris.get(0));
+
+        assertEquals(launchHandlerClientMode, intent.getIntExtra(
+                TrustedWebActivityIntentBuilder.EXTRA_LAUNCH_HANDLER_CLIENT_MODE, 0));
+
+        List<Bundle> displayOverrideBundlesFromIntent = IntentCompat.getParcelableArrayListExtra(
+                intent,
+                TrustedWebActivityIntentBuilder.EXTRA_DISPLAY_OVERRIDE,
+                Bundle.class);
+        assertEquals(displayOverride.size(), displayOverrideBundlesFromIntent.size());
+        assertEquals(TrustedWebActivityDisplayMode.fromBundle(
+                        displayOverrideBundlesFromIntent.get(0)).getClass(),
+                TrustedWebActivityDisplayMode.WindowControlsOverlayMode.class);
     }
 }

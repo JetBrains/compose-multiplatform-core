@@ -65,7 +65,7 @@ class SharedUiContainerTest() {
         fun createMarginLayoutParams(
             widthInPixels: Int,
             heightInPixels: Int,
-            marginInPixels: Int = MARGIN_PIXELS
+            marginInPixels: Int = MARGIN_PIXELS,
         ): MarginLayoutParams =
             MarginLayoutParams(widthInPixels, heightInPixels).apply { setMargins(marginInPixels) }
     }
@@ -113,7 +113,7 @@ class SharedUiContainerTest() {
                 sharedUiAdapter = adapter,
                 setNonZeroDimensions = true,
                 attachToWindow = true,
-                setWindowVisible = true
+                setWindowVisible = true,
             )
 
             adapter.assertSessionOpened()
@@ -255,7 +255,7 @@ class SharedUiContainerTest() {
                 SharedUiAsset(
                     sandboxedSdkView,
                     ASSET_ID_1,
-                    sandboxedUiAdapter = TestSandboxedUiAdapter()
+                    sandboxedUiAdapter = TestSandboxedUiAdapter(),
                 )
 
             assertThat(sharedUiContainer.registerSharedUiAsset(sharedUiAsset)).isTrue()
@@ -410,7 +410,7 @@ class SharedUiContainerTest() {
             sharedUiAdapter: SharedUiAdapter = TestSharedUiAdapter(),
             setNonZeroDimensions: Boolean = true,
             attachToWindow: Boolean = true,
-            setWindowVisible: Boolean = true
+            setWindowVisible: Boolean = true,
         ) {
             sharedUiContainer.setAdapter(sharedUiAdapter)
             activityScenarioRule.withActivity {
@@ -425,7 +425,7 @@ class SharedUiContainerTest() {
 
         private fun initChildViewOnContainer(
             childView: View = this.childView,
-            container: SharedUiContainer = this.sharedUiContainer
+            container: SharedUiContainer = this.sharedUiContainer,
         ) {
             activityScenarioRule.withActivity {
                 childView.layoutParams = LayoutParams(CHILD_WIDTH_PIXELS, CHILD_HEIGHT_PIXELS)
@@ -440,7 +440,7 @@ class SharedUiContainerTest() {
 
             override fun openSession(
                 clientExecutor: Executor,
-                client: SharedUiAdapter.SessionClient
+                client: SharedUiAdapter.SessionClient,
             ) {
                 session = TestSession()
                 this.client = client
@@ -505,7 +505,7 @@ class SharedUiContainerTest() {
                     createMarginLayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT),
                     createMarginLayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT),
                     createMarginLayoutParams(PARENT_WIDTH_PIXELS - 10, PARENT_HEIGHT_PIXELS - 10),
-                    createMarginLayoutParams(PARENT_WIDTH_PIXELS + 10, PARENT_HEIGHT_PIXELS + 10)
+                    createMarginLayoutParams(PARENT_WIDTH_PIXELS + 10, PARENT_HEIGHT_PIXELS + 10),
                 )
         }
 
@@ -628,7 +628,7 @@ class SharedUiContainerTest() {
                         layoutParams =
                             createMarginLayoutParams(
                                 CONTAINER_WIDTH_PIXELS,
-                                CONTAINER_HEIGHT_PIXELS
+                                CONTAINER_HEIGHT_PIXELS,
                             )
                         setPadding(PADDING_PIXELS)
                     }
@@ -647,7 +647,7 @@ class SharedUiContainerTest() {
                     layoutParams =
                         createMarginLayoutParams(
                             LayoutParams.WRAP_CONTENT,
-                            LayoutParams.WRAP_CONTENT
+                            LayoutParams.WRAP_CONTENT,
                         )
                     addView(
                         View(context).apply {
@@ -781,7 +781,7 @@ class SharedUiContainerTest() {
                 0,
                 0,
                 sharedUiContainer.measuredWidth,
-                sharedUiContainer.measuredHeight
+                sharedUiContainer.measuredHeight,
             )
 
             assertLayoutCoordinates(
@@ -789,14 +789,14 @@ class SharedUiContainerTest() {
                 PADDING_PIXELS,
                 PADDING_PIXELS,
                 CHILD_WIDTH_PIXELS + sharedUiContainer.paddingLeft,
-                CHILD_HEIGHT_PIXELS + sharedUiContainer.paddingTop
+                CHILD_HEIGHT_PIXELS + sharedUiContainer.paddingTop,
             )
             assertLayoutCoordinates(
                 childView2,
                 PADDING_PIXELS,
                 PADDING_PIXELS,
                 CONTAINER_WIDTH_PIXELS + 10 + sharedUiContainer.paddingLeft,
-                CONTAINER_HEIGHT_PIXELS + 10 + sharedUiContainer.paddingTop
+                CONTAINER_HEIGHT_PIXELS + 10 + sharedUiContainer.paddingTop,
             )
         }
 
@@ -812,7 +812,7 @@ class SharedUiContainerTest() {
                 0,
                 0,
                 sharedUiContainer.measuredWidth,
-                sharedUiContainer.measuredHeight
+                sharedUiContainer.measuredHeight,
             )
 
             assertLayoutCoordinates(childView, 0, 0, 0, 0)
@@ -823,7 +823,7 @@ class SharedUiContainerTest() {
             left: Int,
             top: Int,
             right: Int,
-            bottom: Int
+            bottom: Int,
         ) {
             assertThat(view.left).isEqualTo(left)
             assertThat(view.top).isEqualTo(top)

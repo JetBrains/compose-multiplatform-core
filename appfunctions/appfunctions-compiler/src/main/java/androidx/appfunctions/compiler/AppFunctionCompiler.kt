@@ -22,10 +22,11 @@ import androidx.appfunctions.compiler.core.ProcessingException
 import androidx.appfunctions.compiler.core.SymbolNotReadyException
 import androidx.appfunctions.compiler.core.logException
 import androidx.appfunctions.compiler.processors.AppFunctionAggregateProcessor
-import androidx.appfunctions.compiler.processors.AppFunctionFunctionRegistryProcessor
+import androidx.appfunctions.compiler.processors.AppFunctionComponentRegistryProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionIdProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionInvokerProcessor
+import androidx.appfunctions.compiler.processors.AppFunctionSchemaInventoryProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionSerializableProcessor
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
@@ -88,7 +89,7 @@ class AppFunctionCompiler(
             val options = AppFunctionCompilerOptions.from(environment.options)
 
             val functionRegistryProcessor =
-                AppFunctionFunctionRegistryProcessor(environment.codeGenerator)
+                AppFunctionComponentRegistryProcessor(environment.codeGenerator)
             val idProcessor = AppFunctionIdProcessor(environment.codeGenerator)
             val inventoryProcessor = AppFunctionInventoryProcessor(environment.codeGenerator)
             val invokerProcessor = AppFunctionInvokerProcessor(environment.codeGenerator)
@@ -96,6 +97,8 @@ class AppFunctionCompiler(
                 AppFunctionSerializableProcessor(environment.codeGenerator, environment.logger)
             val aggregateProcessor =
                 AppFunctionAggregateProcessor(options, environment.codeGenerator)
+            val schemaInventoryProcessor =
+                AppFunctionSchemaInventoryProcessor(environment.codeGenerator, options)
             return AppFunctionCompiler(
                 listOf(
                     functionRegistryProcessor,
@@ -104,6 +107,7 @@ class AppFunctionCompiler(
                     invokerProcessor,
                     entityProcessor,
                     aggregateProcessor,
+                    schemaInventoryProcessor,
                 ),
                 environment.logger,
             )

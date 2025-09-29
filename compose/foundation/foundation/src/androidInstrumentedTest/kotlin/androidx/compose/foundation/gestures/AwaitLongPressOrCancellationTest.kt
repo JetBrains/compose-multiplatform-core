@@ -45,6 +45,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -55,7 +56,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AwaitTouchEventTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun before() {
@@ -83,7 +84,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -109,7 +110,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -135,7 +136,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -170,7 +171,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -205,7 +206,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -246,7 +247,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -285,7 +286,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -334,7 +335,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -368,7 +369,7 @@ class AwaitTouchEventTest {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 awaitLongPressOrCancellation(down.id)?.let { counter++ }
                             }
-                        }
+                        },
                 )
             }
         }
@@ -405,7 +406,7 @@ class AwaitTouchEventTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_NONE
+                /* classification = */ CLASSIFICATION_NONE,
             )
 
         view.dispatchTouchEvent(downEvent)
@@ -433,7 +434,7 @@ class AwaitTouchEventTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_DEEP_PRESS
+                /* classification = */ CLASSIFICATION_DEEP_PRESS,
             )
 
         view.dispatchTouchEvent(deepPressMoveEvent)

@@ -33,6 +33,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +41,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class CompositeKeyHashTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun nonZeroCompositeKeyHash() {
@@ -191,12 +192,7 @@ class CompositeKeyHashTest {
     fun text() {
         // Arrange.
         val node = object : Modifier.Node() {}
-        rule.setContent {
-            BasicText(
-                text = "text",
-                modifier = Modifier.elementOf(node),
-            )
-        }
+        rule.setContent { BasicText(text = "text", modifier = Modifier.elementOf(node)) }
 
         // Act.
         val compositeKeyHash = rule.runOnIdle { node.requireLayoutNode().compositeKeyHash }
@@ -228,7 +224,7 @@ class CompositeKeyHashTest {
             AndroidView(
                 factory = { TextView(it) },
                 modifier = Modifier.elementOf(node),
-                onReset = null
+                onReset = null,
             )
         }
 
@@ -247,7 +243,7 @@ class CompositeKeyHashTest {
             AndroidView(
                 factory = { TextView(it) },
                 modifier = Modifier.elementOf(node),
-                onReset = {}
+                onReset = {},
             )
         }
 
@@ -306,7 +302,7 @@ class CompositeKeyHashTest {
                 measurables.forEach { it.measure(constraints) }
                 layout(0, 0) {}
             },
-            modifier = Modifier.elementOf(node)
+            modifier = Modifier.elementOf(node),
         )
         SideEffect { onSetCompositionKeyHash(node.requireLayoutNode().compositeKeyHash) }
     }
@@ -320,7 +316,7 @@ class CompositeKeyHashTest {
                 measurables.forEach { it.forEach { measurable -> measurable.measure(constraints) } }
                 layout(0, 0) {}
             },
-            modifier = Modifier.elementOf(node)
+            modifier = Modifier.elementOf(node),
         )
         SideEffect { onSetCompositionKeyHash.invoke(node.requireLayoutNode().compositeKeyHash) }
     }
@@ -334,7 +330,7 @@ class CompositeKeyHashTest {
                 measurables.forEach { it.measure(constraints) }
                 layout(0, 0) {}
             },
-            modifier = Modifier.elementOf(node)
+            modifier = Modifier.elementOf(node),
         )
         SideEffect { onSetCompositionKeyHash.invoke(node.requireLayoutNode().compositeKeyHash) }
     }
@@ -349,7 +345,7 @@ class CompositeKeyHashTest {
                 measurables.forEach { it.measure(constraints) }
                 layout(0, 0) {}
             },
-            modifier = Modifier.elementOf(node)
+            modifier = Modifier.elementOf(node),
         )
         SideEffect { onSetCompositionKeyHash.invoke(node.requireLayoutNode().compositeKeyHash) }
     }

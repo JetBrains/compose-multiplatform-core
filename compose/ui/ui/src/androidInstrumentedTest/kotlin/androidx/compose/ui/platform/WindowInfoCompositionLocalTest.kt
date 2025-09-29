@@ -31,7 +31,10 @@ import androidx.compose.ui.graphics.toComposeIntRect
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -44,6 +47,7 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,7 +55,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class WindowInfoCompositionLocalTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     @FlakyTest(bugId = 173088588)
     @Test
@@ -88,7 +92,7 @@ class WindowInfoCompositionLocalTest {
             if (showPopup.value) {
                 Popup(
                     properties = PopupProperties(focusable = true),
-                    onDismissRequest = { showPopup.value = false }
+                    onDismissRequest = { showPopup.value = false },
                 ) {
                     BasicText("Popup Window")
                     popupWindowInfo = LocalWindowInfo.current
@@ -122,7 +126,7 @@ class WindowInfoCompositionLocalTest {
             if (showPopup.value) {
                 Popup(
                     properties = PopupProperties(focusable = true),
-                    onDismissRequest = { showPopup.value = false }
+                    onDismissRequest = { showPopup.value = false },
                 ) {
                     BasicText(text = "Popup Window")
                     WindowFocusObserver { if (it) popupFocusGain.countDown() }
@@ -229,7 +233,7 @@ class WindowInfoCompositionLocalTest {
                     KeyEvent.ACTION_DOWN,
                     KeyEvent.KEYCODE_CTRL_LEFT,
                     0,
-                    KeyEvent.META_CTRL_ON
+                    KeyEvent.META_CTRL_ON,
                 )
             ownerView.dispatchKeyEvent(ctrlPressed)
         }
@@ -245,7 +249,7 @@ class WindowInfoCompositionLocalTest {
                     KeyEvent.ACTION_DOWN,
                     KeyEvent.KEYCODE_ALT_LEFT,
                     0,
-                    KeyEvent.META_CTRL_ON or KeyEvent.META_ALT_ON
+                    KeyEvent.META_CTRL_ON or KeyEvent.META_ALT_ON,
                 )
             ownerView.dispatchKeyEvent(altAndCtrlPressed)
         }
@@ -262,7 +266,7 @@ class WindowInfoCompositionLocalTest {
                     KeyEvent.ACTION_UP,
                     KeyEvent.KEYCODE_ALT_LEFT,
                     0,
-                    KeyEvent.META_CTRL_ON
+                    KeyEvent.META_CTRL_ON,
                 )
             ownerView.dispatchKeyEvent(altUnpressed)
         }
@@ -283,11 +287,15 @@ class WindowInfoCompositionLocalTest {
     fun windowInfo_containerSize() {
         // Arrange.
         var containerSize = IntSize.Zero
+        var containerDpSize = DpSize.Zero
         var recompositions = 0
+        var density = Density(1f)
         rule.setContent {
             BasicText("Main Window")
             val windowInfo = LocalWindowInfo.current
             containerSize = windowInfo.containerSize
+            containerDpSize = windowInfo.containerDpSize
+            density = LocalDensity.current
             recompositions++
         }
 
@@ -301,8 +309,11 @@ class WindowInfoCompositionLocalTest {
                 .toComposeIntRect()
                 .size
 
+        val expectedWindowDpSize = with(density) { expectedWindowSize.toSize().toDpSize() }
+
         // Assert.
         assertThat(containerSize).isEqualTo(expectedWindowSize)
+        assertThat(containerDpSize).isEqualTo(expectedWindowDpSize)
         assertThat(recompositions).isEqualTo(1)
     }
 
@@ -346,12 +357,12 @@ class WindowInfoCompositionLocalTest {
         val widthRange =
             Range.closed(
                 (expectedWindowSize.width * 0.8).roundToInt(),
-                (expectedWindowSize.width * 1.2).roundToInt()
+                (expectedWindowSize.width * 1.2).roundToInt(),
             )
         val heightRange =
             Range.closed(
                 (expectedWindowSize.height * 0.8).roundToInt(),
-                (expectedWindowSize.height * 1.2).roundToInt()
+                (expectedWindowSize.height * 1.2).roundToInt(),
             )
 
         // Assert.

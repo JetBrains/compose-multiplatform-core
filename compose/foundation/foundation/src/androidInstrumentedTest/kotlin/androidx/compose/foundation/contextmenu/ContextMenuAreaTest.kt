@@ -33,6 +33,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -54,6 +55,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,7 +63,9 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class ContextMenuAreaTest {
-    @get:Rule val rule = createComposeRule()
+    @OptIn(ExperimentalTestApi::class)
+    @get:Rule
+    val rule = createComposeRule(StandardTestDispatcher())
 
     private val tag = "testTag"
     private val itemTag = "itemTag"
@@ -71,15 +75,15 @@ class ContextMenuAreaTest {
     @Composable
     private fun TestMenu(
         state: ContextMenuState,
-        onDismiss: () -> Unit = {},
         modifier: Modifier = Modifier,
+        onDismiss: () -> Unit = {},
         contextMenuBuilderBlock: ContextMenuScope.() -> Unit = { testItem() },
     ) {
         ContextMenu(
             state = state,
             onDismiss = onDismiss,
             contextMenuBuilderBlock = contextMenuBuilderBlock,
-            modifier = modifier.testTag(tag)
+            modifier = modifier.testTag(tag),
         )
     }
 
@@ -129,7 +133,7 @@ class ContextMenuAreaTest {
                     TestMenu(
                         state = state,
                         modifier =
-                            Modifier.testTag(menuTag).onGloballyPositioned { menuLayout = it }
+                            Modifier.testTag(menuTag).onGloballyPositioned { menuLayout = it },
                     )
                 }
             }
@@ -187,9 +191,7 @@ class ContextMenuAreaTest {
             with(rule.density) { rule.onAllNodes(isRoot()).onFirst().getBoundsInRoot().toRect() }
         val offset = rootRect.roundToIntRect().bottomRight - IntOffset(1, 1)
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).click(offset.x, offset.y)
-        rule.waitForIdle()
-
-        assertThatContextMenuState(state).statusIsClosed()
+        rule.waitUntil { state.status == Status.Closed }
         interaction.assertDoesNotExist()
     }
 
@@ -198,10 +200,10 @@ class ContextMenuAreaTest {
     // region ContextMenuArea Tests
     @Composable
     private fun TestArea(
+        modifier: Modifier = Modifier,
         state: ContextMenuState = ContextMenuState(),
         onDismiss: () -> Unit = {},
         contextMenuBuilderBlock: ContextMenuScope.() -> Unit = { testItem() },
-        modifier: Modifier = Modifier,
         enabled: Boolean = true,
         content: @Composable () -> Unit = {},
     ) {
@@ -211,7 +213,7 @@ class ContextMenuAreaTest {
             contextMenuBuilderBlock = contextMenuBuilderBlock,
             enabled = enabled,
             content = content,
-            modifier = modifier.testTag(tag)
+            modifier = modifier.testTag(tag),
         )
     }
 
@@ -276,9 +278,9 @@ class ContextMenuAreaTest {
         val state = ContextMenuState()
         rule.setContent {
             TestArea(
+                modifier = Modifier.background(Color.LightGray).size(100.dp),
                 state = state,
                 contextMenuBuilderBlock = { testItem(modifier = Modifier.testTag(itemTag)) },
-                modifier = Modifier.background(Color.LightGray).size(100.dp)
             )
         }
 
@@ -291,11 +293,11 @@ class ContextMenuAreaTest {
         val state = ContextMenuState()
         rule.setContent {
             TestArea(
+                modifier = Modifier.background(Color.LightGray).size(100.dp),
                 state = state,
                 contextMenuBuilderBlock = {
                     testItem(modifier = Modifier.testTag(itemTag)) { state.close() }
                 },
-                modifier = Modifier.background(Color.LightGray).size(100.dp)
             )
         }
 
@@ -313,12 +315,12 @@ class ContextMenuAreaTest {
         val state = ContextMenuState()
         rule.setContent {
             TestArea(
+                modifier = Modifier.background(Color.LightGray).size(100.dp),
                 state = state,
                 enabled = false,
                 contextMenuBuilderBlock = {
                     testItem(modifier = Modifier.testTag(itemTag)) { state.close() }
                 },
-                modifier = Modifier.background(Color.LightGray).size(100.dp)
             )
         }
 

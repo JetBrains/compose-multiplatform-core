@@ -20,13 +20,11 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.compat.workaround.CapturePipelineTorchCorrection
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
 import androidx.camera.camera2.pipe.integration.impl.CapturePipeline
 import androidx.camera.camera2.pipe.integration.impl.CapturePipelineImpl
-import androidx.camera.camera2.pipe.integration.impl.SessionProcessorManager
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCamera
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraImpl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControlImpl
@@ -36,18 +34,13 @@ import androidx.camera.core.impl.DeferrableSurface
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
-import java.util.concurrent.CancellationException
 import javax.inject.Scope
 
 @Scope public annotation class UseCaseCameraScope
 
 /** Dependency bindings for building a [UseCaseCamera] */
 @Module(
-    includes =
-        [
-            UseCaseCameraImpl.Bindings::class,
-            UseCaseCameraRequestControlImpl.Bindings::class,
-        ]
+    includes = [UseCaseCameraImpl.Bindings::class, UseCaseCameraRequestControlImpl.Bindings::class]
 )
 public abstract class UseCaseCameraModule {
     // Used for dagger provider methods that are static.
@@ -57,7 +50,7 @@ public abstract class UseCaseCameraModule {
         @Provides
         public fun provideCapturePipeline(
             capturePipelineImpl: CapturePipelineImpl,
-            capturePipelineTorchCorrection: CapturePipelineTorchCorrection
+            capturePipelineTorchCorrection: CapturePipelineTorchCorrection,
         ): CapturePipeline {
             if (CapturePipelineTorchCorrection.isEnabled) {
                 return capturePipelineTorchCorrection
@@ -73,10 +66,8 @@ public abstract class UseCaseCameraModule {
 public class UseCaseCameraConfig(
     private val useCases: List<UseCase>,
     private val sessionConfigAdapter: SessionConfigAdapter,
-    private val cameraStateAdapter: CameraStateAdapter,
     private val cameraGraph: CameraGraph,
     private val streamConfigMap: Map<CameraStream.Config, DeferrableSurface>,
-    private val sessionProcessorManager: SessionProcessorManager?,
 ) {
     @UseCaseCameraScope
     @Provides
@@ -90,12 +81,6 @@ public class UseCaseCameraConfig(
         return sessionConfigAdapter
     }
 
-    @UseCaseCameraScope
-    @Provides
-    public fun provideSessionProcessorManager(): SessionProcessorManager? {
-        return sessionProcessorManager
-    }
-
     /**
      * [UseCaseGraphConfig] would store the CameraGraph and related surface map that would be used
      * for [UseCaseCamera].
@@ -104,7 +89,7 @@ public class UseCaseCameraConfig(
     @Provides
     public fun provideUseCaseGraphConfig(
         useCaseSurfaceManager: UseCaseSurfaceManager,
-        cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository
+        cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository,
     ): UseCaseGraphConfig {
         sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
             cameraInteropStateCallbackRepository.updateCallbacks(sessionConfig)
@@ -115,45 +100,14 @@ public class UseCaseCameraConfig(
             cameraGraph.streams[streamConfig]?.let { surfaceToStreamMap[deferrableSurface] = it.id }
         }
 
-        Log.debug { "Prepare UseCaseCameraGraphConfig: $cameraGraph " }
-
-        // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and we
-        // will close the CameraGraph when that happens, and we cannot start a closed CameraGraph.
-        cameraGraph.start()
-
-        if (!sessionConfigAdapter.isSessionProcessorEnabled) {
-            Log.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
-            if (sessionConfigAdapter.isSessionConfigValid()) {
-                useCaseSurfaceManager
-                    .setupAsync(
-                        cameraGraph,
-                        sessionConfigAdapter,
-                        surfaceToStreamMap,
-                    )
-                    .invokeOnCompletion { throwable ->
-                        // Only show logs for error cases, ignore CancellationException since the
-                        // task could be cancelled by UseCaseSurfaceManager#stopAsync().
-                        if (throwable != null && throwable !is CancellationException) {
-                            Log.error(throwable) { "Surface setup error!" }
-                        }
-                    }
-            } else {
-                Log.error { "Unable to create capture session due to conflicting configurations" }
-            }
-        }
-
-        return UseCaseGraphConfig(
-            graph = cameraGraph,
-            surfaceToStreamMap = surfaceToStreamMap,
-            cameraStateAdapter = cameraStateAdapter,
-        )
+        Log.debug { "Prepared UseCaseGraphConfig: $cameraGraph " }
+        return UseCaseGraphConfig(graph = cameraGraph, surfaceToStreamMap = surfaceToStreamMap)
     }
 }
 
 public data class UseCaseGraphConfig(
     val graph: CameraGraph,
     val surfaceToStreamMap: Map<DeferrableSurface, StreamId>,
-    val cameraStateAdapter: CameraStateAdapter,
 ) {
     public fun getStreamIdsFromSurfaces(
         deferrableSurfaces: Collection<DeferrableSurface>

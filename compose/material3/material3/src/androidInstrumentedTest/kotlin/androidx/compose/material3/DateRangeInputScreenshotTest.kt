@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.testutils.assertAgainstGolden
@@ -32,6 +31,7 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,11 +39,10 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @LargeTest
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class DateRangeInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -56,7 +55,7 @@ class DateRangeInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(wrap.testTag(wrapperTestTag)) {
                 DateRangePicker(
                     state = rememberDateRangePickerState(initialDisplayMode = DisplayMode.Input),
-                    showModeToggle = false
+                    showModeToggle = false,
                 )
             }
         }
@@ -86,9 +85,9 @@ class DateRangeInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         rememberDateRangePickerState(
                             initialSelectedStartDateMillis = startDayMillis,
                             initialSelectedEndDateMillis = endDayMillis,
-                            initialDisplayMode = DisplayMode.Input
+                            initialDisplayMode = DisplayMode.Input,
                         ),
-                    showModeToggle = false
+                    showModeToggle = false,
                 )
             }
         }

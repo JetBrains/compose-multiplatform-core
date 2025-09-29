@@ -34,6 +34,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +44,7 @@ import org.junit.runner.RunWith
 class HorizontalCenterOpticallyTest {
     private val TextTag = "text"
     private val ContainerTag = "container"
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Test
@@ -53,7 +54,7 @@ class HorizontalCenterOpticallyTest {
                 topStart = 20.dp,
                 bottomStart = 20.dp,
                 topEnd = 0.dp,
-                bottomEnd = 0.dp
+                bottomEnd = 0.dp,
             )
         val baseContentPadding = PaddingValues(horizontal = 20.dp)
         val expectedStartPadding = 20.dp + (0.11f * 20f).dp
@@ -68,7 +69,7 @@ class HorizontalCenterOpticallyTest {
                                 maxStartOffset =
                                     baseContentPadding.calculateStartPadding(layoutDirection),
                                 maxEndOffset =
-                                    baseContentPadding.calculateEndPadding(layoutDirection)
+                                    baseContentPadding.calculateEndPadding(layoutDirection),
                             )
                             .padding(baseContentPadding)
                 ) {
@@ -100,7 +101,7 @@ class HorizontalCenterOpticallyTest {
                                 maxStartOffset =
                                     baseContentPadding.calculateStartPadding(layoutDirection),
                                 maxEndOffset =
-                                    baseContentPadding.calculateEndPadding(layoutDirection)
+                                    baseContentPadding.calculateEndPadding(layoutDirection),
                             )
                             .padding(baseContentPadding)
                 ) {

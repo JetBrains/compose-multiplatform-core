@@ -16,13 +16,13 @@
 
 package androidx.privacysandbox.ui.client.view
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewParent
 import androidx.annotation.VisibleForTesting
+import androidx.customview.poolingcontainer.isWithinPoolingContainer
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SharedUiAdapter
@@ -55,23 +55,24 @@ import kotlin.math.max
  * __Asset registration__: Client-owned views and [SandboxedSdkView]s can be registered as assets
  * using [registerSharedUiAsset] and unregistered using [unregisterSharedUiAsset].
  */
-@OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
-@SuppressLint("NullAnnotationGroup")
+// OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 @ExperimentalFeatures.SharedUiPresentationApi
-class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
-    ViewGroup(context, attrs) {
+public class SharedUiContainer
+@JvmOverloads
+constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs) {
 
     @VisibleForTesting internal val registeredAssets: MutableMap<View, SharedUiAsset> = HashMap()
     private val onAttachStateChangeListener =
         object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {}
 
-            // TODO(b/352500350): don't unregister assets if the container/asset is inside a pooling
-            // container.
             override fun onViewDetachedFromWindow(v: View) {
+                if (isWithinPoolingContainer && containsView(v)) return
                 unregisterSharedUiAsset(v)
             }
         }
+    private val poolingContainerListenerDelegate = PoolingContainerListenerDelegate(this)
 
     private var sessionManager: SessionManager? = null
 
@@ -87,7 +88,7 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
      * Passing 'null' value for [sharedUiAdapter] will release all resources and unregister all
      * children, without setting a new adapter.
      */
-    fun setAdapter(sharedUiAdapter: SharedUiAdapter?) {
+    public fun setAdapter(sharedUiAdapter: SharedUiAdapter?) {
         if (sharedUiAdapter === sessionManager?.sharedUiAdapter) return
 
         sessionManager?.closeClient()
@@ -126,7 +127,7 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
      * @throws [IllegalArgumentException] if a [View] is not a child (direct or indirect) of the
      *   container.
      */
-    fun registerSharedUiAsset(sharedUiAsset: SharedUiAsset): Boolean {
+    public fun registerSharedUiAsset(sharedUiAsset: SharedUiAsset): Boolean {
         val view = sharedUiAsset.view
         if (!containsView(view)) {
             throw IllegalArgumentException(
@@ -158,7 +159,7 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
      * @return 'true' if the asset was unregistered successfully, 'false' otherwise (if there wasn't
      *   a [SharedUiAsset] associated with [view])
      */
-    fun unregisterSharedUiAsset(view: View): Boolean {
+    public fun unregisterSharedUiAsset(view: View): Boolean {
         if (!registeredAssets.containsKey(view)) return false
 
         if (view is SandboxedSdkView) {
@@ -171,12 +172,14 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        maybeAttachPoolingContainerListener()
         sessionManager?.checkClientOpenSession()
     }
 
     override fun onDetachedFromWindow() {
-        // TODO(b/352500350): add PoolingContainer support
-        sessionManager?.closeClient()
+        if (!isWithinPoolingContainer) {
+            sessionManager?.closeClient()
+        }
         super.onDetachedFromWindow()
     }
 
@@ -194,6 +197,8 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
      * Child views that are [View.GONE] are ignored and don't take any space.
      */
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        maybeAttachPoolingContainerListener()
+
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             // Ignore View.GONE views as these are not expected to take any space for layout
@@ -205,7 +210,7 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
                 paddingLeft,
                 paddingTop,
                 child.measuredWidth + paddingLeft,
-                child.measuredHeight + paddingTop
+                child.measuredHeight + paddingTop,
             )
         }
         sessionManager?.checkClientOpenSession()
@@ -246,8 +251,8 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
             resolveSizeAndState(
                 maxHeight,
                 heightMeasureSpec,
-                childState shl MEASURED_HEIGHT_STATE_SHIFT
-            )
+                childState shl MEASURED_HEIGHT_STATE_SHIFT,
+            ),
         )
     }
 
@@ -273,6 +278,10 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
             parentView = currentView.parent
         }
         return false
+    }
+
+    private fun maybeAttachPoolingContainerListener() {
+        poolingContainerListenerDelegate.maybeAttachListener { sessionManager?.closeClient() }
     }
 
     private inner class SessionManager(val sharedUiAdapter: SharedUiAdapter) {
@@ -327,13 +336,13 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
         }
 
         fun closeSandboxedSdkViewSession(sandboxedSdkView: SandboxedSdkView) {
-            sandboxedSdkView.closeClient()
+            sandboxedSdkView.scheduleClientClose()
         }
 
         /** Closes provider UI sessions for [SandboxedSdkView]s registered as assets. */
         fun closeSandboxedSdkViewSessions() {
             registeredAssets.forEach { (view, _) ->
-                if (view is SandboxedSdkView) view.closeClient()
+                if (view is SandboxedSdkView) view.scheduleClientClose()
             }
         }
 

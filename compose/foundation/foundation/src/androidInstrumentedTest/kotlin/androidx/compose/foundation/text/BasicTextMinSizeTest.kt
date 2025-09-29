@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,7 +39,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BasicTextMinSizeTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun changingMinSizeConstraint_shrinksLayout() {
@@ -77,7 +78,7 @@ class BasicTextMinSizeTest {
 fun MinSizeChangeLayout(
     isBig: () -> Boolean,
     onMeasure: (Int) -> Unit,
-    content: @Composable @UiComposable () -> Unit
+    content: @Composable @UiComposable () -> Unit,
 ) {
     Layout(
         modifier = Modifier.fillMaxWidth(),
@@ -92,7 +93,7 @@ fun MinSizeChangeLayout(
                         },
                     maxWidth = constraints.maxWidth,
                     minHeight = 0,
-                    maxHeight = constraints.maxHeight
+                    maxHeight = constraints.maxHeight,
                 )
             val placeables = measurables.map { it.measure(newConstraints) }
             onMeasure(placeables.first().width)
@@ -100,6 +101,6 @@ fun MinSizeChangeLayout(
                 placeables.forEachIndexed { _, it -> it.place(0, 0) }
             }
         },
-        content = content
+        content = content,
     )
 }

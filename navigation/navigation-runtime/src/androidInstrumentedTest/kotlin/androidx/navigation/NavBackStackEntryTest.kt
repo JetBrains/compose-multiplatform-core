@@ -28,6 +28,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.get
 import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.navigation.internal.NavContext
 import androidx.navigation.test.R
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
@@ -93,7 +94,7 @@ class NavBackStackEntryTest {
             val navGraph =
                 navController.navigatorProvider.navigation(
                     route = "start",
-                    startDestination = "first"
+                    startDestination = "first",
                 ) {
                     test("first")
                 }
@@ -281,7 +282,9 @@ class NavBackStackEntryTest {
 
         val extras =
             MutableCreationExtras(entry.defaultViewModelCreationExtras).apply {
-                this[DEFAULT_ARGS_KEY] = bundleOf("test" to "value")
+                this[DEFAULT_ARGS_KEY] =
+                    @Suppress("DEPRECATION") // bundleOf is deprecated
+                    bundleOf("test" to "value")
             }
 
         val actualValue =
@@ -299,11 +302,11 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandle() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator()),
                 null,
                 Lifecycle.State.STARTED,
-                NavControllerViewModel()
+                NavControllerViewModel(),
             )
         entry.maxLifecycle = Lifecycle.State.CREATED
 
@@ -315,9 +318,9 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandleBeforeUpdateState() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator()),
-                viewModelStoreProvider = NavControllerViewModel()
+                viewModelStoreProvider = NavControllerViewModel(),
             )
 
         try {
@@ -342,9 +345,9 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandleInitializedLifecycle() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator()),
-                viewModelStoreProvider = NavControllerViewModel()
+                viewModelStoreProvider = NavControllerViewModel(),
             )
         entry.updateState()
 
@@ -356,9 +359,9 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandleDestroyedLifecycle() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator()),
-                viewModelStoreProvider = NavControllerViewModel()
+                viewModelStoreProvider = NavControllerViewModel(),
             )
         entry.maxLifecycle = Lifecycle.State.CREATED
         // Immediately destroy the NavBackStackEntry
@@ -385,8 +388,8 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandleNoViewModelSet() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
-                NavDestination(TestNavigator())
+                NavContext(ApplicationProvider.getApplicationContext()),
+                NavDestination(TestNavigator()),
             )
         entry.maxLifecycle = Lifecycle.State.CREATED
 
@@ -453,7 +456,7 @@ class NavBackStackEntryTest {
         navController.navigate(
             R.id.start_test,
             null,
-            navOptions { popUpTo(R.id.start_test) { inclusive = true } }
+            navOptions { popUpTo(R.id.start_test) { inclusive = true } },
         )
         assertWithMessage("ViewModel should be cleared when the destination is popped")
             .that(viewModel.isCleared)
@@ -487,7 +490,7 @@ class NavBackStackEntryTest {
                     inclusive = true
                     saveState = true
                 }
-            }
+            },
         )
         assertWithMessage("ViewModel should be saved when the destination is saved")
             .that(viewModel.isCleared)
@@ -527,7 +530,7 @@ class NavBackStackEntryTest {
                     inclusive = true
                     saveState = true
                 }
-            }
+            },
         )
         val newEntry = navController.getBackStackEntry(R.id.start_test)
         navController.navigatorProvider[TestNavigator::class].onTransitionComplete(newEntry)

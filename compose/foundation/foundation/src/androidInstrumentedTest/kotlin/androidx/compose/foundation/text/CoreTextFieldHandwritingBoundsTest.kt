@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -54,7 +55,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class CoreTextFieldHandwritingBoundsTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
     private val fakeImm =
@@ -84,7 +85,7 @@ class CoreTextFieldHandwritingBoundsTest {
                 selectionStart: Int,
                 selectionEnd: Int,
                 compositionStart: Int,
-                compositionEnd: Int
+                compositionEnd: Int,
             ) {}
 
             override fun updateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo) {}
@@ -175,13 +176,13 @@ class CoreTextFieldHandwritingBoundsTest {
                     .fillMaxWidth()
                     // make the size of TextFields equal to padding, so that touch bounds of editors
                     // in the same column/row are overlapping.
-                    .height(HandwritingBoundsVerticalOffset)
+                    .height(HandwritingBoundsVerticalOffset),
         )
     }
 
     private fun setContent(
         extraItemForInitialFocus: Boolean = true,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setFocusableContent(extraItemForInitialFocus) {
             inputMethodInterceptor.Content { content() }

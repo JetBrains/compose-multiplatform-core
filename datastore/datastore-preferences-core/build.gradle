@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -47,8 +46,8 @@ androidXMultiplatform {
                     new File("src/jvmMain/resources/META-INF/proguard/androidx.datastore_datastore-preferences-core.pro")
             )
         }
-        experimentalProperties["android.lint.useK2Uast"] = false
     }
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -67,9 +66,7 @@ androidXMultiplatform {
         }
         commonTest {
             dependencies {
-                implementation(libs.kotlinTestCommon)
                 implementation(libs.kotlinTest)
-                implementation(libs.kotlinTestAnnotationsCommon)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":datastore:datastore-core"))
                 implementation(project(":kruth:kruth"))
@@ -88,8 +85,13 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmAndroidMain)
         }
-        jvmAndroidTest {
+
+        nonWebCommonTest {
             dependsOn(commonTest)
+        }
+
+        jvmAndroidTest {
+            dependsOn(nonWebCommonTest)
             dependencies {
                 implementation(libs.junit)
             }
@@ -101,16 +103,24 @@ androidXMultiplatform {
                 implementation(libs.kotlinSerializationProtobuf)
             }
         }
+
+        wasmJsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinSerializationJson)
+                implementation("org.jetbrains.kotlinx:kotlinx-browser:0.3")
+            }
+        }
+
+        wasmJsTest {
+            dependsOn(commonTest)
+        }
+
         jvmTest {
             dependsOn(jvmAndroidTest)
         }
         nativeTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.kotlinTest)
-                implementation(project(":internal-testutils-datastore"))
-                implementation(project(":kruth:kruth"))
-            }
+            dependsOn(nonWebCommonTest)
         }
 
         targets.configureEach { target ->
@@ -132,6 +142,4 @@ androidx {
     inceptionYear = "2020"
     description = "Android Preferences DataStore without the Android Dependencies"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

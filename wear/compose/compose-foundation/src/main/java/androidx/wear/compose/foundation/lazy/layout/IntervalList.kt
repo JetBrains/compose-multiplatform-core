@@ -73,7 +73,7 @@ internal sealed interface IntervalList<out T> {
         /** The amount of items in the interval. */
         val size: Int,
         /** The value representing this interval. */
-        val value: T
+        val value: T,
     ) {
         init {}
     }

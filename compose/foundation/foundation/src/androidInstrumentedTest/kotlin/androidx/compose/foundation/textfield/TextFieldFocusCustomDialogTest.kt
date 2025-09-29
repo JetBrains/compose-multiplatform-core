@@ -49,6 +49,7 @@ import androidx.test.filters.FlakyTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,7 +57,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class TextFieldFocusCustomDialogTest {
-    @get:Rule val rule = createAndroidComposeRule<FragmentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<FragmentActivity>(StandardTestDispatcher())
 
     data class FocusTestData(val focusRequester: FocusRequester, var focused: Boolean = false)
 
@@ -68,7 +69,7 @@ class TextFieldFocusCustomDialogTest {
     fun keyboardShown_forFieldInAndroidDialog_whenFocusRequestedImmediately_fromLaunchedEffect() {
         keyboardIsShown_whenFocusRequestedImmediately_fromEffect(
             runEffect = { LaunchedEffect(Unit) { it() } },
-            wrapContent = { CustomDialog(content = it) }
+            wrapContent = { CustomDialog(content = it) },
         )
     }
 
@@ -85,13 +86,13 @@ class TextFieldFocusCustomDialogTest {
                     onDispose {}
                 }
             },
-            wrapContent = { CustomDialog(content = it) }
+            wrapContent = { CustomDialog(content = it) },
         )
     }
 
     private fun keyboardIsShown_whenFocusRequestedImmediately_fromEffect(
         runEffect: @Composable (body: () -> Unit) -> Unit,
-        wrapContent: @Composable (@Composable () -> Unit) -> Unit = { it() }
+        wrapContent: @Composable (@Composable () -> Unit) -> Unit = { it() },
     ) {
         val focusRequester = FocusRequester()
         val keyboardHelper = KeyboardHelper(rule)
@@ -108,7 +109,7 @@ class TextFieldFocusCustomDialogTest {
                 BasicTextField(
                     value = "",
                     onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
         }
@@ -153,7 +154,7 @@ class TextFieldFocusCustomDialogTest {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ): View =
             ComposeView(requireContext()).also {
                 it.setViewTreeLifecycleOwner(this)

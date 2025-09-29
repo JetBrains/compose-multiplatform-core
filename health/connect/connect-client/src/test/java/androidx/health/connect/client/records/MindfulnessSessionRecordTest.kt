@@ -44,7 +44,7 @@ class MindfulnessSessionRecordTest {
                     title = "title",
                     notes = "note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
                 ),
                 MindfulnessSessionRecord(
                     startTime = Instant.ofEpochMilli(1234L),
@@ -55,8 +55,8 @@ class MindfulnessSessionRecordTest {
                     title = "title",
                     notes = "note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
-                )
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
+                ),
             )
             .addEqualityGroup(
                 MindfulnessSessionRecord(
@@ -68,7 +68,7 @@ class MindfulnessSessionRecordTest {
                     title = "different title",
                     notes = "different note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
                 )
             )
             .testEquals()
@@ -86,7 +86,7 @@ class MindfulnessSessionRecordTest {
                 title = "title",
                 notes = "note",
                 mindfulnessSessionType =
-                    MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION
+                    MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION,
             )
         }
     }
@@ -103,12 +103,12 @@ class MindfulnessSessionRecordTest {
                         title = "title",
                         notes = "note",
                         mindfulnessSessionType =
-                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MOVEMENT
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MOVEMENT,
                     )
                     .toString()
             )
             .isEqualTo(
-                "MindfulnessSessionRecord(startTime=1970-01-01T00:00:01.234Z, startZoneOffset=null, endTime=1970-01-01T00:00:01.236Z, endZoneOffset=null, mindfulnessSessionType=5, title=title, notes=note, metadata=Metadata(id='', dataOrigin=DataOrigin(packageName=''), lastModifiedTime=1970-01-01T00:00:00Z, clientRecordId=null, clientRecordVersion=0, device=null, recordingMethod=0))"
+                "MindfulnessSessionRecord(startTime=1970-01-01T00:00:01.234Z, startZoneOffset=null, endTime=1970-01-01T00:00:01.236Z, endZoneOffset=null, mindfulnessSessionType=4, title=title, notes=note, metadata=Metadata(id='', dataOrigin=DataOrigin(packageName=''), lastModifiedTime=1970-01-01T00:00:00Z, clientRecordId=null, clientRecordVersion=0, device=null, recordingMethod=0))"
             )
     }
 

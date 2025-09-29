@@ -20,7 +20,6 @@ import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.location.Location
-import android.os.Build
 import android.util.Size
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
@@ -43,7 +42,6 @@ import java.util.UUID
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /**
@@ -53,7 +51,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
  */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class JpegBytes2DiskTest {
 
     private val operation = JpegBytes2Disk()
@@ -124,7 +121,7 @@ class JpegBytes2DiskTest {
     private fun saveFileAndGetPath(
         exif: Exif = createExif(createJpegBytes(WIDTH, HEIGHT)),
         metadata: ImageCapture.Metadata = ImageCapture.Metadata(),
-        rotation: Int = ROTATION_DEGREES
+        rotation: Int = ROTATION_DEGREES,
     ): String {
         val jpegBytes = createJpegBytes(WIDTH, HEIGHT)
         val inputPacket =
@@ -136,7 +133,7 @@ class JpegBytes2DiskTest {
                 Rect(0, 0, WIDTH, HEIGHT),
                 rotation,
                 Matrix(),
-                CAMERA_CAPTURE_RESULT
+                CAMERA_CAPTURE_RESULT,
             )
         val options = OutputFileOptions.Builder(TEMP_FILE).setMetadata(metadata).build()
         val input = JpegBytes2Disk.In.of(inputPacket, options)

@@ -7,6 +7,14 @@
         "identifier": "androidx.annotation:annotation",
         "resolvedVersion": "1.7.0"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.annotation:annotation",
+        "resolvedVersion": "1.7.0"
+      },
       "toConfiguration": "implementation"
     },
     {
@@ -40,6 +48,14 @@
         "resolvedVersion": "2.28.4"
       },
       "fromConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "resolvedVersion": "1.7.3"
+      },
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {

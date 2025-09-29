@@ -46,7 +46,6 @@ dependencies {
 androidx {
     name = "Dynamic animation Kotlin Extensions"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
-    mavenVersion = LibraryVersions.DYNAMICANIMATION_KTX
     inceptionYear = "2018"
     description = "Kotlin extensions for 'dynamicanimation' artifact"
     legacyDisableKotlinStrictApiMode = true

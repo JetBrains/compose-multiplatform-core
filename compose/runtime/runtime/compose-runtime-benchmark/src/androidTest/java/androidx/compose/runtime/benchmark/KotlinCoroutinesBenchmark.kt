@@ -137,9 +137,6 @@ class KotlinCoroutinesBenchmark(private val dispatcher: CoroutineDispatcher) {
         @Parameterized.Parameters(name = "Dispatcher={0}")
         @JvmStatic
         fun parameters() =
-            listOf<Array<Any?>>(
-                arrayOf(Dispatchers.Main),
-                arrayOf(Dispatchers.Unconfined),
-            )
+            listOf<Array<Any?>>(arrayOf(Dispatchers.Main), arrayOf(Dispatchers.Unconfined))
     }
 }

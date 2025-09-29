@@ -27,6 +27,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertWithMessage
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +36,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AnimatorAnimationSpecsTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val tolerance = 0.01f
 
@@ -48,7 +49,7 @@ class AnimatorAnimationSpecsTest {
             val control =
                 transition.animateFloat(
                     label = "control",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -57,7 +58,7 @@ class AnimatorAnimationSpecsTest {
                     label = "reversed",
                     transitionSpec = {
                         tween<Float>(durationMillis = 1000, easing = LinearEasing).reversed(1000)
-                    }
+                    },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -86,7 +87,7 @@ class AnimatorAnimationSpecsTest {
                             100f at 100 using LinearEasing
                             1000f at 1000 using LinearEasing
                         }
-                    }
+                    },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -101,7 +102,7 @@ class AnimatorAnimationSpecsTest {
                                 0f at 1000 using LinearEasing
                             }
                             .reversed(1000)
-                    }
+                    },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -129,7 +130,7 @@ class AnimatorAnimationSpecsTest {
                             0f at 0 using LinearEasing
                             1000f at 500 using LinearEasing
                         }
-                    }
+                    },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -144,7 +145,7 @@ class AnimatorAnimationSpecsTest {
                                 0f at 1000 using LinearEasing
                             }
                             .reversed(1000)
-                    }
+                    },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -166,7 +167,7 @@ class AnimatorAnimationSpecsTest {
             val control =
                 transition.animateFloat(
                     label = "control",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -175,7 +176,7 @@ class AnimatorAnimationSpecsTest {
                     label = "combined",
                     transitionSpec = {
                         combined(listOf(0 to tween(durationMillis = 1000, easing = LinearEasing)))
-                    }
+                    },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -203,7 +204,7 @@ class AnimatorAnimationSpecsTest {
                             0f at 0 using LinearEasing
                             1000f at 1000 using LinearEasing
                         }
-                    }
+                    },
                 ) {
                     if (it) 1000f else 0f
                 }
@@ -224,10 +225,10 @@ class AnimatorAnimationSpecsTest {
                                         durationMillis = 700
                                         300f at 0 using LinearEasing
                                         1000f at 700 using LinearEasing
-                                    }
+                                    },
                             )
                         )
-                    }
+                    },
                 ) {
                     if (it) 1000f else 0f
                 }

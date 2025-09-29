@@ -17,6 +17,7 @@
 package androidx.compose.material3
 
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -43,16 +44,16 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.junit.Ignore
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class NavigationRailScreenshotTest {
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -71,12 +72,11 @@ class NavigationRailScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationRail_lightTheme_defaultColors"
+            goldenIdentifier = "navigationRail_lightTheme_defaultColors",
         )
     }
 
     @Test
-    @Ignore("b/355413615")
     fun lightTheme_defaultColors_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -87,11 +87,17 @@ class NavigationRailScreenshotTest {
             DefaultNavigationRail(interactionSource)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "navigationRail_lightTheme_defaultColors_pressed_post_api_34"
+            } else {
+                "navigationRail_lightTheme_defaultColors_pressed"
+            }
         assertNavigationRailMatches(
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "navigationRail_lightTheme_defaultColors_pressed"
+            goldenIdentifier = nameId,
         )
     }
 
@@ -110,7 +116,7 @@ class NavigationRailScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationRail_lightTheme_defaultColors_disabled"
+            goldenIdentifier = "navigationRail_lightTheme_defaultColors_disabled",
         )
     }
 
@@ -129,12 +135,11 @@ class NavigationRailScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationRail_darkTheme_defaultColors"
+            goldenIdentifier = "navigationRail_darkTheme_defaultColors",
         )
     }
 
     @Test
-    @Ignore("b/355413615")
     fun darkTheme_defaultColors_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -145,11 +150,17 @@ class NavigationRailScreenshotTest {
             DefaultNavigationRail(interactionSource)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "navigationRail_darkTheme_defaultColors_pressed_post_api_34"
+            } else {
+                "navigationRail_darkTheme_defaultColors_pressed"
+            }
         assertNavigationRailMatches(
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "navigationRail_darkTheme_defaultColors_pressed"
+            goldenIdentifier = nameId,
         )
     }
 
@@ -168,7 +179,7 @@ class NavigationRailScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationRail_darkTheme_defaultColors_disabled"
+            goldenIdentifier = "navigationRail_darkTheme_defaultColors_disabled",
         )
     }
 
@@ -187,12 +198,11 @@ class NavigationRailScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationRail_lightTheme_defaultColors_withFab"
+            goldenIdentifier = "navigationRail_lightTheme_defaultColors_withFab",
         )
     }
 
     @Test
-    @Ignore("b/355413615")
     fun lightTheme_defaultColors_withHeaderFab_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -203,11 +213,17 @@ class NavigationRailScreenshotTest {
             DefaultNavigationRail(interactionSource, withHeaderFab = true)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "navigationRail_lightTheme_defaultColors_withFab_pressed_post_api_34"
+            } else {
+                "navigationRail_lightTheme_defaultColors_withFab_pressed"
+            }
         assertNavigationRailMatches(
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 100f)),
-            goldenIdentifier = "navigationRail_lightTheme_defaultColors_withFab_pressed"
+            goldenIdentifier = nameId,
         )
     }
 
@@ -225,7 +241,7 @@ class NavigationRailScreenshotTest {
                         onClick = {},
                         icon = { Icon(Icons.Filled.Home, contentDescription = null) },
                         colors =
-                            NavigationRailItemDefaults.colors(indicatorColor = Color.Transparent)
+                            NavigationRailItemDefaults.colors(indicatorColor = Color.Transparent),
                     )
                 }
             }
@@ -235,7 +251,7 @@ class NavigationRailScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationRail_lightTheme_transparentIndicator"
+            goldenIdentifier = "navigationRail_lightTheme_transparentIndicator",
         )
     }
 
@@ -251,7 +267,7 @@ class NavigationRailScreenshotTest {
         scope: CoroutineScope,
         interactionSource: MutableInteractionSource,
         interaction: Interaction? = null,
-        goldenIdentifier: String
+        goldenIdentifier: String,
     ) {
         if (interaction != null) {
             composeTestRule.runOnIdle {
@@ -304,21 +320,21 @@ private fun DefaultNavigationRail(
                 label = { Text("Favorites") },
                 selected = true,
                 onClick = {},
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
             NavigationRailItem(
                 icon = { Icon(Icons.Filled.Home, null) },
                 label = { Text("Home") },
                 selected = false,
                 enabled = !setUnselectedItemsAsDisabled,
-                onClick = {}
+                onClick = {},
             )
             NavigationRailItem(
                 icon = { Icon(Icons.Filled.Search, null) },
                 label = { Text("Search") },
                 selected = false,
                 enabled = !setUnselectedItemsAsDisabled,
-                onClick = {}
+                onClick = {},
             )
         }
     }
@@ -330,11 +346,7 @@ private fun DefaultNavigationRail(
  */
 @Composable
 private fun HeaderFab() {
-    FloatingActionButton(
-        onClick = {},
-    ) {
-        Icon(Icons.Filled.Edit, contentDescription = "Edit")
-    }
+    FloatingActionButton(onClick = {}) { Icon(Icons.Filled.Edit, contentDescription = "Edit") }
 }
 
 private const val Tag = "NavigationRail"

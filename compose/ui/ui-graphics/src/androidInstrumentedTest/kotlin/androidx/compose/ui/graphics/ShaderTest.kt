@@ -48,7 +48,7 @@ class ShaderTest {
                         1.0f to Color.Blue,
                         start = Offset.Zero,
                         end = Offset(0.0f, 100f),
-                        tileMode = TileMode.Clamp
+                        tileMode = TileMode.Clamp,
                     )
             )
         }
@@ -78,7 +78,7 @@ class ShaderTest {
                         1.0f to Color.Blue,
                         center = Offset(50f, 50f),
                         radius = 50f,
-                        tileMode = TileMode.Clamp
+                        tileMode = TileMode.Clamp,
                     )
             )
         }
@@ -109,7 +109,7 @@ class ShaderTest {
                         0.5f to Color.Red,
                         0.5f to Color.Blue,
                         1.0f to Color.Blue,
-                        center = center
+                        center = center,
                     )
             )
         }
@@ -132,9 +132,9 @@ class ShaderTest {
             Brush.linearGradient(
                     listOf(Color.Red, Color.Blue),
                     start = Offset(200f, 100f),
-                    end = Offset(300f, 300f)
+                    end = Offset(300f, 300f),
                 )
-                .intrinsicSize
+                .intrinsicSize,
         )
     }
 
@@ -145,9 +145,9 @@ class ShaderTest {
             Brush.linearGradient(
                     listOf(Color.Red, Color.Blue),
                     start = Offset(200f, 100f),
-                    end = Offset(100f, -100f)
+                    end = Offset(100f, -100f),
                 )
-                .intrinsicSize
+                .intrinsicSize,
         )
     }
 
@@ -158,9 +158,9 @@ class ShaderTest {
             Brush.linearGradient(
                     listOf(Color.Red, Color.Blue),
                     start = Offset(Float.POSITIVE_INFINITY, 100f),
-                    end = Offset(Float.POSITIVE_INFINITY, 300f)
+                    end = Offset(Float.POSITIVE_INFINITY, 300f),
                 )
-                .intrinsicSize
+                .intrinsicSize,
         )
     }
 
@@ -171,9 +171,9 @@ class ShaderTest {
             Brush.linearGradient(
                     listOf(Color.Red, Color.Blue),
                     start = Offset(100f, 0f),
-                    end = Offset(200f, Float.POSITIVE_INFINITY)
+                    end = Offset(200f, Float.POSITIVE_INFINITY),
                 )
-                .intrinsicSize
+                .intrinsicSize,
         )
     }
 
@@ -183,7 +183,7 @@ class ShaderTest {
         // drawn with
         assertEquals(
             Size.Unspecified,
-            Brush.sweepGradient(listOf(Color.Red, Color.Blue)).intrinsicSize
+            Brush.sweepGradient(listOf(Color.Red, Color.Blue)).intrinsicSize,
         )
     }
 
@@ -191,7 +191,7 @@ class ShaderTest {
     fun testRadialGradientIntrinsicSize() {
         assertEquals(
             Size(100f, 100f),
-            Brush.radialGradient(listOf(Color.Red, Color.Blue), radius = 50f).intrinsicSize
+            Brush.radialGradient(listOf(Color.Red, Color.Blue), radius = 50f).intrinsicSize,
         )
     }
 
@@ -199,7 +199,7 @@ class ShaderTest {
     fun testRadialGradientInfiniteSize() {
         assertEquals(
             Size.Unspecified,
-            Brush.radialGradient(listOf(Color.Red, Color.Blue)).intrinsicSize
+            Brush.radialGradient(listOf(Color.Red, Color.Blue)).intrinsicSize,
         )
     }
 
@@ -257,6 +257,6 @@ class ShaderTest {
                 LayoutDirection.Ltr,
                 Canvas(this),
                 Size(width.toFloat(), height.toFloat()),
-                block
+                block,
             )
 }

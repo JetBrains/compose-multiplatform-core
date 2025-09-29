@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +44,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class LayoutNodeMappingTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private lateinit var owner: Owner
 
@@ -114,7 +115,7 @@ class LayoutNodeMappingTest {
                     if (showAll) {
                         LazyColumn(
                             state = lazyListState,
-                            modifier = Modifier.size(rootSizePx.toDp())
+                            modifier = Modifier.size(rootSizePx.toDp()),
                         ) {
                             items(viewPortCount * pages) { MyItem() }
                         }
@@ -160,7 +161,7 @@ class LayoutNodeMappingTest {
         assertEquals(
             expected = expectedSize,
             actual = owner.layoutNodes.size,
-            message = "Unexpected Map size"
+            message = "Unexpected Map size",
         )
         owner.layoutNodes.forEach { key, value ->
             assertEquals(key, value.semanticsId, "Non-matching keys")

@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
@@ -32,16 +31,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3Api::class)
 class TooltipScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -120,14 +120,15 @@ class TooltipScreenshotTest {
     private fun PlainTooltipTest() {
         val tooltipState = rememberTooltipState()
         TooltipBox(
-            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
             tooltip = {
                 PlainTooltip(modifier = Modifier.testTag(TooltipTestTag)) {
                     Text("Tooltip Description")
                 }
             },
             modifier = Modifier.testTag(AnchorTestTag),
-            state = tooltipState
+            state = tooltipState,
         ) {
             Icon(Icons.Filled.Favorite, contentDescription = null)
         }
@@ -137,12 +138,13 @@ class TooltipScreenshotTest {
     private fun RichTooltipTest() {
         val tooltipState = rememberTooltipState(isPersistent = true)
         TooltipBox(
-            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
             tooltip = {
                 RichTooltip(
                     title = { Text("Title") },
                     action = { TextButton(onClick = {}) { Text("Action Text") } },
-                    modifier = Modifier.testTag(TooltipTestTag)
+                    modifier = Modifier.testTag(TooltipTestTag),
                 ) {
                     Text(
                         "Area for supportive text, providing a descriptive " +
@@ -151,7 +153,7 @@ class TooltipScreenshotTest {
                 }
             },
             state = tooltipState,
-            modifier = Modifier.testTag(AnchorTestTag)
+            modifier = Modifier.testTag(AnchorTestTag),
         ) {
             Icon(Icons.Filled.Favorite, contentDescription = null)
         }

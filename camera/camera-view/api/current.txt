@@ -158,8 +158,8 @@ package androidx.camera.view {
 
   public final class TapToFocusInfo {
     ctor public TapToFocusInfo(int focusState, android.graphics.PointF? tapPoint);
-    method public int getFocusState();
-    method public android.graphics.PointF? getTapPoint();
+    method @InaccessibleFromKotlin public int getFocusState();
+    method @InaccessibleFromKotlin public android.graphics.PointF? getTapPoint();
     property public int focusState;
     property public android.graphics.PointF? tapPoint;
   }

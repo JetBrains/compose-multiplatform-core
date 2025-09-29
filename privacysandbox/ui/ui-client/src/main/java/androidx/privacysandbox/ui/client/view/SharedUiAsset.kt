@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.client.view
 
-import android.annotation.SuppressLint
 import android.view.View
 import androidx.core.util.Preconditions
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
@@ -31,20 +30,19 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
  * No user-sensitive information should be added to the asset registered on [SharedUiContainer] as
  * it will be sent to the UI provider.
  */
-@SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
-class SharedUiAsset
+public class SharedUiAsset
 @JvmOverloads
 constructor(
-    val view: View,
-    val assetId: String,
-    val sandboxedUiAdapter: SandboxedUiAdapter? = null
+    public val view: View,
+    public val assetId: String,
+    public val sandboxedUiAdapter: SandboxedUiAdapter? = null,
 ) {
     init {
         if (sandboxedUiAdapter != null)
             Preconditions.checkArgument(
                 view is SandboxedSdkView,
-                "${SandboxedUiAdapter::class.qualifiedName} can only be set for ${SandboxedSdkView::class.qualifiedName} assets"
+                "${SandboxedUiAdapter::class.qualifiedName} can only be set for ${SandboxedSdkView::class.qualifiedName} assets",
             )
     }
 

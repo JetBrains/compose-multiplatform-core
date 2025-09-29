@@ -15,7 +15,6 @@
  */
 package androidx.compose.material3
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -49,6 +48,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -56,10 +56,10 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class FloatingActionButtonScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -273,10 +273,7 @@ class FloatingActionButtonScreenshotTest {
     @Test
     fun text() {
         rule.setMaterialContent(lightColorScheme()) {
-            ExtendedFloatingActionButton(
-                onClick = {},
-                content = { Text("EXTENDED") },
-            )
+            ExtendedFloatingActionButton(onClick = {}, content = { Text("EXTENDED") })
         }
 
         assertClickableAgainstGolden("fab_extended_text")
@@ -288,7 +285,7 @@ class FloatingActionButtonScreenshotTest {
             ExtendedFloatingActionButton(
                 text = { Text("EXTENDED") },
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -299,10 +296,7 @@ class FloatingActionButtonScreenshotTest {
     @Test
     fun smallExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
-            SmallExtendedFloatingActionButton(
-                onClick = {},
-                content = { Text("EXTENDED") },
-            )
+            SmallExtendedFloatingActionButton(onClick = {}, content = { Text("EXTENDED") })
         }
 
         assertClickableAgainstGolden("fab_small_extended_text")
@@ -315,7 +309,7 @@ class FloatingActionButtonScreenshotTest {
             SmallExtendedFloatingActionButton(
                 text = { Text("EXTENDED") },
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -326,10 +320,7 @@ class FloatingActionButtonScreenshotTest {
     @Test
     fun mediumExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
-            MediumExtendedFloatingActionButton(
-                onClick = {},
-                content = { Text("EXTENDED") },
-            )
+            MediumExtendedFloatingActionButton(onClick = {}, content = { Text("EXTENDED") })
         }
 
         assertClickableAgainstGolden("fab_medium_extended_text")
@@ -345,10 +336,10 @@ class FloatingActionButtonScreenshotTest {
                     Icon(
                         Icons.Filled.Favorite,
                         contentDescription = null,
-                        modifier = Modifier.size(FloatingActionButtonDefaults.MediumIconSize)
+                        modifier = Modifier.size(FloatingActionButtonDefaults.MediumIconSize),
                     )
                 },
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -359,10 +350,7 @@ class FloatingActionButtonScreenshotTest {
     @Test
     fun largeExtendedFabTextOnly() {
         rule.setMaterialContent(lightColorScheme()) {
-            LargeExtendedFloatingActionButton(
-                onClick = {},
-                content = { Text("EXTENDED") },
-            )
+            LargeExtendedFloatingActionButton(onClick = {}, content = { Text("EXTENDED") })
         }
 
         assertClickableAgainstGolden("fab_large_extended_text")
@@ -378,10 +366,10 @@ class FloatingActionButtonScreenshotTest {
                     Icon(
                         Icons.Filled.Favorite,
                         contentDescription = null,
-                        modifier = Modifier.size(FloatingActionButtonDefaults.LargeIconSize)
+                        modifier = Modifier.size(FloatingActionButtonDefaults.LargeIconSize),
                     )
                 },
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -437,7 +425,7 @@ class FloatingActionButtonScreenshotTest {
             Box(Modifier.requiredSize(100.dp, 100.dp).wrapContentSize()) {
                 FloatingActionButton(
                     onClick = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = null)
                 }
@@ -484,7 +472,7 @@ class FloatingActionButtonScreenshotTest {
                 .getDurationNanos(
                     initialValue = AnimationVector1D(0f),
                     targetValue = AnimationVector1D(1f),
-                    initialVelocity = AnimationVector1D(0f)
+                    initialVelocity = AnimationVector1D(0f),
                 ) / 1_000_000.0
 
         rule.mainClock.advanceTimeBy(duration.toLong() / 2)

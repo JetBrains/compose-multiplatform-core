@@ -44,15 +44,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "com.google.guava:listenablefuture",
         "resolvedVersion": "1.0"
       },
@@ -65,15 +56,6 @@
         "resolvedVersion": "4.8.0"
       },
       "fromConfiguration": "testImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.robolectric:robolectric",
-        "resolvedVersion": "4.14"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
     },
     {
       "coordinates": {
@@ -95,6 +77,13 @@
         "type": "project",
         "identifier": ":wear:protolayout:protolayout-expression"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":wear:protolayout:protolayout-expression"
+      },
       "toConfiguration": "api"
     },
     {
@@ -102,7 +91,21 @@
         "type": "project",
         "identifier": ":wear:protolayout:protolayout-proto"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":wear:protolayout:protolayout-proto"
+      },
       "toConfiguration": "api"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":wear:protolayout:protolayout-proto"
+      },
+      "toConfiguration": "testImplementation"
     },
     {
       "coordinates": {

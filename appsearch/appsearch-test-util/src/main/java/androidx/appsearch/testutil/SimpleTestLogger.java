@@ -21,11 +21,13 @@ import androidx.appsearch.localstorage.AppSearchLogger;
 import androidx.appsearch.localstorage.stats.CallStats;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
+import androidx.appsearch.localstorage.stats.PersistToDiskStats;
 import androidx.appsearch.localstorage.stats.PutDocumentStats;
+import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
 import androidx.appsearch.localstorage.stats.SearchSessionStats;
-import androidx.appsearch.localstorage.stats.SearchStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
+import androidx.appsearch.localstorage.stats.VmInitializationStats;
 import androidx.appsearch.stats.SchemaMigrationStats;
 
 import org.jspecify.annotations.NonNull;
@@ -47,8 +49,8 @@ public final class SimpleTestLogger implements AppSearchLogger {
     public @Nullable PutDocumentStats mPutDocumentStats;
     /** Holds {@link InitializeStats} after logging. */
     public @Nullable InitializeStats mInitializeStats;
-    /** Holds {@link SearchStats} after logging. */
-    public @Nullable SearchStats mSearchStats;
+    /** Holds {@link QueryStats} after logging. */
+    public @Nullable QueryStats mQueryStats;
     /** Holds {@link RemoveStats} after logging. */
     public @Nullable RemoveStats mRemoveStats;
     /** Holds {@link OptimizeStats} after logging. */
@@ -59,6 +61,10 @@ public final class SimpleTestLogger implements AppSearchLogger {
     public @Nullable SchemaMigrationStats mSchemaMigrationStats;
     /** Holds {@link SearchSessionStats} after logging. */
     public @NonNull List<SearchSessionStats> mSearchSessionsStats = new ArrayList<>();
+    /** Holds {@link PersistToDiskStats} after logging. */
+    public @NonNull PersistToDiskStats mPersistToDiskStats;
+    /** Holds {@link VmInitializationStats} after logging. */
+    public @Nullable VmInitializationStats mVmInitializationStats;
 
     @Override
     public void logStats(@NonNull CallStats stats) {
@@ -76,8 +82,8 @@ public final class SimpleTestLogger implements AppSearchLogger {
     }
 
     @Override
-    public void logStats(@NonNull SearchStats stats) {
-        mSearchStats = stats;
+    public void logStats(@NonNull QueryStats stats) {
+        mQueryStats = stats;
     }
 
     @Override
@@ -103,5 +109,15 @@ public final class SimpleTestLogger implements AppSearchLogger {
     @Override
     public void logStats(@NonNull List<SearchSessionStats> searchSessionsStats) {
         mSearchSessionsStats.addAll(searchSessionsStats);
+    }
+
+    @Override
+    public void logStats(@NonNull PersistToDiskStats stats) {
+        mPersistToDiskStats = stats;
+    }
+
+    @Override
+    public void logStats(@NonNull VmInitializationStats stats) {
+        mVmInitializationStats = stats;
     }
 }

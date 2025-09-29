@@ -31,12 +31,14 @@ import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +47,9 @@ import org.junit.runner.RunWith
 @MediumTest
 class DragDropTargetTest {
 
-    @get:Rule val rule = createComposeRule()
+    @OptIn(ExperimentalTestApi::class)
+    @get:Rule
+    val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun dragAndDropTarget_changingTarget_updatesModifier() {
@@ -66,7 +70,7 @@ class DragDropTargetTest {
                                     dropEvents.add(targetKey)
                                     return@DragAndDropTarget true
                                 }
-                            }
+                            },
                     )
             )
         }
@@ -126,7 +130,7 @@ class DragDropTargetTest {
                                     dropEvents.add(targetKey)
                                     return@DragAndDropTarget true
                                 }
-                            }
+                            },
                     )
             )
         }
@@ -169,7 +173,7 @@ class DragDropTargetTest {
                                 DragAndDropTarget {
                                     return@DragAndDropTarget true
                                 }
-                            }
+                            },
                     )
             )
         }
@@ -199,7 +203,7 @@ class DragDropTargetTest {
 
     private fun DragAndDropTarget(
         onEvent: (Boolean) -> Unit = {},
-        onDrop: (DragAndDropEvent) -> Boolean
+        onDrop: (DragAndDropEvent) -> Boolean,
     ) =
         object : DragAndDropTarget {
             override fun onEntered(event: DragAndDropEvent) = onEvent(true)

@@ -31,6 +31,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -42,7 +43,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
 class WindowInsetsIgnoringVisibilityTest {
-    @get:Rule val rule = createAndroidComposeRule<WindowInsetsActivity>()
+    @get:Rule val rule = createAndroidComposeRule<WindowInsetsActivity>(StandardTestDispatcher())
 
     private lateinit var insetsView: InsetsView
 
@@ -274,7 +275,7 @@ class WindowInsetsIgnoringVisibilityTest {
 
     private fun setContent(
         initialInsets: WindowInsetsCompat? = null,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContent {
             AndroidView(
@@ -287,13 +288,13 @@ class WindowInsetsIgnoringVisibilityTest {
                         composeView,
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        ),
                     )
                     composeView.setContent(content)
                     view
                 },
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }

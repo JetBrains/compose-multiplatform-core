@@ -47,17 +47,17 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Tests for [ModalWideNavigationRail. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ModalWideNavigationRailTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun modalWideRail_defaultSemantics() {
@@ -65,10 +65,11 @@ class ModalWideNavigationRailTest {
             ModalWideNavigationRail {
                 WideNavigationRailItem(
                     modifier = Modifier.testTag("item"),
+                    railExpanded = false,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -91,9 +92,9 @@ class ModalWideNavigationRailTest {
                 header = {
                     Button(
                         modifier = Modifier.testTag("header"),
-                        onClick = { scope.launch { state.toggle() } }
+                        onClick = { scope.launch { state.toggle() } },
                     ) {}
-                }
+                },
             ) {
                 WideNavigationRailItem(
                     modifier = Modifier.testTag("item"),
@@ -101,7 +102,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -120,33 +121,26 @@ class ModalWideNavigationRailTest {
 
     @Test
     fun modalWideRail_collapses() {
+        lateinit var scope: CoroutineScope
         lateinit var state: WideNavigationRailState
         rule.setMaterialContentForSizeAssertions {
             state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
-            val scope = rememberCoroutineScope()
-
-            ModalWideNavigationRail(
-                modifier = Modifier.testTag("rail"),
-                state = state,
-                header = {
-                    Button(
-                        modifier = Modifier.testTag("header"),
-                        onClick = { scope.launch { state.toggle() } }
-                    ) {}
-                }
-            ) {
+            scope = rememberCoroutineScope()
+            ModalWideNavigationRail(modifier = Modifier.testTag("rail"), state = state) {
                 WideNavigationRailItem(
                     railExpanded = state.targetValue.isExpanded,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
 
-        // Click on header to collapse.
-        rule.onNodeWithTag("header").performClick()
+        // Collapse.
+        rule.runOnIdle { scope.launch { state.toggle() } }
+
+        rule.waitForIdle()
 
         // Assert rail is collapsed.
         assertThat(state.targetValue.isExpanded).isFalse()
@@ -165,16 +159,13 @@ class ModalWideNavigationRailTest {
             state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
             closeRail = getString(Strings.CloseRail)
 
-            ModalWideNavigationRail(
-                modifier = Modifier.testTag("rail"),
-                state = state,
-            ) {
+            ModalWideNavigationRail(modifier = Modifier.testTag("rail"), state = state) {
                 WideNavigationRailItem(
                     railExpanded = state.targetValue.isExpanded,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -208,7 +199,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -239,7 +230,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -275,7 +266,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -309,7 +300,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -334,14 +325,14 @@ class ModalWideNavigationRailTest {
             ModalWideNavigationRail(
                 modifier = Modifier.testTag("rail"),
                 state = state,
-                hideOnCollapse = true
+                hideOnCollapse = true,
             ) {
                 WideNavigationRailItem(
                     railExpanded = true,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }

@@ -17,6 +17,7 @@
 package androidx.compose.material3
 
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -43,17 +44,17 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.junit.Ignore
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class NavigationBarScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -72,12 +73,11 @@ class NavigationBarScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationBar_lightTheme_defaultColors"
+            goldenIdentifier = "navigationBar_lightTheme_defaultColors",
         )
     }
 
     @Test
-    @Ignore("b/355413615")
     fun lightTheme_defaultColors_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -88,11 +88,17 @@ class NavigationBarScreenshotTest {
             DefaultNavigationBar(interactionSource)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "navigationBar_lightTheme_defaultColors_pressed_post_api_34"
+            } else {
+                "navigationBar_lightTheme_defaultColors_pressed"
+            }
         assertNavigationBarMatches(
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "navigationBar_lightTheme_defaultColors_pressed"
+            goldenIdentifier = nameId,
         )
     }
 
@@ -111,7 +117,7 @@ class NavigationBarScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationBar_lightTheme_defaultColors_disabled"
+            goldenIdentifier = "navigationBar_lightTheme_defaultColors_disabled",
         )
     }
 
@@ -130,7 +136,7 @@ class NavigationBarScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationBar_lightTheme_customHeight"
+            goldenIdentifier = "navigationBar_lightTheme_customHeight",
         )
     }
 
@@ -149,12 +155,11 @@ class NavigationBarScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationBar_darkTheme_defaultColors"
+            goldenIdentifier = "navigationBar_darkTheme_defaultColors",
         )
     }
 
     @Test
-    @Ignore("b/355413615")
     fun darkTheme_defaultColors_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -165,11 +170,17 @@ class NavigationBarScreenshotTest {
             DefaultNavigationBar(interactionSource)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "navigationBar_darkTheme_defaultColors_pressed_post_api_34"
+            } else {
+                "navigationBar_darkTheme_defaultColors_pressed"
+            }
         assertNavigationBarMatches(
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "navigationBar_darkTheme_defaultColors_pressed"
+            goldenIdentifier = nameId,
         )
     }
 
@@ -188,7 +199,7 @@ class NavigationBarScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationBar_darkTheme_defaultColors_disabled"
+            goldenIdentifier = "navigationBar_darkTheme_defaultColors_disabled",
         )
     }
 
@@ -206,7 +217,7 @@ class NavigationBarScreenshotTest {
                         onClick = {},
                         icon = { Icon(Icons.Filled.Home, contentDescription = null) },
                         colors =
-                            NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
+                            NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
                     )
                 }
             }
@@ -216,7 +227,7 @@ class NavigationBarScreenshotTest {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "navigationBar_lightTheme_transparentIndicator"
+            goldenIdentifier = "navigationBar_lightTheme_transparentIndicator",
         )
     }
 
@@ -233,7 +244,7 @@ class NavigationBarScreenshotTest {
         scope: CoroutineScope,
         interactionSource: MutableInteractionSource,
         interaction: Interaction? = null,
-        goldenIdentifier: String
+        goldenIdentifier: String,
     ) {
         if (interaction != null) {
             composeTestRule.runOnIdle {
@@ -277,19 +288,19 @@ private fun DefaultNavigationBar(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = true,
                 onClick = {},
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
             NavigationBarItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = false,
                 enabled = !setUnselectedItemsAsDisabled,
-                onClick = {}
+                onClick = {},
             )
             NavigationBarItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
                 selected = false,
                 enabled = !setUnselectedItemsAsDisabled,
-                onClick = {}
+                onClick = {},
             )
         }
     }

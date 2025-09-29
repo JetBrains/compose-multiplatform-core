@@ -45,14 +45,15 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     /** A callback to get the current page number. */
     private var onCurrentPageRequested: (() -> Int)? = null
 
+    /** Gives the visibility of the toolbox view from edit fab. */
+    public val toolboxVisibility: Int
+        get() = editButton.visibility
+
     init {
         inflate(context, R.layout.tool_box_view, this)
         editButton = findViewById(R.id.edit_fab)
 
-        editButton.setOnClickListener {
-            handleEditFabClick()
-            editClickListener?.onClick(this)
-        }
+        editButton.setOnClickListener { editClickListener?.onClick(this) ?: handleEditFabClick() }
     }
 
     /**
@@ -92,6 +93,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     private fun handleEditFabClick() {
+        val document = pdfDocument ?: return
+
+        if (!AnnotationUtils.resolveAnnotationIntent(context, document.uri)) {
+            hideEditFabAndShowToast()
+            return
+        }
 
         pdfDocument?.let {
             try {
@@ -121,7 +128,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         Toast.makeText(
                 context,
                 context?.resources?.getString(R.string.cannot_edit_pdf),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             )
             .show()
     }
@@ -144,7 +151,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         // Set measurements
         setMeasuredDimension(
             child.measuredWidth + paddingLeft + paddingRight,
-            child.measuredHeight + paddingTop + paddingBottom
+            child.measuredHeight + paddingTop + paddingBottom,
         )
     }
 

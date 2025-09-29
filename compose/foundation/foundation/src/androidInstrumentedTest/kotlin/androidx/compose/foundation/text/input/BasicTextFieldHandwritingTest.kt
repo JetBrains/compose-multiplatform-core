@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -48,7 +49,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 internal class BasicTextFieldHandwritingTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val immRule = ComposeInputMethodManagerTestRule()
 
@@ -102,7 +103,7 @@ internal class BasicTextFieldHandwritingTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag(Tag),
-                enabled = false
+                enabled = false,
             )
         }
 
@@ -119,7 +120,7 @@ internal class BasicTextFieldHandwritingTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag(Tag),
-                readOnly = true
+                readOnly = true,
             )
         }
 
@@ -137,7 +138,7 @@ internal class BasicTextFieldHandwritingTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag(Tag),
-                enabled = enabled
+                enabled = enabled,
             )
         }
 
@@ -163,7 +164,7 @@ internal class BasicTextFieldHandwritingTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag(Tag),
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
 
@@ -188,7 +189,7 @@ internal class BasicTextFieldHandwritingTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag(Tag),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             )
         }
 
@@ -203,7 +204,7 @@ internal class BasicTextFieldHandwritingTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag(Tag),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             )
         }
 
@@ -218,11 +219,12 @@ internal class BasicTextFieldHandwritingTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag(Tag),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             )
         }
 
         rule.onNodeWithTag(Tag).performStylusHandwriting()
+        rule.waitForIdle()
         keyboardHelper.waitForKeyboardVisibility(true)
         Truth.assertThat(keyboardHelper.isSoftwareKeyboardShown()).isTrue()
     }
@@ -235,18 +237,19 @@ internal class BasicTextFieldHandwritingTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.fillMaxSize().testTag(Tag),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             )
         }
 
         rule.onNodeWithTag(Tag).performStylusHandwriting()
+        rule.waitForIdle()
         keyboardHelper.waitForKeyboardVisibility(true)
         Truth.assertThat(keyboardHelper.isSoftwareKeyboardShown()).isTrue()
     }
 
     private fun testStylusHandwriting(
         stylusHandwritingStarted: Boolean,
-        interaction: SemanticsNodeInteraction.() -> Unit
+        interaction: SemanticsNodeInteraction.() -> Unit,
     ) {
         immRule.setFactory { imm }
         inputMethodInterceptor.setTextFieldTestContent {

@@ -16,7 +16,6 @@
 
 package androidx.compose.material3.carousel
 
-import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -42,17 +41,18 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3Api::class)
 class CarouselItemScopeTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -66,7 +66,7 @@ class CarouselItemScopeTest {
                     size = 100.dp,
                     minSize = 10.dp,
                     maxSize = 100.dp,
-                    maskRect = DpRect(0.dp, 0.dp, 100.dp, 100.dp)
+                    maskRect = DpRect(0.dp, 0.dp, 100.dp, 100.dp),
                 )
             with(scope) {
                 Box(
@@ -90,7 +90,7 @@ class CarouselItemScopeTest {
                     size = 50.dp,
                     minSize = 10.dp,
                     maxSize = 100.dp,
-                    maskRect = DpRect(25.dp, 25.dp, 75.dp, 75.dp)
+                    maskRect = DpRect(25.dp, 25.dp, 75.dp, 75.dp),
                 )
             with(scope) {
                 Box(
@@ -117,7 +117,7 @@ class CarouselItemScopeTest {
                     size = 50.dp,
                     minSize = 10.dp,
                     maxSize = 100.dp,
-                    maskRect = DpRect(25.dp, 0.dp, 75.dp, 100.dp)
+                    maskRect = DpRect(25.dp, 0.dp, 75.dp, 100.dp),
                 )
             with(scope) {
                 Box(
@@ -141,7 +141,7 @@ class CarouselItemScopeTest {
                     size = 50.dp,
                     minSize = 10.dp,
                     maxSize = 100.dp,
-                    maskRect = DpRect(25.dp, 0.dp, 75.dp, 100.dp)
+                    maskRect = DpRect(25.dp, 0.dp, 75.dp, 100.dp),
                 )
             with(scope) {
                 Box(
@@ -165,7 +165,7 @@ class CarouselItemScopeTest {
                     size = 100.dp,
                     minSize = 10.dp,
                     maxSize = 100.dp,
-                    maskRect = DpRect(0.dp, 0.dp, 100.dp, 100.dp)
+                    maskRect = DpRect(0.dp, 0.dp, 100.dp, 100.dp),
                 )
             with(scope) {
                 Box(
@@ -175,7 +175,7 @@ class CarouselItemScopeTest {
                             .maskClip(shape = RoundedCornerShape(10.dp))
                             .maskBorder(
                                 border = BorderStroke(5.dp, Color.Blue),
-                                shape = RoundedCornerShape(10.dp)
+                                shape = RoundedCornerShape(10.dp),
                             )
                             .background(Color.Red)
                 )
@@ -199,7 +199,7 @@ class CarouselItemScopeTest {
                     size = 100.dp,
                     minSize = 10.dp,
                     maxSize = 100.dp,
-                    maskRect = DpRect(25.dp, 25.dp, 75.dp, 75.dp)
+                    maskRect = DpRect(25.dp, 25.dp, 75.dp, 75.dp),
                 )
             with(scope) {
                 Box(
@@ -220,7 +220,7 @@ class CarouselItemScopeTest {
         size: Dp,
         minSize: Dp,
         maxSize: Dp,
-        maskRect: DpRect
+        maskRect: DpRect,
     ): CarouselItemScope {
         return CarouselItemScopeImpl(
             CarouselItemDrawInfoImpl().apply {

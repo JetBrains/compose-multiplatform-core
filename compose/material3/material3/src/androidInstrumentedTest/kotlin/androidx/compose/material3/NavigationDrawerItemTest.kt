@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.height
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +55,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class NavigationDrawerItemTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     val DrawerItemTag = "drawer_item_tag"
 
@@ -67,7 +68,7 @@ class NavigationDrawerItemTest {
                     label = {},
                     selected = true,
                     onClick = {},
-                    modifier = Modifier.testTag(DrawerItemTag)
+                    modifier = Modifier.testTag(DrawerItemTag),
                 )
             }
         }
@@ -87,7 +88,7 @@ class NavigationDrawerItemTest {
                     label = { Text("Multi \nline \nlabel \nis \ntall") },
                     selected = true,
                     onClick = {},
-                    modifier = Modifier.testTag(DrawerItemTag)
+                    modifier = Modifier.testTag(DrawerItemTag),
                 )
             }
         }
@@ -107,14 +108,14 @@ class NavigationDrawerItemTest {
                         Icon(
                             Icons.Default.Face,
                             contentDescription = null,
-                            modifier = Modifier.testTag("icon")
+                            modifier = Modifier.testTag("icon"),
                         )
                     },
                     label = { Text("Label") },
                     badge = { Text("Badge") },
                     selected = true,
                     onClick = {},
-                    modifier = Modifier.testTag(DrawerItemTag)
+                    modifier = Modifier.testTag(DrawerItemTag),
                 )
             }
         }
@@ -145,7 +146,7 @@ class NavigationDrawerItemTest {
                     label = { Text("Label") },
                     selected = true,
                     onClick = {},
-                    modifier = Modifier.testTag(DrawerItemTag)
+                    modifier = Modifier.testTag(DrawerItemTag),
                 )
             }
         }
@@ -166,14 +167,14 @@ class NavigationDrawerItemTest {
                         icon = { Icon(Icons.Filled.Favorite, null) },
                         label = { Text("ItemText") },
                         selected = true,
-                        onClick = {}
+                        onClick = {},
                     )
                     NavigationDrawerItem(
                         modifier = Modifier.testTag("unselected_item"),
                         icon = { Icon(Icons.Filled.Favorite, null) },
                         label = { Text("ItemText") },
                         selected = false,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             ) {}

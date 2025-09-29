@@ -58,19 +58,40 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
-class CheckboxTest {
+@RunWith(Parameterized::class)
+class CheckboxTest(private val isCheckboxStyleM3FixEnabled: Boolean) {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val defaultTag = "myCheckbox"
+
+    /*
+     * The setup is intended for temporary use during the migration to the Material 3 styling.
+     * Is help to run tests twice with the old and new checkbox styling tokens param.
+     * Should be removed after the migration is complete.
+     */
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun data(): Collection<Array<Any>> {
+            return listOf(arrayOf(true), arrayOf(false))
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Before
+    fun setUp() {
+        isCheckboxStylingFixEnabled = isCheckboxStyleM3FixEnabled
+    }
 
     @Test
     fun checkBoxTest_defaultSemantics() {
@@ -131,7 +152,7 @@ class CheckboxTest {
                     checked,
                     {},
                     enabled = false,
-                    modifier = Modifier.testTag(defaultTag).semantics { focused = true }
+                    modifier = Modifier.testTag(defaultTag).semantics { focused = true },
                 )
             }
         }
@@ -182,7 +203,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = true,
-            minimumTouchTarget = true
+            minimumTouchTarget = true,
         )
     }
 
@@ -191,7 +212,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = true,
-            minimumTouchTarget = false
+            minimumTouchTarget = false,
         )
     }
 
@@ -220,7 +241,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = false,
-            minimumTouchTarget = true
+            minimumTouchTarget = true,
         )
     }
 
@@ -229,7 +250,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = false,
-            minimumTouchTarget = false
+            minimumTouchTarget = false,
         )
     }
 
@@ -239,7 +260,7 @@ class CheckboxTest {
             checkboxValue = On,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3,
         )
     }
 
@@ -249,7 +270,7 @@ class CheckboxTest {
             checkboxValue = On,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3,
         )
     }
 
@@ -259,7 +280,7 @@ class CheckboxTest {
             checkboxValue = Off,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3,
         )
     }
 
@@ -269,7 +290,7 @@ class CheckboxTest {
             checkboxValue = Off,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3,
         )
     }
 
@@ -279,7 +300,7 @@ class CheckboxTest {
             checkboxValue = Indeterminate,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3,
         )
     }
 
@@ -289,7 +310,7 @@ class CheckboxTest {
             checkboxValue = Indeterminate,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3,
         )
     }
 
@@ -313,7 +334,7 @@ class CheckboxTest {
                                 if (clickable) {
                                     {}
                                 } else null,
-                            enabled = false
+                            enabled = false,
                         )
                     } else {
                         val strokeWidthPx =
@@ -326,7 +347,7 @@ class CheckboxTest {
                                 } else null,
                             enabled = false,
                             checkmarkStroke = strokeWidthPx,
-                            outlineStroke = strokeWidthPx
+                            outlineStroke = strokeWidthPx,
                         )
                     }
                 }
@@ -335,7 +356,11 @@ class CheckboxTest {
                 if (clickable && minimumTouchTarget) {
                     assertIsSquareWithSize(48.dp)
                 } else {
-                    assertIsSquareWithSize(2.dp * 2 + 20.dp)
+                    if (isCheckboxStylingFixEnabled) {
+                        assertIsSquareWithSize(18.dp)
+                    } else {
+                        assertIsSquareWithSize(2.dp * 2 + 20.dp)
+                    }
                 }
             }
     }
@@ -351,7 +376,7 @@ class CheckboxTest {
                     TriStateCheckbox(
                         state = state,
                         onClick = { state = On },
-                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag)
+                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag),
                     )
                 }
             }

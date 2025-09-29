@@ -15,6 +15,14 @@
         "identifier": "androidx.lifecycle:lifecycle-common",
         "resolvedVersion": "2.3.1"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.lifecycle:lifecycle-common",
+        "resolvedVersion": "2.3.1"
+      },
       "toConfiguration": "api"
     },
     {
@@ -22,6 +30,14 @@
         "type": "module",
         "identifier": "androidx.lifecycle:lifecycle-runtime",
         "resolvedVersion": "2.3.1"
+      },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.paging:paging-common",
+        "resolvedVersion": "3.1.0"
       },
       "toConfiguration": "androidTestImplementation"
     },
@@ -39,6 +55,14 @@
         "identifier": "androidx.recyclerview:recyclerview",
         "resolvedVersion": "1.2.0"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.recyclerview:recyclerview",
+        "resolvedVersion": "1.2.0"
+      },
       "toConfiguration": "api"
     },
     {
@@ -48,15 +72,6 @@
         "resolvedVersion": "3.7.0-alpha01"
       },
       "fromConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "androidx.test:core",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "androidTestImplementation",
-      "toConfiguration": "androidTestRuntimeOnly"
     },
     {
       "coordinates": {
@@ -87,6 +102,14 @@
         "type": "module",
         "identifier": "junit:junit",
         "resolvedVersion": "4.13.2"
+      },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "resolvedVersion": "1.7.3"
       },
       "toConfiguration": "androidTestImplementation"
     },

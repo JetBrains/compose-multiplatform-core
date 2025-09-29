@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -68,6 +69,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -81,7 +84,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class SeekableTransitionStateTest {
-    private val rule = createComposeRule()
+    val testDispatcher = StandardTestDispatcher()
+    private val rule = createComposeRule(testDispatcher)
 
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
@@ -107,7 +111,7 @@ class SeekableTransitionStateTest {
                 transition
                     .animateInt(
                         label = "Value",
-                        transitionSpec = { tween(easing = LinearEasing) }
+                        transitionSpec = { tween(easing = LinearEasing) },
                     ) { state ->
                         when (state) {
                             AnimStates.From -> 0
@@ -148,87 +152,87 @@ class SeekableTransitionStateTest {
     }
 
     @Test
-    fun animateToTarget() {
-        var animatedValue by mutableIntStateOf(-1)
-        var duration by mutableLongStateOf(0)
-        val seekableTransitionState = SeekableTransitionState(AnimStates.From)
-        lateinit var coroutineScope: CoroutineScope
+    fun animateToTarget() =
+        runTest(testDispatcher) {
+            var animatedValue by mutableIntStateOf(-1)
+            var duration by mutableLongStateOf(0)
+            val seekableTransitionState = SeekableTransitionState(AnimStates.From)
+            lateinit var coroutineScope: CoroutineScope
 
-        rule.mainClock.autoAdvance = false
+            rule.mainClock.autoAdvance = false
 
-        rule.setContent {
-            LaunchedEffect(seekableTransitionState) {
-                seekableTransitionState.seekTo(0f, targetState = AnimStates.To)
-            }
-            coroutineScope = rememberCoroutineScope()
-            val transition = rememberTransition(seekableTransitionState, label = "Test")
-            animatedValue =
-                transition
-                    .animateInt(
-                        label = "Value",
-                        transitionSpec = { tween(easing = LinearEasing) }
-                    ) { state ->
-                        when (state) {
-                            AnimStates.From -> 0
-                            else -> 1000
+            rule.setContent {
+                LaunchedEffect(seekableTransitionState) {
+                    seekableTransitionState.seekTo(0f, targetState = AnimStates.To)
+                }
+                coroutineScope = rememberCoroutineScope()
+                val transition = rememberTransition(seekableTransitionState, label = "Test")
+                animatedValue =
+                    transition
+                        .animateInt(
+                            label = "Value",
+                            transitionSpec = { tween(easing = LinearEasing) },
+                        ) { state ->
+                            when (state) {
+                                AnimStates.From -> 0
+                                else -> 1000
+                            }
                         }
-                    }
-                    .value
-            duration = transition.totalDurationNanos
+                        .value
+                duration = transition.totalDurationNanos
+            }
+
+            rule.mainClock.advanceTimeByFrame() // wait for composition after seekTo()
+            val deferred1 =
+                rule.runOnUiThread { coroutineScope.async { seekableTransitionState.animateTo() } }
+            rule.mainClock.advanceTimeByFrame() // one frame to set the start time
+            rule.mainClock.advanceTimeByFrame()
+
+            var progressFraction = 0f
+            rule.runOnIdle {
+                assertTrue(seekableTransitionState.fraction > 0f)
+                progressFraction = seekableTransitionState.fraction
+            }
+
+            rule.mainClock.advanceTimeByFrame()
+            rule.runOnIdle {
+                assertTrue(seekableTransitionState.fraction > progressFraction)
+                progressFraction = seekableTransitionState.fraction
+            }
+
+            // interrupt the progress
+
+            seekableTransitionState.seekTo(fraction = 0.5f)
+            rule.mainClock.advanceTimeByFrame()
+
+            rule.runOnIdle {
+                assertTrue(deferred1.isCancelled)
+                // We've stopped animating after seeking
+                assertEquals(0.5f, seekableTransitionState.fraction)
+                assertEquals(500, animatedValue)
+            }
+
+            // continue from the same place
+            val deferred2 =
+                rule.runOnUiThread { coroutineScope.async { seekableTransitionState.animateTo() } }
+            rule.waitForIdle() // wait for coroutine to run
+            rule.mainClock.advanceTimeByFrame() // one frame to set the start time
+            rule.mainClock.advanceTimeByFrame()
+
+            rule.runOnIdle {
+                // We've stopped animating after seeking
+                assertTrue(seekableTransitionState.fraction > 0.5f)
+                assertTrue(seekableTransitionState.fraction < 1f)
+            }
+
+            rule.mainClock.advanceTimeBy(5000L)
+
+            rule.runOnIdle {
+                assertTrue(deferred2.isCompleted)
+                assertEquals(0f, seekableTransitionState.fraction, 0f)
+                assertEquals(1000, animatedValue)
+            }
         }
-
-        rule.mainClock.advanceTimeByFrame() // wait for composition after seekTo()
-        val deferred1 =
-            rule.runOnUiThread { coroutineScope.async { seekableTransitionState.animateTo() } }
-        rule.mainClock.advanceTimeByFrame() // one frame to set the start time
-        rule.mainClock.advanceTimeByFrame()
-
-        var progressFraction = 0f
-        rule.runOnIdle {
-            assertTrue(seekableTransitionState.fraction > 0f)
-            progressFraction = seekableTransitionState.fraction
-        }
-
-        rule.mainClock.advanceTimeByFrame()
-        rule.runOnIdle {
-            assertTrue(seekableTransitionState.fraction > progressFraction)
-            progressFraction = seekableTransitionState.fraction
-        }
-
-        // interrupt the progress
-
-        runBlocking { seekableTransitionState.seekTo(fraction = 0.5f) }
-
-        rule.mainClock.advanceTimeByFrame()
-
-        rule.runOnIdle {
-            assertTrue(deferred1.isCancelled)
-            // We've stopped animating after seeking
-            assertEquals(0.5f, seekableTransitionState.fraction)
-            assertEquals(500, animatedValue)
-        }
-
-        // continue from the same place
-        val deferred2 =
-            rule.runOnUiThread { coroutineScope.async { seekableTransitionState.animateTo() } }
-        rule.waitForIdle() // wait for coroutine to run
-        rule.mainClock.advanceTimeByFrame() // one frame to set the start time
-        rule.mainClock.advanceTimeByFrame()
-
-        rule.runOnIdle {
-            // We've stopped animating after seeking
-            assertTrue(seekableTransitionState.fraction > 0.5f)
-            assertTrue(seekableTransitionState.fraction < 1f)
-        }
-
-        rule.mainClock.advanceTimeBy(5000L)
-
-        rule.runOnIdle {
-            assertTrue(deferred2.isCompleted)
-            assertEquals(0f, seekableTransitionState.fraction, 0f)
-            assertEquals(1000, animatedValue)
-        }
-    }
 
     @Test
     fun updatedTransition() {
@@ -245,7 +249,7 @@ class SeekableTransitionStateTest {
                 transition
                     .animateInt(
                         label = "Value",
-                        transitionSpec = { tween(durationMillis = 200, easing = LinearEasing) }
+                        transitionSpec = { tween(durationMillis = 200, easing = LinearEasing) },
                     ) { state ->
                         when (state) {
                             AnimStates.From -> 0
@@ -317,7 +321,7 @@ class SeekableTransitionStateTest {
                 transition
                     .animateInt(
                         label = "Value",
-                        transitionSpec = { tween(easing = LinearEasing) }
+                        transitionSpec = { tween(easing = LinearEasing) },
                     ) { state ->
                         when (state) {
                             AnimStates.From -> 0
@@ -388,7 +392,7 @@ class SeekableTransitionStateTest {
                             } else {
                                 tween(easing = LinearEasing)
                             }
-                        }
+                        },
                     ) { state ->
                         when (state) {
                             AnimStates.From -> 0
@@ -424,7 +428,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -434,7 +438,7 @@ class SeekableTransitionStateTest {
             val val2 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.Other -> 1000
@@ -444,7 +448,7 @@ class SeekableTransitionStateTest {
             val val3 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -519,7 +523,7 @@ class SeekableTransitionStateTest {
             assertEquals(
                 expected1Value + 0.5f * (2000 - expected1Value),
                 animatedValue3.toFloat(),
-                1f
+                1f,
             )
         }
 
@@ -564,7 +568,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -574,7 +578,7 @@ class SeekableTransitionStateTest {
             val val2 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.Other -> 1000
@@ -584,7 +588,7 @@ class SeekableTransitionStateTest {
             val val3 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -699,7 +703,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -709,7 +713,7 @@ class SeekableTransitionStateTest {
             val val2 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.Other -> 1000
@@ -719,7 +723,7 @@ class SeekableTransitionStateTest {
             val val3 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -816,7 +820,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -826,7 +830,7 @@ class SeekableTransitionStateTest {
             val val2 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.Other -> 1000
@@ -836,7 +840,7 @@ class SeekableTransitionStateTest {
             val val3 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -928,7 +932,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -938,7 +942,7 @@ class SeekableTransitionStateTest {
             val val2 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.Other -> 1000
@@ -948,7 +952,7 @@ class SeekableTransitionStateTest {
             val val3 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -1021,7 +1025,7 @@ class SeekableTransitionStateTest {
             transition.AnimatedVisibility(
                 visible = { it != AnimStates.To },
                 enter = fadeIn(tween(300, 0, LinearEasing)),
-                exit = fadeOut(tween(300, 0, LinearEasing))
+                exit = fadeOut(tween(300, 0, LinearEasing)),
             ) {
                 Box(Modifier.fillMaxSize().drawBehind { drawRect(Color.Red) })
             }
@@ -1051,7 +1055,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(easing = LinearEasing) }
+                    transitionSpec = { tween(easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -1090,7 +1094,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 100, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 100, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -1147,7 +1151,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -1190,7 +1194,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1247,7 +1251,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1308,7 +1312,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1358,7 +1362,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1404,7 +1408,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1453,7 +1457,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1496,7 +1500,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1539,7 +1543,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1590,7 +1594,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1647,7 +1651,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1713,7 +1717,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1773,7 +1777,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1000, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1814,7 +1818,7 @@ class SeekableTransitionStateTest {
                     playTimeMillis = halfDuration,
                     start = zeroVector,
                     end = oneVector,
-                    startVelocity = zeroVector
+                    startVelocity = zeroVector,
                 )[0] < 0.5f
         ) {
             halfDuration += 16L
@@ -1826,7 +1830,7 @@ class SeekableTransitionStateTest {
                     playTimeMillis = halfDuration,
                     start = zeroVector,
                     end = oneVector,
-                    startVelocity = zeroVector
+                    startVelocity = zeroVector,
                 )[0] * 1000
         rule.runOnIdle { assertEquals(halfValue, animatedValue1.toFloat(), 1f) }
 
@@ -1836,7 +1840,7 @@ class SeekableTransitionStateTest {
                     playTimeNanos = halfDuration * MillisToNanos,
                     initialValue = zeroVector,
                     targetValue = oneVector,
-                    initialVelocity = zeroVector
+                    initialVelocity = zeroVector,
                 )[0]
 
         rule.runOnUiThread {
@@ -1846,7 +1850,7 @@ class SeekableTransitionStateTest {
                         spring(
                             visibilityThreshold = 0.01f,
                             stiffness = Spring.StiffnessVeryLow,
-                            dampingRatio = Spring.DampingRatioHighBouncy
+                            dampingRatio = Spring.DampingRatioHighBouncy,
                         )
                 )
             }
@@ -1875,7 +1879,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     val target =
                         when (state) {
@@ -1917,7 +1921,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -1928,7 +1932,7 @@ class SeekableTransitionStateTest {
             val val2 =
                 transition.animateInt(
                     label = "Value2",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -1947,7 +1951,7 @@ class SeekableTransitionStateTest {
             coroutineScope.launch {
                 seekableTransitionState.animateTo(
                     AnimStates.To,
-                    animationSpec = tween(durationMillis = 160, easing = LinearEasing)
+                    animationSpec = tween(durationMillis = 160, easing = LinearEasing),
                 )
             }
         }
@@ -1993,7 +1997,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -2037,7 +2041,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -2069,7 +2073,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -2080,7 +2084,7 @@ class SeekableTransitionStateTest {
             val val2 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -2114,6 +2118,7 @@ class SeekableTransitionStateTest {
                     seekableTransitionState.animateTo(AnimStates.Other)
                 }
             }
+        testDispatcher.scheduler.runCurrent() // animateOther can cancel the seekOther
         assertTrue(seekOther.isCancelled)
         assertTrue(animateOther.isActive)
         rule.mainClock.advanceTimeByFrame() // advance the animation
@@ -2138,7 +2143,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -2151,7 +2156,7 @@ class SeekableTransitionStateTest {
                 } else {
                     transition.animateFloat(
                         label = "Value2",
-                        transitionSpec = { tween(durationMillis = 3200, easing = LinearEasing) }
+                        transitionSpec = { tween(durationMillis = 3200, easing = LinearEasing) },
                     ) { state ->
                         when (state) {
                             AnimStates.From -> 0f
@@ -2211,7 +2216,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -2225,7 +2230,7 @@ class SeekableTransitionStateTest {
                 } else {
                     transition.animateFloat(
                         label = "Value2",
-                        transitionSpec = { tween(durationMillis = 3200, easing = LinearEasing) }
+                        transitionSpec = { tween(durationMillis = 3200, easing = LinearEasing) },
                     ) { state ->
                         when (state) {
                             AnimStates.From -> 0f
@@ -2267,6 +2272,7 @@ class SeekableTransitionStateTest {
             rule.runOnUiThread {
                 coroutineScope.async { seekableTransitionState.animateTo(AnimStates.Other) }
             }
+        testDispatcher.scheduler.runCurrent() // animateOther can cancel the animateTo
         assertTrue(animateTo.isCancelled)
         rule.mainClock.advanceTimeByFrame() // wait for composition
         rule.runOnIdle {
@@ -2326,7 +2332,7 @@ class SeekableTransitionStateTest {
             val val1 =
                 transition.animateInt(
                     label = "Value",
-                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) }
+                    transitionSpec = { tween(durationMillis = 1600, easing = LinearEasing) },
                 ) { state ->
                     when (state) {
                         AnimStates.From -> 0
@@ -2408,7 +2414,7 @@ class SeekableTransitionStateTest {
                 transition
                     .animateInt(
                         label = "Value",
-                        transitionSpec = { tween(easing = LinearEasing) }
+                        transitionSpec = { tween(easing = LinearEasing) },
                     ) { state ->
                         when (state) {
                             AnimStates.From -> 0
@@ -2452,7 +2458,7 @@ class SeekableTransitionStateTest {
                 transition
                     .animateInt(
                         label = "Value",
-                        transitionSpec = { tween(easing = LinearEasing) }
+                        transitionSpec = { tween(easing = LinearEasing) },
                     ) { state ->
                         when (state) {
                             AnimStates.From -> 0
@@ -2486,9 +2492,7 @@ class SeekableTransitionStateTest {
         rule.setContent {
             coroutineScope = rememberCoroutineScope()
             transition = rememberTransition(seekableTransitionState, label = "Test")
-            transition.AnimatedVisibility(
-                visible = { it == AnimStates.To },
-            ) {
+            transition.AnimatedVisibility(visible = { it == AnimStates.To }) {
                 animatedVisibilityTransition = this.transition
                 Box(Modifier.size(100.dp))
             }
@@ -2512,6 +2516,75 @@ class SeekableTransitionStateTest {
             assertFalse(transition.isRunning)
             assertFalse(animatedVisibilityTransition!!.isRunning)
         }
+    }
+
+    @Test
+    fun isRunningFalseAfterRemovingAnimationWhileAnimatingToPreviousState() {
+        val seekableTransitionState = SeekableTransitionState(AnimStates.From)
+        lateinit var coroutineScope: CoroutineScope
+        lateinit var transition: Transition<AnimStates>
+        var floatAnim: State<Float>? = null
+        var conditionalAnim: State<Float>? = null
+        var addConditionalAnim by mutableStateOf(true)
+        rule.setContent {
+            coroutineScope = rememberCoroutineScope()
+            transition = rememberTransition(seekableTransitionState)
+            floatAnim =
+                transition.animateFloat(transitionSpec = { tween(500) }) {
+                    if (it == AnimStates.From) 0f else 1000f
+                }
+            conditionalAnim =
+                if (addConditionalAnim) {
+                    // Longer duration than floatAnim so we can check if it keeps the transition
+                    // running
+                    transition.animateFloat(transitionSpec = { tween(10000000) }) {
+                        if (it == AnimStates.From) 0f else 1000f
+                    }
+                } else {
+                    null
+                }
+        }
+        rule.waitForIdle()
+
+        // Check initial values
+        assertEquals(0f, floatAnim?.value)
+        assertEquals(0f, conditionalAnim?.value)
+
+        rule.mainClock.autoAdvance = false
+
+        // Animate
+        rule.runOnUiThread {
+            coroutineScope.launch { seekableTransitionState.animateTo(AnimStates.To) }
+        }
+        rule.mainClock.advanceTimeByFrame()
+
+        // Finish floatAnim but not conditionalAnim
+        rule.mainClock.advanceTimeBy(750)
+
+        assertEquals(1000f, floatAnim?.value)
+        assertTrue(conditionalAnim!!.value < 1000f)
+        assertTrue(transition.isRunning)
+
+        // Animate back
+        rule.runOnUiThread {
+            coroutineScope.launch { seekableTransitionState.animateTo(AnimStates.From) }
+        }
+        rule.mainClock.advanceTimeByFrame()
+
+        // Finish floatAnim but not conditionalAnim
+        rule.mainClock.advanceTimeBy(500)
+
+        assertEquals(0f, floatAnim?.value)
+        assertTrue(conditionalAnim!!.value > 0f)
+        assertTrue(transition.isRunning)
+
+        // Remove conditionalAnim
+        addConditionalAnim = false
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        assertTrue(conditionalAnim == null)
+        assertFalse(transition.isRunning)
     }
 
     @Test
@@ -2547,10 +2620,7 @@ class SeekableTransitionStateTest {
     @Test
     fun quickAddAndRemove() {
         @Stable
-        class ScreenState(
-            val label: String,
-            removing: Boolean = false,
-        ) {
+        class ScreenState(val label: String, removing: Boolean = false) {
             var removing by mutableStateOf(removing)
         }
 
@@ -2586,12 +2656,10 @@ class SeekableTransitionStateTest {
                                 screenTransition.createChildTransition {
                                     screenState === it.lastOrNull() && !screenState.removing
                                 }
-                            visibleTransition.AnimatedVisibility(
-                                visible = { it },
-                            ) {
+                            visibleTransition.AnimatedVisibility(visible = { it }) {
                                 Text(
                                     "Hello ${screenState.label}",
-                                    Modifier.testTag(screenState.label)
+                                    Modifier.testTag(screenState.label),
                                 )
                             }
                         }
@@ -2603,7 +2671,7 @@ class SeekableTransitionStateTest {
                                     if (it.removing) " (removing)" else ""
                             }
                         }",
-                        Modifier.align(Alignment.BottomStart)
+                        Modifier.align(Alignment.BottomStart),
                     )
                 }
             }

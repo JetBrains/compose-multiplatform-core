@@ -32,7 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.OnGloballyPositionedModifier
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Constraints
@@ -41,6 +43,7 @@ import androidx.wear.compose.foundation.lazy.layout.LazyLayoutItemAnimator
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.abs
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -56,7 +59,7 @@ import kotlinx.coroutines.launch
 @Composable
 public fun rememberTransformingLazyColumnState(
     initialAnchorItemIndex: Int = 0,
-    initialAnchorItemScrollOffset: Int = 0
+    initialAnchorItemScrollOffset: Int = 0,
 ): TransformingLazyColumnState =
     rememberSaveable(saver = TransformingLazyColumnState.Saver) {
         TransformingLazyColumnState(
@@ -87,7 +90,7 @@ internal fun rememberTransformingLazyColumnState(
         TransformingLazyColumnState(
             initialAnchorItemIndex = initialAnchorItemIndex,
             initialAnchorItemScrollOffset = initialAnchorItemScrollOffset,
-            prefetchStrategy = prefetchStrategy
+            prefetchStrategy = prefetchStrategy,
         )
     }
 
@@ -119,14 +122,14 @@ internal constructor(
     ) : this(
         initialAnchorItemIndex = initialAnchorItemIndex,
         initialAnchorItemScrollOffset = initialAnchorItemScrollOffset,
-        prefetchStrategy = DefaultTransformingLazyColumnPrefetchStrategy()
+        prefetchStrategy = DefaultTransformingLazyColumnPrefetchStrategy(),
     )
 
     public constructor() :
         this(
             initialAnchorItemIndex = 0,
             initialAnchorItemScrollOffset = 0,
-            prefetchStrategy = DefaultTransformingLazyColumnPrefetchStrategy()
+            prefetchStrategy = DefaultTransformingLazyColumnPrefetchStrategy(),
         )
 
     override val isScrollInProgress: Boolean
@@ -144,8 +147,9 @@ internal constructor(
 
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit
+        block: suspend ScrollScope.() -> Unit,
     ) {
+        awaitLayoutModifier.waitForFirstLayout()
         scrollableState.scroll(scrollPriority, block)
     }
 
@@ -190,7 +194,7 @@ internal constructor(
      * If you need to use it in the composition then consider wrapping the calculation into a
      * derived state in order to only have recompositions when the derived value changes:
      *
-     * @sample androidx.wear.compose.foundation.samples.UsingListAnchorItemPositionInCompositionSample
+     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnScrollToItemSample
      */
     public var anchorItemIndex: Int by mutableIntStateOf(initialAnchorItemIndex)
         private set
@@ -207,10 +211,21 @@ internal constructor(
     public var anchorItemScrollOffset: Int by mutableIntStateOf(initialAnchorItemScrollOffset)
         private set
 
+    /**
+     * The key of the item that is currently considered the anchor for scrolling purposes.
+     *
+     * This property is closely related to [anchorItemIndex], which provides the numerical index of
+     * the anchor item. `anchorItemKey` provides a more stable way to identify the anchor item
+     * across data changes, assuming unique keys are provided for the items in the
+     * [TransformingLazyColumn].
+     */
+    internal var anchorItemKey: Any = EmptyAnchorKey
+        private set
+
     internal var nearestRange: IntRange by
         mutableStateOf(
             calculateNearestItemsRange(initialAnchorItemIndex),
-            structuralEqualityPolicy()
+            structuralEqualityPolicy(),
         )
         private set
 
@@ -253,18 +268,25 @@ internal constructor(
 
     private fun notifyPrefetchOnScroll(
         delta: Float,
-        measureResult: TransformingLazyColumnMeasureResult
+        measureResult: TransformingLazyColumnMeasureResult,
     ) {
         if (prefetchingEnabled) {
             with(prefetchStrategy) { prefetchScope.onScroll(delta, measureResult) }
         }
     }
 
+    /**
+     * Provides a modifier which allows to delay some interactions (e.g. scroll) until layout is
+     * ready.
+     */
+    internal val awaitLayoutModifier = AwaitFirstLayoutModifier()
+
     internal val animator = LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>()
 
     internal fun applyMeasureResult(measureResult: TransformingLazyColumnMeasureResult) {
-        // TODO(artemiy): Don't consume all scroll.
+        // TODO(b/416503918): The scroll shouldn't be fully consumed during the first touch.
         scrollToBeConsumed = 0f
+        anchorItemKey = measureResult.anchorItemKey
         anchorItemIndex = measureResult.anchorItemIndex
         anchorItemScrollOffset = measureResult.anchorItemScrollOffset
         lastMeasuredAnchorItemHeight = measureResult.lastMeasuredItemHeight
@@ -303,18 +325,13 @@ internal constructor(
         /** The default [Saver] implementation for [TransformingLazyColumnState]. */
         internal val Saver =
             listSaver<TransformingLazyColumnState, Int>(
-                save = {
-                    listOf(
-                        it.anchorItemIndex,
-                        it.anchorItemScrollOffset,
-                    )
-                },
+                save = { listOf(it.anchorItemIndex, it.anchorItemScrollOffset) },
                 restore = {
                     TransformingLazyColumnState(
                         initialAnchorItemIndex = it[0],
-                        initialAnchorItemScrollOffset = it[1]
+                        initialAnchorItemScrollOffset = it[1],
                     )
-                }
+                },
             )
     }
 
@@ -328,6 +345,8 @@ internal constructor(
      * [anchorItemIndex] since requested [scrollOffset] may position item with another index closer
      * to the anchor point.
      *
+     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnScrollToItemSample
+     *
      * This operation happens instantly without animation.
      *
      * @param index The index of the item to scroll to. Must be non-negative.
@@ -336,7 +355,7 @@ internal constructor(
      */
     public suspend fun scrollToItem(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        scrollOffset: Int = 0
+        scrollOffset: Int = 0,
     ) {
         scroll { snapToItemIndexInternal(index, scrollOffset) }
     }
@@ -362,7 +381,7 @@ internal constructor(
      */
     public fun requestScrollToItem(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        scrollOffset: Int = 0
+        scrollOffset: Int = 0,
     ) {
         // Cancel any scroll in progress.
         if (isScrollInProgress) {
@@ -380,13 +399,14 @@ internal constructor(
      * [anchorItemIndex] since requested [scrollOffset] may position item with another index closer
      * to the anchor point.
      *
+     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnScrollToItemSample
      * @param index the index to which to scroll. Must be non-negative.
      * @param scrollOffset The offset between the center of the screen and item's center. Positive
      *   offset means the item will be scrolled up.
      */
     public suspend fun animateScrollToItem(
         @androidx.annotation.IntRange(from = 0) index: Int,
-        scrollOffset: Int = 0
+        scrollOffset: Int = 0,
     ) {
         scroll {
             TransformingLazyColumnScrollScope(this@TransformingLazyColumnState, this)
@@ -397,9 +417,10 @@ internal constructor(
     internal fun snapToItemIndexInternal(
         index: Int,
         scrollOffset: Int,
-        forceRemeasure: Boolean = true
+        forceRemeasure: Boolean = true,
     ) {
         anchorItemIndex = index
+        anchorItemKey = EmptyAnchorKey // reset anchorItemKey as anchorItemIndex changed
         anchorItemScrollOffset = scrollOffset
         lastMeasuredAnchorItemHeight = Int.MIN_VALUE
         if (forceRemeasure) {
@@ -416,12 +437,11 @@ internal constructor(
         scrollToBeConsumed += distance
         if (abs(scrollToBeConsumed) > 0.5f) {
             val preScrollToBeConsumed = scrollToBeConsumed
-            animator.releaseAnimations()
             remeasurement?.forceRemeasure()
 
             notifyPrefetchOnScroll(
                 preScrollToBeConsumed - scrollToBeConsumed,
-                layoutInfoState.value
+                layoutInfoState.value,
             )
         }
 
@@ -444,6 +464,7 @@ internal constructor(
 
 private val EmptyTransformingLazyColumnMeasureResult =
     TransformingLazyColumnMeasureResult(
+        anchorItemKey = EmptyAnchorKey,
         anchorItemIndex = 0,
         anchorItemScrollOffset = 0,
         visibleItems = emptyList(),
@@ -466,5 +487,18 @@ private val EmptyTransformingLazyColumnMeasureResult =
                 override val alignmentLines: Map<AlignmentLine, Int> = emptyMap()
 
                 override fun placeChildren() {}
-            }
+            },
     )
+
+/** A modifier that allows to delay some interactions (e.g. scroll) until layout is ready. */
+internal class AwaitFirstLayoutModifier : OnGloballyPositionedModifier {
+    private val firstLayoutDeferred = CompletableDeferred<Unit>()
+
+    suspend fun waitForFirstLayout() {
+        firstLayoutDeferred.await()
+    }
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        firstLayoutDeferred.complete(Unit)
+    }
+}

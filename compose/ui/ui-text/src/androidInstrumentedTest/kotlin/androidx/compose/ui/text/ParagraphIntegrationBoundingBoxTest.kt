@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -31,7 +30,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 23)
 @SmallTest
 class ParagraphIntegrationBoundingBoxTest {
     private val fontFamilyMeasureFont = FontTestData.BASIC_MEASURE_FONT.toFontFamily()
@@ -49,7 +47,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 1,
                 right = fontSizeInPx * 2,
                 top = fontSizeInPx,
-                bottom = fontSizeInPx * 2
+                bottom = fontSizeInPx * 2,
             )
     }
 
@@ -59,14 +57,14 @@ class ParagraphIntegrationBoundingBoxTest {
                 textDirection = TextDirection.Ltr,
                 lineBreakFrom = LineBreakFrom.No,
                 widthInFontSize = 3,
-                heightIntFontSize = 1
+                heightIntFontSize = 1,
             )
             .assertBoxLRTB(
                 offset = 5,
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -78,7 +76,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 5,
                 right = fontSizeInPx * 6,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -90,7 +88,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -101,14 +99,14 @@ class ParagraphIntegrationBoundingBoxTest {
                 LineBreakFrom.No,
                 widthInFontSize = 3,
                 heightIntFontSize = 1,
-                maxLines = 1
+                maxLines = 1,
             )
             .assertBoxLRTB(
                 offset = 5,
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -120,7 +118,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 1,
                 right = fontSizeInPx * 2,
                 top = fontSizeInPx,
-                bottom = fontSizeInPx * 2
+                bottom = fontSizeInPx * 2,
             )
     }
 
@@ -130,14 +128,14 @@ class ParagraphIntegrationBoundingBoxTest {
                 TextDirection.Ltr,
                 LineBreakFrom.First,
                 widthInFontSize = 3,
-                heightIntFontSize = 1
+                heightIntFontSize = 1,
             )
             .assertBoxLRTB(
                 offset = 5,
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -149,7 +147,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 1,
                 right = fontSizeInPx * 2,
                 top = fontSizeInPx,
-                bottom = fontSizeInPx * 2
+                bottom = fontSizeInPx * 2,
             )
     }
 
@@ -161,7 +159,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -172,14 +170,14 @@ class ParagraphIntegrationBoundingBoxTest {
                 LineBreakFrom.First,
                 widthInFontSize = 3,
                 heightIntFontSize = 1,
-                maxLines = 1
+                maxLines = 1,
             )
             .assertBoxLRTB(
                 offset = 5,
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -189,14 +187,14 @@ class ParagraphIntegrationBoundingBoxTest {
                 TextDirection.Ltr,
                 LineBreakFrom.Second,
                 widthInFontSize = 3,
-                heightIntFontSize = 1
+                heightIntFontSize = 1,
             )
             .assertBoxLRTB(
                 offset = 9,
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -208,7 +206,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 1,
                 right = fontSizeInPx * 2,
                 top = fontSizeInPx,
-                bottom = fontSizeInPx * 2
+                bottom = fontSizeInPx * 2,
             )
     }
 
@@ -220,7 +218,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -231,14 +229,14 @@ class ParagraphIntegrationBoundingBoxTest {
                 LineBreakFrom.Second,
                 widthInFontSize = 3,
                 heightIntFontSize = 1,
-                maxLines = 1
+                maxLines = 1,
             )
             .assertBoxLRTB(
                 offset = 9,
                 left = fontSizeInPx * 3,
                 right = fontSizeInPx * 3,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -250,7 +248,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 1,
                 right = fontSizeInPx * 2,
                 top = fontSizeInPx,
-                bottom = fontSizeInPx * 2
+                bottom = fontSizeInPx * 2,
             )
     }
 
@@ -260,7 +258,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 textDirection = TextDirection.Rtl,
                 lineBreakFrom = LineBreakFrom.No,
                 widthInFontSize = 3,
-                heightIntFontSize = 1
+                heightIntFontSize = 1,
             )
             .assertBoxLRTB(offset = 5, left = 0, right = 0, top = 0, bottom = fontSizeInPx)
     }
@@ -273,7 +271,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx,
                 right = fontSizeInPx * 2,
                 top = 0,
-                bottom = fontSizeInPx
+                bottom = fontSizeInPx,
             )
     }
 
@@ -290,7 +288,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 LineBreakFrom.No,
                 widthInFontSize = 3,
                 heightIntFontSize = 1,
-                maxLines = 1
+                maxLines = 1,
             )
             .assertBoxLRTB(offset = 5, left = 0, right = 0, top = 0, bottom = fontSizeInPx)
     }
@@ -303,7 +301,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 1,
                 right = fontSizeInPx * 2,
                 top = fontSizeInPx,
-                bottom = fontSizeInPx * 2
+                bottom = fontSizeInPx * 2,
             )
     }
 
@@ -313,7 +311,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 TextDirection.Rtl,
                 LineBreakFrom.First,
                 widthInFontSize = 3,
-                heightIntFontSize = 1
+                heightIntFontSize = 1,
             )
             .assertBoxLRTB(offset = 5, left = 0, right = 0, top = 0, bottom = fontSizeInPx)
     }
@@ -326,7 +324,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 left = fontSizeInPx * 5,
                 right = fontSizeInPx * 6,
                 top = fontSizeInPx,
-                bottom = fontSizeInPx * 2
+                bottom = fontSizeInPx * 2,
             )
     }
 
@@ -343,7 +341,7 @@ class ParagraphIntegrationBoundingBoxTest {
                 LineBreakFrom.First,
                 widthInFontSize = 3,
                 heightIntFontSize = 1,
-                maxLines = 1
+                maxLines = 1,
             )
             .assertBoxLRTB(offset = 5, left = 0, right = 0, top = 0, bottom = fontSizeInPx)
     }
@@ -353,7 +351,7 @@ class ParagraphIntegrationBoundingBoxTest {
         lineBreakFrom: LineBreakFrom,
         widthInFontSize: Int,
         heightIntFontSize: Int? = null,
-        maxLines: Int = Int.MAX_VALUE
+        maxLines: Int = Int.MAX_VALUE,
     ) =
         Paragraph(
             text = TEST_CONTENT_MAP[textDirection]!![lineBreakFrom]!!,
@@ -366,7 +364,7 @@ class ParagraphIntegrationBoundingBoxTest {
                     maxHeight = (heightIntFontSize?.times(fontSizeInPx)) ?: Constraints.Infinity,
                 ),
             density = defaultDensity,
-            fontFamilyResolver = fontFamilyResolver
+            fontFamilyResolver = fontFamilyResolver,
         )
 
     private fun Paragraph.assertBoxLRTB(offset: Int, left: Int, right: Int, top: Int, bottom: Int) {
@@ -381,7 +379,7 @@ class ParagraphIntegrationBoundingBoxTest {
 private enum class LineBreakFrom {
     No,
     First,
-    Second
+    Second,
 }
 
 private val TEST_CONTENT_MAP =
@@ -397,5 +395,5 @@ private val TEST_CONTENT_MAP =
                 LineBreakFrom.No to "\u05D0\u05D2\u05D2 \u05D3\u05D4\u05D5 \u05D0\u05D2\u05D2",
                 LineBreakFrom.First to "\u05D0\u05D2\u05D2\n\u05D3\u05D4\u05D5 \u05D0\u05D2\u05D2",
                 LineBreakFrom.Second to "\u05D0\u05D2\u05D2 \u05D3\u05D4\u05D5\n\u05D0\u05D2\u05D2",
-            )
+            ),
     )

@@ -16,11 +16,12 @@
 
 package androidx.compose.material3
 
-import android.os.Build
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isDialog
@@ -30,16 +31,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class AlertDialogScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -55,12 +57,10 @@ class AlertDialogScreenshotTest {
                             "which presents the details regarding the Dialog's purpose."
                     )
                 },
-                confirmButton = {
-                    TextButton(onClick = { /* doSomething() */ }) { Text("Confirm") }
-                },
+                confirmButton = { Button(onClick = { /* doSomething() */ }) { Text("Confirm") } },
                 dismissButton = {
-                    TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                }
+                    OutlinedButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
+                },
             )
         }
 
@@ -79,16 +79,50 @@ class AlertDialogScreenshotTest {
                             "which presents the details regarding the Dialog's purpose."
                     )
                 },
-                confirmButton = {
-                    TextButton(onClick = { /* doSomething() */ }) { Text("Confirm") }
-                },
+                confirmButton = { Button(onClick = { /* doSomething() */ }) { Text("Confirm") } },
                 dismissButton = {
-                    TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                }
+                    OutlinedButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
+                },
             )
         }
 
         assertAlertDialogAgainstGolden(goldenIdentifier = "alertDialog_darkTheme")
+    }
+
+    @Test
+    fun alertDialog_withVerticalButtons_lightTheme() {
+        composeTestRule.setMaterialContent(lightColorScheme()) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text(text = "Title") },
+                text = {
+                    Text(
+                        "This area typically contains the supportive text " +
+                            "which presents the details regarding the Dialog's purpose."
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { /* doSomething() */ },
+                        modifier = Modifier.width(DialogMaxWidth * 0.8f),
+                    ) {
+                        Text("Confirm")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { /* doSomething() */ },
+                        modifier = Modifier.width(DialogMaxWidth * 0.8f),
+                    ) {
+                        Text("Dismiss")
+                    }
+                },
+            )
+        }
+
+        assertAlertDialogAgainstGolden(
+            goldenIdentifier = "alertDialog_withVerticalButtons_lightTheme"
+        )
     }
 
     @Test
@@ -104,12 +138,10 @@ class AlertDialogScreenshotTest {
                             "which presents the details regarding the Dialog's purpose."
                     )
                 },
-                confirmButton = {
-                    TextButton(onClick = { /* doSomething() */ }) { Text("Confirm") }
-                },
+                confirmButton = { Button(onClick = { /* doSomething() */ }) { Text("Confirm") } },
                 dismissButton = {
-                    TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                }
+                    OutlinedButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
+                },
             )
         }
 
@@ -129,12 +161,10 @@ class AlertDialogScreenshotTest {
                             "which presents the details regarding the Dialog's purpose."
                     )
                 },
-                confirmButton = {
-                    TextButton(onClick = { /* doSomething() */ }) { Text("Confirm") }
-                },
+                confirmButton = { Button(onClick = { /* doSomething() */ }) { Text("Confirm") } },
                 dismissButton = {
-                    TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                }
+                    OutlinedButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
+                },
             )
         }
 
@@ -155,11 +185,11 @@ class AlertDialogScreenshotTest {
                         )
                     },
                     confirmButton = {
-                        TextButton(onClick = { /* doSomething() */ }) { Text("Confirm") }
+                        Button(onClick = { /* doSomething() */ }) { Text("Confirm") }
                     },
                     dismissButton = {
-                        TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                    }
+                        OutlinedButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
+                    },
                 )
             }
         }

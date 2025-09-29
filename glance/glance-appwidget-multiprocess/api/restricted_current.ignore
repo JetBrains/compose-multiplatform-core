@@ -1,0 +1,11 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.glance.appwidget.multiprocess.MultiProcessConfig#getActionCallbackBroadcastReceiver():
+    Source breaking change: method androidx.glance.appwidget.multiprocess.MultiProcessConfig.getActionCallbackBroadcastReceiver() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.glance.appwidget.multiprocess.MultiProcessConfig#getActionTrampolineActivity():
+    Source breaking change: method androidx.glance.appwidget.multiprocess.MultiProcessConfig.getActionTrampolineActivity() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.glance.appwidget.multiprocess.MultiProcessConfig#getInvisibleActionTrampolineActivity():
+    Source breaking change: method androidx.glance.appwidget.multiprocess.MultiProcessConfig.getInvisibleActionTrampolineActivity() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.glance.appwidget.multiprocess.MultiProcessConfig#getRemoteViewsService():
+    Source breaking change: method androidx.glance.appwidget.multiprocess.MultiProcessConfig.getRemoteViewsService() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.glance.appwidget.multiprocess.MultiProcessConfig#getRemoteWorkerService():
+    Source breaking change: method androidx.glance.appwidget.multiprocess.MultiProcessConfig.getRemoteWorkerService() can no longer be resolved from Kotlin source

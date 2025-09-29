@@ -153,14 +153,14 @@ package androidx.emoji.widget {
     ctor public EmojiButton(android.content.Context!);
     ctor public EmojiButton(android.content.Context!, android.util.AttributeSet!);
     ctor public EmojiButton(android.content.Context!, android.util.AttributeSet!, int);
-    ctor @RequiresApi(android.os.Build.VERSION_CODES.LOLLIPOP) public EmojiButton(android.content.Context!, android.util.AttributeSet!, int, int);
+    ctor public EmojiButton(android.content.Context!, android.util.AttributeSet!, int, int);
   }
 
   public class EmojiEditText extends android.widget.EditText {
     ctor public EmojiEditText(android.content.Context!);
     ctor public EmojiEditText(android.content.Context!, android.util.AttributeSet!);
     ctor public EmojiEditText(android.content.Context!, android.util.AttributeSet!, int);
-    ctor @RequiresApi(android.os.Build.VERSION_CODES.LOLLIPOP) public EmojiEditText(android.content.Context!, android.util.AttributeSet!, int, int);
+    ctor public EmojiEditText(android.content.Context!, android.util.AttributeSet!, int, int);
     method public int getMaxEmojiCount();
     method public void setMaxEmojiCount(@IntRange(from=0) int);
   }
@@ -177,7 +177,7 @@ package androidx.emoji.widget {
     ctor public EmojiExtractEditText(android.content.Context!);
     ctor public EmojiExtractEditText(android.content.Context!, android.util.AttributeSet!);
     ctor public EmojiExtractEditText(android.content.Context!, android.util.AttributeSet!, int);
-    ctor @RequiresApi(android.os.Build.VERSION_CODES.LOLLIPOP) public EmojiExtractEditText(android.content.Context!, android.util.AttributeSet!, int, int);
+    ctor public EmojiExtractEditText(android.content.Context!, android.util.AttributeSet!, int, int);
     method public int getEmojiReplaceStrategy();
     method public int getMaxEmojiCount();
     method public void setEmojiReplaceStrategy(@androidx.emoji.text.EmojiCompat.ReplaceStrategy int);
@@ -188,7 +188,7 @@ package androidx.emoji.widget {
     ctor public EmojiExtractTextLayout(android.content.Context!);
     ctor public EmojiExtractTextLayout(android.content.Context!, android.util.AttributeSet?);
     ctor public EmojiExtractTextLayout(android.content.Context!, android.util.AttributeSet?, int);
-    ctor @RequiresApi(api=android.os.Build.VERSION_CODES.LOLLIPOP) public EmojiExtractTextLayout(android.content.Context!, android.util.AttributeSet!, int, int);
+    ctor public EmojiExtractTextLayout(android.content.Context!, android.util.AttributeSet!, int, int);
     method public int getEmojiReplaceStrategy();
     method public void onUpdateExtractingViews(android.inputmethodservice.InputMethodService!, android.view.inputmethod.EditorInfo!);
     method public void setEmojiReplaceStrategy(@androidx.emoji.text.EmojiCompat.ReplaceStrategy int);
@@ -198,7 +198,7 @@ package androidx.emoji.widget {
     ctor public EmojiTextView(android.content.Context!);
     ctor public EmojiTextView(android.content.Context!, android.util.AttributeSet!);
     ctor public EmojiTextView(android.content.Context!, android.util.AttributeSet!, int);
-    ctor @RequiresApi(api=android.os.Build.VERSION_CODES.LOLLIPOP) public EmojiTextView(android.content.Context!, android.util.AttributeSet!, int, int);
+    ctor public EmojiTextView(android.content.Context!, android.util.AttributeSet!, int, int);
   }
 
   public final class EmojiTextViewHelper {
@@ -213,7 +213,7 @@ package androidx.emoji.widget {
     ctor public ExtractButtonCompat(android.content.Context!);
     ctor public ExtractButtonCompat(android.content.Context!, android.util.AttributeSet!);
     ctor public ExtractButtonCompat(android.content.Context!, android.util.AttributeSet!, int);
-    ctor @RequiresApi(api=android.os.Build.VERSION_CODES.LOLLIPOP) public ExtractButtonCompat(android.content.Context!, android.util.AttributeSet!, int, int);
+    ctor public ExtractButtonCompat(android.content.Context!, android.util.AttributeSet!, int, int);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpannableBuilder extends android.text.SpannableStringBuilder {

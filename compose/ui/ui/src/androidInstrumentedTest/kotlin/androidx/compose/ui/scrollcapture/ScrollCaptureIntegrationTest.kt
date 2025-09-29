@@ -54,6 +54,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,7 +65,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 31)
 class ScrollCaptureIntegrationTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val captureTester = ScrollCaptureTester(rule)
 
@@ -137,7 +138,7 @@ class ScrollCaptureIntegrationTest {
                 with(LocalDensity.current) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(1),
-                        modifier = Modifier.size(10.toDp())
+                        modifier = Modifier.size(10.toDp()),
                     ) {
                         item { Box(Modifier.size(100.toDp())) }
                     }
@@ -158,7 +159,7 @@ class ScrollCaptureIntegrationTest {
                 with(LocalDensity.current) {
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Fixed(1),
-                        modifier = Modifier.size(10.toDp())
+                        modifier = Modifier.size(10.toDp()),
                     ) {
                         item { Box(Modifier.size(100.toDp())) }
                     }
@@ -196,7 +197,7 @@ class ScrollCaptureIntegrationTest {
                     "lots\n\nof\n\nnewlines\n\nto\n\nmake\n\nvertically\n\nscrollable",
                     onValueChange = {},
                     singleLine = false,
-                    maxLines = 2
+                    maxLines = 2,
                 )
             }
 
@@ -231,7 +232,7 @@ class ScrollCaptureIntegrationTest {
             captureTester.setContent {
                 BasicTextField(
                     state,
-                    lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 2)
+                    lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 2),
                 )
             }
 

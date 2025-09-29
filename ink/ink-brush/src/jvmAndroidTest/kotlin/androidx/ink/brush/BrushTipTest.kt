@@ -45,14 +45,15 @@ class BrushTipTest {
         )
 
     @Test
+    @Suppress("DEPRECATION") // Testing deprecated fields.
     fun constructor_returnsExpectedValues() {
         val brushTip = BrushTip()
         assertThat(brushTip.scaleX).isEqualTo(1f)
         assertThat(brushTip.scaleY).isEqualTo(1f)
         assertThat(brushTip.cornerRounding).isEqualTo(1f)
-        assertThat(brushTip.slant).isEqualTo(Angle.ZERO)
+        assertThat(brushTip.slantDegrees).isEqualTo(Angle.ZERO_DEGREES)
         assertThat(brushTip.pinch).isEqualTo(0.0f)
-        assertThat(brushTip.rotation).isEqualTo(Angle.ZERO)
+        assertThat(brushTip.rotationDegrees).isEqualTo(Angle.ZERO_DEGREES)
         assertThat(brushTip.opacityMultiplier).isEqualTo(1.0f)
         assertThat(brushTip.particleGapDistanceScale).isEqualTo(0.0f)
         assertThat(brushTip.particleGapDurationMillis).isEqualTo(0L)
@@ -121,19 +122,28 @@ class BrushTipTest {
     @Test
     @Suppress("Range") // Testing error cases.
     fun constructor_withInvalidSlant_throws() {
-        val nanError = assertFailsWith<IllegalArgumentException> { BrushTip(slant = Float.NaN) }
+        val nanError =
+            assertFailsWith<IllegalArgumentException> { BrushTip(slantDegrees = Float.NaN) }
         assertThat(nanError).hasMessageThat().contains("slant")
         assertThat(nanError).hasMessageThat().contains("finite")
 
         val lowError =
-            assertFailsWith<IllegalArgumentException> { BrushTip(slant = -Angle.HALF_TURN_RADIANS) }
+            assertFailsWith<IllegalArgumentException> {
+                BrushTip(slantDegrees = -Angle.HALF_TURN_DEGREES)
+            }
         assertThat(lowError).hasMessageThat().contains("slant")
-        assertThat(lowError).hasMessageThat().contains("interval [-π/2, π/2]")
+        assertThat(lowError)
+            .hasMessageThat()
+            .contains("interval [-π/2, π/2] radians ([-90, 90] degrees)")
 
         val highError =
-            assertFailsWith<IllegalArgumentException> { BrushTip(slant = Angle.HALF_TURN_RADIANS) }
+            assertFailsWith<IllegalArgumentException> {
+                BrushTip(slantDegrees = Angle.HALF_TURN_DEGREES)
+            }
         assertThat(highError).hasMessageThat().contains("slant")
-        assertThat(highError).hasMessageThat().contains("interval [-π/2, π/2]")
+        assertThat(highError)
+            .hasMessageThat()
+            .contains("interval [-π/2, π/2] radians ([-90, 90] degrees)")
     }
 
     @Test
@@ -206,13 +216,14 @@ class BrushTipTest {
     @Test
     @Suppress("Range") // Testing error cases.
     fun constructor_withInvalidRotation_throws() {
-        val nanError = assertFailsWith<IllegalArgumentException> { BrushTip(rotation = Float.NaN) }
+        val nanError =
+            assertFailsWith<IllegalArgumentException> { BrushTip(rotationDegrees = Float.NaN) }
         assertThat(nanError).hasMessageThat().contains("rotation")
         assertThat(nanError).hasMessageThat().contains("finite")
 
         val infinityError =
             assertFailsWith<IllegalArgumentException> {
-                BrushTip(rotation = Float.POSITIVE_INFINITY)
+                BrushTip(rotationDegrees = Float.POSITIVE_INFINITY)
             }
         assertThat(infinityError).hasMessageThat().contains("rotation")
         assertThat(infinityError).hasMessageThat().contains("finite")
@@ -226,9 +237,9 @@ class BrushTipTest {
                         1f,
                         2f,
                         0.3f,
-                        Angle.QUARTER_TURN_RADIANS,
+                        Angle.QUARTER_TURN_DEGREES,
                         0.4f,
-                        Angle.ZERO,
+                        Angle.ZERO_DEGREES,
                         0.7f,
                         0.5f,
                         100L,
@@ -241,9 +252,9 @@ class BrushTipTest {
                         1f,
                         2f,
                         0.3f,
-                        Angle.QUARTER_TURN_RADIANS,
+                        Angle.QUARTER_TURN_DEGREES,
                         0.4f,
-                        Angle.ZERO,
+                        Angle.ZERO_DEGREES,
                         0.7f,
                         0.5f,
                         100L,
@@ -265,9 +276,9 @@ class BrushTipTest {
         assertThat(brushTip).isNotEqualTo(BrushTip(scaleX = 2f))
         assertThat(brushTip).isNotEqualTo(BrushTip(scaleY = 2f))
         assertThat(brushTip).isNotEqualTo(BrushTip(cornerRounding = 0.2f))
-        assertThat(brushTip).isNotEqualTo(BrushTip(slant = Angle.QUARTER_TURN_RADIANS))
+        assertThat(brushTip).isNotEqualTo(BrushTip(slantDegrees = Angle.QUARTER_TURN_DEGREES))
         assertThat(brushTip).isNotEqualTo(BrushTip(pinch = 0.2f))
-        assertThat(brushTip).isNotEqualTo(BrushTip(rotation = Angle.HALF_TURN_RADIANS))
+        assertThat(brushTip).isNotEqualTo(BrushTip(rotationDegrees = Angle.HALF_TURN_DEGREES))
         assertThat(brushTip).isNotEqualTo(BrushTip(opacityMultiplier = 0.7f))
         assertThat(brushTip).isNotEqualTo(BrushTip(behaviors = listOf(customBehavior)))
     }
@@ -276,8 +287,8 @@ class BrushTipTest {
     fun toString_returnsExpectedValues() {
         assertThat(BrushTip().toString())
             .isEqualTo(
-                "BrushTip(scale=(1.0, 1.0), cornerRounding=1.0, slant=0.0, " +
-                    "pinch=0.0, rotation=0.0, opacityMultiplier=1.0, " +
+                "BrushTip(scale=(1.0, 1.0), cornerRounding=1.0, slantDegrees=0.0, " +
+                    "pinch=0.0, rotationDegrees=0.0, opacityMultiplier=1.0, " +
                     "particleGapDistanceScale=0.0, particleGapDurationMillis=0, " +
                     "behaviors=[])"
             )
@@ -290,9 +301,9 @@ class BrushTipTest {
                 scaleX = 2f,
                 scaleY = 3f,
                 cornerRounding = 0.5f,
-                slant = Angle.ZERO,
+                slantDegrees = Angle.ZERO_DEGREES,
                 pinch = 0.5f,
-                rotation = Angle.ZERO,
+                rotationDegrees = Angle.ZERO_DEGREES,
                 opacityMultiplier = 0.7f,
                 particleGapDistanceScale = 0.8f,
                 particleGapDurationMillis = 9L,
@@ -305,9 +316,9 @@ class BrushTipTest {
                     scaleX = 3f,
                     scaleY = 3f,
                     cornerRounding = 0.5f,
-                    slant = Angle.ZERO,
+                    slantDegrees = Angle.ZERO_DEGREES,
                     pinch = 0.5f,
-                    rotation = Angle.ZERO,
+                    rotationDegrees = Angle.ZERO_DEGREES,
                     opacityMultiplier = 0.7f,
                     particleGapDistanceScale = 0.8f,
                     particleGapDurationMillis = 9L,
@@ -323,9 +334,9 @@ class BrushTipTest {
                 scaleX = 3f,
                 scaleY = 3f,
                 cornerRounding = 0.5f,
-                slant = Angle.ZERO,
+                slantDegrees = Angle.ZERO_DEGREES,
                 pinch = 0.5f,
-                rotation = Angle.ZERO,
+                rotationDegrees = Angle.ZERO_DEGREES,
                 opacityMultiplier = 0.7f,
                 particleGapDistanceScale = 0.8f,
                 particleGapDurationMillis = 9L,
@@ -340,15 +351,16 @@ class BrushTipTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // Testing deprecated setters.
     fun builder_createsExpectedBrushTip() {
         val tip =
             BrushTip.Builder()
                 .setScaleX(0.1f)
                 .setScaleY(0.2f)
                 .setCornerRounding(0.3f)
-                .setSlant(0.4f)
+                .setSlantDegrees(0.4f)
                 .setPinch(0.5f)
-                .setRotation(0.6f)
+                .setRotationDegrees(0.6f)
                 .setOpacityMultiplier(0.7f)
                 .setParticleGapDistanceScale(0.8f)
                 .setParticleGapDurationMillis(9L)

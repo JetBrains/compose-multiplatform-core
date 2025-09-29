@@ -19,7 +19,6 @@ package androidx.camera.core.impl.utils;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.location.Location;
-import android.os.Build;
 import android.os.SystemClock;
 
 import org.junit.Before;
@@ -37,8 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP,
-        instrumentedPackages = { "androidx.camera.core.impl.utils" })
+@Config(instrumentedPackages = { "androidx.camera.core.impl.utils" })
 public class ExifTest {
     private static final InputStream FAKE_INPUT_STREAM =
             new InputStream() {

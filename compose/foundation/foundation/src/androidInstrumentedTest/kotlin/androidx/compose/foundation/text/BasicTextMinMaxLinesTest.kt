@@ -23,6 +23,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +32,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class BasicTextMinMaxLinesTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val longText = "Lorem ipsum\n".repeat(10)
     private val shortText = "Lorem ipsum"
@@ -50,14 +51,14 @@ class BasicTextMinMaxLinesTest {
                 shortText,
                 minLines = minLines1,
                 maxLines = maxLines1,
-                onTextLayout = { size1 = it.size.height }
+                onTextLayout = { size1 = it.size.height },
             )
 
             BasicText(
                 shortText,
                 minLines = minLines2,
                 maxLines = maxLines2,
-                onTextLayout = { size2 = it.size.height }
+                onTextLayout = { size2 = it.size.height },
             )
         }
 
@@ -78,14 +79,14 @@ class BasicTextMinMaxLinesTest {
                 longText,
                 minLines = minLines1,
                 maxLines = maxLines1,
-                onTextLayout = { size1 = it.size.height }
+                onTextLayout = { size1 = it.size.height },
             )
 
             BasicText(
                 longText,
                 minLines = minLines2,
                 maxLines = maxLines2,
-                onTextLayout = { size2 = it.size.height }
+                onTextLayout = { size2 = it.size.height },
             )
         }
 

@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,7 +54,7 @@ import org.mockito.kotlin.verify
 @RunWith(AndroidJUnit4::class)
 class CoreTextInlineContentTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val fontSize = 10
 
@@ -72,7 +73,7 @@ class CoreTextInlineContentTest {
                         Placeholder(
                             size.width.sp,
                             size.height.sp,
-                            PlaceholderVerticalAlign.AboveBaseline
+                            PlaceholderVerticalAlign.AboveBaseline,
                         )
                 ) {
                     Box(modifier = Modifier.fillMaxSize().onSizeChanged(onSizeChanged))
@@ -91,7 +92,7 @@ class CoreTextInlineContentTest {
                     maxLines = Int.MAX_VALUE,
                     onTextLayout = {},
                     overflow = TextOverflow.Clip,
-                    softWrap = true
+                    softWrap = true,
                 )
             }
         }
@@ -109,13 +110,11 @@ class CoreTextInlineContentTest {
     @Test
     fun rtlLayout_inlineContent_placement() {
         rule.setContent {
-            CompositionLocalProvider(
-                LocalLayoutDirection provides LayoutDirection.Ltr,
-            ) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 // LTR character, supported by sample_font
                 TestContent(
                     predicate = "\u0061\u0061\u0061\u0061\u0061",
-                    suffix = "\u0061\u0061\u0061"
+                    suffix = "\u0061\u0061\u0061",
                 )
             }
         }
@@ -144,7 +143,7 @@ class CoreTextInlineContentTest {
             TestContent(
                 predicate = "\u0061\u0061\u0061\u0061\u0061",
                 suffix = "\u0061\u0061\u0061",
-                textStyle = textStyle.copy(textDirection = TextDirection.Rtl)
+                textStyle = textStyle.copy(textDirection = TextDirection.Rtl),
             )
         }
 
@@ -181,7 +180,7 @@ class CoreTextInlineContentTest {
     private fun TestContent(
         predicate: String,
         suffix: String,
-        textStyle: TextStyle = this.textStyle
+        textStyle: TextStyle = this.textStyle,
     ) {
         CompositionLocalProvider(LocalDensity provides Density(density = 1f, fontScale = 1f)) {
             val inlineTextContent =
@@ -190,7 +189,7 @@ class CoreTextInlineContentTest {
                         Placeholder(
                             fontSize.sp,
                             fontSize.sp,
-                            PlaceholderVerticalAlign.AboveBaseline
+                            PlaceholderVerticalAlign.AboveBaseline,
                         )
                 ) {
                     Box(modifier = Modifier.fillMaxSize().testTag("box"))
@@ -206,7 +205,7 @@ class CoreTextInlineContentTest {
                 modifier = Modifier.testTag("text"),
                 style = textStyle,
                 inlineContent = mapOf("box" to inlineTextContent),
-                maxLines = 1
+                maxLines = 1,
             )
         }
     }

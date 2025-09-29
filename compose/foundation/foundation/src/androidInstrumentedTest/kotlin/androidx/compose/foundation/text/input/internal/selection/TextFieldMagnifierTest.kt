@@ -90,14 +90,14 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
         modifier: Modifier,
         style: TextStyle,
         onTextLayout: (TextLayoutResult) -> Unit,
-        maxLines: Int
+        maxLines: Int,
     ) {
         val state = remember { TextFieldState(text) }
         BasicTextField(
             state = state,
             modifier = modifier,
             textStyle = style,
-            onTextLayout = { it()?.let(onTextLayout) }
+            onTextLayout = { it()?.let(onTextLayout) },
         )
     }
 
@@ -166,7 +166,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
             val moveEvent =
                 makeTextDragEvent(
                     action = DragEvent.ACTION_DRAG_LOCATION,
-                    offset = Offset(40f, 10f)
+                    position = Offset(40f, 10f),
                 )
 
             view.dispatchDragEvent(startEvent)
@@ -185,7 +185,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
             val startEvent = makeImageDragEvent(DragEvent.ACTION_DRAG_STARTED)
             val enterEvent = makeImageDragEvent(DragEvent.ACTION_DRAG_ENTERED)
             val moveEvent =
-                makeImageDragEvent(DragEvent.ACTION_DRAG_LOCATION, offset = Offset(40f, 10f))
+                makeImageDragEvent(DragEvent.ACTION_DRAG_LOCATION, position = Offset(40f, 10f))
 
             view.dispatchDragEvent(startEvent)
             view.dispatchDragEvent(enterEvent)
@@ -205,7 +205,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
             val moveEvent =
                 makeTextDragEvent(
                     action = DragEvent.ACTION_DRAG_LOCATION,
-                    offset = Offset(40f, 10f)
+                    position = Offset(40f, 10f),
                 )
 
             view.dispatchDragEvent(startEvent)
@@ -219,7 +219,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
             val moveEvent2 =
                 makeTextDragEvent(
                     action = DragEvent.ACTION_DRAG_LOCATION,
-                    offset = Offset(40f, 40f) // force it out of BTF2's hit box
+                    position = Offset(40f, 40f), // force it out of BTF2's hit box
                 )
             view.dispatchDragEvent(moveEvent2)
         }
@@ -239,7 +239,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                     Modifier.testTag(tag),
                     textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 20.sp),
                     lineLimits = TextFieldLineLimits.SingleLine,
-                    decorator = { Box(modifier = Modifier.padding(8.dp)) { it() } }
+                    decorator = { Box(modifier = Modifier.padding(8.dp)) { it() } },
                 )
             }
         }
@@ -271,7 +271,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                     textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 20.sp),
                     lineLimits = TextFieldLineLimits.MultiLine(1, 2),
                     scrollState = scrollState,
-                    decorator = { Box(modifier = Modifier.padding(8.dp)) { it() } }
+                    decorator = { Box(modifier = Modifier.padding(8.dp)) { it() } },
                 )
             }
         }
@@ -305,7 +305,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                     textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 20.sp),
                     lineLimits = TextFieldLineLimits.SingleLine,
                     scrollState = scrollState,
-                    decorator = { Box(modifier = Modifier.padding(8.dp)) { it() } }
+                    decorator = { Box(modifier = Modifier.padding(8.dp)) { it() } },
                 )
             }
         }
@@ -343,7 +343,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                         .fillMaxSize()
                         .wrapContentSize()
                         .testTag(tag),
-                onTextLayout = { textLayout = it }
+                onTextLayout = { textLayout = it },
             )
         }
 
@@ -370,8 +370,8 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                     lerp(
                         start = textLayout.getLineTop(lineIndex = line),
                         stop = textLayout.getLineBottom(lineIndex = line),
-                        fraction = 0.5f
-                    )
+                        fraction = 0.5f,
+                    ),
             )
 
         val secondOffset = getOffsetAtLine(1)
@@ -409,7 +409,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                         .fillMaxSize()
                         .wrapContentHeight()
                         .testTag(tag),
-                onTextLayout = { textLayout = it }
+                onTextLayout = { textLayout = it },
             )
         }
 
@@ -449,7 +449,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
 
     private fun checkMagnifierStayAtEndWhenDraggedBeyondScroll(
         handle: Handle,
-        layoutDirection: LayoutDirection = LayoutDirection.Ltr
+        layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     ) {
         var screenSize = Size.Zero
         val dragDirection = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f
@@ -461,7 +461,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
         val state =
             TextFieldState(
                 "$fillerWord $fillerWord $fillerWord ".repeat(10),
-                initialSelection = TextRange.Zero
+                initialSelection = TextRange.Zero,
             )
 
         rule.setTextFieldTestContent {
@@ -473,7 +473,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                         .wrapContentSize()
                         .testTag(tag),
                     textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY),
-                    lineLimits = TextFieldLineLimits.SingleLine
+                    lineLimits = TextFieldLineLimits.SingleLine,
                 )
             }
         }
@@ -499,7 +499,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
             val delta =
                 Offset(
                     x = screenSize.width * directionVector.x,
-                    y = screenSize.height * directionVector.y
+                    y = screenSize.height * directionVector.y,
                 )
             moveBy(delta)
         }
@@ -516,7 +516,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
      */
     override fun checkMagnifierShowsDuringInitialLongPressDrag(
         expandForwards: Boolean,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ) {
         val dragDistance = Offset(10f, 0f)
         val dragDirection = if (expandForwards) 1f else -1f
@@ -530,7 +530,7 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                         // Center the text to give the magnifier lots of room to move.
                         .fillMaxSize()
                         .wrapContentSize()
-                        .testTag(tag)
+                        .testTag(tag),
             )
         }
 
@@ -566,12 +566,12 @@ internal class TextFieldMagnifierTest : AbstractSelectionMagnifierTests() {
                 LocalWindowInfo provides
                     object : WindowInfo {
                         override val isWindowFocused = false
-                    }
+                    },
             ) {
                 BasicTextField(
                     state = state,
                     textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 20.sp),
-                    lineLimits = TextFieldLineLimits.SingleLine
+                    lineLimits = TextFieldLineLimits.SingleLine,
                 )
             }
         }

@@ -7,6 +7,14 @@
         "identifier": "androidx.collection:collection",
         "resolvedVersion": "1.4.2"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.collection:collection",
+        "resolvedVersion": "1.4.2"
+      },
       "toConfiguration": "implementation"
     },
     {

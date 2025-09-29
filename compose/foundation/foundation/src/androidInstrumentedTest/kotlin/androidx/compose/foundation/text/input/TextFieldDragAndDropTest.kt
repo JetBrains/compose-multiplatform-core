@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.runtime.CompositionLocalProvider
@@ -61,6 +62,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,7 +73,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TextFieldDragAndDropTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     @Test
     fun nonTextContent_isNotAccepted() {
@@ -103,6 +105,21 @@ class TextFieldDragAndDropTest {
     }
 
     @Test
+    fun draggingText_doesNotUpdateSelection_ifDecoratorSkipsInnerTextField() {
+        rule.setContentAndTestDragAndDrop(
+            textContent = "world",
+            decorator = { BasicText("world") },
+        ) {
+            drag(Offset(fontSize.toPx() * 1, 10f), "hello")
+            assertThat(state.selection).isEqualTo(TextRange(0))
+            drag(Offset(fontSize.toPx() * 2, 10f), "hello")
+            assertThat(state.selection).isEqualTo(TextRange(0))
+            drag(Offset(fontSize.toPx() * 3, 10f), "hello")
+            assertThat(state.selection).isEqualTo(TextRange(0))
+        }
+    }
+
+    @Test
     fun draggingNonText_updatesSelection_withReceiveContent() {
         rule.setContentAndTestDragAndDrop(modifier = Modifier.contentReceiver { null }) {
             drag(Offset(fontSize.toPx() * 1, 10f), defaultUri)
@@ -118,7 +135,7 @@ class TextFieldDragAndDropTest {
     fun draggingText_toEndPadding_updatesSelection() {
         rule.setContentAndTestDragAndDrop(
             style = TextStyle(textAlign = TextAlign.Center),
-            modifier = Modifier.width(300.dp)
+            modifier = Modifier.width(300.dp),
         ) {
             drag(Offset.Zero, "hello")
             assertThat(state.selection).isEqualTo(TextRange(0))
@@ -133,9 +150,10 @@ class TextFieldDragAndDropTest {
         rule.setContentAndTestDragAndDrop(
             style = TextStyle(textAlign = TextAlign.Center),
             interactionSource = interactionSource,
-            modifier = Modifier.width(200.dp)
+            modifier = Modifier.width(200.dp),
         ) {
             drag(Offset(1f, 1f), "hello")
+            rule.waitForIdle()
             assertThat(isHovered).isTrue()
         }
     }
@@ -146,12 +164,14 @@ class TextFieldDragAndDropTest {
         rule.setContentAndTestDragAndDrop(
             style = TextStyle(textAlign = TextAlign.Center),
             interactionSource = interactionSource,
-            modifier = Modifier.width(200.dp)
+            modifier = Modifier.width(200.dp),
         ) {
             drag(Offset(1f, 1f), "hello")
+            rule.waitForIdle()
             assertThat(isHovered).isTrue()
 
             drag(Offset(1000f, 1f), "hello")
+            rule.waitForIdle()
             assertThat(isHovered).isFalse()
         }
     }
@@ -162,12 +182,14 @@ class TextFieldDragAndDropTest {
         rule.setContentAndTestDragAndDrop(
             style = TextStyle(textAlign = TextAlign.Center),
             interactionSource = interactionSource,
-            modifier = Modifier.width(200.dp)
+            modifier = Modifier.width(200.dp),
         ) {
             drag(Offset(1f, 1f), "hello")
+            rule.waitForIdle()
             assertThat(isHovered).isTrue()
 
             cancelDrag()
+            rule.waitForIdle()
             assertThat(isHovered).isFalse()
         }
     }
@@ -178,12 +200,14 @@ class TextFieldDragAndDropTest {
         rule.setContentAndTestDragAndDrop(
             style = TextStyle(textAlign = TextAlign.Center),
             interactionSource = interactionSource,
-            modifier = Modifier.width(200.dp)
+            modifier = Modifier.width(200.dp),
         ) {
             drag(Offset(1f, 1f), "hello")
+            rule.waitForIdle()
             assertThat(isHovered).isTrue()
 
             drop()
+            rule.waitForIdle()
             assertThat(isHovered).isFalse()
         }
     }
@@ -202,7 +226,7 @@ class TextFieldDragAndDropTest {
                 LocalWindowInfo provides
                     object : WindowInfo {
                         override val isWindowFocused = false
-                    }
+                    },
             ) {
                 Box(
                     modifier =
@@ -238,7 +262,7 @@ class TextFieldDragAndDropTest {
                         state = rememberTextFieldState(),
                         textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 20.sp),
                         lineLimits = TextFieldLineLimits.SingleLine,
-                        modifier = Modifier.width(100.dp).height(40.dp).align(Alignment.Center)
+                        modifier = Modifier.width(100.dp).height(40.dp).align(Alignment.Center),
                     )
                 }
             }
@@ -277,7 +301,7 @@ class TextFieldDragAndDropTest {
                 LocalWindowInfo provides
                     object : WindowInfo {
                         override val isWindowFocused = false
-                    }
+                    },
             ) {
                 Box(
                     modifier =
@@ -313,7 +337,7 @@ class TextFieldDragAndDropTest {
                         state = rememberTextFieldState(),
                         textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 20.sp),
                         lineLimits = TextFieldLineLimits.SingleLine,
-                        modifier = Modifier.width(100.dp).height(40.dp).align(Alignment.Center)
+                        modifier = Modifier.width(100.dp).height(40.dp).align(Alignment.Center),
                     )
                 }
             }
@@ -353,7 +377,7 @@ class TextFieldDragAndDropTest {
                         // do not consume text
                         it.uri != null
                     }
-                }
+                },
         ) {
             val clipData = createClipData {
                 addText(" Awesome")
@@ -378,7 +402,7 @@ class TextFieldDragAndDropTest {
                     receivedContent = it
                     // consume everything
                     null
-                }
+                },
         ) {
             val clipData = createClipData {
                 addText(" Awesome")
@@ -405,7 +429,7 @@ class TextFieldDragAndDropTest {
                     // replace the content
                     val clipData = createClipData { addText(uri.toString()) }
                     TransferableContent(clipData)
-                }
+                },
         ) {
             val clipData = createClipData { addUri(defaultUri) }
             drag(Offset(fontSize.toPx() * 5, 10f), clipData)
@@ -419,7 +443,7 @@ class TextFieldDragAndDropTest {
     fun droppedItem_requestsPermission_ifReceiveContent() {
         rule.setContentAndTestDragAndDrop(
             "Hello World!",
-            modifier = Modifier.contentReceiver { null }
+            modifier = Modifier.contentReceiver { null },
         ) {
             drag(Offset(fontSize.toPx() * 5, 10f), defaultUri)
             drop()
@@ -436,7 +460,7 @@ class TextFieldDragAndDropTest {
                 createClipData {
                     addText()
                     addUri()
-                }
+                },
             )
             drop()
             assertThat(rule.activity.requestedDragAndDropPermissions).isEmpty()
@@ -451,7 +475,7 @@ class TextFieldDragAndDropTest {
                 createClipData {
                     addText("Hello")
                     addText("World")
-                }
+                },
             )
             drop()
             assertThat(state.text.toString()).isEqualTo("aaHello\nWorldaa")
@@ -464,7 +488,8 @@ class TextFieldDragAndDropTest {
         style: TextStyle = TextStyle.Default,
         interactionSource: MutableInteractionSource? = null,
         modifier: Modifier = Modifier,
-        block: DragAndDropTestScope.() -> Unit
+        decorator: TextFieldDecorator? = null,
+        block: DragAndDropTestScope.() -> Unit,
     ) {
         val state = TextFieldState(textContent, initialSelection = TextRange.Zero)
         var view: View? = null
@@ -478,7 +503,7 @@ class TextFieldDragAndDropTest {
                 LocalWindowInfo provides
                     object : WindowInfo {
                         override val isWindowFocused = isWindowFocused
-                    }
+                    },
             ) {
                 isHovered = interactionSource?.collectIsHoveredAsState()
                 BasicTextField(
@@ -486,7 +511,8 @@ class TextFieldDragAndDropTest {
                     textStyle = mergedStyle,
                     lineLimits = TextFieldLineLimits.SingleLine,
                     interactionSource = interactionSource,
-                    modifier = modifier
+                    modifier = modifier,
+                    decorator = decorator,
                 )
             }
         }

@@ -75,6 +75,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -84,7 +85,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class InterceptPlatformTextInputTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private lateinit var testNode: TestNode
     private lateinit var coroutineScope: CoroutineScope
@@ -514,11 +515,7 @@ class InterceptPlatformTextInputTest {
 
         rule.waitUntil { requests.size == 1 }
         rule.runOnIdle {
-            assertThat(requests)
-                .containsExactly(
-                    "0 wrapping root",
-                )
-                .inOrder()
+            assertThat(requests).containsExactly("0 wrapping root").inOrder()
 
             // Root request shouldn't be cancelled.
             assertTrue(testJob.isActive)
@@ -528,12 +525,7 @@ class InterceptPlatformTextInputTest {
 
         rule.waitUntil { requests.size == 2 }
         rule.runOnIdle {
-            assertThat(requests)
-                .containsExactly(
-                    "0 wrapping root",
-                    "1 wrapping root",
-                )
-                .inOrder()
+            assertThat(requests).containsExactly("0 wrapping root", "1 wrapping root").inOrder()
 
             // Root request shouldn't be cancelled.
             assertTrue(testJob.isActive)
@@ -548,7 +540,7 @@ class InterceptPlatformTextInputTest {
                 content = content,
                 interceptor = { request, nextHandler ->
                     withContext(CoroutineName(name)) { nextHandler.startInputMethod(request) }
-                }
+                },
             )
         }
 
@@ -613,9 +605,7 @@ class InterceptPlatformTextInputTest {
         }
     }
 
-    private data class TaggedRequest(
-        val tag: String = "",
-    ) : PlatformTextInputMethodRequest {
+    private data class TaggedRequest(val tag: String = "") : PlatformTextInputMethodRequest {
         override fun createInputConnection(outAttributes: EditorInfo): InputConnection =
             TaggedInputConnection(tag)
     }
@@ -639,7 +629,7 @@ class InterceptPlatformTextInputTest {
 
         override fun deleteSurroundingTextInCodePoints(
             beforeLength: Int,
-            afterLength: Int
+            afterLength: Int,
         ): Boolean = TODO("Not yet implemented")
 
         override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean =
@@ -686,7 +676,7 @@ class InterceptPlatformTextInputTest {
         override fun commitContent(
             inputContentInfo: InputContentInfo,
             flags: Int,
-            opts: Bundle?
+            opts: Bundle?,
         ): Boolean = TODO("Not yet implemented")
     }
 }

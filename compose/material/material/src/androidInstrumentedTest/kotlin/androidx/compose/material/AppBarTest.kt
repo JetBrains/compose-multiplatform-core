@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +50,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AppBarTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val appBarHeight = 56.dp
 
@@ -75,7 +76,7 @@ class AppBarTest {
                 TopAppBar(
                     navigationIcon = { FakeIcon(Modifier.testTag("navigationIcon")) },
                     title = { Text("title", Modifier.testTag("title")) },
-                    actions = { FakeIcon(Modifier.testTag("action")) }
+                    actions = { FakeIcon(Modifier.testTag("action")) },
                 )
             }
         }
@@ -120,7 +121,7 @@ class AppBarTest {
                     windowInsets = WindowInsets(fakeInset, fakeInset, fakeInset, fakeInset),
                     navigationIcon = { FakeIcon(Modifier.testTag("navigationIcon")) },
                     title = { Text("title", Modifier.testTag("title")) },
-                    actions = { FakeIcon(Modifier.testTag("action")) }
+                    actions = { FakeIcon(Modifier.testTag("action")) },
                 )
             }
         }
@@ -167,7 +168,7 @@ class AppBarTest {
             Box(Modifier.testTag("bar")) {
                 TopAppBar(
                     title = { Text("title", Modifier.testTag("title")) },
-                    actions = { FakeIcon(Modifier.testTag("action")) }
+                    actions = { FakeIcon(Modifier.testTag("action")) },
                 )
             }
         }
@@ -221,7 +222,7 @@ class AppBarTest {
                         medium = ContentAlpha.medium
                     },
                     navigationIcon = { navigationIconAlpha = LocalContentAlpha.current },
-                    actions = { actionAlpha = LocalContentAlpha.current }
+                    actions = { actionAlpha = LocalContentAlpha.current },
                 )
             }
         }
@@ -285,7 +286,7 @@ class AppBarTest {
         rule.setMaterialContent {
             BottomAppBar(
                 WindowInsets(fakeInsets, fakeInsets, fakeInsets, fakeInsets),
-                Modifier.testTag("bar")
+                Modifier.testTag("bar"),
             ) {
                 FakeIcon(Modifier.testTag("icon"))
             }

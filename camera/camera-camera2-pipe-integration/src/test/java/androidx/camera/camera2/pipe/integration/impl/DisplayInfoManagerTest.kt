@@ -28,11 +28,9 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowDisplay
@@ -43,9 +41,16 @@ import org.robolectric.util.ReflectionHelpers
 @Suppress("DEPRECATION") // getRealSize
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
 class DisplayInfoManagerTest {
-    private val displayInfoManager = DisplayInfoManager(ApplicationProvider.getApplicationContext())
+    private val displayInfoManager =
+        DisplayInfoManager.run {
+            // DisplayInfoManager is used in multiple classes which may be initiated in many other
+            // classes i.e. it may be used through many tests indirectly. So, we call
+            // releaseInstance once before getInstance too so that the first test in this class can
+            // also start with a clean slate.
+            releaseInstance()
+            getInstance(ApplicationProvider.getApplicationContext())
+        }
 
     private fun addDisplay(width: Int, height: Int, state: Int = Display.STATE_ON): Int {
         val displayStr = String.format("w%ddp-h%ddp", width, height)
@@ -62,26 +67,9 @@ class DisplayInfoManagerTest {
         return displayId
     }
 
-    companion object {
-        @JvmStatic
-        @BeforeClass
-        fun classSetUp() {
-            DisplayInfoManager.invalidateLazyFields()
-        }
-    }
-
     @After
     fun tearDown() {
-        val displayManager =
-            (ApplicationProvider.getApplicationContext() as Context).getSystemService(
-                Context.DISPLAY_SERVICE
-            ) as DisplayManager?
-
-        displayManager?.let {
-            for (display in it.displays) {
-                removeDisplay(display.displayId)
-            }
-        }
+        DisplayInfoManager.releaseInstance()
     }
 
     @Test
@@ -96,7 +84,7 @@ class DisplayInfoManagerTest {
 
         // Act
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
 
         // Assert
         assertEquals(currentDisplaySize, size)
@@ -110,7 +98,7 @@ class DisplayInfoManagerTest {
 
         // Act
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
 
         // Assert
         assertEquals(Point(2000, 3000), size)
@@ -125,7 +113,7 @@ class DisplayInfoManagerTest {
 
         // Act
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
 
         // Assert
         assertEquals(Point(480, 640), size)
@@ -137,11 +125,11 @@ class DisplayInfoManagerTest {
         addDisplay(480, 640)
 
         // Act
-        displayInfoManager.defaultDisplay
+        displayInfoManager.getMaxSizeDisplay()
         addDisplay(2000, 3000)
 
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
 
         // Assert
         assertEquals(Point(2000, 3000), size)
@@ -157,7 +145,7 @@ class DisplayInfoManagerTest {
 
         // Act
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
 
         // Assert
         assertEquals(Point(480, 640), size)
@@ -173,7 +161,7 @@ class DisplayInfoManagerTest {
 
         // Act
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
 
         // Assert
         assertEquals(Point(480, 640), size)
@@ -189,7 +177,7 @@ class DisplayInfoManagerTest {
 
         // Act
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
 
         // Assert
         assertEquals(Point(2000, 3000), size)
@@ -202,7 +190,7 @@ class DisplayInfoManagerTest {
 
         // Act
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
     }
 
     @Test
@@ -231,7 +219,7 @@ class DisplayInfoManagerTest {
         // Act
         displayInfoManager.getPreviewSize()
         addDisplay(2000, 3000)
-        displayInfoManager.refresh()
+        displayInfoManager.refreshPreviewSize()
 
         // Assert
         assertEquals(Size(1920, 1080), displayInfoManager.getPreviewSize())
@@ -247,7 +235,9 @@ class DisplayInfoManagerTest {
         Shadows.shadowOf(windowManager.defaultDisplay).setRealHeight(16)
 
         // Act & Assert
-        val displayInfoManager = DisplayInfoManager(ApplicationProvider.getApplicationContext())
+        DisplayInfoManager.releaseInstance()
+        val displayInfoManager =
+            DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext())
         assertThat(displayInfoManager.getPreviewSize()).isEqualTo(Size(640, 480))
     }
 
@@ -263,7 +253,9 @@ class DisplayInfoManagerTest {
         ReflectionHelpers.setStaticField(Build::class.java, "MODEL", "SM-A127F")
 
         // Act & Assert
-        val displayInfoManager = DisplayInfoManager(ApplicationProvider.getApplicationContext())
+        DisplayInfoManager.releaseInstance()
+        val displayInfoManager =
+            DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext())
         assertThat(displayInfoManager.getPreviewSize()).isEqualTo(Size(1600, 720))
     }
 }

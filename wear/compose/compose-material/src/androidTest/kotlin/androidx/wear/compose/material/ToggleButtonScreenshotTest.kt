@@ -15,7 +15,6 @@
  */
 package androidx.wear.compose.material
 
-import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
@@ -37,7 +36,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ToggleButtonScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -52,7 +51,7 @@ class ToggleButtonScreenshotTest {
             ToggleButton(
                 checked = true,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 Text("On")
             }
@@ -64,7 +63,7 @@ class ToggleButtonScreenshotTest {
             ToggleButton(
                 checked = true,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 Text("On")
             }
@@ -76,7 +75,7 @@ class ToggleButtonScreenshotTest {
             checked = false,
             onCheckedChange = {},
             enabled = false,
-            modifier = Modifier.testTag(TEST_TAG)
+            modifier = Modifier.testTag(TEST_TAG),
         ) {
             Text("Off")
         }
@@ -84,7 +83,7 @@ class ToggleButtonScreenshotTest {
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) { content() }

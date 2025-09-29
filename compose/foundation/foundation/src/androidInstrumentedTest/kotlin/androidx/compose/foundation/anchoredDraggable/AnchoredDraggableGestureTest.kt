@@ -16,8 +16,11 @@
 
 package androidx.compose.foundation.anchoredDraggable
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.AnimationVector
+import androidx.compose.animation.core.TwoWayConverter
+import androidx.compose.animation.core.VectorizedAnimationSpec
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.AtomicLong
 import androidx.compose.foundation.AutoTestFrameClock
 import androidx.compose.foundation.anchoredDraggable.AnchoredDraggableTestValue.A
 import androidx.compose.foundation.anchoredDraggable.AnchoredDraggableTestValue.B
@@ -33,7 +36,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -63,9 +65,9 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -205,7 +207,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
             createStateAndModifier(
                 initialValue = A,
                 orientation = Orientation.Horizontal,
-                enabled = false
+                enabled = false,
             )
         val anchors = DraggableAnchors {
             A at 0f
@@ -247,7 +249,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
             createStateAndModifier(
                 initialValue = A,
                 orientation = Orientation.Vertical,
-                enabled = false
+                enabled = false,
             )
         val anchors = DraggableAnchors {
             A at 0f
@@ -294,7 +296,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
                             A at 0f
                             B at 100f
                             C at 200f
-                        }
+                        },
                 )
             val flingBehavior = createAnchoredDraggableFlingBehavior(state, rule.density)
             state.dispatchRawDelta(60f)
@@ -313,7 +315,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
                         A at 0f
                         B at 100f
                         C at 200f
-                    }
+                    },
                 )
             val flingBehavior = createAnchoredDraggableFlingBehavior(state, rule.density)
 
@@ -331,7 +333,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
                     DraggableAnchors {
                         A at 0f
                         B at 200f
-                    }
+                    },
                 )
             val flingBehavior = createAnchoredDraggableFlingBehavior(state, rule.density)
 
@@ -381,7 +383,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
             swipeWithVelocity(
                 start = Offset(left, 0f),
                 end = Offset(right / 2, 0f),
-                endVelocity = AnchoredDraggableMinFlingVelocityPx * 1.1f
+                endVelocity = AnchoredDraggableMinFlingVelocityPx * 1.1f,
             )
         }
 
@@ -416,7 +418,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
             swipeWithVelocity(
                 start = Offset(left, 0f),
                 end = Offset(right / 4, 0f),
-                endVelocity = AnchoredDraggableMinFlingVelocityPx * 0.9f
+                endVelocity = AnchoredDraggableMinFlingVelocityPx * 0.9f,
             )
         }
 
@@ -463,36 +465,37 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
     }
 
     @Test
-    fun anchoredDraggable_targetValue_animationCancelledResetsTargetValueToClosest() = runBlocking {
-        rule.mainClock.autoAdvance = false
-        lateinit var scope: CoroutineScope
-        rule.setContent { scope = rememberCoroutineScope() }
+    fun anchoredDraggable_targetValue_animationCancelledResetsTargetValueToClosest() =
+        runTest(testDispatcher) {
+            rule.mainClock.autoAdvance = false
+            lateinit var scope: CoroutineScope
+            rule.setContent { scope = rememberCoroutineScope() }
 
-        val anchors = DraggableAnchors {
-            A at 0f
-            B at 250f
-            C at 500f
-        }
-        val state = createAnchoredDraggableState(initialValue = A, anchors = anchors)
+            val anchors = DraggableAnchors {
+                A at 0f
+                B at 250f
+                C at 500f
+            }
+            val state = createAnchoredDraggableState(initialValue = A, anchors = anchors)
 
-        assertThat(state.currentValue).isEqualTo(A)
-        assertThat(state.targetValue).isEqualTo(A)
+            assertThat(state.currentValue).isEqualTo(A)
+            assertThat(state.targetValue).isEqualTo(A)
 
-        scope.launch { state.animateTo(C, DefaultSnapAnimationSpec) }
+            scope.launch { state.animateTo(C, DefaultSnapAnimationSpec) }
 
-        // Advance until our closest anchor is B
-        while (state.requireOffset() < anchors.positionOf(B)) {
+            // Advance until our closest anchor is B
+            while (state.requireOffset() < anchors.positionOf(B)) {
+                rule.mainClock.advanceTimeByFrame()
+            }
+            assertThat(state.targetValue).isEqualTo(C)
+
+            // Take over the state to cancel the ongoing animation
+            state.anchoredDrag {}
             rule.mainClock.advanceTimeByFrame()
+
+            // B is the closest now so we should target it
+            assertThat(state.targetValue).isEqualTo(B)
         }
-        assertThat(state.targetValue).isEqualTo(C)
-
-        // Take over the state to cancel the ongoing animation
-        state.anchoredDrag {}
-        rule.mainClock.advanceTimeByFrame()
-
-        // B is the closest now so we should target it
-        assertThat(state.targetValue).isEqualTo(B)
-    }
 
     // TODO(b/360835763): Remove when removing the old overload
     @Test
@@ -597,7 +600,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
                         A at 0f
                         B at 250f
                         C at 500f
-                    }
+                    },
             )
         val state2 =
             createAnchoredDraggableState(
@@ -606,7 +609,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
                     DraggableAnchors {
                         A at 0f
                         B at 250f
-                    }
+                    },
             )
         var state by mutableStateOf(state1)
 
@@ -669,7 +672,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
                         C at 500f
                     },
                 orientation = Orientation.Horizontal,
-                reverseDirection = true
+                reverseDirection = true,
             )
         rule.setContent {
             WithTouchSlop(0f) {
@@ -688,7 +691,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
         rule.onNodeWithTag(AnchoredDraggableTestTag).performTouchInput {
             swipe(
                 start = Offset(x = state.anchors.positionOf(B), y = 0f),
-                end = Offset(x = state.anchors.positionOf(A), y = 0f)
+                end = Offset(x = state.anchors.positionOf(A), y = 0f),
             )
         }
 
@@ -706,7 +709,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
                         B at 250f
                         C at 500f
                     },
-                orientation = Orientation.Horizontal
+                orientation = Orientation.Horizontal,
             )
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         rule.setContent {
@@ -730,7 +733,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
         rule.onNodeWithTag(AnchoredDraggableTestTag).performTouchInput {
             swipe(
                 start = Offset(x = state.anchors.positionOf(A), y = 0f),
-                end = Offset(x = state.anchors.positionOf(B), y = 0f)
+                end = Offset(x = state.anchors.positionOf(B), y = 0f),
             )
         }
         assertThat(state.offset).isEqualTo(state.anchors.positionOf(B))
@@ -741,7 +744,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
         rule.onNodeWithTag(AnchoredDraggableTestTag).performTouchInput {
             swipe(
                 start = Offset(x = state.anchors.positionOf(B), y = 0f),
-                end = Offset(x = state.anchors.positionOf(A), y = 0f)
+                end = Offset(x = state.anchors.positionOf(A), y = 0f),
             )
         }
         assertThat(state.offset).isEqualTo(state.anchors.positionOf(C))
@@ -754,7 +757,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
             createStateAndModifier(
                 initialValue = A,
                 orientation = Orientation.Horizontal,
-                shouldCreateFling = false
+                shouldCreateFling = false,
             )
 
         var density by mutableStateOf(rule.density)
@@ -786,7 +789,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
             swipeWithVelocity(
                 start = Offset(left, 0f),
                 end = Offset(offsetDisplaced, 0f),
-                endVelocity = originalThreshold
+                endVelocity = originalThreshold,
             )
         }
 
@@ -801,7 +804,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
             swipeWithVelocity(
                 start = Offset(left, 0f),
                 end = Offset(offsetDisplaced, 0f),
-                endVelocity = originalThreshold
+                endVelocity = originalThreshold,
             )
         }
 
@@ -814,7 +817,7 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
             swipeWithVelocity(
                 start = Offset(left, 0f),
                 end = Offset(offsetDisplaced, 0f),
-                endVelocity = with(density) { AnchoredDraggableMinFlingVelocity.toPx() } * 1.1f
+                endVelocity = with(density) { AnchoredDraggableMinFlingVelocity.toPx() } * 1.1f,
             )
         }
 
@@ -823,18 +826,66 @@ class AnchoredDraggableGestureTest(val testNewBehavior: Boolean) :
         assertThat(state.currentValue).isEqualTo(C)
     }
 
-    private val DefaultSnapAnimationSpec = tween<Float>()
+    @Test
+    fun anchoredDraggable_fling_confirmValueChange_returnsFalse_returnsToSettledAnchor() {
+        val inspectAnimationSpec = InspectSpringAnimationSpec(DefaultSnapAnimationSpec)
+        val (state, modifier) =
+            createStateAndModifier(
+                initialValue = A,
+                Orientation.Horizontal,
+                confirmValueChange = { it != B },
+                snapAnimationSpec = inspectAnimationSpec,
+            )
+        val anchors = DraggableAnchors {
+            A at 0f
+            B at AnchoredDraggableBoxSize.value / 2f
+            C at AnchoredDraggableBoxSize.value
+        }
+        state.updateAnchors(anchors)
 
-    private class HandPumpTestFrameClock : MonotonicFrameClock {
-        private val frameCh = Channel<Long>(1)
-        private val time = AtomicLong(0)
-
-        suspend fun advanceByFrame() {
-            frameCh.send(time.getAndAdd(16_000_000L))
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                WithTouchSlop(0f) {
+                    Box(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier.requiredSize(AnchoredDraggableBoxSize)
+                                .testTag(AnchoredDraggableTestTag)
+                                .then(modifier)
+                                .offset { IntOffset(state.requireOffset().roundToInt(), 0) }
+                                .background(Color.Red)
+                        )
+                    }
+                }
+            }
         }
 
-        override suspend fun <R> withFrameNanos(onFrame: (frameTimeNanos: Long) -> R): R {
-            return onFrame(frameCh.receive())
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.settledValue).isEqualTo(A)
+
+        rule.onNodeWithTag(AnchoredDraggableTestTag).performTouchInput {
+            swipeRight(endX = right / 2)
+        }
+        assertThat(state.offset).isWithin(0.5f).of(anchors.positionOf(B))
+        rule.waitForIdle()
+
+        assertThat(inspectAnimationSpec.animationWasExecutions).isEqualTo(1)
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.settledValue).isEqualTo(A)
+        assertThat(state.offset).isEqualTo(anchors.positionOf(A))
+    }
+
+    private val DefaultSnapAnimationSpec = tween<Float>()
+
+    private class InspectSpringAnimationSpec(private val animation: AnimationSpec<Float>) :
+        AnimationSpec<Float> {
+
+        var animationWasExecutions = 0
+
+        override fun <V : AnimationVector> vectorize(
+            converter: TwoWayConverter<Float, V>
+        ): VectorizedAnimationSpec<V> {
+            animationWasExecutions++
+            return animation.vectorize(converter)
         }
     }
 

@@ -1,3 +1,0 @@
-// Baseline format: 1.0
-AddedAbstractMethod: androidx.camera.featurecombinationquery.CameraDeviceSetupCompat#isSessionConfigurationSupported(androidx.camera.featurecombinationquery.SessionConfigurationCompat):
-    Added method androidx.camera.featurecombinationquery.CameraDeviceSetupCompat.isSessionConfigurationSupported(androidx.camera.featurecombinationquery.SessionConfigurationCompat)

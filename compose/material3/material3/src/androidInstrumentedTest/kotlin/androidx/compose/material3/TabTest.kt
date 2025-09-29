@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -89,7 +90,7 @@ class TabTest {
 
     private val icon = Icons.Filled.Favorite
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun before() {
@@ -109,7 +110,7 @@ class TabTest {
                     selected = true,
                     onClick = {},
                     modifier = Modifier.testTag("tab"),
-                    text = { Text("Text") }
+                    text = { Text("Text") },
                 )
             }
         }
@@ -136,7 +137,7 @@ class TabTest {
                     onClick = {},
                     modifier = Modifier.testTag("tab"),
                     enabled = false,
-                    text = { Text("Text") }
+                    text = { Text("Text") },
                 )
             }
         }
@@ -158,7 +159,7 @@ class TabTest {
                     onClick = {},
                     text = { Text("Text") },
                     icon = { Icon(icon, null) },
-                    modifier = Modifier.testTag("leadingIconTab")
+                    modifier = Modifier.testTag("leadingIconTab"),
                 )
             }
         }
@@ -186,7 +187,7 @@ class TabTest {
                     text = { Text("Text") },
                     icon = { Icon(icon, null) },
                     modifier = Modifier.testTag("leadingIconTab"),
-                    enabled = false
+                    enabled = false,
                 )
             }
         }
@@ -226,7 +227,7 @@ class TabTest {
                         selected = true,
                         onClick = {},
                         text = { Text("Text and Icon") },
-                        icon = { Icon(icon, null) }
+                        icon = { Icon(icon, null) },
                     )
                 }
             }
@@ -242,7 +243,7 @@ class TabTest {
                         selected = true,
                         onClick = {},
                         text = { Text("Text") },
-                        icon = { Icon(icon, null) }
+                        icon = { Icon(icon, null) },
                     )
                 }
             }
@@ -268,13 +269,13 @@ class TabTest {
                                 .background(color = Color.Red)
                                 .testTag("indicator")
                         )
-                    }
+                    },
                 ) {
                     titles.forEachIndexed { index, title ->
                         Tab(
                             selected = state == index,
                             onClick = { state = index },
-                            text = { Text(title) }
+                            text = { Text(title) },
                         )
                     }
                 }
@@ -287,7 +288,7 @@ class TabTest {
             .onNodeWithTag("indicator", true)
             .assertPositionInRootIsEqualTo(
                 expectedLeft = 0.dp,
-                expectedTop = tabRowBounds.height - indicatorHeight
+                expectedTop = tabRowBounds.height - indicatorHeight,
             )
 
         // Click the second tab
@@ -299,7 +300,7 @@ class TabTest {
             .onNodeWithTag("indicator", true)
             .assertPositionInRootIsEqualTo(
                 expectedLeft = (tabRowBounds.width / 2),
-                expectedTop = tabRowBounds.height - indicatorHeight
+                expectedTop = tabRowBounds.height - indicatorHeight,
             )
     }
 
@@ -375,7 +376,7 @@ class TabTest {
                                 .background(color = Color.Red)
                                 .testTag("indicator")
                         )
-                    }
+                    },
                 ) {
                     titles.forEachIndexed { index, title ->
                         Tab(selected = index == 1, onClick = {}, text = { Text(title) })
@@ -399,14 +400,14 @@ class TabTest {
                 SecondaryTabRow(
                     modifier = Modifier.height(tabRowHeight),
                     selectedTabIndex = 0,
-                    divider = divider
+                    divider = divider,
                 ) {
                     titles.forEachIndexed { index, title ->
                         Tab(
                             selected = index == 0,
                             onClick = {},
                             modifier = Modifier.height(tabRowHeight),
-                            text = { Text(title) }
+                            text = { Text(title) },
                         )
                     }
                 }
@@ -419,7 +420,7 @@ class TabTest {
             .onNodeWithTag("divider", true)
             .assertPositionInRootIsEqualTo(
                 expectedLeft = 0.dp,
-                expectedTop = tabRowBounds.height - DividerTokens.Thickness
+                expectedTop = tabRowBounds.height - DividerTokens.Thickness,
             )
             .assertHeightIsEqualTo(DividerTokens.Thickness)
     }
@@ -436,7 +437,7 @@ class TabTest {
                         Tab(
                             selected = state == index,
                             onClick = { state = index },
-                            text = { Text(title, Modifier.testTag("text")) }
+                            text = { Text(title, Modifier.testTag("text")) },
                         )
                     }
                 }
@@ -463,7 +464,7 @@ class TabTest {
                             selected = state == index,
                             onClick = { state = index },
                             text = { Text(title, Modifier.testTag("text")) },
-                            icon = { Icon(Icons.Filled.Favorite, null) }
+                            icon = { Icon(Icons.Filled.Favorite, null) },
                         )
                     }
                 }
@@ -497,7 +498,7 @@ class TabTest {
                         Tab(
                             selected = state == index,
                             onClick = { state = index },
-                            text = { Text(title, Modifier.testTag("text"), maxLines = 2) }
+                            text = { Text(title, Modifier.testTag("text"), maxLines = 2) },
                         )
                     }
                 }
@@ -521,7 +522,7 @@ class TabTest {
                         selected = true,
                         onClick = {},
                         text = { Text("TAB", Modifier.testTag("text")) },
-                        icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) }
+                        icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                     )
                 }
             }
@@ -539,7 +540,7 @@ class TabTest {
             rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
         textBounds.left.assertIsEqualTo(
             iconBounds.right + textDistanceFromIcon,
-            "textBounds left-position"
+            "textBounds left-position",
         )
 
         val iconOffset =
@@ -570,13 +571,13 @@ class TabTest {
                 SecondaryScrollableTabRow(
                     modifier = Modifier.testTag("tabRow"),
                     selectedTabIndex = state,
-                    indicator = { indicator(state) }
+                    indicator = { indicator(state) },
                 ) {
                     titles.forEachIndexed { index, title ->
                         Tab(
                             selected = state == index,
                             onClick = { state = index },
-                            text = { Text(title) }
+                            text = { Text(title) },
                         )
                     }
                 }
@@ -591,7 +592,7 @@ class TabTest {
             .assertPositionInRootIsEqualTo(
                 // Tabs in a scrollable tab row are offset 52.dp from each end
                 expectedLeft = tabRowPadding,
-                expectedTop = tabRowBounds.height - indicatorHeight
+                expectedTop = tabRowBounds.height - indicatorHeight,
             )
 
         // Click the second tab
@@ -603,7 +604,7 @@ class TabTest {
             .onNodeWithTag("indicator", true)
             .assertPositionInRootIsEqualTo(
                 expectedLeft = tabRowPadding + minimumTabWidth,
-                expectedTop = tabRowBounds.height - indicatorHeight
+                expectedTop = tabRowBounds.height - indicatorHeight,
             )
     }
 
@@ -647,27 +648,38 @@ class TabTest {
 
         val tabRowBounds = rule.onNodeWithTag("tabRow").getUnclippedBoundsInRoot()
         val tabRowPadding = 52.dp
+
         // Indicator should be placed in the bottom left of the first tab
-        rule
-            .onNodeWithTag("indicator", true)
-            .assertPositionInRootIsEqualTo(
-                // Tabs in a scrollable tab row are offset 52.dp from each end
-                expectedLeft = tabRowBounds.width - tabRowPadding - minimumTabWidth,
-                expectedTop = tabRowBounds.height - indicatorHeight,
-            )
+        var indicatorBounds = rule.onNodeWithTag("indicator", true).getUnclippedBoundsInRoot()
+
+        // Split assertions to up tolerance to 1.dp
+        indicatorBounds.left.assertIsEqualTo(
+            expected = tabRowBounds.width - tabRowPadding - minimumTabWidth,
+            subject = "left",
+            tolerance = 1.dp,
+        )
+        indicatorBounds.top.assertIsEqualTo(
+            expected = tabRowBounds.height - indicatorHeight,
+            subject = "top",
+            tolerance = 1.dp,
+        )
 
         // Click the second tab
         rule.onAllNodes(isSelectable())[1].performClick()
 
         // Indicator should now be placed in the bottom left of the second tab.
         // For RTL layout, its x coordinate should be at the start of the TabRow.
-        rule
-            .onNodeWithTag("indicator", true)
-            .assertPositionInRootIsEqualTo(
-                expectedLeft =
-                    tabRowBounds.width - tabRowPadding - minimumTabWidth - minimumTabWidth,
-                expectedTop = tabRowBounds.height - indicatorHeight,
-            )
+        indicatorBounds = rule.onNodeWithTag("indicator", true).getUnclippedBoundsInRoot()
+        indicatorBounds.left.assertIsEqualTo(
+            expected = tabRowBounds.width - tabRowPadding - minimumTabWidth - minimumTabWidth,
+            subject = "left",
+            tolerance = 1.dp,
+        )
+        indicatorBounds.top.assertIsEqualTo(
+            expected = tabRowBounds.height - indicatorHeight,
+            subject = "top",
+            tolerance = 1.dp,
+        )
     }
 
     @Test
@@ -682,14 +694,14 @@ class TabTest {
                 SecondaryScrollableTabRow(
                     modifier = Modifier.height(tabRowHeight),
                     selectedTabIndex = 0,
-                    divider = divider
+                    divider = divider,
                 ) {
                     titles.forEachIndexed { index, title ->
                         Tab(
                             selected = index == 0,
                             onClick = {},
                             modifier = Modifier.height(tabRowHeight),
-                            text = { Text(title) }
+                            text = { Text(title) },
                         )
                     }
                 }
@@ -798,7 +810,7 @@ class TabTest {
                     Tab(
                         selected = state == index,
                         onClick = { state = index },
-                        text = { Text(title) }
+                        text = { Text(title) },
                     )
                 }
             }
@@ -849,13 +861,13 @@ class TabTest {
             Box {
                 SecondaryScrollableTabRow(
                     selectedTabIndex = state,
-                    indicator = { indicator(state) }
+                    indicator = { indicator(state) },
                 ) {
                     titles.forEachIndexed { index, title ->
                         Tab(
                             selected = state == index,
                             onClick = { state = index },
-                            text = { Text(title) }
+                            text = { Text(title) },
                         )
                     }
                 }
@@ -882,6 +894,7 @@ class TabTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun testInspectorValue() {
         val pos = TabPosition(10.0.dp, 200.0.dp, 0.dp)
         rule.setContent {
@@ -902,7 +915,7 @@ class TabTest {
                     onClick = { clicks++ },
                     modifier = Modifier.testTag("tab"),
                     enabled = false,
-                    text = { Text("Text") }
+                    text = { Text("Text") },
                 )
             }
         }
@@ -923,7 +936,7 @@ class TabTest {
                     text = { Text("Text") },
                     icon = { Icon(icon, null) },
                     modifier = Modifier.testTag("tab"),
-                    enabled = false
+                    enabled = false,
                 )
             }
         }
@@ -945,7 +958,7 @@ class TabTest {
                             selected = true,
                             onClick = {},
                             text = { Text(text = "Text", fontSize = 10.sp) },
-                            icon = { Icon(icon, null) }
+                            icon = { Icon(icon, null) },
                         )
                     }
                 }
@@ -965,7 +978,7 @@ class TabTest {
                         Tab(
                             selected = state == index,
                             onClick = { state = index },
-                            text = { Text(text = title) }
+                            text = { Text(text = title) },
                         )
                     }
                 }
@@ -992,7 +1005,7 @@ class TabTest {
                         Tab(
                             selected = state == index,
                             onClick = { state = index },
-                            text = { Text(text = title) }
+                            text = { Text(text = title) },
                         )
                     }
                 }

@@ -18,7 +18,6 @@ package androidx.camera.core.imagecapture
 
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Size
 import androidx.camera.core.ImageCapture
@@ -40,14 +39,12 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.ShadowBuild
 
 /** Unit tests for [TakePictureManager]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class TakePictureManagerTest {
 
     private val imagePipeline = FakeImagePipeline()
@@ -276,7 +273,7 @@ class TakePictureManagerTest {
         val response2 =
             listOf(
                 CaptureConfig.defaultEmptyCaptureConfig(),
-                CaptureConfig.defaultEmptyCaptureConfig()
+                CaptureConfig.defaultEmptyCaptureConfig(),
             )
         imagePipeline.captureConfigMap[request1] = response1
         imagePipeline.captureConfigMap[request2] = response2
@@ -433,7 +430,7 @@ class TakePictureManagerTest {
             ImagePipeline(
                 Utils.createEmptyImageCaptureConfig(),
                 Size(640, 480),
-                cameraCharacteristics
+                cameraCharacteristics,
             )
         val request1 = FakeTakePictureRequest(FakeTakePictureRequest.Type.IN_MEMORY)
         val request2 = FakeTakePictureRequest(FakeTakePictureRequest.Type.IN_MEMORY)
@@ -459,7 +456,7 @@ class TakePictureManagerTest {
             ImagePipeline(
                 Utils.createEmptyImageCaptureConfig(),
                 Size(640, 480),
-                cameraCharacteristics
+                cameraCharacteristics,
             )
         val request1 = FakeTakePictureRequest(FakeTakePictureRequest.Type.IN_MEMORY)
         val request2 = FakeTakePictureRequest(FakeTakePictureRequest.Type.IN_MEMORY)
@@ -480,7 +477,7 @@ class TakePictureManagerTest {
             ImagePipeline(
                 Utils.createEmptyImageCaptureConfig(),
                 Size(640, 480),
-                cameraCharacteristics
+                cameraCharacteristics,
             )
 
         // Create a request and offer it to the manager.
@@ -519,7 +516,7 @@ class TakePictureManagerTest {
             ImagePipeline(
                 Utils.createEmptyImageCaptureConfig(),
                 Size(640, 480),
-                cameraCharacteristics
+                cameraCharacteristics,
             )
 
         // Create a request and offer it to the manager.

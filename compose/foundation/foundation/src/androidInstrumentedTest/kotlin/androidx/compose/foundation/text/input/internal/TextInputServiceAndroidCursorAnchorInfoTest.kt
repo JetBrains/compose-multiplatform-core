@@ -52,6 +52,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import org.junit.Rule
 import org.junit.Test
@@ -61,7 +62,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class TextInputServiceAndroidCursorAnchorInfoTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule
     val composeImmRule = ComposeInputMethodManagerTestRule().apply { setFactory { composeImm } }
@@ -90,7 +91,7 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
                 selectionStart: Int,
                 selectionEnd: Int,
                 compositionStart: Int,
-                compositionEnd: Int
+                compositionEnd: Int,
             ) {}
 
             override fun sendKeyEvent(event: KeyEvent) {}
@@ -128,13 +129,13 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
                 TestLayoutCoordinates(
                     windowOffset = coreNodeOffset,
                     size = coreNodeSize,
-                    isAttached = true
+                    isAttached = true,
                 )
             decoratorNodeCoordinates =
                 TestLayoutCoordinates(
                     windowOffset = decoratorNodeOffset,
                     size = decoratorNodeSize,
-                    isAttached = true
+                    isAttached = true,
                 )
         }
 
@@ -176,7 +177,7 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
             TransformedTextFieldState(
                 textFieldState = textFieldState,
                 inputTransformation = null,
-                codepointTransformation = null
+                codepointTransformation = null,
             )
 
         backgroundScope.launch(Dispatchers.Unconfined) {
@@ -325,7 +326,7 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
             TransformedTextFieldState(
                 textFieldState = textFieldState,
                 inputTransformation = null,
-                codepointTransformation = null
+                codepointTransformation = null,
             )
 
         launch(Dispatchers.Unconfined) {
@@ -343,13 +344,13 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
             textStyle = TextStyle.Default,
             singleLine = false,
             softWrap = false,
-            keyboardOptions = KeyboardOptions.Default
+            keyboardOptions = KeyboardOptions.Default,
         )
         layoutState.layoutWithNewMeasureInputs(
             density = defaultDensity,
             fontFamilyResolver = createFontFamilyResolver(context, coroutineContext),
             layoutDirection = LayoutDirection.Ltr,
-            constraints = Constraints()
+            constraints = Constraints(),
         )
     }
 
@@ -377,12 +378,12 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
 
         override fun localPositionOf(
             sourceCoordinates: LayoutCoordinates,
-            relativeToSource: Offset
+            relativeToSource: Offset,
         ): Offset = sourceCoordinates.localToWindow(relativeToSource) - windowOffset
 
         override fun localBoundingBoxOf(
             sourceCoordinates: LayoutCoordinates,
-            clipBounds: Boolean
+            clipBounds: Boolean,
         ): Rect =
             Rect(localPositionOf(sourceCoordinates, Offset.Zero), sourceCoordinates.size.toSize())
 

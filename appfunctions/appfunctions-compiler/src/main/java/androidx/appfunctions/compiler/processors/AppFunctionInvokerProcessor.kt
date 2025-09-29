@@ -26,18 +26,23 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionCompon
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInvokerClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.ConfigurableAppFunctionFactoryClass
+import androidx.appfunctions.compiler.core.isOfType
 import androidx.appfunctions.compiler.core.toTypeName
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getConstructors
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
@@ -148,11 +153,11 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         codeGenerator
             .createNewFile(
                 Dependencies(
-                    aggregating = false,
-                    checkNotNull(appFunctionClass.classDeclaration.containingFile)
+                    aggregating = true,
+                    sources = appFunctionClass.getSourceFiles().toTypedArray(),
                 ),
                 originalPackageName,
-                invokerClassName
+                invokerClassName,
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }
@@ -190,13 +195,13 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         val contextSpec =
             ParameterSpec.builder(
                     AppFunctionInvokerClass.UnsafeInvokeMethod.APPLICATION_CONTEXT_PARAM_NAME,
-                    AppFunctionContextClass.CLASS_NAME
+                    AppFunctionContextClass.CLASS_NAME,
                 )
                 .build()
         val functionIdentifierSpec =
             ParameterSpec.builder(
                     AppFunctionInvokerClass.UnsafeInvokeMethod.FUNCTION_ID_PARAM_NAME,
-                    String::class
+                    String::class,
                 )
                 .build()
         val functionParametersSpec =
@@ -218,7 +223,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
             .returns(Any::class.asTypeName().copy(nullable = true))
             .addCode(
                 buildCodeBlock {
-                    addStatement("val result = when (${functionIdentifierSpec.name}) {")
+                    addStatement("val result: Any? = when (${functionIdentifierSpec.name}) {")
                     indent()
                     for (appFunction in annotatedAppFunctions.appFunctionDeclarations) {
                         appendInvocationBranchStatement(
@@ -276,7 +281,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
                 "create_method" to
                     ConfigurableAppFunctionFactoryClass.CreateEnclosingClassMethod.METHOD_NAME,
                 "function_name" to appFunction.simpleName.asString(),
-                "parameters" to functionParameterStatement
+                "parameters" to functionParameterStatement,
             )
         addNamed("\"%function_id:L\" -> {\n", formatStringMap)
         indent()
@@ -284,11 +289,21 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         indent()
         addNamed("%context_param:L.%context_property:L\n", formatStringMap)
         unindent()
-        add(")\n")
+        if (annotatedAppFunctions.containsPublicNoArgConstructor()) {
+            addNamed(") { %enclosing_class:T() }\n", formatStringMap)
+        } else {
+            add(")\n")
+        }
         addNamed(".%create_method:L(%enclosing_class:T::class.java)\n", formatStringMap)
         addNamed(".%function_name:L(%parameters:L)\n", formatStringMap)
         unindent()
         add("}\n")
+    }
+
+    private fun AnnotatedAppFunctions.containsPublicNoArgConstructor(): Boolean {
+        return classDeclaration.getConstructors().firstOrNull { constructor ->
+            constructor.modifiers.contains(Modifier.PUBLIC) && constructor.parameters.isEmpty()
+        } != null
     }
 
     private fun KSFunctionDeclaration.getAppFunctionParametersStatement(
@@ -304,9 +319,15 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
                     } else {
                         val parameterName = checkNotNull(value.name).asString()
                         val parameterType = value.type.toTypeName()
-                        add(
-                            "${functionParametersSpec.name}[\"${parameterName}\"] as $parameterType"
-                        )
+                        if (value.type.isOfType(LIST) || isParametrized(value.type)) {
+                            add(
+                                "@Suppress(\"UNCHECKED_CAST\") (${functionParametersSpec.name}[\"${parameterName}\"] as $parameterType)"
+                            )
+                        } else {
+                            add(
+                                "${functionParametersSpec.name}[\"${parameterName}\"] as $parameterType"
+                            )
+                        }
                     }
                 }
             }
@@ -315,5 +336,9 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
 
     private fun getAppFunctionInvokerClassName(functionClassName: String): String {
         return "$%s_AppFunctionInvoker".format(functionClassName)
+    }
+
+    private fun isParametrized(type: KSTypeReference): Boolean {
+        return type.resolve().arguments.isNotEmpty()
     }
 }

@@ -51,7 +51,6 @@ import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -65,6 +64,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -87,9 +87,8 @@ class BasicMarqueeTest {
             override var scaleFactor: Float by mutableStateOf(1f)
         }
 
-    @OptIn(ExperimentalTestApi::class)
     @get:Rule
-    val rule = createComposeRule(effectContext = motionDurationScale)
+    val rule = createComposeRule(effectContext = motionDurationScale + StandardTestDispatcher())
 
     /**
      * Converts pxPerFrame to dps per second. The frame delay is 16ms, which means there are
@@ -132,7 +131,7 @@ class BasicMarqueeTest {
             TestMarqueeContent(
                 Modifier.basicMarqueeWithTestParams(
                     iterations = 1,
-                    spacing = MarqueeSpacing(0.toDp())
+                    spacing = MarqueeSpacing(0.toDp()),
                 )
             )
         }
@@ -181,7 +180,7 @@ class BasicMarqueeTest {
             TestMarqueeContent(
                 Modifier.basicMarqueeWithTestParams(
                     iterations = 1,
-                    spacing = MarqueeSpacing(0.toDp())
+                    spacing = MarqueeSpacing(0.toDp()),
                 )
             )
         }
@@ -747,11 +746,7 @@ class BasicMarqueeTest {
     @Test
     fun animates_negativeVelocity() {
         rule.setContent {
-            TestMarqueeContent(
-                Modifier.basicMarqueeWithTestParams(
-                    velocity = (-10).pxPerFrame,
-                )
-            )
+            TestMarqueeContent(Modifier.basicMarqueeWithTestParams(velocity = (-10).pxPerFrame))
         }
 
         rule.onRoot().captureToImage().assertPixels(expectedSize = IntSize(100, 100)) { Color1 }
@@ -892,7 +887,7 @@ class BasicMarqueeTest {
         testAnimationContinuity(
             resetsAnimation = true,
             Modifier.basicMarqueeWithTestParams(iterations = 10),
-            Modifier.basicMarqueeWithTestParams(iterations = 11)
+            Modifier.basicMarqueeWithTestParams(iterations = 11),
         )
     }
 
@@ -901,7 +896,7 @@ class BasicMarqueeTest {
         testAnimationContinuity(
             resetsAnimation = true,
             Modifier.basicMarqueeWithTestParams(velocity = 10.pxPerFrame),
-            Modifier.basicMarqueeWithTestParams(velocity = 11.pxPerFrame)
+            Modifier.basicMarqueeWithTestParams(velocity = 11.pxPerFrame),
         )
     }
 
@@ -910,7 +905,7 @@ class BasicMarqueeTest {
         testAnimationContinuity(
             resetsAnimation = true,
             Modifier.basicMarqueeWithTestParams(initialDelayMillis = 0),
-            Modifier.basicMarqueeWithTestParams(initialDelayMillis = 1)
+            Modifier.basicMarqueeWithTestParams(initialDelayMillis = 1),
         )
     }
 
@@ -919,7 +914,7 @@ class BasicMarqueeTest {
         testAnimationContinuity(
             resetsAnimation = true,
             Modifier.basicMarqueeWithTestParams(delayMillis = 0),
-            Modifier.basicMarqueeWithTestParams(delayMillis = 1)
+            Modifier.basicMarqueeWithTestParams(delayMillis = 1),
         )
     }
 
@@ -930,7 +925,7 @@ class BasicMarqueeTest {
         testAnimationContinuity(
             resetsAnimation = false,
             Modifier.basicMarqueeWithTestParams(spacing = spacing1),
-            Modifier.basicMarqueeWithTestParams(spacing = spacing2)
+            Modifier.basicMarqueeWithTestParams(spacing = spacing2),
         )
     }
 
@@ -941,7 +936,7 @@ class BasicMarqueeTest {
         testAnimationContinuity(
             resetsAnimation = true,
             modifierFactory = { Modifier.basicMarqueeWithTestParams(spacing = spacingFunction) },
-            onChange = { spacing = 1 }
+            onChange = { spacing = 1 },
         )
     }
 
@@ -979,8 +974,7 @@ class BasicMarqueeTest {
         rule.setContent {
             Box(Modifier.drawBehind { outerDraws++ }) {
                 TestMarqueeContent(
-                    marqueeModifier =
-                        Modifier.basicMarqueeWithTestParams().drawBehind { innerDraws++ }
+                    modifier = Modifier.basicMarqueeWithTestParams().drawBehind { innerDraws++ }
                 )
             }
         }
@@ -1003,27 +997,27 @@ class BasicMarqueeTest {
             object : MeasurePolicy {
                 override fun MeasureScope.measure(
                     measurables: List<Measurable>,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult = layout(0, 0) {}
 
                 override fun IntrinsicMeasureScope.minIntrinsicWidth(
                     measurables: List<IntrinsicMeasurable>,
-                    height: Int
+                    height: Int,
                 ): Int = childMinIntrinsicWidth
 
                 override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                     measurables: List<IntrinsicMeasurable>,
-                    height: Int
+                    height: Int,
                 ): Int = childMaxIntrinsicWidth
 
                 override fun IntrinsicMeasureScope.minIntrinsicHeight(
                     measurables: List<IntrinsicMeasurable>,
-                    width: Int
+                    width: Int,
                 ): Int = childMinIntrinsicHeight
 
                 override fun IntrinsicMeasureScope.maxIntrinsicHeight(
                     measurables: List<IntrinsicMeasurable>,
-                    width: Int
+                    width: Int,
                 ): Int = childMaxIntrinsicHeight
             }
         var minIntrinsicWidth = -1
@@ -1042,7 +1036,7 @@ class BasicMarqueeTest {
                             layout(0, 0) {}
                         }
                         .basicMarqueeWithTestParams(),
-                measurePolicy = fixedIntrinsicsMeasurePolicy
+                measurePolicy = fixedIntrinsicsMeasurePolicy,
             )
         }
 
@@ -1076,7 +1070,7 @@ class BasicMarqueeTest {
                         iterations = Int.MAX_VALUE,
                         initialDelayMillis = 0,
                         delayMillis = 0,
-                        animationMode = Immediately
+                        animationMode = Immediately,
                     )
             ) {
                 BasicText(text = "the quick brown fox jumped over the lazy dogs")
@@ -1094,20 +1088,20 @@ class BasicMarqueeTest {
     private fun testAnimationContinuity(
         resetsAnimation: Boolean,
         modifier1: Modifier,
-        modifier2: Modifier
+        modifier2: Modifier,
     ) {
         var modifier by mutableStateOf(modifier1)
         testAnimationContinuity(
             resetsAnimation,
             modifierFactory = { modifier },
-            onChange = { modifier = modifier2 }
+            onChange = { modifier = modifier2 },
         )
     }
 
     private fun testAnimationContinuity(
         resetsAnimation: Boolean,
         modifierFactory: () -> Modifier,
-        onChange: () -> Unit
+        onChange: () -> Unit,
     ) {
         rule.setContent { TestMarqueeContent(modifierFactory()) }
 
@@ -1128,8 +1122,8 @@ class BasicMarqueeTest {
     }
 
     @Composable
-    private fun TestMarqueeContent(marqueeModifier: Modifier) {
-        Row(Modifier.width(100.toDp()).background(BackgroundColor).then(marqueeModifier)) {
+    private fun TestMarqueeContent(modifier: Modifier) {
+        Row(Modifier.width(100.toDp()).background(BackgroundColor).then(modifier)) {
             Box(Modifier.size(100.toDp()).background(Color1))
             Box(Modifier.size(100.toDp()).background(Color2))
         }
@@ -1141,7 +1135,7 @@ class BasicMarqueeTest {
         delayMillis: Int = 0,
         initialDelayMillis: Int = 0,
         spacing: MarqueeSpacing = MarqueeSpacing(0.toDp()),
-        velocity: Dp = 10.pxPerFrame
+        velocity: Dp = 10.pxPerFrame,
     ) =
         basicMarquee(
             iterations = iterations,
@@ -1149,7 +1143,7 @@ class BasicMarqueeTest {
             repeatDelayMillis = delayMillis,
             initialDelayMillis = initialDelayMillis,
             spacing = spacing,
-            velocity = velocity
+            velocity = velocity,
         )
 
     /**

@@ -32,6 +32,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -42,7 +43,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TestRuleExecutesLayoutPassesWhenWaitingForIdleTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun measure_animation() {
@@ -127,13 +128,13 @@ class TestRuleExecutesLayoutPassesWhenWaitingForIdleTest {
                             left: Int,
                             top: Int,
                             right: Int,
-                            bottom: Int
+                            bottom: Int,
                         ) {
                             viewLayouts++
                             super.onLayout(changed, left, top, right, bottom)
                         }
                     }
-                }
+                },
             )
 
             LaunchedEffect(Unit) {

@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +43,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FocusSearchNonPlacedItemsTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private lateinit var focusManager: FocusManager
     private val initialFocus: FocusRequester = FocusRequester()
@@ -425,7 +426,7 @@ class FocusSearchNonPlacedItemsTest {
         width: Dp,
         height: Dp,
         focusRequester: FocusRequester? = null,
-        content: @Composable BoxScope.() -> Unit = {}
+        content: @Composable BoxScope.() -> Unit = {},
     ) {
         Box(
             modifier =
@@ -434,7 +435,7 @@ class FocusSearchNonPlacedItemsTest {
                     .focusRequester(focusRequester ?: remember { FocusRequester() })
                     .onFocusChanged { isFocused.value = it.isFocused }
                     .focusTarget(),
-            content = content
+            content = content,
         )
     }
 
@@ -450,7 +451,7 @@ class FocusSearchNonPlacedItemsTest {
             modifier =
                 Modifier.focusRequester(focusRequester ?: remember { FocusRequester() })
                     .onFocusChanged { isFocused.value = it.isFocused }
-                    .focusTarget()
+                    .focusTarget(),
         ) { measurables, constraints ->
             var width = 0
             var height = 0
@@ -479,14 +480,14 @@ class FocusSearchNonPlacedItemsTest {
         isFocused: MutableState<Boolean>,
         unplacedIndices: List<Int>,
         focusRequester: FocusRequester? = null,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         Layout(
             content = content,
             modifier =
                 Modifier.focusRequester(focusRequester ?: remember { FocusRequester() })
                     .onFocusChanged { isFocused.value = it.isFocused }
-                    .focusTarget()
+                    .focusTarget(),
         ) { measurables, constraints ->
             var width = 0
             var height = 0

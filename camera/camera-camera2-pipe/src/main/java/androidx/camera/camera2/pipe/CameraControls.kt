@@ -85,7 +85,7 @@ public value class AeMode(public val value: Int) {
                 ON_ALWAYS_FLASH,
                 ON_AUTO_FLASH_REDEYE,
                 ON_EXTERNAL_FLASH,
-                ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY,
             )
 
         @JvmStatic

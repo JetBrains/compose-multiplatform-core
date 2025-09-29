@@ -30,6 +30,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.requestFocus
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +44,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class BasicTextFieldImeSelectionChangesTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val immRule = ComposeInputMethodManagerTestRule()
 
@@ -125,7 +126,7 @@ internal class BasicTextFieldImeSelectionChangesTest {
                     /* action = */ ACTION_DOWN,
                     /* code = */ KeyEvent.KEYCODE_DPAD_LEFT,
                     /* repeat = */ 0,
-                    /* metaState = */ KeyEvent.META_CTRL_ON
+                    /* metaState = */ KeyEvent.META_CTRL_ON,
                 )
             )
             view.dispatchKeyEvent(
@@ -135,7 +136,7 @@ internal class BasicTextFieldImeSelectionChangesTest {
                     /* action = */ ACTION_UP,
                     /* code = */ KeyEvent.KEYCODE_DPAD_LEFT,
                     /* repeat = */ 0,
-                    /* metaState = */ KeyEvent.META_CTRL_ON
+                    /* metaState = */ KeyEvent.META_CTRL_ON,
                 )
             )
 
@@ -147,7 +148,7 @@ internal class BasicTextFieldImeSelectionChangesTest {
                     /* action = */ ACTION_DOWN,
                     /* code = */ KeyEvent.KEYCODE_DPAD_RIGHT,
                     /* repeat = */ 0,
-                    /* metaState = */ KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON
+                    /* metaState = */ KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON,
                 )
             )
             view.dispatchKeyEvent(
@@ -157,7 +158,7 @@ internal class BasicTextFieldImeSelectionChangesTest {
                     /* action = */ ACTION_UP,
                     /* code = */ KeyEvent.KEYCODE_DPAD_RIGHT,
                     /* repeat = */ 0,
-                    /* metaState = */ KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON
+                    /* metaState = */ KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON,
                 )
             )
         }

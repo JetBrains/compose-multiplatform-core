@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,7 +61,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SegmentedButtonTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun toggleableSegmentedButton_itemsDisplay() {
@@ -114,8 +115,10 @@ class SegmentedButtonTest {
                         disabledActiveBorderColor =
                             OutlineColor.value.copy(alpha = DisabledOutlineOpacity),
                         disabledInactiveContainerColor = Color.Transparent,
-                        disabledInactiveContentColor = DisabledLabelTextColor.value,
-                        disabledInactiveBorderColor = OutlineColor.value,
+                        disabledInactiveContentColor =
+                            DisabledLabelTextColor.value.copy(alpha = DisabledLabelTextOpacity),
+                        disabledInactiveBorderColor =
+                            OutlineColor.value.copy(alpha = DisabledOutlineOpacity),
                     )
                 )
         }
@@ -156,18 +159,10 @@ class SegmentedButtonTest {
     fun selectableSegmentedButton_semantics() {
         rule.setMaterialContent(lightColorScheme()) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.testTag("row")) {
-                SegmentedButton(
-                    selected = false,
-                    onClick = {},
-                    shape = RectangleShape,
-                ) {
+                SegmentedButton(selected = false, onClick = {}, shape = RectangleShape) {
                     Text("Day")
                 }
-                SegmentedButton(
-                    selected = false,
-                    onClick = {},
-                    shape = RectangleShape,
-                ) {
+                SegmentedButton(selected = false, onClick = {}, shape = RectangleShape) {
                     Text("Month")
                 }
             }
@@ -210,7 +205,7 @@ class SegmentedButtonTest {
         rule
             .setMaterialContentForSizeAssertions(
                 parentMaxWidth = 300.dp,
-                parentMaxHeight = 100.dp
+                parentMaxHeight = 100.dp,
             ) {
                 MultiChoiceSegmentedButtonRow {
                     SegmentedButton(checked = false, onCheckedChange = {}, shape = RectangleShape) {
@@ -232,14 +227,14 @@ class SegmentedButtonTest {
         rule
             .setMaterialContentForSizeAssertions(
                 parentMaxWidth = 300.dp,
-                parentMaxHeight = 100.dp
+                parentMaxHeight = 100.dp,
             ) {
                 MultiChoiceSegmentedButtonRow {
                     SegmentedButton(
                         contentPadding = PaddingValues(24.dp),
                         checked = false,
                         onCheckedChange = {},
-                        shape = RectangleShape
+                        shape = RectangleShape,
                     ) {
                         Text(modifier = Modifier.width(60.dp), text = "Day")
                     }
@@ -247,7 +242,7 @@ class SegmentedButtonTest {
                         contentPadding = PaddingValues(20.dp),
                         checked = false,
                         onCheckedChange = {},
-                        shape = RectangleShape
+                        shape = RectangleShape,
                     ) {
                         Text(modifier = Modifier.width(30.dp), text = "Month")
                     }
@@ -264,7 +259,7 @@ class SegmentedButtonTest {
         rule
             .setMaterialContentForSizeAssertions(
                 parentMaxWidth = 300.dp,
-                parentMaxHeight = 100.dp
+                parentMaxHeight = 100.dp,
             ) {
                 CompositionLocalProvider(
                     LocalDensity provides
@@ -274,14 +269,14 @@ class SegmentedButtonTest {
                         SegmentedButton(
                             checked = false,
                             onCheckedChange = {},
-                            shape = RectangleShape
+                            shape = RectangleShape,
                         ) {
                             Text(modifier = Modifier.width(60.dp), text = "Day")
                         }
                         SegmentedButton(
                             checked = false,
                             onCheckedChange = {},
-                            shape = RectangleShape
+                            shape = RectangleShape,
                         ) {
                             Text(modifier = Modifier.width(30.dp), text = "Month")
                         }

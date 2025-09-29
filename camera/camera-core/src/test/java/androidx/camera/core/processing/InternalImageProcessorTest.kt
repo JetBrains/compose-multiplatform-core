@@ -17,7 +17,6 @@
 package androidx.camera.core.processing
 
 import android.graphics.PixelFormat
-import android.os.Build
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProcessor
 import androidx.camera.core.ImageProcessor.Response
@@ -33,13 +32,11 @@ import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [InternalImageProcessor]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class InternalImageProcessorTest {
 
     companion object {

@@ -55,6 +55,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,7 +64,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AnnotatedStringFromHtmlTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     // pre-N block-level elements were separated with two new lines
@@ -86,12 +87,12 @@ class AnnotatedStringFromHtmlTest {
                         ParagraphStyle(
                             textIndent =
                                 TextIndent(
-                                    DefaultBulletIndentation * level,
-                                    DefaultBulletIndentation * level
+                                    Bullet.DefaultIndentation * level,
+                                    Bullet.DefaultIndentation * level,
                                 )
                         )
                     )
-                    pushBullet(DefaultBullet)
+                    pushBullet(Bullet.Default)
                     append("a")
                     pop()
                     pop()
@@ -203,7 +204,7 @@ class AnnotatedStringFromHtmlTest {
                 .containsExactly(
                     AnnotatedString.Range("value1", 0, 1, "key1"),
                     AnnotatedString.Range("value2", 0, 1, "key2"),
-                    AnnotatedString.Range("valueThree", 0, 1, "keythree")
+                    AnnotatedString.Range("valueThree", 0, 1, "keythree"),
                 )
         }
     }
@@ -223,7 +224,7 @@ class AnnotatedStringFromHtmlTest {
             assertThat(actual.getStringAnnotations(0, actual.length))
                 .containsExactly(
                     AnnotatedString.Range("val1", 0, 1, "key1"),
-                    AnnotatedString.Range("val2", 2, 3, "key2")
+                    AnnotatedString.Range("val2", 2, 3, "key2"),
                 )
         }
     }
@@ -237,7 +238,7 @@ class AnnotatedStringFromHtmlTest {
             assertThat(actual.text).isEqualTo("aa")
             assertThat(actual.spanStyles)
                 .containsExactly(
-                    AnnotatedString.Range(SpanStyle(fontWeight = FontWeight.Bold), 1, 2),
+                    AnnotatedString.Range(SpanStyle(fontWeight = FontWeight.Bold), 1, 2)
                 )
             assertThat(actual.getStringAnnotations(0, actual.length))
                 .containsExactly(AnnotatedString.Range("value1", 0, 1, "key1"))
@@ -391,18 +392,18 @@ class AnnotatedStringFromHtmlTest {
         val spannable = SpannableStringBuilder()
         spannable.append(
             "a",
-            BulletSpanWithLevel(DefaultBullet, 1, 0),
-            Spanned.SPAN_INCLUSIVE_INCLUSIVE
+            BulletSpanWithLevel(Bullet.Default, 1, 0),
+            Spanned.SPAN_INCLUSIVE_INCLUSIVE,
         )
 
         val expected = buildAnnotatedString {
             withStyle(
                 ParagraphStyle(
-                    textIndent = TextIndent(DefaultBulletIndentation, DefaultBulletIndentation)
+                    textIndent = TextIndent(Bullet.DefaultIndentation, Bullet.DefaultIndentation)
                 )
             ) {
                 append("a")
-                addBullet(DefaultBullet, 0, 1)
+                addBullet(Bullet.Default, 0, 1)
             }
         }
         assertThat(spannable.toAnnotatedString().text).isEqualTo(expected.text)
@@ -431,7 +432,7 @@ class AnnotatedStringFromHtmlTest {
         val annotatedString =
             AnnotatedString.fromHtml(
                 stringWithColoredLink,
-                TextLinkStyles(SpanStyle(color = Color.Green))
+                TextLinkStyles(SpanStyle(color = Color.Green)),
             )
 
         rule.setContent { BasicText(text = annotatedString) }
@@ -452,7 +453,7 @@ class AnnotatedStringFromHtmlTest {
         val annotatedString =
             AnnotatedString.fromHtml(
                 stringWithColoredLink,
-                TextLinkStyles(SpanStyle(color = Color.Green))
+                TextLinkStyles(SpanStyle(color = Color.Green)),
             )
 
         rule.setContent { BasicText(text = annotatedString) }
@@ -469,7 +470,7 @@ class AnnotatedStringFromHtmlTest {
         val annotatedString =
             AnnotatedString.fromHtml(
                 stringWithColoredLink,
-                TextLinkStyles(SpanStyle(background = Color.Red))
+                TextLinkStyles(SpanStyle(background = Color.Red)),
             )
 
         rule.setContent { BasicText(text = annotatedString) }
@@ -494,7 +495,7 @@ class AnnotatedStringFromHtmlTest {
                     hoveredStyle = SpanStyle(color = Color.Blue),
                     pressedStyle = SpanStyle(color = Color.Gray),
                 ),
-                linkInteractionListener = {}
+                linkInteractionListener = {},
             )
 
         val link = annotatedString.getLinkAnnotations(0, 4).first().item as LinkAnnotation.Url

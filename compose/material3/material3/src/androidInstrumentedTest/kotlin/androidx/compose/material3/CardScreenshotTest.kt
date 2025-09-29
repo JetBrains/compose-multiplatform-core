@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +41,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Ignore
 import org.junit.Rule
@@ -50,10 +50,10 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CardScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -102,7 +102,7 @@ class CardScreenshotTest {
                 Card(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Filled Card", Modifier.align(Alignment.Center))
@@ -120,7 +120,7 @@ class CardScreenshotTest {
                 Card(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Filled Card", Modifier.align(Alignment.Center))
@@ -166,7 +166,7 @@ class CardScreenshotTest {
                 ElevatedCard(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Elevated Card", Modifier.align(Alignment.Center))
@@ -184,7 +184,7 @@ class CardScreenshotTest {
                 ElevatedCard(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Elevated Card", Modifier.align(Alignment.Center))
@@ -230,7 +230,7 @@ class CardScreenshotTest {
                 OutlinedCard(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Outlined Card", Modifier.align(Alignment.Center))
@@ -248,7 +248,7 @@ class CardScreenshotTest {
                 OutlinedCard(
                     onClick = {},
                     Modifier.size(width = 180.dp, height = 100.dp),
-                    enabled = false
+                    enabled = false,
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Outlined Card", Modifier.align(Alignment.Center))
@@ -370,7 +370,7 @@ class CardScreenshotTest {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
                 Card(
                     onClick = {},
-                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester)
+                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester),
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Filled Card", Modifier.align(Alignment.Center))
@@ -397,7 +397,7 @@ class CardScreenshotTest {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
                 ElevatedCard(
                     onClick = {},
-                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester)
+                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester),
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Elevated Card", Modifier.align(Alignment.Center))
@@ -424,7 +424,7 @@ class CardScreenshotTest {
             Box(wrap.testTag(wrapperTestTag), contentAlignment = Alignment.Center) {
                 OutlinedCard(
                     onClick = {},
-                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester)
+                    Modifier.size(width = 180.dp, height = 100.dp).focusRequester(focusRequester),
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         Text("Outlined Card", Modifier.align(Alignment.Center))

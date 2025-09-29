@@ -78,6 +78,7 @@ class SystemBarStateMonitor {
                 }
             }
         };
+        mDetector.setVisibility(View.GONE);
         mDetector.setWillNotDraw(true);
         ViewCompat.setOnApplyWindowInsetsListener(mDetector, (view, windowInsets) -> {
             final Insets insets = getInsets(windowInsets);
@@ -223,14 +224,19 @@ class SystemBarStateMonitor {
     }
 
     boolean hasCallback() {
-        return mCallbacks.isEmpty();
+        return !mCallbacks.isEmpty();
     }
 
     void detachFromWindow() {
-        final ViewParent parent = mDetector.getParent();
-        if (parent instanceof ViewGroup) {
-            ((ViewGroup) parent).removeView(mDetector);
-        }
+        // Here removes mDetector in a separated message. Because DecorView would remove its child
+        // views by indexes in a loop, this way prevents the indexes from getting changed in the
+        // loop, which can cause NullPointerException.
+        mDetector.post(() -> {
+            final ViewParent parent = mDetector.getParent();
+            if (parent instanceof ViewGroup) {
+                ((ViewGroup) parent).removeView(mDetector);
+            }
+        });
     }
 
     /**

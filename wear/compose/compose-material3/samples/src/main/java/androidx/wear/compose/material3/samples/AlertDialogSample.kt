@@ -34,7 +34,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.AlertDialogDefaults
-import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
@@ -47,46 +46,43 @@ import androidx.wear.compose.material3.Text
 fun AlertDialogWithConfirmAndDismissSample() {
     var showDialog by remember { mutableStateOf(false) }
 
-    // Use AppScaffold to improve AlertDialog's Performance
-    AppScaffold {
-        Box(Modifier.fillMaxSize()) {
-            FilledTonalButton(
-                modifier = Modifier.align(Alignment.Center),
-                onClick = { showDialog = true },
-                label = { Text("Show Dialog") }
-            )
-        }
-        AlertDialog(
-            visible = showDialog,
-            onDismissRequest = { showDialog = false },
-            icon = {
-                Icon(
-                    Icons.Rounded.AccountCircle,
-                    modifier = Modifier.size(32.dp),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            title = { Text("Enable Battery Saver Mode?") },
-            text = { Text("Your battery is low. Turn on battery saver.") },
-            confirmButton = {
-                AlertDialogDefaults.ConfirmButton(
-                    onClick = {
-                        // Perform confirm action here
-                        showDialog = false
-                    }
-                )
-            },
-            dismissButton = {
-                AlertDialogDefaults.DismissButton(
-                    onClick = {
-                        // Perform dismiss action here
-                        showDialog = false
-                    }
-                )
-            }
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showDialog = true },
+            label = { Text("Show Dialog") },
         )
     }
+    AlertDialog(
+        visible = showDialog,
+        onDismissRequest = { showDialog = false },
+        icon = {
+            Icon(
+                Icons.Rounded.AccountCircle,
+                modifier = Modifier.size(32.dp),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        },
+        title = { Text("Enable Battery Saver Mode?") },
+        text = { Text("Your battery is low. Turn on battery saver.") },
+        confirmButton = {
+            AlertDialogDefaults.ConfirmButton(
+                onClick = {
+                    // Perform confirm action here
+                    showDialog = false
+                }
+            )
+        },
+        dismissButton = {
+            AlertDialogDefaults.DismissButton(
+                onClick = {
+                    // Perform dismiss action here
+                    showDialog = false
+                }
+            )
+        },
+    )
 }
 
 @Preview
@@ -95,38 +91,35 @@ fun AlertDialogWithConfirmAndDismissSample() {
 fun AlertDialogWithEdgeButtonSample() {
     var showDialog by remember { mutableStateOf(false) }
 
-    // Use AppScaffold to improve AlertDialog's Performance
-    AppScaffold {
-        Box(Modifier.fillMaxSize()) {
-            FilledTonalButton(
-                modifier = Modifier.align(Alignment.Center),
-                onClick = { showDialog = true },
-                label = { Text("Show Dialog") }
-            )
-        }
-
-        AlertDialog(
-            visible = showDialog,
-            onDismissRequest = { showDialog = false },
-            icon = {
-                Icon(
-                    Icons.Rounded.AccountCircle,
-                    modifier = Modifier.size(32.dp),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            title = { Text("Mobile network is not currently available") },
-            edgeButton = {
-                AlertDialogDefaults.EdgeButton(
-                    onClick = {
-                        // Perform confirm action here
-                        showDialog = false
-                    }
-                )
-            }
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showDialog = true },
+            label = { Text("Show Dialog") },
         )
     }
+
+    AlertDialog(
+        visible = showDialog,
+        onDismissRequest = { showDialog = false },
+        icon = {
+            Icon(
+                Icons.Rounded.AccountCircle,
+                modifier = Modifier.size(32.dp),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        },
+        title = { Text("Mobile network is not currently available") },
+        edgeButton = {
+            AlertDialogDefaults.EdgeButton(
+                onClick = {
+                    // Perform confirm action here
+                    showDialog = false
+                }
+            )
+        },
+    )
 }
 
 @Preview
@@ -137,62 +130,59 @@ fun AlertDialogWithContentGroupsSample() {
     var weatherEnabled by remember { mutableStateOf(false) }
     var calendarEnabled by remember { mutableStateOf(false) }
 
-    // Use AppScaffold to improve AlertDialog's Performance
-    AppScaffold {
-        Box(Modifier.fillMaxSize()) {
-            FilledTonalButton(
-                modifier = Modifier.align(Alignment.Center),
-                onClick = { showDialog = true },
-                label = { Text("Show Dialog") }
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showDialog = true },
+            label = { Text("Show Dialog") },
+        )
+    }
+    AlertDialog(
+        visible = showDialog,
+        onDismissRequest = { showDialog = false },
+        title = { Text("Share your location") },
+        text = { Text(" The following apps have asked you to share your location") },
+        edgeButton = {
+            AlertDialogDefaults.EdgeButton(
+                onClick = {
+                    // Perform confirm action here
+                    showDialog = false
+                }
+            ) {
+                Text("Share once")
+            }
+        },
+    ) {
+        item {
+            SwitchButton(
+                modifier = Modifier.fillMaxWidth(),
+                checked = weatherEnabled,
+                onCheckedChange = { weatherEnabled = it },
+                label = { Text("Weather") },
             )
         }
-        AlertDialog(
-            visible = showDialog,
-            onDismissRequest = { showDialog = false },
-            title = { Text("Share your location") },
-            text = { Text(" The following apps have asked you to share your location") },
-            edgeButton = {
-                AlertDialogDefaults.EdgeButton(
-                    onClick = {
-                        // Perform confirm action here
-                        showDialog = false
-                    }
-                ) {
-                    Text("Share once")
-                }
-            }
-        ) {
-            item {
-                SwitchButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    checked = weatherEnabled,
-                    onCheckedChange = { weatherEnabled = it },
-                    label = { Text("Weather") }
-                )
-            }
-            item {
-                SwitchButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    checked = calendarEnabled,
-                    onCheckedChange = { calendarEnabled = it },
-                    label = { Text("Calendar") }
-                )
-            }
-            item { AlertDialogDefaults.GroupSeparator() }
-            item {
-                FilledTonalButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {},
-                    label = { Text(modifier = Modifier.fillMaxWidth(), text = "Never share") }
-                )
-            }
-            item {
-                FilledTonalButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {},
-                    label = { Text(modifier = Modifier.fillMaxWidth(), text = "Share always") }
-                )
-            }
+        item {
+            SwitchButton(
+                modifier = Modifier.fillMaxWidth(),
+                checked = calendarEnabled,
+                onCheckedChange = { calendarEnabled = it },
+                label = { Text("Calendar") },
+            )
+        }
+        item { AlertDialogDefaults.GroupSeparator() }
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {},
+                label = { Text(modifier = Modifier.fillMaxWidth(), text = "Never share") },
+            )
+        }
+        item {
+            FilledTonalButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {},
+                label = { Text(modifier = Modifier.fillMaxWidth(), text = "Share always") },
+            )
         }
     }
 }

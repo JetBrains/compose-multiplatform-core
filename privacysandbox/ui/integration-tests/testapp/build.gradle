@@ -28,7 +28,6 @@ android {
 
     defaultConfig {
         applicationId = "androidx.privacysandbox.ui.integration.testapp"
-        targetSdk = 35
     }
 
     buildTypes {
@@ -67,9 +66,19 @@ dependencies {
     implementation(project(":privacysandbox:activity:activity-core"))
     implementation(project(":privacysandbox:activity:activity-client"))
     implementation(project(":privacysandbox:sdkruntime:sdkruntime-client"))
-    implementation(project(":privacysandbox:ui:integration-tests:testaidl"))
+    implementation(project(":privacysandbox:ui:integration-tests:inappmediateeadaptersdk"))
     implementation(project(":privacysandbox:ui:integration-tests:sdkproviderutils"))
     implementation(project(":privacysandbox:ui:integration-tests:testsdkproviderwrapper"))
     implementation(project(":privacysandbox:ui:ui-client"))
+    implementation(project(":privacysandbox:ui:ui-client-compose"))
     implementation(project(":privacysandbox:ui:ui-provider"))
+    implementation(libs.media3Ui)
+    implementation(libs.media3Common)
+    implementation(libs.media3Exoplayer)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.espressoIntents)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.testUiautomator)
 }

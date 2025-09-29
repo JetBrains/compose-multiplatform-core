@@ -47,16 +47,16 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class PullToRefreshBoxTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun box_startRefreshing_updatesFraction() {
@@ -96,20 +96,12 @@ class PullToRefreshBoxTest {
     @Test
     fun boxVisible_VisibleToSemantics() {
         val state = PullToRefreshState()
-        rule.setContent {
-            PullToRefreshBox(
-                modifier = Modifier.testTag("PullToRefresh"),
-                isRefreshing = true,
-                state = state,
-                onRefresh = {},
-            ) {}
-        }
+        rule.setContent { PullToRefreshBox(isRefreshing = true, state = state, onRefresh = {}) {} }
 
         assertThat(state.distanceFraction).isEqualTo(1f)
         rule
-            .onNodeWithTag("PullToRefresh")
-            .onChild()
-            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+            .onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+            .assertExists()
     }
 
     @Test
@@ -134,7 +126,7 @@ class PullToRefreshBoxTest {
             PullToRefreshBox(
                 isRefreshing = isRefreshing.value,
                 state = state,
-                onRefresh = { isRefreshing.value = true }
+                onRefresh = { isRefreshing.value = true },
             ) {
                 LazyColumn(Modifier.testTag("lazy")) { items(50) { Text("Item") } }
             }
@@ -157,7 +149,7 @@ class PullToRefreshBoxTest {
             PullToRefreshBox(
                 isRefreshing = isRefreshing.value,
                 state = state,
-                onRefresh = { isRefreshing.value = true }
+                onRefresh = { isRefreshing.value = true },
             ) {
                 Column(
                     Modifier.fillMaxWidth()
@@ -172,7 +164,7 @@ class PullToRefreshBoxTest {
                                         remainingVelocity = initialVelocity
                                         return initialVelocity
                                     }
-                                }
+                                },
                         )
                 ) {
                     repeat(50) { Text("Lorem ipsum") }

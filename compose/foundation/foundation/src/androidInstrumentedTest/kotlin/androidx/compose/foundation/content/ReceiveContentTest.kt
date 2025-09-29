@@ -38,12 +38,14 @@ import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.firstUriOrNull
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,7 +55,9 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 class ReceiveContentTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @OptIn(ExperimentalTestApi::class)
+    @get:Rule
+    val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     @Test
     fun receiveContentConfiguration_isMergedBottomToTop() {
@@ -130,7 +134,7 @@ class ReceiveContentTest {
             assertClipData(videoReceived!!.clipEntry.clipData)
                 .isEqualToClipData(
                     createClipData { addUri(Uri.parse("content://video"), "video/mp4") },
-                    ignoreClipDescription = true
+                    ignoreClipDescription = true,
                 )
             assertClipData(audioReceived!!.clipEntry.clipData)
                 .isEqualToClipData(
@@ -138,7 +142,7 @@ class ReceiveContentTest {
                         addUri(Uri.parse("content://video"), "video/mp4")
                         addUri(Uri.parse("content://audio"), "audio/ogg")
                     },
-                    ignoreClipDescription = true
+                    ignoreClipDescription = true,
                 )
             assertClipData(textReceived!!.clipEntry.clipData)
                 .isEqualToClipData(
@@ -147,7 +151,7 @@ class ReceiveContentTest {
                         addUri(Uri.parse("content://video"), "video/mp4")
                         addUri(Uri.parse("content://audio"), "audio/ogg")
                     },
-                    ignoreClipDescription = true
+                    ignoreClipDescription = true,
                 )
         }
     }
@@ -646,7 +650,7 @@ class ReceiveContentTest {
                         "enter-3",
                         "exit-1",
                         "exit-2",
-                        "exit-3"
+                        "exit-3",
                     )
                 )
         }
@@ -799,7 +803,7 @@ class ReceiveContentTest {
 
 internal fun createClipData(
     label: String = defaultLabel,
-    block: (ClipDataBuilder.() -> Unit)? = null
+    block: (ClipDataBuilder.() -> Unit)? = null,
 ): ClipData {
     val builder = ClipDataBuilder()
     return if (block != null) {
@@ -827,7 +831,7 @@ internal class ClipDataBuilder {
 
     fun addText(
         text: String = "plain text",
-        mimeType: String = ClipDescription.MIMETYPE_TEXT_PLAIN
+        mimeType: String = ClipDescription.MIMETYPE_TEXT_PLAIN,
     ) {
         items.add(ClipData.Item(text))
         mimeTypes.add(mimeType)
@@ -836,7 +840,7 @@ internal class ClipDataBuilder {
     fun addHtmlText(
         text: String = "Html Content",
         htmlText: String = "<p>Html Content</p>",
-        mimeType: String = ClipDescription.MIMETYPE_TEXT_HTML
+        mimeType: String = ClipDescription.MIMETYPE_TEXT_HTML,
     ) {
         items.add(ClipData.Item(text, htmlText))
         mimeTypes.add(mimeType)
@@ -849,7 +853,7 @@ internal class ClipDataBuilder {
 
     fun addIntent(
         intent: Intent = defaultIntent,
-        mimeType: String = ClipDescription.MIMETYPE_TEXT_INTENT
+        mimeType: String = ClipDescription.MIMETYPE_TEXT_INTENT,
     ) {
         items.add(ClipData.Item(intent))
         mimeTypes.add(mimeType)

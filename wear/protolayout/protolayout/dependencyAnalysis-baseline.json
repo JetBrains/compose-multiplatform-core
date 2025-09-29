@@ -12,15 +12,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "com.google.guava:guava",
         "resolvedVersion": "33.3.1-jre"
       },
@@ -41,15 +32,6 @@
         "resolvedVersion": "4.13.2"
       },
       "toConfiguration": "testImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.robolectric:robolectric",
-        "resolvedVersion": "4.14"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
     }
   ]
 }

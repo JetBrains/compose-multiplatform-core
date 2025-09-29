@@ -55,20 +55,25 @@ class FakeNoOpAnalyticsService : AnalyticsService() {
                 get() =
                     FakeObjectFactory.factory.mapProperty(
                         String::class.java,
-                        ProjectData::class.java
+                        ProjectData::class.java,
                     )
 
             override val enableProfileJson: Property<Boolean>
                 get() = FakeGradleProperty(true)
 
+            @Suppress(
+                "UPPER_BOUND_VIOLATED_BASED_ON_JAVA_ANNOTATIONS",
+                "UPPER_BOUND_VIOLATED",
+                "UNCHECKED_CAST",
+            ) // b/429040474
             override val profileDir: Property<File?>
-                get() = FakeGradleProperty()
+                get(): Property<File?> = FakeGradleProperty<File>() as Property<File?>
 
             override val taskMetadata: MapProperty<String, TaskMetadata>
                 get() =
                     FakeObjectFactory.factory.mapProperty(
                         String::class.java,
-                        TaskMetadata::class.java
+                        TaskMetadata::class.java,
                     )
 
             override val rootProjectPath: Property<String>
@@ -93,7 +98,7 @@ class FakeNoOpAnalyticsService : AnalyticsService() {
 
     override fun getVariantBuilder(
         projectPath: String,
-        variantName: String
+        variantName: String,
     ): GradleBuildVariant.Builder {
         return GradleBuildVariant.newBuilder()
     }
@@ -107,7 +112,7 @@ class FakeNoOpAnalyticsService : AnalyticsService() {
         transform: GradleTransformExecution?,
         projectPath: String,
         variantName: String,
-        block: Recorder.VoidBlock
+        block: Recorder.VoidBlock,
     ) {
         block.call()
     }

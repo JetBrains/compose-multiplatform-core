@@ -7,6 +7,14 @@
         "identifier": "androidx.annotation:annotation",
         "resolvedVersion": "1.8.1"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.annotation:annotation",
+        "resolvedVersion": "1.8.1"
+      },
       "toConfiguration": "implementation"
     },
     {
@@ -46,14 +54,6 @@
         "type": "module",
         "identifier": "androidx.fragment:fragment",
         "resolvedVersion": "1.6.2"
-      },
-      "toConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "androidx.lifecycle:lifecycle-viewmodel",
-        "resolvedVersion": "2.9.0-alpha07"
       },
       "toConfiguration": "androidTestImplementation"
     },
@@ -133,6 +133,13 @@
         "identifier": ":internal-testutils-runtime"
       },
       "fromConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "project",
+        "identifier": ":lifecycle:lifecycle-viewmodel"
+      },
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {

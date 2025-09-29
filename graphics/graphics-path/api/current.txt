@@ -4,9 +4,9 @@ package androidx.graphics.path {
   public final class PathIterator implements java.util.Iterator<androidx.graphics.path.PathSegment> kotlin.jvm.internal.markers.KMappedMarker {
     ctor public PathIterator(android.graphics.Path path, optional androidx.graphics.path.PathIterator.ConicEvaluation conicEvaluation, optional float tolerance);
     method public int calculateSize(optional boolean includeConvertedConics);
-    method public androidx.graphics.path.PathIterator.ConicEvaluation getConicEvaluation();
-    method public android.graphics.Path getPath();
-    method public float getTolerance();
+    method @InaccessibleFromKotlin public androidx.graphics.path.PathIterator.ConicEvaluation getConicEvaluation();
+    method @InaccessibleFromKotlin public android.graphics.Path getPath();
+    method @InaccessibleFromKotlin public float getTolerance();
     method public boolean hasNext();
     method public androidx.graphics.path.PathSegment next();
     method public androidx.graphics.path.PathSegment.Type next(float[] points);
@@ -23,9 +23,9 @@ package androidx.graphics.path {
   }
 
   public final class PathSegment {
-    method public android.graphics.PointF[] getPoints();
-    method public androidx.graphics.path.PathSegment.Type getType();
-    method public float getWeight();
+    method @InaccessibleFromKotlin public android.graphics.PointF[] getPoints();
+    method @InaccessibleFromKotlin public androidx.graphics.path.PathSegment.Type getType();
+    method @InaccessibleFromKotlin public float getWeight();
     property public android.graphics.PointF[] points;
     property public androidx.graphics.path.PathSegment.Type type;
     property public float weight;
@@ -42,8 +42,8 @@ package androidx.graphics.path {
   }
 
   public final class PathSegmentUtilities {
-    method public static androidx.graphics.path.PathSegment getCloseSegment();
-    method public static androidx.graphics.path.PathSegment getDoneSegment();
+    method @InaccessibleFromKotlin public static androidx.graphics.path.PathSegment getCloseSegment();
+    method @InaccessibleFromKotlin public static androidx.graphics.path.PathSegment getDoneSegment();
     property public static androidx.graphics.path.PathSegment CloseSegment;
     property public static androidx.graphics.path.PathSegment DoneSegment;
   }

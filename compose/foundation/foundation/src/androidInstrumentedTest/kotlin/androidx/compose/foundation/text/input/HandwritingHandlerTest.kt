@@ -29,6 +29,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -38,7 +39,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 internal class HandwritingHandlerTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val immRule = ComposeInputMethodManagerTestRule()
 
@@ -58,7 +59,7 @@ internal class HandwritingHandlerTest {
             val state = remember { TextFieldState() }
             BasicTextField(
                 state = state,
-                modifier = Modifier.fillMaxSize().handwritingHandler().testTag(tag)
+                modifier = Modifier.fillMaxSize().handwritingHandler().testTag(tag),
             )
         }
 

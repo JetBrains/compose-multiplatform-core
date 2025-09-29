@@ -57,7 +57,7 @@ class LocalControllerTest {
                 SDK_PACKAGE_NAME,
                 applicationContext,
                 localSdkRegistry,
-                appOwnedSdkRegistry
+                appOwnedSdkRegistry,
             )
     }
 
@@ -147,7 +147,7 @@ class LocalControllerTest {
                 "LocalControllerTest.anotherSdk",
                 applicationContext,
                 localSdkRegistry,
-                appOwnedSdkRegistry
+                appOwnedSdkRegistry,
             )
         val anotherSdkHandler =
             object : SdkSandboxActivityHandlerCompat {
@@ -235,15 +235,21 @@ class LocalControllerTest {
             throw IllegalStateException("Unexpected call")
         }
 
-        override fun loadSdk(sdkName: String, params: Bundle): SandboxedSdkCompat {
+        override fun loadSdk(
+            sdkName: String,
+            params: Bundle,
+            executor: Executor,
+            callback: LoadSdkCallback,
+        ) {
             lastLoadSdkName = sdkName
             lastLoadSdkParams = params
 
             if (loadSdkError != null) {
-                throw loadSdkError!!
+                executor.execute { callback.onError(loadSdkError!!) }
+                return
             }
 
-            return loadSdkResult!!
+            executor.execute { callback.onResult(loadSdkResult!!) }
         }
 
         override fun unloadSdk(sdkName: String) {

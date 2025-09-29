@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,7 +47,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PointerInputDensityTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val tag = "Tagged Layout"
 
@@ -90,7 +91,7 @@ class PointerInputDensityTest {
         val motionEventsToTrigger =
             generateMultipleMotionEvents(
                 lastPointerX = Float.POSITIVE_INFINITY,
-                lastPointerY = Float.POSITIVE_INFINITY
+                lastPointerY = Float.POSITIVE_INFINITY,
             )
         val recordedEvents = mutableListOf<PointerEventType>()
 
@@ -126,7 +127,7 @@ class PointerInputDensityTest {
         val motionEventsToTrigger =
             generateMultipleMotionEvents(
                 lastPointerX = Float.NEGATIVE_INFINITY,
-                lastPointerY = Float.NEGATIVE_INFINITY
+                lastPointerY = Float.NEGATIVE_INFINITY,
             )
         val recordedEvents = mutableListOf<PointerEventType>()
 
@@ -229,7 +230,7 @@ class PointerInputDensityTest {
 
     private fun generateMultipleMotionEvents(
         lastPointerX: Float,
-        lastPointerY: Float
+        lastPointerY: Float,
     ): List<MotionEvent> {
         val firstPointerOffset = Offset(0f, 0f)
         val secondPointerOffset = Offset(10f, 0f)
@@ -270,7 +271,7 @@ class PointerInputDensityTest {
                 0,
                 0,
                 0,
-                0
+                0,
             )
 
         eventStartTime += 500
@@ -284,7 +285,7 @@ class PointerInputDensityTest {
                 arrayOf(firstPointerProperties, secondPointerProperties),
                 arrayOf(
                     PointerCoords(firstPointerOffset.x, firstPointerOffset.y),
-                    PointerCoords(secondPointerOffset.x, secondPointerOffset.y)
+                    PointerCoords(secondPointerOffset.x, secondPointerOffset.y),
                 ),
                 0,
                 0,
@@ -293,7 +294,7 @@ class PointerInputDensityTest {
                 0,
                 0,
                 0,
-                0
+                0,
             )
 
         eventStartTime += 500
@@ -308,7 +309,7 @@ class PointerInputDensityTest {
                 arrayOf(
                     PointerCoords(firstPointerOffset.x, firstPointerOffset.y),
                     PointerCoords(secondPointerOffset.x, secondPointerOffset.y),
-                    PointerCoords(lastPointerX, lastPointerY)
+                    PointerCoords(lastPointerX, lastPointerY),
                 ),
                 0,
                 0,
@@ -317,7 +318,7 @@ class PointerInputDensityTest {
                 0,
                 0,
                 0,
-                0
+                0,
             )
 
         return listOf(firstPointerEvent, secondPointerEvent, thirdPointerEvent)

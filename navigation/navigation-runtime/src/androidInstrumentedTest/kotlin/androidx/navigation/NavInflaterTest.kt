@@ -95,14 +95,14 @@ class NavInflaterTest {
     fun testInflateDeepLinkWithApplicationIdAction() {
         val context = ApplicationProvider.getApplicationContext() as Context
         val navInflater = NavInflater(context, TestNavigatorProvider())
-        val graph = navInflater.inflate(R.navigation.nav_simple)
+        val graph = navInflater.inflate(R.navigation.nav_deeplink)
 
         assertThat(graph).isNotNull()
-        val expectedDeepLinkRequest = NavDeepLinkRequest.Builder.fromAction("test.action").build()
+        val expectedDeepLinkRequest = NavDeepLinkRequest.Builder.fromAction("action.only").build()
         val result = graph.matchDeepLink(expectedDeepLinkRequest)
         assertThat(result).isNotNull()
         assertThat(result?.destination).isNotNull()
-        assertThat(result?.destination?.id).isEqualTo(R.id.second_test)
+        assertThat(result?.destination?.id).isEqualTo(R.id.action_only)
     }
 
     @Test
@@ -143,24 +143,126 @@ class NavInflaterTest {
     fun testInflateDeepLinkWithApplicationIdMimeType() {
         val context = ApplicationProvider.getApplicationContext() as Context
         val navInflater = NavInflater(context, TestNavigatorProvider())
-        val graph = navInflater.inflate(R.navigation.nav_simple)
+        val graph = navInflater.inflate(R.navigation.nav_deeplink)
 
         assertThat(graph).isNotNull()
-        val expectedDeepLinkRequest = NavDeepLinkRequest.Builder.fromMimeType("type/test").build()
+        val expectedDeepLinkRequest = NavDeepLinkRequest.Builder.fromMimeType("mime/only").build()
         val result = graph.matchDeepLink(expectedDeepLinkRequest)
         assertThat(result).isNotNull()
         assertThat(result?.destination).isNotNull()
-        assertThat(result?.destination?.id).isEqualTo(R.id.second_test)
+        assertThat(result?.destination?.id).isEqualTo(R.id.mime_only)
     }
 
     @Test
-    fun testInflateDeepLinkWithApplicationIdMimeType_nonNullableArg() {
+    fun testInflateDeepLinkWithApplicationIdMimeTypeAndUri_nonNullableArgMissingUri() {
         val context = ApplicationProvider.getApplicationContext() as Context
         val navInflater = NavInflater(context, TestNavigatorProvider())
         val graph = navInflater.inflate(R.navigation.nav_simple)
 
         assertThat(graph).isNotNull()
         val expectedDeepLinkRequest = NavDeepLinkRequest.Builder.fromMimeType("type/test2").build()
+        val result = graph.matchDeepLink(expectedDeepLinkRequest)
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun testInflateDeepLinkWithApplicationIdMimeTypeAndAction() {
+        val context = ApplicationProvider.getApplicationContext() as Context
+        val navInflater = NavInflater(context, TestNavigatorProvider())
+        val graph = navInflater.inflate(R.navigation.nav_deeplink)
+
+        assertThat(graph).isNotNull()
+        val expectedDeepLinkRequest =
+            NavDeepLinkRequest.Builder.fromMimeType("mime/action").setAction("mime.action").build()
+        val result = graph.matchDeepLink(expectedDeepLinkRequest)
+        assertThat(result).isNotNull()
+        assertThat(result?.destination).isNotNull()
+        assertThat(result?.destination?.id).isEqualTo(R.id.mime_action)
+    }
+
+    @Test
+    fun testInflateDeepLinkWithApplicationIdMimeTypeAndAction_missingUri() {
+        val context = ApplicationProvider.getApplicationContext() as Context
+        val navInflater = NavInflater(context, TestNavigatorProvider())
+        val graph = navInflater.inflate(R.navigation.nav_deeplink)
+
+        assertThat(graph).isNotNull()
+        val expectedDeepLinkRequest =
+            NavDeepLinkRequest.Builder.fromMimeType("uri/actionMime")
+                .setAction("uri.action.mime")
+                .build()
+        val result = graph.matchDeepLink(expectedDeepLinkRequest)
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun testInflateDeepLinkWithApplicationIdMimeTypeAndUri() {
+        val context = ApplicationProvider.getApplicationContext() as Context
+        val navInflater = NavInflater(context, TestNavigatorProvider())
+        val graph = navInflater.inflate(R.navigation.nav_deeplink)
+
+        assertThat(graph).isNotNull()
+        val expectedDeepLinkRequest =
+            NavDeepLinkRequest.Builder.fromMimeType("mime/uri")
+                .setUri(
+                    Uri.parse(
+                        "android-app://" + instrumentation.targetContext.packageName + "/mime/uri"
+                    )
+                )
+                .build()
+        val result = graph.matchDeepLink(expectedDeepLinkRequest)
+        assertThat(result).isNotNull()
+        assertThat(result?.destination).isNotNull()
+        assertThat(result?.destination?.id).isEqualTo(R.id.mime_uri)
+    }
+
+    @Test
+    fun testInflateDeepLinkWithApplicationIdMimeTypeAndUri_missingUri() {
+        val context = ApplicationProvider.getApplicationContext() as Context
+        val navInflater = NavInflater(context, TestNavigatorProvider())
+        val graph = navInflater.inflate(R.navigation.nav_deeplink)
+
+        assertThat(graph).isNotNull()
+        val expectedDeepLinkRequest = NavDeepLinkRequest.Builder.fromMimeType("mime/uri").build()
+        val result = graph.matchDeepLink(expectedDeepLinkRequest)
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun testInflateDeepLinkWithApplicationIdActionAndUri() {
+        val context = ApplicationProvider.getApplicationContext() as Context
+        val navInflater = NavInflater(context, TestNavigatorProvider())
+        val graph = navInflater.inflate(R.navigation.nav_deeplink)
+
+        assertThat(graph).isNotNull()
+        val expectedDeepLinkRequest =
+            NavDeepLinkRequest.Builder.fromAction("action.uri")
+                .setUri(
+                    Uri.parse(
+                        "android-app://" + instrumentation.targetContext.packageName + "/action/uri"
+                    )
+                )
+                .build()
+        val result = graph.matchDeepLink(expectedDeepLinkRequest)
+        assertThat(result).isNotNull()
+        assertThat(result?.destination).isNotNull()
+        assertThat(result?.destination?.id).isEqualTo(R.id.action_uri)
+    }
+
+    @Test
+    fun testInflateDeepLinkWithApplicationIdActionAndUri_missingAction() {
+        val context = ApplicationProvider.getApplicationContext() as Context
+        val navInflater = NavInflater(context, TestNavigatorProvider())
+        val graph = navInflater.inflate(R.navigation.nav_deeplink)
+
+        assertThat(graph).isNotNull()
+        val expectedDeepLinkRequest =
+            NavDeepLinkRequest.Builder.fromUri(
+                    Uri.parse(
+                        "android-app://" + instrumentation.targetContext.packageName + "/action/uri"
+                    )
+                )
+                .build()
         val result = graph.matchDeepLink(expectedDeepLinkRequest)
         assertThat(result).isNull()
     }

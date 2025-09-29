@@ -22,8 +22,8 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -78,6 +78,14 @@ androidx {
     inceptionYear = "2021"
     description = "Leverage graphics facilities across multiple Android platform releases"
     legacyDisableKotlinStrictApiMode = true
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
     samples(project(":graphics:graphics-core:graphics-core-samples"))
+}
+
+//TODO(b/407725443): Remove this block when CanvasBufferedRendererTests and CanvasFrontBufferedRendererTest pass on API Level 21
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xlambdas=class"
+        ]
+    }
 }

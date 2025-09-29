@@ -18,6 +18,7 @@ package androidx.wear.protolayout.renderer.inflater;
 
 import static androidx.wear.protolayout.renderer.inflater.ArcWidgetHelper.getSignForClockwise;
 import static androidx.wear.protolayout.renderer.inflater.ArcWidgetHelper.isPointInsideArcArea;
+import static androidx.wear.protolayout.renderer.inflater.SweepGradientHelper.makeOpaque;
 
 import static java.lang.Math.min;
 
@@ -25,7 +26,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Style;
@@ -34,26 +34,18 @@ import android.graphics.Path.Direction;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Shader;
-import android.graphics.SweepGradient;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.VisibleForTesting;
-import androidx.wear.protolayout.proto.ColorProto;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcDirection;
 import androidx.wear.protolayout.renderer.R;
-import androidx.wear.protolayout.renderer.inflater.WearCurvedLineView.ArcSegment.CapPosition;
 import androidx.wear.widget.ArcLayout;
-
-import com.google.common.primitives.Floats;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -76,9 +68,11 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
     private static final int DEFAULT_THICKNESS_PX = 0;
     private static final float DEFAULT_MAX_SWEEP_ANGLE_DEGREES = SWEEP_ANGLE_WRAP_LENGTH;
     private static final float DEFAULT_LINE_SWEEP_ANGLE_DEGREES = 0;
+
+    @SuppressWarnings("EnumOrdinal")
     private static final int DEFAULT_LINE_STROKE_CAP = Cap.ROUND.ordinal();
+
     @ColorInt private static final int DEFAULT_COLOR = 0xFFFFFFFF;
-    private static final int FULLY_OPAQUE_COLOR_MASK = 0xFF000000;
 
     private ArcDirection mLineDirection = ArcDirection.ARC_DIRECTION_CLOCKWISE;
 
@@ -91,7 +85,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
     private float mMaxSweepAngleDegrees;
     private float mLineSweepAngleDegrees;
 
-    @VisibleForTesting @Nullable SweepGradientHelper mSweepGradientHelper;
+    @Nullable SweepGradientHelper mSweepGradientHelper;
 
     private @Nullable ArcDrawable mArcDrawable;
     private @Nullable StrokeCapShadow mCapShadow;
@@ -206,10 +200,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
             thickness = 0;
         }
         mBasePaint.setStrokeWidth(thickness);
-
-        updateArcDrawable();
-        requestLayout();
-        postInvalidate();
+        triggerRefresh();
     }
 
     /** Sets the direction which the line is drawn. */
@@ -249,9 +240,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
      */
     public void setMaxSweepAngleDegrees(float maxSweepAngleDegrees) {
         this.mMaxSweepAngleDegrees = maxSweepAngleDegrees;
-        updateArcDrawable();
-        requestLayout();
-        postInvalidate();
+        triggerRefresh();
     }
 
     /**
@@ -269,10 +258,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
      */
     public void setLineSweepAngleDegrees(float lineLengthDegrees) {
         this.mLineSweepAngleDegrees = lineLengthDegrees;
-
-        updateArcDrawable();
-        requestLayout();
-        postInvalidate();
+        triggerRefresh();
     }
 
     /** Returns the color of this arc, in ARGB format. */
@@ -288,23 +274,13 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
             color = makeOpaque(color);
         }
         mBasePaint.setColor(color);
-
-        updateArcDrawable();
-        invalidate();
+        triggerRefresh();
     }
 
-    /** Sets a brush to be used to draw this arc. */
-    public void setBrush(ColorProto.@NonNull Brush brushProto) {
-        if (!brushProto.hasSweepGradient()) {
-            Log.e(TAG, "Only SweepGradient is currently supported in ArcLine.");
-            return;
-        }
-        try {
-            this.mSweepGradientHelper = new SweepGradientHelper(brushProto.getSweepGradient());
-        } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Invalid SweepGradient definition: " + e.getMessage());
-        }
-        updateArcDrawable();
+    /** Sets a sweep gradient to be used to draw this arc. */
+    public void setSweepGradient(@NonNull SweepGradientHelper sweepGradientHelper) {
+        this.mSweepGradientHelper = sweepGradientHelper;
+        triggerRefresh();
     }
 
     /** Returns the strokeCap of this arc. */
@@ -343,219 +319,11 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
                 this, x, y, mBasePaint.getStrokeWidth(), resolveSweepAngleDegrees());
     }
 
-    static class SweepGradientHelper {
-
-        private static class AngularColorStop {
-            final float angle;
-            @ColorInt final int color;
-
-            AngularColorStop(float angle, int color) {
-                this.angle = angle;
-                this.color = color;
-            }
-        }
-
-        private static final int MIN_COLOR_STOPS = 2;
-        private static final int MAX_COLOR_STOPS = 10;
-
-        /**
-         * The size of the sector with a constant color, equivalent to 90 degrees, where the cap is
-         * drawn. It's used to ensure that the cap is drawn with the adjacent color in the line.
-         */
-        private static final float CAP_COLOR_SHADER_OFFSET_SIZE = 0.25f;
-
-        private final @NonNull List<AngularColorStop> colorStops;
-
-        /** Constructor. All colors will have their alpha channel set to 0xFF (opaque). */
-        SweepGradientHelper(ColorProto.@NonNull SweepGradient sweepGradProto) {
-            int numColors = sweepGradProto.getColorStopsCount();
-            if (numColors < MIN_COLOR_STOPS || numColors > MAX_COLOR_STOPS) {
-                throw new IllegalArgumentException(
-                        "SweepGradient color count must be >= "
-                                + MIN_COLOR_STOPS
-                                + "and <= "
-                                + MAX_COLOR_STOPS);
-            }
-
-            final float gradStartAngle = sweepGradProto.getStartAngle().getValue();
-            final float gradEndAngle =
-                    sweepGradProto.getEndAngle().hasValue()
-                            ? sweepGradProto.getEndAngle().getValue()
-                            : 360f;
-
-            // Use the first color stop to check for offsets to be present or absent.
-            boolean offsetsRequired = sweepGradProto.getColorStops(0).hasOffset();
-
-            colorStops = new ArrayList<>(numColors);
-            for (int i = 0; i < numColors; i++) {
-                ColorProto.ColorStop stop = sweepGradProto.getColorStops(i);
-                if (offsetsRequired ^ stop.hasOffset()) {
-                    throw new IllegalArgumentException(
-                            "Either all or none of the color stops should contain an offset.");
-                }
-                float offset =
-                        stop.hasOffset()
-                                ? stop.getOffset().getValue()
-                                : (float) i / (numColors - 1);
-                float gradAngle = gradStartAngle + offset * (gradEndAngle - gradStartAngle);
-                colorStops.add(
-                        new AngularColorStop(gradAngle, makeOpaque(stop.getColor().getArgb())));
-            }
-
-            if (offsetsRequired) {
-                colorStops.sort((a, b) -> Float.compare(a.angle, b.angle));
-            }
-        }
-
-        /**
-         * Interpolates colors linearly. Color interpolation needs to be done accordingly to the
-         * underlying SweepGradient shader implementation so that all color transitions are smooth
-         * and static.
-         *
-         * <p>The ArgbEvaluator class applies gamma correction to colors which results in a
-         * different behavior compared to the shader's native implementation.
-         */
-        @ColorInt
-        @VisibleForTesting
-        int interpolateColors(
-                int startColor, float startAngle, int endColor, float endAngle, float targetAngle) {
-            if (startAngle == endAngle) {
-                return startColor;
-            }
-            float fraction = (targetAngle - startAngle) / (endAngle - startAngle);
-            if (Float.isInfinite(fraction)) {
-                return startColor;
-            }
-
-            float startA = Color.alpha(startColor);
-            float startR = Color.red(startColor);
-            float startG = Color.green(startColor);
-            float startB = Color.blue(startColor);
-
-            float endA = Color.alpha(endColor);
-            float endR = Color.red(endColor);
-            float endG = Color.green(endColor);
-            float endB = Color.blue(endColor);
-
-            int a = (int) (startA + fraction * (endA - startA));
-            int r = (int) (startR + fraction * (endR - startR));
-            int g = (int) (startG + fraction * (endG - startG));
-            int b = (int) (startB + fraction * (endB - startB));
-            return Color.argb(a, r, g, b);
-        }
-
-        /**
-         * Gets the color for a specific angle in the gradient. The color is an interpolation
-         * between the color stops adjacent to the given {@code angle}.
-         */
-        @ColorInt
-        int getColor(float angle) {
-            for (int i = 0; i < colorStops.size(); i++) {
-                float stopAngle = colorStops.get(i).angle;
-                if (stopAngle >= angle) {
-                    int stopColor = colorStops.get(i).color;
-                    if (i == 0) {
-                        return stopColor;
-                    }
-                    float prevAngle = colorStops.get(i - 1).angle;
-                    int prevColor = colorStops.get(i - 1).color;
-                    return interpolateColors(prevColor, prevAngle, stopColor, stopAngle, angle);
-                }
-            }
-
-            // If no color was returned till here, return the last color in the gradient.
-            return colorStops.get(colorStops.size() - 1).color;
-        }
-
-        /**
-         * Gets a SweepGradient Shader object using colors present between gradStartAngle and
-         * gradEndAngle, which are angles corresponding to the Brush proto definition. The
-         * rotationAngle is applied to the generated Shader object.
-         *
-         * @param bounds the bounds of the drawing area for the arc
-         * @param gradStartAngle the start angle position in the gradient, defining to the start
-         *     color
-         * @param gradEndAngle the end angle position in the gradient, defining to the end color
-         * @param rotationAngle the angle to rotate the shader, defining the position of the start
-         *     color
-         * @param capPosition the position of the stroke cap.
-         */
-        @NonNull Shader getShader(
-                @NonNull RectF bounds,
-                float gradStartAngle,
-                float gradEndAngle,
-                float rotationAngle,
-                CapPosition capPosition) {
-            if (Math.abs(gradEndAngle - gradStartAngle) > 360f) {
-                throw new IllegalArgumentException(
-                        "Start and End angles must span at most 360 degrees");
-            }
-
-            boolean isClockwise = gradEndAngle >= gradStartAngle;
-            if (!isClockwise) {
-                gradStartAngle = Math.abs(gradStartAngle);
-                gradEndAngle = Math.abs(gradEndAngle);
-            }
-
-            List<Integer> colors = new ArrayList<>();
-            List<Float> offsets = new ArrayList<>();
-
-            // Start Color
-            int startColor = getColor(gradStartAngle);
-            colors.add(startColor);
-            offsets.add(0f);
-
-            // Colors within range.
-            for (int i = 0; i < colorStops.size(); i++) {
-                float stopAngle = colorStops.get(i).angle;
-                if (stopAngle <= gradStartAngle) {
-                    continue;
-                }
-                if (stopAngle >= gradEndAngle) {
-                    break;
-                }
-
-                colors.add(colorStops.get(i).color);
-                offsets.add((stopAngle - gradStartAngle) / 360f);
-            }
-
-            // End Color
-            int endColor = getColor(gradEndAngle);
-            float endOffset = (gradEndAngle - gradStartAngle) / 360f;
-            colors.add(endColor);
-            offsets.add(endOffset);
-
-            // Draw the Cap with a solid color. The Cap must have the same color as its adjacent
-            // position in the ArcLine. So a new color stop is added to the Shader to make sure the
-            // Cap region has a single color.
-            if (capPosition == CapPosition.START) {
-                colors.add(startColor);
-                offsets.add(1f - CAP_COLOR_SHADER_OFFSET_SIZE);
-            } else if (capPosition == CapPosition.END) {
-                colors.add(endColor);
-                offsets.add(endOffset + CAP_COLOR_SHADER_OFFSET_SIZE);
-            }
-
-            // Invert gradient if angle span is counter-clockwise.
-            if (!isClockwise) {
-                offsets.replaceAll(o -> 1f - o);
-                Collections.reverse(offsets);
-                Collections.reverse(colors);
-            }
-
-            float centerX = (bounds.left + bounds.right) / 2f;
-            float centerY = (bounds.top + bounds.bottom) / 2f;
-            SweepGradient shader =
-                    new SweepGradient(
-                            centerX,
-                            centerY,
-                            colors.stream().mapToInt(Integer::intValue).toArray(),
-                            Floats.toArray(offsets));
-            Matrix matrix = new Matrix();
-            matrix.setRotate(rotationAngle, centerX, centerY);
-            shader.setLocalMatrix(matrix);
-            return shader;
-        }
+    /** Invalidates the view's current drawn state and triggers a redraw. */
+    public void triggerRefresh() {
+        updateArcDrawable();
+        requestLayout();
+        postInvalidate();
     }
 
     /**
@@ -608,12 +376,6 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
      * Paint for drawing.
      */
     static class ArcSegment implements Segment {
-        enum CapPosition {
-            NONE,
-            START,
-            END
-        }
-
         /** The angle span of the sector that is clipped out. */
         private static final float CLIP_OUT_PATH_SPAN_DEGREES = 90f;
 
@@ -778,7 +540,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
             float sweepDirection = Math.signum(sweepAngle);
             float absSweepAngle = Math.abs(sweepAngle);
 
-            ArcSegment.CapPosition tailCapPosition = ArcSegment.CapPosition.START;
+            CapPosition tailCapPosition = CapPosition.START;
             // The start of the top layer, relative to the Arc Line's full length.
             float topLayerStartCursor = 0f;
             float topLayerLength = sweepAngle;
@@ -788,14 +550,14 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
                 // When drawing the last 360 degrees of the line, the start and end of the drawing
                 // are at the same angle.
                 drawStartAngle = (drawStartAngle + sweepAngle) % 360f;
-                tailCapPosition = ArcSegment.CapPosition.NONE;
+                tailCapPosition = CapPosition.NONE;
                 topLayerStartCursor = sweepAngle - sweepDirection * 360f;
                 topLayerLength = sweepDirection * 360f;
             }
 
             float segmentSweep = topLayerLength / 2f;
 
-            Paint shadowPaint = null;
+            @Nullable Paint shadowPaint = null;
             if (strokeCapShadow != null) {
                 shadowPaint = new Paint(basePaint);
                 shadowPaint.setColor(Color.TRANSPARENT);
@@ -846,7 +608,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
                                 midCursor,
                                 midCursor + segmentSweep,
                                 drawMidAngle,
-                                ArcSegment.CapPosition.END);
+                                CapPosition.END);
                 headPaint.setShader(shader);
             }
             ArcSegment headSegment =
@@ -855,7 +617,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
                             drawMidAngle,
                             segmentSweep,
                             thicknessPx,
-                            ArcSegment.CapPosition.END,
+                            CapPosition.END,
                             headPaint);
 
             // Add a shadow layer to the head Cap if needed.
@@ -891,7 +653,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
      * canvas.drawPath}, because {@code canvas.drawPath} implementation has a bug when the path is
      * an Arc which causes the aliasing issue (b/393971851)
      */
-    private static class ArcDrawableLegacy implements ArcDrawable {
+    static class ArcDrawableLegacy implements ArcDrawable {
 
         private final @NonNull Paint mPaint;
         private final RectF mBounds;
@@ -922,7 +684,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
     }
 
     /** Data holder for the stroke cap shadow. */
-    private static final class StrokeCapShadow {
+    private static class StrokeCapShadow {
         final float mBlurRadius;
         final int mColor;
 
@@ -932,8 +694,10 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
         }
     }
 
-    /** Changes the alpha channel of the color to 0xFF (fully opaque). */
-    private static int makeOpaque(int color) {
-        return color | FULLY_OPAQUE_COLOR_MASK;
+    /** Position of the Cap for an ArcSegment. */
+    public enum CapPosition {
+        NONE,
+        START,
+        END
     }
 }

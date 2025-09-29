@@ -40,14 +40,6 @@
         "resolvedVersion": "1"
       },
       "toConfiguration": "api"
-    },
-    {
-      "coordinates": {
-        "type": "project",
-        "identifier": ":hilt:hilt-common"
-      },
-      "fromConfiguration": "api",
-      "toConfiguration": "compileOnly"
     }
   ]
 }

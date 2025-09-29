@@ -62,6 +62,7 @@ import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
 import kotlin.math.roundToInt
 import kotlin.random.Random
+import kotlinx.coroutines.test.StandardTestDispatcher
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.nullValue
@@ -76,7 +77,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class AnimationModifierTest {
-    val rule = createComposeRule()
+    val rule = createComposeRule(StandardTestDispatcher())
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
     val ruleChain: RuleChain = RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(rule)
@@ -136,13 +137,13 @@ class AnimationModifierTest {
             assertEquals(
                 density * (startWidth * (1 - fraction) + endWidth * fraction),
                 testModifier.width.toFloat(),
-                1f
+                1f,
             )
 
             assertEquals(
                 density * (startHeight * (1 - fraction) + endHeight * fraction),
                 testModifier.height.toFloat(),
-                1f
+                1f,
             )
 
             if (i == animDuration) {
@@ -213,7 +214,7 @@ class AnimationModifierTest {
                         assertThat(it.valueOverride, nullValue())
                         assertThat(
                             it.inspectableElements.map { it.name }.toList(),
-                            `is`(listOf("animationSpec", "alignment", "finishedListener"))
+                            `is`(listOf("animationSpec", "alignment", "finishedListener")),
                         )
                         true
                     } else {
@@ -338,7 +339,7 @@ class AnimationModifierTest {
             Box(
                 Modifier.animateContentSize(
                         animationSpec = tween(animDuration, easing = LinearOutSlowInEasing),
-                        alignment = alignment
+                        alignment = alignment,
                     )
                     .onPlaced { positionInRootByBoxIndex[index] = it.positionInRoot() }
                     .requiredSize(width.dp, height.dp)
@@ -393,7 +394,7 @@ internal class TestModifier : LayoutModifier {
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         if (isLookingAhead) lookaheadSize = IntSize(placeable.width, placeable.height)

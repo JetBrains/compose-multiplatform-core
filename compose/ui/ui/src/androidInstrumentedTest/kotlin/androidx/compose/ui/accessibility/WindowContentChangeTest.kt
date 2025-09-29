@@ -47,6 +47,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Correspondence
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -55,7 +56,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class WindowContentChangeTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     private lateinit var androidComposeView: AndroidComposeView
     private val dispatchedAccessibilityEvents = mutableListOf<AccessibilityEvent>()
@@ -334,7 +335,7 @@ class WindowContentChangeTest {
                         actual.parcelableData == expected.parcelableData &&
                         actual.recordCount == expected.recordCount
                 },
-                "has same properties as"
+                "has same properties as",
             )
     }
 
@@ -351,7 +352,7 @@ class WindowContentChangeTest {
                 @Suppress("DEPRECATION") AccessibilityEvent.obtain()
             }
             .apply {
-                packageName = "androidx.compose.ui.test"
+                packageName = "androidx.compose.ui.tests"
                 className = "android.view.View"
                 isEnabled = true
             }

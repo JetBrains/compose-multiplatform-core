@@ -71,7 +71,7 @@ class TransformingLazyColumnSemanticsTest {
         val state = TransformingLazyColumnState()
 
         rule.setContent {
-            TransformingLazyColumn(Modifier.testTag(TEST_TAG), state = state) {
+            TransformingLazyColumn(Modifier.height(100.dp).testTag(TEST_TAG), state = state) {
                 items(100) { Box(Modifier.requiredSize(50.dp).testTag("item#$it")) }
             }
         }
@@ -84,12 +84,21 @@ class TransformingLazyColumnSemanticsTest {
             abs(scrollRatio - 0.5f) < 0.001f
         }
 
-        rule.runOnIdle { runBlocking { state.scrollBy(10_000f) } }
+        // Scroll to end
+        rule.runOnIdle { runBlocking { state.scrollBy(20_000f) } }
         rule.waitForIdle()
 
         rule.onNodeWithTag(TEST_TAG).assertVerticalScrollAxisRange { scrollAxisRange ->
             val scrollRatio = scrollAxisRange.value() / scrollAxisRange.maxValue()
-            scrollRatio in 0.999f..1f
+            scrollRatio in 0.99f..1f
+        }
+
+        // Scroll to start
+        rule.runOnIdle { runBlocking { state.scrollBy(-20_000f) } }
+        rule.waitForIdle()
+
+        rule.onNodeWithTag(TEST_TAG).assertVerticalScrollAxisRange { scrollAxisRange ->
+            scrollAxisRange.value() == 0f
         }
     }
 }

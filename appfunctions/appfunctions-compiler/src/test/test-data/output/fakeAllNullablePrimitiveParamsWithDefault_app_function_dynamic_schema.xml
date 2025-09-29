@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveArrayParamsWithDefault</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -18,7 +15,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg1</name>
         </parameters>
         <parameters>
@@ -33,7 +30,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg2</name>
         </parameters>
         <parameters>
@@ -48,7 +45,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg3</name>
         </parameters>
         <parameters>
@@ -63,7 +60,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg4</name>
         </parameters>
         <parameters>
@@ -78,7 +75,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg5</name>
         </parameters>
         <parameters>
@@ -93,7 +90,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg6</name>
         </parameters>
         <parameters>
@@ -108,23 +105,8 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg7</name>
-        </parameters>
-        <parameters>
-            <dataTypeMetadata>
-                <id>unused</id>
-                <isNullable>true</isNullable>
-                <itemType>
-                    <id>unused</id>
-                    <isNullable>false</isNullable>
-                    <type>2</type>
-                </itemType>
-                <type>10</type>
-            </dataTypeMetadata>
-            <id>unused</id>
-            <isRequired>true</isRequired>
-            <name>arg8</name>
         </parameters>
         <response>
             <id>unused</id>
@@ -134,18 +116,12 @@
                 <type>0</type>
             </valueType>
         </response>
-        <schema>
-            <id>unused</id>
-            <schemaCategory>fake_schema_category</schemaCategory>
-            <schemaName>allNullablePrimitiveParamsWithDefault</schemaName>
-            <schemaVersion>1</schemaVersion>
-        </schema>
+        <schemaCategory>fake_schema_category</schemaCategory>
+        <schemaName>allNullablePrimitiveParamsWithDefault</schemaName>
+        <schemaVersion>1</schemaVersion>
         <functionId>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveArrayParamsWithDefault</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveParamsWithDefault</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -155,7 +131,7 @@
                 <type>7</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg1</name>
         </parameters>
         <parameters>
@@ -165,7 +141,7 @@
                 <type>6</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg2</name>
         </parameters>
         <parameters>
@@ -175,7 +151,7 @@
                 <type>5</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg3</name>
         </parameters>
         <parameters>
@@ -185,7 +161,7 @@
                 <type>4</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg4</name>
         </parameters>
         <parameters>
@@ -195,7 +171,7 @@
                 <type>8</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg5</name>
         </parameters>
         <parameters>
@@ -205,7 +181,7 @@
                 <type>1</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg6</name>
         </parameters>
         <response>
@@ -216,12 +192,9 @@
                 <type>0</type>
             </valueType>
         </response>
-        <schema>
-            <id>unused</id>
-            <schemaCategory>fake_schema_category</schemaCategory>
-            <schemaName>allNullablePrimitiveParamsWithDefault</schemaName>
-            <schemaVersion>1</schemaVersion>
-        </schema>
+        <schemaCategory>fake_schema_category</schemaCategory>
+        <schemaName>allNullablePrimitiveParamsWithDefault</schemaName>
+        <schemaVersion>1</schemaVersion>
         <functionId>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveParamsWithDefault</functionId>
     </appfunction>
 </appfunctions>

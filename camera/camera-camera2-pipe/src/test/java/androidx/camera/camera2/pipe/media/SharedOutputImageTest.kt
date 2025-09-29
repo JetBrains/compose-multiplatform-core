@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.media
 
-import android.os.Build
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamId
 import com.google.common.truth.Truth.assertThat
@@ -30,11 +29,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 /** Tests for [OutputImage] and [SharedOutputImage] */
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SharedOutputImageTest {
     private val streamId = StreamId(42)
     private val outputId = OutputId(64)

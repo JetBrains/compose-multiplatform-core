@@ -63,6 +63,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -72,7 +73,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CompositionLocalMapInjectionTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     @After
     fun teardown() {
@@ -264,7 +265,7 @@ class ConsumeInLayoutNode :
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // Consume Static local
         view = currentValueOf(LocalView)
@@ -304,9 +305,9 @@ class ConsumeInAttachNode :
 inline fun OldLayoutSkippableUpdate(
     content: @Composable @UiComposable () -> Unit,
     modifier: Modifier = Modifier,
-    measurePolicy: MeasurePolicy
+    measurePolicy: MeasurePolicy,
 ) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = @Suppress("DEPRECATION") currentCompositeKeyHash
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     val viewConfiguration = LocalViewConfiguration.current
@@ -326,7 +327,7 @@ inline fun OldLayoutSkippableUpdate(
         // versions
         // of UI, despite this name being different now.
         skippableUpdate = materializerOfWithCompositionLocalInjection(modifier),
-        content = content
+        content = content,
     )
 }
 
@@ -334,7 +335,7 @@ inline fun OldLayoutSkippableUpdate(
 @Composable
 @UiComposable
 internal inline fun OldLayout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = @Suppress("DEPRECATION") currentCompositeKeyHash
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     val viewConfiguration = LocalViewConfiguration.current

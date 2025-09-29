@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,7 +59,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 /** Test for [IconButton] and [IconToggleButton]. */
 class IconButtonTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun iconButton_size() {
@@ -267,7 +268,7 @@ class IconButtonTest {
                     IconToggleButton(
                         checked = checked,
                         onCheckedChange = { checked = it },
-                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag)
+                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag),
                     ) {
                         Box(Modifier.size(2.dp))
                     }

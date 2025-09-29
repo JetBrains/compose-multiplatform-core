@@ -16,7 +16,6 @@
 
 package androidx.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +33,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,10 +41,10 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalMaterialApi::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class DrawerScreenshotTest {
 
-    @Suppress("DEPRECATION") @get:Rule val rule = createComposeRule()
+    @Suppress("DEPRECATION") @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
 
@@ -54,7 +54,7 @@ class DrawerScreenshotTest {
                 BottomDrawer(
                     drawerState = rememberBottomDrawerState(drawerValue),
                     drawerContent = { Box(Modifier.fillMaxSize().background(Color.Red)) },
-                    content = { Box(Modifier.fillMaxSize().background(Color.Yellow)) }
+                    content = { Box(Modifier.fillMaxSize().background(Color.Yellow)) },
                 )
             }
         }
@@ -66,7 +66,7 @@ class DrawerScreenshotTest {
                 ModalDrawer(
                     drawerState = rememberDrawerState(drawerValue),
                     drawerContent = { Box(Modifier.fillMaxSize().background(Color.Red)) },
-                    content = { Box(Modifier.fillMaxSize().background(Color.Yellow)) }
+                    content = { Box(Modifier.fillMaxSize().background(Color.Yellow)) },
                 )
             }
         }

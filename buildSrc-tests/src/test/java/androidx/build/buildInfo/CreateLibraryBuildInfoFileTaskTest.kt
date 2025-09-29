@@ -94,7 +94,8 @@ class CreateLibraryBuildInfoFileTaskTest {
         assertThat(buildInfo.shouldPublishDocs).isFalse()
         assertThat(buildInfo.isKmp).isFalse()
         assertThat(buildInfo.target).isEqualTo("androidx")
-        assertThat(buildInfo.kmpChildren).isEqualTo(setOf("android", "jvm"))
+        assertThat(buildInfo.kmpChildren)
+            .isEqualTo(setOf("android", "jvm", "jvmstubs", "linuxx64stubs", "wasm-js"))
     }
 
     @Test
@@ -128,21 +129,13 @@ class CreateLibraryBuildInfoFileTaskTest {
     @Test
     fun hasApplePlatform_withAtLeastOnePlatformIdentifierTargetingAnApplePlatform_returnsTrue() {
         val platforms =
-            setOf(
-                PlatformIdentifier.ANDROID,
-                PlatformIdentifier.IOS_ARM_64,
-                PlatformIdentifier.JVM,
-            )
+            setOf(PlatformIdentifier.ANDROID, PlatformIdentifier.IOS_ARM_64, PlatformIdentifier.JVM)
         assertThat(hasApplePlatform(platforms)).isTrue()
     }
 
     @Test
     fun hasApplePlatform_withNoPlatformIdentifiersTargetingAnApplePlatform_returnsFalse() {
-        val platforms =
-            setOf(
-                PlatformIdentifier.ANDROID,
-                PlatformIdentifier.JVM,
-            )
+        val platforms = setOf(PlatformIdentifier.ANDROID, PlatformIdentifier.JVM)
         assertThat(hasApplePlatform(platforms)).isFalse()
     }
 
@@ -157,7 +150,6 @@ class CreateLibraryBuildInfoFileTaskTest {
                 plugins {
                     id("com.android.library")
                     id("maven-publish")
-                    id("kotlin-android")
                 }
                 ext {
                     supportRootFolder = new File("${projectSetup.rootDir}")
@@ -174,7 +166,10 @@ class CreateLibraryBuildInfoFileTaskTest {
                 implementation("androidx.core:core:1.1.0")
             }
             android {
-                 namespace 'androidx.build_info'
+                namespace 'androidx.build_info'
+                publishing {
+                    singleVariant('release') { }
+                }
             }
             group = "androidx.build_info_test"
             afterEvaluate {
@@ -197,14 +192,14 @@ class CreateLibraryBuildInfoFileTaskTest {
                             false,
                             false,
                             "androidx",
-                            ["android", "jvm"].toSet(),
+                            ["android", "jvm", "jvmStubs", "linuxx64Stubs", "wasmJs"].toSet(),
                             project.provider { ["test.xml"] },
                         )
                     }
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
     }
 
@@ -217,7 +212,6 @@ class CreateLibraryBuildInfoFileTaskTest {
                 plugins {
                     id("com.android.library")
                     id("maven-publish")
-                    id("kotlin-android")
                 }
                 ext {
                     supportRootFolder = new File("${projectSetup.rootDir}")
@@ -234,7 +228,10 @@ class CreateLibraryBuildInfoFileTaskTest {
                 implementation("androidx.core:core:1.1.0")
             }
             android {
-                 namespace 'androidx.build_info'
+                namespace 'androidx.build_info'
+                publishing {
+                    singleVariant('release') { }
+                }
             }
             group = "androidx.build_info_test"
             afterEvaluate {
@@ -264,7 +261,7 @@ class CreateLibraryBuildInfoFileTaskTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
     }
 

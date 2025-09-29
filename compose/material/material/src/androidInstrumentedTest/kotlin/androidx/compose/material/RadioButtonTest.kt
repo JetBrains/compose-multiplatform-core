@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +48,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RadioButtonTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val itemOne = "Bar"
     private val itemTwo = "Foo"
@@ -71,7 +72,7 @@ class RadioButtonTest {
                     RadioButton(
                         modifier = Modifier.testTag(item),
                         selected = (selected.value == item),
-                        onClick = { selected.value = item }
+                        onClick = { selected.value = item },
                     )
                 }
             }
@@ -101,7 +102,7 @@ class RadioButtonTest {
                     RadioButton(
                         modifier = Modifier.testTag(item),
                         selected = (selected.value == item),
-                        onClick = { selected.value = item }
+                        onClick = { selected.value = item },
                     )
                 }
             }
@@ -127,7 +128,7 @@ class RadioButtonTest {
                     RadioButton(
                         modifier = Modifier.testTag(item),
                         selected = (selected.value == item),
-                        onClick = { selected.value = item }
+                        onClick = { selected.value = item },
                     )
                 }
             }
@@ -151,7 +152,7 @@ class RadioButtonTest {
                 RadioButton(
                     selected = true,
                     onClick = null,
-                    modifier = Modifier.semantics { focused = true }
+                    modifier = Modifier.semantics { focused = true },
                 )
             }
         }
@@ -173,7 +174,7 @@ class RadioButtonTest {
                     RadioButton(
                         modifier = Modifier.testTag(item),
                         selected = (selected.value == item),
-                        onClick = { selected.value = item }
+                        onClick = { selected.value = item },
                     )
                 }
             }
@@ -242,7 +243,7 @@ class RadioButtonTest {
     private fun materialSizesTestForValue(
         selected: Boolean,
         clickable: Boolean,
-        minimumTouchTarget: Boolean
+        minimumTouchTarget: Boolean,
     ) {
         rule
             .setMaterialContentForSizeAssertions {
@@ -254,7 +255,7 @@ class RadioButtonTest {
                         onClick =
                             if (clickable) {
                                 {}
-                            } else null
+                            } else null,
                     )
                 }
             }

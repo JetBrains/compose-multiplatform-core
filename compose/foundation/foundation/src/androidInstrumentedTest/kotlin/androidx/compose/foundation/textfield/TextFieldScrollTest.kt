@@ -17,6 +17,7 @@
 package androidx.compose.foundation.textfield
 
 import android.os.Build
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,6 +46,7 @@ import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Layout
@@ -80,6 +82,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -87,6 +90,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -117,7 +121,7 @@ class TextFieldScrollTest : FocusedWindowTest {
             "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu " +
             "fugiat nulla pariatur."
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun before() {
@@ -136,7 +140,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.setupHorizontallyScrollableContent(
             scrollerPosition,
             longText,
-            Modifier.size(width = 300.dp, height = 50.dp)
+            Modifier.size(width = 300.dp, height = 50.dp),
         )
 
         rule.runOnIdle {
@@ -152,7 +156,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.setupVerticallyScrollableContent(
             scrollerPosition = scrollerPosition,
             text = longText,
-            modifier = Modifier.size(width = 300.dp, height = 50.dp)
+            modifier = Modifier.size(width = 300.dp, height = 50.dp),
         )
 
         rule.runOnIdle {
@@ -169,7 +173,7 @@ class TextFieldScrollTest : FocusedWindowTest {
             modifier = Modifier.width(100.dp),
             scrollerPosition = scrollerPosition,
             text = longText,
-            maxLines = 3
+            maxLines = 3,
         )
 
         rule.runOnIdle {
@@ -185,7 +189,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.setupHorizontallyScrollableContent(
             scrollerPosition = scrollerPosition,
             text = "text",
-            modifier = Modifier.size(width = 300.dp, height = 50.dp)
+            modifier = Modifier.size(width = 300.dp, height = 50.dp),
         )
 
         rule.runOnIdle { assertThat(scrollerPosition.maximum).isEqualTo(0f) }
@@ -198,7 +202,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.setupVerticallyScrollableContent(
             scrollerPosition = scrollerPosition,
             text = "text",
-            modifier = Modifier.size(width = 300.dp, height = 100.dp)
+            modifier = Modifier.size(width = 300.dp, height = 100.dp),
         )
 
         rule.runOnIdle { assertThat(scrollerPosition.maximum).isEqualTo(0f) }
@@ -219,7 +223,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                         modifier = Modifier.size(textFieldSize.toDp()),
                         scrollerPosition = TextFieldScrollerPosition(Orientation.Horizontal),
                         text = longText,
-                        isVertical = false
+                        isVertical = false,
                     )
                 }
             }
@@ -249,7 +253,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                         modifier = Modifier.size(textFieldSize.toDp()),
                         scrollerPosition = TextFieldScrollerPosition(),
                         text = longText,
-                        isVertical = true
+                        isVertical = true,
                     )
                 }
             }
@@ -271,7 +275,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.setupHorizontallyScrollableContent(
             scrollerPosition = scrollerPosition,
             text = longText,
-            modifier = Modifier.size(width = 300.dp, height = 50.dp)
+            modifier = Modifier.size(width = 300.dp, height = 50.dp),
         )
 
         rule.runOnIdle { assertThat(scrollerPosition.offset).isEqualTo(0f) }
@@ -292,7 +296,7 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.setupVerticallyScrollableContent(
             scrollerPosition = scrollerPosition,
             text = longText,
-            modifier = Modifier.size(width = 300.dp, height = 50.dp)
+            modifier = Modifier.size(width = 300.dp, height = 50.dp),
         )
 
         rule.runOnIdle { assertThat(scrollerPosition.offset).isEqualTo(0f) }
@@ -320,7 +324,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                 modifier = Modifier.size(width = 300.dp, height = 50.dp),
                 scrollerPosition = scrollerPosition!!,
                 text = longText,
-                isVertical = false
+                isVertical = false,
             )
         }
 
@@ -345,7 +349,11 @@ class TextFieldScrollTest : FocusedWindowTest {
         val interactionSource = MutableInteractionSource()
         rule.setTextFieldTestContent {
             val modifier =
-                Modifier.textFieldScrollable(position, interactionSource) as InspectableValue
+                Modifier.textFieldScrollable(
+                    scrollerPosition = position,
+                    interactionSource = interactionSource,
+                    overscrollEffect = null,
+                ) as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("textFieldScrollable")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
@@ -377,7 +385,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                     modifier = Modifier.size(size, height),
                     scrollerPosition = textFieldScrollPosition,
                     text = text,
-                    isVertical = true
+                    isVertical = true,
                 )
                 Box(Modifier.size(size))
                 Box(Modifier.size(size))
@@ -427,7 +435,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                     Modifier.size(widthDp, heightDp).textFieldScroll(
                         remember { scrollerPosition },
                         TextFieldValue(text),
-                        VisualTransformation.None
+                        VisualTransformation.None,
                     ) {
                         textLayoutResultRef.value
                     },
@@ -435,7 +443,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                     object : MeasurePolicy {
                         override fun MeasureScope.measure(
                             measurables: List<Measurable>,
-                            constraints: Constraints
+                            constraints: Constraints,
                         ): MeasureResult {
                             measuredConstraints = constraints
                             return layout(width / 2, height) {}
@@ -443,11 +451,11 @@ class TextFieldScrollTest : FocusedWindowTest {
 
                         override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                             measurables: List<IntrinsicMeasurable>,
-                            height: Int
+                            height: Int,
                         ): Int {
                             return width / 2
                         }
-                    }
+                    },
             )
         }
 
@@ -477,7 +485,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                     Modifier.size(widthDp, heightDp).textFieldScroll(
                         remember { scrollerPosition },
                         TextFieldValue(text),
-                        VisualTransformation.None
+                        VisualTransformation.None,
                     ) {
                         textLayoutResultRef.value
                     },
@@ -485,7 +493,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                     object : MeasurePolicy {
                         override fun MeasureScope.measure(
                             measurables: List<Measurable>,
-                            constraints: Constraints
+                            constraints: Constraints,
                         ): MeasureResult {
                             measuredConstraints = constraints
                             return layout(width * 2, height) {}
@@ -493,11 +501,11 @@ class TextFieldScrollTest : FocusedWindowTest {
 
                         override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                             measurables: List<IntrinsicMeasurable>,
-                            height: Int
+                            height: Int,
                         ): Int {
                             return width * 2
                         }
-                    }
+                    },
             )
         }
 
@@ -508,7 +516,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                         minWidth = width,
                         maxWidth = Constraints.Infinity,
                         minHeight = height,
-                        maxHeight = height
+                        maxHeight = height,
                     )
                 )
         }
@@ -516,7 +524,7 @@ class TextFieldScrollTest : FocusedWindowTest {
 
     @Test
     fun textField_cursorHandle_hidden_whenScrolledOutOfView() {
-        val size = 100
+        val size = 200
         val tag = "Text"
 
         with(rule.density) {
@@ -524,7 +532,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                 BasicTextField(
                     value = longText,
                     onValueChange = {},
-                    modifier = Modifier.padding(size.toDp()).size(size.toDp()).testTag(tag)
+                    modifier = Modifier.padding(size.toDp()).size(size.toDp()).testTag(tag),
                 )
             }
         }
@@ -533,6 +541,9 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.onNodeWithTag(tag).performClick()
 
         rule.onNode(isSelectionHandle(Handle.Cursor)).assertIsDisplayed()
+
+        // prevent double click behavior
+        rule.mainClock.advanceTimeBy(1000)
 
         // Scroll up by twice the height to move the cursor out of the visible area.
         rule.onNodeWithTag(tag).performTouchInput {
@@ -564,7 +575,7 @@ class TextFieldScrollTest : FocusedWindowTest {
                             .padding(size.toDp())
                             .border(0.dp, Color.Black)
                             .size(size.toDp())
-                            .testTag(tag)
+                            .testTag(tag),
                 )
             }
         }
@@ -597,35 +608,77 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.onNode(isSelectionHandle(Handle.SelectionEnd)).assertIsDisplayed()
     }
 
+    @Test
+    fun textFieldScroll_horizontal_overscroll() {
+        val scrollerPosition = TextFieldScrollerPosition(Orientation.Horizontal)
+        val overscrollEffect = CustomEffect()
+
+        rule.setupHorizontallyScrollableContent(
+            scrollerPosition = scrollerPosition,
+            text = longText,
+            modifier = Modifier.size(width = 300.dp, height = 50.dp),
+            overscrollEffect = overscrollEffect,
+        )
+
+        rule.onNodeWithTag(TextfieldTag).performTouchInput { swipeRight() }
+        rule.runOnIdle {
+            assertThat(overscrollEffect.applyToScrollCallCount).isGreaterThan(0)
+            assertThat(overscrollEffect.applyToFlingCallCount).isGreaterThan(0)
+        }
+    }
+
+    @Test
+    fun textFieldScroll_vertical_overscroll() {
+        val scrollerPosition = TextFieldScrollerPosition()
+        val overscrollEffect = CustomEffect()
+
+        rule.setupVerticallyScrollableContent(
+            scrollerPosition = scrollerPosition,
+            text = longText,
+            modifier = Modifier.size(width = 300.dp, height = 50.dp),
+            overscrollEffect = overscrollEffect,
+        )
+
+        rule.onNodeWithTag(TextfieldTag).performTouchInput { swipeDown() }
+        rule.runOnIdle {
+            assertThat(overscrollEffect.applyToScrollCallCount).isGreaterThan(0)
+            assertThat(overscrollEffect.applyToFlingCallCount).isGreaterThan(0)
+        }
+    }
+
     private fun ComposeContentTestRule.setupHorizontallyScrollableContent(
         scrollerPosition: TextFieldScrollerPosition,
         text: String,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        overscrollEffect: OverscrollEffect? = null,
     ) {
         setContent {
             ScrollableContent(
                 scrollerPosition = scrollerPosition,
+                overscrollEffect = overscrollEffect,
                 text = text,
                 isVertical = false,
                 modifier = modifier,
-                maxLines = 1
+                maxLines = 1,
             )
         }
     }
 
     private fun ComposeContentTestRule.setupVerticallyScrollableContent(
         scrollerPosition: TextFieldScrollerPosition,
+        overscrollEffect: OverscrollEffect? = null,
         text: String,
         modifier: Modifier = Modifier,
-        maxLines: Int = Int.MAX_VALUE
+        maxLines: Int = Int.MAX_VALUE,
     ) {
         setContent {
             ScrollableContent(
                 scrollerPosition = scrollerPosition,
+                overscrollEffect = overscrollEffect,
                 text = text,
                 isVertical = true,
                 modifier = modifier,
-                maxLines = maxLines
+                maxLines = maxLines,
             )
         }
     }
@@ -634,9 +687,10 @@ class TextFieldScrollTest : FocusedWindowTest {
     private fun ScrollableContent(
         modifier: Modifier,
         scrollerPosition: TextFieldScrollerPosition,
+        overscrollEffect: OverscrollEffect? = null,
         text: String,
         isVertical: Boolean,
-        maxLines: Int = Int.MAX_VALUE
+        maxLines: Int = Int.MAX_VALUE,
     ) {
         val textLayoutResultRef: Ref<TextLayoutResultProxy?> = remember { Ref() }
         val resolvedMaxLines = if (isVertical) maxLines else 1
@@ -649,13 +703,40 @@ class TextFieldScrollTest : FocusedWindowTest {
                 modifier
                     .testTag(TextfieldTag)
                     .heightInLines(textStyle = TextStyle.Default, maxLines = resolvedMaxLines)
-                    .textFieldScrollable(scrollerPosition)
+                    .textFieldScrollable(
+                        scrollerPosition = scrollerPosition,
+                        overscrollEffect = overscrollEffect,
+                    )
                     .textFieldScroll(
                         remember { scrollerPosition },
                         TextFieldValue(text),
                         VisualTransformation.None,
-                        { textLayoutResultRef.value }
-                    )
+                        { textLayoutResultRef.value },
+                    ),
         )
+    }
+}
+
+private class CustomEffect : OverscrollEffect {
+    override val isInProgress = false
+    override val node = object : Modifier.Node() {}
+    var applyToScrollCallCount = 0
+    var applyToFlingCallCount = 0
+
+    override fun applyToScroll(
+        delta: Offset,
+        source: NestedScrollSource,
+        performScroll: (Offset) -> Offset,
+    ): Offset {
+        applyToScrollCallCount++
+        return performScroll(delta)
+    }
+
+    override suspend fun applyToFling(
+        velocity: Velocity,
+        performFling: suspend (Velocity) -> Velocity,
+    ) {
+        applyToFlingCallCount++
+        performFling(velocity)
     }
 }
