@@ -31,6 +31,8 @@ import kotlin.math.min
 import kotlin.math.sign
 
 internal interface RowColumnMeasurePolicy {
+    val propagateCrossAxisMinConstraint: Boolean get() = false
+
     fun Placeable.mainAxisSize(): Int
 
     fun Placeable.crossAxisSize(): Int
@@ -127,7 +129,8 @@ internal fun RowColumnMeasurePolicy.measure(
                         // Ask for preferred main axis size.
                         createConstraints(
                             mainAxisMin = 0,
-                            crossAxisMin = crossAxisDesiredSize ?: 0,
+                            crossAxisMin = crossAxisDesiredSize
+                                ?: if (propagateCrossAxisMinConstraint) crossAxisMin else 0,
                             mainAxisMax =
                                 if (mainAxisMax == Constraints.Infinity) {
                                     Constraints.Infinity
@@ -200,7 +203,8 @@ internal fun RowColumnMeasurePolicy.measure(
                             } else {
                                 0
                             },
-                        crossAxisMin = crossAxisDesiredSize ?: 0,
+                        crossAxisMin = crossAxisDesiredSize
+                            ?: if (propagateCrossAxisMinConstraint) crossAxisMin else 0,
                         mainAxisMax = childMainAxisSize,
                         crossAxisMax = crossAxisDesiredSize ?: crossAxisMax,
                         isPrioritizing = true,

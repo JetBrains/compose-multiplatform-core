@@ -167,7 +167,7 @@ internal abstract class SnapshotFlowManagerImpl internal constructor() {
      * Returns [watch] with its first argument fixed to [channel] by partial application. That is,
      * [readObserverFor(channel)(obj)] is equivalent to [watch(channel, obj)].
      */
-    internal abstract fun readObserverFor(channel: SendChannel<Unit>): (Any) -> Unit
+    internal abstract fun readObserverFor(channel: SendChannel<Unit>): (Any) -> Boolean
 
     /**
      * Unsubscribes [channel] from being notified of changes to all objects.
@@ -253,7 +253,7 @@ private class SingleSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() 
     var subscribedChannel: SendChannel<Unit>? = null
 
     // Caches the only valid return value of [readObserverFor].
-    private val readObserverCache = { obj: Any -> watch(subscribedChannel!!, obj) }
+    private val readObserverCache = { obj: Any -> watch(subscribedChannel!!, obj); true }
 
     private val unregisterApplyObserver =
         Snapshot.registerApplyObserver { changed, _ ->
@@ -301,7 +301,7 @@ private class SingleSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() 
         }
     }
 
-    override fun readObserverFor(channel: SendChannel<Unit>): (Any) -> Unit {
+    override fun readObserverFor(channel: SendChannel<Unit>): (Any) -> Boolean {
         checkPrecondition(subscribedChannel == null || subscribedChannel == channel) {
             "Requested a SingleSubscriptionSnapshotFlowManager to manage multiple subscriptions"
         }
@@ -400,7 +400,7 @@ private class MultiSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() {
     private val toNotify = mutableScatterSetOf<SendChannel<Unit>>()
 
     // Used by [readObserverFor] to cache partially applied functions.
-    private val readObserverCache = mutableScatterMapOf<SendChannel<Unit>, (Any) -> Unit>()
+    private val readObserverCache = mutableScatterMapOf<SendChannel<Unit>, (Any) -> Boolean>()
 
     private val unregisterApplyObserver =
         Snapshot.registerApplyObserver { changed, _ ->
@@ -422,9 +422,9 @@ private class MultiSubscriptionSnapshotFlowManager : SnapshotFlowManagerImpl() {
         pendingChanges.add(Add(obj, channel))
     }
 
-    override fun readObserverFor(channel: SendChannel<Unit>): (Any) -> Unit {
+    override fun readObserverFor(channel: SendChannel<Unit>): (Any) -> Boolean {
         return readObserverCache.get(channel)
-            ?: { obj: Any -> watch(channel, obj) }.also { readObserverCache.put(channel, it) }
+            ?: { obj: Any -> watch(channel, obj); true }.also { readObserverCache.put(channel, it) }
     }
 
     override fun clearWatchSet(channel: SendChannel<Unit>) {

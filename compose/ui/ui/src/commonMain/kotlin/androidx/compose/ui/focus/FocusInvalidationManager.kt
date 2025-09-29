@@ -112,7 +112,7 @@ internal class FocusInvalidationManager(
         // clear focus from the root because that could cause initial focus logic to be re-run.
         // Now that all the invalidations are complete, we run owner.clearFocus() if needed.
         if (focusOwner.activeFocusTargetNode == null || focusOwner.rootState == Inactive) {
-            focusOwner.clearOwnerFocus()
+            focusOwner.clearOwnerFocus(isAutomatic = true)
         }
     }
 }

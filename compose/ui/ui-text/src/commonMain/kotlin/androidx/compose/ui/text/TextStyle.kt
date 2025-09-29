@@ -54,9 +54,8 @@ import kotlin.jvm.JvmName
 // Maintainer note: When adding a new constructor or copy parameter, make sure to add a test case to
 // TextStyleInvalidationTest to ensure the correct phase(s) get invalidated.
 @Immutable
-class TextStyle
-internal constructor(
-    internal val spanStyle: SpanStyle,
+class TextStyle(
+    val spanStyle: SpanStyle,
     internal val paragraphStyle: ParagraphStyle,
     val platformStyle: PlatformTextStyle? = null,
 ) {

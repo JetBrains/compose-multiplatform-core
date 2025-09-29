@@ -21,6 +21,8 @@ import androidx.collection.MutableScatterMap
 import androidx.collection.MutableScatterSet
 import androidx.compose.runtime.DerivedState
 import androidx.compose.runtime.DerivedStateObserver
+import androidx.compose.runtime.DataSource
+import androidx.compose.runtime.ObserverHandle
 import androidx.compose.runtime.TestOnly
 import androidx.compose.runtime.collection.ScopeMap
 import androidx.compose.runtime.collection.fastForEach
@@ -49,7 +51,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
     private val pendingChanges = AtomicReference<Any?>(null)
     private var sendingNotifications = false
 
-    private val applyObserver: (Set<Any>, Snapshot) -> Unit = { applied, _ ->
+    private val applyObserver: (Set<Any>) -> Unit = { applied ->
         addChanges(applied)
         if (drainChanges()) sendNotifications()
     }
@@ -163,9 +165,12 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
     private fun report(): Nothing = composeRuntimeError("Unexpected notification")
 
     /** The observer used by this [SnapshotStateObserver] during [observeReads]. */
-    private val readObserver: (Any) -> Unit = { state ->
+    private val readObserver: (Any) -> Boolean = { state ->
         if (!isPaused) {
             synchronized(observedScopeMapsLock) { currentMap!!.recordRead(state) }
+            true
+        } else {
+            false
         }
     }
 
@@ -325,7 +330,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
 
     /** Starts watching for state commits. */
     public fun start() {
-        applyUnsubscribe = Snapshot.registerApplyObserver(applyObserver)
+        applyUnsubscribe = DataSource.registerInvalidator(applyObserver)
     }
 
     /** Stops watching for state commits. */
@@ -334,12 +339,11 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
     }
 
     /**
-     * This method is only used for testing. It notifies that [changes] have been made on
-     * [snapshot].
+     * This method is only used for testing. It notifies that [changes] have been made.
      */
     @TestOnly
-    public fun notifyChanges(changes: Set<Any>, snapshot: Snapshot) {
-        applyObserver(changes, snapshot)
+    public fun notifyChanges(changes: Set<Any>) {
+        applyObserver(changes)
     }
 
     /** Remove all observations. */
@@ -486,7 +490,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
         @Suppress("NOTHING_TO_INLINE")
         inline fun observe(
             scope: Any,
-            noinline readObserver: (Any) -> Unit,
+            noinline readObserver: (Any) -> Boolean,
             noinline block: () -> Unit,
         ) {
             val previousScope = currentScope
@@ -500,7 +504,10 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
             }
 
             observeDerivedStateRecalculations(derivedStateObserver) {
-                Snapshot.observeInternal(readObserver, null, block)
+                DataSource.observe(
+                    recordDependency = readObserver,
+                    block = block,
+                )
             }
 
             clearObsoleteStateReads(currentScope!!)

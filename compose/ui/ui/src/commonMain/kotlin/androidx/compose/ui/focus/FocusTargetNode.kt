@@ -113,7 +113,7 @@ internal class FocusTargetNode(
     }
 
     private fun assignFocus(focusDirection: FocusDirection): Boolean {
-        return when (performCustomRequestFocus(focusDirection)) {
+        return when (performCustomRequestFocus(focusDirection, isAutomatic = false)) {
             None -> performRequestFocus()
             Redirected -> true
             Cancelled,
@@ -127,8 +127,8 @@ internal class FocusTargetNode(
                 field = value
                 if (
                     isAttached &&
-                        this === requireOwner().focusOwner.activeFocusTargetNode &&
-                        !field.canFocus(this)
+                    this === requireOwner().focusOwner.activeFocusTargetNode &&
+                    !field.canFocus(this)
                 ) {
                     @OptIn(ExperimentalComposeUiApi::class)
                     if (isOptimizedFocusEventDispatchEnabled) {
@@ -168,6 +168,7 @@ internal class FocusTargetNode(
                     refreshFocusEvents = true,
                     clearOwnerFocus = true,
                     focusDirection = Exit,
+                    isAutomatic = true,
                 )
         }
     }
@@ -186,6 +187,7 @@ internal class FocusTargetNode(
                     refreshFocusEvents = true,
                     clearOwnerFocus = false,
                     focusDirection = Exit,
+                    isAutomatic = true,
                 )
 
                 if (isInteropViewHost) {
@@ -277,11 +279,12 @@ internal class FocusTargetNode(
 
     private inline fun fetchCustomEnterOrExit(
         focusDirection: FocusDirection,
+        isAutomatic: Boolean,
         block: (FocusRequester) -> Unit,
         enterOrExit: FocusProperties.(FocusEnterExitScope) -> Unit,
     ) {
         val focusProperties = fetchFocusProperties()
-        val scope = CancelIndicatingFocusBoundaryScope(focusDirection)
+        val scope = CancelIndicatingFocusBoundaryScope(focusDirection, isAutomatic)
         val focusOwner = requireOwner().focusOwner
         val activeNodeBefore = focusOwner.activeFocusTargetNode
         focusProperties.enterOrExit(scope)
@@ -305,12 +308,13 @@ internal class FocusTargetNode(
      */
     internal inline fun fetchCustomEnter(
         focusDirection: FocusDirection,
+        isAutomatic: Boolean,
         block: (FocusRequester) -> Unit,
     ) {
         if (!isProcessingCustomEnter) {
             isProcessingCustomEnter = true
             try {
-                fetchCustomEnterOrExit(focusDirection, block) { it.onEnter() }
+                fetchCustomEnterOrExit(focusDirection, isAutomatic, block) { it.onEnter() }
             } finally {
                 isProcessingCustomEnter = false
             }
@@ -329,12 +333,13 @@ internal class FocusTargetNode(
      */
     internal inline fun fetchCustomExit(
         focusDirection: FocusDirection,
+        isAutomatic: Boolean,
         block: (FocusRequester) -> Unit,
     ) {
         if (!isProcessingCustomExit) {
             isProcessingCustomExit = true
             try {
-                fetchCustomEnterOrExit(focusDirection, block) { it.onExit() }
+                fetchCustomEnterOrExit(focusDirection, isAutomatic, block) { it.onExit() }
             } finally {
                 isProcessingCustomExit = false
             }
@@ -351,11 +356,19 @@ internal class FocusTargetNode(
                 lateinit var focusProperties: FocusProperties
                 observeReads { focusProperties = fetchFocusProperties() }
                 if (!focusProperties.canFocus) {
-                    requireOwner().focusOwner.clearFocus(force = true)
+                    requireOwner().focusOwner.clearFocus(
+                        force = true,
+                        refreshFocusEvents = true,
+                        clearOwnerFocus = true,
+                        focusDirection = Exit,
+                        isAutomatic = false,
+                    )
                 }
             }
+
             ActiveParent,
-            Inactive -> {}
+            Inactive -> {
+            }
         }
     }
 

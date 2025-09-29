@@ -34,4 +34,4 @@ private fun Char.isPrintable(): Boolean {
 @InternalFoundationApi
 actual val KeyEvent.isTypedEvent: Boolean
     get() = awtEventOrNull?.id == java.awt.event.KeyEvent.KEY_TYPED &&
-        awtEventOrNull?.keyChar?.isPrintable() == true
+        awtEventOrNull?.keyChar?.let { it.isPrintable() || it.isWhitespace() } == true

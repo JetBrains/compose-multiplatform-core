@@ -17,7 +17,7 @@ import androidx.compose.runtime.external.kotlinx.collections.immutable.internal.
  *
  * @param E the type of elements contained in the list. The immutable list is covariant on its element type.
  */
-internal interface ImmutableList<out E> : List<E>, ImmutableCollection<E> {
+interface ImmutableList<out E> : List<E>, ImmutableCollection<E> {
 
     /**
      * Returns a view of the portion of this list between the specified [fromIndex] (inclusive) and [toIndex] (exclusive).
@@ -59,7 +59,7 @@ internal interface ImmutableList<out E> : List<E>, ImmutableCollection<E> {
  *
  * @param E the type of elements contained in the list. The persistent list is covariant on its element type.
  */
-internal interface PersistentList<out E> : ImmutableList<E>, PersistentCollection<E> {
+interface PersistentList<out E> : ImmutableList<E>, PersistentCollection<E> {
     /**
      * Returns a new persistent list with the specified [element] appended.
      */

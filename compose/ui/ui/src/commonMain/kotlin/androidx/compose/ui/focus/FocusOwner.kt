@@ -116,6 +116,7 @@ internal interface FocusOwner : FocusManager {
         refreshFocusEvents: Boolean,
         clearOwnerFocus: Boolean,
         focusDirection: FocusDirection,
+        isAutomatic: Boolean,
     ): Boolean
 
     /** Reset focus to the default focused item based on the focus direction. */
@@ -129,7 +130,7 @@ internal interface FocusOwner : FocusManager {
      * new content is ready, we can call [clearFocus] with clearOwnerFocus = false, and then call
      * this function when the content is ready to receive focus.
      */
-    fun clearOwnerFocus()
+    fun clearOwnerFocus(isAutomatic: Boolean)
 
     /** Searches for the currently focused item, and returns its coordinates as a rect. */
     fun getFocusRect(): Rect?

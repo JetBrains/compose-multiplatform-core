@@ -407,8 +407,9 @@ def includeProject(String name, filePath, List<BuildType> filter = []) {
 // see /mpp/docs/Stubbed Projects.md
 includeProject(":annotation:annotation", "annotation/annotation-compatibility-stub")
 includeProject(":collection:collection", "collection/collection-compatibility-stub")
-includeProject(":compose:runtime:runtime", "compose/runtime/runtime-compatibility-stub")
-includeProject(":compose:runtime:runtime-saveable", "compose/runtime/runtime-saveable-compatibility-stub")
+// Stubbing mechanism disabled for the runtime module and related ones in the context of the Noria compatibility work
+includeProject(":compose:runtime:runtime", /*"compose/runtime/runtime-compatibility-stub"*/)
+includeProject(":compose:runtime:runtime-saveable", /*"compose/runtime/runtime-saveable-compatibility-stub"*/)
 includeProject(":lifecycle:lifecycle-common", "lifecycle/lifecycle-common-compatibility-stub")
 includeProject(":lifecycle:lifecycle-runtime", "lifecycle/lifecycle-runtime-compatibility-stub")
 includeProject(":lifecycle:lifecycle-runtime-compose", "lifecycle/lifecycle-runtime-compose-compatibility-stub")
@@ -590,6 +591,10 @@ includeProject(":compose:material3:material3-adaptive-navigation-suite:material3
 includeProject(":compose:ui:ui-text-lint", "mpp/stub-project")
 includeProject(":compose:material3:adaptive:adaptive-samples", "mpp/stub-project")
 includeProject(":compose:ui:ui-test-manifest:integration-tests:testapp", "mpp/stub-project")
+
+include(":fleet:compose:runtime:runtime-all-desktop")
+include(":fleet:compose:ui:ui-all-desktop")
+include(":fleet:lifecycle:lifecycle-all-desktop")
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----

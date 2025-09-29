@@ -19,7 +19,7 @@ package androidx.compose.runtime.external.kotlinx.collections.immutable
  *          can accept key as a parameter (of [containsKey] for example) and return it in [keys] set.
  * @param V the type of map values. The map is covariant on its value type.
  */
-internal interface ImmutableMap<K, out V>: Map<K, V> {
+interface ImmutableMap<K, out V>: Map<K, V> {
 
     override val keys: ImmutableSet<K>
 
@@ -38,7 +38,7 @@ internal interface ImmutableMap<K, out V>: Map<K, V> {
  * @param K the type of map keys. The map is invariant on its key type.
  * @param V the type of map values. The persistent map is covariant on its value type.
  */
-internal interface PersistentMap<K, out V> : ImmutableMap<K, V> {
+interface PersistentMap<K, out V> : ImmutableMap<K, V> {
     /**
      * Returns the result of associating the specified [value] with the specified [key] in this map.
      *

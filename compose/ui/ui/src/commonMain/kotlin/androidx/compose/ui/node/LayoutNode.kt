@@ -193,7 +193,7 @@ internal class LayoutNode(
      * This should **not** be mutated or even accessed directly from outside of [LayoutNode]. Use
      * [forEachChild]/[forEachChildIndexed] when there's a need to iterate through the vector.
      */
-    internal val _children: MutableVector<LayoutNode>
+    val _children: MutableVector<LayoutNode>
         get() {
             updateChildrenIfDirty()
             return if (virtualChildrenCount == 0) {
@@ -1505,7 +1505,7 @@ internal class LayoutNode(
         forEachCoordinatorIncludingInner { it.onRelease() }
     }
 
-    internal companion object {
+    companion object {
         private val ErrorMeasurePolicy: NoIntrinsicsMeasurePolicy =
             object :
                 NoIntrinsicsMeasurePolicy(error = "Undefined intrinsics block and it is required") {
@@ -1519,7 +1519,7 @@ internal class LayoutNode(
         @Suppress("ConstPropertyName") internal const val NotPlacedPlaceOrder = Int.MAX_VALUE
 
         /** Pre-allocated constructor to be used with ComposeNode */
-        internal val Constructor: () -> LayoutNode = { LayoutNode() }
+        val Constructor: () -> LayoutNode = { LayoutNode() }
 
         /**
          * All of these values are only used in tests. The real ViewConfiguration should be set in

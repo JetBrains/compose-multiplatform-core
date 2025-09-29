@@ -15,7 +15,7 @@ package androidx.compose.runtime.external.kotlinx.collections.immutable
  *
  * @param E the type of elements contained in the collection. The immutable collection is covariant on its element type.
  */
-internal interface ImmutableCollection<out E>: Collection<E>
+interface ImmutableCollection<out E>: Collection<E>
 
 /**
  * A generic persistent collection of elements that supports adding and removing elements.
@@ -24,7 +24,7 @@ internal interface ImmutableCollection<out E>: Collection<E>
  *
  * @param E the type of elements contained in the collection. The persistent collection is covariant on its element type.
  */
-internal interface PersistentCollection<out E> : ImmutableCollection<E> {
+interface PersistentCollection<out E> : ImmutableCollection<E> {
     /**
      * Returns the result of adding the specified [element] to this collection.
      *
