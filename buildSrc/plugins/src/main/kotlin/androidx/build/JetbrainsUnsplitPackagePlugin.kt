@@ -56,18 +56,18 @@ class JetbrainsUnsplitPackagePlugin : Plugin<Project> {
             project.pluginManager.withPlugin(SHADOW_PLUGIN_ID) {
                 project.extensions.configure<PublishingExtension>("publishing") { publishingExtension ->
                     publishingExtension.publications { publicationContainer ->
-                        publicationContainer.register<MavenPublication>("unsplitPackage") {
+                        // Needs to be called "desktop" to be picked up by
+                        // publishComposeJb[ToMavenLocal] from AbstractComposePublishingTask
+                        publicationContainer.register<MavenPublication>("desktop") {
                             from(project.components.findByName("shadow"))
                         }
+                        // Needs to be present and called "kotlinMultiplatform" to satisfy
+                        // publishComposeJb[ToMavenLocal] from AbstractComposePublishingTask
+                        publicationContainer.register<MavenPublication>("kotlinMultiplatform") {}
                     }
                     publishingExtension.repositories { repositoryHandler ->
                         repositoryHandler.maven { mavenArtifactRepository ->
-                            mavenArtifactRepository.url =
-                                URI("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-                            mavenArtifactRepository.credentials { credentials ->
-                                credentials.username = project.properties["publishingUsername"] as String?
-                                credentials.password = project.properties["publishingPassword"] as String?
-                            }
+                            mavenArtifactRepository.setUrl(project.getRepositoryDirectory())
                         }
                         repositoryHandler.mavenLocal()
                     }

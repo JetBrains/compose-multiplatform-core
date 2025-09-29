@@ -30,11 +30,18 @@ sealed interface WindowDecoration {
 
     val isDecorated: Boolean
 
+    val leftTitleBarElements: List<TitleBarElement>
+    val rightTitleBarElements: List<TitleBarElement>
+
     /**
      * Specifies that the default system decoration should be used.
      */
     data object Decorated : WindowDecoration {
         override val isDecorated: Boolean = true
+        override val leftTitleBarElements: List<TitleBarElement> =
+            WindowDecorationDefaults.LeftTitleBarElements
+        override val rightTitleBarElements: List<TitleBarElement> =
+            WindowDecorationDefaults.RightTitleBarElements
     }
 
     /**
@@ -46,6 +53,8 @@ sealed interface WindowDecoration {
     class Undecorated(val resizerThickness: Dp = WindowDecorationDefaults.ResizerThickness) :
         WindowDecoration {
         override val isDecorated: Boolean = false
+        override val leftTitleBarElements: List<TitleBarElement> = emptyList()
+        override val rightTitleBarElements: List<TitleBarElement> = emptyList()
 
         override fun equals(other: Any?): Boolean {
             if (other !is Undecorated) return false
@@ -65,6 +74,10 @@ sealed interface WindowDecoration {
     @Immutable
     class CustomTitleBar(val height: Dp) : WindowDecoration {
         override val isDecorated: Boolean = true
+        override val leftTitleBarElements: List<TitleBarElement> =
+            WindowDecorationDefaults.LeftTitleBarElements
+        override val rightTitleBarElements: List<TitleBarElement> =
+            WindowDecorationDefaults.RightTitleBarElements
 
         override fun equals(other: Any?): Boolean {
             if (other !is CustomTitleBar) return false
@@ -74,6 +87,16 @@ sealed interface WindowDecoration {
         override fun hashCode(): Int {
             return height.hashCode()
         }
+    }
+
+    enum class TitleBarElement {
+        AppMenu,
+        Icon,
+        Spacer,
+        MinimizeButton,
+        MaximizeButton,
+        FullscreenButton,
+        CloseButton,
     }
 }
 
@@ -96,6 +119,37 @@ object WindowDecorationDefaults {
         DesktopPlatform.Windows -> 32.dp
         else -> 24.dp
     }
+
+    val LeftTitleBarElements: List<WindowDecoration.TitleBarElement> =
+        when (DesktopPlatform.Current) {
+            DesktopPlatform.MacOS -> listOf(
+                WindowDecoration.TitleBarElement.CloseButton,
+                WindowDecoration.TitleBarElement.MinimizeButton,
+                WindowDecoration.TitleBarElement.FullscreenButton
+            )
+
+            DesktopPlatform.Windows -> listOf(WindowDecoration.TitleBarElement.AppMenu)
+            DesktopPlatform.Linux -> emptyList()
+            DesktopPlatform.Unknown -> emptyList()
+        }
+
+    val RightTitleBarElements: List<WindowDecoration.TitleBarElement> =
+        when (DesktopPlatform.Current) {
+            DesktopPlatform.MacOS -> emptyList()
+            DesktopPlatform.Windows -> listOf(
+                WindowDecoration.TitleBarElement.MinimizeButton,
+                WindowDecoration.TitleBarElement.MaximizeButton,
+                WindowDecoration.TitleBarElement.CloseButton
+            )
+
+            DesktopPlatform.Linux -> listOf(
+                WindowDecoration.TitleBarElement.MinimizeButton,
+                WindowDecoration.TitleBarElement.MaximizeButton,
+                WindowDecoration.TitleBarElement.CloseButton
+            )
+
+            DesktopPlatform.Unknown -> emptyList()
+        }
 }
 
 /**
