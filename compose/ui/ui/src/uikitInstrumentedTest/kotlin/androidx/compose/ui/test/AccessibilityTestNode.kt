@@ -52,6 +52,8 @@ import platform.UIKit.UIAccessibilityTraitToggleButton
 import platform.UIKit.UIAccessibilityTraitUpdatesFrequently
 import platform.UIKit.UIAccessibilityTraits
 import platform.UIKit.UIView
+import platform.UIKit.UIWindow
+import platform.UIKit.UIWindowScene
 import platform.UIKit.accessibilityCustomActions
 import platform.UIKit.accessibilityElementAtIndex
 import platform.UIKit.accessibilityElementCount
@@ -60,6 +62,7 @@ import platform.UIKit.accessibilityFrame
 import platform.UIKit.accessibilityLabel
 import platform.UIKit.accessibilityTraits
 import platform.UIKit.accessibilityValue
+import platform.UIKit.automationElements
 import platform.UIKit.isAccessibilityElement
 import platform.darwin.NSIntegerMax
 import platform.darwin.NSObject
@@ -76,32 +79,57 @@ import platform.darwin.NSObject
  */
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode {
-    fun buildNode(element: NSObject, level: Int): AccessibilityTestNode {
+    fun buildNode(element: NSObject, isAccessibilityElementContent: Boolean): AccessibilityTestNode {
         val children = mutableListOf<AccessibilityTestNode>()
         val elements = element.accessibilityElements()
+        val accessibilityElementContent = isAccessibilityElementContent || element.isAccessibilityElement
 
-        if (elements != null) {
+        if (accessibilityElementContent) {
+            // iOS Automation uses `automationElements` to build the semantics tree inside the
+            // accessibility element.
+            // Exceptions are UIKit elements that use private logic to build their semantics tree
+            // for automation.
+            if ((element.automationElements?.isNotEmpty() ?: false)) {
+                element.automationElements?.forEach {
+                    children.add(buildNode(it as NSObject, accessibilityElementContent))
+                }
+            } else if (element is UIView) {
+                element.subviews.forEach {
+                    children.add(buildNode(it as UIView, accessibilityElementContent))
+                }
+            }
+        } else if (elements != null) {
             elements.forEach {
-                children.add(buildNode(it as NSObject, level = level + 1))
+                children.add(buildNode(it as NSObject, accessibilityElementContent))
             }
         } else {
             val count = element.accessibilityElementCount()
             if (count == NSIntegerMax) {
-                when {
-                    element is UIView -> {
-                        element.subviews.mapNotNull {
-                            children.add(buildNode(it as UIView, level = level + 1))
+                when (element) {
+                    is UIView -> {
+                        element.subviews.forEach {
+                            children.add(buildNode(it as UIView, accessibilityElementContent))
+                        }
+                    }
+
+                    is UIWindowScene -> {
+                        element.windows.filter { !(it as UIWindow).isHidden() }.forEach {
+                            children.add(buildNode(it as UIWindow, accessibilityElementContent))
                         }
                     }
                 }
             } else if (count > 0) {
-                (0 until count).mapNotNull {
+                (0 until count).forEach {
                     val child = element.accessibilityElementAtIndex(it) as NSObject
-                    children.add(buildNode(child, level = level + 1))
+                    children.add(buildNode(child, accessibilityElementContent))
                 }
             } else if (element is UIView) {
-                element.subviews.mapNotNull {
-                    children.add(buildNode(it as UIView, level = level + 1))
+                element.subviews.forEach {
+                    children.add(buildNode(it as UIView, accessibilityElementContent))
+                }
+            } else if (element is UIWindowScene) {
+                element.windows.filter { !(it as UIWindow).isHidden() }.forEach {
+                    children.add(buildNode(it as UIWindow, accessibilityElementContent))
                 }
             }
         }
@@ -122,7 +150,7 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
         }
     }
 
-    return buildNode(appDelegate.window!!, 0)
+    return buildNode(appDelegate.window!!.windowScene!!, isAccessibilityElementContent = false)
 }
 
 private val allAccessibilityTraits = mapOf(
