@@ -28,6 +28,7 @@ import androidx.ink.strokes.Stroke
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onIdle
 import androidx.test.ext.junit.rules.ActivityScenarioRule
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
@@ -37,6 +38,7 @@ import org.junit.Before
 import org.junit.Rule
 
 /** Base class for emulator-based tests using [InProgressStrokesView]. */
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 open class InProgressStrokesViewTestBase {
 
     @get:Rule
@@ -178,7 +180,7 @@ open class InProgressStrokesViewTestBase {
 
     protected fun basicBrush(@ColorInt color: Int) =
         Brush.createWithColorIntArgb(
-            family = StockBrushes.markerLatest,
+            family = StockBrushes.marker(),
             colorIntArgb = color,
             size = 25F,
             epsilon = 0.1F,

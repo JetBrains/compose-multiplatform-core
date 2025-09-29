@@ -24,8 +24,7 @@ import org.junit.Test
 class RecyclingTest {
     private val sink = NoOpSink()
 
-    private val context: TraceContext =
-        TraceContext(sequenceId = 1, sink = sink, isEnabled = true, isDebug = true)
+    private val context: TraceContext = TraceContext(sink = sink, isEnabled = true, isDebug = true)
 
     fun TraceContext.validateEachTrackHasOnePoolable() {
         validateTrackPools { track -> assertEquals(1, track.pool.poolableCount()) }
@@ -47,7 +46,7 @@ class RecyclingTest {
         context.use {
             val process = context.getOrCreateProcessTrack(id = 1, name = "process")
             val thread = process.getOrCreateThreadTrack(1, "thread")
-            thread.traceFlow("section") {}
+            thread.traceCoroutine("section") {}
         }
         assertTrue(context.isDebug)
         context.validateEachTrackHasOnePoolable()

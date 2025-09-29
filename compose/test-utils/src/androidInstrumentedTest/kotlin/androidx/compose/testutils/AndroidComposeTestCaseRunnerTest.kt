@@ -44,6 +44,7 @@ import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.yield
 import org.junit.Rule
 import org.junit.Test
@@ -53,7 +54,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidComposeTestCaseRunnerTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     internal fun <A : ComponentActivity> AndroidComposeTestRule<ActivityScenarioRule<A>, A>
         .forGivenContent(composable: @Composable () -> Unit): ComposeTestCaseSetup {
@@ -209,7 +211,7 @@ class AndroidComposeTestCaseRunnerTest {
         lateinit var focusState: FocusState
         composeTestRule
             .forGivenContent {
-                val focusRequester = FocusRequester()
+                val focusRequester = remember { FocusRequester() }
                 Box(
                     Modifier.fillMaxSize()
                         .onFocusChanged { focusState = it }
@@ -309,7 +311,7 @@ class AndroidComposeTestCaseRunnerTest {
 
     private inline fun <reified T : Throwable> assertFailsWith(
         expectedErrorMessage: String? = null,
-        block: () -> Any
+        block: () -> Any,
     ) {
         try {
             block()

@@ -46,6 +46,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers
 import org.hamcrest.Description
 import org.hamcrest.Matcher
@@ -57,7 +58,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class SelectionHandlePopupPositionTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val offset = Offset(120f, 120f)
     private val parentSizeWidth = 100.dp
@@ -81,7 +82,7 @@ class SelectionHandlePopupPositionTest {
             rule.singleSelectionHandleMatches(
                 matchesPosition(
                     composeViewAbsolutePos.x.toDp() + expectedPopupPositionX,
-                    composeViewAbsolutePos.y.toDp() + expectedPositionY
+                    composeViewAbsolutePos.y.toDp() + expectedPositionY,
                 )
             )
             rule
@@ -106,7 +107,7 @@ class SelectionHandlePopupPositionTest {
             rule.singleSelectionHandleMatches(
                 matchesPosition(
                     composeViewAbsolutePos.x.toDp() + expectedPopupPositionX,
-                    composeViewAbsolutePos.y.toDp() + expectedPositionY
+                    composeViewAbsolutePos.y.toDp() + expectedPositionY,
                 )
             )
             rule
@@ -130,7 +131,7 @@ class SelectionHandlePopupPositionTest {
             rule.singleSelectionHandleMatches(
                 matchesPosition(
                     composeViewAbsolutePos.x.toDp() + expectedPositionX,
-                    composeViewAbsolutePos.y.toDp() + expectedPositionY
+                    composeViewAbsolutePos.y.toDp() + expectedPositionY,
                 )
             )
             rule
@@ -153,7 +154,7 @@ class SelectionHandlePopupPositionTest {
             rule.singleSelectionHandleMatches(
                 matchesPosition(
                     composeViewAbsolutePos.x.toDp() + expectedPositionX,
-                    composeViewAbsolutePos.y.toDp() + expectedPositionY
+                    composeViewAbsolutePos.y.toDp() + expectedPositionY,
                 )
             )
             rule
@@ -178,13 +179,13 @@ class SelectionHandlePopupPositionTest {
 
             createSelectionHandle(
                 isStartHandle = true,
-                containerModifier = Modifier.offset(containerOffsetX, containerOffsetY)
+                containerModifier = Modifier.offset(containerOffsetX, containerOffsetY),
             )
 
             rule.singleSelectionHandleMatches(
                 matchesPosition(
                     composeViewAbsolutePos.x.toDp() + expectedPopupPositionX,
-                    composeViewAbsolutePos.y.toDp() + expectedPopupPositionY
+                    composeViewAbsolutePos.y.toDp() + expectedPopupPositionY,
                 )
             )
             rule
@@ -209,13 +210,13 @@ class SelectionHandlePopupPositionTest {
 
             createSelectionHandle(
                 isStartHandle = false,
-                containerModifier = Modifier.offset(containerOffsetX, containerOffsetY)
+                containerModifier = Modifier.offset(containerOffsetX, containerOffsetY),
             )
 
             rule.singleSelectionHandleMatches(
                 matchesPosition(
                     composeViewAbsolutePos.x.toDp() + expectedPopupPositionX,
-                    composeViewAbsolutePos.y.toDp() + expectedPopupPositionY
+                    composeViewAbsolutePos.y.toDp() + expectedPopupPositionY,
                 )
             )
             rule
@@ -227,7 +228,7 @@ class SelectionHandlePopupPositionTest {
     private fun createSelectionHandle(
         isStartHandle: Boolean,
         containerModifier: Modifier = Modifier,
-        isRtl: Boolean = false
+        isRtl: Boolean = false,
     ) {
         val measureLatch = CountDownLatch(1)
 
@@ -262,7 +263,7 @@ class SelectionHandlePopupPositionTest {
 
     private fun matchesPosition(
         expectedPositionX: Dp,
-        expectedPositionY: Dp
+        expectedPositionY: Dp,
     ): BoundedMatcher<View, View> {
         return object : BoundedMatcher<View, View>(View::class.java) {
             // (-1, -1) no position found
@@ -316,6 +317,7 @@ private class SingleSelectionHandleMatcher : TypeSafeMatcher<Root>() {
     override fun matchesSafely(item: Root?): Boolean {
         val matches = item != null && isPopupLayout(item.decorView)
         if (matches) {
+            @Suppress("DEPRECATION")
             lastSeenWindowParams = item!!.windowLayoutParams.get()
         }
         return matches

@@ -32,6 +32,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureCapabilities;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore;
@@ -233,12 +234,14 @@ public final class ExtensionsManager {
                 throw new IllegalStateException("Not yet done deinitializing extensions");
             }
             sDeinitializeFuture = null;
+            Context applicationContext = ContextUtil.getApplicationContext(context);
 
             // Will be initialized, with an empty implementation which will report all extensions
             // as unavailable
             if (ExtensionVersion.getRuntimeVersion() == null) {
                 return Futures.immediateFuture(
-                        getOrCreateExtensionsManager(ExtensionsAvailability.NONE, cameraProvider));
+                        getOrCreateExtensionsManager(ExtensionsAvailability.NONE, cameraProvider,
+                                applicationContext));
             }
 
             // Prior to 1.1 no additional initialization logic required
@@ -246,21 +249,21 @@ public final class ExtensionsManager {
                     || ExtensionVersion.isMaximumCompatibleVersion(Version.VERSION_1_0)) {
                 return Futures.immediateFuture(
                         getOrCreateExtensionsManager(ExtensionsAvailability.LIBRARY_AVAILABLE,
-                                cameraProvider));
+                                cameraProvider, applicationContext));
             }
 
             if (sInitializeFuture == null) {
                 sInitializeFuture = CallbackToFutureAdapter.getFuture(completer -> {
                     try {
                         InitializerImpl.init(clientVersion.toVersionString(),
-                                ContextUtil.getApplicationContext(context),
+                                applicationContext,
                                 new InitializerImpl.OnExtensionsInitializedCallback() {
                                     @Override
                                     public void onSuccess() {
                                         Logger.d(TAG, "Successfully initialized extensions");
                                         completer.set(getOrCreateExtensionsManager(
                                                 ExtensionsAvailability.LIBRARY_AVAILABLE,
-                                                cameraProvider));
+                                                cameraProvider, applicationContext));
                                     }
 
                                     @Override
@@ -269,7 +272,7 @@ public final class ExtensionsManager {
                                         completer.set(getOrCreateExtensionsManager(
                                                 ExtensionsAvailability
                                                         .LIBRARY_UNAVAILABLE_ERROR_LOADING,
-                                                cameraProvider));
+                                                cameraProvider, applicationContext));
                                     }
                                 },
                                 CameraXExecutors.directExecutor());
@@ -278,7 +281,7 @@ public final class ExtensionsManager {
                                 + "are missed in the vendor library. " + e);
                         completer.set(getOrCreateExtensionsManager(
                                 ExtensionsAvailability.LIBRARY_UNAVAILABLE_MISSING_IMPLEMENTATION,
-                                cameraProvider));
+                                cameraProvider, applicationContext));
                     } catch (RuntimeException e) {
                         // Catches all unexpected runtime exceptions and still returns an
                         // ExtensionsManager instance which performs default behavior.
@@ -288,7 +291,7 @@ public final class ExtensionsManager {
                                         + e);
                         completer.set(getOrCreateExtensionsManager(
                                 ExtensionsAvailability.LIBRARY_UNAVAILABLE_ERROR_LOADING,
-                                cameraProvider));
+                                cameraProvider, applicationContext));
                     }
 
                     return "Initialize extensions";
@@ -382,13 +385,15 @@ public final class ExtensionsManager {
 
     static ExtensionsManager getOrCreateExtensionsManager(
             @NonNull ExtensionsAvailability extensionsAvailability,
-            @NonNull CameraProvider cameraProvider) {
+            @NonNull CameraProvider cameraProvider,
+            @NonNull Context applicationContext) {
         synchronized (EXTENSIONS_LOCK) {
             if (sExtensionsManager != null) {
                 return sExtensionsManager;
             }
 
-            sExtensionsManager = new ExtensionsManager(extensionsAvailability, cameraProvider);
+            sExtensionsManager = new ExtensionsManager(extensionsAvailability, cameraProvider,
+                    applicationContext);
 
             return sExtensionsManager;
         }
@@ -431,14 +436,32 @@ public final class ExtensionsManager {
     }
 
     /**
-     * Returns true if the particular extension mode is available for the specified
-     * {@link CameraSelector}.
+     * Checks if a specific extension mode is available for a given {@link CameraSelector}.
      *
-     * <p> Note that Extensions are not supported for use with 10-bit capture output (e.g.
-     * setting a dynamic range other than {@link DynamicRange#SDR}).
+     * <p>To use Ultra HDR, you must first check for support and then enable the format. This
+     * feature is available on capable devices starting from API level 34.
+     * <ol>
+     * <li>Obtain a {@link CameraInfo} instance by calling
+     * {@link CameraProvider#getCameraInfo(CameraSelector)} with the extension-enabled
+     * {@code CameraSelector} from
+     * {@link #getExtensionEnabledCameraSelector(CameraSelector, int)}.</li>
+     * <li>Use this {@code CameraInfo} to get the {@link ImageCaptureCapabilities} via
+     * {@link ImageCapture#getImageCaptureCapabilities(CameraInfo)}.</li>
+     * <li>Check the supported formats by calling
+     * {@link ImageCaptureCapabilities#getSupportedOutputFormats()}. The presence of
+     * {@link ImageCapture#OUTPUT_FORMAT_JPEG_ULTRA_HDR} indicates Ultra HDR support.</li>
+     * <li>When Ultra HDR is supported, configure the {@link ImageCapture} to use it by calling
+     * {@link ImageCapture.Builder#setOutputFormat(int)} with
+     * {@link ImageCapture#OUTPUT_FORMAT_JPEG_ULTRA_HDR}.</li>
+     * </ol>
      *
-     * @param baseCameraSelector The base {@link CameraSelector} to find a camera to use.
-     * @param mode               The target extension mode to support.
+     * <p><b>Note:</b> Camera extensions do not support 10-bit preview or video capture. When
+     * using extensions, the dynamic range must be {@link DynamicRange#SDR} (the default).
+     *
+     * @param baseCameraSelector The base {@link CameraSelector} used to select the camera.
+     * @param mode The extension mode to verify.
+     * @return {@code true} if the extension mode is available for the camera selector,
+     * {@code false} otherwise.
      */
     public boolean isExtensionAvailable(@NonNull CameraSelector baseCameraSelector,
             @ExtensionMode.Mode int mode) {
@@ -549,8 +572,8 @@ public final class ExtensionsManager {
     }
 
     private ExtensionsManager(@NonNull ExtensionsAvailability extensionsAvailability,
-            @NonNull CameraProvider cameraProvider) {
+            @NonNull CameraProvider cameraProvider, @NonNull Context applicationContext) {
         mExtensionsAvailability = extensionsAvailability;
-        mExtensionsInfo = new ExtensionsInfo(cameraProvider);
+        mExtensionsInfo = new ExtensionsInfo(cameraProvider, applicationContext);
     }
 }

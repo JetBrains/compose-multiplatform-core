@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
 import androidx.build.SoftwareType
 
 plugins {
@@ -33,8 +34,8 @@ plugins {
 dependencies {
     compileOnly(project(":annotation:annotation-sampled"))
 
-    implementation("androidx.compose.foundation:foundation:1.8.0-beta01")
-    implementation("androidx.compose.foundation:foundation-layout:1.8.0-beta01")
+    implementation("androidx.compose.foundation:foundation:1.8.0")
+    implementation("androidx.compose.foundation:foundation-layout:1.8.0")
 
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.compose.animation:animation:1.6.0")

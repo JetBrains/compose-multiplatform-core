@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
@@ -67,6 +68,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.fail
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,7 +89,9 @@ private val TestColors =
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class ContextMenuUiTest {
-    @get:Rule val rule = createComposeRule()
+    @OptIn(ExperimentalTestApi::class)
+    @get:Rule
+    val rule = createComposeRule(StandardTestDispatcher())
 
     private val tag = "testTag"
     private val longText = "M ".repeat(200).trimEnd()
@@ -98,7 +102,11 @@ class ContextMenuUiTest {
         contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
     ) {
         ContextMenuColumn(colors, Modifier.testTag(tag)) {
-            val scope = remember { ContextMenuScope() }
+            val scope = remember {
+                ContextMenuScope { modifier, label, enabled, colors, leadingIcon, onClick ->
+                    ContextMenuItem(label, enabled, colors, modifier, leadingIcon, onClick)
+                }
+            }
             with(scope) {
                 clear()
                 contextMenuBuilderBlock()
@@ -108,12 +116,13 @@ class ContextMenuUiTest {
     }
 
     // region ContextMenuItem Tests
+    @Suppress("ComposableLambdaParameterPosition")
     @Composable
     private fun TestItem(
+        modifier: Modifier = Modifier.testTag(tag),
         label: String = "Item",
         enabled: Boolean = true,
         colors: ContextMenuColors = TestColors,
-        modifier: Modifier = Modifier.testTag(tag),
         leadingIcon: @Composable ((iconColor: Color) -> Unit)? = null,
         onClick: () -> Unit = {},
     ) {
@@ -123,7 +132,7 @@ class ContextMenuUiTest {
             colors = colors,
             modifier = modifier,
             leadingIcon = leadingIcon,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -560,9 +569,7 @@ class ContextMenuUiTest {
         rule.setContent {
             TestColumn(colors) {
                 testItem(
-                    leadingIcon = { iconColor ->
-                        Box(Modifier.background(iconColor).fillMaxSize())
-                    },
+                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) }
                 )
             }
         }
@@ -577,9 +584,7 @@ class ContextMenuUiTest {
             TestColumn(colors) {
                 testItem(
                     enabled = false,
-                    leadingIcon = { iconColor ->
-                        Box(Modifier.background(iconColor).fillMaxSize())
-                    },
+                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
                 )
             }
         }
@@ -605,9 +610,7 @@ class ContextMenuUiTest {
                 testItem(
                     label = "M".repeat(5),
                     enabled = enabled,
-                    leadingIcon = { iconColor ->
-                        Box(Modifier.background(iconColor).fillMaxSize())
-                    },
+                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
                 )
             }
         }
@@ -632,7 +635,7 @@ class ContextMenuUiTest {
                 anchorBounds: IntRect,
                 windowSize: IntSize,
                 layoutDirection: LayoutDirection,
-                popupContentSize: IntSize
+                popupContentSize: IntSize,
             ): IntOffset = windowSize.center - popupContentSize.center
         }
 
@@ -681,9 +684,7 @@ class ContextMenuUiTest {
                 testItem(
                     label = "M".repeat(10),
                     enabled = enabled,
-                    leadingIcon = { iconColor ->
-                        Box(Modifier.background(iconColor).fillMaxSize())
-                    },
+                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
                 )
             }
         }
@@ -695,7 +696,7 @@ class ContextMenuUiTest {
                 .containsExactly(
                     TestColors.backgroundColor,
                     TestColors.textColor,
-                    TestColors.iconColor
+                    TestColors.iconColor,
                 )
 
             enabled = false
@@ -704,7 +705,7 @@ class ContextMenuUiTest {
                 .containsExactly(
                     TestColors.backgroundColor,
                     TestColors.disabledTextColor,
-                    TestColors.disabledIconColor
+                    TestColors.disabledIconColor,
                 )
         }
     }

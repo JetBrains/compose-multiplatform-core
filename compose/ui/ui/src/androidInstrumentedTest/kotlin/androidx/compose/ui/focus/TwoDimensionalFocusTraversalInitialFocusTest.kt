@@ -32,6 +32,7 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +43,7 @@ private const val invalid = "Not applicable to a 2D focus search."
 @MediumTest
 @RunWith(Parameterized::class)
 class TwoDimensionalFocusTraversalInitialFocusTest(param: Param) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     // We need to wrap the inline class parameter in another class because Java can't instantiate
     // the inline class.
@@ -193,7 +194,7 @@ private fun FocusableBox(
     isFocused: MutableState<Boolean> = mutableStateOf(false),
     focusRequester: FocusRequester? = null,
     deactivated: Boolean = false,
-    content: @Composable () -> Unit = {}
+    content: @Composable () -> Unit = {},
 ) {
     FocusableBox(isFocused, 0, 0, 10, 10, focusRequester, deactivated, Modifier, content)
 }

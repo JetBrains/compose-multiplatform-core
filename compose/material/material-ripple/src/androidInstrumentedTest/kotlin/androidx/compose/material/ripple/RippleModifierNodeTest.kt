@@ -70,6 +70,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -86,13 +87,13 @@ import org.junit.runner.RunWith
 )
 class RippleModifierNodeTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val TestRipple = TestIndicationNodeFactory({ TestRippleColor }, { TestRippleAlpha })
 
     private class TestIndicationNodeFactory(
         private val color: ColorProducer,
-        private val rippleAlpha: () -> RippleAlpha
+        private val rippleAlpha: () -> RippleAlpha,
     ) : IndicationNodeFactory {
         override fun create(interactionSource: InteractionSource): DelegatableNode {
             return createRippleModifierNode(
@@ -100,7 +101,7 @@ class RippleModifierNodeTest {
                 bounded = true,
                 radius = Dp.Unspecified,
                 color = color,
-                rippleAlpha = rippleAlpha
+                rippleAlpha = rippleAlpha,
             )
         }
 
@@ -111,7 +112,7 @@ class RippleModifierNodeTest {
             other as TestIndicationNodeFactory
 
             if (color != other.color) return false
-            if (rippleAlpha != other.rippleAlpha) return false
+            if (rippleAlpha !== other.rippleAlpha) return false
 
             return true
         }
@@ -139,14 +140,14 @@ class RippleModifierNodeTest {
         val expectedColor =
             calculateResultingRippleColor(
                 TestRippleColor,
-                rippleOpacity = TestRippleAlpha.pressedAlpha
+                rippleOpacity = TestRippleAlpha.pressedAlpha,
             )
 
         assertRippleMatches(
             scope!!,
             interactionSource,
             PressInteraction.Press(Offset(10f, 10f)),
-            expectedColor
+            expectedColor,
         )
     }
 
@@ -179,7 +180,7 @@ class RippleModifierNodeTest {
         val expectedColor =
             calculateResultingRippleColor(
                 TestRippleColor,
-                rippleOpacity = TestRippleAlpha.pressedAlpha
+                rippleOpacity = TestRippleAlpha.pressedAlpha,
             )
 
         assertRippleMatches(
@@ -187,7 +188,7 @@ class RippleModifierNodeTest {
             interactionSource,
             // Unused
             PressInteraction.Press(Offset(10f, 10f)),
-            expectedColor
+            expectedColor,
         )
     }
 
@@ -256,7 +257,7 @@ class RippleModifierNodeTest {
         val expectedColor =
             calculateResultingRippleColor(
                 TestRippleColor,
-                rippleOpacity = TestRippleAlpha.pressedAlpha
+                rippleOpacity = TestRippleAlpha.pressedAlpha,
             )
 
         // Add the ripple node to the hierarchy, which should then create a ripple before the node
@@ -268,7 +269,7 @@ class RippleModifierNodeTest {
             interactionSource,
             // Unused
             PressInteraction.Press(Offset(10f, 10f)),
-            expectedColor
+            expectedColor,
         )
     }
 
@@ -288,7 +289,7 @@ class RippleModifierNodeTest {
         val expectedColor =
             calculateResultingRippleColor(
                 TestRippleColor,
-                rippleOpacity = TestRippleAlpha.hoveredAlpha
+                rippleOpacity = TestRippleAlpha.hoveredAlpha,
             )
 
         assertRippleMatches(scope!!, interactionSource, HoverInteraction.Enter(), expectedColor)
@@ -310,10 +311,63 @@ class RippleModifierNodeTest {
         val expectedColor =
             calculateResultingRippleColor(
                 TestRippleColor,
-                rippleOpacity = TestRippleAlpha.focusedAlpha
+                rippleOpacity = TestRippleAlpha.focusedAlpha,
             )
 
         assertRippleMatches(scope!!, interactionSource, FocusInteraction.Focus(), expectedColor)
+    }
+
+    @Test
+    fun focusedHoveredThenUnhovered() {
+        val interactionSource = MutableInteractionSource()
+
+        var scope: CoroutineScope? = null
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                RippleBoxWithBackground(interactionSource, TestRipple, bounded = true)
+            }
+        }
+
+        scope!!
+
+        // Focus
+        assertRippleMatches(
+            scope,
+            interactionSource = interactionSource,
+            interaction = FocusInteraction.Focus(),
+            expectedCenterPixelColor =
+                calculateResultingRippleColor(
+                    TestRippleColor,
+                    rippleOpacity = TestRippleAlpha.focusedAlpha,
+                ),
+        )
+
+        // Hover
+        val enter = HoverInteraction.Enter()
+        assertRippleMatches(
+            scope,
+            interactionSource = interactionSource,
+            interaction = enter,
+            expectedCenterPixelColor =
+                calculateResultingRippleColor(
+                    TestRippleColor,
+                    rippleOpacity = TestRippleAlpha.hoveredAlpha,
+                ),
+        )
+
+        // Unhover
+        assertRippleMatches(
+            scope,
+            interactionSource = interactionSource,
+            interaction = HoverInteraction.Exit(enter),
+            expectedCenterPixelColor =
+                calculateResultingRippleColor(
+                    TestRippleColor,
+                    rippleOpacity = TestRippleAlpha.focusedAlpha,
+                ),
+        )
     }
 
     @Test
@@ -332,7 +386,7 @@ class RippleModifierNodeTest {
         val expectedColor =
             calculateResultingRippleColor(
                 TestRippleColor,
-                rippleOpacity = TestRippleAlpha.draggedAlpha
+                rippleOpacity = TestRippleAlpha.draggedAlpha,
             )
 
         assertRippleMatches(scope!!, interactionSource, DragInteraction.Start(), expectedColor)
@@ -374,7 +428,7 @@ class RippleModifierNodeTest {
             val expectedColor =
                 calculateResultingRippleColor(
                     initialColor,
-                    rippleOpacity = TestRippleAlpha.draggedAlpha
+                    rippleOpacity = TestRippleAlpha.draggedAlpha,
                 )
 
             Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
@@ -391,7 +445,7 @@ class RippleModifierNodeTest {
             val expectedColor =
                 calculateResultingRippleColor(
                     newColor,
-                    rippleOpacity = TestRippleAlpha.draggedAlpha
+                    rippleOpacity = TestRippleAlpha.draggedAlpha,
                 )
 
             Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
@@ -434,7 +488,7 @@ class RippleModifierNodeTest {
             val expectedColor =
                 calculateResultingRippleColor(
                     TestRippleColor,
-                    rippleOpacity = TestRippleAlpha.draggedAlpha
+                    rippleOpacity = TestRippleAlpha.draggedAlpha,
                 )
 
             Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
@@ -452,7 +506,7 @@ class RippleModifierNodeTest {
             val expectedColor =
                 calculateResultingRippleColor(
                     TestRippleColor,
-                    rippleOpacity = TestRippleAlpha.draggedAlpha
+                    rippleOpacity = TestRippleAlpha.draggedAlpha,
                 )
 
             Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
@@ -469,7 +523,7 @@ class RippleModifierNodeTest {
             val expectedColor =
                 calculateResultingRippleColor(
                     TestRippleColor,
-                    rippleOpacity = newRippleAlpha.focusedAlpha
+                    rippleOpacity = newRippleAlpha.focusedAlpha,
                 )
 
             Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
@@ -493,7 +547,7 @@ class RippleModifierNodeTest {
 
         var scope: CoroutineScope? = null
 
-        var size by mutableStateOf(400)
+        var size by mutableStateOf(100)
 
         val ripple = TestIndicationNodeFactory({ TestRippleColor }, { TestRippleAlpha })
 
@@ -501,7 +555,7 @@ class RippleModifierNodeTest {
             scope = rememberCoroutineScope()
             Box(
                 Modifier.fillMaxSize().background(RippleBoxBackgroundColor),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier.size(with(LocalDensity.current) { size.toDp() })
@@ -553,7 +607,7 @@ class RippleModifierNodeTest {
 
         assertPixelColors(size)
 
-        val newSize = 800
+        val newSize = 200
 
         rule.runOnUiThread { size = newSize }
         rule.waitForIdle()
@@ -571,7 +625,7 @@ class RippleModifierNodeTest {
 
         var scope: CoroutineScope? = null
 
-        var size by mutableStateOf(400)
+        var size by mutableStateOf(100)
 
         val ripple = TestIndicationNodeFactory({ TestRippleColor }, { TestRippleAlpha })
 
@@ -579,7 +633,7 @@ class RippleModifierNodeTest {
             scope = rememberCoroutineScope()
             Box(
                 Modifier.fillMaxSize().background(RippleBoxBackgroundColor),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier.size(with(LocalDensity.current) { size.toDp() })
@@ -609,7 +663,7 @@ class RippleModifierNodeTest {
                     val expectedColor =
                         calculateResultingRippleColor(
                             TestRippleColor,
-                            rippleOpacity = TestRippleAlpha.draggedAlpha
+                            rippleOpacity = TestRippleAlpha.draggedAlpha,
                         )
 
                     Truth.assertThat(center).isEqualTo(expectedColor)
@@ -623,7 +677,7 @@ class RippleModifierNodeTest {
 
         assertPixelColors(size)
 
-        val newSize = 800
+        val newSize = 200
 
         rule.runOnUiThread { size = newSize }
         rule.waitForIdle()
@@ -643,7 +697,7 @@ class RippleModifierNodeTest {
         scope: CoroutineScope,
         interactionSource: MutableInteractionSource,
         interaction: Interaction,
-        expectedCenterPixelColor: Color
+        expectedCenterPixelColor: Color,
     ) {
         // Pause the clock if we are drawing a state layer
         if (interaction !is PressInteraction) {
@@ -696,7 +750,7 @@ class RippleModifierNodeTest {
 private fun RippleBoxWithBackground(
     interactionSource: MutableInteractionSource,
     ripple: Indication,
-    bounded: Boolean
+    bounded: Boolean,
 ) {
     Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
         Box(Modifier.padding(25.dp).background(RippleBoxBackgroundColor)) {

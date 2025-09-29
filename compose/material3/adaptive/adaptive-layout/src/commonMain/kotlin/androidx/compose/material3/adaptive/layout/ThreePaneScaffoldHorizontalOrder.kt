@@ -27,7 +27,7 @@ class ThreePaneScaffoldHorizontalOrder
 internal constructor(
     internal val firstPane: ThreePaneScaffoldRole,
     internal val secondPane: ThreePaneScaffoldRole,
-    internal val thirdPane: ThreePaneScaffoldRole
+    internal val thirdPane: ThreePaneScaffoldRole,
 ) : PaneScaffoldHorizontalOrder<ThreePaneScaffoldRole> {
     init {
         require(firstPane != secondPane && secondPane != thirdPane && firstPane != thirdPane) {
@@ -103,28 +103,4 @@ internal fun ThreePaneScaffoldHorizontalOrder.toLtrOrder(
     } else {
         this
     }
-}
-
-/** The set of the available pane roles of [ThreePaneScaffold]. */
-enum class ThreePaneScaffoldRole {
-    /**
-     * The primary pane of [ThreePaneScaffold]. It is supposed to have the highest priority during
-     * layout adaptation and usually contains the most important content of the screen, like content
-     * details in a list-detail settings.
-     */
-    Primary,
-
-    /**
-     * The secondary pane of [ThreePaneScaffold]. It is supposed to have the second highest priority
-     * during layout adaptation and usually contains the supplement content of the screen, like
-     * content list in a list-detail settings.
-     */
-    Secondary,
-
-    /**
-     * The tertiary pane of [ThreePaneScaffold]. It is supposed to have the lowest priority during
-     * layout adaptation and usually contains the additional info which will only be shown under
-     * user interaction.
-     */
-    Tertiary
 }

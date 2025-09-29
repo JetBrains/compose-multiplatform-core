@@ -292,7 +292,7 @@ class NavHostControllerTest {
             NavHost(navController, startDestination = "first?arg=value1&arg=value2") {
                 composable(
                     "first?arg={arg}",
-                    arguments = listOf(navArgument("arg") { type = NavType.StringListType })
+                    arguments = listOf(navArgument("arg") { type = NavType.StringListType }),
                 ) { entry ->
                     if (entry.arguments?.containsKey("arg") == true) {
                         value = NavType.StringListType.get(entry.arguments!!, "arg")!!

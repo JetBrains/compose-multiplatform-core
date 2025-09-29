@@ -17,6 +17,7 @@
 package androidx.compose.material3
 
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -45,19 +46,18 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.junit.Ignore
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -76,12 +76,11 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "wideNavigationRail_${scheme.name}"
+            goldenIdentifier = "wideNavigationRail_${scheme.name}",
         )
     }
 
     @Test
-    @Ignore("b/355413615")
     fun wideNavigationRail_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -92,11 +91,17 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             DefaultWideNavigationRail(interactionSource, expanded = scheme.expanded)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "wideNavigationRail_${scheme.name}_pressed_post_api_34"
+            } else {
+                "wideNavigationRail_${scheme.name}_pressed"
+            }
         assertWideNavigationRailMatches(
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "wideNavigationRail_${scheme.name}_pressed"
+            goldenIdentifier = nameId,
         )
     }
 
@@ -111,7 +116,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             DefaultWideNavigationRail(
                 interactionSource = interactionSource,
                 expanded = scheme.expanded,
-                setUnselectedItemsAsDisabled = true
+                setUnselectedItemsAsDisabled = true,
             )
         }
 
@@ -119,7 +124,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "wideNavigationRail_${scheme.name}_disabled"
+            goldenIdentifier = "wideNavigationRail_${scheme.name}_disabled",
         )
     }
 
@@ -143,7 +148,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "wideNavigationRail_${expanded}_lightTheme_defaultColors_withHeader"
+            goldenIdentifier = "wideNavigationRail_${expanded}_lightTheme_defaultColors_withHeader",
         )
     }
 
@@ -158,7 +163,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             DefaultWideNavigationRail(
                 interactionSource,
                 expanded = scheme.expanded,
-                arrangement = Arrangement.Center
+                arrangement = Arrangement.Center,
             )
         }
 
@@ -168,7 +173,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             interactionSource = interactionSource,
             interaction = null,
             goldenIdentifier =
-                "wideNavigationRail_${expanded}_lightTheme_defaultColors_centeredArrangement"
+                "wideNavigationRail_${expanded}_lightTheme_defaultColors_centeredArrangement",
         )
     }
 
@@ -183,7 +188,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             DefaultWideNavigationRail(
                 interactionSource,
                 expanded = scheme.expanded,
-                arrangement = Arrangement.Bottom
+                arrangement = Arrangement.Bottom,
             )
         }
 
@@ -193,7 +198,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             interactionSource = interactionSource,
             interaction = null,
             goldenIdentifier =
-                "wideNavigationRail_${expanded}_lightTheme_defaultColors_bottomArrangement"
+                "wideNavigationRail_${expanded}_lightTheme_defaultColors_bottomArrangement",
         )
     }
 
@@ -210,7 +215,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
         scope: CoroutineScope,
         interactionSource: MutableInteractionSource,
         interaction: Interaction? = null,
-        goldenIdentifier: String
+        goldenIdentifier: String,
     ) {
         if (interaction != null) {
             composeTestRule.runOnIdle {
@@ -244,17 +249,17 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
                 TestWrapper(
                     expanded = false,
                     "collapsed_lightTheme_defaultColors",
-                    lightColorScheme()
+                    lightColorScheme(),
                 ),
                 TestWrapper(
                     expanded = false,
                     "collapsed_darkTheme_defaultColors",
-                    darkColorScheme()
+                    darkColorScheme(),
                 ),
                 TestWrapper(
                     expanded = true,
                     "expanded_lightTheme_defaultColors",
-                    lightColorScheme()
+                    lightColorScheme(),
                 ),
                 TestWrapper(expanded = true, "expanded_darkTheme_defaultColors", darkColorScheme()),
             )
@@ -278,7 +283,6 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
  * @param withHeader when true, shows a [FloatingActionButton] as the header
  * @param setUnselectedItemsAsDisabled when true, marks unselected items as disabled
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DefaultWideNavigationRail(
     interactionSource: MutableInteractionSource,
@@ -298,7 +302,7 @@ private fun DefaultWideNavigationRail(
                     { Header() }
                 } else {
                     null
-                }
+                },
         ) {
             WideNavigationRailItem(
                 railExpanded = expanded,
@@ -306,7 +310,7 @@ private fun DefaultWideNavigationRail(
                 label = { Text("Favorites") },
                 selected = true,
                 onClick = {},
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
             WideNavigationRailItem(
                 railExpanded = expanded,
@@ -314,7 +318,7 @@ private fun DefaultWideNavigationRail(
                 label = { Text("Home") },
                 selected = false,
                 enabled = !setUnselectedItemsAsDisabled,
-                onClick = {}
+                onClick = {},
             )
             WideNavigationRailItem(
                 railExpanded = expanded,
@@ -322,7 +326,7 @@ private fun DefaultWideNavigationRail(
                 label = { Text("Search") },
                 selected = false,
                 enabled = !setUnselectedItemsAsDisabled,
-                onClick = {}
+                onClick = {},
             )
         }
     }

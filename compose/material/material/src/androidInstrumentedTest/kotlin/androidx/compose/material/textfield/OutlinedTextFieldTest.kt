@@ -114,6 +114,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -128,7 +129,7 @@ class OutlinedTextFieldTest {
     private val IconColorAlpha = 0.54f
     private val TextfieldTag = "textField"
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testOutlinedTextField_setSmallWidth() {
@@ -136,7 +137,7 @@ class OutlinedTextFieldTest {
             .setMaterialContentForSizeAssertions {
                 OutlinedTextField(
                     state = rememberTextFieldState("input"),
-                    modifier = Modifier.requiredWidth(40.dp)
+                    modifier = Modifier.requiredWidth(40.dp),
                 )
             }
             .assertWidthIsEqualTo(40.dp)
@@ -224,9 +225,9 @@ class OutlinedTextFieldTest {
                         colors =
                             TextFieldDefaults.outlinedTextFieldColors(
                                 textColor = Color.White,
-                                unfocusedBorderColor = Color.White
+                                unfocusedBorderColor = Color.White,
                             ),
-                        shape = RectangleShape
+                        shape = RectangleShape,
                     )
                 }
             }
@@ -241,7 +242,7 @@ class OutlinedTextFieldTest {
                 verticalPadding = 1.dp, // OutlinedTextField border thickness
                 backgroundColor = Color.White, // OutlinedTextField border color
                 shapeColor = Color.Red, // Color of background as OutlinedTextField is transparent
-                shape = RectangleShape
+                shape = RectangleShape,
             )
     }
 
@@ -261,9 +262,9 @@ class OutlinedTextFieldTest {
                                 Modifier.onGloballyPositioned {
                                     labelPosition.value = it.positionInRoot()
                                     labelSize.value = it.size
-                                }
+                                },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -296,9 +297,9 @@ class OutlinedTextFieldTest {
                     label = {
                         Text(
                             text = "long long long long long long long long long long long long",
-                            modifier = Modifier.onGloballyPositioned { labelSize.value = it.size }
+                            modifier = Modifier.onGloballyPositioned { labelSize.value = it.size },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -327,9 +328,9 @@ class OutlinedTextFieldTest {
                                 Modifier.onGloballyPositioned {
                                     labelPosition.value = it.positionInRoot()
                                     labelSize.value = it.size
-                                }
+                                },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -362,9 +363,9 @@ class OutlinedTextFieldTest {
                             Modifier.onGloballyPositioned {
                                 labelPosition.value = it.positionInRoot()
                                 labelSize.value = it.size
-                            }
+                            },
                     )
-                }
+                },
             )
         }
 
@@ -395,9 +396,9 @@ class OutlinedTextFieldTest {
                     label = {
                         Text(
                             text = "long long long long long long long long long long long long",
-                            modifier = Modifier.onGloballyPositioned { labelSize.value = it.size }
+                            modifier = Modifier.onGloballyPositioned { labelSize.value = it.size },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -448,7 +449,7 @@ class OutlinedTextFieldTest {
                         modifier =
                             Modifier.width(labelRequestedWidth).onGloballyPositioned {
                                 labelSize.value = it.size
-                            }
+                            },
                     )
                 },
                 trailingIcon = {
@@ -493,9 +494,9 @@ class OutlinedTextFieldTest {
                             Modifier.onGloballyPositioned {
                                 labelPosition.value = it.positionInRoot()
                                 labelSize.value = it.size
-                            }
+                            },
                     )
-                }
+                },
             )
         }
 
@@ -544,9 +545,9 @@ class OutlinedTextFieldTest {
                                 Modifier.onGloballyPositioned {
                                     placeholderPosition.value = it.positionInRoot()
                                     placeholderSize.value = it.size
-                                }
+                                },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -584,9 +585,9 @@ class OutlinedTextFieldTest {
                                 Modifier.onGloballyPositioned {
                                     placeholderPosition.value = it.positionInRoot()
                                     placeholderSize.value = it.size
-                                }
+                                },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -622,9 +623,9 @@ class OutlinedTextFieldTest {
                                 Modifier.onGloballyPositioned {
                                     placeholderPosition.value = it.positionInRoot()
                                     placeholderSize.value = it.size
-                                }
+                                },
                         )
-                    }
+                    },
                 )
             }
         }
@@ -649,7 +650,7 @@ class OutlinedTextFieldTest {
                     assertThat(LocalContentColor.current.copy(alpha = LocalContentAlpha.current))
                         .isEqualTo(MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
                     assertThat(LocalTextStyle.current).isEqualTo(MaterialTheme.typography.subtitle1)
-                }
+                },
             )
         }
 
@@ -678,7 +679,7 @@ class OutlinedTextFieldTest {
                             Modifier.onGloballyPositioned {
                                 leadingPosition.value = it.positionInRoot()
                                 leadingSize.value = it.size
-                            }
+                            },
                         )
                     },
                     trailingIcon = {
@@ -688,7 +689,7 @@ class OutlinedTextFieldTest {
                             Modifier.onGloballyPositioned {
                                 trailingPosition.value = it.positionInRoot()
                                 trailingSize.value = it.size
-                            }
+                            },
                         )
                     },
                 )
@@ -749,7 +750,7 @@ class OutlinedTextFieldTest {
                                 Modifier.onGloballyPositioned {
                                     leadingPosition = it.positionInRoot()
                                     leadingSize = it.size
-                                }
+                                },
                         ) {
                             Icon(Icons.Default.Favorite, null)
                         }
@@ -761,11 +762,11 @@ class OutlinedTextFieldTest {
                                 Modifier.onGloballyPositioned {
                                     trailingPosition = it.positionInRoot()
                                     trailingSize = it.size
-                                }
+                                },
                         ) {
                             Icon(Icons.Default.Favorite, null)
                         }
-                    }
+                    },
                 )
             }
         }
@@ -864,11 +865,11 @@ class OutlinedTextFieldTest {
                             modifier =
                                 Modifier.onGloballyPositioned {
                                     labelPosition.value = it.positionInRoot()
-                                }
+                                },
                         )
                     },
                     trailingIcon = { Icon(Icons.Default.Favorite, null) },
-                    leadingIcon = { Icon(Icons.Default.Favorite, null) }
+                    leadingIcon = { Icon(Icons.Default.Favorite, null) },
                 )
             }
         }
@@ -896,11 +897,11 @@ class OutlinedTextFieldTest {
                             modifier =
                                 Modifier.onGloballyPositioned {
                                     labelPosition.value = it.positionInRoot()
-                                }
+                                },
                         )
                     },
                     trailingIcon = null,
-                    leadingIcon = null
+                    leadingIcon = null,
                 )
             }
         }
@@ -923,7 +924,7 @@ class OutlinedTextFieldTest {
                 trailingIcon = {
                     assertThat(LocalContentColor.current)
                         .isEqualTo(MaterialTheme.colors.onSurface.copy(IconColorAlpha))
-                }
+                },
             )
         }
     }
@@ -940,7 +941,7 @@ class OutlinedTextFieldTest {
                 },
                 trailingIcon = {
                     assertThat(LocalContentColor.current).isEqualTo(MaterialTheme.colors.error)
-                }
+                },
             )
         }
     }
@@ -962,7 +963,7 @@ class OutlinedTextFieldTest {
                     modifier = Modifier.testTag(TextfieldTag),
                     state = rememberTextFieldState(),
                     keyboardOptions =
-                        KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Email)
+                        KeyboardOptions(imeAction = ImeAction.Go, keyboardType = KeyboardType.Email),
                 )
             }
         }
@@ -1008,7 +1009,7 @@ class OutlinedTextFieldTest {
                 shapeColor = Color.White,
                 shape = RectangleShape,
                 // avoid elevation artifacts
-                antiAliasingGap = with(rule.density) { 3.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 3.dp.toPx() },
             )
     }
 
@@ -1038,7 +1039,7 @@ class OutlinedTextFieldTest {
                     Modifier.testTag(TextfieldTag).semantics {
                         if (isError.value) error(errorMessage)
                     },
-                isError = isError.value
+                isError = isError.value,
             )
             defaultErrorMessage = getString(Strings.DefaultErrorMessage)
         }
@@ -1097,9 +1098,9 @@ class OutlinedTextFieldTest {
                 colors =
                     TextFieldDefaults.outlinedTextFieldColors(
                         backgroundColor = Color.Red,
-                        unfocusedBorderColor = Color.Red
+                        unfocusedBorderColor = Color.Red,
                     ),
-                shape = RectangleShape
+                shape = RectangleShape,
             )
         }
 
@@ -1122,7 +1123,7 @@ class OutlinedTextFieldTest {
                     OutlinedTextField(
                         state = rememberTextFieldState(),
                         label = { Text(text = "Label") },
-                        modifier = Modifier.onGloballyPositioned { textFieldSize = it.size }
+                        modifier = Modifier.onGloballyPositioned { textFieldSize = it.size },
                     )
                 }
             }
@@ -1149,8 +1150,8 @@ class OutlinedTextFieldTest {
                         TextFieldDefaults.outlinedTextFieldColors(
                             unfocusedLabelColor = Color.White,
                             errorLabelColor = Color.Red,
-                            errorBorderColor = Color.White
-                        )
+                            errorBorderColor = Color.White,
+                        ),
                 )
             }
         }
@@ -1178,8 +1179,8 @@ class OutlinedTextFieldTest {
                 colors =
                     TextFieldDefaults.textFieldColors(
                         unfocusedLabelColor = unfocusedLabelColor,
-                        focusedLabelColor = focusedLabelColor
-                    )
+                        focusedLabelColor = focusedLabelColor,
+                    ),
             )
         }
 
@@ -1219,8 +1220,8 @@ class OutlinedTextFieldTest {
                     colors =
                         TextFieldDefaults.textFieldColors(
                             unfocusedLabelColor = unfocusedLabelColor,
-                            focusedLabelColor = focusedLabelColor
-                        )
+                            focusedLabelColor = focusedLabelColor,
+                        ),
                 )
             }
         }
@@ -1260,8 +1261,8 @@ class OutlinedTextFieldTest {
                     colors =
                         TextFieldDefaults.textFieldColors(
                             unfocusedLabelColor = expectedLabelColor,
-                            focusedLabelColor = focusedLabelColor
-                        )
+                            focusedLabelColor = focusedLabelColor,
+                        ),
                 )
             }
         }
@@ -1304,8 +1305,8 @@ class OutlinedTextFieldTest {
                     colors =
                         TextFieldDefaults.textFieldColors(
                             unfocusedLabelColor = unfocusedLabelColor,
-                            focusedLabelColor = focusedLabelColor
-                        )
+                            focusedLabelColor = focusedLabelColor,
+                        ),
                 )
             }
         }
@@ -1343,9 +1344,7 @@ class OutlinedTextFieldTest {
         rule.setMaterialContent {
             Box(Modifier.onGloballyPositioned { height = it.size.height }) {
                 Row(Modifier.height(IntrinsicSize.Min)) {
-                    OutlinedTextField(
-                        state = rememberTextFieldState(),
-                    )
+                    OutlinedTextField(state = rememberTextFieldState())
                     Divider(Modifier.fillMaxHeight())
                 }
             }
@@ -1412,6 +1411,23 @@ class OutlinedTextFieldTest {
     }
 
     @Test
+    fun outlinedTextField_withTrailingIcon_inIntrinsicHeight_andTooShortWidth_doesNotCrash() {
+        // Regression test for b/328954156
+        rule.setContent {
+            Box(Modifier.width(200.dp)) {
+                Box(Modifier.height(IntrinsicSize.Min)) {
+                    OutlinedTextField(
+                        state = rememberTextFieldState(),
+                        modifier = Modifier.padding(100.dp),
+                        trailingIcon = { Box(Modifier.size(20.dp)) },
+                    )
+                }
+            }
+        }
+        // Nothing to assert; just make sure it doesn't crash
+    }
+
+    @Test
     fun outlinedTextField_stringOverload_doesNotCallOnValueChange_whenCompositionUpdatesOnly() {
         var callbackCounter = 0
 
@@ -1428,7 +1444,7 @@ class OutlinedTextFieldTest {
                     // causes TextFieldValue's composition clearing
                     focusManager.clearFocus(true)
                 },
-                modifier = Modifier.testTag("tag")
+                modifier = Modifier.testTag("tag"),
             )
         }
 
@@ -1449,7 +1465,7 @@ class OutlinedTextFieldTest {
             ) {
                 OutlinedTextField(
                     state = rememberTextFieldState("Cat"),
-                    leadingIcon = { Text("Icon") }
+                    leadingIcon = { Text("Icon") },
                 )
             }
         }

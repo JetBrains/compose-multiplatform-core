@@ -15,24 +15,33 @@
  */
 package androidx.compose.ui.window
 
+import android.content.pm.ActivityInfo
 import android.graphics.Point
+import android.os.Build
 import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent.ACTION_DOWN
 import android.view.MotionEvent.ACTION_UP
 import android.view.View
+import android.view.Window
+import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -51,21 +60,25 @@ import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.gesture.MotionEvent
 import androidx.compose.ui.gesture.PointerProperties
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerCoords
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.TestActivity2
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyChild
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.IntOffset
@@ -74,12 +87,16 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -88,7 +105,9 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DialogTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity2>(StandardTestDispatcher())
+
+    lateinit var activity: ComponentActivity
 
     private val defaultText = "dialogText"
     private val testTag = "tag"
@@ -98,6 +117,26 @@ class DialogTest {
     fun dialogTest_isShowingContent() {
         setupDialogTest(closeDialogOnDismiss = false)
         rule.onNodeWithTag(testTag).assertIsDisplayed()
+    }
+
+    @Test
+    fun dialogTest_windowTitleCustom() {
+        lateinit var window: Window
+        rule.setContent {
+            Dialog(
+                onDismissRequest = {},
+                properties = DialogProperties(windowTitle = defaultText),
+            ) {
+                var parent = LocalView.current
+                while (parent !is DialogWindowProvider) {
+                    parent = parent.parent as View
+                }
+                window = (parent as DialogWindowProvider).window
+                Box(Modifier.size(10.dp))
+            }
+        }
+
+        rule.runOnIdle { assertThat(window.attributes.title).isEqualTo(defaultText) }
     }
 
     @Test
@@ -183,6 +222,52 @@ class DialogTest {
         textInteraction.assertIsDisplayed()
 
         clickOutsideDialog()
+        // The Dialog should still be visible
+        textInteraction.assertIsDisplayed()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun dialogTest_isNotDismissed_whenPressOutside_releaseInside() {
+        setupDialogTest(dialogProperties = DialogProperties())
+        val textInteraction = rule.onNodeWithTag(testTag)
+        textInteraction.assertIsDisplayed()
+
+        clickDialog(pressOutside = true, releaseOutside = false)
+        // The Dialog should still be visible
+        textInteraction.assertIsDisplayed()
+    }
+
+    @Test
+    fun dialogTest_isNotDismissed_whenPressInside_releaseOutside() {
+        setupDialogTest(dialogProperties = DialogProperties())
+        val textInteraction = rule.onNodeWithTag(testTag)
+        textInteraction.assertIsDisplayed()
+
+        clickDialog(pressOutside = false, releaseOutside = true)
+        // The Dialog should still be visible
+        textInteraction.assertIsDisplayed()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun dialogTest_isNotDismissed_whenPressOutside_releaseInside_decorFitsFalse() {
+        setupDialogTest(dialogProperties = DialogProperties(decorFitsSystemWindows = false))
+        val textInteraction = rule.onNodeWithTag(testTag)
+        textInteraction.assertIsDisplayed()
+
+        clickDialog(pressOutside = true, releaseOutside = false)
+        // The Dialog should still be visible
+        textInteraction.assertIsDisplayed()
+    }
+
+    @Test
+    fun dialogTest_isNotDismissed_whenPressInside_releaseOutside_decorFitsFalse() {
+        setupDialogTest(dialogProperties = DialogProperties(decorFitsSystemWindows = false))
+        val textInteraction = rule.onNodeWithTag(testTag)
+        textInteraction.assertIsDisplayed()
+
+        clickDialog(pressOutside = false, releaseOutside = true)
         // The Dialog should still be visible
         textInteraction.assertIsDisplayed()
     }
@@ -326,7 +411,7 @@ class DialogTest {
             Dialog(
                 {},
                 properties =
-                    DialogProperties(usePlatformDefaultWidth = true, decorFitsSystemWindows = true)
+                    DialogProperties(usePlatformDefaultWidth = true, decorFitsSystemWindows = true),
             ) {
                 dialogView = LocalView.current
                 Box(Modifier.size(with(LocalDensity.current) { 100.toDp() }))
@@ -349,7 +434,7 @@ class DialogTest {
             Dialog(
                 {},
                 properties =
-                    DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = true)
+                    DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = true),
             ) {
                 dialogView = LocalView.current
                 Box(Modifier.size(with(LocalDensity.current) { 100.toDp() }))
@@ -371,7 +456,7 @@ class DialogTest {
             Dialog(
                 {},
                 properties =
-                    DialogProperties(usePlatformDefaultWidth = true, decorFitsSystemWindows = false)
+                    DialogProperties(usePlatformDefaultWidth = true, decorFitsSystemWindows = false),
             ) {
                 dialogView = LocalView.current
                 Box(Modifier.size(with(LocalDensity.current) { 100.toDp() }))
@@ -401,8 +486,8 @@ class DialogTest {
                 properties =
                     DialogProperties(
                         usePlatformDefaultWidth = false,
-                        decorFitsSystemWindows = false
-                    )
+                        decorFitsSystemWindows = false,
+                    ),
             ) {
                 dialogView = LocalView.current
                 Box(Modifier.size(with(LocalDensity.current) { 100.toDp() }))
@@ -426,7 +511,7 @@ class DialogTest {
             displayMetrics = LocalView.current.context.resources.displayMetrics
             Dialog(
                 onDismissRequest = {},
-                properties = DialogProperties(usePlatformDefaultWidth = false)
+                properties = DialogProperties(usePlatformDefaultWidth = false),
             ) {
                 Box(Modifier.fillMaxSize().onSizeChanged { box1Width = it.width })
             }
@@ -448,7 +533,7 @@ class DialogTest {
         rule.setContent {
             Dialog(
                 onDismissRequest = {},
-                properties = DialogProperties(usePlatformDefaultWidth = usePlatformDefaultWidth)
+                properties = DialogProperties(usePlatformDefaultWidth = usePlatformDefaultWidth),
             ) {
                 Box(Modifier.size(width, 150.dp).onSizeChanged { actualWidth = it.width })
             }
@@ -523,7 +608,7 @@ class DialogTest {
             Dialog(
                 onDismissRequest = { dismissed = true },
                 properties =
-                    DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = true)
+                    DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = true),
             ) {
                 composeView = LocalView.current
                 Box(Modifier.size(10.dp).testTag(clickBoxTag).clickable { clicked = true })
@@ -532,7 +617,6 @@ class DialogTest {
 
         // click inside the compose view
         rule.onNodeWithTag(clickBoxTag).performClick()
-
         rule.waitForIdle()
 
         assertThat(dismissed).isFalse()
@@ -558,7 +642,7 @@ class DialogTest {
                     actionIndex = 0,
                     pointerProperties = arrayOf(PointerProperties(0)),
                     pointerCoords = arrayOf(PointerCoords(x, y)),
-                    root
+                    root,
                 )
             root.dispatchTouchEvent(down)
             val up =
@@ -569,7 +653,7 @@ class DialogTest {
                     actionIndex = 0,
                     pointerProperties = arrayOf(PointerProperties(0)),
                     pointerCoords = arrayOf(PointerCoords(x, y)),
-                    root
+                    root,
                 )
             root.dispatchTouchEvent(up)
         }
@@ -591,8 +675,8 @@ class DialogTest {
                 properties =
                     DialogProperties(
                         usePlatformDefaultWidth = false,
-                        decorFitsSystemWindows = false
-                    )
+                        decorFitsSystemWindows = false,
+                    ),
             ) {
                 composeView = LocalView.current
                 Box(Modifier.size(10.dp).testTag(clickBoxTag).clickable { clicked = true })
@@ -601,7 +685,6 @@ class DialogTest {
 
         // click inside the compose view
         rule.onNodeWithTag(clickBoxTag).performClick()
-
         rule.waitForIdle()
 
         assertThat(dismissed).isFalse()
@@ -627,7 +710,7 @@ class DialogTest {
                     actionIndex = 0,
                     pointerProperties = arrayOf(PointerProperties(0)),
                     pointerCoords = arrayOf(PointerCoords(x, y)),
-                    root
+                    root,
                 )
             root.dispatchTouchEvent(down)
             val up =
@@ -638,7 +721,7 @@ class DialogTest {
                     actionIndex = 0,
                     pointerProperties = arrayOf(PointerProperties(0)),
                     pointerCoords = arrayOf(PointerCoords(x, y)),
-                    root
+                    root,
                 )
             root.dispatchTouchEvent(up)
         }
@@ -660,8 +743,8 @@ class DialogTest {
                 properties =
                     DialogProperties(
                         usePlatformDefaultWidth = false,
-                        decorFitsSystemWindows = false
-                    )
+                        decorFitsSystemWindows = false,
+                    ),
             ) {
                 composeView = LocalView.current
                 Box(Modifier.size(10.dp).testTag(clickBoxTag).clickable { clicked = true })
@@ -670,7 +753,6 @@ class DialogTest {
 
         // click inside the compose view
         rule.onNodeWithTag(clickBoxTag).performClick()
-
         rule.waitForIdle()
 
         assertThat(dismissed).isFalse()
@@ -696,7 +778,7 @@ class DialogTest {
                     actionIndex = 0,
                     pointerProperties = arrayOf(PointerProperties(0)),
                     pointerCoords = arrayOf(PointerCoords(x, y)),
-                    root
+                    root,
                 )
             root.dispatchTouchEvent(down)
             val up =
@@ -707,7 +789,7 @@ class DialogTest {
                     actionIndex = 0,
                     pointerProperties = arrayOf(PointerProperties(0)),
                     pointerCoords = arrayOf(PointerCoords(x, y)),
-                    root
+                    root,
                 )
             root.dispatchTouchEvent(up)
         }
@@ -725,7 +807,7 @@ class DialogTest {
         rule.setContent {
             Dialog(onDismissRequest = {}) {
                 val density = LocalDensity.current
-                val insets = WindowInsets.safeContent
+                val insets = WindowInsets.safeDrawing
                 Box(
                     Modifier.fillMaxSize().onPlaced {
                         top = insets.getTop(density)
@@ -735,7 +817,7 @@ class DialogTest {
                     TextField(
                         "Hello World",
                         onValueChange = {},
-                        Modifier.align(Alignment.BottomStart).focusRequester(focusRequester)
+                        Modifier.align(Alignment.BottomStart).focusRequester(focusRequester),
                     )
                 }
             }
@@ -747,9 +829,13 @@ class DialogTest {
             focusRequester.requestFocus()
         }
 
-        rule.runOnIdle {
-            assertThat(top).isEqualTo(0)
-            assertThat(bottom).isEqualTo(0)
+        // On 35+, the IME WindowInsets are still passed, even though the content automatically
+        // avoids the IME. b/430601578
+        if (Build.VERSION.SDK_INT < 35) {
+            rule.runOnIdle {
+                assertThat(top).isEqualTo(0)
+                assertThat(bottom).isEqualTo(0)
+            }
         }
     }
 
@@ -769,6 +855,219 @@ class DialogTest {
             }
             val window = provider.window
             assertThat(window.attributes.gravity).isEqualTo(Gravity.CENTER)
+        }
+    }
+
+    @Test
+    @SdkSuppress(maxSdkVersion = 34)
+    fun dialogThemeCanBeOverridden() {
+        lateinit var window: Window
+        rule.setContent {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    ComposeView(
+                            ContextThemeWrapper(
+                                context,
+                                androidx.compose.ui.tests.R.style.CustomDialogTheme,
+                            )
+                        )
+                        .apply {
+                            setContent {
+                                Dialog(
+                                    onDismissRequest = {},
+                                    properties =
+                                        DialogProperties(
+                                            decorFitsSystemWindows = false,
+                                            usePlatformDefaultWidth = false,
+                                        ),
+                                ) {
+                                    var parent = LocalView.current
+                                    while (parent !is DialogWindowProvider) {
+                                        parent = parent.parent as View
+                                    }
+                                    window = (parent as DialogWindowProvider).window
+                                    Box(Modifier.fillMaxSize().background(Color.Blue))
+                                }
+                            }
+                        }
+                },
+            )
+        }
+        rule.runOnIdle {
+            @Suppress("DEPRECATION") assertThat(window.statusBarColor).isEqualTo(Color.Red.toArgb())
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 28)
+    fun fullScreenDialogDrawsBehindDisplayCutout() {
+        lateinit var window: Window
+        rule.setContent {
+            Dialog(
+                properties =
+                    DialogProperties(
+                        decorFitsSystemWindows = false,
+                        usePlatformDefaultWidth = false,
+                    ),
+                onDismissRequest = {},
+            ) {
+                var parent = LocalView.current
+                while (parent !is DialogWindowProvider) {
+                    parent = parent.parent as View
+                }
+                window = (parent as DialogWindowProvider).window
+                Box(Modifier.fillMaxSize())
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(window.attributes.layoutInDisplayCutoutMode)
+                .isEqualTo(LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS)
+        }
+    }
+
+    @Test
+    fun fullScreenDialogPortraitNotDefaultWidthDecorFitsMatchesContainerSize() {
+        rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        verifyFullScreenDialogMatchesContainer()
+    }
+
+    @Test
+    fun fullScreenDialogLandscapeNotDefaultWidthDecorFitsMatchesContainerSize() {
+        rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        verifyFullScreenDialogMatchesContainer()
+    }
+
+    private fun verifyFullScreenDialogMatchesContainer() {
+        var mainContentWidth = 0
+        var mainContentHeight = 0
+        var dialogWidth = 0
+        var dialogHeight = 0
+        rule.activityRule.scenario.onActivity {
+            WindowCompat.setDecorFitsSystemWindows(it.window, false)
+        }
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.safeDrawingPadding().fillMaxSize().onGloballyPositioned {
+                        mainContentWidth = it.size.width
+                        mainContentHeight = it.size.height
+                    }
+            ) {
+                Dialog(
+                    onDismissRequest = {},
+                    properties =
+                        DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = true,
+                        ),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().onGloballyPositioned {
+                                dialogWidth = it.size.width
+                                dialogHeight = it.size.height
+                            }
+                    ) {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(mainContentWidth).isEqualTo(dialogWidth)
+            assertThat(mainContentHeight).isEqualTo(dialogHeight)
+        }
+    }
+
+    @Test
+    fun fullScreenDialogWithImeNotDefaultWidthDecorFitsMatchesContainerSize() {
+        var mainContentWidth = 0
+        var mainContentHeight = 0
+        var dialogWidth = 0
+        var dialogHeight = 0
+        rule.activityRule.scenario.onActivity {
+            WindowCompat.setDecorFitsSystemWindows(it.window, false)
+        }
+        rule.setContent {
+            val keyboardController = LocalSoftwareKeyboardController.current
+            keyboardController?.show()
+            Box(
+                modifier =
+                    Modifier.safeDrawingPadding().fillMaxSize().onGloballyPositioned {
+                        mainContentWidth = it.size.width
+                        mainContentHeight = it.size.height
+                    }
+            ) {
+                Dialog(
+                    onDismissRequest = {},
+                    properties =
+                        DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = true,
+                        ),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().onGloballyPositioned {
+                                dialogWidth = it.size.width
+                                dialogHeight = it.size.height
+                            }
+                    ) {
+                        TextField(
+                            state = rememberTextFieldState(initialText = "Hello"),
+                            label = { Text("Label") },
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(mainContentWidth).isEqualTo(dialogWidth)
+            assertThat(mainContentHeight).isEqualTo(dialogHeight)
+        }
+    }
+
+    @Test
+    fun fullScreenDialogNotDefaultWidthNoDecorFitsMatchesContainerSize() {
+        var mainContentWidth = 0
+        var mainContentHeight = 0
+        var dialogWidth = 0
+        var dialogHeight = 0
+        rule.activityRule.scenario.onActivity {
+            WindowCompat.setDecorFitsSystemWindows(it.window, false)
+        }
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize().onGloballyPositioned {
+                        mainContentWidth = it.size.width
+                        mainContentHeight = it.size.height
+                    }
+            ) {
+                Dialog(
+                    onDismissRequest = {},
+                    properties =
+                        DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = false,
+                        ),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize().onGloballyPositioned {
+                                dialogWidth = it.size.width
+                                dialogHeight = it.size.height
+                            }
+                    ) {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(mainContentWidth).isEqualTo(dialogWidth)
+            assertThat(mainContentHeight).isEqualTo(dialogHeight)
         }
     }
 
@@ -813,10 +1112,36 @@ class DialogTest {
 
     /** Try to dismiss the dialog by clicking between the topLefts of the dialog and the root. */
     private fun clickOutsideDialog() {
+        clickDialog()
+    }
+
+    private fun clickDialog(pressOutside: Boolean = true, releaseOutside: Boolean = true) {
         val dialogBounds = rule.onNode(isRoot().and(hasAnyChild(isDialog()))).boundsOnScreen()
         val rootBounds = rule.onNode(isRoot().and(hasAnyChild(isDialog()).not())).boundsOnScreen()
-        val clickPosition = lerp(dialogBounds.topLeft, rootBounds.topLeft, 0.5f).round()
-        UiDevice.getInstance(getInstrumentation()).click(clickPosition.x, clickPosition.y)
+        val outsidePosition = lerp(dialogBounds.topLeft, rootBounds.topLeft, 0.5f).round()
+        val insidePosition = lerp(dialogBounds.topLeft, dialogBounds.bottomRight, 0.5f).round()
+        val uiDevice = UiDevice.getInstance(getInstrumentation())
+        if (pressOutside && releaseOutside) {
+            uiDevice.click(outsidePosition.x, outsidePosition.y)
+        } else if (!pressOutside && !releaseOutside) {
+            uiDevice.click(insidePosition.x, insidePosition.y)
+        } else if (pressOutside) {
+            uiDevice.drag(
+                outsidePosition.x,
+                outsidePosition.y,
+                insidePosition.x,
+                insidePosition.y,
+                10,
+            )
+        } else {
+            uiDevice.drag(
+                insidePosition.x,
+                insidePosition.y,
+                outsidePosition.x,
+                outsidePosition.y,
+                10,
+            )
+        }
     }
 
     private fun SemanticsNodeInteraction.boundsOnScreen(): Rect {
@@ -836,7 +1161,7 @@ private fun PopupUsingPosition(parentPositionInRoot: Offset) {
                 anchorBounds: IntRect,
                 windowSize: IntSize,
                 layoutDirection: LayoutDirection,
-                popupContentSize: IntSize
+                popupContentSize: IntSize,
             ): IntOffset = anchorBounds.topLeft + parentPositionInRoot.round()
         }
 

@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
@@ -53,7 +54,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 internal class HandwritingHoverIconTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private lateinit var ownerView: View
 
@@ -100,7 +101,7 @@ internal class HandwritingHoverIconTest {
                     modifier =
                         Modifier.fillMaxWidth()
                             .height(HandwritingBoundsVerticalOffset)
-                            .testTag(basicTextFieldTag)
+                            .testTag(basicTextFieldTag),
                 )
                 // This spacer is within the extended handwriting bounds of both text fields
                 Spacer(
@@ -116,7 +117,7 @@ internal class HandwritingHoverIconTest {
                     modifier =
                         Modifier.fillMaxWidth()
                             .height(HandwritingBoundsVerticalOffset)
-                            .testTag(coreTextFieldTag)
+                            .testTag(coreTextFieldTag),
                 )
                 // This spacer is within the extended handwriting bounds of coreTextField
                 Spacer(
@@ -140,7 +141,7 @@ internal class HandwritingHoverIconTest {
                     modifier =
                         Modifier.fillMaxWidth()
                             .height(HandwritingBoundsVerticalOffset)
-                            .testTag(coreTextFieldUnsupportedTag)
+                            .testTag(coreTextFieldUnsupportedTag),
                 )
             }
         }

@@ -36,6 +36,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -58,7 +59,7 @@ class PointerInteropFilterAndroidViewHookupTest {
         eventStringLog.add("motionEvent")
     }
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     @Before
     fun setup() {
@@ -73,7 +74,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                     layoutParams =
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
+                            ViewGroup.LayoutParams.MATCH_PARENT,
                         )
                     setContent {
                         Box(Modifier.fillMaxSize()) {
@@ -89,7 +90,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                             )
                             AndroidView(
                                 { child },
-                                Modifier.spyGestureFilter { eventStringLog.add(it.name) }
+                                Modifier.spyGestureFilter { eventStringLog.add(it.name) },
                             )
                         }
                     }
@@ -113,7 +114,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle { root.dispatchTouchEvent(down) }
@@ -132,7 +133,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -142,7 +143,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -166,7 +167,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -176,7 +177,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -200,7 +201,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val move =
             MotionEvent(
@@ -210,7 +211,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -220,7 +221,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -245,7 +246,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -255,7 +256,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val down2 =
             MotionEvent(
@@ -265,7 +266,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -279,7 +280,7 @@ class PointerInteropFilterAndroidViewHookupTest {
     }
 
     @Test
-    fun ui_downMove_moveIsDispatchedDuringFinal() {
+    fun ui_downMove_moveIsDispatchedDuringMain() {
         val down =
             MotionEvent(
                 0,
@@ -288,7 +289,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val move =
             MotionEvent(
@@ -298,7 +299,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -309,9 +310,9 @@ class PointerInteropFilterAndroidViewHookupTest {
 
         assertThat(eventStringLog).hasSize(4)
         assertThat(eventStringLog[0]).isEqualTo(PointerEventPass.Initial.toString())
-        assertThat(eventStringLog[1]).isEqualTo(PointerEventPass.Main.toString())
-        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Final.toString())
-        assertThat(eventStringLog[3]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[1]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Main.toString())
+        assertThat(eventStringLog[3]).isEqualTo(PointerEventPass.Final.toString())
     }
 
     @Test
@@ -324,7 +325,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val move =
             MotionEvent(
@@ -334,7 +335,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -361,7 +362,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val move1 =
             MotionEvent(
@@ -371,7 +372,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
         val move2 =
             MotionEvent(
@@ -381,7 +382,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(150f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -395,9 +396,9 @@ class PointerInteropFilterAndroidViewHookupTest {
 
         assertThat(eventStringLog).hasSize(4)
         assertThat(eventStringLog[0]).isEqualTo(PointerEventPass.Initial.toString())
-        assertThat(eventStringLog[1]).isEqualTo(PointerEventPass.Main.toString())
-        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Final.toString())
-        assertThat(eventStringLog[3]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[1]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Main.toString())
+        assertThat(eventStringLog[3]).isEqualTo(PointerEventPass.Final.toString())
     }
 
     @Test
@@ -410,7 +411,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val up =
             MotionEvent(
@@ -420,7 +421,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val downB =
             MotionEvent(
@@ -430,7 +431,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(50f, 50f)),
-                root
+                root,
             )
         val moveB =
             MotionEvent(
@@ -440,7 +441,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(100f, 50f)),
-                root
+                root,
             )
 
         rule.runOnIdle {
@@ -454,9 +455,9 @@ class PointerInteropFilterAndroidViewHookupTest {
 
         assertThat(eventStringLog).hasSize(4)
         assertThat(eventStringLog[0]).isEqualTo(PointerEventPass.Initial.toString())
-        assertThat(eventStringLog[1]).isEqualTo(PointerEventPass.Main.toString())
-        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Final.toString())
-        assertThat(eventStringLog[3]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[1]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Main.toString())
+        assertThat(eventStringLog[3]).isEqualTo(PointerEventPass.Final.toString())
     }
 
     @Test
@@ -510,7 +511,7 @@ class PointerInteropFilterAndroidViewHookupTest {
                     PointerEventType.Press,
                     PointerEventType.Move,
                     PointerEventType.Move,
-                    PointerEventType.Release
+                    PointerEventType.Release,
                 )
         }
     }
@@ -523,7 +524,7 @@ class PointerInteropFilterAndroidViewHookupTest {
             0,
             arrayOf(PointerProperties(0)),
             arrayOf(PointerCoords(offset.x, offset.y)),
-            root
+            root,
         )
 
     fun move(eventTime: Int, offset: Offset) =
@@ -534,7 +535,7 @@ class PointerInteropFilterAndroidViewHookupTest {
             0,
             arrayOf(PointerProperties(0)),
             arrayOf(PointerCoords(offset.x, offset.y)),
-            root
+            root,
         )
 
     fun up(eventTime: Int, offset: Offset = Offset(50f, 50f)) =
@@ -545,7 +546,7 @@ class PointerInteropFilterAndroidViewHookupTest {
             0,
             arrayOf(PointerProperties(0)),
             arrayOf(PointerCoords(offset.x, offset.y)),
-            root
+            root,
         )
 }
 

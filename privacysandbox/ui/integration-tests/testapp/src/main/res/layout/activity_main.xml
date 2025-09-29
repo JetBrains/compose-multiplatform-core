@@ -64,6 +64,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:background="@android:drawable/btn_dropdown"
+            android:popupBackground="@color/light_background"
             android:spinnerMode="dropdown" />
 
         <Spinner
@@ -73,6 +74,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="50dp"
             android:background="@android:drawable/btn_dropdown"
+            android:popupBackground="@color/light_background"
             android:spinnerMode="dropdown" />
 
         <Spinner
@@ -82,6 +84,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="100dp"
             android:background="@android:drawable/btn_dropdown"
+            android:popupBackground="@color/light_background"
             android:spinnerMode="dropdown" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
@@ -94,13 +97,13 @@
             android:text="@string/display_viewability_switch" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/zorder_below_switch"
+            android:id="@+id/zorder_above_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="200dp"
             android:checked="false"
-            android:text="@string/zorder_below_switch" />
+            android:text="@string/zorder_above_switch" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/compose_switch"

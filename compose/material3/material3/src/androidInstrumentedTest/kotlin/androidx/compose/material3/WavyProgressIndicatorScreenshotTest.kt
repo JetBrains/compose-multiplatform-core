@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,9 +47,9 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class WavyProgressIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -151,7 +151,7 @@ class WavyProgressIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper
             Box(wrap.testTag(wrapperTestTag)) {
                 LinearWavyProgressIndicator(
                     progress = { 0.5f },
-                    stroke = Stroke(width = strokeWidth, cap = StrokeCap.Square)
+                    stroke = Stroke(width = strokeWidth, cap = StrokeCap.Square),
                 )
             }
         }
@@ -170,7 +170,7 @@ class WavyProgressIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper
                     progress = { 0.5f },
                     modifier = Modifier.height(14.dp),
                     stroke = thickStroke,
-                    trackStroke = thickStroke
+                    trackStroke = thickStroke,
                 )
             }
         }
@@ -233,7 +233,7 @@ class WavyProgressIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper
                     progress = { 0.7f },
                     modifier = Modifier.size(52.dp),
                     stroke = thickStroke,
-                    trackStroke = thickStroke
+                    trackStroke = thickStroke,
                 )
             }
         }
@@ -283,7 +283,7 @@ class WavyProgressIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper
                 CircularWavyProgressIndicator(
                     progress = { 0.4f },
                     trackColor = Color.Gray,
-                    stroke = Stroke(width = 6f, cap = StrokeCap.Butt)
+                    stroke = Stroke(width = 6f, cap = StrokeCap.Butt),
                 )
             }
         }

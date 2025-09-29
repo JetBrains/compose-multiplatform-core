@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
@@ -48,6 +47,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,10 +61,10 @@ import org.junit.runner.RunWith
 // TODO(b/208991956): Update to include DropdownMenu when popups can be captured into bitmaps.
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class MenuScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -134,14 +134,14 @@ class MenuScreenshotTest {
                     text = { Text("Edit") },
                     onClick = {},
                     enabled = enabledItems,
-                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) }
+                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
                 )
                 DropdownMenuItem(
                     text = { Text("Settings") },
                     onClick = {},
                     enabled = enabledItems,
                     leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
-                    trailingIcon = { Text("F11", textAlign = TextAlign.Center) }
+                    trailingIcon = { Text("F11", textAlign = TextAlign.Center) },
                 )
                 HorizontalDivider()
                 DropdownMenuItem(
@@ -149,7 +149,7 @@ class MenuScreenshotTest {
                     onClick = {},
                     enabled = enabledItems,
                     leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null) },
-                    trailingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) }
+                    trailingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
                 )
             }
         }

@@ -61,6 +61,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,7 +69,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TextFieldDecorationBoxTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val Density = Density(1f)
     private val InnerTextFieldHeight = 50.dp
@@ -80,7 +81,7 @@ class TextFieldDecorationBoxTest {
             TextFieldDefaults.outlinedTextFieldPadding(top = 10.dp),
             false,
             10.dp + InnerTextFieldHeight + TextFieldPadding,
-            10.dp
+            10.dp,
         )
     }
 
@@ -90,7 +91,7 @@ class TextFieldDecorationBoxTest {
             TextFieldDefaults.outlinedTextFieldPadding(top = 10.dp),
             true,
             10.dp + InnerTextFieldHeight + TextFieldPadding,
-            (10.dp + TextFieldPadding) / 2
+            (10.dp + TextFieldPadding) / 2,
         )
     }
 
@@ -100,7 +101,7 @@ class TextFieldDecorationBoxTest {
             TextFieldDefaults.outlinedTextFieldPadding(bottom = 10.dp),
             false,
             TextFieldPadding + InnerTextFieldHeight + 10.dp,
-            TextFieldPadding
+            TextFieldPadding,
         )
     }
 
@@ -110,7 +111,7 @@ class TextFieldDecorationBoxTest {
             TextFieldDefaults.outlinedTextFieldPadding(bottom = 10.dp),
             true,
             TextFieldPadding + InnerTextFieldHeight + 10.dp,
-            (10.dp + TextFieldPadding) / 2
+            (10.dp + TextFieldPadding) / 2,
         )
     }
 
@@ -120,7 +121,7 @@ class TextFieldDecorationBoxTest {
             TextFieldDefaults.outlinedTextFieldPadding(start = 10.dp),
             false,
             10.dp + InnerTextFieldWidth + TextFieldPadding,
-            10.dp
+            10.dp,
         )
     }
 
@@ -130,7 +131,7 @@ class TextFieldDecorationBoxTest {
             TextFieldDefaults.outlinedTextFieldPadding(start = 10.dp),
             true,
             10.dp + InnerTextFieldWidth + TextFieldPadding,
-            TextFieldPadding
+            TextFieldPadding,
         )
     }
 
@@ -140,7 +141,7 @@ class TextFieldDecorationBoxTest {
             TextFieldDefaults.outlinedTextFieldPadding(end = 20.dp),
             false,
             TextFieldPadding + InnerTextFieldWidth + 20.dp,
-            TextFieldPadding
+            TextFieldPadding,
         )
     }
 
@@ -150,7 +151,7 @@ class TextFieldDecorationBoxTest {
             TextFieldDefaults.outlinedTextFieldPadding(end = 20.dp),
             true,
             TextFieldPadding + InnerTextFieldWidth + 20.dp,
-            20.dp
+            20.dp,
         )
     }
 
@@ -161,7 +162,7 @@ class TextFieldDecorationBoxTest {
             singleLine = true,
             hasLabel = false,
             40.dp + InnerTextFieldHeight + TextFieldPadding,
-            (40.dp + TextFieldPadding) / 2
+            (40.dp + TextFieldPadding) / 2,
         )
     }
 
@@ -172,7 +173,7 @@ class TextFieldDecorationBoxTest {
             singleLine = true,
             hasLabel = true,
             40.dp + TextFieldTopPadding + InnerTextFieldHeight + TextFieldBottomPadding,
-            40.dp + TextFieldTopPadding
+            40.dp + TextFieldTopPadding,
         )
     }
 
@@ -183,7 +184,7 @@ class TextFieldDecorationBoxTest {
             singleLine = true,
             hasLabel = false,
             TextFieldPadding + InnerTextFieldHeight + 40.dp,
-            (TextFieldPadding + 40.dp) / 2
+            (TextFieldPadding + 40.dp) / 2,
         )
     }
 
@@ -194,7 +195,7 @@ class TextFieldDecorationBoxTest {
             singleLine = true,
             hasLabel = true,
             FirstBaselineOffset + TextFieldTopPadding + InnerTextFieldHeight + 40.dp,
-            FirstBaselineOffset + TextFieldTopPadding
+            FirstBaselineOffset + TextFieldTopPadding,
         )
     }
 
@@ -205,7 +206,7 @@ class TextFieldDecorationBoxTest {
             singleLine = false,
             hasLabel = false,
             40.dp + InnerTextFieldHeight + TextFieldPadding,
-            40.dp
+            40.dp,
         )
     }
 
@@ -216,7 +217,7 @@ class TextFieldDecorationBoxTest {
             singleLine = false,
             hasLabel = true,
             40.dp + TextFieldTopPadding + InnerTextFieldHeight + TextFieldBottomPadding,
-            40.dp + TextFieldTopPadding
+            40.dp + TextFieldTopPadding,
         )
     }
 
@@ -227,7 +228,7 @@ class TextFieldDecorationBoxTest {
             singleLine = false,
             hasLabel = false,
             TextFieldPadding + InnerTextFieldHeight + 40.dp,
-            TextFieldPadding
+            TextFieldPadding,
         )
     }
 
@@ -238,7 +239,7 @@ class TextFieldDecorationBoxTest {
             singleLine = false,
             hasLabel = true,
             FirstBaselineOffset + TextFieldTopPadding + InnerTextFieldHeight + 40.dp,
-            FirstBaselineOffset + TextFieldTopPadding
+            FirstBaselineOffset + TextFieldTopPadding,
         )
     }
 
@@ -249,7 +250,7 @@ class TextFieldDecorationBoxTest {
             false,
             hasLabel = true,
             40.dp + InnerTextFieldWidth + TextFieldPadding,
-            40.dp
+            40.dp,
         )
     }
 
@@ -260,7 +261,7 @@ class TextFieldDecorationBoxTest {
             true,
             hasLabel = true,
             40.dp + InnerTextFieldWidth + TextFieldPadding,
-            TextFieldPadding
+            TextFieldPadding,
         )
     }
 
@@ -271,7 +272,7 @@ class TextFieldDecorationBoxTest {
             false,
             hasLabel = false,
             40.dp + InnerTextFieldWidth + TextFieldPadding,
-            40.dp
+            40.dp,
         )
     }
 
@@ -282,7 +283,7 @@ class TextFieldDecorationBoxTest {
             true,
             hasLabel = false,
             40.dp + InnerTextFieldWidth + TextFieldPadding,
-            TextFieldPadding
+            TextFieldPadding,
         )
     }
 
@@ -293,7 +294,7 @@ class TextFieldDecorationBoxTest {
             false,
             hasLabel = true,
             TextFieldPadding + InnerTextFieldWidth + 40.dp,
-            TextFieldPadding
+            TextFieldPadding,
         )
     }
 
@@ -304,7 +305,7 @@ class TextFieldDecorationBoxTest {
             true,
             hasLabel = true,
             TextFieldPadding + InnerTextFieldWidth + 40.dp,
-            40.dp
+            40.dp,
         )
     }
 
@@ -315,7 +316,7 @@ class TextFieldDecorationBoxTest {
             false,
             hasLabel = false,
             TextFieldPadding + InnerTextFieldWidth + 40.dp,
-            TextFieldPadding
+            TextFieldPadding,
         )
     }
 
@@ -326,7 +327,7 @@ class TextFieldDecorationBoxTest {
             true,
             hasLabel = false,
             TextFieldPadding + InnerTextFieldWidth + 40.dp,
-            40.dp
+            40.dp,
         )
     }
 
@@ -350,10 +351,10 @@ class TextFieldDecorationBoxTest {
                     modifier =
                         Modifier.size(
                             with(Density) { textFieldWidth.toDp() },
-                            with(Density) { textFieldHeight.toDp() }
+                            with(Density) { textFieldHeight.toDp() },
                         ),
                     singleLine = singleLine,
-                    interactionSource = interactionSource
+                    interactionSource = interactionSource,
                 ) {
                     OutlinedTextFieldDecorationBox(
                         value = value,
@@ -369,11 +370,11 @@ class TextFieldDecorationBoxTest {
                                 colors = colors,
                                 interactionSource = interactionSource,
                                 shape = RectangleShape,
-                                unfocusedBorderThickness = with(Density) { borderWidth.toDp() }
+                                unfocusedBorderThickness = with(Density) { borderWidth.toDp() },
                             )
                         },
                         colors = colors,
-                        contentPadding = PaddingValues(0.dp)
+                        contentPadding = PaddingValues(0.dp),
                     )
                 }
             }
@@ -412,14 +413,14 @@ class TextFieldDecorationBoxTest {
                                 colors = colors,
                                 interactionSource = interactionSource,
                                 unfocusedIndicatorLineThickness =
-                                    with(Density) { borderWidth.toDp() }
+                                    with(Density) { borderWidth.toDp() },
                             )
                             .size(
                                 with(Density) { textFieldWidth.toDp() },
-                                with(Density) { textFieldHeight.toDp() }
+                                with(Density) { textFieldHeight.toDp() },
                             ),
                     singleLine = singleLine,
-                    interactionSource = interactionSource
+                    interactionSource = interactionSource,
                 ) {
                     TextFieldDecorationBox(
                         value = value,
@@ -429,7 +430,7 @@ class TextFieldDecorationBoxTest {
                         interactionSource = interactionSource,
                         singleLine = singleLine,
                         colors = colors,
-                        contentPadding = PaddingValues(0.dp)
+                        contentPadding = PaddingValues(0.dp),
                     )
                 }
             }
@@ -467,10 +468,10 @@ class TextFieldDecorationBoxTest {
                     modifier =
                         Modifier.size(
                             with(Density) { textFieldWidth.toDp() },
-                            with(Density) { textFieldHeight.toDp() }
+                            with(Density) { textFieldHeight.toDp() },
                         ),
                     singleLine = singleLine,
-                    interactionSource = interactionSource
+                    interactionSource = interactionSource,
                 ) {
                     OutlinedTextFieldDecorationBox(
                         value = value,
@@ -486,11 +487,11 @@ class TextFieldDecorationBoxTest {
                                 colors = colors,
                                 interactionSource = interactionSource,
                                 shape = RectangleShape,
-                                unfocusedBorderThickness = with(Density) { borderWidth.toDp() }
+                                unfocusedBorderThickness = with(Density) { borderWidth.toDp() },
                             )
                         },
                         colors = colors,
-                        contentPadding = PaddingValues(0.dp)
+                        contentPadding = PaddingValues(0.dp),
                     )
                 }
             }
@@ -532,14 +533,14 @@ class TextFieldDecorationBoxTest {
                                 colors = colors,
                                 interactionSource = interactionSource,
                                 unfocusedIndicatorLineThickness =
-                                    with(Density) { borderWidth.toDp() }
+                                    with(Density) { borderWidth.toDp() },
                             )
                             .size(
                                 with(Density) { textFieldWidth.toDp() },
-                                with(Density) { textFieldHeight.toDp() }
+                                with(Density) { textFieldHeight.toDp() },
                             ),
                     singleLine = singleLine,
-                    interactionSource = interactionSource
+                    interactionSource = interactionSource,
                 ) {
                     TextFieldDecorationBox(
                         value = value,
@@ -549,7 +550,7 @@ class TextFieldDecorationBoxTest {
                         interactionSource = interactionSource,
                         singleLine = singleLine,
                         colors = colors,
-                        contentPadding = PaddingValues(0.dp)
+                        contentPadding = PaddingValues(0.dp),
                     )
                 }
             }
@@ -577,7 +578,7 @@ class TextFieldDecorationBoxTest {
             label = {
                 // imitates the multiline label
                 Box(Modifier.size(10.dp, labelHeight))
-            }
+            },
         )
     }
 
@@ -593,7 +594,7 @@ class TextFieldDecorationBoxTest {
             label = {
                 // imitates the multiline label
                 Box(Modifier.size(10.dp, labelHeight))
-            }
+            },
         )
     }
 
@@ -601,14 +602,14 @@ class TextFieldDecorationBoxTest {
         padding: PaddingValues,
         singleLine: Boolean,
         expectedHeight: Dp,
-        expectedPosition: Dp
+        expectedPosition: Dp,
     ) {
         assertSizeAndPosition_outlinedTextField(
             padding,
             singleLine,
             expectedHeight,
             expectedPosition,
-            true
+            true,
         )
     }
 
@@ -616,7 +617,7 @@ class TextFieldDecorationBoxTest {
         padding: PaddingValues,
         rtl: Boolean,
         expectedHeight: Dp,
-        expectedPosition: Dp
+        expectedPosition: Dp,
     ) {
         assertSizeAndPosition_outlinedTextField(
             padding,
@@ -624,7 +625,7 @@ class TextFieldDecorationBoxTest {
             expectedHeight,
             expectedPosition,
             false,
-            if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+            if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
         )
     }
 
@@ -635,7 +636,7 @@ class TextFieldDecorationBoxTest {
         expectedPosition: Dp,
         vertical: Boolean,
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        label: @Composable (() -> Unit)? = null
+        label: @Composable (() -> Unit)? = null,
     ) {
         var size: IntSize? = null
         var position: Offset? = null
@@ -643,7 +644,7 @@ class TextFieldDecorationBoxTest {
         rule.setMaterialContent {
             CompositionLocalProvider(
                 LocalLayoutDirection provides layoutDirection,
-                LocalDensity provides Density
+                LocalDensity provides Density,
             ) {
                 Box(Modifier.onSizeChanged { size = it }) {
                     val value = ""
@@ -653,7 +654,7 @@ class TextFieldDecorationBoxTest {
                         onValueChange = {},
                         modifier = Modifier.focusRequester(focusRequester),
                         singleLine = singleLine,
-                        interactionSource = interactionSource
+                        interactionSource = interactionSource,
                     ) {
                         OutlinedTextFieldDecorationBox(
                             value = value,
@@ -670,7 +671,7 @@ class TextFieldDecorationBoxTest {
                             visualTransformation = VisualTransformation.None,
                             interactionSource = interactionSource,
                             contentPadding = padding,
-                            label = label
+                            label = label,
                         )
                     }
                 }
@@ -702,7 +703,7 @@ class TextFieldDecorationBoxTest {
         singleLine: Boolean,
         hasLabel: Boolean,
         expectedHeight: Dp,
-        expectedPosition: Dp
+        expectedPosition: Dp,
     ) {
         assertSizeAndPosition_textField(
             padding,
@@ -710,7 +711,7 @@ class TextFieldDecorationBoxTest {
             expectedHeight,
             expectedPosition,
             true,
-            hasLabel
+            hasLabel,
         )
     }
 
@@ -719,7 +720,7 @@ class TextFieldDecorationBoxTest {
         rtl: Boolean,
         hasLabel: Boolean,
         expectedHeight: Dp,
-        expectedPosition: Dp
+        expectedPosition: Dp,
     ) {
         assertSizeAndPosition_textField(
             padding,
@@ -728,7 +729,7 @@ class TextFieldDecorationBoxTest {
             expectedPosition,
             false,
             hasLabel,
-            if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+            if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
         )
     }
 
@@ -739,7 +740,7 @@ class TextFieldDecorationBoxTest {
         expectedPosition: Dp,
         vertical: Boolean,
         hasLabel: Boolean,
-        layoutDirection: LayoutDirection = LayoutDirection.Ltr
+        layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     ) {
         var size: IntSize? = null
         var position: Offset? = null
@@ -747,7 +748,7 @@ class TextFieldDecorationBoxTest {
         rule.setMaterialContent {
             CompositionLocalProvider(
                 LocalLayoutDirection provides layoutDirection,
-                LocalDensity provides Density
+                LocalDensity provides Density,
             ) {
                 Box(Modifier.onSizeChanged { size = it }) {
                     val value = "Text"
@@ -757,7 +758,7 @@ class TextFieldDecorationBoxTest {
                         onValueChange = {},
                         modifier = Modifier.focusRequester(focusRequester),
                         singleLine = singleLine,
-                        interactionSource = interactionSource
+                        interactionSource = interactionSource,
                     ) {
                         val label: @Composable (() -> Unit)? =
                             if (hasLabel) {
@@ -778,7 +779,7 @@ class TextFieldDecorationBoxTest {
                             visualTransformation = VisualTransformation.None,
                             interactionSource = interactionSource,
                             contentPadding = padding,
-                            label = label
+                            label = label,
                         )
                     }
                 }

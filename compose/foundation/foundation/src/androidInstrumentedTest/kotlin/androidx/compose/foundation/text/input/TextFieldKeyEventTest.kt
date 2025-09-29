@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input
 
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.internal.toClipEntry
@@ -29,6 +30,7 @@ import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
 import androidx.compose.foundation.text.input.internal.selection.FakeClipboard
+import androidx.compose.foundation.text.test.withEmojiCompat
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
@@ -42,6 +44,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -63,7 +66,9 @@ import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -73,7 +78,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalTestApi::class)
 class TextFieldKeyEventTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val tag = "TextFieldTestTag"
 
@@ -188,6 +193,38 @@ class TextFieldKeyEventTest {
     }
 
     @Test
+    fun textField_linesNavigation_cache_resets_at_start() {
+        keysSequenceTest("hello\n\nworld") {
+            pressKey(Key.DirectionRight)
+            pressKey(Key.DirectionRight) // he|llo
+            pressKey(Key.DirectionDown) // |
+            pressKey(Key.DirectionUp) // he|llo
+            pressKey(Key.DirectionUp) // |hello
+            // now the cache should be reset
+            pressKey(Key.DirectionDown) // |
+            pressKey(Key.DirectionDown) // |world
+            pressKey(Key.Zero)
+            expectedText("hello\n\n0world")
+        }
+    }
+
+    @Test
+    fun textField_linesNavigation_cache_resets_at_end() {
+        keysSequenceTest("hello\n\nworld") {
+            pressKey(Key.DirectionRight)
+            pressKey(Key.DirectionRight) // he|llo
+            pressKey(Key.DirectionDown) // |
+            pressKey(Key.DirectionDown) // wo|rld
+            pressKey(Key.DirectionDown) // world|
+            // now the cache should be reset
+            pressKey(Key.DirectionUp) // |
+            pressKey(Key.DirectionUp) // hello|
+            pressKey(Key.Zero)
+            expectedText("hello0\n\nworld")
+        }
+    }
+
+    @Test
     fun textField_newLine() {
         keysSequenceTest("hello") {
             pressKey(Key.Enter)
@@ -202,6 +239,33 @@ class TextFieldKeyEventTest {
             pressKey(Key.DirectionRight)
             pressKey(Key.Backspace)
             expectedText("hllo")
+        }
+    }
+
+    @Test
+    fun textField_backspace_withDiacritic() {
+        keysSequenceTest(initText = "e\u0301f") { // e + combining acute accent + f
+            press(Key.CtrlLeft + Key.DirectionRight) // move cursor to end of line
+            pressKey(Key.Backspace)
+            expectedText("e\u0301")
+            pressKey(Key.Backspace) // Should remove the accent, not the base character
+            expectedText("e")
+            pressKey(Key.Backspace)
+            expectedText("")
+            pressKey(Key.Backspace) // Shouldn't crash
+            expectedText("")
+        }
+    }
+
+    @Test
+    fun textField_backspace_withEmoji() {
+        val emojiText =
+            "\ud83d\udc69\u200d\u2764\ufe0f\u200d\ud83d\udc8b\u200d\ud83d\udc69" // 👩‍❤️‍💋‍👩
+
+        keysSequenceTest(initText = emojiText, useEmojiCompat = true) {
+            press(Key.CtrlLeft + Key.DirectionRight) // move cursor to end of line
+            pressKey(Key.Backspace)
+            expectedText("") // If it is deleting code points, the result will look like "👩‍❤️‍💋‍"
         }
     }
 
@@ -503,7 +567,7 @@ class TextFieldKeyEventTest {
     fun textField_pageNavigationDown_exactFit() {
         keysSequenceTest(
             initText = "A\nB\nC\nD\nE",
-            modifier = Modifier.requiredSize(90.dp) // exactly 3 lines fit
+            modifier = Modifier.requiredSize(90.dp), // exactly 3 lines fit
         ) {
             pressKey(Key.PageDown)
             expectedSelection(TextRange(6))
@@ -515,7 +579,7 @@ class TextFieldKeyEventTest {
         keysSequenceTest(
             initText = "A\nB\nC\nD\nE",
             initSelection = TextRange(8), // just before 5
-            modifier = Modifier.requiredSize(73.dp)
+            modifier = Modifier.requiredSize(73.dp),
         ) {
             pressKey(Key.PageUp)
             expectedSelection(TextRange(4))
@@ -527,7 +591,7 @@ class TextFieldKeyEventTest {
         keysSequenceTest(
             initText = "A\nB\nC\nD\nE",
             initSelection = TextRange(8), // just before 5
-            modifier = Modifier.requiredSize(90.dp) // exactly 3 lines fit
+            modifier = Modifier.requiredSize(90.dp), // exactly 3 lines fit
         ) {
             pressKey(Key.PageUp)
             expectedSelection(TextRange(2))
@@ -539,7 +603,7 @@ class TextFieldKeyEventTest {
         keysSequenceTest(
             initText = "1\n2\n3\n4\n5",
             initSelection = TextRange(0),
-            modifier = Modifier.requiredSize(90.dp)
+            modifier = Modifier.requiredSize(90.dp),
         ) {
             pressKey(Key.PageUp)
             expectedSelection(TextRange(0))
@@ -707,7 +771,7 @@ class TextFieldKeyEventTest {
                     modifier = Modifier.testTag(tag),
                     lineLimits = SingleLine,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    onKeyboardAction = { keyboardActionCount++ }
+                    onKeyboardAction = { keyboardActionCount++ },
                 )
             }
         }
@@ -734,7 +798,7 @@ class TextFieldKeyEventTest {
                     modifier = Modifier.testTag(tag),
                     lineLimits = MultiLine(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    onKeyboardAction = { keyboardActionCount++ }
+                    onKeyboardAction = { keyboardActionCount++ },
                 )
             }
         }
@@ -861,7 +925,7 @@ class TextFieldKeyEventTest {
         var handled = -1
         val focusRequester = FocusRequester()
         rule.setContent {
-            val stateValue = state.value
+            val stateValue = state.intValue
 
             @Suppress("UNUSED_PARAMETER")
             fun handle(key: KeyEvent): Boolean {
@@ -872,7 +936,7 @@ class TextFieldKeyEventTest {
             BasicTextField(
                 value = "text",
                 onValueChange = {},
-                modifier = Modifier.focusRequester(focusRequester).testTag(tag).onKeyEvent(::handle)
+                modifier = Modifier.focusRequester(focusRequester).testTag(tag).onKeyEvent(::handle),
             )
         }
 
@@ -880,17 +944,51 @@ class TextFieldKeyEventTest {
         rule.onNodeWithTag(tag).performKeyInput { pressKey(Key.A) }
         rule.runOnIdle {
             assertThat(handled).isEqualTo(0)
-            state.value += 1
+            state.intValue += 1
         }
 
         rule.onNodeWithTag(tag).performKeyInput { pressKey(Key.A) }
         rule.runOnIdle { assertThat(handled).isEqualTo(1) }
     }
 
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun singleLineTextField_enterIsNotConsumed_withDefaultKeyboardAction() {
+        var keyDownReceived = false
+        var keyUpReceived = false
+        rule.setContent {
+            val state = rememberTextFieldState()
+            Box(
+                Modifier.onKeyEvent {
+                    if (it.key == Key.Enter) {
+                        when (it.type) {
+                            KeyEventType.KeyDown -> keyDownReceived = true
+                            KeyEventType.KeyUp -> keyUpReceived = true
+                        }
+                    }
+                    false
+                }
+            ) {
+                BasicTextField(
+                    state = state,
+                    lineLimits = SingleLine,
+                    modifier = Modifier.testTag(tag),
+                )
+            }
+        }
+        rule.onNodeWithTag(tag).apply {
+            requestFocus()
+            performKeyInput { pressKey(Key.Enter) }
+        }
+
+        assertTrue(keyDownReceived)
+        assertTrue(keyUpReceived)
+    }
+
     private inner class SequenceScope(
         val state: TextFieldState,
         val clipboard: Clipboard,
-        private val keyInjectionScope: KeyInjectionScope
+        private val keyInjectionScope: KeyInjectionScope,
     ) : KeyInjectionScope by keyInjectionScope {
 
         fun press(keys: List<Key>) {
@@ -932,12 +1030,15 @@ class TextFieldKeyEventTest {
         singleLine: Boolean = false,
         secure: Boolean = false,
         noTextLayout: Boolean = false,
+        useEmojiCompat: Boolean = false,
         sequence: suspend SequenceScope.() -> Unit,
     ) {
         val state = TextFieldState(initText, initSelection)
         val focusRequester = FocusRequester()
         val clipboard = FakeClipboard("InitialTestText")
+        lateinit var context: Context
         rule.setContent {
+            context = LocalContext.current
             CompositionLocalProvider(
                 LocalDensity provides defaultDensity,
                 LocalClipboard provides clipboard,
@@ -952,7 +1053,7 @@ class TextFieldKeyEventTest {
                             if (!noTextLayout) {
                                 it()
                             }
-                        }
+                        },
                     )
                 } else {
                     BasicSecureTextField(
@@ -963,19 +1064,20 @@ class TextFieldKeyEventTest {
                             if (!noTextLayout) {
                                 it()
                             }
-                        }
+                        },
                     )
                 }
             }
         }
 
         rule.runOnIdle { focusRequester.requestFocus() }
-
         rule.waitForIdle()
         rule.mainClock.advanceTimeBy(1000)
 
-        rule.onNodeWithTag(tag).performKeyInput {
-            runBlocking { sequence(SequenceScope(state, clipboard, this@performKeyInput)) }
+        withEmojiCompat(context, enabled = useEmojiCompat) {
+            rule.onNodeWithTag(tag).performKeyInput {
+                runBlocking { sequence(SequenceScope(state, clipboard, this@performKeyInput)) }
+            }
         }
     }
 }

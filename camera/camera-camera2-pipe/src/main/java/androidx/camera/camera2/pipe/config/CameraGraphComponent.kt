@@ -25,6 +25,7 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.Parameters
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.SurfaceTracker
@@ -49,6 +50,8 @@ import javax.inject.Qualifier
 import javax.inject.Scope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 
 @Scope internal annotation class CameraGraphScope
 
@@ -67,6 +70,8 @@ import kotlinx.coroutines.CoroutineScope
 )
 internal interface CameraGraphComponent {
     fun cameraGraph(): CameraGraph
+
+    fun frameDistributor(): FrameDistributor
 
     @Subcomponent.Builder
     interface Builder {
@@ -99,10 +104,7 @@ internal abstract class SharedCameraGraphModules {
     @Binds
     abstract fun bindSurfaceTracker(surfaceGraph: SurfaceGraph): SurfaceTracker
 
-    @Binds
-    abstract fun bindCameraGraphParameters(
-        parameters: CameraGraphParametersImpl
-    ): CameraGraph.Parameters
+    @Binds abstract fun bindCameraGraphParameters(parameters: CameraGraphParametersImpl): Parameters
 
     companion object {
         @CameraGraphScope
@@ -114,8 +116,14 @@ internal abstract class SharedCameraGraphModules {
         @CameraGraphScope
         @Provides
         @ForCameraGraph
-        fun provideCameraGraphCoroutineScope(threads: Threads): CoroutineScope {
-            return CoroutineScope(threads.lightweightDispatcher.plus(CoroutineName("CXCP-Graph")))
+        fun provideCameraGraphCoroutineScope(
+            threads: Threads,
+            @CameraPipeJob cameraPipeJob: Job,
+        ): CoroutineScope {
+            return CoroutineScope(
+                SupervisorJob(cameraPipeJob) +
+                    threads.lightweightDispatcher.plus(CoroutineName("CXCP-Graph"))
+            )
         }
 
         @CameraGraphScope
@@ -124,7 +132,7 @@ internal abstract class SharedCameraGraphModules {
         fun provideRequestListeners(
             graphConfig: CameraGraph.Config,
             listener3A: Listener3A,
-            frameDistributor: FrameDistributor
+            frameDistributor: FrameDistributor,
         ): List<@JvmSuppressWildcards Request.Listener> {
             val listeners = mutableListOf<Request.Listener>(listener3A)
 
@@ -147,13 +155,13 @@ internal abstract class SharedCameraGraphModules {
             streamGraphImpl: StreamGraphImpl,
             cameraController: Provider<CameraController>,
             cameraSurfaceManager: CameraSurfaceManager,
-            imageSourceMap: ImageSourceMap
+            imageSourceMap: ImageSourceMap,
         ): SurfaceGraph {
             return SurfaceGraph(
                 streamGraphImpl,
                 cameraController,
                 cameraSurfaceManager,
-                imageSourceMap.imageSources
+                imageSourceMap.imageSources,
             )
         }
 
@@ -161,9 +169,9 @@ internal abstract class SharedCameraGraphModules {
         @Provides
         fun provideFrameDistributor(
             imageSourceMap: ImageSourceMap,
-            frameCaptureQueue: FrameCaptureQueue
+            frameCaptureQueue: FrameCaptureQueue,
         ): FrameDistributor {
-            return FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue) {}
+            return FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue)
         }
     }
 }
@@ -176,7 +184,7 @@ internal abstract class InternalCameraGraphModules {
         fun provideCameraBackend(
             cameraBackends: CameraBackends,
             graphConfig: CameraGraph.Config,
-            cameraContext: CameraContext
+            cameraContext: CameraContext,
         ): CameraBackend {
             val customCameraBackend = graphConfig.customCameraBackend
             if (customCameraBackend != null) {
@@ -196,7 +204,7 @@ internal abstract class InternalCameraGraphModules {
         @Provides
         fun provideCameraMetadata(
             graphConfig: CameraGraph.Config,
-            cameraBackend: CameraBackend
+            cameraBackend: CameraBackend,
         ): CameraMetadata {
             // TODO: It might be a good idea to cache and go through caches for some of these calls
             //   instead of reading it directly from the backend.

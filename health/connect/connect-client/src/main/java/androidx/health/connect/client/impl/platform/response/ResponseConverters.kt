@@ -64,11 +64,7 @@ import java.time.ZoneOffset
 private const val BUCKET_DATA_ORIGINS_EXTENSION_VERSION = 10
 
 fun AggregateRecordsResponse<Any>.toSdkResponse(metrics: Set<AggregateMetric<Any>>) =
-    buildAggregationResult(
-        metrics,
-        ::get,
-        ::getDataOrigins,
-    )
+    buildAggregationResult(metrics, ::get, ::getDataOrigins)
 
 fun AggregateRecordsGroupedByDurationResponse<Any>.toSdkResponse(
     metrics: Set<AggregateMetric<Any>>
@@ -86,8 +82,9 @@ fun AggregateRecordsGroupedByDurationResponse<Any>.toSdkResponse(
         buildAggregationResult(metrics, ::get, platformDataOriginsGetter),
         startTime,
         endTime,
-        getZoneOffset(metrics.first().toAggregationType())
-            ?: ZoneOffset.systemDefault().rules.getOffset(startTime)
+        metrics.firstNotNullOfOrNull { getZoneOffset(it.toAggregationType()) }
+            ?: ZoneOffset.systemDefault().rules.getOffset(startTime),
+        shouldSkipValidation = true,
     )
 }
 
@@ -97,7 +94,7 @@ fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(metrics: Set<Aggr
 fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(
     metrics: Set<AggregateMetric<Any>>,
     bucketStartTime: LocalDateTime,
-    bucketEndTime: LocalDateTime
+    bucketEndTime: LocalDateTime,
 ): AggregationResultGroupedByPeriod {
     val platformDataOriginsGetter: (AggregationType<Any>) -> Set<PlatformDataOrigin> =
         if (
@@ -111,7 +108,8 @@ fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(
     return AggregationResultGroupedByPeriod(
         buildAggregationResult(metrics, ::get, platformDataOriginsGetter),
         bucketStartTime,
-        bucketEndTime
+        bucketEndTime,
+        shouldSkipValidation = true,
     )
 }
 
@@ -119,7 +117,7 @@ fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(
 internal fun buildAggregationResult(
     metrics: Set<AggregateMetric<Any>>,
     aggregationValueGetter: (AggregationType<Any>) -> Any?,
-    platformDataOriginsGetter: (AggregationType<Any>) -> Set<PlatformDataOrigin>
+    platformDataOriginsGetter: (AggregationType<Any>) -> Set<PlatformDataOrigin>,
 ): AggregationResult {
     val metricValueMap = buildMap {
         metrics.forEach { metric ->
@@ -131,7 +129,7 @@ internal fun buildAggregationResult(
         getDoubleMetricValues(metricValueMap),
         metrics.flatMapTo(hashSetOf()) { metric ->
             platformDataOriginsGetter(metric.toAggregationType()).map { it.toSdkDataOrigin() }
-        }
+        },
     )
 }
 

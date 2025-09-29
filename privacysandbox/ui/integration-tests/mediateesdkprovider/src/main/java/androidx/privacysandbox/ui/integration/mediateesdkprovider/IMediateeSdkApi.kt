@@ -25,6 +25,7 @@ interface IMediateeSdkApi {
         adFormat: Int,
         adType: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
+        automatedTestCallbackBundle: Bundle,
     ): Bundle
 }

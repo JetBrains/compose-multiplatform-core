@@ -16,7 +16,6 @@
 
 package androidx.build.gitclient
 
-import androidx.build.gitclient.GitHeadShaSource.Parameters
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.charset.Charset
@@ -36,25 +35,41 @@ import org.gradle.process.ExecOperations
  *   and MANIFEST to resolve the files if these environmental variables are set, otherwise it will
  *   default to using git.
  */
-fun Project.getChangedFilesProvider(
-    baseCommitOverride: Provider<String>,
-): Provider<List<String>> {
-    val changeInfoPath = System.getenv("CHANGE_INFO")
-    val manifestPath = System.getenv("MANIFEST")
-    return if (changeInfoPath != null && manifestPath != null) {
-        if (baseCommitOverride.isPresent())
-            throw GradleException(
-                "Overriding base commit is not supported when using CHANGE_INFO and MANIFEST"
-            )
-        getChangedFilesFromChangeInfoProvider(manifestPath, changeInfoPath)
-    } else if (changeInfoPath != null) {
-        throw GradleException("Setting CHANGE_INFO requires also setting MANIFEST")
-    } else if (manifestPath != null) {
-        throw GradleException("Setting MANIFEST requires also setting CHANGE_INFO")
-    } else {
-        providers.of(GitChangedFilesSource::class.java) {
-            it.parameters.workingDir.set(rootProject.layout.projectDirectory)
-            it.parameters.baseCommitOverride.set(baseCommitOverride)
+fun Project.getChangedFilesProvider(baseCommitOverride: Provider<String>): Provider<List<String>> {
+    val changeInfo = providers.environmentVariable("CHANGE_INFO")
+    val manifest = providers.environmentVariable("MANIFEST")
+
+    val presence =
+        changeInfo
+            .map { true }
+            .orElse(false)
+            .zip(manifest.map { true }.orElse(false)) { ci, mf -> ci to mf }
+
+    return presence.flatMap { (hasChangeInfo, hasManifest) ->
+        when {
+            hasChangeInfo && hasManifest -> {
+                if (baseCommitOverride.isPresent) {
+                    throw GradleException(
+                        "Overriding base commit is not supported when using CHANGE_INFO and MANIFEST"
+                    )
+                }
+                getChangedFilesFromChangeInfoProvider(manifest, changeInfo)
+            }
+
+            hasChangeInfo xor hasManifest -> {
+                providers.provider {
+                    throw GradleException(
+                        if (hasChangeInfo) "Setting CHANGE_INFO requires also setting MANIFEST"
+                        else "Setting MANIFEST requires also setting CHANGE_INFO"
+                    )
+                }
+            }
+            else -> {
+                providers.of(GitChangedFilesSource::class.java) {
+                    it.parameters.workingDir.set(rootProject.layout.projectDirectory)
+                    it.parameters.baseCommitOverride.set(baseCommitOverride)
+                }
+            }
         }
     }
 }
@@ -64,14 +79,14 @@ fun Project.getChangedFilesProvider(
  *   is set, otherwise it will default to using git.
  */
 fun getHeadShaProvider(project: Project): Provider<String> {
-    val manifestPath = System.getenv("MANIFEST")
-    return if (manifestPath != null) { // using manifest xml file for HEAD SHA
-        project.getHeadShaFromManifestProvider(manifestPath)
-    } else { // using git for HEAD SHA
-        project.providers.of(GitHeadShaSource::class.java) {
-            it.parameters.workingDir.set(project.layout.projectDirectory)
-        }
-    }
+    val manifestPath = project.providers.environmentVariable("MANIFEST")
+    return manifestPath
+        .flatMap { project.getHeadShaFromManifestProvider(manifestPath) }
+        .orElse(
+            project.providers.of(GitHeadShaSource::class.java) {
+                it.parameters.workingDir.set(project.layout.projectDirectory)
+            }
+        )
 }
 
 /** Provides HEAD SHA by calling git in [Parameters.workingDir]. */
@@ -98,7 +113,7 @@ internal abstract class GitChangedFilesSource :
     ValueSource<List<String>, GitChangedFilesSource.Parameters> {
     interface Parameters : ValueSourceParameters {
         val workingDir: DirectoryProperty
-        val baseCommitOverride: Property<String?>
+        val baseCommitOverride: Property<String>
     }
 
     @get:Inject abstract val execOperations: ExecOperations
@@ -118,13 +133,14 @@ internal abstract class GitChangedFilesSource :
                         "-1",
                         "--merges",
                         "--oneline",
-                        "--pretty=format:%H"
+                        "--pretty=format:%H",
                     )
                     it.standardOutput = output
                     it.workingDir = gitDirInParentFilepath
                 }
                 String(output.toByteArray(), Charset.defaultCharset()).trim()
             }
+        output.reset()
         // Get the list of changed files since the last git merge commit
         execOperations.exec {
             it.commandLine("git", "diff", "--name-only", "HEAD", baseCommit)

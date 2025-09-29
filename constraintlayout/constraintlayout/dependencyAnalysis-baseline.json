@@ -20,15 +20,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.profileinstaller:profileinstaller",
-        "resolvedVersion": "1.4.0"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "junit:junit",
         "resolvedVersion": "4.13.2"
       },

@@ -36,6 +36,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +46,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterialApi::class)
 class PullRefreshIndicatorTransformTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     // Convert from floats to DP to avoid rounding issues later
 
@@ -69,7 +70,7 @@ class PullRefreshIndicatorTransformTest {
                     // Set a larger size so that when offset the indicator will still appear
                     .size(ContainingBoxSize)
                     .testTag(BoxTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier.pullRefreshIndicatorTransform(state)
@@ -95,7 +96,7 @@ class PullRefreshIndicatorTransformTest {
                     // Set a larger size so that when offset the indicator will still appear
                     .size(ContainingBoxSize)
                     .testTag(BoxTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier.pullRefreshIndicatorTransform(state)
@@ -147,7 +148,7 @@ class PullRefreshIndicatorTransformTest {
                 rememberPullRefreshState(
                     refreshing = true,
                     onRefresh = {},
-                    refreshingOffset = IndicatorSize
+                    refreshingOffset = IndicatorSize,
                 )
             Box(
                 Modifier.fillMaxSize()
@@ -156,7 +157,7 @@ class PullRefreshIndicatorTransformTest {
                     // Set a larger size so that when offset the indicator will still appear
                     .size(ContainingBoxSize)
                     .testTag(BoxTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier.pullRefreshIndicatorTransform(state)

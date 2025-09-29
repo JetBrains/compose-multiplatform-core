@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,119 +16,137 @@
 
 package androidx.xr.scenecore
 
-import android.util.Log
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Session
+import androidx.xr.scenecore.runtime.InputEventListener as RtInputEventListener
+import androidx.xr.scenecore.runtime.PointerCaptureComponent as RtPointerCaptureComponent
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /**
- * Provides pointer capture capabilities for a given entity.
+ * Provides pointer capture capabilities for a given [Entity].
  *
- * To enable pointer capture, the task must be in full space, and the entity must be visible.
+ * To enable pointer capture, the task must be in full space, the entity must be visible, and the
+ * [PointerCaptureComponent] must be attached to the entity.
  *
  * Only one PointerCaptureComponent can be attached to an entity at a given time. If a second one
  * tries to attach to an entity, it will fail.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class PointerCaptureComponent
 private constructor(
-    private val platformAdapter: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
     private val entityManager: EntityManager,
     private val executor: Executor,
-    private val stateListener: StateListener,
-    private val inputEventListener: InputEventListener,
+    private val stateListener: Consumer<@PointerCaptureStateValue Int>,
+    private val inputEventListener: Consumer<InputEvent>,
 ) : Component {
 
-    private var attachedEntity: Entity? = null
-
-    private val rtInputEventListener =
-        JxrPlatformAdapter.InputEventListener { rtEvent ->
-            inputEventListener.onInputEvent(rtEvent.toInputEvent(entityManager))
-        }
-
-    private val rtStateListener =
-        JxrPlatformAdapter.PointerCaptureComponent.StateListener { pcState: Int ->
-            when (pcState) {
-                JxrPlatformAdapter.PointerCaptureComponent.POINTER_CAPTURE_STATE_PAUSED ->
-                    stateListener.onStateChanged(POINTER_CAPTURE_STATE_PAUSED)
-                JxrPlatformAdapter.PointerCaptureComponent.POINTER_CAPTURE_STATE_ACTIVE ->
-                    stateListener.onStateChanged(POINTER_CAPTURE_STATE_ACTIVE)
-                JxrPlatformAdapter.PointerCaptureComponent.POINTER_CAPTURE_STATE_STOPPED ->
-                    stateListener.onStateChanged(POINTER_CAPTURE_STATE_STOPPED)
-                else -> {
-                    Log.e(TAG, "Unknown pointer capture state received: ${pcState}")
-                    stateListener.onStateChanged(pcState)
-                }
-            }
-        }
-
-    private val rtComponent by lazy {
-        platformAdapter.createPointerCaptureComponent(
-            executor,
-            rtStateListener,
-            rtInputEventListener
-        )
-    }
-
+    @Target(
+        AnnotationTarget.FUNCTION,
+        AnnotationTarget.PROPERTY_GETTER,
+        AnnotationTarget.PROPERTY_SETTER,
+        AnnotationTarget.VALUE_PARAMETER,
+        AnnotationTarget.FIELD,
+        AnnotationTarget.LOCAL_VARIABLE,
+        AnnotationTarget.TYPE,
+    )
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         value =
             [
-                POINTER_CAPTURE_STATE_PAUSED,
-                POINTER_CAPTURE_STATE_ACTIVE,
-                POINTER_CAPTURE_STATE_STOPPED
+                PointerCaptureState.POINTER_CAPTURE_PAUSED,
+                PointerCaptureState.POINTER_CAPTURE_ACTIVE,
+                PointerCaptureState.POINTER_CAPTURE_STOPPED,
             ]
     )
-    internal annotation class PointerCaptureState
+    internal annotation class PointerCaptureStateValue
 
-    /** Listener for pointer capture state changes. */
-    public interface StateListener {
-        public fun onStateChanged(@PointerCaptureState newState: Int)
+    /** Defines the possible states of a [PointerCaptureComponent]. */
+    public object PointerCaptureState {
+        /**
+         * Pointer Capture is temporarily disabled for this component. The component can resume
+         * capture from this state.
+         */
+        public const val POINTER_CAPTURE_PAUSED: Int = 0
+
+        /** Pointer Capture is enabled for this component. */
+        public const val POINTER_CAPTURE_ACTIVE: Int = 1
+
+        /**
+         * Pointer Capture has been stopped for this component and no more callbacks will get
+         * triggered. The component will not recover from this state. This can occur if the
+         * underlying system replaces this pointer capture request by another one.
+         */
+        public const val POINTER_CAPTURE_STOPPED: Int = 2
+    }
+
+    private var attachedEntity: Entity? = null
+
+    private val rtInputEventListener = RtInputEventListener { rtEvent ->
+        inputEventListener.accept(rtEvent.toInputEvent(entityManager))
+    }
+
+    private val rtStateListener =
+        RtPointerCaptureComponent.StateListener { pcState: Int ->
+            when (pcState) {
+                RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_PAUSED ->
+                    stateListener.accept(PointerCaptureState.POINTER_CAPTURE_PAUSED)
+                RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_ACTIVE ->
+                    stateListener.accept(PointerCaptureState.POINTER_CAPTURE_ACTIVE)
+                RtPointerCaptureComponent.PointerCaptureState.POINTER_CAPTURE_STATE_STOPPED ->
+                    stateListener.accept(PointerCaptureState.POINTER_CAPTURE_STOPPED)
+                else -> {
+                    stateListener.accept(pcState)
+                }
+            }
+        }
+
+    private val rtComponent by lazy {
+        sceneRuntime.createPointerCaptureComponent(executor, rtStateListener, rtInputEventListener)
     }
 
     override fun onAttach(entity: Entity): Boolean {
         if (attachedEntity != null) {
-            Log.e(TAG, "Already attached to entity ${attachedEntity}")
             return false
         }
         attachedEntity = entity
 
-        return (entity as BaseEntity<*>).rtEntity.addComponent(rtComponent)
+        return (entity as BaseEntity<*>).rtEntity!!.addComponent(rtComponent)
     }
 
     override fun onDetach(entity: Entity) {
         if (entity != attachedEntity) {
-            Log.e(TAG, "Detaching from non-attached entity, ignoring")
             return
         }
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtComponent)
+        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtComponent)
         attachedEntity = null
     }
 
     public companion object {
-        /** Pointer Capture is enabled for this component. */
-        public const val POINTER_CAPTURE_STATE_PAUSED: Int = 0
-
-        /** Pointer Capture is disabled for this component. */
-        public const val POINTER_CAPTURE_STATE_ACTIVE: Int = 1
-
-        /** Pointer Capture has been stopped for this component. */
-        public const val POINTER_CAPTURE_STATE_STOPPED: Int = 2
-
-        private const val TAG: String = "PointerCaptureComponent"
-
-        /** Factory function for creating [PointerCaptureComponent] instances. */
+        /**
+         * Creates a new instance of [PointerCaptureComponent].
+         *
+         * @param session The active [Session] for the scene.
+         * @param executor The [Executor] on which the listener callbacks will be invoked.
+         * @param stateListener A [Consumer] to receive updates when the pointer capture state
+         *   changes (e.g., from active to paused).
+         * @param inputListener A [Consumer] to receive all [InputEvent]s while pointer capture is
+         *   active for the attached entity.
+         * @return A new instance of [PointerCaptureComponent].
+         */
         @JvmStatic
         public fun create(
             session: Session,
             executor: Executor,
-            stateListener: StateListener,
-            inputListener: InputEventListener,
+            stateListener: Consumer<@PointerCaptureStateValue Int>,
+            inputListener: Consumer<InputEvent>,
         ): PointerCaptureComponent =
             PointerCaptureComponent(
-                session.platformAdapter,
-                session.entityManager,
+                session.sceneRuntime,
+                session.scene.entityManager,
                 executor,
                 stateListener,
                 inputListener,

@@ -53,6 +53,7 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_SCROL
 import androidx.test.filters.MediumTest
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,7 +83,7 @@ class ScrollAccessibilityTest(private val config: TestConfig) {
             }
     }
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     private val scrollerTag = "ScrollerTest"
     private var composeView: View? = null
@@ -133,7 +134,7 @@ class ScrollAccessibilityTest(private val config: TestConfig) {
         createScrollableContent_StartAtStart()
         verifyNodeInfoScrollActions(
             expectForward = !config.reversed,
-            expectBackward = config.reversed
+            expectBackward = config.reversed,
         )
     }
 
@@ -148,7 +149,7 @@ class ScrollAccessibilityTest(private val config: TestConfig) {
         createScrollableContent_StartAtEnd()
         verifyNodeInfoScrollActions(
             expectForward = config.reversed,
-            expectBackward = !config.reversed
+            expectBackward = !config.reversed,
         )
     }
 
@@ -165,7 +166,7 @@ class ScrollAccessibilityTest(private val config: TestConfig) {
     private fun testAbsoluteDirection(
         canonicalTarget: Int,
         accessibilityAction: Int,
-        expectActionSuccess: Boolean
+        expectActionSuccess: Boolean,
     ) {
         val inverse = config.horizontal && config.rtl
         val target = if (!inverse) canonicalTarget else 100 - canonicalTarget - 1
@@ -179,7 +180,7 @@ class ScrollAccessibilityTest(private val config: TestConfig) {
     private fun testScrollAction(
         target: Int,
         accessibilityAction: Int,
-        expectActionSuccess: Boolean = true
+        expectActionSuccess: Boolean = true,
     ) {
         createScrollableContent_StartInMiddle()
         rule.onNodeWithText("$target").assertIsNotDisplayed()

@@ -50,6 +50,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -63,7 +64,7 @@ private const val TargetTag = "TargetLayout"
 @RunWith(JUnit4::class)
 class TapGestureDetectorTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private var pressed = false
     private var released = false
@@ -93,7 +94,7 @@ class TapGestureDetectorTest {
                     canceled = true
                 }
             },
-            onTap = { tapped = true }
+            onTap = { tapped = true },
         )
     }
 
@@ -107,7 +108,7 @@ class TapGestureDetectorTest {
                     canceled = true
                 }
             },
-            onTap = { tapped = true }
+            onTap = { tapped = true },
         )
     }
 
@@ -124,7 +125,7 @@ class TapGestureDetectorTest {
             },
             onTap = { tapped = true },
             onLongPress = { longPressed = true },
-            onDoubleTap = { doubleTapped = true }
+            onDoubleTap = { doubleTapped = true },
         )
     }
 
@@ -144,12 +145,12 @@ class TapGestureDetectorTest {
     }
 
     private fun layoutWithGestureDetector(
-        gestureDetector: suspend PointerInputScope.() -> Unit,
+        gestureDetector: suspend PointerInputScope.() -> Unit
     ): @Composable () -> Unit = {
         CompositionLocalProvider(
             LocalDensity provides Density(1f),
             LocalViewConfiguration provides
-                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero)
+                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero),
         ) {
             with(LocalDensity.current) {
                 Box(
@@ -181,7 +182,7 @@ class TapGestureDetectorTest {
     private fun performTouch(
         initialPass: PointerInputChange.() -> Unit = nothingHandler,
         finalPass: PointerInputChange.() -> Unit = nothingHandler,
-        block: TouchInjectionScope.() -> Unit
+        block: TouchInjectionScope.() -> Unit,
     ) {
         this.initialPass = initialPass
         this.finalPass = finalPass
@@ -815,7 +816,7 @@ class TapGestureDetectorTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_NONE
+                /* classification = */ CLASSIFICATION_NONE,
             )
 
         view.dispatchTouchEvent(downEvent)
@@ -846,7 +847,7 @@ class TapGestureDetectorTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_DEEP_PRESS
+                /* classification = */ CLASSIFICATION_DEEP_PRESS,
             )
 
         view.dispatchTouchEvent(deepPressMoveEvent)
@@ -919,7 +920,7 @@ class TapGestureDetectorTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_NONE
+                /* classification = */ CLASSIFICATION_NONE,
             )
 
         view.dispatchTouchEvent(downEvent)
@@ -951,7 +952,7 @@ class TapGestureDetectorTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_DEEP_PRESS
+                /* classification = */ CLASSIFICATION_DEEP_PRESS,
             )
 
         view.dispatchTouchEvent(deepPressMoveEvent)

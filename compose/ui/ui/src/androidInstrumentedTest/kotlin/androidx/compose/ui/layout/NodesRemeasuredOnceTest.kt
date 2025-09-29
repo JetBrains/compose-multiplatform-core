@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,7 +35,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class NodesRemeasuredOnceTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
 
@@ -224,7 +225,7 @@ private fun WrapChild(onMeasured: (Int) -> Unit = {}, content: @Composable () ->
 @Composable
 private fun WrapChildMeasureDuringLayout(
     onMeasured: (Int) -> Unit = {},
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Layout(content = content) { measurables, constraints ->
         val width = if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
@@ -244,7 +245,7 @@ private fun WrapChildMeasureDuringLayout(
 @Composable
 private fun IntrinsicSizeAndMeasureDuringLayout(
     onMeasured: (Int) -> Unit = {},
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Layout(content = content) { measurables, constraints ->
         val width = measurables.first().maxIntrinsicWidth(constraints.maxWidth)
@@ -265,7 +266,7 @@ private fun NotPlaceChild(height: State<Int>, content: @Composable () -> Unit) {
     Layout(content = content) { measurables, constraints ->
         layout(
             if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth,
-            height.value
+            height.value,
         ) {
             measurables
                 .first()
@@ -279,7 +280,7 @@ private fun Child(height: State<Int>) {
     Layout { _, constraints ->
         layout(
             if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth,
-            height.value
+            height.value,
         ) {}
     }
 }

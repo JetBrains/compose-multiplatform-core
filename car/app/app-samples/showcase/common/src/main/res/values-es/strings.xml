@@ -231,14 +231,11 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"Demo de plantilla de mensaje"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"El mensaje va aquí.\nMás texto en la segunda línea."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Demo de plantilla de mensaje corto"</string>
-    <!-- no translation found for sectioned_item_template_demo_title (8377594346379786774) -->
-    <skip />
-    <!-- no translation found for sectioned_item_template_radio_button_section_title (1014325865070733609) -->
-    <skip />
-    <!-- no translation found for sectioned_item_template_toggle_section_title (3197227971733559949) -->
-    <skip />
-    <!-- no translation found for sectioned_item_template_lots_of_rows_section_title (1501401956386938735) -->
-    <skip />
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Demo de plantilla de elemento con secciones"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Sección de botón de selección"</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Mostrar u ocultar sección"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"Sección con muchas filas"</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"Sección de elementos de la cuadrícula"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Demo de plantilla de panel"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Demo de plantilla de la lista de lugares"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Ver lugares"</string>
@@ -346,7 +343,7 @@
     <string name="voice_access_demo_title" msgid="3825223890895361496">"Pantalla de la demo de Voice Access"</string>
     <string name="user_interactions_demo_title" msgid="1356952319161314986">"Interacciones de usuarios"</string>
     <string name="request_permission_menu_demo_title" msgid="4796486779527427017">"Demos de solicitud de permisos"</string>
-    <string name="application_overflow_title" msgid="396427940886169325">"Validador de desbordamiento de aplicaciones"</string>
+    <string name="application_overflow_title" msgid="396427940886169325">"Validador de desbordamiento de apps"</string>
     <string name="application_overflow_subtitle1" msgid="7429415605726615529">"Prueba las siguientes plantillas mientras se hace el cambio"</string>
     <string name="application_overflow_subtitle2" msgid="4385123036846369714">"el vehículo del estado de estacionamiento al de conducción"</string>
     <string name="perm_group" msgid="3834918337351876270">"Grupo de permisos"</string>

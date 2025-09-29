@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -34,16 +33,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class BadgeScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -52,7 +52,7 @@ class BadgeScreenshotTest {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(
                 Modifier.size(56.dp).semantics(mergeDescendants = true) {}.testTag(TestTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Favorite, null) }
             }
@@ -66,7 +66,7 @@ class BadgeScreenshotTest {
         composeTestRule.setMaterialContent(darkColorScheme()) {
             Box(
                 Modifier.size(56.dp).semantics(mergeDescendants = true) {}.testTag(TestTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Favorite, null) }
             }
@@ -80,7 +80,7 @@ class BadgeScreenshotTest {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(
                 Modifier.size(56.dp).semantics(mergeDescendants = true) {}.testTag(TestTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 BadgedBox(badge = { Badge { Text("8") } }) { Icon(Icons.Filled.Favorite, null) }
             }
@@ -94,7 +94,7 @@ class BadgeScreenshotTest {
         composeTestRule.setMaterialContent(darkColorScheme()) {
             Box(
                 Modifier.size(56.dp).semantics(mergeDescendants = true) {}.testTag(TestTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 BadgedBox(badge = { Badge { Text("8") } }) { Icon(Icons.Filled.Favorite, null) }
             }

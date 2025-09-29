@@ -19,6 +19,7 @@ package androidx.health.connect.client.impl.platform.aggregate
 import android.annotation.TargetApi
 import android.content.Context
 import android.os.Build
+import android.os.ext.SdkExtensions
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
@@ -41,6 +42,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Period
@@ -49,6 +51,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertThrows
+import org.junit.Assume
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,12 +76,22 @@ class BloodPressureAggregationExtensionsTest {
     val grantPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             HealthPermission.getWritePermission(BloodPressureRecord::class),
-            HealthPermission.getReadPermission(BloodPressureRecord::class)
+            HealthPermission.getReadPermission(BloodPressureRecord::class),
         )
+
+    @Before
+    fun setUp() {
+        Assume.assumeTrue(
+            SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) < 10
+        )
+    }
 
     @After
     fun tearDown() = runTest {
-        healthConnectClient.deleteRecords(BloodPressureRecord::class, TimeRangeFilter.none())
+        healthConnectClient.deleteRecords(
+            BloodPressureRecord::class,
+            TimeRangeFilter.after(Instant.EPOCH),
+        )
     }
 
     @Test
@@ -90,13 +104,13 @@ class BloodPressureAggregationExtensionsTest {
                 BloodPressureRecord.SYSTOLIC_AVG,
                 BloodPressureRecord.SYSTOLIC_MAX,
                 BloodPressureRecord.SYSTOLIC_MIN,
-                NutritionRecord.TRANS_FAT_TOTAL
+                NutritionRecord.TRANS_FAT_TOTAL,
             )
 
         assertThrows(IllegalStateException::class.java) {
             runBlocking {
                 healthConnectClient.aggregateBloodPressure(
-                    AggregateRequest(metrics, TimeRangeFilter.none(), emptySet())
+                    AggregateRequest(metrics, TimeRangeFilter.after(Instant.EPOCH), emptySet())
                 )
             }
         }
@@ -116,7 +130,7 @@ class BloodPressureAggregationExtensionsTest {
 
         val aggregationResult =
             healthConnectClient.aggregateBloodPressure(
-                AggregateRequest(metrics, TimeRangeFilter.none(), emptySet())
+                AggregateRequest(metrics, TimeRangeFilter.after(Instant.EPOCH), emptySet())
             )
 
         metrics.forEach { assertThat(it in aggregationResult).isFalse() }
@@ -132,36 +146,36 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 105.millimetersOfMercury,
-                    diastolic = 60.millimetersOfMercury
+                    diastolic = 60.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 2.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 90.millimetersOfMercury,
-                    diastolic = 70.millimetersOfMercury
+                    diastolic = 70.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 4.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
+                    diastolic = 80.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 6.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 110.millimetersOfMercury,
-                    diastolic = 65.millimetersOfMercury
+                    diastolic = 65.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 8.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
-                )
+                    diastolic = 80.millimetersOfMercury,
+                ),
             )
         )
 
@@ -169,8 +183,8 @@ class BloodPressureAggregationExtensionsTest {
             healthConnectClient.aggregateBloodPressure(
                 AggregateRequest(
                     setOf(BloodPressureRecord.SYSTOLIC_MAX),
-                    TimeRangeFilter.none(),
-                    emptySet()
+                    TimeRangeFilter.after(Instant.EPOCH),
+                    emptySet(),
                 )
             )
 
@@ -188,15 +202,15 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
+                    diastolic = 80.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 8.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 60.millimetersOfMercury
-                )
+                    diastolic = 60.millimetersOfMercury,
+                ),
             )
         )
 
@@ -211,8 +225,8 @@ class BloodPressureAggregationExtensionsTest {
                         BloodPressureRecord.SYSTOLIC_MAX,
                         BloodPressureRecord.SYSTOLIC_MIN,
                     ),
-                    TimeRangeFilter.none(),
-                    emptySet()
+                    TimeRangeFilter.after(Instant.EPOCH),
+                    emptySet(),
                 )
             )
 
@@ -236,15 +250,15 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
+                    diastolic = 80.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 8.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 60.millimetersOfMercury
-                )
+                    diastolic = 60.millimetersOfMercury,
+                ),
             )
         )
 
@@ -256,8 +270,8 @@ class BloodPressureAggregationExtensionsTest {
                         BloodPressureRecord.SYSTOLIC_MAX,
                         BloodPressureRecord.SYSTOLIC_MIN,
                     ),
-                    TimeRangeFilter.none(),
-                    emptySet()
+                    TimeRangeFilter.after(Instant.EPOCH),
+                    emptySet(),
                 )
             )
 
@@ -269,7 +283,7 @@ class BloodPressureAggregationExtensionsTest {
         setOf(
                 BloodPressureRecord.DIASTOLIC_MAX,
                 BloodPressureRecord.DIASTOLIC_MIN,
-                BloodPressureRecord.SYSTOLIC_AVG
+                BloodPressureRecord.SYSTOLIC_AVG,
             )
             .forEach { assertThat(it in aggregationResult).isFalse() }
         assertThat(aggregationResult.dataOrigins).containsExactly(DataOrigin(context.packageName))
@@ -284,42 +298,42 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 105.millimetersOfMercury,
-                    diastolic = 60.millimetersOfMercury
+                    diastolic = 60.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 2.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 90.millimetersOfMercury,
-                    diastolic = 70.millimetersOfMercury
+                    diastolic = 70.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 4.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
+                    diastolic = 80.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 6.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 110.millimetersOfMercury,
-                    diastolic = 65.millimetersOfMercury
+                    diastolic = 65.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 8.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
-                )
+                    diastolic = 80.millimetersOfMercury,
+                ),
             )
         )
 
         val aggregationResult =
             healthConnectClient.aggregateBloodPressure(
-                AggregateRequest(emptySet(), TimeRangeFilter.none(), emptySet())
+                AggregateRequest(emptySet(), TimeRangeFilter.after(Instant.EPOCH), emptySet())
             )
 
         setOf(
@@ -343,36 +357,36 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 105.millimetersOfMercury,
-                    diastolic = 60.millimetersOfMercury
+                    diastolic = 60.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 2.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 90.millimetersOfMercury,
-                    diastolic = 70.millimetersOfMercury
+                    diastolic = 70.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 4.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
+                    diastolic = 80.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 6.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 110.millimetersOfMercury,
-                    diastolic = 65.millimetersOfMercury
+                    diastolic = 65.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 8.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
-                )
+                    diastolic = 80.millimetersOfMercury,
+                ),
             )
         )
 
@@ -382,9 +396,9 @@ class BloodPressureAggregationExtensionsTest {
                     setOf(BloodPressureRecord.DIASTOLIC_MIN),
                     TimeRangeFilter.between(
                         START_TIME + 30.seconds,
-                        START_TIME + 6.minutes + 45.seconds
+                        START_TIME + 6.minutes + 45.seconds,
                     ),
-                    emptySet()
+                    emptySet(),
                 )
             )
 
@@ -402,15 +416,15 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 110.millimetersOfMercury,
-                    diastolic = 65.millimetersOfMercury
+                    diastolic = 65.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 2.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
-                )
+                    diastolic = 80.millimetersOfMercury,
+                ),
             )
         )
 
@@ -420,9 +434,9 @@ class BloodPressureAggregationExtensionsTest {
                     setOf(BloodPressureRecord.DIASTOLIC_AVG, BloodPressureRecord.SYSTOLIC_AVG),
                     TimeRangeFilter.between(
                         START_TIME + 1.minutes,
-                        START_TIME + 1.minutes + 59.seconds
+                        START_TIME + 1.minutes + 59.seconds,
                     ),
-                    emptySet()
+                    emptySet(),
                 )
             )
 
@@ -440,36 +454,36 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 105.millimetersOfMercury,
-                    diastolic = 60.millimetersOfMercury
+                    diastolic = 60.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 2.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 70.millimetersOfMercury
+                    diastolic = 70.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 4.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
+                    diastolic = 80.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 6.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 110.millimetersOfMercury,
-                    diastolic = 65.millimetersOfMercury
+                    diastolic = 65.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 8.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
-                )
+                    diastolic = 80.millimetersOfMercury,
+                ),
             )
         )
 
@@ -480,14 +494,14 @@ class BloodPressureAggregationExtensionsTest {
                     TimeRangeFilter.between(
                         LocalDateTime.ofInstant(
                             START_TIME + 2.hours + 30.seconds,
-                            ZoneOffset.ofHours(-2)
+                            ZoneOffset.ofHours(-2),
                         ),
                         LocalDateTime.ofInstant(
                             START_TIME + 2.hours + 6.minutes + 45.seconds,
-                            ZoneOffset.ofHours(-2)
-                        )
+                            ZoneOffset.ofHours(-2),
+                        ),
                     ),
-                    emptySet()
+                    emptySet(),
                 )
             )
 
@@ -508,8 +522,8 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 110.millimetersOfMercury,
-                    diastolic = 65.millimetersOfMercury
-                ),
+                    diastolic = 65.millimetersOfMercury,
+                )
             )
         )
 
@@ -517,8 +531,8 @@ class BloodPressureAggregationExtensionsTest {
             healthConnectClient.aggregateBloodPressure(
                 AggregateRequest(
                     setOf(BloodPressureRecord.SYSTOLIC_AVG),
-                    TimeRangeFilter.none(),
-                    setOf(DataOrigin(context.packageName))
+                    TimeRangeFilter.after(Instant.EPOCH),
+                    setOf(DataOrigin(context.packageName)),
                 )
             )
 
@@ -536,8 +550,8 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 110.millimetersOfMercury,
-                    diastolic = 65.millimetersOfMercury
-                ),
+                    diastolic = 65.millimetersOfMercury,
+                )
             )
         )
 
@@ -546,7 +560,7 @@ class BloodPressureAggregationExtensionsTest {
                 AggregateRequest(
                     setOf(BloodPressureRecord.SYSTOLIC_AVG),
                     TimeRangeFilter.after(START_TIME + 2.minutes),
-                    emptySet()
+                    emptySet(),
                 )
             )
 
@@ -563,8 +577,8 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 110.millimetersOfMercury,
-                    diastolic = 65.millimetersOfMercury
-                ),
+                    diastolic = 65.millimetersOfMercury,
+                )
             )
         )
 
@@ -572,8 +586,8 @@ class BloodPressureAggregationExtensionsTest {
             healthConnectClient.aggregateBloodPressure(
                 AggregateRequest(
                     setOf(BloodPressureRecord.SYSTOLIC_AVG),
-                    TimeRangeFilter.none(),
-                    setOf(DataOrigin("some random package name"))
+                    TimeRangeFilter.after(Instant.EPOCH),
+                    setOf(DataOrigin("some random package name")),
                 )
             )
 
@@ -590,22 +604,22 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
+                    diastolic = 80.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 8.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 60.millimetersOfMercury
+                    diastolic = 60.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 1.days + 10.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 70.millimetersOfMercury
-                )
+                    diastolic = 70.millimetersOfMercury,
+                ),
             )
         )
 
@@ -623,7 +637,7 @@ class BloodPressureAggregationExtensionsTest {
                     TimeRangeFilter.after(
                         START_TIME.toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC)
                     ),
-                    timeRangeSlicer = Period.ofDays(1)
+                    timeRangeSlicer = Period.ofDays(1),
                 )
             )
 
@@ -679,22 +693,22 @@ class BloodPressureAggregationExtensionsTest {
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury
+                    diastolic = 80.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 8.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 60.millimetersOfMercury
+                    diastolic = 60.millimetersOfMercury,
                 ),
                 BloodPressureRecord(
                     time = START_TIME + 1.hours + 10.minutes,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 100.millimetersOfMercury,
-                    diastolic = 70.millimetersOfMercury
-                )
+                    diastolic = 70.millimetersOfMercury,
+                ),
             )
         )
 
@@ -711,7 +725,7 @@ class BloodPressureAggregationExtensionsTest {
                             BloodPressureRecord.SYSTOLIC_MIN,
                         ),
                     timeRangeFilter = TimeRangeFilter.after(START_TIME),
-                    timeRangeSlicer = 1.hours
+                    timeRangeSlicer = 1.hours,
                 )
             )
 
@@ -733,8 +747,8 @@ class BloodPressureAggregationExtensionsTest {
                                     BloodPressureRecord.SYSTOLIC_MAX.metricKey to 120.0,
                                     BloodPressureRecord.SYSTOLIC_MIN.metricKey to 100.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName))
-                        )
+                            dataOrigins = setOf(DataOrigin(context.packageName)),
+                        ),
                 ),
                 AggregationResultGroupedByDuration(
                     startTime = START_TIME + 1.hours,
@@ -752,9 +766,9 @@ class BloodPressureAggregationExtensionsTest {
                                     BloodPressureRecord.SYSTOLIC_MAX.metricKey to 100.0,
                                     BloodPressureRecord.SYSTOLIC_MIN.metricKey to 100.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName))
-                        )
-                )
+                            dataOrigins = setOf(DataOrigin(context.packageName)),
+                        ),
+                ),
             )
     }
 

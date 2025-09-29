@@ -35,6 +35,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +44,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TextFieldOutputTransformationGesturesIntegrationTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
@@ -60,11 +61,11 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
                     TextStyle(
                         textAlign = TextAlign.Center,
                         fontFamily = TEST_FONT_FAMILY,
-                        fontSize = 10.sp
+                        fontSize = 10.sp,
                     ),
                 outputTransformation = {
                     replace(1, 2, "bbbb") // "zbbbbz"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).assertTextEquals("zbbbbz")
@@ -105,9 +106,9 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
                     TextStyle(
                         textAlign = TextAlign.Left,
                         fontFamily = TEST_FONT_FAMILY,
-                        fontSize = 10.sp
+                        fontSize = 10.sp,
                     ),
-                outputTransformation = { replace(indexOfA, indexOfA + 1, replacement) }
+                outputTransformation = { replace(indexOfA, indexOfA + 1, replacement) },
             )
         }
         rule.onNodeWithTag(Tag).assertTextEquals("zzzzzzzz${replacement}z")
@@ -136,11 +137,11 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
                     TextStyle(
                         textAlign = TextAlign.Center,
                         fontFamily = TEST_FONT_FAMILY,
-                        fontSize = 10.sp
+                        fontSize = 10.sp,
                     ),
                 outputTransformation = {
                     insert(1, "bbbb") // "zbbbbz"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).assertTextEquals("zbbbbz")

@@ -1,0 +1,7 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.customview.poolingcontainer.PoolingContainer#isPoolingContainer(android.view.View):
+    Source breaking change: method androidx.customview.poolingcontainer.PoolingContainer.isPoolingContainer(android.view.View) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.customview.poolingcontainer.PoolingContainer#isWithinPoolingContainer(android.view.View):
+    Source breaking change: method androidx.customview.poolingcontainer.PoolingContainer.isWithinPoolingContainer(android.view.View) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.customview.poolingcontainer.PoolingContainer#setPoolingContainer(android.view.View, boolean):
+    Source breaking change: method androidx.customview.poolingcontainer.PoolingContainer.setPoolingContainer(android.view.View,boolean) can no longer be resolved from Kotlin source

@@ -39,7 +39,7 @@ package androidx.datastore.preferences.core {
   }
 
   public static final class Preferences.Key<T> {
-    method public String getName();
+    method @InaccessibleFromKotlin public String getName();
     method public infix androidx.datastore.preferences.core.Preferences.Pair<T> to(T value);
     property public String name;
   }
@@ -54,7 +54,7 @@ package androidx.datastore.preferences.core {
   }
 
   public final class PreferencesFileSerializer implements androidx.datastore.core.Serializer<androidx.datastore.preferences.core.Preferences> {
-    method public androidx.datastore.preferences.core.Preferences getDefaultValue();
+    method @InaccessibleFromKotlin public androidx.datastore.preferences.core.Preferences getDefaultValue();
     method @kotlin.jvm.Throws(exceptionClasses={IOException::class, CorruptionException::class}) public suspend Object? readFrom(java.io.InputStream input, kotlin.coroutines.Continuation<? super androidx.datastore.preferences.core.Preferences>) throws androidx.datastore.core.CorruptionException, java.io.IOException;
     method @kotlin.jvm.Throws(exceptionClasses={IOException::class, CorruptionException::class}) public suspend Object? writeTo(androidx.datastore.preferences.core.Preferences t, java.io.OutputStream output, kotlin.coroutines.Continuation<? super kotlin.Unit>) throws androidx.datastore.core.CorruptionException, java.io.IOException;
     property public androidx.datastore.preferences.core.Preferences defaultValue;
@@ -77,7 +77,7 @@ package androidx.datastore.preferences.core {
   }
 
   public final class PreferencesSerializer implements androidx.datastore.core.okio.OkioSerializer<androidx.datastore.preferences.core.Preferences> {
-    method public androidx.datastore.preferences.core.Preferences getDefaultValue();
+    method @InaccessibleFromKotlin public androidx.datastore.preferences.core.Preferences getDefaultValue();
     method @kotlin.jvm.Throws(exceptionClasses={IOException::class, CorruptionException::class}) public suspend Object? readFrom(okio.BufferedSource source, kotlin.coroutines.Continuation<? super androidx.datastore.preferences.core.Preferences>) throws androidx.datastore.core.CorruptionException, java.io.IOException;
     method @kotlin.jvm.Throws(exceptionClasses={IOException::class, CorruptionException::class}) public suspend Object? writeTo(androidx.datastore.preferences.core.Preferences t, okio.BufferedSink sink, kotlin.coroutines.Continuation<? super kotlin.Unit>) throws androidx.datastore.core.CorruptionException, java.io.IOException;
     property public androidx.datastore.preferences.core.Preferences defaultValue;

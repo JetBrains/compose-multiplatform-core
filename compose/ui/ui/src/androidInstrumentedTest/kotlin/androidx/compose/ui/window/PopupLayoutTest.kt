@@ -40,6 +40,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +55,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PopupLayoutTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun canCalculatePosition_onlyWhenSizeAndCoordinatesAreAvailable() {
@@ -86,9 +87,9 @@ class PopupLayoutTest {
                             anchorBounds: IntRect,
                             windowSize: IntSize,
                             layoutDirection: LayoutDirection,
-                            popupContentSize: IntSize
+                            popupContentSize: IntSize,
                         ): IntOffset = anchorBounds.topLeft
-                    },
+                    }
             )
         layout.popupContentSize = IntSize.Zero
 
@@ -113,7 +114,7 @@ class PopupLayoutTest {
                             anchorBounds: IntRect,
                             windowSize: IntSize,
                             layoutDirection: LayoutDirection,
-                            popupContentSize: IntSize
+                            popupContentSize: IntSize,
                         ): IntOffset = anchorBounds.topLeft
                     },
                 popupLayoutHelper =
@@ -121,11 +122,11 @@ class PopupLayoutTest {
                         override fun updateViewLayout(
                             windowManager: WindowManager,
                             popupView: View,
-                            params: ViewGroup.LayoutParams
+                            params: ViewGroup.LayoutParams,
                         ) {
                             paramUpdateCount++
                         }
-                    }
+                    },
             )
 
         // Set size before coordinates to match the order that the compose runtime uses.
@@ -152,7 +153,7 @@ class PopupLayoutTest {
                             anchorBounds: IntRect,
                             windowSize: IntSize,
                             layoutDirection: LayoutDirection,
-                            popupContentSize: IntSize
+                            popupContentSize: IntSize,
                         ): IntOffset = anchorBounds.topLeft
                     },
                 popupLayoutHelper =
@@ -160,11 +161,11 @@ class PopupLayoutTest {
                         override fun updateViewLayout(
                             windowManager: WindowManager,
                             popupView: View,
-                            params: ViewGroup.LayoutParams
+                            params: ViewGroup.LayoutParams,
                         ) {
                             paramUpdateCount++
                         }
-                    }
+                    },
             )
 
         // Set size before coordinates to match the order that the compose runtime uses.
@@ -190,7 +191,7 @@ class PopupLayoutTest {
                             anchorBounds: IntRect,
                             windowSize: IntSize,
                             layoutDirection: LayoutDirection,
-                            popupContentSize: IntSize
+                            popupContentSize: IntSize,
                         ): IntOffset = anchorBounds.topLeft
                     },
                 popupLayoutHelper =
@@ -198,11 +199,11 @@ class PopupLayoutTest {
                         override fun updateViewLayout(
                             windowManager: WindowManager,
                             popupView: View,
-                            params: ViewGroup.LayoutParams
+                            params: ViewGroup.LayoutParams,
                         ) {
                             paramUpdateCount++
                         }
-                    }
+                    },
             )
 
         // Set size before coordinates to match the order that the compose runtime uses.
@@ -232,7 +233,7 @@ class PopupLayoutTest {
                             anchorBounds: IntRect,
                             windowSize: IntSize,
                             layoutDirection: LayoutDirection,
-                            popupContentSize: IntSize
+                            popupContentSize: IntSize,
                         ): IntOffset = offset
                     },
             )
@@ -267,7 +268,7 @@ class PopupLayoutTest {
                             anchorBounds: IntRect,
                             windowSize: IntSize,
                             layoutDirection: LayoutDirection,
-                            popupContentSize: IntSize
+                            popupContentSize: IntSize,
                         ): IntOffset = offset
                     },
             )
@@ -300,9 +301,9 @@ class PopupLayoutTest {
                             anchorBounds: IntRect,
                             windowSize: IntSize,
                             layoutDirection: LayoutDirection,
-                            popupContentSize: IntSize
+                            popupContentSize: IntSize,
                         ): IntOffset = anchorBounds.topLeft
-                    },
+                    }
             )
         layout.popupContentSize = IntSize.Zero
 
@@ -336,7 +337,7 @@ class PopupLayoutTest {
                         density = density,
                         initialPositionProvider = positionProvider,
                         popupId = UUID.randomUUID(),
-                        popupLayoutHelper = popupLayoutHelper
+                        popupLayoutHelper = popupLayoutHelper,
                     )
                     .also { layout = it }
             }
@@ -360,7 +361,7 @@ class PopupLayoutTest {
                     anchorBounds: IntRect,
                     windowSize: IntSize,
                     layoutDirection: LayoutDirection,
-                    popupContentSize: IntSize
+                    popupContentSize: IntSize,
                 ): IntOffset = IntOffset.Zero
             }
 
@@ -379,6 +380,9 @@ class PopupLayoutTest {
 
             var windowOffset: Offset = Offset.Zero
 
+            override fun localToScreen(relativeToLocal: Offset): Offset =
+                relativeToLocal + windowOffset
+
             override fun windowToLocal(relativeToWindow: Offset): Offset =
                 relativeToWindow - windowOffset
 
@@ -390,12 +394,12 @@ class PopupLayoutTest {
 
             override fun localPositionOf(
                 sourceCoordinates: LayoutCoordinates,
-                relativeToSource: Offset
+                relativeToSource: Offset,
             ): Offset = throw UnsupportedOperationException()
 
             override fun localBoundingBoxOf(
                 sourceCoordinates: LayoutCoordinates,
-                clipBounds: Boolean
+                clipBounds: Boolean,
             ): Rect = throw UnsupportedOperationException()
 
             override fun get(alignmentLine: AlignmentLine): Int =
@@ -405,7 +409,7 @@ class PopupLayoutTest {
         private open class NoopPopupLayoutHelper : PopupLayoutHelper {
             override fun getWindowVisibleDisplayFrame(
                 composeView: View,
-                outRect: android.graphics.Rect
+                outRect: android.graphics.Rect,
             ) {
                 // do nothing
             }
@@ -417,7 +421,7 @@ class PopupLayoutTest {
             override fun updateViewLayout(
                 windowManager: WindowManager,
                 popupView: View,
-                params: ViewGroup.LayoutParams
+                params: ViewGroup.LayoutParams,
             ) {
                 // do nothing
             }

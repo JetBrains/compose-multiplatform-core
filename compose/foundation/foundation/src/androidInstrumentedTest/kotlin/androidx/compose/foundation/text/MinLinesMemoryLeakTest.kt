@@ -18,6 +18,7 @@ package androidx.compose.foundation.text
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.filters.LargeTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import leakcanary.DetectLeaksAfterTestSuccess
 import leakcanary.LeakCanary
 import org.junit.AfterClass
@@ -41,11 +42,18 @@ class MinLinesMemoryLeakTest(private val numLines: Int) {
         // issues for other tests that use leak canary
         private lateinit var savedLeakCanaryConfig: LeakCanary.Config
 
-        private val IgnoreFrameTrackerLeak =
-            AndroidReferenceMatchers.instanceFieldLeak(
-                className = "com.android.internal.jank.FrameTracker",
-                fieldName = "mConfig",
-                "Ignoring a leak due to misconfigured framework jank tracking b/349355283"
+        private val IgnoreFrameTrackerLeaks =
+            listOf(
+                AndroidReferenceMatchers.instanceFieldLeak(
+                    className = "com.android.internal.jank.FrameTracker",
+                    fieldName = "mConfig",
+                    "Ignoring a leak due to misconfigured framework jank tracking b/349355283",
+                ),
+                AndroidReferenceMatchers.instanceFieldLeak(
+                    className = "com.android.internal.jank.FrameTracker",
+                    fieldName = "mListener",
+                    "Ignoring a leak due to misconfigured framework jank tracking b/349355283",
+                ),
             )
 
         @JvmStatic
@@ -54,7 +62,9 @@ class MinLinesMemoryLeakTest(private val numLines: Int) {
             val current = LeakCanary.config
             savedLeakCanaryConfig = current
             LeakCanary.config =
-                current.copy(referenceMatchers = current.referenceMatchers + IgnoreFrameTrackerLeak)
+                current.copy(
+                    referenceMatchers = current.referenceMatchers + IgnoreFrameTrackerLeaks
+                )
         }
 
         @JvmStatic
@@ -64,7 +74,7 @@ class MinLinesMemoryLeakTest(private val numLines: Int) {
         }
     }
 
-    private val composeTestRule = createComposeRule()
+    private val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule
     val ruleChain: RuleChain =

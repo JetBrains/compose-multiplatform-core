@@ -31,18 +31,19 @@ import androidx.core.graphics.withMatrix
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.latency.LatencyData
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.geometry.MutableBox
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
 
 /**
- * An implementation of [InProgressStrokesRenderHelper] that works on Android versions before
- * [android.os.Build.VERSION_CODES.Q]. This implementation renders in-progress strokes via the
- * [View] hierarchy using a [CanvasStrokeRenderer], where everything occurs on the UI thread.
- * Support of pre-Q Android versions comes with the expense of rendering latency that is higher than
- * it would be with [androidx.graphics.lowlatency.CanvasFrontBufferedRenderer].
+ * An implementation of [InProgressStrokesRenderHelper] that works on all Android versions. This
+ * implementation renders in-progress strokes via the [View] hierarchy using a
+ * [CanvasStrokeRenderer], where everything occurs on the UI thread. Support of pre-Q Android
+ * versions comes with the expense of rendering latency that is higher than it would be with
+ * [androidx.graphics.lowlatency.CanvasFrontBufferedRenderer].
  */
-@OptIn(ExperimentalLatencyDataApi::class)
+@OptIn(ExperimentalLatencyDataApi::class, ExperimentalInkCustomBrushApi::class)
 @UiThread
 internal class CanvasInProgressStrokesRenderHelperV21(
     private val mainView: ViewGroup,
@@ -118,6 +119,9 @@ internal class CanvasInProgressStrokesRenderHelperV21(
         }
 
     init {
+        // Not checking that this is used for only pre-Q devices because InProgressStrokesView
+        // allows
+        // forcing this implementation as a fallback (with useHighLatencyRenderHelper).
         if (mainView.isAttachedToWindow) {
             addInnerToMainView()
         }
@@ -143,12 +147,18 @@ internal class CanvasInProgressStrokesRenderHelperV21(
     override fun drawInModifiedRegion(
         inProgressStroke: InProgressStroke,
         strokeToMainViewTransform: Matrix,
+        textureAnimationProgress: Float,
     ) {
         assertOnUiThread()
         val canvas =
             checkNotNull(canvasForCurrentDraw) { "Can only render during Callback.onDraw." }
         canvas.withMatrix(strokeToMainViewTransform) {
-            renderer.draw(canvas, inProgressStroke, strokeToMainViewTransform)
+            renderer.draw(
+                canvas,
+                inProgressStroke,
+                strokeToMainViewTransform,
+                textureAnimationProgress,
+            )
         }
     }
 

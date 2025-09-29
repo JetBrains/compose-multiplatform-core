@@ -16,39 +16,39 @@
 
 package androidx.xr.scenecore
 
-import android.util.Log
-import androidx.annotation.RestrictTo
+import androidx.xr.scenecore.runtime.SoundFieldAttributes as RtSoundFieldAttributes
+import androidx.xr.scenecore.runtime.SpatializerConstants as RtSpatializerConstants
 
-/** Configures ambisonics sound sources. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * Configures a sound source to be played as an ambisonics sound field.
+ *
+ * Ambisonic audio (or ambisonics) is like a skybox for audio, providing an immersive soundscape for
+ * your users. Ambisonic sounds must be in AmbiX format in first, second, or third order. For more
+ * information about playing ambisonics, see:
+ * [Add ambisonic sound fields to your app](https://developer.android.com/develop/xr/jetpack-xr-sdk/add-spatial-audio#ambionics_example).
+ *
+ * @property order The [SpatializerConstants.AmbisonicsOrder] of the sound to be played.
+ */
 public class SoundFieldAttributes(@SpatializerConstants.AmbisonicsOrder public val order: Int) {
 
-    internal val rtSoundFieldAttributes: JxrPlatformAdapter.SoundFieldAttributes
+    internal val rtSoundFieldAttributes: RtSoundFieldAttributes
 
     init {
         val rtOrder =
             when (order) {
                 SpatializerConstants.AMBISONICS_ORDER_FIRST_ORDER ->
-                    JxrPlatformAdapter.SpatializerConstants.AMBISONICS_ORDER_FIRST_ORDER
+                    RtSpatializerConstants.AMBISONICS_ORDER_FIRST_ORDER
                 SpatializerConstants.AMBISONICS_ORDER_SECOND_ORDER ->
-                    JxrPlatformAdapter.SpatializerConstants.AMBISONICS_ORDER_SECOND_ORDER
+                    RtSpatializerConstants.AMBISONICS_ORDER_SECOND_ORDER
                 SpatializerConstants.AMBISONICS_ORDER_THIRD_ORDER ->
-                    JxrPlatformAdapter.SpatializerConstants.AMBISONICS_ORDER_THIRD_ORDER
-                else -> {
-                    Log.e(TAG, "Unknown ambisonics order.")
-                    order
-                }
+                    RtSpatializerConstants.AMBISONICS_ORDER_THIRD_ORDER
+                else -> order
             }
 
-        rtSoundFieldAttributes = JxrPlatformAdapter.SoundFieldAttributes(rtOrder)
-    }
-
-    private companion object {
-        const val TAG = "SoundFieldAttributes"
+        rtSoundFieldAttributes = RtSoundFieldAttributes(rtOrder)
     }
 }
 
-internal fun JxrPlatformAdapter.SoundFieldAttributes.toSoundFieldAttributes():
-    SoundFieldAttributes {
+internal fun RtSoundFieldAttributes.toSoundFieldAttributes(): SoundFieldAttributes {
     return SoundFieldAttributes(this.ambisonicsOrder.ambisonicsOrderToJxr())
 }

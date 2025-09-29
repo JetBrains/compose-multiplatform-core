@@ -15,7 +15,6 @@
  */
 package androidx.compose.ui.window
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,16 +34,17 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.MSSIMMatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class DialogScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_UI)
 
@@ -75,7 +75,7 @@ class DialogScreenshotTest {
                     Modifier.graphicsLayer(
                             shadowElevation = elevation,
                             shape = RoundedCornerShape(percent = 15),
-                            clip = true
+                            clip = true,
                         )
                         .size(200.dp)
                         .background(Color(0xFFA896B0))
@@ -89,7 +89,7 @@ class DialogScreenshotTest {
             .assertAgainstGolden(
                 screenshotRule,
                 "dialogWithElevation",
-                matcher = MSSIMMatcher(threshold = 0.999)
+                matcher = MSSIMMatcher(threshold = 0.999),
             )
     }
 }

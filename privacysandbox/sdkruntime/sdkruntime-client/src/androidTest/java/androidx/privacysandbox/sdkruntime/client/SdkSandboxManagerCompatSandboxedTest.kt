@@ -51,8 +51,9 @@ import org.mockito.invocation.InvocationOnMock
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-// TODO(b/249982507) Test should be rewritten to use real SDK in sandbox instead of mocking manager
-@SdkSuppress(minSdkVersion = 34)
+// TODO(b/315321962) Migrate to Robolectric to remove usage of dexmakerMockito.
+// maxSdkVersion due to b/430688215
+@SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
 class SdkSandboxManagerCompatSandboxedTest {
 
     private lateinit var mContext: Context
@@ -234,7 +235,7 @@ class SdkSandboxManagerCompatSandboxedTest {
 
     private fun setupLoadSdkAnswer(
         sdkSandboxManager: SdkSandboxManager,
-        sandboxedSdk: SandboxedSdk
+        sandboxedSdk: SandboxedSdk,
     ) {
         val answer = { args: InvocationOnMock ->
             val receiver = args.getArgument<OutcomeReceiver<SandboxedSdk, LoadSdkException>>(3)
@@ -246,7 +247,7 @@ class SdkSandboxManagerCompatSandboxedTest {
 
     private fun setupLoadSdkAnswer(
         sdkSandboxManager: SdkSandboxManager,
-        loadSdkException: LoadSdkException
+        loadSdkException: LoadSdkException,
     ) {
         val answer = { args: InvocationOnMock ->
             val receiver = args.getArgument<OutcomeReceiver<SandboxedSdk, LoadSdkException>>(3)

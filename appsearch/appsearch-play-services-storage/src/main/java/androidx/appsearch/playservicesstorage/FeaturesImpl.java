@@ -65,6 +65,8 @@ final class FeaturesImpl implements Features {
                 // fall through
             case Features.SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES:
                 // fall through
+            case Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES:
+                // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES:
                 // fall through
             case Features.SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG:
@@ -104,6 +106,12 @@ final class FeaturesImpl implements Features {
                 // fall through
             case Features.INDEXER_MOBILE_APPLICATIONS:
                 // TODO(b/275592563) : Update once this features is supported.
+                // fall through
+            case Features.SEARCH_EMBEDDING_MATCH_INFO:
+                // TODO(b/395128139) : Update once this features is supported.
+                // fall through
+            case Features.SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM:
+                // READ_GLOBAL_APP_SEARCH_DATA permission is only supported in platform storage.
                 // fall through
             default:
                 return false; // AppSearch features absent in GMSCore AppSearch.

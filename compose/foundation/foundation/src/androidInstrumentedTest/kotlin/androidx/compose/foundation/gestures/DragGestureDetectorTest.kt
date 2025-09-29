@@ -41,6 +41,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -55,7 +56,7 @@ private const val TargetTag = "TargetLayout"
 @RunWith(Parameterized::class)
 class DragGestureDetectorTest(dragType: GestureType) {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     enum class GestureType {
         VerticalDrag,
@@ -86,7 +87,8 @@ class DragGestureDetectorTest(dragType: GestureType) {
     private val DragTouchSlopUtil = layoutWithGestureDetector {
         var count = 0
         detectDragGestures(
-            onDragStart = {
+            orientationLock = null,
+            onDragStart = { _: PointerInputChange, _: PointerInputChange, _: Offset ->
                 gestureStarted = true
                 startOrder = count++
             },
@@ -97,7 +99,7 @@ class DragGestureDetectorTest(dragType: GestureType) {
             onDragCancel = {
                 gestureCanceled = true
                 cancelOrder = count++
-            }
+            },
         ) { change, dragAmount ->
             val positionChange = change.positionChange()
             dragOrder = count++
@@ -123,7 +125,7 @@ class DragGestureDetectorTest(dragType: GestureType) {
             onDragCancel = {
                 gestureCanceled = true
                 cancelOrder = count++
-            }
+            },
         ) { change, dragAmount ->
             dragOrder = count++
             if (change.positionChange().y > 0f || !consumePositiveOnly) {
@@ -147,7 +149,7 @@ class DragGestureDetectorTest(dragType: GestureType) {
             onDragCancel = {
                 gestureCanceled = true
                 cancelOrder = count++
-            }
+            },
         ) { change, dragAmount ->
             dragOrder = count++
             if (change.positionChange().x > 0f || !consumePositiveOnly) {
@@ -309,12 +311,12 @@ class DragGestureDetectorTest(dragType: GestureType) {
     }
 
     private fun layoutWithGestureDetector(
-        gestureDetector: suspend PointerInputScope.() -> Unit,
+        gestureDetector: suspend PointerInputScope.() -> Unit
     ): @Composable () -> Unit = {
         CompositionLocalProvider(
             LocalDensity provides Density(1f),
             LocalViewConfiguration provides
-                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero)
+                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero),
         ) {
             with(LocalDensity.current) {
                 Box(
@@ -351,7 +353,7 @@ class DragGestureDetectorTest(dragType: GestureType) {
     private fun performTouch(
         initialPass: PointerInputChange.() -> Unit = nothingHandler,
         finalPass: PointerInputChange.() -> Unit = nothingHandler,
-        block: TouchInjectionScope.() -> Unit
+        block: TouchInjectionScope.() -> Unit,
     ) {
         this.initialPass = initialPass
         this.finalPass = finalPass

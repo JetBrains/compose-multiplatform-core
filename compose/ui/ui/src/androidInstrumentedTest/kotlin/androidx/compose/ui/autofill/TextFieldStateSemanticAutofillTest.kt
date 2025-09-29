@@ -16,11 +16,9 @@
 
 package androidx.compose.ui.autofill
 
-import android.os.Build
 import android.util.SparseArray
 import android.view.View
 import android.view.autofill.AutofillValue
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
@@ -41,6 +39,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -49,9 +48,8 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 26)
-@RequiresApi(Build.VERSION_CODES.O)
 class TextFieldStateSemanticAutofillTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     @OptIn(ExperimentalComposeUiApi::class)
     private val previousFlagValue = ComposeUiFlags.isSemanticAutofillEnabled
@@ -87,14 +85,14 @@ class TextFieldStateSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
                 BasicTextField(
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.testTag(passwordTag).semantics {
                             contentType = ContentType.Password
-                        }
+                        },
                 )
             }
         }
@@ -130,7 +128,7 @@ class TextFieldStateSemanticAutofillTest {
                     modifier =
                         Modifier.testTag(usernameTag).semantics {
                             contentType = ContentType.Username
-                        }
+                        },
                 )
             }
         }

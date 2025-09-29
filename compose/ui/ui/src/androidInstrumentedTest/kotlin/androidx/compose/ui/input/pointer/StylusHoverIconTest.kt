@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -55,7 +56,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class StylusHoverIconTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
     private val parentIconTag = "myParentIcon"
     private val childIconTag = "myChildIcon"
     private val grandchildIconTag = "myGrandchildIcon"
@@ -99,11 +100,7 @@ class StylusHoverIconTest {
             assertThat(modifier.nameFallback).isEqualTo("stylusHoverIcon")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
-                .containsExactly(
-                    "icon",
-                    "overrideDescendants",
-                    "touchBoundsExpansion",
-                )
+                .containsExactly("icon", "overrideDescendants", "touchBoundsExpansion")
         }
         isDebugInspectorInfoEnabled = false
     }
@@ -485,7 +482,7 @@ class StylusHoverIconTest {
                                 if (isVisible.value)
                                     Modifier.stylusHoverIcon(
                                         desiredParentIcon,
-                                        overrideDescendants = true
+                                        overrideDescendants = true,
                                     )
                                 else Modifier
                             )
@@ -546,7 +543,7 @@ class StylusHoverIconTest {
                                 if (isVisible.value)
                                     Modifier.stylusHoverIcon(
                                         desiredParentIcon,
-                                        overrideDescendants = true
+                                        overrideDescendants = true,
                                     )
                                 else Modifier
                             )
@@ -619,7 +616,7 @@ class StylusHoverIconTest {
                             .then(
                                 Modifier.stylusHoverIcon(
                                     desiredParentIcon,
-                                    overrideDescendants = parentOverrideDescendants
+                                    overrideDescendants = parentOverrideDescendants,
                                 )
                             )
                 ) {
@@ -715,7 +712,7 @@ class StylusHoverIconTest {
                             .testTag(parentIconTag)
                             .stylusHoverIcon(
                                 desiredParentIcon,
-                                overrideDescendants = parentOverrideState.value
+                                overrideDescendants = parentOverrideState.value,
                             )
                 ) {
                     Box(
@@ -783,7 +780,7 @@ class StylusHoverIconTest {
                                 .then(
                                     Modifier.stylusHoverIcon(
                                         desiredParentIcon,
-                                        overrideDescendants = parentOverrideDescendants
+                                        overrideDescendants = parentOverrideDescendants,
                                     )
                                 )
                     ) {
@@ -2337,7 +2334,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (isChildVisible.value) {
                         Box(
@@ -2408,7 +2405,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .stylusHoverIcon(desiredParentIcon, overrideDescendants = true),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (isChildVisible.value) {
                         Box(
@@ -2484,7 +2481,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (areDescendantsVisible.value) {
                         Box(
@@ -2494,7 +2491,7 @@ class StylusHoverIconTest {
                                     .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                                     .testTag(childIconTag)
                                     .stylusHoverIcon(desiredChildIcon, overrideDescendants = false),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Box(
                                 modifier =
@@ -2504,7 +2501,7 @@ class StylusHoverIconTest {
                                         .testTag(grandchildIconTag)
                                         .stylusHoverIcon(
                                             desiredGrandchildIcon,
-                                            overrideDescendants = false
+                                            overrideDescendants = false,
                                         )
                             )
                         }
@@ -2582,7 +2579,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (areDescendantsVisible.value) {
                         Box(
@@ -2592,7 +2589,7 @@ class StylusHoverIconTest {
                                     .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                                     .testTag(childIconTag)
                                     .stylusHoverIcon(desiredChildIcon, overrideDescendants = false),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Box(
                                 modifier =
@@ -2602,7 +2599,7 @@ class StylusHoverIconTest {
                                         .testTag(grandchildIconTag)
                                         .stylusHoverIcon(
                                             desiredGrandchildIcon,
-                                            overrideDescendants = true
+                                            overrideDescendants = true,
                                         )
                             )
                         }
@@ -2678,7 +2675,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (areDescendantsVisible.value) {
                         Box(
@@ -2688,7 +2685,7 @@ class StylusHoverIconTest {
                                     .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                                     .testTag(childIconTag)
                                     .stylusHoverIcon(desiredChildIcon, overrideDescendants = true),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Box(
                                 modifier =
@@ -2698,7 +2695,7 @@ class StylusHoverIconTest {
                                         .testTag(grandchildIconTag)
                                         .stylusHoverIcon(
                                             desiredGrandchildIcon,
-                                            overrideDescendants = false
+                                            overrideDescendants = false,
                                         )
                             )
                         }
@@ -2777,7 +2774,7 @@ class StylusHoverIconTest {
                                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                 .testTag(parentIconTag)
                                 .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         child()
                     }
@@ -2855,7 +2852,7 @@ class StylusHoverIconTest {
                                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                 .testTag(parentIconTag)
                                 .stylusHoverIcon(desiredParentIcon, overrideDescendants = true),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         child()
                     }
@@ -2935,7 +2932,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (isChildVisible.value) {
                         Box(
@@ -2944,7 +2941,7 @@ class StylusHoverIconTest {
                                     .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                                     .testTag(childIconTag)
                                     .stylusHoverIcon(desiredChildIcon, overrideDescendants = false),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             grandchild()
                         }
@@ -3040,7 +3037,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (isChildVisible.value) {
                         Box(
@@ -3049,7 +3046,7 @@ class StylusHoverIconTest {
                                     .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                     .testTag(childIconTag)
                                     .stylusHoverIcon(desiredChildIcon, overrideDescendants = true),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             grandchild()
                         }
@@ -3142,7 +3139,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(grandparentIconTag)
                             .stylusHoverIcon(desiredGrandparentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         modifier =
@@ -3150,7 +3147,7 @@ class StylusHoverIconTest {
                                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                 .testTag(parentIconTag)
                                 .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         if (isChildVisible.value) {
                             Box(
@@ -3160,9 +3157,9 @@ class StylusHoverIconTest {
                                         .testTag(childIconTag)
                                         .stylusHoverIcon(
                                             desiredChildIcon,
-                                            overrideDescendants = false
+                                            overrideDescendants = false,
                                         ),
-                                contentAlignment = Alignment.Center
+                                contentAlignment = Alignment.Center,
                             ) {
                                 grandchild()
                             }
@@ -3247,7 +3244,7 @@ class StylusHoverIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .stylusHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         modifier =
@@ -3255,7 +3252,7 @@ class StylusHoverIconTest {
                                 .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                                 .testTag(childIconTag)
                                 .stylusHoverIcon(desiredChildIcon, overrideDescendants = false),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         if (isGrandchildVisible.value) {
                             Box(
@@ -3265,7 +3262,7 @@ class StylusHoverIconTest {
                                         .testTag(grandchildIconTag)
                                         .stylusHoverIcon(
                                             desiredGrandchildIcon,
-                                            overrideDescendants = false
+                                            overrideDescendants = false,
                                         )
                             )
                         }
@@ -3355,7 +3352,7 @@ class StylusHoverIconTest {
                                     .testTag(grandchildIconTag)
                                     .stylusHoverIcon(
                                         desiredGrandchildIcon,
-                                        overrideDescendants = false
+                                        overrideDescendants = false,
                                     )
                             )
                         }
@@ -3456,7 +3453,7 @@ class StylusHoverIconTest {
                                     .testTag(grandchildIconTag)
                                     .stylusHoverIcon(
                                         desiredGrandchildIcon,
-                                        overrideDescendants = false
+                                        overrideDescendants = false,
                                     )
                             )
                         }
@@ -3544,7 +3541,7 @@ class StylusHoverIconTest {
                                     .testTag(grandchildIconTag)
                                     .stylusHoverIcon(
                                         desiredGrandchildIcon,
-                                        overrideDescendants = false
+                                        overrideDescendants = false,
                                     )
                             )
                         }

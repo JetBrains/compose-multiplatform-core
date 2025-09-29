@@ -44,6 +44,7 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.collections.removeFirst as removeFirstKt
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +52,7 @@ import org.junit.Test
 @MediumTest
 class PagerPinnableContainerTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private var pinnableContainer: PinnableContainer? = null
 
@@ -79,9 +80,14 @@ class PagerPinnableContainerTest {
         // Arrange.
         rule.setContent {
             HorizontalPager(
-                state = rememberPagerState { 100 }.also { pagerState = it },
+                state =
+                    rememberPagerState { 100 }
+                        .also {
+                            pagerState = it
+                            it.prefetchingEnabled = false
+                        },
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 1) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -115,9 +121,14 @@ class PagerPinnableContainerTest {
         // Arrange.
         rule.setContent {
             HorizontalPager(
-                state = rememberPagerState { 100 }.also { pagerState = it },
+                state =
+                    rememberPagerState { 100 }
+                        .also {
+                            pagerState = it
+                            it.prefetchingEnabled = false
+                        },
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 1) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -149,9 +160,14 @@ class PagerPinnableContainerTest {
         // Arrange.
         rule.setContent {
             HorizontalPager(
-                state = rememberPagerState { 100 }.also { pagerState = it },
+                state =
+                    rememberPagerState { 100 }
+                        .also {
+                            pagerState = it
+                            it.prefetchingEnabled = false
+                        },
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 4) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -194,9 +210,14 @@ class PagerPinnableContainerTest {
         // Arrange.
         rule.setContent {
             HorizontalPager(
-                state = rememberPagerState { 100 }.also { pagerState = it },
+                state =
+                    rememberPagerState { 100 }
+                        .also {
+                            pagerState = it
+                            it.prefetchingEnabled = false
+                        },
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 1) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -252,10 +273,10 @@ class PagerPinnableContainerTest {
     @Composable
     fun Pager(dataset: List<Int>, pinnedPage: Int, visiblePages: Int) {
         HorizontalPager(
-            state = rememberPagerState { dataset.size },
+            state = rememberPagerState { dataset.size }.also { it.prefetchingEnabled = false },
             modifier = Modifier.width(pageSizeDp * visiblePages),
             pageSize = PageSize.Fixed(pageSizeDp),
-            key = { dataset[it] }
+            key = { dataset[it] },
         ) { page ->
             if (dataset[page] == pinnedPage) {
                 pinnableContainer = LocalPinnableContainer.current
@@ -269,13 +290,14 @@ class PagerPinnableContainerTest {
         var state by
             mutableStateOf(
                 PagerState(currentPage = 2, currentPageOffsetFraction = 0f, pageCount = { 100 })
+                    .also { it.prefetchingEnabled = false }
             )
         // Arrange.
         rule.setContent {
             HorizontalPager(
                 state = state,
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 2) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -298,7 +320,9 @@ class PagerPinnableContainerTest {
 
         rule.runOnIdle {
             assertThat(composed).contains(2)
-            state = PagerState(currentPage = 0, currentPageOffsetFraction = 0f, pageCount = { 100 })
+            state =
+                PagerState(currentPage = 0, currentPageOffsetFraction = 0f, pageCount = { 100 })
+                    .also { it.prefetchingEnabled = false }
         }
 
         rule.waitUntil {
@@ -314,13 +338,14 @@ class PagerPinnableContainerTest {
         var state by
             mutableStateOf(
                 PagerState(currentPage = 0, currentPageOffsetFraction = 0f, pageCount = { 100 })
+                    .also { it.prefetchingEnabled = false }
             )
         // Arrange.
         rule.setContent {
             HorizontalPager(
                 state = state,
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 0) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -330,7 +355,9 @@ class PagerPinnableContainerTest {
         }
 
         rule.runOnIdle {
-            state = PagerState(currentPage = 0, currentPageOffsetFraction = 0f, pageCount = { 100 })
+            state =
+                PagerState(currentPage = 0, currentPageOffsetFraction = 0f, pageCount = { 100 })
+                    .also { it.prefetchingEnabled = false }
         }
 
         rule.runOnIdle { requireNotNull(pinnableContainer).pin() }
@@ -354,9 +381,14 @@ class PagerPinnableContainerTest {
         lateinit var state: PagerState
         rule.setContent {
             HorizontalPager(
-                state = rememberPagerState(initialPage = 3) { 100 }.also { state = it },
+                state =
+                    rememberPagerState(initialPage = 3) { 100 }
+                        .also {
+                            state = it
+                            it.prefetchingEnabled = false
+                        },
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 3) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -389,9 +421,14 @@ class PagerPinnableContainerTest {
         // Arrange.
         rule.setContent {
             HorizontalPager(
-                state = rememberPagerState(initialPage = 3) { pageCount }.also { state = it },
+                state =
+                    rememberPagerState(initialPage = 3) { pageCount }
+                        .also {
+                            state = it
+                            it.prefetchingEnabled = false
+                        },
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 3) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -444,9 +481,14 @@ class PagerPinnableContainerTest {
         // Arrange.
         rule.setContent {
             HorizontalPager(
-                state = rememberPagerState { 100 }.also { pagerState = it },
+                state =
+                    rememberPagerState { 100 }
+                        .also {
+                            pagerState = it
+                            it.prefetchingEnabled = false
+                        },
                 modifier = Modifier.size(pageSizeDp * 2),
-                pageSize = PageSize.Fixed(pageSizeDp)
+                pageSize = PageSize.Fixed(pageSizeDp),
             ) { page ->
                 if (page == 1) {
                     pinnableContainer = LocalPinnableContainer.current
@@ -500,8 +542,8 @@ class PagerPinnableContainerTest {
         rule.setContent {
             CompositionLocalProvider(LocalPinnableContainer provides parentContainer) {
                 HorizontalPager(
-                    state = rememberPagerState { 1 },
-                    pageSize = PageSize.Fixed(pageSizeDp)
+                    state = rememberPagerState { 1 }.also { it.prefetchingEnabled = false },
+                    pageSize = PageSize.Fixed(pageSizeDp),
                 ) {
                     pinnableContainer = LocalPinnableContainer.current
                     Box(Modifier.size(pageSizeDp))
@@ -542,8 +584,8 @@ class PagerPinnableContainerTest {
         rule.setContent {
             CompositionLocalProvider(LocalPinnableContainer provides parentContainer) {
                 HorizontalPager(
-                    state = rememberPagerState { 1 },
-                    pageSize = PageSize.Fixed(pageSizeDp)
+                    state = rememberPagerState { 1 }.also { it.prefetchingEnabled = false },
+                    pageSize = PageSize.Fixed(pageSizeDp),
                 ) {
                     pinnableContainer = LocalPinnableContainer.current
                     Box(Modifier.size(pageSizeDp))

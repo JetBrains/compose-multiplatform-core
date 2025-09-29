@@ -90,6 +90,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
@@ -98,7 +99,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ChipTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun defaultSemantics_assistChip() {
@@ -107,7 +108,7 @@ class ChipTest {
                 AssistChip(
                     onClick = {},
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text(TestChipTag) }
+                    label = { Text(TestChipTag) },
                 )
             }
         }
@@ -127,7 +128,7 @@ class ChipTest {
                     modifier = Modifier.testTag(TestChipTag),
                     onClick = {},
                     label = { Text(TestChipTag) },
-                    enabled = false
+                    enabled = false,
                 )
             }
         }
@@ -149,7 +150,7 @@ class ChipTest {
                 AssistChip(
                     onClick = onClick,
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text("Test chip") }
+                    label = { Text("Test chip") },
                 )
             }
         }
@@ -178,7 +179,7 @@ class ChipTest {
             AssistChip(
                 onClick = {},
                 modifier = Modifier.onGloballyPositioned { chipCoordinates = it },
-                label = { Text("Assist chip", Modifier.testTag(TestChipTag)) }
+                label = { Text("Assist chip", Modifier.testTag(TestChipTag)) },
             )
         }
 
@@ -205,9 +206,9 @@ class ChipTest {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(AssistChipDefaults.IconSize)
+                        modifier = Modifier.size(AssistChipDefaults.IconSize),
                     )
-                }
+                },
             )
         }
 
@@ -235,14 +236,14 @@ class ChipTest {
                     Icon(
                         Icons.Filled.Settings,
                         contentDescription = "Localized description",
-                        modifier = Modifier.testTag("Leading").size(AssistChipDefaults.IconSize)
+                        modifier = Modifier.testTag("Leading").size(AssistChipDefaults.IconSize),
                     )
                 },
                 trailingIcon = {
                     Icon(
                         Icons.Filled.Settings,
                         contentDescription = "Localized description",
-                        modifier = Modifier.testTag("Trailing").size(AssistChipDefaults.IconSize)
+                        modifier = Modifier.testTag("Trailing").size(AssistChipDefaults.IconSize),
                     )
                 },
             )
@@ -290,7 +291,7 @@ class ChipTest {
                 onClick = {},
                 label = {},
                 enabled = false,
-                shape = RectangleShape
+                shape = RectangleShape,
             )
         }
 
@@ -302,7 +303,7 @@ class ChipTest {
                 horizontalPadding = 0.dp,
                 verticalPadding = 0.dp,
                 backgroundColor = containerColor,
-                shapeColor = containerColor
+                shapeColor = containerColor,
             )
     }
 
@@ -314,7 +315,7 @@ class ChipTest {
                     selected = false,
                     onClick = {},
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text(TestChipTag) }
+                    label = { Text(TestChipTag) },
                 )
             }
         }
@@ -335,7 +336,7 @@ class ChipTest {
                     selected = true,
                     onClick = {},
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text(TestChipTag) }
+                    label = { Text(TestChipTag) },
                 )
             }
         }
@@ -357,7 +358,7 @@ class ChipTest {
                     modifier = Modifier.testTag(TestChipTag),
                     onClick = {},
                     label = { Text(TestChipTag) },
-                    enabled = false
+                    enabled = false,
                 )
             }
         }
@@ -379,7 +380,7 @@ class ChipTest {
                     selected = selected.value,
                     onClick = { selected.value = !selected.value },
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text("Test chip") }
+                    label = { Text("Test chip") },
                 )
             }
         }
@@ -401,7 +402,7 @@ class ChipTest {
                 selected = false,
                 onClick = {},
                 modifier = Modifier.onGloballyPositioned { chipCoordinates = it },
-                label = { Text("Filter chip", Modifier.testTag(TestChipTag)) }
+                label = { Text("Filter chip", Modifier.testTag(TestChipTag)) },
             )
         }
 
@@ -428,9 +429,9 @@ class ChipTest {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
-                }
+                },
             )
         }
 
@@ -457,16 +458,16 @@ class ChipTest {
                     Icon(
                         imageVector = Icons.Filled.Person,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
                 },
                 trailingIcon = {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
-                }
+                },
             )
         }
 
@@ -588,16 +589,16 @@ class ChipTest {
                     Icon(
                         imageVector = Icons.Filled.Settings,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
                 },
                 trailingIcon = {
                     Icon(
                         imageVector = Icons.Filled.Settings,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.testTag("Trailing").size(FilterChipDefaults.IconSize)
+                        modifier = Modifier.testTag("Trailing").size(FilterChipDefaults.IconSize),
                     )
-                }
+                },
             )
         }
 
@@ -613,7 +614,7 @@ class ChipTest {
             FilterChip(
                 selected = false,
                 onClick = {},
-                label = { contentColor = LocalContentColor.current }
+                label = { contentColor = LocalContentColor.current },
             )
         }
 
@@ -629,7 +630,7 @@ class ChipTest {
             FilterChip(
                 selected = true,
                 onClick = {},
-                label = { contentColor = LocalContentColor.current }
+                label = { contentColor = LocalContentColor.current },
             )
         }
 
@@ -668,7 +669,7 @@ class ChipTest {
                         ),
                     selectedLabelColor = FilterChipTokens.SelectedLabelTextColor.value,
                     selectedLeadingIconColor = FilterChipTokens.SelectedLeadingIconColor.value,
-                    selectedTrailingIconColor = FilterChipTokens.SelectedTrailingIconColor.value
+                    selectedTrailingIconColor = FilterChipTokens.SelectedTrailingIconColor.value,
                 )
             val colors = FilterChipDefaults.elevatedFilterChipColors()
             assertThat(colors).isEqualTo(expectedColors)
@@ -683,7 +684,7 @@ class ChipTest {
                     selected = false,
                     onClick = {},
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text(TestChipTag) }
+                    label = { Text(TestChipTag) },
                 )
             }
         }
@@ -703,7 +704,7 @@ class ChipTest {
                     selected = false,
                     onClick = {},
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text(TestChipTag) }
+                    label = { Text(TestChipTag) },
                 )
             }
         }
@@ -724,7 +725,7 @@ class ChipTest {
                     selected = true,
                     onClick = {},
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text(TestChipTag) }
+                    label = { Text(TestChipTag) },
                 )
             }
         }
@@ -746,7 +747,7 @@ class ChipTest {
                     modifier = Modifier.testTag(TestChipTag),
                     onClick = {},
                     label = { Text(TestChipTag) },
-                    enabled = false
+                    enabled = false,
                 )
             }
         }
@@ -768,7 +769,7 @@ class ChipTest {
                     selected = selected.value,
                     onClick = { selected.value = !selected.value },
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text("Test chip") }
+                    label = { Text("Test chip") },
                 )
             }
         }
@@ -802,7 +803,7 @@ class ChipTest {
                 selected = false,
                 onClick = {},
                 modifier = Modifier.onGloballyPositioned { chipCoordinates = it },
-                label = { Text("Input chip", Modifier.testTag(TestChipTag)) }
+                label = { Text("Input chip", Modifier.testTag(TestChipTag)) },
             )
         }
 
@@ -830,9 +831,9 @@ class ChipTest {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(InputChipDefaults.IconSize)
+                        modifier = Modifier.size(InputChipDefaults.IconSize),
                     )
-                }
+                },
             )
         }
 
@@ -861,9 +862,9 @@ class ChipTest {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(InputChipDefaults.AvatarSize)
+                        modifier = Modifier.size(InputChipDefaults.AvatarSize),
                     )
-                }
+                },
             )
         }
 
@@ -892,7 +893,7 @@ class ChipTest {
                 selected = selected.value,
                 onClick = { selected.value = !selected.value },
                 label = { contentColor = LocalContentColor.current },
-                modifier = Modifier.testTag(TestChipTag)
+                modifier = Modifier.testTag(TestChipTag),
             )
         }
 
@@ -910,7 +911,7 @@ class ChipTest {
                 SuggestionChip(
                     onClick = {},
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text(TestChipTag) }
+                    label = { Text(TestChipTag) },
                 )
             }
         }
@@ -930,7 +931,7 @@ class ChipTest {
                     modifier = Modifier.testTag(TestChipTag),
                     onClick = {},
                     label = { Text(TestChipTag) },
-                    enabled = false
+                    enabled = false,
                 )
             }
         }
@@ -952,7 +953,7 @@ class ChipTest {
                 SuggestionChip(
                     onClick = onClick,
                     modifier = Modifier.testTag(TestChipTag),
-                    label = { Text("Test chip") }
+                    label = { Text("Test chip") },
                 )
             }
         }
@@ -981,7 +982,7 @@ class ChipTest {
             SuggestionChip(
                 onClick = {},
                 modifier = Modifier.onGloballyPositioned { chipCoordinates = it },
-                label = { Text("Suggestion chip", Modifier.testTag(TestChipTag)) }
+                label = { Text("Suggestion chip", Modifier.testTag(TestChipTag)) },
             )
         }
 
@@ -1008,9 +1009,9 @@ class ChipTest {
                     Icon(
                         imageVector = Icons.Filled.Done,
                         contentDescription = "Localized Description",
-                        modifier = Modifier.size(SuggestionChipDefaults.IconSize)
+                        modifier = Modifier.size(SuggestionChipDefaults.IconSize),
                     )
-                }
+                },
             )
         }
 
@@ -1052,7 +1053,7 @@ class ChipTest {
                 onClick = {},
                 label = {},
                 enabled = false,
-                shape = RectangleShape
+                shape = RectangleShape,
             )
         }
 
@@ -1064,7 +1065,7 @@ class ChipTest {
                 horizontalPadding = 0.dp,
                 verticalPadding = 0.dp,
                 backgroundColor = containerColor,
-                shapeColor = containerColor
+                shapeColor = containerColor,
             )
     }
 
@@ -1078,7 +1079,7 @@ class ChipTest {
                     modifier = Modifier.testTag(TestChipTag),
                     onClick = onClick,
                     label = { Text("Hello") },
-                    enabled = enabled
+                    enabled = enabled,
                 )
             }
         }
@@ -1112,7 +1113,7 @@ class ChipTest {
                 label = {
                     textStyle = LocalTextStyle.current
                     body2TextStyle = SuggestionChipTokens.LabelTextFont.value
-                }
+                },
             )
         }
 
@@ -1139,7 +1140,7 @@ class ChipTest {
                             item2Bounds = it.boundsInRoot()
                         }
                     )
-                }
+                },
             )
         }
 
@@ -1158,7 +1159,7 @@ class ChipTest {
                     modifier =
                         Modifier.align(Alignment.Center).testTag(TestChipTag).requiredSize(10.dp),
                     onClick = { clicked = !clicked },
-                    label = { Box(Modifier.size(10.dp)) }
+                    label = { Box(Modifier.size(10.dp)) },
                 )
             }
         }

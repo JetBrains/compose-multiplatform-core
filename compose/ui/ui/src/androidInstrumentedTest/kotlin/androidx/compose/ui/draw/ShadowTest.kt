@@ -58,7 +58,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -78,7 +77,7 @@ class ShadowTest {
             override fun createOutline(
                 size: Size,
                 layoutDirection: LayoutDirection,
-                density: Density
+                density: Density,
             ) = Outline.Rectangle(size.toRect())
         }
 
@@ -115,18 +114,16 @@ class ShadowTest {
         takeScreenShot(12).apply { hasShadow() }
     }
 
-    @Ignore // b/266748959
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switchFromShadowToNoShadow() {
-        val elevation = mutableStateOf(0.dp)
-
+        val elevation = mutableStateOf(10.dp)
         rule.runOnUiThreadIR { activity.setContent { ShadowContainer(elevation = elevation) } }
         assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
-
+        takeScreenShot(12).apply { hasShadow() }
         rule.runOnUiThreadIR { elevation.value = 0.dp }
 
-        takeScreenShot(12).apply { assertEquals(color(5, 11), Color.White) }
+        takeScreenShot(12).apply { hasNoShadow() }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -159,8 +156,8 @@ class ShadowTest {
                             Modifier.graphicsLayer(
                                 shadowElevation = elevation,
                                 shape = rectShape,
-                                alpha = 0.5f
-                            )
+                                alpha = 0.5f,
+                            ),
                     ) {}
                 }
             }
@@ -192,7 +189,7 @@ class ShadowTest {
                                 shape = rectShape,
                                 ambientShadowColor = Color(0xFFFF00FF),
                                 spotShadowColor = Color(0xFFFF00FF),
-                            )
+                            ),
                     ) {}
                 }
             }
@@ -246,7 +243,7 @@ class ShadowTest {
                     ValueElement("shape", RectangleShape),
                     ValueElement("clip", true),
                     ValueElement("ambientColor", DefaultShadowColor),
-                    ValueElement("spotColor", DefaultShadowColor)
+                    ValueElement("spotColor", DefaultShadowColor),
                 )
         }
     }
@@ -311,14 +308,18 @@ class ShadowTest {
     @Composable
     private fun ShadowContainer(
         modifier: Modifier = Modifier,
-        elevation: State<Dp> = mutableStateOf(8.dp)
+        elevation: State<Dp> = mutableStateOf(8.dp),
     ) {
         AtLeastSize(size = 12, modifier = modifier.background(Color.White)) {
             AtLeastSize(
                 size = 10,
-                modifier = Modifier.shadow(elevation = elevation.value, shape = rectShape)
+                modifier = Modifier.shadow(elevation = elevation.value, shape = rectShape),
             ) {}
         }
+    }
+
+    private fun Bitmap.hasNoShadow() {
+        assertEquals(Color.White, color(width / 2, height - 1))
     }
 
     private fun Bitmap.hasShadow() {

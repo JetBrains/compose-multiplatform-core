@@ -52,6 +52,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +61,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class CollectionInfoTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     private lateinit var composeView: AndroidComposeView
     private val tag = "TestTag"
@@ -117,7 +118,7 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle {
             with(info.collectionInfo) {
-                assertThat(rowCount).isEqualTo(-1)
+                assertThat(rowCount).isEqualTo(2)
                 assertThat(columnCount).isEqualTo(1)
                 assertThat(isHierarchical).isFalse()
             }
@@ -161,7 +162,7 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle {
             with(info.collectionInfo) {
-                assertThat(rowCount).isEqualTo(-1)
+                assertThat(rowCount).isEqualTo(2)
                 assertThat(columnCount).isEqualTo(1)
                 assertThat(isHierarchical).isFalse()
             }
@@ -249,7 +250,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
@@ -281,7 +282,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
@@ -313,7 +314,7 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }

@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +58,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class MenuTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun menu_canBeTriggered() {
@@ -143,7 +144,7 @@ class MenuTest {
                     DropdownMenu(
                         expanded = true,
                         onDismissRequest = {},
-                        scrollState = scrollState
+                        scrollState = scrollState,
                     ) {
                         repeat(100) {
                             Box(Modifier.testTag("MenuContent ${it + 1}").size(70.toDp()))
@@ -178,7 +179,7 @@ class MenuTest {
                     IntRect(anchorPosition, anchorSize),
                     windowSize,
                     LayoutDirection.Ltr,
-                    popupSize
+                    popupSize,
                 )
 
         assertThat(ltrPosition.x).isEqualTo(anchorPosition.x + offsetX)
@@ -190,7 +191,7 @@ class MenuTest {
                     IntRect(anchorPosition, anchorSize),
                     windowSize,
                     LayoutDirection.Rtl,
-                    popupSize
+                    popupSize,
                 )
 
         assertThat(rtlPosition.x)
@@ -217,7 +218,7 @@ class MenuTest {
                     IntRect(anchorPosition, anchorSize),
                     windowSize,
                     LayoutDirection.Ltr,
-                    popupSize
+                    popupSize,
                 )
 
         assertThat(ltrPosition.x)
@@ -230,7 +231,7 @@ class MenuTest {
                     IntRect(anchorPositionRtl, anchorSize),
                     windowSize,
                     LayoutDirection.Rtl,
-                    popupSize
+                    popupSize,
                 )
 
         assertThat(rtlPosition.x).isEqualTo(anchorPositionRtl.x - offsetX)
@@ -257,7 +258,7 @@ class MenuTest {
                     IntRect(anchorPosition, anchorSize),
                     windowSize,
                     LayoutDirection.Ltr,
-                    popupSize
+                    popupSize,
                 )
 
         assertThat(position.y).isEqualTo(verticalMargin)
@@ -284,7 +285,7 @@ class MenuTest {
                     IntRect(anchorPosition, anchorSize),
                     windowSize,
                     LayoutDirection.Ltr,
-                    popupSize
+                    popupSize,
                 )
 
         assertThat(position.x).isEqualTo(0)
@@ -296,7 +297,7 @@ class MenuTest {
                     IntRect(anchorPositionRtl, anchorSize),
                     windowSize,
                     LayoutDirection.Rtl,
-                    popupSize
+                    popupSize,
                 )
 
         assertThat(rtlPosition.x).isEqualTo(screenWidth - popupSize.width)
@@ -327,7 +328,7 @@ class MenuTest {
                 IntRect(anchorPosition, anchorSize),
                 windowSize,
                 LayoutDirection.Ltr,
-                popupSize
+                popupSize,
             )
 
         assertThat(obtainedParentBounds).isEqualTo(IntRect(anchorPosition, anchorSize))
@@ -337,7 +338,7 @@ class MenuTest {
                     anchorPosition.x + offsetX,
                     anchorPosition.y + anchorSize.height + offsetY,
                     anchorPosition.x + offsetX + popupSize.width,
-                    anchorPosition.y + anchorSize.height + offsetY + popupSize.height
+                    anchorPosition.y + anchorSize.height + offsetY + popupSize.height,
                 )
             )
     }
@@ -380,7 +381,7 @@ class MenuTest {
         rule.setContent {
             DropdownMenuItem(
                 onClick,
-                modifier = Modifier.testTag("MenuItem").clickable(onClick = onClick)
+                modifier = Modifier.testTag("MenuItem").clickable(onClick = onClick),
             ) {
                 Box(Modifier.requiredSize(40.dp))
             }

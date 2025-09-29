@@ -231,7 +231,6 @@ Libraries within an atomic group should not specify a version in their
 androidx {
     name = 'AppSearch'
     publish = Publish.SNAPSHOT_AND_RELEASE
-    mavenGroup = LibraryGroups.APPSEARCH
     inceptionYear = '2019'
     description = 'Provides local and centralized app indexing'
 }
@@ -316,7 +315,6 @@ import androidx.build.KmpPlatformsKt
 androidx {
     name = "Collection"
     type = LibraryType.KMP_LIBRARY
-    mavenGroup = LibraryGroups.COLLECTION
     mavenVersion = KmpPlatformsKt.enableNative(project) ? LibraryVersions.COLLECTION_KMP : LibraryVersions.KMP
     inceptionYear = "2018"
     description = "Standalone efficient collections."

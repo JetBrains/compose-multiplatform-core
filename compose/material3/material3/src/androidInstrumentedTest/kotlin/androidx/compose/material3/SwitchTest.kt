@@ -63,6 +63,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,7 +72,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SwitchTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val defaultSwitchTag = "switch"
 
@@ -83,7 +84,7 @@ class SwitchTest {
                 Switch(
                     modifier = Modifier.testTag("unchecked"),
                     checked = false,
-                    onCheckedChange = {}
+                    onCheckedChange = {},
                 )
             }
         }
@@ -110,7 +111,7 @@ class SwitchTest {
                 Switch(
                     modifier = Modifier.testTag(defaultSwitchTag),
                     checked = checked,
-                    onCheckedChange = onChecked
+                    onCheckedChange = onChecked,
                 )
             }
         }
@@ -127,7 +128,7 @@ class SwitchTest {
                 Switch(
                     modifier = Modifier.testTag(defaultSwitchTag),
                     checked = checked,
-                    onCheckedChange = onChecked
+                    onCheckedChange = onChecked,
                 )
             }
         }
@@ -148,7 +149,7 @@ class SwitchTest {
                 modifier = Modifier.testTag(defaultSwitchTag),
                 checked = checked,
                 onCheckedChange = {},
-                enabled = false
+                enabled = false,
             )
         }
         rule.onNodeWithTag(defaultSwitchTag).assertHasClickAction()
@@ -164,7 +165,7 @@ class SwitchTest {
                     checked,
                     {},
                     enabled = false,
-                    modifier = Modifier.testTag(defaultSwitchTag).semantics { focused = true }
+                    modifier = Modifier.testTag(defaultSwitchTag).semantics { focused = true },
                 )
             }
         }
@@ -300,7 +301,7 @@ class SwitchTest {
                                                 items.toMutableList().also {
                                                     it[index] = item.first to !item.second
                                                 }
-                                        }
+                                        },
                                     )
                                 }
                             }
@@ -328,7 +329,7 @@ class SwitchTest {
     private fun materialSizesTestForValue(
         checked: Boolean,
         clickable: Boolean,
-        minimumTouchTarget: Boolean
+        minimumTouchTarget: Boolean,
     ) =
         with(rule.density) {
             rule
@@ -345,7 +346,7 @@ class SwitchTest {
                                 } else {
                                     null
                                 },
-                            enabled = false
+                            enabled = false,
                         )
                     }
                 }
@@ -377,7 +378,7 @@ class SwitchTest {
                                 .testTag(defaultSwitchTag)
                                 .requiredSize(2.dp),
                         checked = checked,
-                        onCheckedChange = { checked = it }
+                        onCheckedChange = { checked = it },
                     )
                 }
             }

@@ -67,6 +67,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Correspondence
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -75,7 +76,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ScrollingTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     private val tag = "tag"
     private lateinit var androidComposeView: AndroidComposeView
@@ -123,7 +124,7 @@ class ScrollingTest {
                 androidComposeView.accessibilityNodeProvider.performAction(
                     virtualViewId,
                     ACTION_ACCESSIBILITY_FOCUS,
-                    null
+                    null,
                 )
                 Snapshot.notifyObjectsInitialized()
                 scrollValue = 2f
@@ -242,7 +243,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = false
+                            reverseScrolling = false,
                         )
                 }
             )
@@ -271,7 +272,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = false
+                            reverseScrolling = false,
                         )
                 }
             )
@@ -420,7 +421,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = true
+                            reverseScrolling = true,
                         )
                 }
             )
@@ -450,7 +451,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = true
+                            reverseScrolling = true,
                         )
 
                     scrollBy { x, _ ->
@@ -466,7 +467,7 @@ class ScrollingTest {
             androidComposeView.accessibilityNodeProvider.performAction(
                 virtualViewId,
                 ACTION_SCROLL_BACKWARD,
-                null
+                null,
             )
         }
         assertThat(actualScrolledAmount).isEqualTo(viewPortSize)
@@ -486,7 +487,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = true
+                            reverseScrolling = true,
                         )
 
                     scrollBy { x, _ ->
@@ -504,7 +505,7 @@ class ScrollingTest {
             androidComposeView.accessibilityNodeProvider.performAction(
                 virtualViewId,
                 ACTION_SCROLL_BACKWARD,
-                null
+                null,
             )
         }
         assertThat(actualScrolledAmount).isEqualTo(viewPortSize - contentPadding)
@@ -521,7 +522,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = true
+                            reverseScrolling = true,
                         )
                 }
             )
@@ -599,7 +600,7 @@ class ScrollingTest {
                         actual.parcelableData == expected.parcelableData &&
                         actual.recordCount == expected.recordCount
                 },
-                "has same properties as"
+                "has same properties as",
             )
     }
 
@@ -616,7 +617,7 @@ class ScrollingTest {
                 @Suppress("DEPRECATION") AccessibilityEvent.obtain()
             }
             .apply {
-                packageName = "androidx.compose.ui.test"
+                packageName = "androidx.compose.ui.tests"
                 className = "android.view.View"
                 isEnabled = true
             }

@@ -47,6 +47,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -58,7 +59,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MagnifierTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun setUp() {
@@ -78,7 +79,7 @@ class MagnifierTest {
         val modifier =
             Modifier.magnifier(
                     sourceCenter = sourceCenterLambda,
-                    magnifierCenter = magnifierCenterLambda
+                    magnifierCenter = magnifierCenterLambda,
                 )
                 .findInspectableValue()!!
         assertThat(modifier.nameFallback).isEqualTo("magnifier")
@@ -117,7 +118,7 @@ class MagnifierTest {
                         magnifierCenter = { Offset.Unspecified },
                         zoom = Float.NaN,
                         onSizeChanged = null,
-                        platformMagnifierFactory = magnifierFactory
+                        platformMagnifierFactory = magnifierFactory,
                     )
                 )
             }
@@ -143,7 +144,7 @@ class MagnifierTest {
                     zoom = Float.NaN,
                     elevation = elevation,
                     onSizeChanged = null,
-                    platformMagnifierFactory = magnifierFactory
+                    platformMagnifierFactory = magnifierFactory,
                 )
             )
         }
@@ -168,7 +169,7 @@ class MagnifierTest {
                     zoom = Float.NaN,
                     useTextDefault = useTextDefault,
                     onSizeChanged = null,
-                    platformMagnifierFactory = magnifierFactory
+                    platformMagnifierFactory = magnifierFactory,
                 )
             )
         }
@@ -192,7 +193,7 @@ class MagnifierTest {
                     magnifierCenter = { Offset.Unspecified },
                     zoom = zoom,
                     onSizeChanged = null,
-                    platformMagnifierFactory = magnifierFactory
+                    platformMagnifierFactory = magnifierFactory,
                 )
             )
         }
@@ -216,7 +217,7 @@ class MagnifierTest {
                     magnifierCenter = { Offset.Unspecified },
                     zoom = zoom,
                     onSizeChanged = null,
-                    platformMagnifierFactory = magnifierFactory
+                    platformMagnifierFactory = magnifierFactory,
                 )
             )
         }
@@ -247,7 +248,7 @@ class MagnifierTest {
                         magnifierCenter = { Offset.Unspecified },
                         zoom = Float.NaN,
                         onSizeChanged = null,
-                        platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                        platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                     )
             )
         }
@@ -281,7 +282,7 @@ class MagnifierTest {
                         magnifierCenter = { Offset.Unspecified },
                         zoom = Float.NaN,
                         onSizeChanged = null,
-                        platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                        platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                     )
             )
         }
@@ -306,7 +307,7 @@ class MagnifierTest {
                         magnifierCenter = { Offset.Unspecified },
                         zoom = Float.NaN,
                         onSizeChanged = null,
-                        platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                        platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                     )
             )
         }
@@ -330,7 +331,7 @@ class MagnifierTest {
                     magnifierCenter = { Offset.Unspecified },
                     zoom = Float.NaN,
                     onSizeChanged = null,
-                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                 )
             )
         }
@@ -354,7 +355,7 @@ class MagnifierTest {
                     magnifierCenter = { magnifierCenter },
                     zoom = Float.NaN,
                     onSizeChanged = null,
-                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                 )
             )
         }
@@ -379,7 +380,7 @@ class MagnifierTest {
                     magnifierCenter = { Offset.Unspecified },
                     zoom = zoom,
                     onSizeChanged = null,
-                    platformMagnifierFactory = factory
+                    platformMagnifierFactory = factory,
                 )
             )
         }
@@ -404,7 +405,7 @@ class MagnifierTest {
                         magnifierCenter = { Offset.Unspecified },
                         zoom = Float.NaN,
                         onSizeChanged = null,
-                        platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                        platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                     )
                 } else {
                     Modifier
@@ -435,7 +436,7 @@ class MagnifierTest {
                     magnifierCenter = { Offset.Unspecified },
                     zoom = Float.NaN,
                     onSizeChanged = null,
-                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                 )
             )
         }
@@ -465,7 +466,7 @@ class MagnifierTest {
                     zoom = Float.NaN,
                     elevation = elevation,
                     onSizeChanged = null,
-                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                 )
             )
         }
@@ -492,7 +493,7 @@ class MagnifierTest {
                     magnifierCenter = { Offset.Unspecified },
                     zoom = Float.NaN,
                     onSizeChanged = { sizeEvents += it },
-                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                 )
             )
         }
@@ -516,7 +517,7 @@ class MagnifierTest {
                     magnifierCenter = { Offset.Unspecified },
                     zoom = Float.NaN,
                     onSizeChanged = { sizeEvents += it },
-                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                 )
             )
         }
@@ -538,7 +539,7 @@ class MagnifierTest {
                     magnifierCenter = { Offset.Unspecified },
                     zoom = Float.NaN,
                     onSizeChanged = { sizeEvents += it },
-                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                 )
             )
         }
@@ -572,7 +573,7 @@ class MagnifierTest {
                     zoom = Float.NaN,
                     size = magnifierDpSize,
                     onSizeChanged = { sizeEvents += it },
-                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier)
+                    platformMagnifierFactory = PlatformMagnifierFactory(platformMagnifier),
                 )
             )
         }
@@ -614,7 +615,7 @@ class MagnifierTest {
 
     private fun PlatformMagnifierFactory(
         platformMagnifier: PlatformMagnifier,
-        canUpdateZoom: Boolean = false
+        canUpdateZoom: Boolean = false,
     ) =
         object : PlatformMagnifierFactory {
             override val canUpdateZoom: Boolean = canUpdateZoom
@@ -627,7 +628,7 @@ class MagnifierTest {
                 elevation: Dp,
                 clippingEnabled: Boolean,
                 density: Density,
-                initialZoom: Float
+                initialZoom: Float,
             ): PlatformMagnifier {
                 return platformMagnifier
             }
@@ -648,7 +649,7 @@ class MagnifierTest {
             elevation: Dp,
             clippingEnabled: Boolean,
             density: Density,
-            initialZoom: Float
+            initialZoom: Float,
         ): PlatformMagnifier {
             creationCount++
             return NoopPlatformMagnifier

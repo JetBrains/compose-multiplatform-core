@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -116,6 +116,7 @@ final val androidx.lifecycle/viewModelScope // androidx.lifecycle/viewModelScope
 final fun (androidx.lifecycle.viewmodel/CreationExtras).androidx.lifecycle.viewmodel/contains(androidx.lifecycle.viewmodel/CreationExtras.Key<*>): kotlin/Boolean // androidx.lifecycle.viewmodel/contains|contains@androidx.lifecycle.viewmodel.CreationExtras(androidx.lifecycle.viewmodel.CreationExtras.Key<*>){}[0]
 final fun (androidx.lifecycle.viewmodel/CreationExtras).androidx.lifecycle.viewmodel/plus(androidx.lifecycle.viewmodel/CreationExtras): androidx.lifecycle.viewmodel/MutableCreationExtras // androidx.lifecycle.viewmodel/plus|plus@androidx.lifecycle.viewmodel.CreationExtras(androidx.lifecycle.viewmodel.CreationExtras){}[0]
 final fun (androidx.lifecycle.viewmodel/MutableCreationExtras).androidx.lifecycle.viewmodel/plusAssign(androidx.lifecycle.viewmodel/CreationExtras) // androidx.lifecycle.viewmodel/plusAssign|plusAssign@androidx.lifecycle.viewmodel.MutableCreationExtras(androidx.lifecycle.viewmodel.CreationExtras){}[0]
+final fun androidx.lifecycle.viewmodel/CreationExtras(androidx.lifecycle.viewmodel/CreationExtras = ..., kotlin/Function1<androidx.lifecycle.viewmodel/MutableCreationExtras, kotlin/Unit> = ...): androidx.lifecycle.viewmodel/CreationExtras // androidx.lifecycle.viewmodel/CreationExtras|CreationExtras(androidx.lifecycle.viewmodel.CreationExtras;kotlin.Function1<androidx.lifecycle.viewmodel.MutableCreationExtras,kotlin.Unit>){}[0]
 final inline fun <#A: reified androidx.lifecycle/ViewModel> (androidx.lifecycle.viewmodel/InitializerViewModelFactoryBuilder).androidx.lifecycle.viewmodel/initializer(noinline kotlin/Function1<androidx.lifecycle.viewmodel/CreationExtras, #A>) // androidx.lifecycle.viewmodel/initializer|initializer@androidx.lifecycle.viewmodel.InitializerViewModelFactoryBuilder(kotlin.Function1<androidx.lifecycle.viewmodel.CreationExtras,0:0>){0§<androidx.lifecycle.ViewModel>}[0]
 final inline fun <#A: reified androidx.lifecycle/ViewModel> (androidx.lifecycle/ViewModelProvider).androidx.lifecycle/get(): #A // androidx.lifecycle/get|get@androidx.lifecycle.ViewModelProvider(){0§<androidx.lifecycle.ViewModel>}[0]
 final inline fun androidx.lifecycle.viewmodel/viewModelFactory(kotlin/Function1<androidx.lifecycle.viewmodel/InitializerViewModelFactoryBuilder, kotlin/Unit>): androidx.lifecycle/ViewModelProvider.Factory // androidx.lifecycle.viewmodel/viewModelFactory|viewModelFactory(kotlin.Function1<androidx.lifecycle.viewmodel.InitializerViewModelFactoryBuilder,kotlin.Unit>){}[0]

@@ -49,7 +49,7 @@ public class CardColors(
     public val secondaryIconColor: LayoutColor = titleColor,
     public val secondaryTextColor: LayoutColor = timeColor,
     public val graphicProgressIndicatorColors: ProgressIndicatorColors? = null,
-    public val graphicIconColor: LayoutColor? = null
+    public val graphicIconColor: LayoutColor? = null,
 ) {
     /**
      * Returns a copy of this [CardColors], optionally overriding some of the values.
@@ -78,7 +78,7 @@ public class CardColors(
         secondaryTextColor: LayoutColor = this.secondaryTextColor,
         graphicProgressIndicatorColors: ProgressIndicatorColors? =
             this.graphicProgressIndicatorColors,
-        graphicIconColor: LayoutColor? = this.graphicIconColor
+        graphicIconColor: LayoutColor? = this.graphicIconColor,
     ): CardColors =
         CardColors(
             backgroundColor = backgroundColor,
@@ -89,7 +89,7 @@ public class CardColors(
             secondaryIconColor = secondaryIconColor,
             secondaryTextColor = secondaryTextColor,
             graphicProgressIndicatorColors = graphicProgressIndicatorColors,
-            graphicIconColor = graphicIconColor
+            graphicIconColor = graphicIconColor,
         )
 }
 
@@ -99,7 +99,7 @@ public object CardDefaults {
      * common action on a screen.
      *
      * These colors are using [ColorScheme.primary] for background color and [ColorScheme.onPrimary]
-     * for content colors.
+     * for content colors from the given [MaterialScope]'s [ColorScheme].
      */
     public fun MaterialScope.filledCardColors(): CardColors =
         CardColors(
@@ -107,14 +107,15 @@ public object CardDefaults {
             titleColor = theme.colorScheme.onPrimary,
             contentColor = theme.colorScheme.onPrimary.withOpacity(0.8f),
             graphicProgressIndicatorColors = filledProgressIndicatorColors(),
-            graphicIconColor = theme.colorScheme.primaryContainer
+            graphicIconColor = theme.colorScheme.primaryContainer,
         )
 
     /**
      * [CardColors] for the medium-emphasis card.
      *
      * These colors are using [ColorScheme.surfaceContainer] for background color and
-     * [ColorScheme.onSurface] and [ColorScheme.onSurfaceVariant] for content colors.
+     * [ColorScheme.onSurface] and [ColorScheme.onSurfaceVariant] for content colors from the given
+     * [MaterialScope]'s [ColorScheme].
      */
     public fun MaterialScope.filledTonalCardColors(): CardColors =
         CardColors(
@@ -123,14 +124,15 @@ public object CardDefaults {
             contentColor = theme.colorScheme.onSurfaceVariant,
             secondaryIconColor = theme.colorScheme.primary,
             graphicProgressIndicatorColors = filledTonalProgressIndicatorColors(),
-            graphicIconColor = theme.colorScheme.primaryDim
+            graphicIconColor = theme.colorScheme.primaryDim,
         )
 
     /**
      * Alternative [CardColors] for the high-emphasis card.
      *
      * These colors are using [ColorScheme.primaryContainer] for background color and
-     * [ColorScheme.primaryContainer] for content colors.
+     * [ColorScheme.primaryContainer] for content colors from the given [MaterialScope]'s
+     * [ColorScheme].
      */
     public fun MaterialScope.filledVariantCardColors(): CardColors =
         CardColors(
@@ -138,19 +140,20 @@ public object CardDefaults {
             titleColor = theme.colorScheme.onPrimaryContainer,
             contentColor = theme.colorScheme.onPrimaryContainer.withOpacity(0.9f),
             graphicProgressIndicatorColors = filledVariantProgressIndicatorColors(),
-            graphicIconColor = theme.colorScheme.primaryDim
+            graphicIconColor = theme.colorScheme.primaryDim,
         )
 
     /**
      * Alternative [CardColors] for the card with [backgroundImage] as a background.
      *
-     * These colors are using [ColorScheme.onBackground] for content colors.
+     * These colors are using [ColorScheme.onBackground] for content colors from the given
+     * [MaterialScope]'s [ColorScheme].
      */
     public fun MaterialScope.imageBackgroundCardColors(): CardColors =
         CardColors(
             backgroundColor = theme.colorScheme.background,
             titleColor = theme.colorScheme.onBackground,
-            contentColor = theme.colorScheme.onBackground
+            contentColor = theme.colorScheme.onBackground,
         )
 
     internal const val METADATA_TAG: String = "CR"

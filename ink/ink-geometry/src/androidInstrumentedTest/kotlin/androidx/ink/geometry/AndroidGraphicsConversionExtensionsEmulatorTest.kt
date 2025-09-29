@@ -65,7 +65,7 @@ class AndroidGraphicsConversionExtensionsEmulatorTest {
     fun populatePathFromOutlines_returnsCorrectPath() {
         val partitionedMesh = buildTestStrokeShape()
         val path = Path()
-        partitionedMesh.populatePathFromOutlines(0, path)
+        partitionedMesh.populateOutlines(0, path)
         assertThat(path.isEmpty).isFalse()
 
         val outlineVertexCount = partitionedMesh.getOutlineVertexCount(0, 0)
@@ -91,7 +91,7 @@ class AndroidGraphicsConversionExtensionsEmulatorTest {
     private fun buildTestStrokeShape(): PartitionedMesh {
         return Stroke(
                 TEST_BRUSH,
-                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).asImmutable(),
+                buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f)).toImmutable(),
             )
             .shape
     }
@@ -104,7 +104,6 @@ class AndroidGraphicsConversionExtensionsEmulatorTest {
         private const val E = 5f
         private const val F = 6f
 
-        private val TEST_BRUSH =
-            Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f)
+        private val TEST_BRUSH = Brush(family = StockBrushes.marker(), size = 10f, epsilon = 0.1f)
     }
 }

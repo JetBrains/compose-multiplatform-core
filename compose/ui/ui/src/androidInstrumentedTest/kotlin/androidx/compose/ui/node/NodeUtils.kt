@@ -17,6 +17,7 @@
 package androidx.compose.ui.node
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
@@ -24,10 +25,10 @@ import androidx.compose.ui.platform.InspectorInfo
 
 /**
  * Remove the root modifier nodes as they are not relevant from the perspective of the tests. There
- * are 6 nodes: FocusTargetNode, KeyInputNode, RotaryInputNode, SemanticsNode, DragAndDropNode and
- * BringIntoViewModifierNode
+ * are 3 nodes: RootModifierNode, FocusTargetNode, and DragAndDropNode.
  */
-internal fun <T> List<T>.trimRootModifierNodes(): List<T> = dropLast(6)
+@OptIn(ExperimentalComposeUiApi::class)
+internal fun <T> List<T>.trimRootModifierNodes(): List<T> = dropLast(3)
 
 internal fun Modifier.elementOf(node: Modifier.Node): Modifier {
     return this.then(ElementOf { node })
@@ -59,7 +60,7 @@ internal fun ReverseMeasureLayout(modifier: Modifier, vararg contents: @Composab
                         layoutWidth = maxOf(layoutWidth, placeable.width)
                         layoutHeight = maxOf(layoutHeight, placeable.height)
                     }
-                }
+                },
             )
         }
 

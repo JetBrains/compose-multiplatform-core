@@ -1,0 +1,29 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.metrics.performance.FrameData#getFrameDurationUiNanos():
+    Source breaking change: method androidx.metrics.performance.FrameData.getFrameDurationUiNanos() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.FrameData#getFrameStartNanos():
+    Source breaking change: method androidx.metrics.performance.FrameData.getFrameStartNanos() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.FrameData#getStates():
+    Source breaking change: method androidx.metrics.performance.FrameData.getStates() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.FrameData#isJank():
+    Source breaking change: method androidx.metrics.performance.FrameData.isJank() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.FrameDataApi24#getFrameDurationCpuNanos():
+    Source breaking change: method androidx.metrics.performance.FrameDataApi24.getFrameDurationCpuNanos() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.FrameDataApi31#getFrameDurationTotalNanos():
+    Source breaking change: method androidx.metrics.performance.FrameDataApi31.getFrameDurationTotalNanos() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.FrameDataApi31#getFrameOverrunNanos():
+    Source breaking change: method androidx.metrics.performance.FrameDataApi31.getFrameOverrunNanos() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.JankStats#getJankHeuristicMultiplier():
+    Source breaking change: method androidx.metrics.performance.JankStats.getJankHeuristicMultiplier() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.JankStats#isTrackingEnabled():
+    Source breaking change: method androidx.metrics.performance.JankStats.isTrackingEnabled() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.JankStats#setJankHeuristicMultiplier(float):
+    Source breaking change: method androidx.metrics.performance.JankStats.setJankHeuristicMultiplier(float) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.JankStats#setTrackingEnabled(boolean):
+    Source breaking change: method androidx.metrics.performance.JankStats.setTrackingEnabled(boolean) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.PerformanceMetricsState.Holder#getState():
+    Source breaking change: method androidx.metrics.performance.PerformanceMetricsState.Holder.getState() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.StateInfo#getKey():
+    Source breaking change: method androidx.metrics.performance.StateInfo.getKey() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.metrics.performance.StateInfo#getValue():
+    Source breaking change: method androidx.metrics.performance.StateInfo.getValue() can no longer be resolved from Kotlin source

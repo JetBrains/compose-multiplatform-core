@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -55,7 +56,7 @@ class ProgressIndicatorTest {
     private val ExpectedLinearWidth = 240.dp
     private val ExpectedLinearHeight = 4.dp
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun determinateLinearProgressIndicator_Progress() {
@@ -219,7 +220,7 @@ class ProgressIndicatorTest {
                 LinearProgressIndicator(
                     modifier = Modifier.size(expectedWidth, expectedHeight),
                     progress = 1f,
-                    color = Color.Blue
+                    color = Color.Blue,
                 )
             }
         }
@@ -242,7 +243,7 @@ class ProgressIndicatorTest {
             Box(Modifier.testTag(tag)) {
                 LinearProgressIndicator(
                     modifier = Modifier.size(expectedWidth, expectedHeight),
-                    color = Color.Blue
+                    color = Color.Blue,
                 )
             }
         }
@@ -370,7 +371,7 @@ class ProgressIndicatorTest {
                 Box(Modifier.testTag(visualTag)) {
                     LinearProgressIndicator(
                         modifier = Modifier.testTag(withPaddingTag),
-                        progress = 1f
+                        progress = 1f,
                     )
                 }
                 repeat(20) { Text("Item $it") }

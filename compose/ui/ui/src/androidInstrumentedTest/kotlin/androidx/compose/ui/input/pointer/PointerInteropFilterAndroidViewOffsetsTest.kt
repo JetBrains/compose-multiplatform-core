@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -53,7 +54,7 @@ class PointerInteropFilterAndroidViewOffsetsTest {
     private lateinit var five: View
     private val theHitListener: () -> Unit = mock()
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     @Before
     fun setup() {
@@ -79,7 +80,7 @@ class PointerInteropFilterAndroidViewOffsetsTest {
                     layoutParams =
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
+                            ViewGroup.LayoutParams.MATCH_PARENT,
                         )
                     setPadding(1, 11, 0, 0)
                     addView(one)
@@ -90,7 +91,7 @@ class PointerInteropFilterAndroidViewOffsetsTest {
                     layoutParams =
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
+                            ViewGroup.LayoutParams.MATCH_PARENT,
                         )
                     setPadding(3, 13, 0, 0)
                     setContent {
@@ -99,7 +100,7 @@ class PointerInteropFilterAndroidViewOffsetsTest {
                             Box(
                                 Modifier.padding(
                                     start = (2f / density).dp,
-                                    top = (12f / density).dp
+                                    top = (12f / density).dp,
                                 )
                             ) {
                                 AndroidView({ two })
@@ -113,7 +114,7 @@ class PointerInteropFilterAndroidViewOffsetsTest {
                     layoutParams =
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
+                            ViewGroup.LayoutParams.MATCH_PARENT,
                         )
                     setPadding(4, 14, 0, 0)
                     addView(four)
@@ -149,7 +150,7 @@ class PointerInteropFilterAndroidViewOffsetsTest {
                     0,
                     arrayOf(PointerProperties(1)),
                     arrayOf(PointerCoords(x.toFloat(), y.toFloat())),
-                    five
+                    five,
                 )
             val up =
                 MotionEvent(
@@ -159,7 +160,7 @@ class PointerInteropFilterAndroidViewOffsetsTest {
                     0,
                     arrayOf(PointerProperties(1)),
                     arrayOf(PointerCoords(x.toFloat(), y.toFloat())),
-                    five
+                    five,
                 )
 
             five.dispatchTouchEvent(down)

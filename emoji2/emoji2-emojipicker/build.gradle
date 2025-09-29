@@ -55,7 +55,6 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
     namespace = "androidx.emoji2.emojipicker"
-    testOptions.unitTests.includeAndroidResources = true
 }
 
 androidx {

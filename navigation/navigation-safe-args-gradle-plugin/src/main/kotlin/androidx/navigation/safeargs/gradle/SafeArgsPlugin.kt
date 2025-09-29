@@ -45,17 +45,10 @@ abstract class SafeArgsPlugin protected constructor(private val providerFactory:
 
     private val agpBasePluginId = "com.android.base"
 
-    private val kgpPluginIds =
-        listOf(
-            "org.jetbrains.kotlin.jvm",
-            "org.jetbrains.kotlin.android",
-            "org.jetbrains.kotlin.multiplatform"
-        )
-
     @Suppress("DEPRECATION") // For BaseVariant should be replaced in later studio versions
     private fun forEachVariant(
         extension: BaseExtension,
-        action: (com.android.build.gradle.api.BaseVariant) -> Unit
+        action: (com.android.build.gradle.api.BaseVariant) -> Unit,
     ) {
         when {
             extension is AppExtension -> extension.applicationVariants.configureEach(action)
@@ -75,10 +68,7 @@ abstract class SafeArgsPlugin protected constructor(private val providerFactory:
             isAndroidProject = true
             applySafeArgsPlugin(project)
         }
-        var isKotlinProject = false
-        kgpPluginIds.forEach { kgpPluginId ->
-            project.plugins.withId(kgpPluginId) { isKotlinProject = true }
-        }
+        val isKotlinProject = project.extensions.findByName("kotlin") != null
         project.afterEvaluate {
             if (!isAndroidProject) {
                 throw GradleException("safeargs plugin must be used with android plugin")
@@ -97,10 +87,10 @@ abstract class SafeArgsPlugin protected constructor(private val providerFactory:
         val componentsExtension =
             project.extensions.findByType(AndroidComponentsExtension::class.java)
                 ?: throw GradleException("safeargs plugin must be used with android plugin")
-        if (componentsExtension.pluginVersion < AndroidPluginVersion(7, 3)) {
+        if (componentsExtension.pluginVersion < AndroidPluginVersion(8, 4)) {
             throw GradleException(
                 "safeargs Gradle plugin is only compatible with Android " +
-                    "Gradle plugin (AGP) version 7.3.0 or higher (found " +
+                    "Gradle plugin (AGP) version 8.4.0 or higher (found " +
                     "${componentsExtension.pluginVersion})."
             )
         }
@@ -134,7 +124,7 @@ abstract class SafeArgsPlugin protected constructor(private val providerFactory:
                     "generateSafeArgs${variant.name.replaceFirstChar {
                     if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString()
                 }}",
-                    ArgumentsGenerationTask::class.java
+                    ArgumentsGenerationTask::class.java,
                 ) { task ->
                     task.applicationId.set(
                         applicationIds.getOrPut(variant.name) {
@@ -173,7 +163,7 @@ abstract class SafeArgsPlugin protected constructor(private val providerFactory:
     @Suppress("DEPRECATION") // For BaseVariant should be replaced in later studio versions
     private fun navigationFiles(
         variant: com.android.build.gradle.api.BaseVariant,
-        project: Project
+        project: Project,
     ): ConfigurableFileCollection {
         val fileProvider =
             providerFactory.provider {

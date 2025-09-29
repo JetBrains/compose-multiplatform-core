@@ -16,12 +16,14 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 
 /**
@@ -41,20 +43,28 @@ import androidx.compose.ui.graphics.graphicsLayer
  * @param timeText The default time (and potentially status message) to display at the top middle of
  *   the screen in this app. When [AppScaffold] is used in combination with [ScreenScaffold], the
  *   time text will be scrolled away and shown/hidden according to the scroll state of the screen.
+ * @param containerColor The container color of the app drawn behind the [content], i.e. the color
+ *   of the background behind the content.
+ * @param contentColor The content color for the application [content].
  * @param content The main content for this application.
  */
 @Composable
 public fun AppScaffold(
     modifier: Modifier = Modifier,
     timeText: @Composable () -> Unit = { TimeText() },
+    containerColor: Color = MaterialTheme.colorScheme.background,
+    contentColor: Color = contentColorFor(containerColor),
     content: @Composable BoxScope.() -> Unit,
 ) {
+    // Run the animator coordinator if needed.
+    AnimationCoordinator.Looper()
+
     CompositionLocalProvider(
-        LocalScaffoldState provides
-            ScaffoldState(appScaffoldPresent = true, appTimeText = timeText),
+        LocalScaffoldState provides ScaffoldState(appTimeText = timeText),
+        LocalContentColor provides contentColor,
     ) {
         val scaffoldState = LocalScaffoldState.current
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().background(containerColor)) {
             Box(
                 modifier =
                     modifier.fillMaxSize().graphicsLayer {
@@ -63,9 +73,8 @@ public fun AppScaffold(
                     }
             ) {
                 content()
-                scaffoldState.timeText()
+                scaffoldState.screenContent.timeText()
             }
-            scaffoldState.fullScreenContent?.let { it() }
         }
     }
 }

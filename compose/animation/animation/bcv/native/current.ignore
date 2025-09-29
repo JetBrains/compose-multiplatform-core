@@ -1,0 +1,7 @@
+// Baseline format: 1.0
+[linuxX64]: Removed declaration androidx.compose.animation/androidx_compose_animation_SharedElementInternalState$stableprop from androidx.compose.animation:animation
+[linuxX64]: Removed declaration androidx.compose.animation/androidx_compose_animation_SkipToLookaheadElement$stableprop from androidx.compose.animation:animation
+[linuxX64]: Removed declaration androidx.compose.animation/androidx_compose_animation_SkipToLookaheadNode$stableprop from androidx.compose.animation:animation
+[linuxX64]: Removed declaration androidx.compose.animation/androidx_compose_animation_SharedElementInternalState$stableprop_getter() from androidx.compose.animation:animation
+[linuxX64]: Removed declaration androidx.compose.animation/androidx_compose_animation_SkipToLookaheadElement$stableprop_getter() from androidx.compose.animation:animation
+[linuxX64]: Removed declaration androidx.compose.animation/androidx_compose_animation_SkipToLookaheadNode$stableprop_getter() from androidx.compose.animation:animation

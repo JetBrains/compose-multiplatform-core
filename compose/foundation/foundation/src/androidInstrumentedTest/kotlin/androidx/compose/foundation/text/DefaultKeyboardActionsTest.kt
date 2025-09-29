@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,7 +53,7 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class DefaultKeyboardActionsTest(param: Param) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
@@ -75,7 +76,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                 Param(Send),
                 Param(Previous),
                 Param(Next),
-                Param(Done)
+                Param(Done),
             )
     }
 
@@ -98,7 +99,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                         modifier =
                             Modifier.focusRequester(textField1).onFocusChanged {
                                 focusState1 = it.isFocused
-                            }
+                            },
                     )
                     CoreTextField(
                         value = value2,
@@ -111,7 +112,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                                     next = textField3
                                 }
                                 .onFocusChanged { focusState2 = it.isFocused },
-                        imeOptions = ImeOptions(imeAction = imeAction)
+                        imeOptions = ImeOptions(imeAction = imeAction),
                     )
                     CoreTextField(
                         value = value3,
@@ -119,7 +120,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                         modifier =
                             Modifier.focusRequester(textField3).onFocusChanged {
                                 focusState3 = it.isFocused
-                            }
+                            },
                     )
                 }
             }
@@ -184,7 +185,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                         modifier =
                             Modifier.focusRequester(textField1).onFocusChanged {
                                 focusState1 = it.isFocused
-                            }
+                            },
                     )
                     CoreTextField(
                         value = value2,
@@ -206,7 +207,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                                 onPrevious = { defaultKeyboardAction(Previous) },
                                 onSearch = { defaultKeyboardAction(Search) },
                                 onSend = { defaultKeyboardAction(Send) },
-                            )
+                            ),
                     )
                     CoreTextField(
                         value = value3,
@@ -214,7 +215,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                         modifier =
                             Modifier.focusRequester(textField3).onFocusChanged {
                                 focusState3 = it.isFocused
-                            }
+                            },
                     )
                 }
             }
@@ -288,7 +289,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                             onPrevious = { defaultKeyboardAction(Next) },
                             onSearch = { defaultKeyboardAction(Next) },
                             onSend = { defaultKeyboardAction(Next) },
-                        )
+                        ),
                 )
                 CoreTextField(
                     value = value2,
@@ -296,7 +297,7 @@ class DefaultKeyboardActionsTest(param: Param) {
                     modifier =
                         Modifier.focusRequester(textField2).onFocusChanged {
                             focusState2 = it.isFocused
-                        }
+                        },
                 )
             }
         }

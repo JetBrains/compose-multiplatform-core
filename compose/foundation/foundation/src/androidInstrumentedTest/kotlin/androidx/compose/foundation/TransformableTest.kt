@@ -64,6 +64,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -77,7 +78,7 @@ private const val EDGE_FUZZ_FACTOR = 0.2f
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TransformableTest {
-    @Suppress("DEPRECATION") @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private lateinit var scope: CoroutineScope
 
@@ -119,7 +120,7 @@ class TransformableTest {
                 Offset(leftStartX, center.y),
                 Offset(leftEndX, center.y),
                 Offset(rightStartX, center.y),
-                Offset(rightEndX, center.y)
+                Offset(rightEndX, center.y),
             )
         }
 
@@ -237,7 +238,7 @@ class TransformableTest {
                                     rememberTransformableState { _, _, _ ->
                                         // no-op
                                     },
-                                canPan = { false }
+                                canPan = { false },
                             )
                     )
                 }
@@ -272,7 +273,7 @@ class TransformableTest {
                                 canPan = { offset ->
                                     lastCanPanOffset = offset
                                     false
-                                }
+                                },
                             )
                     )
                 }
@@ -332,7 +333,7 @@ class TransformableTest {
             Modifier.transformable(
                 lockRotationOnZoomPan = rotationLock.value,
                 state =
-                    rememberTransformableState { _, _, rotation -> cumulativeRotation += rotation }
+                    rememberTransformableState { _, _, rotation -> cumulativeRotation += rotation },
             )
         }
 
@@ -400,7 +401,7 @@ class TransformableTest {
                 Offset(leftStartX, center.y),
                 Offset(leftEndX, center.y),
                 Offset(rightStartX, center.y),
-                Offset(rightEndX, center.y)
+                Offset(rightEndX, center.y),
             )
         }
 
@@ -448,7 +449,7 @@ class TransformableTest {
         setTransformableContent {
             Modifier.transformable(
                 enabled = enabled.value,
-                state = rememberTransformableState { zoom, _, _ -> cumulativeScale *= zoom }
+                state = rememberTransformableState { zoom, _, _ -> cumulativeScale *= zoom },
             )
         }
 
@@ -462,7 +463,7 @@ class TransformableTest {
                 Offset(leftStartX, center.y),
                 Offset(leftEndX, center.y),
                 Offset(rightStartX, center.y),
-                Offset(rightEndX, center.y)
+                Offset(rightEndX, center.y),
             )
         }
 
@@ -486,7 +487,7 @@ class TransformableTest {
                 Offset(leftStartX, center.y),
                 Offset(leftEndX, center.y),
                 Offset(rightStartX, center.y),
-                Offset(rightEndX, center.y)
+                Offset(rightEndX, center.y),
             )
         }
 

@@ -28,7 +28,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation(libs.junit)
 }
@@ -37,9 +36,6 @@ android {
     defaultConfig {
         minSdk = 26
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.watchface.complications.datasource.ktx"
 }
 
@@ -49,5 +45,6 @@ androidx {
     inceptionYear = "2021"
     description = "Kotlin suspend wrapper for Android Wear Complications Data Source"
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }
 

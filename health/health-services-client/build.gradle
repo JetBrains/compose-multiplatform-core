@@ -43,7 +43,6 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinReflect)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testCore)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinTest)
@@ -75,4 +74,5 @@ androidx {
     inceptionYear = "2021"
     description = "This library helps developers create performant health applications in a platform agnostic way"
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

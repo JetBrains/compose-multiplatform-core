@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
@@ -106,6 +107,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -116,7 +118,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3Api::class)
 class BottomSheetScaffoldTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
     private val restorationTester = StateRestorationTester(rule)
 
     private val sheetHeight = 256.dp
@@ -133,7 +135,7 @@ class BottomSheetScaffoldTest {
         restorationTester.setContent {
             state =
                 rememberBottomSheetScaffoldState(
-                    bottomSheetState = rememberStandardBottomSheetState(initialValue),
+                    bottomSheetState = rememberStandardBottomSheetState(initialValue)
                 )
         }
         assertThat(state.bottomSheetState.currentValue).isEqualTo(initialValue)
@@ -147,7 +149,7 @@ class BottomSheetScaffoldTest {
             BottomSheetScaffold(
                 sheetContent = { Box(Modifier.fillMaxSize().testTag(sheetTag)) },
                 sheetPeekHeight = peekHeight,
-                sheetDragHandle = null
+                sheetDragHandle = null,
             ) {
                 Text("Content")
             }
@@ -171,7 +173,7 @@ class BottomSheetScaffoldTest {
                 sheetDragHandle = {
                     Box(Modifier.fillMaxWidth().requiredHeight(dragHandleSize).testTag(sheetTag))
                 },
-                sheetPeekHeight = peekHeight
+                sheetPeekHeight = peekHeight,
             ) {
                 Text("Content")
             }
@@ -190,7 +192,7 @@ class BottomSheetScaffoldTest {
                     Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight).testTag(sheetTag))
                 },
                 sheetDragHandle = { Box(Modifier.testTag(dragHandleTag).size(dragHandleSize)) },
-                sheetPeekHeight = peekHeight
+                sheetPeekHeight = peekHeight,
             ) {
                 Text("Content")
             }
@@ -223,7 +225,7 @@ class BottomSheetScaffoldTest {
                 scaffoldState =
                     rememberBottomSheetScaffoldState(
                         bottomSheetState = rememberStandardBottomSheetState(skipHiddenState = false)
-                    )
+                    ),
             ) {
                 Text("Content")
             }
@@ -264,7 +266,7 @@ class BottomSheetScaffoldTest {
             BottomSheetScaffold(
                 sheetContent = { Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight)) },
                 scaffoldState =
-                    rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
+                    rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState),
             ) {
                 Text("Content")
             }
@@ -295,7 +297,7 @@ class BottomSheetScaffoldTest {
                     Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight).testTag(sheetTag))
                 },
                 sheetDragHandle = { Box(Modifier.testTag(dragHandleTag).size(dragHandleSize)) },
-                sheetPeekHeight = peekHeight
+                sheetPeekHeight = peekHeight,
             ) {
                 Text("Content")
             }
@@ -324,7 +326,7 @@ class BottomSheetScaffoldTest {
                         Box(Modifier.fillMaxWidth().requiredHeight(peekHeight).testTag(sheetTag))
                     },
                     sheetDragHandle = null,
-                    sheetPeekHeight = peekHeight
+                    sheetPeekHeight = peekHeight,
                 ) {
                     Text("Content")
                 }
@@ -355,7 +357,7 @@ class BottomSheetScaffoldTest {
                         )
                     },
                     sheetPeekHeight = peekHeight,
-                    content = { Text("Content") }
+                    content = { Text("Content") },
                 )
             }
             val expectedHeight = sheetHeight + dragHandleSize
@@ -393,7 +395,7 @@ class BottomSheetScaffoldTest {
                 },
                 sheetDragHandle = null,
                 sheetPeekHeight = peekHeight,
-                content = { Text("Content") }
+                content = { Text("Content") },
             )
         }
 
@@ -421,18 +423,16 @@ class BottomSheetScaffoldTest {
             bottomSheetState =
                 rememberStandardBottomSheetState(
                     initialValue = SheetValue.PartiallyExpanded,
-                    confirmValueChange = { it != SheetValue.Expanded }
+                    confirmValueChange = { it != SheetValue.Expanded },
                 )
             BottomSheetScaffold(
                 scaffoldState =
-                    rememberBottomSheetScaffoldState(
-                        bottomSheetState = bottomSheetState,
-                    ),
+                    rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState),
                 sheetContent = {
                     Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight).testTag(sheetTag))
                 },
                 sheetPeekHeight = peekHeight,
-                content = { Text("Content") }
+                content = { Text("Content") },
             )
         }
 
@@ -468,7 +468,7 @@ class BottomSheetScaffoldTest {
                 },
                 sheetSwipeEnabled = false,
                 sheetPeekHeight = peekHeight,
-                content = { Text("Content") }
+                content = { Text("Content") },
             )
         }
 
@@ -501,7 +501,7 @@ class BottomSheetScaffoldTest {
                             }
                     )
                 },
-                sheetContent = { Box(Modifier.requiredSize(10.dp)) }
+                sheetContent = { Box(Modifier.requiredSize(10.dp)) },
             ) {
                 Box(
                     Modifier.onGloballyPositioned {
@@ -534,7 +534,7 @@ class BottomSheetScaffoldTest {
                                 .background(color = Color.White)
                         )
                     },
-                    sheetContent = { Box(Modifier.requiredSize(0.dp)) }
+                    sheetContent = { Box(Modifier.requiredSize(0.dp)) },
                 ) {
                     Box(Modifier.requiredSize(10.dp).background(color = Color.White))
                 }
@@ -557,7 +557,7 @@ class BottomSheetScaffoldTest {
         rule.setContent {
             BottomSheetScaffold(
                 sheetContent = { Box(Modifier.fillMaxWidth().requiredHeight(100.dp)) },
-                sheetPeekHeight = peekHeight
+                sheetPeekHeight = peekHeight,
             ) {
                 innerPadding = it
                 Text("body")
@@ -654,7 +654,7 @@ class BottomSheetScaffoldTest {
                 screenWidthPx = context.resources.displayMetrics.widthPixels
                 BottomSheetScaffold(
                     sheetMaxWidth = Dp.Unspecified,
-                    sheetContent = { Box(Modifier.testTag(sheetTag).fillMaxHeight(0.4f)) }
+                    sheetContent = { Box(Modifier.testTag(sheetTag).fillMaxHeight(0.4f)) },
                 ) {
                     Text("body")
                 }
@@ -704,9 +704,9 @@ class BottomSheetScaffoldTest {
                                     .containerColor(colorTransitionFraction = 1f)
                         },
                         modifier = Modifier.testTag("AppBar"),
-                        scrollBehavior = topAppBarScrollBehavior
+                        scrollBehavior = topAppBarScrollBehavior,
                     )
-                }
+                },
             ) {
                 scaffoldContentScrollState = rememberScrollState()
                 Column(
@@ -818,7 +818,7 @@ class BottomSheetScaffoldTest {
                 sheetContent = { Box(Modifier.fillMaxSize().testTag(sheetTag)) },
                 sheetPeekHeight = peekHeight,
                 sheetMaxWidth = sheetMaxWidth.value,
-                sheetDragHandle = null
+                sheetDragHandle = null,
             ) {
                 Text("Content")
             }
@@ -856,11 +856,7 @@ class BottomSheetScaffoldTest {
                     Box(Modifier.height(sheetHeight).fillMaxWidth().testTag(sheetTag))
                 },
                 sheetPeekHeight = peekHeight,
-                sheetDragHandle = {
-                    BottomSheetDefaults.DragHandle(
-                        shape = dragHandleShape,
-                    )
-                },
+                sheetDragHandle = { BottomSheetDefaults.DragHandle(shape = dragHandleShape) },
                 topBar = {
                     Box(modifier = Modifier.height(topBarHeight).fillMaxWidth().testTag("TopBar"))
                 },
@@ -890,7 +886,7 @@ class BottomSheetScaffoldTest {
                 verticalPadding = 22.dp,
                 backgroundColor = dragHandleColor.compositeOver(surface),
                 shapeColor = dragHandleColor.compositeOver(surface),
-                shape = dragHandleShape
+                shape = dragHandleShape,
             )
         // Assert sheet content is positioned at the sheet peek height + drag handle height + 22.dp
         // top and bottom padding.
@@ -920,12 +916,7 @@ class BottomSheetScaffoldTest {
     fun bottomSheetScaffold_bottomSheetOffsetTaggedAsMotionFrameOfReference() {
         var offset by mutableStateOf(IntOffset(0, 0))
         val offsets =
-            listOf(
-                IntOffset(0, 0),
-                IntOffset(5, 20),
-                IntOffset(25, 0),
-                IntOffset(100, 10),
-            )
+            listOf(IntOffset(0, 0), IntOffset(5, 20), IntOffset(25, 0), IntOffset(100, 10))
         var sheetCoords: LayoutCoordinates? = null
         var rootCoords: LayoutCoordinates? = null
         val state =
@@ -955,7 +946,7 @@ class BottomSheetScaffoldTest {
                         Box(Modifier.fillMaxSize().onGloballyPositioned { sheetCoords = it })
                     },
                     scaffoldState =
-                        BottomSheetScaffoldState(state, remember { SnackbarHostState() })
+                        BottomSheetScaffoldState(state, remember { SnackbarHostState() }),
                 ) {
                     Box(Modifier.fillMaxSize())
                 }
@@ -979,7 +970,7 @@ class BottomSheetScaffoldTest {
                             .round()
                     assertEquals(
                         includeSheetOffset - IntOffset(0, state.requireOffset().roundToInt()),
-                        excludeOffset
+                        excludeOffset,
                     )
                 }
             }
@@ -990,12 +981,7 @@ class BottomSheetScaffoldTest {
     fun modalBottomSheet_bottomSheetOffsetTaggedAsMotionFrameOfReference() {
         var offset by mutableStateOf(IntOffset(0, 0))
         val offsets =
-            listOf(
-                IntOffset(0, 0),
-                IntOffset(5, 20),
-                IntOffset(25, 0),
-                IntOffset(100, 10),
-            )
+            listOf(IntOffset(0, 0), IntOffset(5, 20), IntOffset(25, 0), IntOffset(100, 10))
         var sheetCoords: LayoutCoordinates? = null
         val state =
             SheetState(
@@ -1044,7 +1030,7 @@ class BottomSheetScaffoldTest {
                             .round()
                     assertEquals(
                         includeSheetOffset - IntOffset(0, state.requireOffset().roundToInt()),
-                        excludeOffset
+                        excludeOffset,
                     )
                 }
             }
@@ -1062,7 +1048,7 @@ class BottomSheetScaffoldTest {
                 },
                 sheetDragHandle = { Box(Modifier.testTag(dragHandleTag).size(dragHandleSize)) },
                 sheetPeekHeight = peekHeight,
-                scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = sheetState)
+                scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = sheetState),
             ) {
                 Text("Content")
             }
@@ -1091,7 +1077,7 @@ class BottomSheetScaffoldTest {
                 },
                 sheetDragHandle = { Box(Modifier.testTag(dragHandleTag).size(dragHandleSize)) },
                 sheetPeekHeight = peekHeight,
-                scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = sheetState)
+                scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = sheetState),
             ) {
                 Text("Content")
             }
@@ -1107,5 +1093,43 @@ class BottomSheetScaffoldTest {
         rule.onNodeWithTag(dragHandleTag, useUnmergedTree = true).performClick()
         rule.waitForIdle()
         assertThat(sheetState.currentValue).isEqualTo(SheetValue.Hidden)
+    }
+
+    @Test
+    fun bottomSheetScaffold_peekHeightMatchesContentHeight_containsExpandedAnchor() {
+        val bottomSheetState =
+            SheetState(
+                skipPartiallyExpanded = true,
+                skipHiddenState = true,
+                initialValue = SheetValue.Expanded,
+                positionalThreshold = {
+                    with(rule.density) { BottomSheetDefaults.PositionalThreshold.toPx() }
+                },
+                velocityThreshold = {
+                    with(rule.density) { BottomSheetDefaults.VelocityThreshold.toPx() }
+                },
+            )
+        rule.setContent {
+            LookaheadScope {
+                BottomSheetScaffold(
+                    sheetContent = { Box(Modifier.fillMaxWidth().requiredHeight(sheetHeight)) },
+                    sheetDragHandle = null,
+                    sheetPeekHeight = sheetHeight,
+                    scaffoldState =
+                        rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState),
+                ) {
+                    Text("Content")
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(bottomSheetState.anchoredDraggableState.anchors.size).isEqualTo(1)
+            assertThat(
+                    bottomSheetState.anchoredDraggableState.anchors.hasAnchorFor(
+                        SheetValue.Expanded
+                    )
+                )
+                .isTrue()
+        }
     }
 }

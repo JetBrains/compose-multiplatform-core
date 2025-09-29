@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
-import android.os.Build
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import com.google.common.truth.Truth.assertThat
@@ -29,7 +28,6 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @DoNotInstrument
 class CameraMetadataIntegrationTest {
     private lateinit var cameraMetadata: androidx.camera.camera2.pipe.CameraMetadata
@@ -87,9 +85,7 @@ class CameraMetadataIntegrationTest {
         initCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
-                    intArrayOf(
-                        CameraMetadata.CONTROL_AE_MODE_OFF,
-                    )
+                    intArrayOf(CameraMetadata.CONTROL_AE_MODE_OFF)
             )
         )
 
@@ -117,9 +113,7 @@ class CameraMetadataIntegrationTest {
         initCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
-                    intArrayOf(
-                        CameraMetadata.CONTROL_AE_MODE_ON_EXTERNAL_FLASH,
-                    )
+                    intArrayOf(CameraMetadata.CONTROL_AE_MODE_ON_EXTERNAL_FLASH)
             )
         )
 
@@ -131,9 +125,7 @@ class CameraMetadataIntegrationTest {
         initCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
-                    intArrayOf(
-                        CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO,
-                    )
+                    intArrayOf(CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
             )
         )
 
@@ -151,7 +143,7 @@ class CameraMetadataIntegrationTest {
                     intArrayOf(
                         CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
                         CameraMetadata.CONTROL_AF_MODE_AUTO,
-                        CameraMetadata.CONTROL_AF_MODE_OFF
+                        CameraMetadata.CONTROL_AF_MODE_OFF,
                     )
             )
         )
@@ -169,7 +161,7 @@ class CameraMetadataIntegrationTest {
                 CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
                     intArrayOf(
                         CameraMetadata.CONTROL_AF_MODE_AUTO,
-                        CameraMetadata.CONTROL_AF_MODE_OFF
+                        CameraMetadata.CONTROL_AF_MODE_OFF,
                     )
             )
         )
@@ -203,7 +195,7 @@ class CameraMetadataIntegrationTest {
                     intArrayOf(
                         CameraMetadata.CONTROL_AWB_MODE_DAYLIGHT,
                         CameraMetadata.CONTROL_AWB_MODE_AUTO,
-                        CameraMetadata.CONTROL_AWB_MODE_OFF
+                        CameraMetadata.CONTROL_AWB_MODE_OFF,
                     )
             )
         )
@@ -219,7 +211,7 @@ class CameraMetadataIntegrationTest {
                 CameraCharacteristics.CONTROL_AWB_AVAILABLE_MODES to
                     intArrayOf(
                         CameraMetadata.CONTROL_AWB_MODE_AUTO,
-                        CameraMetadata.CONTROL_AWB_MODE_OFF
+                        CameraMetadata.CONTROL_AWB_MODE_OFF,
                     )
             )
         )

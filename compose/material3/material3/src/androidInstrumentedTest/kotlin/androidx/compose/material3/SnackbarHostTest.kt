@@ -42,6 +42,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +58,7 @@ import org.mockito.kotlin.mock
 @LargeTest
 class SnackbarHostTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun snackbarHost_observePushedData() {
@@ -215,27 +216,27 @@ class SnackbarHostTest {
         }
         assertEquals(
             Long.MAX_VALUE,
-            SnackbarDuration.Indefinite.toMillis(true, accessibilityManager)
+            SnackbarDuration.Indefinite.toMillis(true, accessibilityManager),
         )
         assertEquals(
             Long.MAX_VALUE,
-            SnackbarDuration.Indefinite.toMillis(false, accessibilityManager)
+            SnackbarDuration.Indefinite.toMillis(false, accessibilityManager),
         )
         assertEquals(
             mockDurationControl,
-            SnackbarDuration.Long.toMillis(true, accessibilityManager)
+            SnackbarDuration.Long.toMillis(true, accessibilityManager),
         )
         assertEquals(
             mockDurationNonControl,
-            SnackbarDuration.Long.toMillis(false, accessibilityManager)
+            SnackbarDuration.Long.toMillis(false, accessibilityManager),
         )
         assertEquals(
             mockDurationControl,
-            SnackbarDuration.Short.toMillis(true, accessibilityManager)
+            SnackbarDuration.Short.toMillis(true, accessibilityManager),
         )
         assertEquals(
             mockDurationNonControl,
-            SnackbarDuration.Short.toMillis(false, accessibilityManager)
+            SnackbarDuration.Short.toMillis(false, accessibilityManager),
         )
     }
 

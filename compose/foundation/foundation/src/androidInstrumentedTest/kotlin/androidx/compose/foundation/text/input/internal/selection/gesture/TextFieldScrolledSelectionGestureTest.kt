@@ -69,9 +69,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.fail
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -84,7 +84,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TextFieldScrolledSelectionGestureTest : FocusedWindowTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val fontFamily = TEST_FONT_FAMILY
     private val fontSize = 15.sp
@@ -185,7 +185,7 @@ class TextFieldScrolledSelectionGestureTest : FocusedWindowTest {
                     Modifier.width(300.dp)
                         .testTag(tag = tag)
                         .onSizeChanged { sizeNullable!!.value = it }
-                        .onGloballyPositioned { textFieldLayoutCoordinates = it }
+                        .onGloballyPositioned { textFieldLayoutCoordinates = it },
             )
         }
         val onTextField = rule.onNodeWithTag(pointerAreaTag)
@@ -274,7 +274,7 @@ class TextFieldScrolledSelectionGestureTest : FocusedWindowTest {
                     Modifier.width(300.dp)
                         .testTag(tag = tag)
                         .onSizeChanged { sizeNullable!!.value = it }
-                        .onGloballyPositioned { textFieldLayoutCoordinates = it }
+                        .onGloballyPositioned { textFieldLayoutCoordinates = it },
             )
         }
         assertThat(sizeNullable).isNotNull()
@@ -315,7 +315,6 @@ class TextFieldScrolledSelectionGestureTest : FocusedWindowTest {
     // TODO(b/316940648)
     //  The TextToolbar at the top of the screen messes up the popup position calculations,
     //  so suppress SDKs that don't have the floating popup.
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun whenVerticalScroll_handleGesture_drag() = runVerticalTest {
         // select "text8".

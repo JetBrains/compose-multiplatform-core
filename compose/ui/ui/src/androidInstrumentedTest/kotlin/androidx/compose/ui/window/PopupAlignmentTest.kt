@@ -37,8 +37,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.Description
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +47,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PopupAlignmentTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val testTag = "testedPopup"
     private val offset = IntOffset(10, 10)
@@ -92,20 +92,6 @@ class PopupAlignmentTest {
         val expectedPosition = IntOffset(40, 10)
 
         createPopupWithAlignmentRule(alignment = Alignment.TopCenter)
-
-        rule.popupMatches(testTag, matchesPosition(composeViewAbsolutePos + expectedPosition))
-    }
-
-    @Test
-    @Ignore("b/308574912")
-    fun popup_correctPosition_alignmentTopCenter_rtl() {
-        /* Expected TopCenter Position
-           x = -offset.x + parentSize.x / 2 - popupSize.x / 2
-           y = offset.y
-        */
-        val expectedPosition = IntOffset(20, 10)
-
-        createPopupWithAlignmentRule(alignment = Alignment.TopCenter, isRtl = true)
 
         rule.popupMatches(testTag, matchesPosition(composeViewAbsolutePos + expectedPosition))
     }
@@ -328,7 +314,7 @@ class PopupAlignmentTest {
                                             Modifier.onGloballyPositioned {
                                                 measureLatch.countDown()
                                             },
-                                        content = {}
+                                        content = {},
                                     )
                                 }
                             }
@@ -369,7 +355,7 @@ class PopupAlignmentTest {
                         Alignment.TopStart.align(
                             IntSize(placeable.width, placeable.height),
                             IntSize(layoutWidth, layoutHeight),
-                            layoutDirection
+                            layoutDirection,
                         )
                     placeable.placeRelative(position.x, position.y)
                 }

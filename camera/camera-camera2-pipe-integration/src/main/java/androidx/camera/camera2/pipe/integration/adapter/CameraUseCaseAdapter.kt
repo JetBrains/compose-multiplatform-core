@@ -28,8 +28,6 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.setupHDRnet
 import androidx.camera.camera2.pipe.integration.compat.workaround.toggleHDRPlus
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.DisplayInfoManager
-import androidx.camera.camera2.pipe.integration.impl.SESSION_PHYSICAL_CAMERA_ID_OPTION
-import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_CASE_OPTION
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
 import androidx.camera.core.ExperimentalZeroShutterLag
 import androidx.camera.core.ImageCapture
@@ -54,7 +52,7 @@ import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
  */
 @Suppress("DEPRECATION")
 public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
-    private val displayInfoManager by lazy { DisplayInfoManager(context) }
+    private val displayInfoManager by lazy { DisplayInfoManager.getInstance(context) }
 
     init {
         if (context === context.applicationContext) {
@@ -94,7 +92,7 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
         }
         mutableConfig.insertOption(
             UseCaseConfig.OPTION_DEFAULT_SESSION_CONFIG,
-            sessionBuilder.build()
+            sessionBuilder.build(),
         )
         val captureBuilder = CaptureConfig.Builder()
         when (captureType) {
@@ -116,7 +114,7 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
         }
         mutableConfig.insertOption(
             UseCaseConfig.OPTION_DEFAULT_CAPTURE_CONFIG,
-            captureBuilder.build()
+            captureBuilder.build(),
         )
 
         // Only CAPTURE_TYPE_IMAGE_CAPTURE has its own ImageCaptureOptionUnpacker. Other
@@ -127,11 +125,11 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
                 ImageCaptureOptionUnpacker.INSTANCE
             } else {
                 DefaultCaptureOptionsUnpacker.INSTANCE
-            }
+            },
         )
         mutableConfig.insertOption(
             UseCaseConfig.OPTION_SESSION_CONFIG_UNPACKER,
-            DefaultSessionOptionsUnpacker
+            DefaultSessionOptionsUnpacker,
         )
 
         if (captureType == CaptureType.PREVIEW) {
@@ -141,7 +139,7 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
 
         mutableConfig.insertOption(
             ImageOutputConfig.OPTION_TARGET_ROTATION,
-            displayInfoManager.defaultDisplay.rotation
+            displayInfoManager.getMaxSizeDisplay().rotation,
         )
         return OptionsBundle.from(mutableConfig)
     }
@@ -209,7 +207,7 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
         override fun unpack(
             resolution: Size,
             config: UseCaseConfig<*>,
-            builder: SessionConfig.Builder
+            builder: SessionConfig.Builder,
         ) {
             val defaultSessionConfig = config.getDefaultSessionConfig(/* valueIfMissing= */ null)
 
@@ -255,11 +253,14 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
             val extendedConfig =
                 MutableOptionsBundle.create().apply {
                     camera2Config.getPhysicalCameraId()?.let { physicalCameraId ->
-                        insertOption(SESSION_PHYSICAL_CAMERA_ID_OPTION, physicalCameraId)
+                        insertOption(
+                            Camera2ImplConfig.SESSION_PHYSICAL_CAMERA_ID_OPTION,
+                            physicalCameraId,
+                        )
                     }
 
                     camera2Config.getStreamUseCase()?.let { streamUseCase ->
-                        insertOption(STREAM_USE_CASE_OPTION, streamUseCase)
+                        insertOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION, streamUseCase)
                     }
                 }
             builder.addImplementationOptions(extendedConfig)

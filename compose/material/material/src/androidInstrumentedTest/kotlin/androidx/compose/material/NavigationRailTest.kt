@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,7 +66,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 /** Test for [NavigationRail] and [NavigationRailItem]. */
 class NavigationRailTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val NavigationRailPadding = 8.dp
 
@@ -78,7 +79,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -106,7 +107,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -150,7 +151,7 @@ class NavigationRailTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -177,7 +178,7 @@ class NavigationRailTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -202,7 +203,7 @@ class NavigationRailTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -227,7 +228,7 @@ class NavigationRailTest {
                             modifier =
                                 Modifier.width(96.dp).onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -254,7 +255,7 @@ class NavigationRailTest {
                             modifier =
                                 Modifier.width(96.dp).onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -268,7 +269,7 @@ class NavigationRailTest {
         itemCoords: MutableMap<Int, LayoutCoordinates>,
         expectedItemWidth: Dp,
         expectedItemHeight: Dp,
-        inset: Dp = 0.dp
+        inset: Dp = 0.dp,
     ) {
         rule.runOnIdleWithDensity {
             val expectedItemWidthPx = expectedItemWidth.roundToPx()
@@ -300,7 +301,7 @@ class NavigationRailTest {
                         icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = { Text("ItemText") },
                         selected = true,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -343,7 +344,7 @@ class NavigationRailTest {
                         label = { Text("ItemText") },
                         selected = false,
                         onClick = {},
-                        alwaysShowLabel = false
+                        alwaysShowLabel = false,
                     )
                 }
             }
@@ -376,7 +377,7 @@ class NavigationRailTest {
                         icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = null,
                         selected = false,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -430,7 +431,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = { clicks++ }
+                    onClick = { clicks++ },
                 )
             }
         }

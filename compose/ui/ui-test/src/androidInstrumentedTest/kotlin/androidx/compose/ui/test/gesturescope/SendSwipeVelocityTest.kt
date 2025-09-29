@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi
-import androidx.compose.ui.input.pointer.util.VelocityTrackerStrategyUseImpulse
 import androidx.compose.ui.test.InputDispatcher.Companion.eventPeriodMillis
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -56,7 +55,7 @@ class SendSwipeVelocityTest(private val config: TestConfig) {
         LeftToRight(Offset(boxStart, boxMiddle), Offset(boxEnd, boxMiddle)),
         RightToLeft(Offset(boxEnd, boxMiddle), Offset(boxStart, boxMiddle)),
         TopToBottom(Offset(boxMiddle, boxStart), Offset(boxMiddle, boxEnd)),
-        BottomToTop(Offset(boxMiddle, boxEnd), Offset(boxMiddle, boxStart))
+        BottomToTop(Offset(boxMiddle, boxEnd), Offset(boxMiddle, boxStart)),
     }
 
     companion object {
@@ -140,13 +139,9 @@ class SendSwipeVelocityTest(private val config: TestConfig) {
                 assertThat(recordedDurationMillis).isEqualTo(duration)
 
                 // Check velocity
-                if (VelocityTrackerStrategyUseImpulse) {
-                    assertThat(recordedVelocity.x).isWithin(1f).of(expectedXVelocity)
-                    assertThat(recordedVelocity.y).isWithin(1f).of(expectedYVelocity)
-                } else {
-                    assertThat(recordedVelocity.x).isWithin(.1f).of(expectedXVelocity)
-                    assertThat(recordedVelocity.y).isWithin(.1f).of(expectedYVelocity)
-                }
+
+                assertThat(recordedVelocity.x).isWithin(.1f).of(expectedXVelocity)
+                assertThat(recordedVelocity.y).isWithin(.1f).of(expectedYVelocity)
             }
         }
     }

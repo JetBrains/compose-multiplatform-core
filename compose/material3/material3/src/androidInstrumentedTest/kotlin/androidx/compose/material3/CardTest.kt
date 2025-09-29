@@ -52,6 +52,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,7 +61,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CardTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
@@ -74,7 +75,7 @@ class CardTest {
                     Card(
                         modifier = Modifier.semantics(mergeDescendants = true) {}.testTag("card"),
                         shape = shape,
-                        colors = CardDefaults.cardColors(containerColor = cardColor)
+                        colors = CardDefaults.cardColors(containerColor = cardColor),
                     ) {
                         Box(Modifier.size(50.dp, 50.dp))
                     }
@@ -90,7 +91,7 @@ class CardTest {
                 shape = shape,
                 shapeColor = cardColor,
                 backgroundColor = background,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -102,7 +103,7 @@ class CardTest {
                     surface = Color.Green,
                     onSurface = Color.Blue,
                     error = Color.Red,
-                    onError = Color.Yellow
+                    onError = Color.Yellow,
                 )
             MaterialTheme(colorScheme = colorScheme) {
                 var colors = CardDefaults.cardColors(containerColor = colorScheme.surface)
@@ -124,7 +125,7 @@ class CardTest {
                     surface = Color.Green,
                     onSurface = Color.Blue,
                     error = Color.Red,
-                    onError = Color.Yellow
+                    onError = Color.Yellow,
                 )
             MaterialTheme(colorScheme = colorScheme) {
                 var colors = CardDefaults.elevatedCardColors(containerColor = colorScheme.surface)
@@ -146,7 +147,7 @@ class CardTest {
                     surface = Color.Green,
                     onSurface = Color.Blue,
                     error = Color.Red,
-                    onError = Color.Yellow
+                    onError = Color.Yellow,
                 )
             MaterialTheme(colorScheme = colorScheme) {
                 var colors = CardDefaults.outlinedCardColors(containerColor = colorScheme.surface)
@@ -203,7 +204,7 @@ class CardTest {
             Card(
                 modifier =
                     Modifier.testTag("card")
-                        .clickable(enabled = enabled.value, onClick = { count.value += 1 }),
+                        .clickable(enabled = enabled.value, onClick = { count.value += 1 })
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -228,7 +229,7 @@ class CardTest {
             Card(
                 onClick = {},
                 modifier = Modifier.testTag("card"),
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -265,7 +266,7 @@ class CardTest {
             Box(Modifier.fillMaxSize()) {
                 Button(
                     modifier = Modifier.fillMaxSize().testTag("clickable"),
-                    onClick = { state.value += 1 }
+                    onClick = { state.value += 1 },
                 ) {
                     Text("button fullscreen")
                 }

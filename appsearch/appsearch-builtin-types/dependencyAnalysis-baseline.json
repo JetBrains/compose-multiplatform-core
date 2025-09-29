@@ -20,6 +20,14 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "androidx.appsearch:appsearch-compiler",
+        "resolvedVersion": "1.1.0-beta01"
+      },
+      "toConfiguration": "annotationProcessor"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "androidx.test:monitor",
         "resolvedVersion": "1.8.0-alpha01"
       },

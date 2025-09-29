@@ -20,6 +20,38 @@
     {
       "coordinates": {
         "type": "module",
+        "identifier": "androidx.test.espresso:espresso-core",
+        "resolvedVersion": "3.7.0-alpha01"
+      },
+      "fromConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.test.espresso:espresso-idling-resource",
+        "resolvedVersion": "3.7.0-alpha01"
+      },
+      "fromConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.test.ext:junit",
+        "resolvedVersion": "1.3.0-alpha01"
+      },
+      "fromConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.test.uiautomator:uiautomator",
+        "resolvedVersion": "2.2.0"
+      },
+      "fromConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
         "identifier": "androidx.test:monitor",
         "resolvedVersion": "1.8.0-alpha01"
       },
@@ -44,20 +76,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.test:runner",
-        "resolvedVersion": "1.7.0-alpha01"
-      },
-      "fromConfiguration": "testImplementation",
-      "toConfiguration": "testRuntimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "com.google.auto.value:auto-value-annotations",
+        "identifier": "com.google.auto.value:auto-value",
         "resolvedVersion": "1.6.3"
       },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "compileOnly"
+      "fromConfiguration": "annotationProcessor"
     },
     {
       "coordinates": {
@@ -90,23 +112,6 @@
         "resolvedVersion": "4.13.2"
       },
       "toConfiguration": "testImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "implementation"
     },
     {
       "coordinates": {

@@ -61,6 +61,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,11 +78,11 @@ import org.junit.runner.RunWith
     // On S and above, the press ripple is patterned and has inconsistent behaviour in terms of
     // alpha, so it doesn't behave according to our expectations - we can't explicitly assert on the
     // color.
-    maxSdkVersion = Build.VERSION_CODES.R
+    maxSdkVersion = Build.VERSION_CODES.R,
 )
 class RippleTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun bounded_lightTheme_pressed() {
@@ -94,14 +95,14 @@ class RippleTest {
                 interactionSource = interactionSource,
                 bounded = true,
                 lightTheme = true,
-                contentColor = contentColor
+                contentColor = contentColor,
             )
 
         assertRippleMatches(
             scope,
             interactionSource,
             PressInteraction.Press(Offset(10f, 10f)),
-            calculateResultingRippleColor(contentColor, rippleOpacity = 0.10f)
+            calculateResultingRippleColor(contentColor, rippleOpacity = 0.10f),
         )
     }
 
@@ -116,14 +117,14 @@ class RippleTest {
                 interactionSource = interactionSource,
                 bounded = true,
                 lightTheme = true,
-                contentColor = contentColor
+                contentColor = contentColor,
             )
 
         assertRippleMatches(
             scope,
             interactionSource,
             HoverInteraction.Enter(),
-            calculateResultingRippleColor(contentColor, rippleOpacity = 0.08f)
+            calculateResultingRippleColor(contentColor, rippleOpacity = 0.08f),
         )
     }
 
@@ -138,14 +139,14 @@ class RippleTest {
                 interactionSource = interactionSource,
                 bounded = true,
                 lightTheme = true,
-                contentColor = contentColor
+                contentColor = contentColor,
             )
 
         assertRippleMatches(
             scope,
             interactionSource,
             FocusInteraction.Focus(),
-            calculateResultingRippleColor(contentColor, rippleOpacity = 0.1f)
+            calculateResultingRippleColor(contentColor, rippleOpacity = 0.1f),
         )
     }
 
@@ -160,14 +161,14 @@ class RippleTest {
                 interactionSource = interactionSource,
                 bounded = true,
                 lightTheme = true,
-                contentColor = contentColor
+                contentColor = contentColor,
             )
 
         assertRippleMatches(
             scope,
             interactionSource,
             DragInteraction.Start(),
-            calculateResultingRippleColor(contentColor, rippleOpacity = 0.16f)
+            calculateResultingRippleColor(contentColor, rippleOpacity = 0.16f),
         )
     }
 
@@ -182,14 +183,14 @@ class RippleTest {
                 interactionSource = interactionSource,
                 bounded = false,
                 lightTheme = true,
-                contentColor = contentColor
+                contentColor = contentColor,
             )
 
         assertRippleMatches(
             scope,
             interactionSource,
             PressInteraction.Press(Offset(10f, 10f)),
-            calculateResultingRippleColor(contentColor, rippleOpacity = 0.10f)
+            calculateResultingRippleColor(contentColor, rippleOpacity = 0.10f),
         )
     }
 
@@ -204,14 +205,14 @@ class RippleTest {
                 interactionSource = interactionSource,
                 bounded = false,
                 lightTheme = true,
-                contentColor = contentColor
+                contentColor = contentColor,
             )
 
         assertRippleMatches(
             scope,
             interactionSource,
             HoverInteraction.Enter(),
-            calculateResultingRippleColor(contentColor, rippleOpacity = 0.08f)
+            calculateResultingRippleColor(contentColor, rippleOpacity = 0.08f),
         )
     }
 
@@ -226,14 +227,14 @@ class RippleTest {
                 interactionSource = interactionSource,
                 bounded = false,
                 lightTheme = true,
-                contentColor = contentColor
+                contentColor = contentColor,
             )
 
         assertRippleMatches(
             scope,
             interactionSource,
             FocusInteraction.Focus(),
-            calculateResultingRippleColor(contentColor, rippleOpacity = 0.1f)
+            calculateResultingRippleColor(contentColor, rippleOpacity = 0.1f),
         )
     }
 
@@ -248,14 +249,14 @@ class RippleTest {
                 interactionSource = interactionSource,
                 bounded = false,
                 lightTheme = true,
-                contentColor = contentColor
+                contentColor = contentColor,
             )
 
         assertRippleMatches(
             scope,
             interactionSource,
             DragInteraction.Start(),
-            calculateResultingRippleColor(contentColor, rippleOpacity = 0.16f)
+            calculateResultingRippleColor(contentColor, rippleOpacity = 0.16f),
         )
     }
 
@@ -347,7 +348,7 @@ class RippleTest {
                     // Color from the ripple configuration should be used
                     rippleConfiguration.color,
                     // Default alpha should be used
-                    rippleOpacity = 0.16f
+                    rippleOpacity = 0.16f,
                 )
 
             Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
@@ -375,7 +376,7 @@ class RippleTest {
                             RippleBoxWithBackground(
                                 interactionSource,
                                 ripple(color = explicitColor),
-                                bounded = true
+                                bounded = true,
                             )
                         }
                     }
@@ -395,7 +396,7 @@ class RippleTest {
                     // Color explicitly set on the ripple should 'win' over the configuration color
                     explicitColor,
                     // Default alpha should be used
-                    rippleOpacity = 0.16f
+                    rippleOpacity = 0.16f,
                 )
 
             Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
@@ -440,7 +441,7 @@ class RippleTest {
                     // Default color should be used
                     contentColor,
                     // Alpha from the ripple configuration should be used
-                    rippleOpacity = rippleConfiguration.rippleAlpha!!.draggedAlpha
+                    rippleOpacity = rippleConfiguration.rippleAlpha!!.draggedAlpha,
                 )
 
             Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
@@ -526,7 +527,7 @@ class RippleTest {
         val newConfiguration =
             RippleConfiguration(
                 color = Color.Red,
-                rippleAlpha = RippleAlpha(0.5f, 0.5f, 0.5f, 0.5f)
+                rippleAlpha = RippleAlpha(0.5f, 0.5f, 0.5f, 0.5f),
             )
 
         rule.runOnUiThread { rippleConfiguration = newConfiguration }
@@ -649,7 +650,7 @@ class RippleTest {
         scope: CoroutineScope,
         interactionSource: MutableInteractionSource,
         interaction: Interaction,
-        expectedCenterPixelColor: Color
+        expectedCenterPixelColor: Color,
     ) {
         // Pause the clock if we are drawing a state layer
         if (interaction !is PressInteraction) {
@@ -693,7 +694,7 @@ class RippleTest {
 private fun RippleBoxWithBackground(
     interactionSource: MutableInteractionSource,
     ripple: Indication,
-    bounded: Boolean
+    bounded: Boolean,
 ) {
     Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
         Surface(Modifier.padding(25.dp), color = RippleBoxBackgroundColor) {
@@ -727,7 +728,7 @@ private fun ComposeContentTestRule.setRippleContent(
     interactionSource: MutableInteractionSource,
     bounded: Boolean,
     lightTheme: Boolean,
-    contentColor: Color
+    contentColor: Color,
 ): CoroutineScope {
     var scope: CoroutineScope? = null
 

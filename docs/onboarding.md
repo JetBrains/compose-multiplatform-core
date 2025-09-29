@@ -24,6 +24,19 @@ Submodule users can skip Workstation setup.
 
 ### Linux and MacOS {#setup-linux-mac}
 
+#### Git rename limit {#setup-linux-mac-rename-limit}
+
+To ensure `git` can detect diffs and renames across significant changes (namely,
+the `androidx.*` package rename), we recommend that you set the following `git
+config` properties:
+
+```shell
+git config --global merge.renameLimit 999999
+git config --global diff.renameLimit 999999
+```
+
+#### Repo {#setup-linux-mac-repo}
+
 First, download `repo` using `curl`.
 
 ```shell
@@ -43,8 +56,9 @@ export PATH=~/bin:$PATH
 > NOTE: When using quotes (`"~/bin"`), `~` does not expand and the path is
 > invalid. (Possibly `bash` only?)
 
-Next, add the following lines to `~/.zshrc` (or `~/.bash_profile` if using
-`bash`) aliasing the `repo` command to run with `python3`:
+Next, if your machine has multiple versions of Python installed then you will
+need to add the following lines to `~/.zshrc` (or `~/.bash_profile` if using
+`bash`) to force the `repo` command to run with `python3`:
 
 ```shell
 # Force repo to run with Python3
@@ -73,9 +87,10 @@ Finally, you will need to either start a new terminal session or run `source
 > ```
 >
 > Run the `Install Certificates.command` in the Python folder of Application
-> (e.g. `/Applications/Python\ 3.11/Install\ Certificates.command`). For more
-> information about SSL/TLS certificate validation, you can read the "Important
-> Information" displayed during Python installation.
+> (e.g. `/Applications/Python\ 3.11/Install\ Certificates.command`). You may
+> also need to install `pip` via `python3 -m ensurepip` to run this command. For
+> more information about SSL/TLS certificate validation, you can read the
+> "Important Information" displayed during Python installation.
 
 ### Windows {#setup-win}
 
@@ -107,8 +122,8 @@ possible. All feature development occurs in the public
 the
 [`frameworks/support` git repository](https://android.googlesource.com/platform/frameworks/support/+/androidx-main).
 
-As of 2024/10/10, you will need about XXX GB for a clean checkout or YYY GB for
-a fully-built checkout.
+As of 2025-08-18, you will need about 60 GB for a clean checkout or 160 GB for a
+fully-built checkout with history.
 
 ### Synchronize the branch {#source-checkout}
 
@@ -138,27 +153,6 @@ failed with exit status -6` with cause `md_enable: algorithm 10 not available`
 you may need to install a build of `gpg` that supports SHA512, such as the
 latest version available from [Homebrew](https://brew.sh/) using `brew install
 gpg`.
-
-### Increase Git rename limit {#source-config}
-
-To ensure `git` can detect diffs and renames across significant changes (namely,
-the `androidx.*` package rename), we recommend that you set the following `git
-config` properties:
-
-```shell
-git config --global merge.renameLimit 999999
-git config --global diff.renameLimit 999999
-```
-
-### Set up Git file exclusions {#source-exclude}
-
-Mac users should consider adding `.DS_Store` to a global `.gitignore` file to
-avoid accidentally checking in local metadata files:
-
-```shell
-echo .DS_Store>>~/.gitignore
-git config --global core.excludesFile '~/.gitignore'
-```
 
 ### To check out older sources, use the superproject {#source-historical}
 
@@ -219,13 +213,21 @@ query to search for, e.g. `AppCompatButton file:appcompat`, and press the
 Library development uses a curated version of Android Studio to ensure
 compatibility between various components of the development workflow.
 
-From the `frameworks/support` directory, you can use `./studiow m` (short for
-`ANDROIDX_PROJECTS=main ./gradlew studio`) to automatically download and run the
-correct version of Studio to work on the `main` set of androidx projects
-(non-Compose Jetpack libraries).
-[studiow](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:studiow)
-also supports several other arguments like `all` for other subsets of the
-projects (run `./studiow` for help).
+From the `frameworks/support` directory, you can use
+
+```shell
+PROJECT_PREFIX=:core:,:work: ./gradlew :studio
+```
+
+where `PROJECT_PREFIX` is comma separated list of project prefixes for projects
+you want to work on. This will automatically download and run the correct
+version of Studio to work on the selected libraries.
+
+If you want to open all projects, you can run
+
+```shell
+./studiow all
+```
 
 Next, open the `framework/support` project root from your checkout. If Studio
 asks you which SDK you would like to use, select `Use project SDK`. Importing
@@ -371,6 +373,14 @@ at any time to see an updated list of the remaining errors.
 
 ## Building {#building}
 
+Gradle `:tasks` command allows you to find all the useful tasks for a given
+project. For example, the following command will let you find tasks available
+for `:core:core` project:
+
+```bash
+./gradlew :core:core:tasks
+```
+
 ### Modules and Maven artifacts {#modules-and-maven-artifacts}
 
 To build a specific module, use the module's `assemble` Gradle task. For
@@ -486,9 +496,6 @@ which is typically used for plugin and IDE development.
 Our reference docs (Javadocs and KotlinDocs) are published to
 https://developer.android.com/reference/androidx/packages and may be built
 locally.
-
-NOTE `./gradlew tasks` always has the canonical task information! When in doubt,
-run `./gradlew tasks`
 
 #### Generate docs
 
@@ -1007,7 +1014,7 @@ dependencyResolutionManagement {
         mavenCentral()
         // Add this
         maven {
-            setUrl("<path-to-sdk>/out/repository/")
+            setUrl("<absolute-path-to-checkout>/out/repository/")
         }
     }
 }

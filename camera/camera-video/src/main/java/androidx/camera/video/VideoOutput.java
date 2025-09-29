@@ -159,7 +159,8 @@ public interface VideoOutput {
      * Returns the {@link VideoCapabilities} information of the {@link VideoOutput}.
      */
     @RestrictTo(Scope.LIBRARY)
-    default @NonNull VideoCapabilities getMediaCapabilities(@NonNull CameraInfo cameraInfo) {
+    default @NonNull VideoCapabilities getMediaCapabilities(@NonNull CameraInfo cameraInfo,
+            int sessionType) {
         return VideoCapabilities.EMPTY;
     }
 }

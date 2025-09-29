@@ -34,6 +34,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +44,7 @@ import org.junit.runners.Parameterized
 @MediumTest
 @RunWith(Parameterized::class)
 class CompositionLocalConsumerModifierNodeTest(layoutComposableParam: LayoutComposableParam) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     val testLayout: @Composable (modifier: Modifier) -> Unit = layoutComposableParam.layout
 
@@ -78,7 +79,7 @@ class CompositionLocalConsumerModifierNodeTest(layoutComposableParam: LayoutComp
 
     class LayoutComposableParam(
         val name: String,
-        val layout: @Composable (modifier: Modifier) -> Unit
+        val layout: @Composable (modifier: Modifier) -> Unit,
     ) {
         override fun toString() = name
     }

@@ -52,7 +52,7 @@ public class ComposableFragment internal constructor() : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         // Consider using Fragment.content from fragment-compose once it is stable
         return ComposeView(requireContext()).apply {
@@ -80,6 +80,7 @@ public class ComposableFragment internal constructor() : Fragment() {
         @JvmStatic
         public fun ComposableFragment(fullyQualifiedName: String): ComposableFragment {
             return ComposableFragment().apply {
+                @Suppress("DEPRECATION") // bundleOf is deprecated
                 arguments = bundleOf(FULLY_QUALIFIED_NAME to fullyQualifiedName)
             }
         }

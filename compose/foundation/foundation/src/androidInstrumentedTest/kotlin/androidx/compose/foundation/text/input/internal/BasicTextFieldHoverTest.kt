@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +50,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
 @RunWith(AndroidJUnit4::class)
 class BasicTextFieldHoverTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Suppress("DEPRECATION")
     @Test
@@ -58,7 +59,7 @@ class BasicTextFieldHoverTest {
             boxIconModifier = Modifier,
             expectedBoxIcon = TYPE_DEFAULT,
             textFieldIconModifier = Modifier,
-            expectedTextIcon = TYPE_TEXT
+            expectedTextIcon = TYPE_TEXT,
         )
 
     @Suppress("DEPRECATION")
@@ -68,7 +69,7 @@ class BasicTextFieldHoverTest {
             boxIconModifier = Modifier,
             expectedBoxIcon = TYPE_DEFAULT,
             textFieldIconModifier = Modifier.pointerHoverIcon(PointerIcon.Crosshair),
-            expectedTextIcon = TYPE_TEXT
+            expectedTextIcon = TYPE_TEXT,
         )
 
     @Suppress("DEPRECATION")
@@ -79,7 +80,7 @@ class BasicTextFieldHoverTest {
             expectedBoxIcon = TYPE_DEFAULT,
             textFieldIconModifier =
                 Modifier.pointerHoverIcon(icon = PointerIcon.Crosshair, overrideDescendants = true),
-            expectedTextIcon = TYPE_CROSSHAIR
+            expectedTextIcon = TYPE_CROSSHAIR,
         )
 
     @Test
@@ -88,7 +89,7 @@ class BasicTextFieldHoverTest {
             boxIconModifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
             expectedBoxIcon = TYPE_HAND,
             textFieldIconModifier = Modifier,
-            expectedTextIcon = TYPE_TEXT
+            expectedTextIcon = TYPE_TEXT,
         )
 
     @Test
@@ -97,7 +98,7 @@ class BasicTextFieldHoverTest {
             boxIconModifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
             expectedBoxIcon = TYPE_HAND,
             textFieldIconModifier = Modifier.pointerHoverIcon(PointerIcon.Crosshair),
-            expectedTextIcon = TYPE_TEXT
+            expectedTextIcon = TYPE_TEXT,
         )
 
     @Test
@@ -107,7 +108,7 @@ class BasicTextFieldHoverTest {
             expectedBoxIcon = TYPE_HAND,
             textFieldIconModifier =
                 Modifier.pointerHoverIcon(icon = PointerIcon.Crosshair, overrideDescendants = true),
-            expectedTextIcon = TYPE_CROSSHAIR
+            expectedTextIcon = TYPE_CROSSHAIR,
         )
 
     private fun runTest(
@@ -134,7 +135,7 @@ class BasicTextFieldHoverTest {
                         modifier =
                             Modifier.requiredSize(50.dp)
                                 .then(textFieldIconModifier)
-                                .testTag(textFieldTag)
+                                .testTag(textFieldTag),
                     )
                 }
             }

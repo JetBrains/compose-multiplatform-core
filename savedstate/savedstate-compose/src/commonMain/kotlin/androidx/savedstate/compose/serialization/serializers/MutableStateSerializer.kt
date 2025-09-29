@@ -41,7 +41,6 @@ import kotlinx.serialization.serializer
  * @return A [MutableStateSerializer] for handling [MutableState] containing a [Serializable] type
  *   [T].
  */
-@Suppress("FunctionName")
 public inline fun <reified T> MutableStateSerializer(): MutableStateSerializer<T> {
     return MutableStateSerializer(serializer())
 }
@@ -56,27 +55,25 @@ public inline fun <reified T> MutableStateSerializer(): MutableStateSerializer<T
  * @param T The type of the value stored in the [MutableState].
  * @param valueSerializer The [KSerializer] used to serialize and deserialize the inner value.
  */
-public class MutableStateSerializer<T>(
-    private val valueSerializer: KSerializer<T>,
-) : KSerializer<MutableState<T>> {
+public class MutableStateSerializer<T>(private val valueSerializer: KSerializer<T>) :
+    KSerializer<MutableState<T>> {
 
     @OptIn(ExperimentalSerializationApi::class)
-    override val descriptor: SerialDescriptor by lazy {
-        val structureKind = valueSerializer.descriptor.kind
-        if (structureKind is PrimitiveKind) {
-            PrimitiveSerialDescriptor(SERIAL_NAME, structureKind)
+    override val descriptor: SerialDescriptor = run {
+        val serialName = "androidx.compose.runtime.MutableState"
+        val kind = valueSerializer.descriptor.kind
+        if (kind is PrimitiveKind) {
+            PrimitiveSerialDescriptor(serialName, kind)
         } else {
-            SerialDescriptor(SERIAL_NAME, valueSerializer.descriptor)
+            SerialDescriptor(serialName, valueSerializer.descriptor)
         }
     }
 
     override fun serialize(encoder: Encoder, value: MutableState<T>) {
-        valueSerializer.serialize(encoder, value.value)
+        encoder.encodeSerializableValue(valueSerializer, value.value)
     }
 
     override fun deserialize(decoder: Decoder): MutableState<T> {
-        return mutableStateOf(valueSerializer.deserialize(decoder))
+        return mutableStateOf(decoder.decodeSerializableValue(valueSerializer))
     }
 }
-
-private const val SERIAL_NAME = "androidx.compose.runtime.MutableState"

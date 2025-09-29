@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,7 +71,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 /** Test for [NavigationRail] and [NavigationRailItem]. */
 class NavigationRailTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun defaultSemantics() {
@@ -81,7 +82,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -97,6 +98,7 @@ class NavigationRailTest {
             .onNodeWithTag("item")
             .onParent()
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.SelectableGroup))
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.IsTraversalGroup))
     }
 
     @Test
@@ -109,7 +111,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -132,7 +134,7 @@ class NavigationRailTest {
                     label = { Text("Favorite") },
                     selected = true,
                     alwaysShowLabel = false,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationRailItem(
                     modifier = Modifier.testTag("item2"),
@@ -140,13 +142,13 @@ class NavigationRailTest {
                     label = { Text("Favorite") },
                     selected = false,
                     alwaysShowLabel = false,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationRailItem(
                     modifier = Modifier.testTag("item3"),
                     icon = { Icon(Icons.Filled.Favorite, "Favorite") },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -175,7 +177,7 @@ class NavigationRailTest {
                             icon = { Icon(icons[index], contentDescription = item) },
                             label = { Text(item) },
                             selected = index == 0,
-                            onClick = { /* do something */ }
+                            onClick = { /* do something */ },
                         )
                     }
                 }
@@ -211,7 +213,7 @@ class NavigationRailTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -265,7 +267,7 @@ class NavigationRailTest {
                         icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = { Text("ItemText", Modifier.testTag("label")) },
                         selected = true,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -306,7 +308,7 @@ class NavigationRailTest {
                         label = { Text("ItemText") },
                         selected = false,
                         onClick = {},
-                        alwaysShowLabel = false
+                        alwaysShowLabel = false,
                     )
                 }
             }
@@ -339,7 +341,7 @@ class NavigationRailTest {
                         icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = null,
                         selected = false,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -371,7 +373,7 @@ class NavigationRailTest {
                         icon = { Icon(icons[index], contentDescription = item) },
                         label = { Text(item) },
                         selected = selectedItem == index,
-                        onClick = { selectedItem = index }
+                        onClick = { selectedItem = index },
                     )
                 }
             }
@@ -407,7 +409,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = { clicks++ }
+                    onClick = { clicks++ },
                 )
             }
         }

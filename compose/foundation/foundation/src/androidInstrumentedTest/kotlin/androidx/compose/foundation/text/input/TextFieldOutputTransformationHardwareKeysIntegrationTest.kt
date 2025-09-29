@@ -36,6 +36,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +46,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TextFieldOutputTransformationHardwareKeysIntegrationTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
@@ -60,7 +61,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     replace(1, 3, "efg") // "aefgd"
-                }
+                },
             )
         }
 
@@ -76,7 +77,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     replace(1, 3, "efg") // "aefgd"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -99,7 +100,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     replace(1, 3, "efg") // "aefgd"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -122,7 +123,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     replace(1, 3, "efg") // "aefgd"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -145,7 +146,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     replace(1, 3, "efg") // "aefgd"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -168,7 +169,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(1, "efg") // "aefgb"
-                }
+                },
             )
         }
 
@@ -184,7 +185,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(1, "efg") // "aefgb"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -207,7 +208,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(1, "efg") // "aefgb"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -230,7 +231,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(1, "efg") // "aefgb"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -253,7 +254,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(1, "efg") // "aefgb"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -276,7 +277,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(2, "efg hij") // "abefg hij"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -299,7 +300,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(2, "efg hij") // "abefg hij"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -322,7 +323,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(0, "hij efg") // "hij efgab"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -345,7 +346,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(0, "hij efg") // "hij efgab"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -368,7 +369,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(4, "xyz\nxyz ") // "abc xyz\nxyz def"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -389,7 +390,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(4, "xyz\nxyz ") // "abc xyz\nxyz def"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -410,7 +411,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(4, "xyz\nxyz ") // "abc xyz\nxyz def"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -431,7 +432,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                 modifier = Modifier.testTag(Tag),
                 outputTransformation = {
                     insert(4, "xyz\nxyz ") // "abc xyz\nxyz def"
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -456,7 +457,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                     delete(7, 10) // >wedge  ghi
                     insert(8, "insertion") // >wedge  insertionghi
                     insert(length, "<") // >wedge  insertionghi<
-                }
+                },
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -486,7 +487,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                     TextRange(9),
                     TextRange(10),
                     TextRange(11),
-                    TextRange(11)
+                    TextRange(11),
                 )
             )
         assertThat(semanticsOffsets)
@@ -501,7 +502,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                     TextRange(18),
                     TextRange(19),
                     TextRange(20),
-                    TextRange(21)
+                    TextRange(21),
                 )
             )
     }
@@ -519,7 +520,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                     delete(7, 10) // >wedge  ghi
                     insert(8, "insertion") // >wedge  insertionghi
                     insert(length, "<") // >wedge  insertionghi<
-                }
+                },
             )
         }
         // guarantees selection wedge affinity.
@@ -550,7 +551,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                     TextRange(4, 7),
                     TextRange(3),
                     TextRange(0),
-                    TextRange(0)
+                    TextRange(0),
                 )
             )
         assertThat(semanticsOffsets)
@@ -565,7 +566,7 @@ class TextFieldOutputTransformationHardwareKeysIntegrationTest {
                     TextRange(7),
                     TextRange(6),
                     TextRange(1),
-                    TextRange(0)
+                    TextRange(0),
                 )
             )
     }

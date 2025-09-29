@@ -7,6 +7,14 @@
         "identifier": "androidx.compose.ui:ui-unit",
         "resolvedVersion": "1.6.8"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.compose.ui:ui-unit",
+        "resolvedVersion": "1.6.8"
+      },
       "toConfiguration": "implementation"
     },
     {
@@ -16,15 +24,6 @@
         "resolvedVersion": "1.8.0"
       },
       "fromConfiguration": "implementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
-        "resolvedVersion": "1.7.3"
-      },
-      "fromConfiguration": "api",
-      "toConfiguration": "runtimeOnly"
     },
     {
       "coordinates": {

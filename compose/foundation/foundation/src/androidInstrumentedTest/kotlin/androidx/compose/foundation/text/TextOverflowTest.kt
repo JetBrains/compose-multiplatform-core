@@ -49,6 +49,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,7 +57,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class TextOverflowTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val density = Density(1f)
     private val fontFamilyResolver =
@@ -77,7 +78,7 @@ class TextOverflowTest {
         rule.setContent {
             CompositionLocalProvider(
                 LocalDensity provides density,
-                LocalFontFamilyResolver provides fontFamilyResolver
+                LocalFontFamilyResolver provides fontFamilyResolver,
             ) {
                 Box(Modifier.testTag(BoxTag).size(boxWidth.dp, boxHeight.dp)) {
                     BasicText(
@@ -91,9 +92,9 @@ class TextOverflowTest {
                                 fontSize = 20.sp,
                                 fontFamily = fontFamily,
                                 color = Color.Red,
-                                lineHeight = 20.sp
+                                lineHeight = 20.sp,
                             ),
-                        overflow = TextOverflow.Visible
+                        overflow = TextOverflow.Visible,
                     )
                 }
             }
@@ -119,7 +120,7 @@ class TextOverflowTest {
         rule.setContent {
             CompositionLocalProvider(
                 LocalDensity provides density,
-                LocalFontFamilyResolver provides fontFamilyResolver
+                LocalFontFamilyResolver provides fontFamilyResolver,
             ) {
                 Box(Modifier.testTag(BoxTag).size(boxWidth.dp, boxHeight.dp)) {
                     BasicText(
@@ -133,9 +134,9 @@ class TextOverflowTest {
                                 fontSize = 20.sp,
                                 fontFamily = fontFamily,
                                 color = Color.Red,
-                                lineHeight = 20.sp
+                                lineHeight = 20.sp,
                             ),
-                        overflow = TextOverflow.Visible
+                        overflow = TextOverflow.Visible,
                     )
                 }
             }

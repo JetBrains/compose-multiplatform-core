@@ -27,15 +27,21 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Test was kept for compatibility with [ModifierLocalBeyondBoundsLayout]. The version of this test
+ * using Modifier Nodes is in BeyondBoundsLayoutProviderModifierNodeTest.
+ */
+@Suppress("DEPRECATION")
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class BeyondBoundsLayoutTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     // The result of an imaginary operation that is run after we add the beyondBounds items we need.
     private val OperationResult = 10
@@ -125,13 +131,7 @@ class BeyondBoundsLayoutTest {
         // Assert.
         assertThat(callMap)
             .containsExactlyEntriesIn(
-                mapOf(
-                    1 to null,
-                    2 to null,
-                    3 to null,
-                    4 to null,
-                    5 to OperationResult,
-                )
+                mapOf(1 to null, 2 to null, 3 to null, 4 to null, 5 to OperationResult)
             )
         assertThat(returnValue).isEqualTo(OperationResult)
     }
@@ -281,7 +281,7 @@ class BeyondBoundsLayoutTest {
             object : BeyondBoundsLayout {
                 override fun <T> layout(
                     direction: LayoutDirection,
-                    block: BeyondBoundsScope.() -> T?
+                    block: BeyondBoundsScope.() -> T?,
                 ): T? = null
             }
         }
@@ -292,7 +292,7 @@ class BeyondBoundsLayoutTest {
             object : BeyondBoundsLayout {
                 override fun <T> layout(
                     direction: LayoutDirection,
-                    block: BeyondBoundsScope.() -> T?
+                    block: BeyondBoundsScope.() -> T?,
                 ): T? {
                     var count = 5
                     var result: T? = null

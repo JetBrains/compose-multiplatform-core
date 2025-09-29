@@ -34,10 +34,11 @@ import com.google.common.util.concurrent.ListenableFuture
  */
 class FakeProcessCameraProviderWrapper(
     private val camera: Camera = FakeCamera(),
-    private val bindToLifecycleException: Throwable? = null
+    private val bindToLifecycleException: Throwable? = null,
 ) : ProcessCameraProviderWrapper {
 
     private var unbindInvoked = false
+    private var shouldThrowOnGetCameraInfo = false
 
     fun unbindInvoked(): Boolean {
         return unbindInvoked
@@ -58,7 +59,7 @@ class FakeProcessCameraProviderWrapper(
     override fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
-        useCaseGroup: UseCaseGroup
+        useCaseGroup: UseCaseGroup,
     ): Camera {
         if (bindToLifecycleException != null) {
             throw bindToLifecycleException
@@ -71,6 +72,13 @@ class FakeProcessCameraProviderWrapper(
     }
 
     override fun getCameraInfo(cameraSelector: CameraSelector?): CameraInfo {
+        if (shouldThrowOnGetCameraInfo) {
+            throw IllegalArgumentException("Fake error: No camera available for selector")
+        }
         return camera.cameraInfo
+    }
+
+    fun setShouldThrowOnGetCameraInfo(shouldThrow: Boolean) {
+        shouldThrowOnGetCameraInfo = shouldThrow
     }
 }

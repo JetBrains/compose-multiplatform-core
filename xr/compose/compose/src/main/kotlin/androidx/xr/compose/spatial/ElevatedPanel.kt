@@ -19,7 +19,7 @@ package androidx.xr.compose.spatial
 import android.view.View
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Transition
-import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.Box
@@ -32,18 +32,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.xr.compose.platform.LocalCoreEntity
+import androidx.xr.compose.platform.LocalCoreMainPanelEntity
+import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.platform.coreMainPanelEntity
-import androidx.xr.compose.platform.disposableValueOf
-import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
@@ -51,9 +48,9 @@ import androidx.xr.compose.subspace.rememberComposeView
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.Meter.Companion.meters
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.PanelEntity
 
 internal object ElevatedPanelDefaults {
@@ -62,29 +59,28 @@ internal object ElevatedPanelDefaults {
 }
 
 /**
- * This is the base panel underlying the implementations of SpatialElevation, SpatialPopup, and
- * SpatialDialog. It allows creating a panel at a specific size and offset.
+ * This is the base panel underlying the implementations of SpatialPopup and SpatialDialog. It
+ * allows creating a panel at a specific size and offset.
  */
 @Composable
 internal fun ElevatedPanel(
-    spatialElevationLevel: SpatialElevationLevel,
+    elevation: Dp,
     contentSize: IntSize,
     shape: SpatialShape = ElevatedPanelDefaults.shape,
     contentOffset: Offset? = null,
-    transitionSpec:
-        @Composable
-        Transition.Segment<SpatialElevationLevel>.() -> FiniteAnimationSpec<Float> =
-        {
-            spring()
-        },
+    elevationTransitionSpec: @Composable Transition.Segment<Dp>.() -> FiniteAnimationSpec<Dp> = {
+        spring()
+    },
     content: @Composable () -> Unit,
 ) {
     val parentView = LocalView.current
     val zDepth by
-        updateTransition(targetState = spatialElevationLevel, label = "restingLevelTransition")
-            .animateFloat(transitionSpec = transitionSpec, label = "zDepth") { state ->
-                state.level
-            }
+        updateTransition(targetState = elevation, label = "restingLevelTransition").animateDp(
+            transitionSpec = elevationTransitionSpec,
+            label = "zDepth",
+        ) { state ->
+            state
+        }
     var parentViewSize by remember { mutableStateOf(parentView.size) }
     DisposableEffect(parentView) {
         val listener =
@@ -116,37 +112,33 @@ internal fun ElevatedPanel(
     content: @Composable () -> Unit,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val parentEntity = LocalCoreEntity.current ?: session.coreMainPanelEntity
-    val density = LocalDensity.current
+    val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
     val view = rememberComposeView()
-    val meterSize = contentSize.toMeterSize(density)
-    val panelEntity by remember {
-        disposableValueOf(
-            CorePanelEntity(
-                session,
+    val density = LocalDensity.current
+
+    val panelEntity: CorePanelEntity = remember {
+        CorePanelEntity(
                 PanelEntity.create(
                     session = session,
                     view = view,
-                    surfaceDimensionsPx =
-                        contentSize.run { Dimensions(width.toFloat(), height.toFloat(), 0f) },
-                    dimensions = meterSize.toCoreMeterDimensions(),
+                    pixelDimensions = contentSize.run { IntSize2d(width, height) },
                     name = "ElevatedPanel:${view.id}",
-                ),
+                )
             )
-        ) {
-            it.dispose()
-        }
+            .also { it.setShape(shape, density) }
     }
 
+    LaunchedEffect(shape, density) { panelEntity.setShape(shape, density) }
+
     view.setContent {
-        CompositionLocalProvider(LocalCoreEntity provides panelEntity) {
-            Box(Modifier.alpha(if (pose == null) 0.0f else 1.0f)) { content() }
-        }
+        CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) { Box { content() } }
     }
+
+    DisposableEffect(panelEntity) { onDispose { panelEntity.dispose() } }
 
     LaunchedEffect(pose) {
         if (pose != null) {
-            panelEntity.entity.setPose(pose)
+            panelEntity.poseInMeters = pose
         }
     }
 
@@ -155,15 +147,9 @@ internal fun ElevatedPanel(
         val height = contentSize.height
 
         panelEntity.size = IntVolumeSize(width = width, height = height, depth = 0)
-        if (shape is SpatialRoundedCornerShape) {
-            panelEntity.setCornerRadius(
-                shape.computeCornerRadius(width.toFloat(), height.toFloat(), density),
-                density,
-            )
-        }
     }
 
-    LaunchedEffect(parentEntity) { panelEntity.entity.setParent(parentEntity.entity) }
+    LaunchedEffect(parentEntity) { panelEntity.parent = parentEntity }
 }
 
 /** A 3D vector where each coordinate is [Meter]s. */
@@ -178,27 +164,11 @@ internal data class MeterPosition(
      * @param other the other [MeterPosition] to add.
      * @return a new [MeterPosition] representing the sum of the two positions.
      */
-    public operator fun plus(other: MeterPosition) =
+    operator fun plus(other: MeterPosition) =
         MeterPosition(x = x + other.x, y = y + other.y, z = z + other.z)
 
     fun toVector3() = Vector3(x = x.toM(), y = y.toM(), z = z.toM())
 }
-
-/** Represents a 3D size using [Meter] units. */
-internal data class MeterSize(
-    public val width: Meter = 0.meters,
-    public val height: Meter = 0.meters,
-    public val depth: Meter = 0.meters,
-)
-
-private fun IntSize.toMeterSize(density: Density) =
-    MeterSize(
-        Meter.fromPixel(width.toFloat(), density),
-        Meter.fromPixel(height.toFloat(), density),
-        0.meters,
-    )
-
-private fun MeterSize.toCoreMeterDimensions() = Dimensions(width.toM(), height.toM(), depth.toM())
 
 internal val View.size
     get() = IntSize(width, height)

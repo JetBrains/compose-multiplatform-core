@@ -66,6 +66,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,7 +76,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SurfaceTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
@@ -94,7 +95,7 @@ class SurfaceTest {
                 density = rule.density,
                 shape = RectangleShape,
                 shapeColor = Color.Green,
-                backgroundColor = Color.White
+                backgroundColor = Color.White,
             )
     }
 
@@ -130,7 +131,7 @@ class SurfaceTest {
                         Modifier.fillMaxSize().padding(2.dp),
                         elevation = 2.dp,
                         color = Color.Blue,
-                        content = {}
+                        content = {},
                     )
                 }
 
@@ -146,7 +147,7 @@ class SurfaceTest {
                             Modifier.fillMaxSize().padding(2.dp),
                             elevation = 2.dp,
                             color = Color.Blue,
-                            content = {}
+                            content = {},
                         )
                     }
                 }
@@ -176,7 +177,7 @@ class SurfaceTest {
                     },
                     elevation = 2.dp,
                     contentColor = expectedColor,
-                    content = {}
+                    content = {},
                 )
             }
         }
@@ -254,7 +255,7 @@ class SurfaceTest {
             Surface(
                 modifier = Modifier.testTag("surface"),
                 enabled = enabled.value,
-                onClick = { count.value += 1 }
+                onClick = { count.value += 1 },
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -280,7 +281,7 @@ class SurfaceTest {
             Surface(
                 modifier = Modifier.testTag("surface"),
                 onClick = {},
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -317,7 +318,7 @@ class SurfaceTest {
             Surface(
                 selected = selected.value,
                 onClick = { selected.value = !selected.value },
-                modifier = Modifier.testTag("surface")
+                modifier = Modifier.testTag("surface"),
             ) {
                 Text("${selected.value}")
                 Spacer(Modifier.size(30.dp))
@@ -365,7 +366,7 @@ class SurfaceTest {
             Surface(
                 selected = selected.value,
                 onClick = { selected.value = !selected.value },
-                modifier = Modifier.testTag("surface")
+                modifier = Modifier.testTag("surface"),
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -385,7 +386,7 @@ class SurfaceTest {
                 selected = selected.value,
                 onClick = { selected.value = !selected.value },
                 modifier = Modifier.testTag("surface"),
-                shape = CircleShape
+                shape = CircleShape,
             ) {
                 Spacer(Modifier.size(100.dp))
             }
@@ -407,7 +408,7 @@ class SurfaceTest {
                 selected = selected.value,
                 onClick = { selected.value = !selected.value },
                 modifier = Modifier.testTag("surface"),
-                shape = CircleShape
+                shape = CircleShape,
             ) {
                 Spacer(Modifier.size(40.dp))
             }
@@ -429,7 +430,7 @@ class SurfaceTest {
             Surface(
                 checked = toggled.value,
                 onCheckedChange = { toggled.value = !toggled.value },
-                modifier = Modifier.testTag("surface")
+                modifier = Modifier.testTag("surface"),
             ) {
                 Text("${toggled.value}")
                 Spacer(Modifier.size(30.dp))
@@ -477,7 +478,7 @@ class SurfaceTest {
             Surface(
                 checked = toggled.value,
                 onCheckedChange = { toggled.value = !toggled.value },
-                modifier = Modifier.testTag("surface")
+                modifier = Modifier.testTag("surface"),
             ) {
                 Spacer(Modifier.size(30.dp))
             }
@@ -497,7 +498,7 @@ class SurfaceTest {
                 checked = checked.value,
                 onCheckedChange = { checked.value = !checked.value },
                 modifier = Modifier.testTag("surface"),
-                shape = CircleShape
+                shape = CircleShape,
             ) {
                 Spacer(Modifier.size(100.dp))
             }
@@ -519,7 +520,7 @@ class SurfaceTest {
                 checked = checked.value,
                 onCheckedChange = { checked.value = !checked.value },
                 modifier = Modifier.testTag("surface"),
-                shape = CircleShape
+                shape = CircleShape,
             ) {
                 Spacer(Modifier.size(40.dp))
             }
@@ -541,13 +542,11 @@ class SurfaceTest {
             Box(Modifier.fillMaxSize()) {
                 Button(
                     modifier = Modifier.fillMaxSize().testTag("clickable"),
-                    onClick = { state.value += 1 }
+                    onClick = { state.value += 1 },
                 ) {
                     Text("button fullscreen")
                 }
-                Surface(
-                    Modifier.fillMaxSize().testTag("surface"),
-                ) {}
+                Surface(Modifier.fillMaxSize().testTag("surface")) {}
             }
         }
         rule.onNodeWithTag("clickable").assertHasClickAction().performClick()
@@ -561,9 +560,7 @@ class SurfaceTest {
         val hitTested = mutableStateOf(false)
         rule.setContent {
             Box(Modifier.fillMaxSize()) {
-                Surface(
-                    Modifier.fillMaxSize().testTag("surface"),
-                ) {
+                Surface(Modifier.fillMaxSize().testTag("surface")) {
                     Box(
                         Modifier.fillMaxSize().testTag("clickable").pointerInput(Unit) {
                             awaitEachGesture {

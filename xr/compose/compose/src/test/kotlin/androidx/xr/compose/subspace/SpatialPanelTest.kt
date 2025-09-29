@@ -17,18 +17,25 @@
 package androidx.xr.compose.subspace
 
 import android.content.Intent
-import android.view.View
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -36,23 +43,33 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.compose.platform.DialogManager
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.xr.compose.platform.DefaultDialogManager
 import androidx.xr.compose.platform.LocalDialogManager
+import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.SpatialDialog
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.sizeIn
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
+import androidx.xr.compose.testing.assertHeightIsEqualTo
+import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.compose.testing.setSubspaceContent
+import androidx.xr.compose.testing.session
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.unit.Meter.Companion.meters
-import androidx.xr.scenecore.BasePanelEntity
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.getEntitiesOfType
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
+import androidx.xr.scenecore.scene
+import com.android.extensions.xr.ShadowXrExtensions
+import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,12 +81,14 @@ class SpatialPanelTest {
 
     @Test
     fun spatialPanel_internalElementsAreLaidOutProperly() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(SubspaceModifier.width(100.dp).testTag("panel")) {
-                // Row with 2 elements, one is 3x as large as the other
-                Row {
-                    Spacer(Modifier.testTag("spacer1").weight(1f))
-                    Spacer(Modifier.testTag("spacer2").weight(3f))
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.width(100.dp).testTag("panel")) {
+                    // Row with 2 elements, one is 3x as large as the other
+                    Row {
+                        Spacer(Modifier.testTag("spacer1").weight(1f))
+                        Spacer(Modifier.testTag("spacer2").weight(3f))
+                    }
                 }
             }
         }
@@ -80,12 +99,17 @@ class SpatialPanelTest {
 
     @Test
     fun spatialPanel_textTooLong_panelDoesNotGrowBeyondSpecifiedWidth() {
-        composeTestRule.setSubspaceContent {
-            // Panel with 10dp width, way too small for the text we're putting into it
-            SpatialPanel(SubspaceModifier.width(10.dp).testTag("panel")) {
-                // Panel contains a column.
-                Column {
-                    Text("Hello World long text", style = MaterialTheme.typography.headlineLarge)
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                // Panel with 10dp width, way too small for the text we're putting into it
+                SpatialPanel(SubspaceModifier.width(10.dp).testTag("panel")) {
+                    // Panel contains a column.
+                    Column {
+                        Text(
+                            "Hello World long text",
+                            style = MaterialTheme.typography.headlineLarge,
+                        )
+                    }
                 }
             }
         }
@@ -96,23 +120,86 @@ class SpatialPanelTest {
     }
 
     @Test
-    fun spatialPanel_viewBasedPanelComposes() {
-        composeTestRule.setSubspaceContent {
-            val context = LocalContext.current
-            val textView = remember { TextView(context).apply { text = "Hello World" } }
-            SpatialPanel(view = textView, SubspaceModifier.testTag("panel"))
-            // The View is not inserted in the compose tree, we need to test it differentlly
-            assertEquals(View.VISIBLE, textView.visibility)
+    fun spatialPanel_composePanel_sizesItself() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    Box(Modifier.width(100.dp).height(100.dp).testTag("contentBox")) {
+                        Text("Content")
+                    }
+                }
+            }
         }
-        // TODO: verify that the TextView is add to the Panel
+
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(100.dp)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(100.dp)
+        composeTestRule.onNodeWithTag("contentBox").assertWidthIsEqualTo(100.dp)
+        composeTestRule.onNodeWithTag("contentBox").assertWidthIsEqualTo(100.dp)
+    }
+
+    @Test
+    fun spatialPanel_composePanel_sizesItselfWithLazyContent() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace(modifier = SubspaceModifier.sizeIn(0.dp, 2000.dp, 0.dp, 2000.dp)) {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    LazyColumn { items(50) { Box(Modifier.size(100.dp)) } }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(100.dp)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(2000.dp)
+    }
+
+    @Test
+    fun spatialPanel_androidViewBasedPanel_composes() {
+        lateinit var view: TextView
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialAndroidViewPanel(
+                    factory = {
+                        TextView(it).apply { text = "Hello AndroidView World" }.also { view = it }
+                    },
+                    SubspaceModifier.testTag("panel"),
+                )
+            }
+        }
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertTrue(view.isAttachedToWindow)
+    }
+
+    @Test
+    fun spatialPanel_androidViewBasedPanel_sizesItself() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialAndroidViewPanel(
+                    factory = { context ->
+                        TextView(context).apply {
+                            width = 100
+                            height = 100
+                        }
+                    },
+                    SubspaceModifier.testTag("panel"),
+                )
+            }
+        }
+
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(100.dp)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(100.dp)
     }
 
     @Test
     fun mainPanel_renders() {
         val text = "Main Window Text"
-        composeTestRule.setSubspaceContent({ Text(text) }) {
-            MainPanel(SubspaceModifier.testTag("panel"))
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            Text(text)
+            Subspace { SpatialMainPanel(SubspaceModifier.testTag("panel")) }
         }
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
@@ -120,69 +207,203 @@ class SpatialPanelTest {
     }
 
     @Test
-    fun mainPanel_addedTwice_asserts() {
-        val text = "Main Window Text"
+    fun mainPanel_visibilityToggles_enablesAndDisablesEntity() {
+        val showPanel = mutableStateOf(true)
+        val panelTag = "mainPanel"
 
-        assertThrows(IllegalStateException::class.java) {
-            composeTestRule.setSubspaceContent({ Text(text) }) {
-                MainPanel(SubspaceModifier.testTag("panel"))
-                MainPanel(SubspaceModifier.testTag("panel2"))
-            }
-        }
-    }
-
-    @Test
-    fun mainPanel_addedTwiceInDifferentSubtrees_asserts() {
-        val text = "Main Window Text"
-
-        assertThrows(IllegalStateException::class.java) {
-            composeTestRule.setSubspaceContent({ Text(text) }) {
-                SpatialColumn {
-                    SpatialRow { MainPanel(SubspaceModifier.testTag("panel")) }
-                    SpatialRow { MainPanel(SubspaceModifier.testTag("panel2")) }
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                if (showPanel.value) {
+                    SpatialMainPanel(SubspaceModifier.testTag(panelTag).size(100.dp))
                 }
             }
         }
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNode = composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).isEnabled()).isTrue()
+
+        showPanel.value = false
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertDoesNotExist()
+
+        showPanel.value = true
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelEntityAfterShowing =
+            composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode().semanticsEntity
+                as? PanelEntity
+        assertThat(checkNotNull(panelEntityAfterShowing).isEnabled()).isTrue()
+    }
+
+    @Test
+    fun spatialPanel_visibilityToggles_enablesAndDisablesEntity() {
+        val showPanel = mutableStateOf(true)
+        val panelTag = "spatialPanel"
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                if (showPanel.value) {
+                    SpatialPanel(SubspaceModifier.testTag(panelTag).size(100.dp)) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNode = composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).isEnabled()).isTrue()
+
+        showPanel.value = false
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertDoesNotExist()
+
+        showPanel.value = true
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNodeAfterShow =
+            composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntityAfterShow = panelNodeAfterShow.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntityAfterShow).isEnabled()).isTrue()
+    }
+
+    @Test
+    fun spatialAndroidViewPanel_visibilityToggles_enablesAndDisablesEntity() {
+        val showPanel = mutableStateOf(true)
+        val panelTag = "androidViewPanel"
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                if (showPanel.value) {
+                    SpatialAndroidViewPanel(
+                        factory = { context -> TextView(context).apply { text = "test" } },
+                        modifier = SubspaceModifier.testTag(panelTag).size(100.dp),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNode = composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).isEnabled()).isTrue()
+
+        showPanel.value = false
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertDoesNotExist()
+
+        showPanel.value = true
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNodeAfterShow =
+            composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntityAfterShow = panelNodeAfterShow.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntityAfterShow).isEnabled()).isTrue()
+    }
+
+    @Test
+    fun activityPanel_visibilityToggles_enablesAndDisablesEntity() {
+        val showPanel = mutableStateOf(true)
+        val panelTag = "activityPanel"
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                if (showPanel.value) {
+                    SpatialActivityPanel(
+                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                        modifier = SubspaceModifier.testTag(panelTag).size(100.dp),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNode = composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).isEnabled()).isTrue()
+
+        showPanel.value = false
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertDoesNotExist()
+
+        showPanel.value = true
+
+        composeTestRule.onSubspaceNodeWithTag(panelTag).assertExists()
+        val panelNodeAfterShow =
+            composeTestRule.onSubspaceNodeWithTag(panelTag).fetchSemanticsNode()
+        val panelEntityAfterShow = panelNodeAfterShow.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntityAfterShow).isEnabled()).isTrue()
     }
 
     @Test
     fun spatialPanel_cornerRadius_dp() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(
-                modifier = SubspaceModifier.width(200.dp).height(300.dp).testTag("panel"),
-                shape = SpatialRoundedCornerShape(CornerSize(32.dp)),
-            ) {}
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(
+                    modifier = SubspaceModifier.width(200.dp).height(300.dp).testTag("panel"),
+                    shape = SpatialRoundedCornerShape(CornerSize(32.dp)),
+                ) {}
+            }
         }
-        assertThat(getBasePanelEntity("panel")?.getCornerRadius()?.meters?.toDp()).isEqualTo(32.dp)
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).cornerRadius.meters.toDp()).isEqualTo(32.dp)
+    }
+
+    @Test
+    fun mainPanel_cornerRadius_dp() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialMainPanel(
+                    modifier = SubspaceModifier.width(200.dp).height(300.dp).testTag("mainPanel"),
+                    shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
+                )
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("mainPanel").fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).cornerRadius.meters.toDp()).isEqualTo(16.dp)
     }
 
     @Test
     fun spatialPanel_cornerRadius_percent() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(
-                modifier = SubspaceModifier.width(200.dp).height(300.dp).testTag("panel"),
-                shape = SpatialRoundedCornerShape(CornerSize(50)),
-            ) {}
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(
+                    modifier = SubspaceModifier.width(200.dp).height(300.dp).testTag("panel"),
+                    shape = SpatialRoundedCornerShape(CornerSize(50)),
+                ) {}
+            }
         }
 
-        assertThat(getBasePanelEntity("panel")?.getCornerRadius()?.meters?.toDp()).isEqualTo(100.dp)
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = panelNode.semanticsEntity as? PanelEntity
+        assertThat(checkNotNull(panelEntity).cornerRadius.meters.toDp()).isEqualTo(100.dp)
     }
 
     @Test
     fun activityPanel_launchesIntent() {
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(
-                intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                modifier = SubspaceModifier.width(200.dp).height(300.dp),
-                shape = SpatialRoundedCornerShape(CornerSize(50)),
-            )
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialActivityPanel(
+                    intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                    modifier = SubspaceModifier.width(200.dp).height(300.dp),
+                    shape = SpatialRoundedCornerShape(CornerSize(50)),
+                )
+            }
         }
         // Since SubspaceTestingActivity uses FakeXrExtensions, the intent is stored in a map
         // instead of
         // being launched.
         val launchIntent =
-            composeTestRule.activity.extensions.activityPanelMap[composeTestRule.activity]
-                ?.launchIntent
+            ShadowActivityPanel.extract(
+                    ShadowXrExtensions.extract(checkNotNull(XrExtensionsProvider.getXrExtensions()))
+                        .getActivityPanelForHost(composeTestRule.activity)
+                )
+                .launchIntent
 
         assertThat(launchIntent?.component?.className)
             .isEqualTo(SpatialPanelActivity::class.java.name)
@@ -190,55 +411,123 @@ class SpatialPanelTest {
 
     @Test
     fun activityPanel_scrimAdds() {
-        var dialogManager: DialogManager? = null
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(
-                intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                modifier = SubspaceModifier.width(200.dp).height(300.dp),
-                shape = SpatialRoundedCornerShape(CornerSize(50)),
+        val showDialog = mutableStateOf(false)
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            CompositionLocalProvider(
+                LocalDialogManager provides DefaultDialogManager(),
+                content = {
+                    Subspace {
+                        SpatialActivityPanel(
+                            intent =
+                                Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                            modifier = SubspaceModifier.width(200.dp).height(300.dp),
+                            shape = SpatialRoundedCornerShape(CornerSize(50)),
+                        )
+                        if (showDialog.value) {
+                            SpatialDialog(onDismissRequest = { showDialog.value = false }) {
+                                Text("Spatial Dialog")
+                            }
+                        }
+                    }
+                },
             )
-            dialogManager = LocalDialogManager.current
         }
-        val session = composeTestRule.activity.session
+        val session = composeTestRule.session
 
-        // For activity panels, the added scrim is represented by a PanelEntity, so the total entity
-        // count should increase by 1.
-        assertThat(session.getEntitiesOfType(PanelEntity::class.java).size).isEqualTo(2)
+        // Verify the initial set of PanelEntities in the scene before the dialog is shown:
+        // Activity Panel
+        // Main PanelEntity
+        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(2)
 
-        dialogManager!!.isSpatialDialogActive.value = true
+        showDialog.value = true
         composeTestRule.waitForIdle()
 
-        assertThat(session.getEntitiesOfType(PanelEntity::class.java).size).isEqualTo(3)
+        // Verify the set of PanelEntities after the SpatialDialog is displayed:
+        // Activity Panel
+        // Main PanelEntity
+        // SpatialDialog
+        // Activity Scrim Panel
+        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(4)
     }
 
     @Test
     fun activityPanel_scrimRemoves() {
-        var dialogManager: DialogManager? = null
-        composeTestRule.setSubspaceContent {
-            SpatialPanel(
-                intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                modifier = SubspaceModifier.width(200.dp).height(300.dp),
-                shape = SpatialRoundedCornerShape(CornerSize(50)),
+        val showDialog = mutableStateOf(true)
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            CompositionLocalProvider(
+                LocalDialogManager provides DefaultDialogManager(),
+                content = {
+                    Subspace {
+                        SpatialActivityPanel(
+                            intent =
+                                Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
+                            modifier = SubspaceModifier.width(200.dp).height(300.dp),
+                            shape = SpatialRoundedCornerShape(CornerSize(50)),
+                        )
+                        if (showDialog.value) {
+                            SpatialDialog(onDismissRequest = { showDialog.value = false }) {
+                                Text("Spatial Dialog")
+                            }
+                        }
+                    }
+                },
             )
-            dialogManager = LocalDialogManager.current
         }
-        val session = composeTestRule.activity.session
-        dialogManager!!.isSpatialDialogActive.value = true
+        val session = composeTestRule.session
+
+        // Verify the set of PanelEntities before the SpatialDialog is dismissed:
+        // SpatialDialog
+        // Activity Scrim Panel
+        // Activity Panel
+        // Main PanelEntity
+        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(4)
+
+        showDialog.value = false
         composeTestRule.waitForIdle()
 
-        // For activity panels, the added scrim is represented by a PanelEntity, so the total entity
-        // count should decrease by 1.
-        assertThat(session.getEntitiesOfType(PanelEntity::class.java).size).isEqualTo(3)
-
-        dialogManager!!.isSpatialDialogActive.value = false
-        composeTestRule.waitForIdle()
-
-        assertThat(session.getEntitiesOfType(PanelEntity::class.java).size).isEqualTo(2)
+        // Verify the set of PanelEntities after the SpatialDialog is dismissed:
+        // Activity Panel
+        // Main PanelEntity
+        assertThat(session?.scene?.getEntitiesOfType(PanelEntity::class.java)?.size).isEqualTo(2)
     }
 
-    private fun getBasePanelEntity(tag: String): BasePanelEntity<*>? {
-        return composeTestRule.onSubspaceNodeWithTag(tag).fetchSemanticsNode().semanticsEntity
-            as BasePanelEntity<*>
+    @Test
+    fun mainPanel_switchesActivePanel_onStateChange() {
+        var activePanelId by mutableStateOf("A")
+
+        @Composable
+        fun PanelContainer(id: String) {
+            if (activePanelId == id) {
+                SpatialMainPanel(SubspaceModifier.testTag("panel-$id"))
+            }
+        }
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                PanelContainer("A")
+                PanelContainer("B")
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel-A").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel-B").assertDoesNotExist()
+
+        activePanelId = "B"
+        composeTestRule.waitForIdle()
+        composeTestRule.onSubspaceNodeWithTag("panel-A").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("panel-B").assertExists()
+
+        activePanelId = "A"
+        composeTestRule.waitForIdle()
+        composeTestRule.onSubspaceNodeWithTag("panel-A").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel-B").assertDoesNotExist()
+
+        activePanelId = "C"
+        composeTestRule.waitForIdle()
+        composeTestRule.onSubspaceNodeWithTag("panel-A").assertDoesNotExist()
+        composeTestRule.onSubspaceNodeWithTag("panel-B").assertDoesNotExist()
     }
 
     private class SpatialPanelActivity : ComponentActivity() {}

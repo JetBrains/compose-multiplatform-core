@@ -33,7 +33,6 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.AlertDialogDefaults
-import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Text
 
@@ -41,32 +40,29 @@ object AlertDialogBenchmark : MacrobenchmarkScreen {
     override val content: @Composable (BoxScope.() -> Unit)
         get() = {
             val showDialog = remember { mutableStateOf(false) }
-            AppScaffold {
-                Column(
-                    Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+            Column(
+                Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Button(
+                    onClick = { showDialog.value = true },
+                    modifier = Modifier.semantics { contentDescription = OPEN_ALERT_DIALOG },
                 ) {
-                    Button(
-                        onClick = { showDialog.value = true },
-                        modifier = Modifier.semantics { contentDescription = OPEN_ALERT_DIALOG }
-                    ) {
-                        Text("Open")
-                    }
+                    Text("Open")
                 }
-
-                AlertDialog(
-                    visible = showDialog.value,
-                    onDismissRequest = { showDialog.value = false },
-                    title = { Text("Title") },
-                    confirmButton = {
-                        AlertDialogDefaults.ConfirmButton(
-                            onClick = { showDialog.value = false },
-                            modifier = Modifier.semantics { contentDescription = DIALOG_CONFIRM }
-                        )
-                    }
-                )
             }
+            AlertDialog(
+                visible = showDialog.value,
+                onDismissRequest = { showDialog.value = false },
+                title = { Text("Title") },
+                confirmButton = {
+                    AlertDialogDefaults.ConfirmButton(
+                        onClick = { showDialog.value = false },
+                        modifier = Modifier.semantics { contentDescription = DIALOG_CONFIRM },
+                    )
+                },
+            )
         }
 
     override val exercise: MacrobenchmarkScope.() -> Unit

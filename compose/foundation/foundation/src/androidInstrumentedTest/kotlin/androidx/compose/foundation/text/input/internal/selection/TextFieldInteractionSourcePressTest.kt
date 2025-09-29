@@ -45,13 +45,14 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 @LargeTest
 class TextFieldInteractionSourcePressTest : FocusedWindowTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val TAG = "BasicTextField"
 
@@ -72,7 +73,7 @@ class TextFieldInteractionSourcePressTest : FocusedWindowTest {
                 state,
                 modifier = Modifier.testTag(TAG),
                 textStyle = defaultTextStyle,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
         }
 
@@ -102,7 +103,7 @@ class TextFieldInteractionSourcePressTest : FocusedWindowTest {
                 state,
                 modifier = Modifier.testTag(TAG),
                 textStyle = defaultTextStyle,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
         }
 
@@ -141,7 +142,7 @@ class TextFieldInteractionSourcePressTest : FocusedWindowTest {
                 modifier = Modifier.testTag(TAG),
                 textStyle = defaultTextStyle,
                 interactionSource = interactionSource,
-                decorator = { Box(modifier = Modifier.size(100.dp)) }
+                decorator = { Box(modifier = Modifier.size(100.dp)) },
             )
         }
 
@@ -171,7 +172,7 @@ class TextFieldInteractionSourcePressTest : FocusedWindowTest {
                 state,
                 modifier = Modifier.testTag(TAG),
                 textStyle = defaultTextStyle,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
         }
 
@@ -211,7 +212,7 @@ class TextFieldInteractionSourcePressTest : FocusedWindowTest {
                 state,
                 modifier = Modifier.testTag(TAG),
                 textStyle = defaultTextStyle,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
         }
 

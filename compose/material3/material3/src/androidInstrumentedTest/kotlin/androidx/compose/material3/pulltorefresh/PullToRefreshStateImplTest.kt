@@ -17,7 +17,6 @@
 package androidx.compose.material3.pulltorefresh
 
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,15 +34,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class PullToRefreshStateImplTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun refreshTrigger_onlyAfterThreshold() {
@@ -64,7 +63,7 @@ class PullToRefreshStateImplTest {
                     isRefreshing = true
                     refreshCount++
                     isRefreshing = false
-                }
+                },
             ) {
                 LazyColumn { items(100) { Text("item $it") } }
             }
@@ -124,7 +123,7 @@ class PullToRefreshStateImplTest {
                 modifier = Modifier.testTag(PullRefreshTag),
                 isRefreshing = false,
                 onRefresh = { refreshCount++ },
-                state = state
+                state = state,
             ) {
                 LazyColumn { items(100) { Text("item $it") } }
             }
@@ -171,7 +170,7 @@ class PullToRefreshStateImplTest {
                 modifier = Modifier.testTag(PullRefreshTag),
                 isRefreshing = false,
                 onRefresh = { refreshCount++ },
-                state = state
+                state = state,
             ) {
                 LazyColumn { items(100) { Text("item $it") } }
             }
@@ -225,7 +224,7 @@ class PullToRefreshStateImplTest {
                 modifier = Modifier.testTag(PullRefreshTag),
                 isRefreshing = false,
                 onRefresh = { refreshCount++ },
-                state = state
+                state = state,
             ) {
                 LazyColumn { items(100) { Text("item $it") } }
             }

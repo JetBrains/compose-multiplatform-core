@@ -16,7 +16,6 @@
 
 package androidx.camera.view
 
-import android.os.Build
 import android.os.Looper.getMainLooper
 import androidx.lifecycle.MutableLiveData
 import com.google.common.truth.Truth.assertThat
@@ -24,13 +23,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [ForwardingLiveData] */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class ForwardingLiveDataTest {
     private val forwardingLiveData = ForwardingLiveData<Any>()
 

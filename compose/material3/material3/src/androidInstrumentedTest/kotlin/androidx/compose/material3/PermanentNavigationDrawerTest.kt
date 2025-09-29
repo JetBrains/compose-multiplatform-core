@@ -35,12 +35,12 @@ import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onParent
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,7 +50,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3Api::class)
 class PermanentNavigationDrawerTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun permanentNavigationDrawer_testOffset() {
@@ -59,7 +59,7 @@ class PermanentNavigationDrawerTest {
                 drawerContent = {
                     PermanentDrawerSheet { Box(Modifier.fillMaxSize().testTag("content")) }
                 },
-                content = {}
+                content = {},
             )
         }
 
@@ -75,7 +75,7 @@ class PermanentNavigationDrawerTest {
                         Box(Modifier.fillMaxSize().testTag("content"))
                     }
                 },
-                content = {}
+                content = {},
             )
         }
 
@@ -93,7 +93,7 @@ class PermanentNavigationDrawerTest {
                     drawerContent = {
                         PermanentDrawerSheet { Box(Modifier.fillMaxSize().testTag("content")) }
                     },
-                    content = {}
+                    content = {},
                 )
             }
         }
@@ -112,7 +112,7 @@ class PermanentNavigationDrawerTest {
                 drawerContent = {
                     PermanentDrawerSheet { Box(Modifier.fillMaxSize().testTag("content")) }
                 },
-                content = {}
+                content = {},
             )
         }
 
@@ -128,7 +128,7 @@ class PermanentNavigationDrawerTest {
                         Box(Modifier.fillMaxSize().testTag("content"))
                     }
                 },
-                content = {}
+                content = {},
             )
         }
 
@@ -142,18 +142,17 @@ class PermanentNavigationDrawerTest {
         rule.setMaterialContent(lightColorScheme()) {
             PermanentNavigationDrawer(
                 drawerContent = {
-                    PermanentDrawerSheet {
-                        Box(Modifier.fillMaxSize().testTag("navigationDrawerTag"))
+                    PermanentDrawerSheet(modifier = Modifier.testTag("navigationDrawerTag")) {
+                        Box(Modifier.fillMaxSize())
                     }
                 },
-                content = {}
+                content = {},
             )
             navigationMenu = getString(Strings.NavigationMenu)
         }
 
         rule
             .onNodeWithTag("navigationDrawerTag", useUnmergedTree = true)
-            .onParent()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, navigationMenu))
     }
 }

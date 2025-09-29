@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation
 
-import android.os.Build
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +49,7 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.ScreenshotTestRule
 import androidx.test.screenshot.matchers.MSSIMMatcher
 import androidx.testutils.AnimationDurationScaleRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,9 +62,9 @@ import org.junit.runner.RunWith
  */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class StretchOverscrollScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_FOUNDATION)
 
@@ -101,7 +101,7 @@ class StretchOverscrollScreenshotTest {
     private fun OverscrollContent(
         orientation: Orientation,
         overscrollEffect: OverscrollEffect,
-        onDrawOverscroll: () -> Unit
+        onDrawOverscroll: () -> Unit,
     ) {
         Box(Modifier.fillMaxSize().wrapContentSize(Alignment.Center)) {
             Box(Modifier.testTag(overscrollTag).clipToBounds()) {
@@ -110,7 +110,7 @@ class StretchOverscrollScreenshotTest {
                         Stripes(
                             orientation = Orientation.Vertical,
                             showText = false,
-                            modifier = Modifier.border(1.dp, Color.Black)
+                            modifier = Modifier.border(1.dp, Color.Black),
                         )
                         Stripes(
                             orientation = Orientation.Vertical,
@@ -118,12 +118,12 @@ class StretchOverscrollScreenshotTest {
                             modifier =
                                 Modifier.border(1.dp, Color.Black)
                                     .overscroll(overscrollEffect)
-                                    .drawBehind { onDrawOverscroll() }
+                                    .drawBehind { onDrawOverscroll() },
                         )
                         Stripes(
                             orientation = Orientation.Vertical,
                             showText = false,
-                            modifier = Modifier.border(1.dp, Color.Black)
+                            modifier = Modifier.border(1.dp, Color.Black),
                         )
                     }
                 } else {
@@ -131,7 +131,7 @@ class StretchOverscrollScreenshotTest {
                         Stripes(
                             orientation = Orientation.Horizontal,
                             showText = false,
-                            modifier = Modifier.border(1.dp, Color.Black)
+                            modifier = Modifier.border(1.dp, Color.Black),
                         )
                         Stripes(
                             orientation = Orientation.Horizontal,
@@ -139,12 +139,12 @@ class StretchOverscrollScreenshotTest {
                             modifier =
                                 Modifier.border(1.dp, Color.Black)
                                     .overscroll(overscrollEffect)
-                                    .drawBehind { onDrawOverscroll() }
+                                    .drawBehind { onDrawOverscroll() },
                         )
                         Stripes(
                             orientation = Orientation.Horizontal,
                             showText = false,
-                            modifier = Modifier.border(1.dp, Color.Black)
+                            modifier = Modifier.border(1.dp, Color.Black),
                         )
                     }
                 }
@@ -156,7 +156,7 @@ class StretchOverscrollScreenshotTest {
     private fun Stripes(
         orientation: Orientation,
         showText: Boolean,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         val mainAxisSize = 100.dp
         val crossAxisSize = 50.dp
@@ -172,7 +172,7 @@ class StretchOverscrollScreenshotTest {
                         BasicText(
                             "Stretch",
                             Modifier.rotate(90f),
-                            style = TextStyle(color = Color.White)
+                            style = TextStyle(color = Color.White),
                         )
                     }
                 }
@@ -200,7 +200,7 @@ class StretchOverscrollScreenshotTest {
     private fun stretchAndAssertAgainstGolden(
         offset: Offset,
         screenshotRule: ScreenshotTestRule,
-        goldenIdentifier: String
+        goldenIdentifier: String,
     ) {
         animationScaleRule.setAnimationDurationScale(1f)
         // Due to b/302303969 there are no guarantees runOnIdle() will wait for drawing to happen,

@@ -36,24 +36,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "androidx.profileinstaller:profileinstaller",
-        "resolvedVersion": "1.4.0"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "androidx.resourceinspection:resourceinspection-annotation",
-        "resolvedVersion": "1.0.1"
-      },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "compileOnly"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "androidx.test.espresso:espresso-idling-resource",
         "resolvedVersion": "3.7.0-alpha01"
       },
@@ -74,6 +56,14 @@
         "resolvedVersion": "1.1.0"
       },
       "toConfiguration": "implementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.vectordrawable:vectordrawable",
+        "resolvedVersion": "1.1.0"
+      },
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {

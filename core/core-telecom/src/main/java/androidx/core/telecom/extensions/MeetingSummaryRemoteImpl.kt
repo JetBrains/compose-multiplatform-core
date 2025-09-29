@@ -45,7 +45,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 internal class MeetingSummaryRemoteImpl(
     private val callScope: CoroutineScope,
     private val onCurrentSpeakerChanged: suspend (String) -> Unit,
-    private val onParticipantCountChanged: suspend (Int) -> Unit
+    private val onParticipantCountChanged: suspend (Int) -> Unit,
 ) : MeetingSummaryRemote {
 
     /**
@@ -84,7 +84,7 @@ internal class MeetingSummaryRemoteImpl(
      */
     internal suspend fun onExchangeComplete(
         negotiatedCapability: Capability?,
-        remote: CapabilityExchangeListenerRemote?
+        remote: CapabilityExchangeListenerRemote?,
     ) {
         Log.i(TAG, "onExchangeComplete: in function")
         if (negotiatedCapability == null || remote == null) {
@@ -111,19 +111,19 @@ internal class MeetingSummaryRemoteImpl(
      */
     private suspend fun connectToRemote(
         negotiatedCapability: Capability,
-        remote: CapabilityExchangeListenerRemote
+        remote: CapabilityExchangeListenerRemote,
     ): Unit = suspendCancellableCoroutine { continuation ->
         Log.d(TAG, "connectToRemote:")
         val stateListener =
             MeetingSummaryStateListener(
                 updateCurrentSpeaker = { callScope.launch { onCurrentSpeakerChanged(it) } },
                 updateParticipantCount = { callScope.launch { onParticipantCountChanged(it) } },
-                finishSync = { callScope.launch { continuation.resume(Unit) } }
+                finishSync = { callScope.launch { continuation.resume(Unit) } },
             )
         try {
             remote.onCreateMeetingSummaryExtension(
                 negotiatedCapability.featureVersion,
-                stateListener
+                stateListener,
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error connecting to remote extension", e)

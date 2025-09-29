@@ -60,7 +60,7 @@ class TransitionClockTest {
     enum class EnumState {
         One,
         Two,
-        Three
+        Three,
     }
 
     data class CustomState(val number: Int)
@@ -132,6 +132,29 @@ class TransitionClockTest {
                 assertEquals(Color.Green, it.values[0])
                 assertEquals(Color.Gray, it.values[2000])
             }
+        }
+    }
+
+    @Test
+    fun clockKeepsSetTime() {
+        val clock = createEnumTransitionClock()
+        rule.waitForIdle()
+        rule.runOnIdle {
+            // Change state and clock time to end of the animation.
+            clock.state = TargetState(EnumState.One, EnumState.Two)
+            clock.setClockTime(millisToNanos(2000))
+        }
+        rule.waitForIdle()
+        rule.runOnIdle {
+            // Values are at the end of animation.
+            assertEquals(listOf(20.dp, Color.Gray), clock.getAnimatedProperties().map { it.value })
+            // Swap state without changing time.
+            clock.state = TargetState(EnumState.Two, EnumState.One)
+        }
+        rule.waitForIdle()
+        rule.runOnIdle {
+            // Values are still at the end of new animation.
+            assertEquals(listOf(10.dp, Color.Red), clock.getAnimatedProperties().map { it.value })
         }
     }
 
@@ -267,7 +290,7 @@ class TransitionClockTest {
     fun changeTimeForNullableEnumClock() {
         changeTimeForClock(
             createNullableEnumTransitionClock(),
-            TargetState(EnumState.Three, EnumState.Two)
+            TargetState(EnumState.Three, EnumState.Two),
         )
     }
 
@@ -280,7 +303,7 @@ class TransitionClockTest {
     fun changeTimeForCustomStateClock() {
         changeTimeForClock(
             createCustomStateTransitionClock(),
-            TargetState(CustomState(3), CustomState(2))
+            TargetState(CustomState(3), CustomState(2)),
         )
     }
 
@@ -302,9 +325,9 @@ class TransitionClockTest {
             assertEquals(
                 listOf(
                     ComposeAnimatedProperty("Animated Dp", 10.dp),
-                    ComposeAnimatedProperty("Animated Color", Color.Red)
+                    ComposeAnimatedProperty("Animated Color", Color.Red),
                 ),
-                clock.getAnimatedProperties()
+                clock.getAnimatedProperties(),
             )
             // Change start and end state.
             clock.state = state
@@ -314,9 +337,9 @@ class TransitionClockTest {
             assertEquals(
                 listOf(
                     ComposeAnimatedProperty("Animated Dp", 30.dp),
-                    ComposeAnimatedProperty("Animated Color", Color.Green)
+                    ComposeAnimatedProperty("Animated Color", Color.Green),
                 ),
-                clock.getAnimatedProperties()
+                clock.getAnimatedProperties(),
             )
             // Update clock time - set it to end of dp animation.
             clock.setClockTime(millisToNanos(1100L))
@@ -364,7 +387,7 @@ class TransitionClockTest {
                     EnumState.Two -> Color.Gray
                     EnumState.Three -> Color.Green
                 }
-            }
+            },
         )
     }
 
@@ -384,7 +407,7 @@ class TransitionClockTest {
                     2 -> Color.Gray
                     else -> Color.Green
                 }
-            }
+            },
         )
     }
 
@@ -404,7 +427,7 @@ class TransitionClockTest {
                     CustomState(2) -> Color.Gray
                     else -> Color.Green
                 }
-            }
+            },
         )
     }
 
@@ -427,14 +450,14 @@ class TransitionClockTest {
                     EnumState.Three -> Color.Green
                     null -> Color.Green
                 }
-            }
+            },
         )
     }
 
     private fun <S> createTransitionClock(
         target: S,
         targetDpByState: @Composable (state: S) -> Dp,
-        targetColorByState: @Composable (state: S) -> Color
+        targetColorByState: @Composable (state: S) -> Color,
     ): TransitionClock<S> {
         val targetState by mutableStateOf(target)
         lateinit var clock: TransitionClock<S>
@@ -442,14 +465,14 @@ class TransitionClockTest {
             val transition = updateTransition(targetState, label = "TestTransition")
             transition.animateDp(
                 transitionSpec = { tween(durationMillis = 1000, delayMillis = 100) },
-                label = "Animated Dp"
+                label = "Animated Dp",
             ) {
                 targetDpByState(it)
             }
 
             transition.animateColor(
                 transitionSpec = { tween(durationMillis = 2000) },
-                label = "Animated Color"
+                label = "Animated Color",
             ) {
                 targetColorByState(it)
             }
@@ -506,7 +529,7 @@ class TransitionClockTest {
     @Test
     fun childTransition() {
         val search = AnimationSearch.TransitionSearch {}
-        rule.addAnimations(search) { childTransitions() }
+        rule.addAnimations(search) { ChildTransitions() }
         val clock = TransitionClock(search.animations.first().parse()!!)
 
         rule.runOnIdle {
@@ -531,12 +554,12 @@ class TransitionClockTest {
 
     @OptIn(ExperimentalTransitionApi::class)
     @Composable
-    fun childTransitions() {
+    fun ChildTransitions() {
         val state by remember { mutableStateOf(EnumState.One) }
         val parentTransition = updateTransition(state, label = "parent")
         parentTransition.animateDp(
             transitionSpec = { tween(durationMillis = 1000, delayMillis = 100) },
-            label = "Parent"
+            label = "Parent",
         ) {
             10.dp
         }
@@ -547,7 +570,7 @@ class TransitionClockTest {
                 .apply {
                     this.animateDp(
                         transitionSpec = { tween(durationMillis = 1000, delayMillis = 100) },
-                        label = "Child1"
+                        label = "Child1",
                     ) {
                         10.dp
                     }
@@ -558,7 +581,7 @@ class TransitionClockTest {
                 .apply {
                     this.animateDp(
                         transitionSpec = { tween(durationMillis = 1000, delayMillis = 100) },
-                        label = "Grandchild"
+                        label = "Grandchild",
                     ) {
                         10.dp
                     }
@@ -568,7 +591,7 @@ class TransitionClockTest {
             .apply {
                 this.animateDp(
                     transitionSpec = { tween(durationMillis = 1000, delayMillis = 100) },
-                    label = "GrandGrandchild"
+                    label = "GrandGrandchild",
                 ) {
                     10.dp
                 }
@@ -578,7 +601,7 @@ class TransitionClockTest {
             .apply {
                 this.animateDp(
                     transitionSpec = { tween(durationMillis = 1000, delayMillis = 100) },
-                    label = "Child2"
+                    label = "Child2",
                 ) {
                     10.dp
                 }

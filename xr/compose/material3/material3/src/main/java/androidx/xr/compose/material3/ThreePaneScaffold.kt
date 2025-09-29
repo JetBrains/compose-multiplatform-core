@@ -22,7 +22,7 @@ import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.PaneScaffoldParentData
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldHorizontalOrder
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldOverride
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldOverrideContext
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldOverrideScope
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -69,7 +69,7 @@ public fun ThreePaneScaffold(
     paneOrder: ThreePaneScaffoldHorizontalOrder,
     secondaryPane: @Composable () -> Unit,
     tertiaryPane: (@Composable () -> Unit)? = null,
-    primaryPane: @Composable () -> Unit
+    primaryPane: @Composable () -> Unit,
 ) {
     Subspace {
         SpatialRow(
@@ -86,7 +86,7 @@ public fun ThreePaneScaffold(
                             scaffoldDirective,
                             XrThreePaneScaffoldTokens.PrimaryPanePanelWidth,
                             drawSpacer,
-                            primaryPane
+                            primaryPane,
                         )
                         drawSpacer = true
                     }
@@ -95,7 +95,7 @@ public fun ThreePaneScaffold(
                             scaffoldDirective,
                             XrThreePaneScaffoldTokens.SecondaryPanePanelWidth,
                             drawSpacer,
-                            secondaryPane
+                            secondaryPane,
                         )
                         drawSpacer = true
                     }
@@ -105,7 +105,7 @@ public fun ThreePaneScaffold(
                                 scaffoldDirective,
                                 XrThreePaneScaffoldTokens.TertiaryPanePanelWidth,
                                 drawSpacer,
-                                tertiaryPane
+                                tertiaryPane,
                             )
                             drawSpacer = true
                         }
@@ -121,7 +121,7 @@ private fun Panel(
     scaffoldDirective: PaneScaffoldDirective,
     defaultPreferredWidth: Dp,
     drawSpacer: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (drawSpacer) {
         SpatialLayoutSpacer(SubspaceModifier.width(scaffoldDirective.horizontalPartitionSpacerSize))
@@ -129,7 +129,13 @@ private fun Panel(
 
     SpatialPanel(SubspaceModifier.width(defaultPreferredWidth).fillMaxHeight()) {
         Layout(content) { measurables, constraints ->
-            val measurable = measurables[0]
+            val measurable = measurables.getOrNull(0)
+            if (measurable == null) {
+                return@Layout layout(
+                    defaultPreferredWidth.toPx().roundToInt(),
+                    constraints.maxHeight,
+                ) {}
+            }
             val parentData = measurable.parentData as? PaneScaffoldParentData
             val widthFloat = parentData?.preferredWidth ?: defaultPreferredWidth
             val width = widthFloat.toPx().roundToInt()
@@ -149,11 +155,11 @@ private fun Panel(
 @ExperimentalMaterial3XrApi
 @OptIn(
     ExperimentalMaterial3AdaptiveApi::class,
-    ExperimentalMaterial3AdaptiveComponentOverrideApi::class
+    ExperimentalMaterial3AdaptiveComponentOverrideApi::class,
 )
 internal object XrThreePaneScaffoldOverride : ThreePaneScaffoldOverride {
     @Composable
-    override fun ThreePaneScaffoldOverrideContext.ThreePaneScaffold() {
+    override fun ThreePaneScaffoldOverrideScope.ThreePaneScaffold() {
         ThreePaneScaffold(
             modifier = SubspaceModifier,
             scaffoldDirective = scaffoldDirective.copy(maxHorizontalPartitions = 3),
@@ -173,8 +179,7 @@ private object XrThreePaneScaffoldTokens {
     val TertiaryPanePanelWidth = 412.dp
 }
 
-@Suppress("BanInlineOptIn")
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@ExperimentalMaterial3AdaptiveApi
 private inline fun ThreePaneScaffoldHorizontalOrder.each(action: (ThreePaneScaffoldRole) -> Unit) {
     action(get(0))
     action(get(1))

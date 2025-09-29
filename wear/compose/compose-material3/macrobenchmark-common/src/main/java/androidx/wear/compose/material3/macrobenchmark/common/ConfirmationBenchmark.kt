@@ -31,7 +31,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
-import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ConfirmationDialog
 import androidx.wear.compose.material3.ConfirmationDialogDefaults
@@ -42,28 +41,26 @@ object ConfirmationBenchmark : MacrobenchmarkScreen {
     override val content: @Composable (BoxScope.() -> Unit)
         get() = {
             val showDialog = remember { mutableStateOf(false) }
-            AppScaffold {
-                Column(
-                    Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+            Column(
+                Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Button(
+                    onClick = { showDialog.value = true },
+                    modifier = Modifier.semantics { contentDescription = SHOW_CONFIRMATION },
                 ) {
-                    Button(
-                        onClick = { showDialog.value = true },
-                        modifier = Modifier.semantics { contentDescription = SHOW_CONFIRMATION }
-                    ) {
-                        Text("Open")
-                    }
+                    Text("Open")
                 }
-                val style = ConfirmationDialogDefaults.curvedTextStyle
-                ConfirmationDialog(
-                    visible = showDialog.value,
-                    onDismissRequest = { showDialog.value = false },
-                    durationMillis = 2000,
-                    curvedText = { confirmationDialogCurvedText("Text", style) },
-                    content = { ConfirmationDialogDefaults.SuccessIcon() }
-                )
             }
+            val style = ConfirmationDialogDefaults.curvedTextStyle
+            ConfirmationDialog(
+                visible = showDialog.value,
+                onDismissRequest = { showDialog.value = false },
+                durationMillis = 2000,
+                curvedText = { confirmationDialogCurvedText("Text", style) },
+                content = { ConfirmationDialogDefaults.SuccessIcon() },
+            )
         }
 
     override val exercise: MacrobenchmarkScope.() -> Unit

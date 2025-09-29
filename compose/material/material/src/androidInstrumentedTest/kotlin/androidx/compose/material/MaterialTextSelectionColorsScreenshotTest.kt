@@ -16,7 +16,6 @@
 
 package androidx.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.selection.TextSelectionColors
@@ -41,6 +40,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,10 +54,10 @@ import org.junit.runner.RunWith
  */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class MaterialTextSelectionColorsScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
 
@@ -199,7 +199,7 @@ private fun FilledTextFieldTestContent(colors: Colors) {
             TextField(
                 value = TextFieldText,
                 onValueChange = {},
-                modifier = Modifier.requiredWidth(280.dp)
+                modifier = Modifier.requiredWidth(280.dp),
             )
         }
     }
@@ -212,7 +212,7 @@ private fun OutlinedTextFieldTestContent(colors: Colors) {
             OutlinedTextField(
                 value = TextFieldText,
                 onValueChange = {},
-                modifier = Modifier.requiredWidth(280.dp)
+                modifier = Modifier.requiredWidth(280.dp),
             )
         }
     }
@@ -223,6 +223,6 @@ private val TextFieldText =
     TextFieldValue(
         text = "Selected text",
         selection = TextRange(0, 8),
-        composition = TextRange(0, 8)
+        composition = TextRange(0, 8),
     )
 private const val Tag = "TestTag"

@@ -22,6 +22,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,7 +31,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class MotionSchemeTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun tokenValue() {
@@ -42,7 +43,7 @@ class MotionSchemeTest {
         lateinit var fastEffectsSpec: FiniteAnimationSpec<Float>
         lateinit var slowEffectsSpec: FiniteAnimationSpec<Float>
         rule.setMaterialContent(lightColorScheme()) {
-            motionScheme = LocalMotionScheme.current
+            motionScheme = MaterialTheme.motionScheme
             defaultSpatialSpec = MotionSchemeKeyTokens.DefaultSpatial.value()
             fastSpatialSpec = MotionSchemeKeyTokens.FastSpatial.value()
             slowSpatialSpec = MotionSchemeKeyTokens.SlowSpatial.value()
@@ -59,5 +60,23 @@ class MotionSchemeTest {
             assertThat(motionScheme.fastEffectsSpec<Float>()).isEqualTo(fastEffectsSpec)
             assertThat(motionScheme.slowEffectsSpec<Float>()).isEqualTo(slowEffectsSpec)
         }
+    }
+
+    @Test
+    fun readLocalMotionScheme() {
+        lateinit var mainMotionScheme: MotionScheme
+        lateinit var nestedMotionScheme: MotionScheme
+        rule.setContent {
+            MaterialTheme {
+                mainMotionScheme = MaterialTheme.LocalMotionScheme.current
+
+                MaterialTheme(motionScheme = MotionScheme.expressive()) {
+                    nestedMotionScheme = MaterialTheme.LocalMotionScheme.current
+                }
+            }
+        }
+
+        assertThat(mainMotionScheme).isEqualTo(MotionScheme.standard())
+        assertThat(nestedMotionScheme).isEqualTo(MotionScheme.expressive())
     }
 }

@@ -27,6 +27,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Test
 
 @SmallTest
@@ -39,7 +40,7 @@ class DurationScaleTransitionTest {
                 override val scaleFactor: Float
                     get() = 4f
             }
-        runComposeUiTest(effectContext = motionDurationScale) {
+        runComposeUiTest(effectContext = motionDurationScale + StandardTestDispatcher()) {
             mainClock.autoAdvance = false
             val state = MutableTransitionState(0)
             var value1 = -1f
@@ -48,18 +49,14 @@ class DurationScaleTransitionTest {
             setContent {
                 val transition = rememberTransition(transitionState = state)
                 val animatedValue1 by
-                    transition.animateFloat(
-                        { tween(160, easing = LinearEasing) },
-                    ) {
+                    transition.animateFloat({ tween(160, easing = LinearEasing) }) {
                         if (it == 0) 0f else 1000f
                     }
                 value1 = animatedValue1
                 if (withChild) {
                     val child = transition.createChildTransition { it }
                     val animatedValue2 by
-                        child.animateFloat(
-                            { tween(160, easing = LinearEasing) },
-                        ) {
+                        child.animateFloat({ tween(160, easing = LinearEasing) }) {
                             if (it == 0) 0f else 1000f
                         }
                     value2 = animatedValue2
@@ -97,7 +94,7 @@ class DurationScaleTransitionTest {
                 override val scaleFactor: Float
                     get() = 4f
             }
-        runComposeUiTest(effectContext = motionDurationScale) {
+        runComposeUiTest(effectContext = motionDurationScale + StandardTestDispatcher()) {
             mainClock.autoAdvance = false
             val state = SeekableTransitionState(0)
             var value1 = -1f
@@ -108,18 +105,14 @@ class DurationScaleTransitionTest {
                 coroutineScope = rememberCoroutineScope()
                 val transition = rememberTransition(transitionState = state)
                 val animatedValue1 by
-                    transition.animateFloat(
-                        { tween(160, easing = LinearEasing) },
-                    ) {
+                    transition.animateFloat({ tween(160, easing = LinearEasing) }) {
                         if (it == 0) 0f else 1000f
                     }
                 value1 = animatedValue1
                 if (withChild) {
                     val child = transition.createChildTransition { it }
                     val animatedValue2 by
-                        child.animateFloat(
-                            { tween(160, easing = LinearEasing) },
-                        ) {
+                        child.animateFloat({ tween(160, easing = LinearEasing) }) {
                             if (it == 0) 0f else 1000f
                         }
                     value2 = animatedValue2
@@ -162,7 +155,7 @@ class DurationScaleTransitionTest {
                 override val scaleFactor: Float
                     get() = 4f
             }
-        runComposeUiTest(effectContext = motionDurationScale) {
+        runComposeUiTest(effectContext = motionDurationScale + StandardTestDispatcher()) {
             mainClock.autoAdvance = false
             val state = SeekableTransitionState(0)
             var value1 = -1f
@@ -173,18 +166,14 @@ class DurationScaleTransitionTest {
                 coroutineScope = rememberCoroutineScope()
                 val transition = rememberTransition(transitionState = state)
                 val animatedValue1 by
-                    transition.animateFloat(
-                        { tween(160, easing = LinearEasing) },
-                    ) {
+                    transition.animateFloat({ tween(160, easing = LinearEasing) }) {
                         if (it == 0) 0f else 1000f
                     }
                 value1 = animatedValue1
                 if (withChild) {
                     val child = transition.createChildTransition { it }
                     val animatedValue2 by
-                        child.animateFloat(
-                            { tween(160, easing = LinearEasing) },
-                        ) {
+                        child.animateFloat({ tween(160, easing = LinearEasing) }) {
                             if (it == 0) 0f else 1000f
                         }
                     value2 = animatedValue2

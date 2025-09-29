@@ -25,12 +25,11 @@ import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInstant
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
-import androidx.wear.protolayout.expression.PlatformEventKeys
+import androidx.wear.protolayout.expression.PlatformEventSources
 import androidx.wear.protolayout.expression.PlatformHealthSources
 import androidx.wear.protolayout.expression.PlatformHealthSources.Keys
 import androidx.wear.protolayout.expression.dynamicDataMapOf
 import androidx.wear.protolayout.expression.mapTo
-import androidx.wear.protolayout.expression.platformVisibilityStatus
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
 import java.time.Instant
@@ -95,7 +94,7 @@ class DynamicTypeEvaluatorsTest {
                 testDynamicString.evaluate(
                     dynamicDataMapOf(
                         Keys.DAILY_STEPS mapTo testValue1,
-                        Keys.HEART_RATE_BPM mapTo testValue2
+                        Keys.HEART_RATE_BPM mapTo testValue2,
                     )
                 )
             )
@@ -115,7 +114,7 @@ class DynamicTypeEvaluatorsTest {
                 testDynamicString.evaluate(
                     dynamicDataMapOf(
                         Keys.HEART_RATE_BPM mapTo testValue1,
-                        stateKey mapTo testValue2
+                        stateKey mapTo testValue2,
                     )
                 )
             )
@@ -136,7 +135,7 @@ class DynamicTypeEvaluatorsTest {
                 testDynamicFloat.evaluate(
                     dynamicDataMapOf(
                         Keys.HEART_RATE_BPM mapTo testValue1,
-                        stateKey mapTo testValue2
+                        stateKey mapTo testValue2,
                     )
                 )
             )
@@ -206,20 +205,20 @@ class DynamicTypeEvaluatorsTest {
             .isEqualTo(colorValue1)
 
         val testDynamicColor =
-            DynamicColor.onCondition(platformVisibilityStatus())
+            DynamicColor.onCondition(PlatformEventSources.isLayoutVisible())
                 .use(colorValue1.toArgb())
                 .elseUse(colorValue2.toArgb())
 
         assertThat(
                 testDynamicColor.evaluate(
-                    dynamicDataMapOf(PlatformEventKeys.VISIBILITY_STATUS mapTo true)
+                    dynamicDataMapOf(PlatformEventSources.Keys.LAYOUT_VISIBILITY mapTo true)
                 )
             )
             .isEqualTo(colorValue1)
 
         assertThat(
                 testDynamicColor.evaluate(
-                    dynamicDataMapOf(PlatformEventKeys.VISIBILITY_STATUS mapTo false)
+                    dynamicDataMapOf(PlatformEventSources.Keys.LAYOUT_VISIBILITY mapTo false)
                 )
             )
             .isEqualTo(colorValue2)

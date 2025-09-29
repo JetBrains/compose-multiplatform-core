@@ -53,7 +53,7 @@ internal constructor(
      *
      * @see NavDeepLinkRequest.mimeType
      */
-    public val mimeType: String?
+    public val mimeType: String?,
 ) {
     // path
     private val pathArgs = mutableListOf<String>()
@@ -90,11 +90,7 @@ internal constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(uri: String) : this(uri, null, null)
 
-    private fun buildRegex(
-        uri: String,
-        args: MutableList<String>,
-        uriRegex: StringBuilder,
-    ) {
+    private fun buildRegex(uri: String, args: MutableList<String>, uriRegex: StringBuilder) {
         var result = FILL_IN_PATTERN.find(uri)
         var appendPos = 0
         while (result != null) {
@@ -104,7 +100,7 @@ internal constructor(
             if (result.range.first > appendPos) {
                 uriRegex.append(Regex.escape(uri.substring(appendPos, result.range.first)))
             }
-            uriRegex.append(PATH_REGEX)
+            uriRegex.append(PATH_REGEX.pattern)
             appendPos = result.range.last + 1
             result = result.next()
         }
@@ -118,39 +114,40 @@ internal constructor(
         return matches(NavDeepLinkRequest(uri, null, null))
     }
 
-    internal fun matches(deepLinkRequest: NavDeepLinkRequest): Boolean {
-        if (!matchUri(deepLinkRequest.uri)) {
-            return false
+    /**
+     * Checks for matches on uri, action, and mimType between a deepLink and a deepLinkRequest.
+     *
+     * Returns false if either
+     * 1. the deepLink's field is non-null while requested link's field is null
+     * 2. both fields are non-null but don't match
+     *
+     * Returns true otherwise (including when both fields are null).
+     */
+    internal fun matches(deepLinkRequest: NavDeepLinkRequest): Boolean =
+        matchUri(deepLinkRequest.uri) &&
+            matchAction(deepLinkRequest.action) &&
+            matchMimeType(deepLinkRequest.mimeType)
+
+    private fun matchUri(uri: NavUri?): Boolean =
+        when {
+            pathPattern == null -> true
+            uri == null -> false
+            else -> pathPattern!!.matches(uri.toString())
         }
-        return if (!matchAction(deepLinkRequest.action)) {
-            false
-        } else matchMimeType(deepLinkRequest.mimeType)
-    }
 
-    private fun matchUri(uri: NavUri?): Boolean {
-        // If the null status of both are not the same return false.
-        return if (uri == null == (pathPattern != null)) {
-            false
-        } else uri == null || pathPattern!!.matches(uri.toString())
-        // If both are null return true, otherwise see if they match
-    }
+    private fun matchAction(action: String?): Boolean =
+        when {
+            this.action == null -> true
+            action == null -> false
+            else -> this.action == action
+        }
 
-    private fun matchAction(action: String?): Boolean {
-        // If the null status of both are not the same return false.
-        return if (action == null == (this.action != null)) {
-            false
-        } else action == null || this.action == action
-        // If both are null return true, otherwise see if they match
-    }
-
-    private fun matchMimeType(mimeType: String?): Boolean {
-        // If the null status of both are not the same return false.
-        return if (mimeType == null == (this.mimeType != null)) {
-            false
-        } else mimeType == null || mimeTypePattern!!.matches(mimeType)
-
-        // If both are null return true, otherwise see if they match
-    }
+    private fun matchMimeType(mimeType: String?): Boolean =
+        when {
+            this.mimeType == null -> true
+            mimeType == null -> false
+            else -> mimeTypePattern!!.matches(mimeType)
+        }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getMimeTypeMatchRating(mimeType: String): Int {
@@ -176,7 +173,7 @@ internal constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getMatchingArguments(
         deepLink: NavUri,
-        arguments: Map<String, NavArgument?>
+        arguments: Map<String, NavArgument?>,
     ): SavedState? {
         // first check overall uri pattern for quick return if general pattern does not match
         val result = pathPattern?.matchEntire(deepLink.toString()) ?: return null
@@ -204,7 +201,7 @@ internal constructor(
      */
     internal fun getMatchingPathAndQueryArgs(
         deepLink: NavUri?,
-        arguments: Map<String, NavArgument?>
+        arguments: Map<String, NavArgument?>,
     ): SavedState {
         val savedState = savedState()
         if (deepLink == null) return savedState
@@ -218,7 +215,7 @@ internal constructor(
     private fun getMatchingUriFragment(
         fragment: String?,
         savedState: SavedState,
-        arguments: Map<String, NavArgument?>
+        arguments: Map<String, NavArgument?>,
     ) {
         // Base condition of a matching fragment is a complete match on regex pattern. If a
         // required fragment arg is present while regex does not match, this will be caught later
@@ -240,7 +237,7 @@ internal constructor(
     private fun getMatchingPathArguments(
         result: MatchResult,
         savedState: SavedState,
-        arguments: Map<String, NavArgument?>
+        arguments: Map<String, NavArgument?>,
     ): Boolean {
         this.pathArgs.mapIndexed { index, argumentName ->
             val value = result.groups[index + 1]?.value?.let { NavUriUtils.decode(it) }.orEmpty()
@@ -261,7 +258,7 @@ internal constructor(
     private fun getMatchingQueryArguments(
         deepLink: NavUri,
         savedState: SavedState,
-        arguments: Map<String, NavArgument?>
+        arguments: Map<String, NavArgument?>,
     ): Boolean {
         // key is queryParameterName (argName could be different), value is NavDeepLink.ParamQuery
         queryArgsMap.forEach { entry ->
@@ -371,7 +368,7 @@ internal constructor(
         savedState: SavedState,
         name: String,
         value: String,
-        argument: NavArgument?
+        argument: NavArgument?,
     ) {
         if (argument != null) {
             val type = argument.type
@@ -392,7 +389,7 @@ internal constructor(
         savedState: SavedState,
         name: String,
         value: String?,
-        argument: NavArgument?
+        argument: NavArgument?,
     ): Boolean {
         if (!savedState.read { contains(name) }) {
             return true
@@ -728,7 +725,7 @@ internal constructor(
         val uriRegex = StringBuilder("^")
         // append scheme pattern
         if (!SCHEME_PATTERN.containsMatchIn(uriPattern)) {
-            uriRegex.append(SCHEME_REGEX)
+            uriRegex.append(SCHEME_REGEX.pattern)
         }
         // extract beginning of uriPattern until it hits either a query(?), a framgment(#), or
         // end of uriPattern

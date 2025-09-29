@@ -33,6 +33,7 @@ import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +42,8 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class SupportingPaneScaffoldNavigatorTest {
-    @get:Rule val composeRule = createComposeRule()
+    val testDispatcher = StandardTestDispatcher()
+    @get:Rule val composeRule = createComposeRule(testDispatcher)
 
     @Test
     fun singlePaneLayout_navigateTo_makeDestinationPaneExpanded() {
@@ -119,11 +121,11 @@ class SupportingPaneScaffoldNavigatorTest {
                         listOf(
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             )
                         ),
                     scaffoldDirective = MockDualPaneScaffoldDirective,
-                    isDestinationHistoryAware = false
+                    isDestinationHistoryAware = false,
                 )
             canNavigateBack = scaffoldNavigator.canNavigateBack()
         }
@@ -161,11 +163,11 @@ class SupportingPaneScaffoldNavigatorTest {
                         listOf(
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             )
                         ),
                     scaffoldDirective = MockDualPaneScaffoldDirective,
-                    isDestinationHistoryAware = true
+                    isDestinationHistoryAware = true,
                 )
             canNavigateBack = scaffoldNavigator.canNavigateBack()
         }
@@ -240,10 +242,10 @@ class SupportingPaneScaffoldNavigatorTest {
                         listOf(
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main),
-                        )
+                        ),
                 )
         }
 
@@ -269,10 +271,10 @@ class SupportingPaneScaffoldNavigatorTest {
                         listOf(
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main),
-                        )
+                        ),
                 )
         }
 
@@ -310,13 +312,13 @@ class SupportingPaneScaffoldNavigatorTest {
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main, null),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                1
+                                1,
                             ),
-                        )
+                        ),
                 )
         }
 
@@ -352,7 +354,7 @@ class SupportingPaneScaffoldNavigatorTest {
                         listOf(
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main, 0),
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main, 1),
-                        )
+                        ),
                 )
         }
 
@@ -384,13 +386,13 @@ class SupportingPaneScaffoldNavigatorTest {
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main, null),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                1
+                                1,
                             ),
-                        )
+                        ),
                 )
         }
 
@@ -427,10 +429,10 @@ class SupportingPaneScaffoldNavigatorTest {
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main, 0),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Extra, 0),
-                        )
+                        ),
                 )
         }
 
@@ -465,9 +467,9 @@ class SupportingPaneScaffoldNavigatorTest {
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main, 0),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
-                        )
+                        ),
                 )
         }
 
@@ -497,10 +499,10 @@ class SupportingPaneScaffoldNavigatorTest {
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Extra, 1),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                         ),
-                    isDestinationHistoryAware = true
+                    isDestinationHistoryAware = true,
                 )
         }
 
@@ -508,7 +510,7 @@ class SupportingPaneScaffoldNavigatorTest {
             scaffoldNavigator.scaffoldValue.assert(
                 PaneAdaptedValue.Hidden,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Expanded
+                PaneAdaptedValue.Expanded,
             )
             assertThat(scaffoldNavigator.currentDestination?.pane)
                 .isEqualTo(SupportingPaneScaffoldRole.Supporting)
@@ -520,7 +522,7 @@ class SupportingPaneScaffoldNavigatorTest {
             scaffoldNavigator.scaffoldValue.assert(
                 PaneAdaptedValue.Expanded,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Hidden
+                PaneAdaptedValue.Hidden,
             )
             assertThat(scaffoldNavigator.currentDestination?.pane)
                 .isEqualTo(SupportingPaneScaffoldRole.Main)
@@ -532,7 +534,7 @@ class SupportingPaneScaffoldNavigatorTest {
             scaffoldNavigator.scaffoldValue.assert(
                 PaneAdaptedValue.Hidden,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Expanded
+                PaneAdaptedValue.Expanded,
             )
             assertThat(scaffoldNavigator.currentDestination?.pane)
                 .isEqualTo(SupportingPaneScaffoldRole.Supporting)
@@ -555,10 +557,10 @@ class SupportingPaneScaffoldNavigatorTest {
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Extra, 1),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                         ),
-                    isDestinationHistoryAware = false
+                    isDestinationHistoryAware = false,
                 )
         }
 
@@ -566,7 +568,7 @@ class SupportingPaneScaffoldNavigatorTest {
             scaffoldNavigator.scaffoldValue.assert(
                 PaneAdaptedValue.Expanded,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Hidden
+                PaneAdaptedValue.Hidden,
             )
             assertThat(scaffoldNavigator.currentDestination?.pane)
                 .isEqualTo(SupportingPaneScaffoldRole.Supporting)
@@ -578,7 +580,7 @@ class SupportingPaneScaffoldNavigatorTest {
             scaffoldNavigator.scaffoldValue.assert(
                 PaneAdaptedValue.Expanded,
                 PaneAdaptedValue.Expanded,
-                PaneAdaptedValue.Hidden
+                PaneAdaptedValue.Hidden,
             )
             assertThat(scaffoldNavigator.currentDestination?.pane)
                 .isEqualTo(SupportingPaneScaffoldRole.Main)
@@ -590,7 +592,7 @@ class SupportingPaneScaffoldNavigatorTest {
             scaffoldNavigator.scaffoldValue.assert(
                 PaneAdaptedValue.Expanded,
                 PaneAdaptedValue.Hidden,
-                PaneAdaptedValue.Expanded
+                PaneAdaptedValue.Expanded,
             )
             assertThat(scaffoldNavigator.currentDestination?.pane)
                 .isEqualTo(SupportingPaneScaffoldRole.Extra)
@@ -613,9 +615,9 @@ class SupportingPaneScaffoldNavigatorTest {
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
-                        )
+                        ),
                 )
         }
 
@@ -677,13 +679,13 @@ class SupportingPaneScaffoldNavigatorTest {
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                1
+                                1,
                             ),
-                        )
+                        ),
                 )
         }
 
@@ -747,10 +749,10 @@ class SupportingPaneScaffoldNavigatorTest {
                         listOf(
                             ThreePaneScaffoldDestinationItem(
                                 SupportingPaneScaffoldRole.Supporting,
-                                0
+                                0,
                             ),
                             ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main),
-                        )
+                        ),
                 )
         }
         composeRule.runOnIdle {
@@ -773,6 +775,7 @@ class SupportingPaneScaffoldNavigatorTest {
 
     private fun CoroutineScope.runBlockingOnIdle(block: suspend CoroutineScope.() -> Unit) {
         val job = composeRule.runOnIdle { launch(block = block) }
+        testDispatcher.scheduler.runCurrent()
         runBlocking { job.join() }
     }
 }
@@ -789,7 +792,7 @@ private val MockDualPaneScaffoldDirective =
 private fun ThreePaneScaffoldValue.assert(
     expectedMainPaneAdaptedValue: PaneAdaptedValue,
     expectedSupportingPaneAdaptedValue: PaneAdaptedValue,
-    expectedExtraPaneAdaptedValue: PaneAdaptedValue
+    expectedExtraPaneAdaptedValue: PaneAdaptedValue,
 ) {
     assertThat(this[SupportingPaneScaffoldRole.Main]).isEqualTo(expectedMainPaneAdaptedValue)
     assertThat(this[SupportingPaneScaffoldRole.Supporting])

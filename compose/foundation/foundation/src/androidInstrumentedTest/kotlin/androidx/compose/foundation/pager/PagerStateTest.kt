@@ -58,7 +58,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -94,7 +94,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -146,7 +146,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -182,7 +182,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -216,7 +216,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
                 snapPosition = config.snapPosition.first,
-                pageSize = PageSize.Fixed(200.dp)
+                pageSize = PageSize.Fixed(200.dp),
             )
         }
 
@@ -248,7 +248,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -307,7 +307,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -343,7 +343,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -379,7 +379,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -418,7 +418,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -450,7 +450,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -484,7 +484,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
         rule.forEachParameter(PagerStateTestParams) { param ->
@@ -545,7 +545,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
                 snappingPage = snapDistance,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -590,6 +590,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
             // Assert
             assertThat(pagerState.targetPage).isEqualTo(previousTargetPage)
             onPager().performTouchInput { up() }
+            rule.waitForIdle()
             runBlocking { resetTestCase() }
         }
     }
@@ -605,7 +606,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
                 snappingPage = snapDistance,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
         rule.forEachParameter(PagerStateTestParams) { param ->
@@ -665,7 +666,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
                 snappingPage = snapDistance,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
         rule.forEachParameter(PagerStateTestParams) { param ->
@@ -718,7 +719,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
 
                 override suspend fun ScrollScope.performFling(
                     initialVelocity: Float,
-                    onRemainingDistanceUpdated: (Float) -> Unit
+                    onRemainingDistanceUpdated: (Float) -> Unit,
                 ): Float {
                     val finalOffset = decay.calculateTargetValue(0.0f, initialVelocity)
                     val pageDisplacement = finalOffset / pagerState.pageSizeWithSpacing
@@ -728,10 +729,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                         var velocityLeft = initialVelocity
                         var lastValue = 0f
                         val animationState =
-                            AnimationState(
-                                initialValue = 0f,
-                                initialVelocity = initialVelocity,
-                            )
+                            AnimationState(initialValue = 0f, initialVelocity = initialVelocity)
                         animationState.animateDecay(decay) {
                             onRemainingDistanceUpdated(finalOffset - value)
                             val delta = value - lastValue
@@ -757,7 +755,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 reverseLayout = config.reverseLayout,
                 pageCount = { 100 },
                 flingBehavior = myCustomFling,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
         rule.forEachParameter(PagerStateTestParams) { param ->
@@ -816,7 +814,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -863,10 +861,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 val targetPageDiff = page - currentPage
                 val distance = targetPageDiff * layoutInfo.pageSize.toFloat()
                 var previousValue = 0.0f
-                animate(
-                    0f,
-                    distance,
-                ) { currentValue, _ ->
+                animate(0f, distance) { currentValue, _ ->
                     previousValue += scrollBy(currentValue - previousValue)
                 }
             }
@@ -878,7 +873,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
         rule.forEachParameter(PagerStateTestParams) {
@@ -926,7 +921,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -968,6 +963,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
             }
 
             onPager().performTouchInput { up() }
+            rule.waitForIdle()
             runBlocking { resetTestCase(initialPage = 5) }
         }
     }
@@ -981,7 +977,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -1018,6 +1014,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
             }
 
             onPager().performTouchInput { up() }
+            rule.waitForIdle()
             runBlocking { resetTestCase(initialPage = 5) }
         }
     }
@@ -1036,7 +1033,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 snapPosition = config.snapPosition.first,
                 additionalContent = {
                     LaunchedEffect(key1 = pagerState.settledPage) { settledPageChanges++ }
-                }
+                },
             )
         }
 
@@ -1050,7 +1047,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
             // Act
             // Moving forward
             rule.runOnIdle { scope.launch { pagerState.animateScrollToPage(DefaultPageCount - 1) } }
-
+            rule.mainClock.advanceTimeByFrame()
             // Settled page shouldn't change whilst scroll is in progress.
             assertTrue { pagerState.isScrollInProgress }
             assertTrue { settledPageChanges == 0 }
@@ -1081,7 +1078,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 snapPosition = config.snapPosition.first,
                 additionalContent = {
                     LaunchedEffect(key1 = pagerState.settledPage) { settledPageChanges++ }
-                }
+                },
             )
         }
 
@@ -1123,7 +1120,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 orientation = config.orientation,
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -1174,6 +1171,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                 assertThat(pagerState.currentPageOffsetFraction).isWithin(0.1f).of(-0.25f)
             }
             onPager().performTouchInput { up() }
+            rule.waitForIdle()
             runBlocking { resetTestCase(initialPage = DefaultPageCount / 2) }
         }
     }
@@ -1196,7 +1194,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                     },
                 layoutDirection = config.layoutDirection,
                 reverseLayout = config.reverseLayout,
-                snapPosition = config.snapPosition.first
+                snapPosition = config.snapPosition.first,
             )
         }
 
@@ -1233,7 +1231,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                             add(
                                 SingleParamConfig(
                                     orientation = orientation,
-                                    snapPosition = snapPosition
+                                    snapPosition = snapPosition,
                                 )
                             )
                         }
@@ -1246,7 +1244,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
                                     SingleParamConfig(
                                         orientation = orientation,
                                         reverseLayout = reverseLayout,
-                                        layoutDirection = layoutDirection
+                                        layoutDirection = layoutDirection,
                                     )
                                 )
                             }

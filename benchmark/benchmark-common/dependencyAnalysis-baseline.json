@@ -23,6 +23,14 @@
         "identifier": "com.squareup.okio:okio",
         "resolvedVersion": "3.9.1"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "com.squareup.okio:okio",
+        "resolvedVersion": "3.9.1"
+      },
       "toConfiguration": "api"
     },
     {
@@ -36,11 +44,10 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
+        "identifier": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
         "resolvedVersion": "1.7.3"
       },
-      "fromConfiguration": "implementation",
-      "toConfiguration": "runtimeOnly"
+      "toConfiguration": "androidTestImplementation"
     },
     {
       "coordinates": {

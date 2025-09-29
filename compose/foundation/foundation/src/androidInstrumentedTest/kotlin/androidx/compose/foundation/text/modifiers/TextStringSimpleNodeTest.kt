@@ -70,6 +70,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withTimeout
 import org.junit.Ignore
 import org.junit.Rule
@@ -79,7 +80,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TextStringSimpleNodeTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
     val context: Context = InstrumentationRegistry.getInstrumentation().context
 
     @Test
@@ -106,10 +107,7 @@ class TextStringSimpleNodeTest {
         rule.setContent {
             val state = rememberScrollState()
             Column(Modifier.verticalScroll(state)) {
-                BasicText(
-                    text = "text\n".repeat(10_000),
-                    style = TextStyle(fontSize = 50.sp),
-                )
+                BasicText(text = "text\n".repeat(10_000), style = TextStyle(fontSize = 50.sp))
             }
         }
     }
@@ -124,7 +122,7 @@ class TextStringSimpleNodeTest {
                     BoxWithConstraints {
                         BasicText(
                             text = if (!flag) "" else "LOADED",
-                            modifier = Modifier.testTag("target")
+                            modifier = Modifier.testTag("target"),
                         )
                     }
                 }
@@ -154,7 +152,7 @@ class TextStringSimpleNodeTest {
             TextStringSimpleElement(
                 "til",
                 TextStyle.Default.copy(fontFamily = asyncFont.toFontFamily()),
-                createFontFamilyResolver(context)
+                createFontFamilyResolver(context),
             )
 
         val modifier =

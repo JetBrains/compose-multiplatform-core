@@ -1,0 +1,101 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.work.Configuration#getClock():
+    Source breaking change: method androidx.work.Configuration.getClock() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getContentUriTriggerWorkersLimit():
+    Source breaking change: method androidx.work.Configuration.getContentUriTriggerWorkersLimit() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getDefaultProcessName():
+    Source breaking change: method androidx.work.Configuration.getDefaultProcessName() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getExecutor():
+    Source breaking change: method androidx.work.Configuration.getExecutor() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getInitializationExceptionHandler():
+    Source breaking change: method androidx.work.Configuration.getInitializationExceptionHandler() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getInputMergerFactory():
+    Source breaking change: method androidx.work.Configuration.getInputMergerFactory() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getMaxJobSchedulerId():
+    Source breaking change: method androidx.work.Configuration.getMaxJobSchedulerId() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getMinJobSchedulerId():
+    Source breaking change: method androidx.work.Configuration.getMinJobSchedulerId() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getRemoteSessionTimeoutMillis():
+    Source breaking change: method androidx.work.Configuration.getRemoteSessionTimeoutMillis() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getRunnableScheduler():
+    Source breaking change: method androidx.work.Configuration.getRunnableScheduler() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getSchedulingExceptionHandler():
+    Source breaking change: method androidx.work.Configuration.getSchedulingExceptionHandler() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getTaskExecutor():
+    Source breaking change: method androidx.work.Configuration.getTaskExecutor() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getWorkerCoroutineContext():
+    Source breaking change: method androidx.work.Configuration.getWorkerCoroutineContext() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getWorkerExecutionExceptionHandler():
+    Source breaking change: method androidx.work.Configuration.getWorkerExecutionExceptionHandler() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getWorkerFactory():
+    Source breaking change: method androidx.work.Configuration.getWorkerFactory() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration#getWorkerInitializationExceptionHandler():
+    Source breaking change: method androidx.work.Configuration.getWorkerInitializationExceptionHandler() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Configuration.Provider#getWorkManagerConfiguration():
+    Source breaking change: method androidx.work.Configuration.Provider.getWorkManagerConfiguration() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Constraints#getContentTriggerMaxDelayMillis():
+    Source breaking change: method androidx.work.Constraints.getContentTriggerMaxDelayMillis() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Constraints#getContentTriggerUpdateDelayMillis():
+    Source breaking change: method androidx.work.Constraints.getContentTriggerUpdateDelayMillis() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Constraints#getContentUriTriggers():
+    Source breaking change: method androidx.work.Constraints.getContentUriTriggers() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Constraints#getRequiredNetworkRequest():
+    Source breaking change: method androidx.work.Constraints.getRequiredNetworkRequest() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Constraints#getRequiredNetworkType():
+    Source breaking change: method androidx.work.Constraints.getRequiredNetworkType() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Constraints.ContentUriTrigger#getUri():
+    Source breaking change: method androidx.work.Constraints.ContentUriTrigger.getUri() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Constraints.ContentUriTrigger#isTriggeredForDescendants():
+    Source breaking change: method androidx.work.Constraints.ContentUriTrigger.isTriggeredForDescendants() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.CoroutineWorker#getCoroutineContext():
+    Source breaking change: method androidx.work.CoroutineWorker.getCoroutineContext() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.Data#getKeyValueMap():
+    Source breaking change: method androidx.work.Data.getKeyValueMap() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getConstraints():
+    Source breaking change: method androidx.work.WorkInfo.getConstraints() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getGeneration():
+    Source breaking change: method androidx.work.WorkInfo.getGeneration() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getId():
+    Source breaking change: method androidx.work.WorkInfo.getId() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getInitialDelayMillis():
+    Source breaking change: method androidx.work.WorkInfo.getInitialDelayMillis() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getNextScheduleTimeMillis():
+    Source breaking change: method androidx.work.WorkInfo.getNextScheduleTimeMillis() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getOutputData():
+    Source breaking change: method androidx.work.WorkInfo.getOutputData() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getPeriodicityInfo():
+    Source breaking change: method androidx.work.WorkInfo.getPeriodicityInfo() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getProgress():
+    Source breaking change: method androidx.work.WorkInfo.getProgress() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getRunAttemptCount():
+    Source breaking change: method androidx.work.WorkInfo.getRunAttemptCount() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getState():
+    Source breaking change: method androidx.work.WorkInfo.getState() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getStopReason():
+    Source breaking change: method androidx.work.WorkInfo.getStopReason() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo#getTags():
+    Source breaking change: method androidx.work.WorkInfo.getTags() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo.PeriodicityInfo#getFlexIntervalMillis():
+    Source breaking change: method androidx.work.WorkInfo.PeriodicityInfo.getFlexIntervalMillis() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo.PeriodicityInfo#getRepeatIntervalMillis():
+    Source breaking change: method androidx.work.WorkInfo.PeriodicityInfo.getRepeatIntervalMillis() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkInfo.State#isFinished():
+    Source breaking change: method androidx.work.WorkInfo.State.isFinished() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkManager#getConfiguration():
+    Source breaking change: method androidx.work.WorkManager.getConfiguration() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkQuery#getIds():
+    Source breaking change: method androidx.work.WorkQuery.getIds() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkQuery#getStates():
+    Source breaking change: method androidx.work.WorkQuery.getStates() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkQuery#getTags():
+    Source breaking change: method androidx.work.WorkQuery.getTags() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkQuery#getUniqueWorkNames():
+    Source breaking change: method androidx.work.WorkQuery.getUniqueWorkNames() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkRequest#getId():
+    Source breaking change: method androidx.work.WorkRequest.getId() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkerExceptionInfo#getThrowable():
+    Source breaking change: method androidx.work.WorkerExceptionInfo.getThrowable() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkerExceptionInfo#getWorkerClassName():
+    Source breaking change: method androidx.work.WorkerExceptionInfo.getWorkerClassName() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.work.WorkerExceptionInfo#getWorkerParameters():
+    Source breaking change: method androidx.work.WorkerExceptionInfo.getWorkerParameters() can no longer be resolved from Kotlin source

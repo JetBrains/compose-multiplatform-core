@@ -43,7 +43,7 @@ import kotlinx.atomicfu.atomic
 public class RequestProcessorAdapter(
     private val useCaseGraphConfig: UseCaseGraphConfig,
     private val processorSurfaces: List<SessionProcessorSurface>,
-    private val threads: UseCaseThreads
+    private val threads: UseCaseThreads,
 ) : RequestProcessor {
     private val coroutineMutex = CoroutineMutex()
     private val sequenceIds = atomic(0)
@@ -59,7 +59,7 @@ public class RequestProcessorAdapter(
         override fun onStarted(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            timestamp: CameraTimestamp
+            timestamp: CameraTimestamp,
         ) {
             callback.onCaptureStarted(request, frameNumber.value, timestamp.value)
         }
@@ -67,29 +67,29 @@ public class RequestProcessorAdapter(
         override fun onPartialCaptureResult(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            captureResult: FrameMetadata
+            captureResult: FrameMetadata,
         ) {
             callback.onCaptureProgressed(
                 request,
-                PartialCaptureResultAdapter(requestMetadata, frameNumber, captureResult)
+                PartialCaptureResultAdapter(requestMetadata, frameNumber, captureResult),
             )
         }
 
         override fun onComplete(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            result: FrameInfo
+            result: FrameInfo,
         ) {
             callback.onCaptureCompleted(
                 request,
-                CaptureResultAdapter(requestMetadata, frameNumber, result)
+                CaptureResultAdapter(requestMetadata, frameNumber, result),
             )
         }
 
         override fun onFailed(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            requestFailure: RequestFailure
+            requestFailure: RequestFailure,
         ) {
             callback.onCaptureFailed(request, CaptureFailureAdapter(requestFailure))
         }
@@ -97,7 +97,7 @@ public class RequestProcessorAdapter(
         override fun onBufferLost(
             requestMetadata: RequestMetadata,
             frameNumber: FrameNumber,
-            stream: StreamId
+            stream: StreamId,
         ) {
             val surface = requestProcessorAdapter.getDeferrableSurface(stream)
             if (surface != null && surface is SessionProcessorSurface) {
@@ -107,7 +107,7 @@ public class RequestProcessorAdapter(
 
         override fun onRequestSequenceCompleted(
             requestMetadata: RequestMetadata,
-            frameNumber: FrameNumber
+            frameNumber: FrameNumber,
         ) {
             if (!shouldInvokeSequenceCallback) {
                 return
@@ -125,14 +125,14 @@ public class RequestProcessorAdapter(
 
     override fun submit(
         request: RequestProcessor.Request,
-        callback: RequestProcessor.Callback
+        callback: RequestProcessor.Callback,
     ): Int {
         return submit(mutableListOf(request), callback)
     }
 
     override fun submit(
         requests: MutableList<RequestProcessor.Request>,
-        callback: RequestProcessor.Callback
+        callback: RequestProcessor.Callback,
     ): Int {
         Log.debug { "$this#submit" }
         val sequenceId = sequenceIds.incrementAndGet()
@@ -170,7 +170,7 @@ public class RequestProcessorAdapter(
                                 request,
                                 this,
                             )
-                        )
+                        ),
                 )
             }
 
@@ -182,7 +182,7 @@ public class RequestProcessorAdapter(
 
     override fun setRepeating(
         request: RequestProcessor.Request,
-        callback: RequestProcessor.Callback
+        callback: RequestProcessor.Callback,
     ): Int {
         Log.debug { "$this#setRepeating" }
         val sequenceId = sequenceIds.incrementAndGet()
@@ -207,13 +207,13 @@ public class RequestProcessorAdapter(
                             sequenceId,
                             shouldInvokeSequenceCallback = true,
                             request,
-                            this
+                            this,
                         ),
                         CameraCallbackMap.createFor(
                             sessionConfig!!.repeatingCameraCaptureCallbacks,
-                            threads.backgroundExecutor
-                        )
-                    )
+                            threads.backgroundExecutor,
+                        ),
+                    ),
             )
         coroutineMutex.withLockLaunch(threads.scope) {
             useCaseGraphConfig.graph.acquireSession().use { it.startRepeating(requestsToSubmit) }

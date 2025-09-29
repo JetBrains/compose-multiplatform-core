@@ -61,7 +61,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasPerformImeAction
@@ -87,6 +86,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -99,10 +99,9 @@ class TextFieldCursorTest : FocusedWindowTest {
             override var scaleFactor: Float by mutableStateOf(1f)
         }
 
-    @OptIn(ExperimentalTestApi::class)
     @get:Rule
     val rule =
-        createComposeRule(effectContext = motionDurationScale).also {
+        createComposeRule(effectContext = motionDurationScale + StandardTestDispatcher()).also {
             it.mainClock.autoAdvance = false
         }
 
@@ -120,7 +119,7 @@ class TextFieldCursorTest : FocusedWindowTest {
             color = contentColor,
             background = contentColor,
             fontSize = fontSize,
-            fontFamily = TEST_FONT_FAMILY
+            fontFamily = TEST_FONT_FAMILY,
         )
 
     private var isFocused = false
@@ -171,7 +170,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -193,7 +192,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     textStyle = textStyle,
                     modifier = textFieldModifier.width(30.dp),
                     cursorBrush = SolidColor(cursorColor),
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
             }
         }
@@ -217,7 +216,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -239,7 +238,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     textStyle = textStyle,
                     modifier = textFieldModifier.width(50.dp),
                     cursorBrush = SolidColor(cursorColor),
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
             }
         }
@@ -265,7 +264,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier.width(50.dp),
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -290,7 +289,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     textStyle = textStyle,
                     modifier = textFieldModifier.width(30.dp),
                     cursorBrush = SolidColor(cursorColor),
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
             }
         }
@@ -321,7 +320,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                         // Without triple bottom, the bottom color never hits to the provided color.
                         listOf(Color.Blue, Color.Blue, Color.Green, Color.Green, Color.Green)
                     ),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -348,7 +347,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -368,7 +367,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
     }
 
@@ -384,7 +383,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -404,7 +403,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
     }
 
@@ -417,7 +416,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 state = state,
                 textStyle = textStyle,
                 modifier = textFieldModifier,
-                cursorBrush = SolidColor(Color.Unspecified)
+                cursorBrush = SolidColor(Color.Unspecified),
             )
         }
 
@@ -432,7 +431,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
 
         // no cursor when should be no cursor
@@ -445,7 +444,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
     }
 
@@ -459,7 +458,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier.width(100.dp),
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -487,7 +486,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -524,7 +523,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     } else {
                         Column { it() }
                     }
-                }
+                },
             )
         }
 
@@ -543,7 +542,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
 
         toggle = !toggle
@@ -566,7 +565,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
     }
 
@@ -582,7 +581,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     textStyle = textStyle,
                     modifier = textFieldModifier,
                     cursorBrush = cursorBrush,
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
             }
         }
@@ -601,7 +600,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
     }
 
@@ -620,7 +619,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     textStyle = textStyle.copy(background = Color.Unspecified),
                     modifier = textFieldModifier,
                     cursorBrush = SolidColor(cursorColor),
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
             }
         }
@@ -646,7 +645,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     textStyle = textStyle,
                     modifier = textFieldModifier,
                     cursorBrush = SolidColor(cursorColor),
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
                 Box(modifier = Modifier.focusable(true).testTag("box"))
             }
@@ -671,7 +670,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
     }
 
@@ -686,7 +685,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 modifier = textFieldModifier,
                 readOnly = true,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -711,7 +710,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 modifier = textFieldModifier,
                 readOnly = readOnly,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -748,7 +747,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                         textStyle = textStyle,
                         modifier = textFieldModifier,
                         cursorBrush = SolidColor(cursorColor),
-                        onTextLayout = onTextLayout
+                        onTextLayout = onTextLayout,
                     )
                 }
             }
@@ -788,7 +787,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                         textStyle = textStyle,
                         modifier = textFieldModifier,
                         cursorBrush = SolidColor(cursorColor),
-                        onTextLayout = onTextLayout
+                        onTextLayout = onTextLayout,
                     )
                 }
             }
@@ -832,7 +831,7 @@ class TextFieldCursorTest : FocusedWindowTest {
             CompositionLocalProvider(
                 LocalWindowInfo provides windowInfo,
                 LocalTextSelectionColors provides
-                    TextSelectionColors(selectionColor, selectionColor)
+                    TextSelectionColors(selectionColor, selectionColor),
             ) {
                 BasicTextField(
                     state = state,
@@ -840,7 +839,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     textStyle = textStyle.copy(background = Color.Unspecified),
                     modifier = textFieldModifier,
                     cursorBrush = SolidColor(cursorColor),
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
             }
         }
@@ -866,7 +865,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -878,7 +877,7 @@ class TextFieldCursorTest : FocusedWindowTest {
             val moveEvent =
                 makeTextDragEvent(
                     action = DragEvent.ACTION_DRAG_LOCATION,
-                    offset = Offset(with(rule.density) { fontSize.toPx() * 3 }, 5f)
+                    position = Offset(with(rule.density) { fontSize.toPx() * 3 }, 5f),
                 )
 
             view?.dispatchDragEvent(startEvent)
@@ -903,7 +902,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -915,7 +914,7 @@ class TextFieldCursorTest : FocusedWindowTest {
             val moveEvent =
                 makeTextDragEvent(
                     action = DragEvent.ACTION_DRAG_LOCATION,
-                    offset = Offset(with(rule.density) { fontSize.toPx() * 3 }, 5f)
+                    position = Offset(with(rule.density) { fontSize.toPx() * 3 }, 5f),
                 )
 
             view?.dispatchDragEvent(startEvent)
@@ -933,7 +932,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 shape = RectangleShape,
                 shapeColor = contentColor,
                 backgroundColor = contentColor,
-                antiAliasingGap = 0.0f
+                antiAliasingGap = 0.0f,
             )
     }
 
@@ -949,7 +948,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 textStyle = textStyle,
                 modifier = textFieldModifier,
                 cursorBrush = SolidColor(cursorColor),
-                onTextLayout = onTextLayout
+                onTextLayout = onTextLayout,
             )
         }
 
@@ -961,7 +960,7 @@ class TextFieldCursorTest : FocusedWindowTest {
             val moveEvent =
                 makeTextDragEvent(
                     action = DragEvent.ACTION_DRAG_LOCATION,
-                    offset = Offset(with(rule.density) { fontSize.toPx() * 3 }, 5f)
+                    position = Offset(with(rule.density) { fontSize.toPx() * 3 }, 5f),
                 )
 
             view?.dispatchDragEvent(startEvent)
@@ -976,7 +975,7 @@ class TextFieldCursorTest : FocusedWindowTest {
         val moveEvent2 =
             makeTextDragEvent(
                 action = DragEvent.ACTION_DRAG_LOCATION,
-                offset = Offset(with(rule.density) { fontSize.toPx() * 4 }, 5f)
+                position = Offset(with(rule.density) { fontSize.toPx() * 4 }, 5f),
             )
         view?.dispatchDragEvent(moveEvent2)
         rule.mainClock.advanceTimeBy(400)
@@ -997,7 +996,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                     textStyle = textStyle,
                     modifier = textFieldModifier,
                     cursorBrush = SolidColor(cursorColor),
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
             }
         }
@@ -1010,7 +1009,7 @@ class TextFieldCursorTest : FocusedWindowTest {
             val moveEvent =
                 makeTextDragEvent(
                     action = DragEvent.ACTION_DRAG_LOCATION,
-                    offset = Offset(with(rule.density) { fontSize.toPx() * 3 }, 5f)
+                    position = Offset(with(rule.density) { fontSize.toPx() * 3 }, 5f),
                 )
 
             view?.dispatchDragEvent(startEvent)
@@ -1043,7 +1042,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 ceil(cursorPosition.x - cursorSizePx.width / 2) + 1,
                 ceil(cursorPosition.y) + 1,
                 floor(cursorPosition.x + cursorSizePx.width / 2) - 1,
-                floor(cursorPosition.y + cursorSizePx.height) - 1
+                floor(cursorPosition.y + cursorSizePx.height) - 1,
             )
 
         // skip an expanded rectangle that is 1px larger than cursor rectangle due to antialiasing
@@ -1052,7 +1051,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                 floor(cursorPosition.x - cursorSizePx.width / 2) - 1,
                 floor(cursorPosition.y) - 1,
                 ceil(cursorPosition.x + cursorSizePx.width / 2) + 1,
-                ceil(cursorPosition.y + cursorSizePx.height) + 1
+                ceil(cursorPosition.y + cursorSizePx.height) + 1,
             )
 
         val width = width
@@ -1092,7 +1091,7 @@ class TextFieldCursorTest : FocusedWindowTest {
                             layout(p.width, p.height) { p.place(0, 0) }
                         },
                     cursorBrush = SolidColor(cursorColor),
-                    onTextLayout = onTextLayout
+                    onTextLayout = onTextLayout,
                 )
             }
         }

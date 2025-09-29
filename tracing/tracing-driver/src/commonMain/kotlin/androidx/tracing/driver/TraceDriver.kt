@@ -17,14 +17,10 @@
 package androidx.tracing.driver
 
 /** The entry point for the tracing API. */
-public class TraceDriver(
-    private val sequenceId: Int,
-    private val sink: TraceSink,
-    private val isEnabled: Boolean = true
-) {
+public class TraceDriver(private val sink: TraceSink, private val isEnabled: Boolean = true) {
     public val context: TraceContext =
         if (isEnabled) {
-            TraceContext(sequenceId = sequenceId, sink = sink, isEnabled = true)
+            TraceContext(sink = sink, isEnabled = true)
         } else {
             EmptyTraceContext
         }

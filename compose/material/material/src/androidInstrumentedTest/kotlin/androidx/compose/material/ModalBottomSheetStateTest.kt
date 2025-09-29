@@ -22,6 +22,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
@@ -31,7 +32,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ModalBottomSheetStateTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
     private val restorationTester = StateRestorationTester(rule)
 
     @Test
@@ -45,7 +46,7 @@ class ModalBottomSheetStateTest {
                 rememberModalBottomSheetState(
                     initialValue = initialValue,
                     skipHalfExpanded = skipHalfExpanded,
-                    animationSpec = animationSpec
+                    animationSpec = animationSpec,
                 )
         }
 
@@ -66,7 +67,7 @@ class ModalBottomSheetStateTest {
             ModalBottomSheetState(
                 initialValue = ModalBottomSheetValue.HalfExpanded,
                 isSkipHalfExpanded = true,
-                density = rule.density
+                density = rule.density,
             )
             fail("ModalBottomSheetState didn't throw an exception")
         } catch (exception: IllegalArgumentException) {
@@ -79,7 +80,7 @@ class ModalBottomSheetStateTest {
         ModalBottomSheetState(
             initialValue = ModalBottomSheetValue.Hidden,
             isSkipHalfExpanded = true,
-            density = rule.density
+            density = rule.density,
         )
     }
 
@@ -88,7 +89,7 @@ class ModalBottomSheetStateTest {
         ModalBottomSheetState(
             initialValue = ModalBottomSheetValue.Expanded,
             isSkipHalfExpanded = true,
-            density = rule.density
+            density = rule.density,
         )
     }
 }

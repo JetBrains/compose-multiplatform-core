@@ -54,6 +54,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
@@ -74,7 +75,7 @@ class HeightInLinesModifierTest {
 
     private val context = InstrumentationRegistry.getInstrumentation().context
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun before() {
@@ -102,7 +103,7 @@ class HeightInLinesModifierTest {
                 },
                 onTextLayoutResult = { subjectLayout = it },
                 textFieldValue = TextFieldValue("abc"),
-                minLines = 2
+                minLines = 2,
             )
             HeightObservingText(
                 onGlobalHeightPositioned = {
@@ -111,7 +112,7 @@ class HeightInLinesModifierTest {
                 },
                 onTextLayoutResult = {},
                 textFieldValue = TextFieldValue("1\n2"),
-                minLines = 2
+                minLines = 2,
             )
         }
         assertThat(positionedLatch.await(1, TimeUnit.SECONDS)).isTrue()
@@ -153,7 +154,7 @@ class HeightInLinesModifierTest {
             CoreTextField(
                 value = TextFieldValue(),
                 onValueChange = {},
-                modifier = Modifier.heightInLines(textStyle = TextStyle.Default, minLines = 0)
+                modifier = Modifier.heightInLines(textStyle = TextStyle.Default, minLines = 0),
             )
         }
     }
@@ -164,7 +165,7 @@ class HeightInLinesModifierTest {
             CoreTextField(
                 value = TextFieldValue(),
                 onValueChange = {},
-                modifier = Modifier.heightInLines(textStyle = TextStyle.Default, maxLines = 0)
+                modifier = Modifier.heightInLines(textStyle = TextStyle.Default, maxLines = 0),
             )
         }
     }
@@ -179,8 +180,8 @@ class HeightInLinesModifierTest {
                     Modifier.heightInLines(
                         textStyle = TextStyle.Default,
                         minLines = 2,
-                        maxLines = 1
-                    )
+                        maxLines = 1,
+                    ),
             )
         }
     }
@@ -214,7 +215,7 @@ class HeightInLinesModifierTest {
                 },
                 onTextLayoutResult = { subjectLayout = it },
                 textFieldValue = TextFieldValue(longText),
-                maxLines = 2
+                maxLines = 2,
             )
             HeightObservingText(
                 onGlobalHeightPositioned = {
@@ -223,7 +224,7 @@ class HeightInLinesModifierTest {
                 },
                 onTextLayoutResult = {},
                 textFieldValue = TextFieldValue("1\n2"),
-                maxLines = 2
+                maxLines = 2,
             )
         }
         assertThat(positionedLatch.await(1, TimeUnit.SECONDS)).isTrue()
@@ -260,7 +261,7 @@ class HeightInLinesModifierTest {
                     override val weight: FontWeight = FontWeight.Normal
                     override val style: FontStyle = FontStyle.Normal
                 },
-                TEST_FONT
+                TEST_FONT,
             )
 
         val heights = mutableListOf<Int>()
@@ -268,14 +269,14 @@ class HeightInLinesModifierTest {
         rule.setContent {
             CompositionLocalProvider(
                 LocalFontFamilyResolver provides resolver,
-                LocalDensity provides Density(1.0f, 1f)
+                LocalDensity provides Density(1.0f, 1f),
             ) {
                 HeightObservingText(
                     onGlobalHeightPositioned = { heights.add(it) },
                     onTextLayoutResult = {},
                     textFieldValue = TextFieldValue(longText),
                     maxLines = 10,
-                    textStyle = TextStyle.Default.copy(fontFamily = fontFamily, fontSize = 80.sp)
+                    textStyle = TextStyle.Default.copy(fontFamily = fontFamily, fontSize = 80.sp),
                 )
             }
         }
@@ -299,14 +300,14 @@ class HeightInLinesModifierTest {
             .containsExactly(
                 ValueElement("minLines", 5),
                 ValueElement("maxLines", 10),
-                ValueElement("textStyle", TextStyle.Default)
+                ValueElement("textStyle", TextStyle.Default),
             )
     }
 
     private fun setTextFieldWithMaxLines(
         textFieldValue: TextFieldValue,
         minLines: Int = 1,
-        maxLines: Int = Int.MAX_VALUE
+        maxLines: Int = Int.MAX_VALUE,
     ): Pair<TextLayoutResult?, Int?> {
         var textLayoutResult: TextLayoutResult? = null
         var height: Int? = null
@@ -321,7 +322,7 @@ class HeightInLinesModifierTest {
                 onTextLayoutResult = { textLayoutResult = it },
                 textFieldValue = textFieldValue,
                 minLines = minLines,
-                maxLines = maxLines
+                maxLines = maxLines,
             )
         }
         assertThat(positionedLatch.await(1, TimeUnit.SECONDS)).isTrue()
@@ -336,7 +337,7 @@ class HeightInLinesModifierTest {
         textFieldValue: TextFieldValue,
         minLines: Int = 1,
         maxLines: Int = Int.MAX_VALUE,
-        textStyle: TextStyle = TextStyle.Default
+        textStyle: TextStyle = TextStyle.Default,
     ) {
         Box(Modifier.onGloballyPositioned { onGlobalHeightPositioned(it.size.height) }) {
             CoreTextField(
@@ -348,9 +349,9 @@ class HeightInLinesModifierTest {
                         .heightInLines(
                             textStyle = textStyle,
                             minLines = minLines,
-                            maxLines = maxLines
+                            maxLines = maxLines,
                         ),
-                onTextLayout = onTextLayoutResult
+                onTextLayout = onTextLayoutResult,
             )
         }
     }

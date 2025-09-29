@@ -38,6 +38,7 @@ import androidx.compose.ui.res.ImageVectorCache
 import androidx.compose.ui.res.ResourceIdCache
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
 /**
  * The Android [Configuration]. The [Configuration] is useful for determining how to organize the
@@ -81,10 +82,12 @@ actual val LocalLifecycleOwner
     get() = LocalLifecycleOwner
 
 /** The CompositionLocal containing the current [SavedStateRegistryOwner]. */
-val LocalSavedStateRegistryOwner =
-    staticCompositionLocalOf<SavedStateRegistryOwner> {
-        noLocalProvidedFor("LocalSavedStateRegistryOwner")
-    }
+@Deprecated(
+    "Moved to savedstate-compose library in androidx.savedstate.compose package.",
+    ReplaceWith("androidx.savedstate.compose.LocalSavedStateRegistryOwner"),
+)
+val LocalSavedStateRegistryOwner
+    get() = LocalSavedStateRegistryOwner
 
 /** The CompositionLocal containing the current Compose [View]. */
 val LocalView = staticCompositionLocalOf<View> { noLocalProvidedFor("LocalView") }
@@ -93,7 +96,7 @@ val LocalView = staticCompositionLocalOf<View> { noLocalProvidedFor("LocalView")
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun ProvideAndroidCompositionLocals(
     owner: AndroidComposeView,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val view = owner
     val context = view.context
@@ -174,7 +177,7 @@ private fun obtainResourceIdCache(context: Context): ResourceIdCache {
 @Composable
 private fun obtainImageVectorCache(
     context: Context,
-    configuration: Configuration?
+    configuration: Configuration?,
 ): ImageVectorCache {
     val imageVectorCache = remember { ImageVectorCache() }
     val currentConfiguration: Configuration = remember {

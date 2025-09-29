@@ -41,6 +41,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,7 +51,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = 31)
 class ScrollCaptureDrawTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     private val captureTester = ScrollCaptureTester(rule)
 
@@ -273,10 +274,7 @@ class ScrollCaptureDrawTest {
         }
 
     @Composable
-    private fun TestContent(
-        scrollState: ScrollState,
-        reverseScrolling: Boolean = false,
-    ) {
+    private fun TestContent(scrollState: ScrollState, reverseScrolling: Boolean = false) {
         with(LocalDensity.current) {
             Column(
                 Modifier.size(10.toDp())

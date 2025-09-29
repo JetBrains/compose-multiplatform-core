@@ -41,6 +41,20 @@ public fun SubspaceSemanticsNodeInteraction.assertWidthIsEqualTo(
 }
 
 /**
+ * Asserts that the layout of this node has width that is NOT equal to [expectedWidth].
+ *
+ * @param expectedWidth The width to assert.
+ * @throws AssertionError if comparison fails.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertWidthIsNotEqualTo(
+    expectedWidth: Dp
+): SubspaceSemanticsNodeInteraction {
+    return withSize { it.width.assertIsNotEqualTo(expectedWidth, "width") }
+}
+
+/**
  * Asserts that the layout of this node has height equal to [expectedHeight].
  *
  * @param expectedHeight The height to assert.
@@ -52,6 +66,34 @@ public fun SubspaceSemanticsNodeInteraction.assertHeightIsEqualTo(
     expectedHeight: Dp
 ): SubspaceSemanticsNodeInteraction {
     return withSize { it.height.assertIsEqualTo(expectedHeight, "height") }
+}
+
+/**
+ * Asserts that the layout of this node has height that is NOT equal to [expectedHeight].
+ *
+ * @param expectedHeight The height to assert.
+ * @throws AssertionError if comparison fails.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertHeightIsNotEqualTo(
+    expectedHeight: Dp
+): SubspaceSemanticsNodeInteraction {
+    return withSize { it.height.assertIsNotEqualTo(expectedHeight, "height") }
+}
+
+/**
+ * Asserts that the layout of this node has depth that is NOT equal to [expectedDepth].
+ *
+ * @param expectedDepth The depth to assert.
+ * @throws AssertionError if comparison fails.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertDepthIsNotEqualTo(
+    expectedDepth: Dp
+): SubspaceSemanticsNodeInteraction {
+    return withSize { it.depth.assertIsNotEqualTo(expectedDepth, "depth") }
 }
 
 /**
@@ -291,45 +333,67 @@ public fun SubspaceSemanticsNodeInteraction.assertZPositionIsEqualTo(
  * Asserts that the layout of this node has rotation in the root composable that is equal to the
  * given rotation.
  *
- * @param expected The rotation to assert.
+ * This assertion uses a tolerance to account for floating-point inaccuracies.
+ *
+ * @param expected The expected rotation in the root space to assert.
+ * @param tolerance The maximum allowed difference in degrees.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertRotationInRootIsEqualTo(
-    expected: Quaternion
+    expected: Quaternion,
+    tolerance: Float = 0.01f,
 ): SubspaceSemanticsNodeInteraction {
+    val actual = getRotationInRoot()
+    val angleDiff = Quaternion.angle(actual, expected)
 
-    val makeError = { subject: String, exp: Float, actual: Float ->
-        "Actual $subject is $actual: expected $exp"
+    if (abs(angleDiff) >= tolerance) {
+        val errorMessage =
+            """
+            Rotation assertion in root failed.
+            Angular difference of ${"%.4f".format(angleDiff)}° is greater than or equal to the allowed tolerance of ${"%.4f".format(tolerance)}°.
+            Actual rotation in root:   $actual
+            Expected rotation in root: $expected
+            """
+                .trimIndent()
+        throw AssertionError(errorMessage)
     }
 
-    return withRotationInRoot {
-        check(it.x.equals(expected.x)) { makeError.invoke("x", expected.x, it.x) }
-        check(it.y.equals(expected.y)) { makeError.invoke("y", expected.y, it.y) }
-        check(it.z.equals(expected.z)) { makeError.invoke("z", expected.z, it.z) }
-        check(it.w.equals(expected.w)) { makeError.invoke("w", expected.w, it.w) }
-    }
+    return this
 }
 
 /**
  * Asserts that the layout of this node has rotation that is equal to the given rotation.
  *
+ * This assertion uses a tolerance to account for floating-point inaccuracies.
+ *
  * @param expected The rotation to assert.
+ * @param tolerance The maximum allowed difference in degrees.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertRotationIsEqualTo(
-    expected: Quaternion
+    expected: Quaternion,
+    tolerance: Float = 0.01f,
 ): SubspaceSemanticsNodeInteraction {
+    val actual = getRotation()
+    val angleDiff = Quaternion.angle(actual, expected)
 
-    return withRotation {
-        check(it.x.equals(expected.x)) { "Actual x is ${it.x}: expected ${expected.x}" }
-        check(it.y.equals(expected.y)) { "Actual y is ${it.y}: expected ${expected.y}" }
-        check(it.z.equals(expected.z)) { "Actual z is ${it.z}: expected ${expected.z}" }
-        check(it.w.equals(expected.w)) { "Actual w is ${it.w}: expected ${expected.w}" }
+    if (abs(angleDiff) >= tolerance) {
+        val errorMessage =
+            """
+            Rotation assertion failed.
+            Angular difference of ${"%.4f".format(angleDiff)}° is greater than or equal to the allowed tolerance of ${"%.4f".format(tolerance)}°.
+            Actual rotation:   $actual
+            Expected rotation: $expected
+            """
+                .trimIndent()
+        throw AssertionError(errorMessage)
     }
+
+    return this
 }
 
 /**
@@ -469,6 +533,25 @@ public fun Dp.assertIsEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(
     if (!isWithinTolerance(expected, tolerance)) {
         // Comparison failed, report the error in DPs
         throw AssertionError("Actual $subject is $this, expected $expected (tolerance: $tolerance)")
+    }
+}
+
+/**
+ * Asserts that this value is NOT equal to the given [expected] value.
+ *
+ * Performs the comparison with the given [tolerance] or the default one if none is provided.
+ *
+ * @param expected The expected value to which this one should NOT be equal to.
+ * @param subject Used in the error message to identify which item this assertion failed on.
+ * @param tolerance The tolerance within which the values should be treated as equal.
+ * @throws AssertionError if comparison fails.
+ */
+private fun Dp.assertIsNotEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(.5f)) {
+    if (isWithinTolerance(expected, tolerance)) {
+        // Comparison failed, report the error in DPs
+        throw AssertionError(
+            "Actual $subject is $this, should NOT be $expected (tolerance: $tolerance)"
+        )
     }
 }
 

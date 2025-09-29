@@ -47,7 +47,7 @@ internal fun LazyLayout(
     itemProvider: () -> LazyLayoutItemProvider,
     modifier: Modifier = Modifier,
     prefetchState: LazyLayoutPrefetchState? = null,
-    measurePolicy: LazyLayoutMeasureScope.(Constraints) -> MeasureResult
+    measurePolicy: LazyLayoutMeasureScope.(Constraints) -> MeasureResult,
 ) {
     val currentItemProvider = rememberUpdatedState(itemProvider)
 
@@ -76,7 +76,7 @@ internal fun LazyLayout(
                         measurePolicy(constraints)
                     }
                 }
-            }
+            },
         )
     }
 }

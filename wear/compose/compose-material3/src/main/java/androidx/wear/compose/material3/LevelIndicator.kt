@@ -16,7 +16,10 @@
 
 package androidx.wear.compose.material3
 
+import androidx.annotation.FloatRange
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
@@ -41,7 +44,7 @@ import kotlin.math.sin
  * @param colors [LevelIndicatorColors] that will be used to resolve the indicator and track colors
  *   for this [LevelIndicator] in different states
  * @param strokeWidth The stroke width for the indicator and track strokes
- * @param sweepAngle The angle covered by the curved LevelIndicator
+ * @param sweepAngle The angle covered by the curved LevelIndicator, in degrees
  * @param reverseDirection Reverses direction of PositionIndicator if true
  */
 @Composable
@@ -51,9 +54,10 @@ public fun LevelIndicator(
     enabled: Boolean = true,
     colors: LevelIndicatorColors = LevelIndicatorDefaults.colors(),
     strokeWidth: Dp = LevelIndicatorDefaults.StrokeWidth,
-    sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
+    @FloatRange(from = 0.0, to = 360.0) sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
     reverseDirection: Boolean = false,
 ) {
+    val updatedValue by rememberUpdatedState(value)
     val screenWidthDp = LocalConfiguration.current.screenWidthDp
     val paddingHorizontal = LevelIndicatorDefaults.edgePadding
     val radius = screenWidthDp / 2 - paddingHorizontal.value - strokeWidth.value / 2
@@ -61,7 +65,7 @@ public fun LevelIndicator(
     val indicatorHeight = 2f * sin((0.5f * sweepAngle).toRadians()) * radius
 
     IndicatorImpl(
-        state = FractionPositionStateAdapter { value().coerceIn(0f, 1f) },
+        state = FractionPositionStateAdapter { updatedValue().coerceIn(0f, 1f) },
         indicatorHeight = indicatorHeight.dp,
         indicatorWidth = strokeWidth,
         paddingHorizontal = paddingHorizontal,
@@ -88,7 +92,7 @@ public fun LevelIndicator(
  * @param colors [LevelIndicatorColors] that will be used to resolve the indicator and track colors
  *   for this [LevelIndicator] in different states
  * @param strokeWidth The stroke width for the indicator and track strokes
- * @param sweepAngle The angle covered by the curved LevelIndicator
+ * @param sweepAngle The angle covered by the curved LevelIndicator, in degrees
  * @param reverseDirection Reverses direction of PositionIndicator if true
  */
 @Composable
@@ -99,7 +103,7 @@ public fun StepperLevelIndicator(
     enabled: Boolean = true,
     colors: LevelIndicatorColors = LevelIndicatorDefaults.colors(),
     strokeWidth: Dp = LevelIndicatorDefaults.StrokeWidth,
-    sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
+    @FloatRange(from = 0.0, to = 360.0) sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
     reverseDirection: Boolean = false,
 ): Unit =
     LevelIndicator(
@@ -129,7 +133,7 @@ public fun StepperLevelIndicator(
  * @param colors [LevelIndicatorColors] that will be used to resolve the indicator and track colors
  *   for this [LevelIndicator] in different states
  * @param strokeWidth The stroke width for the indicator and track strokes
- * @param sweepAngle The angle covered by the curved LevelIndicator
+ * @param sweepAngle The angle covered by the curved LevelIndicator, in degrees
  * @param reverseDirection Reverses direction of PositionIndicator if true
  */
 @Composable
@@ -140,7 +144,7 @@ public fun StepperLevelIndicator(
     enabled: Boolean = true,
     colors: LevelIndicatorColors = LevelIndicatorDefaults.colors(),
     strokeWidth: Dp = LevelIndicatorDefaults.StrokeWidth,
-    sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
+    @FloatRange(from = 0.0, to = 360.0) sweepAngle: Float = LevelIndicatorDefaults.SweepAngle,
     reverseDirection: Boolean = false,
 ): Unit =
     LevelIndicator(
@@ -192,7 +196,7 @@ public object LevelIndicatorDefaults {
      * The sweep angle for the curved [LevelIndicator], measured up to the centers of the stroke
      * caps. The default value of 72 degrees equates to 20% of the circumference, i.e. 360/5.
      */
-    public const val SweepAngle: Float = 72f
+    public val SweepAngle: Float = 72f
 
     /** The default stroke width for the indicator and track strokes */
     public val StrokeWidth: Dp = 6.dp
@@ -230,7 +234,7 @@ public class LevelIndicatorColors(
     public val indicatorColor: Color,
     public val trackColor: Color,
     public val disabledIndicatorColor: Color,
-    public val disabledTrackColor: Color
+    public val disabledTrackColor: Color,
 ) {
     /**
      * Returns a copy of this LevelIndicatorColors optionally overriding some of the values.
@@ -302,9 +306,8 @@ public class LevelIndicatorColors(
  * @param valueFraction the value fraction to adapt to a ScrollIndicatorState
  * @VisibleForTesting
  */
-internal class FractionPositionStateAdapter(
-    private val valueFraction: () -> Float,
-) : IndicatorState {
+internal class FractionPositionStateAdapter(private val valueFraction: () -> Float) :
+    IndicatorState {
 
     override val positionFraction = 1f // LevelIndicator always starts at the bottom
 

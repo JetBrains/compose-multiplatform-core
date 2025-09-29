@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +50,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class InvalidatingNotPlacedChildTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
 
@@ -96,7 +97,7 @@ class InvalidatingNotPlacedChildTest {
         composeTestRule.setContent {
             ConditionallyPlacedChild(
                 shouldPlace,
-                Modifier.background(Color.Blue).graphicsLayer().testTag("node")
+                Modifier.background(Color.Blue).graphicsLayer().testTag("node"),
             ) {
                 Spacer(Modifier.fillMaxSize().graphicsLayer().background(Color.Red))
             }
@@ -287,7 +288,7 @@ private fun ConditionallyPlacedChild(
     shouldPlace: State<Boolean>,
     modifier: Modifier = Modifier,
     placeWithLayer: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Layout(content = content, modifier = modifier) { measurables, constraints ->
         val placeable = measurables.first().measure(constraints)
@@ -307,7 +308,7 @@ private fun ConditionallyPlacedChild(
 private fun MeasureInLayoutBlock(
     modifier: Modifier = Modifier,
     placeWithLayer: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Layout(content = content, modifier = modifier) { measurables, constraints ->
         val size = 5.dp.roundToPx()

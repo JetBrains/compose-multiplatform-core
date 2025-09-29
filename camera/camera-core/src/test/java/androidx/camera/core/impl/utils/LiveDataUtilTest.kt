@@ -16,7 +16,6 @@
 
 package androidx.camera.core.impl.utils
 
-import android.os.Build
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.testutils.MainDispatcherRule
@@ -34,12 +33,10 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class LiveDataUtilTest {
     @get:Rule
     val dispatcherRule = MainDispatcherRule(MoreExecutors.directExecutor().asCoroutineDispatcher())

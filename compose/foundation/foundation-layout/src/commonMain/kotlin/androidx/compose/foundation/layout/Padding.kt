@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.layout
 
-import androidx.compose.foundation.layout.PaddingValues.Absolute
 import androidx.compose.foundation.layout.internal.requirePrecondition
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -30,6 +29,7 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
@@ -64,7 +64,7 @@ fun Modifier.padding(start: Dp = 0.dp, top: Dp = 0.dp, end: Dp = 0.dp, bottom: D
                 properties["top"] = top
                 properties["end"] = end
                 properties["bottom"] = bottom
-            }
+            },
         )
 
 /**
@@ -92,7 +92,7 @@ fun Modifier.padding(horizontal: Dp = 0.dp, vertical: Dp = 0.dp) =
                 name = "padding"
                 properties["horizontal"] = horizontal
                 properties["vertical"] = vertical
-            }
+            },
         )
 
 /**
@@ -119,7 +119,7 @@ fun Modifier.padding(all: Dp) =
             inspectorInfo = {
                 name = "padding"
                 value = all
-            }
+            },
         )
 
 /**
@@ -142,7 +142,7 @@ fun Modifier.padding(paddingValues: PaddingValues) =
             inspectorInfo = {
                 name = "padding"
                 properties["paddingValues"] = paddingValues
-            }
+            },
         )
 
 /**
@@ -173,7 +173,7 @@ fun Modifier.absolutePadding(left: Dp = 0.dp, top: Dp = 0.dp, right: Dp = 0.dp, 
                 properties["top"] = top
                 properties["right"] = right
                 properties["bottom"] = bottom
-            }
+            },
         ))
 
 /**
@@ -194,13 +194,23 @@ interface PaddingValues {
     /** The padding to be applied along the bottom edge inside a box. */
     fun calculateBottomPadding(): Dp
 
+    /** Returns a new [PaddingValues] with the sum of this and [other] */
+    @Stable operator fun plus(other: PaddingValues): PaddingValues = AddedPaddingValues(this, other)
+
+    /**
+     * Returns a new [PaddingValues] with the difference of this and [other], coercing negative
+     * values to `0.dp`.
+     */
+    @Stable
+    operator fun minus(other: PaddingValues): PaddingValues = SubtractedPaddingValues(this, other)
+
     /** Describes an absolute (RTL unaware) padding to be applied along the edges inside a box. */
     @Immutable
     class Absolute(
         @Stable private val left: Dp = 0.dp,
         @Stable private val top: Dp = 0.dp,
         @Stable private val right: Dp = 0.dp,
-        @Stable private val bottom: Dp = 0.dp
+        @Stable private val bottom: Dp = 0.dp,
     ) : PaddingValues {
 
         init {
@@ -289,7 +299,7 @@ fun PaddingValues(
     start: Dp = 0.dp,
     top: Dp = 0.dp,
     end: Dp = 0.dp,
-    bottom: Dp = 0.dp
+    bottom: Dp = 0.dp,
 ): PaddingValues = PaddingValuesImpl(start, top, end, bottom)
 
 @Immutable
@@ -297,7 +307,7 @@ internal class PaddingValuesImpl(
     @Stable val start: Dp = 0.dp,
     @Stable val top: Dp = 0.dp,
     @Stable val end: Dp = 0.dp,
-    @Stable val bottom: Dp = 0.dp
+    @Stable val bottom: Dp = 0.dp,
 ) : PaddingValues {
 
     init {
@@ -332,13 +342,86 @@ internal class PaddingValuesImpl(
     override fun toString() = "PaddingValues(start=$start, top=$top, end=$end, bottom=$bottom)"
 }
 
+/**
+ * A [PaddingValues] that is the sum of [first] and [second] as returned after [PaddingValues.plus].
+ */
+@Immutable
+private class AddedPaddingValues(val first: PaddingValues, val second: PaddingValues) :
+    PaddingValues {
+    override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp {
+        return first.calculateLeftPadding(layoutDirection) +
+            second.calculateLeftPadding(layoutDirection)
+    }
+
+    override fun calculateTopPadding(): Dp {
+        return first.calculateTopPadding() + second.calculateTopPadding()
+    }
+
+    override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp {
+        return first.calculateRightPadding(layoutDirection) +
+            second.calculateRightPadding(layoutDirection)
+    }
+
+    override fun calculateBottomPadding(): Dp {
+        return first.calculateBottomPadding() + second.calculateBottomPadding()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is AddedPaddingValues) return false
+        return first == other.first && second == other.second
+    }
+
+    override fun hashCode() = first.hashCode() * 31 + second.hashCode()
+
+    override fun toString() = "($first + $second)"
+}
+
+/**
+ * A [PaddingValues] that is the difference of [first] and [second] as returned after
+ * [PaddingValues.minus]. Paddings will be coerced to 0 if the result is negative.
+ */
+@Immutable
+private class SubtractedPaddingValues(val first: PaddingValues, val second: PaddingValues) :
+    PaddingValues {
+    override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp {
+        return (first.calculateLeftPadding(layoutDirection) -
+                second.calculateLeftPadding(layoutDirection))
+            .coerceAtLeast(0.dp)
+    }
+
+    override fun calculateTopPadding(): Dp {
+        return (first.calculateTopPadding() - second.calculateTopPadding()).coerceAtLeast(0.dp)
+    }
+
+    override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp {
+        return (first.calculateRightPadding(layoutDirection) -
+                second.calculateRightPadding(layoutDirection))
+            .coerceAtLeast(0.dp)
+    }
+
+    override fun calculateBottomPadding(): Dp {
+        return (first.calculateBottomPadding() - second.calculateBottomPadding()).coerceAtLeast(
+            0.dp
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is SubtractedPaddingValues) return false
+        return first == other.first && second == other.second
+    }
+
+    override fun hashCode() = first.hashCode() * 31 + second.hashCode()
+
+    override fun toString() = "($first - $second)"
+}
+
 private class PaddingElement(
     var start: Dp = 0.dp,
     var top: Dp = 0.dp,
     var end: Dp = 0.dp,
     var bottom: Dp = 0.dp,
     var rtlAware: Boolean,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<PaddingNode>() {
 
     init {
@@ -392,12 +475,12 @@ private class PaddingNode(
     var top: Dp = 0.dp,
     var end: Dp = 0.dp,
     var bottom: Dp = 0.dp,
-    var rtlAware: Boolean
+    var rtlAware: Boolean,
 ) : LayoutModifierNode, Modifier.Node() {
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
 
         val horizontal = start.roundToPx() + end.roundToPx()
@@ -419,7 +502,7 @@ private class PaddingNode(
 
 private class PaddingValuesElement(
     val paddingValues: PaddingValues,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<PaddingValuesModifier>() {
     override fun create(): PaddingValuesModifier {
         return PaddingValuesModifier(paddingValues)
@@ -445,7 +528,7 @@ private class PaddingValuesModifier(var paddingValues: PaddingValues) :
     LayoutModifierNode, Modifier.Node() {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val leftPadding = paddingValues.calculateLeftPadding(layoutDirection)
         val topPadding = paddingValues.calculateTopPadding()

@@ -16,16 +16,18 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -41,8 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrNull
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 
@@ -78,7 +80,7 @@ public fun PickerGroup(
     selectedPickerState: PickerState? = null,
     autoCenter: Boolean = true,
     propagateMinConstraints: Boolean = false,
-    content: @Composable PickerGroupScope.() -> Unit
+    content: @Composable PickerGroupScope.() -> Unit,
 ) {
     val touchExplorationServicesEnabled by
         LocalTouchExplorationStateProvider.current.touchExplorationState()
@@ -94,18 +96,15 @@ public fun PickerGroup(
                     Modifier.scrollable(
                         state = selectedPickerState,
                         orientation = Orientation.Vertical,
-                        reverseDirection = true
+                        reverseDirection = true,
                     )
                 } else {
                     Modifier
                 }
             ),
-        propagateMinConstraints = propagateMinConstraints
+        propagateMinConstraints = propagateMinConstraints,
+        autoCenter = autoCenter,
     ) {
-        // When no Picker is selected, provide an empty composable as a placeholder
-        // and tell the HierarchicalFocusCoordinator to clear the focus.
-        HierarchicalFocusCoordinator(requiresFocus = { selectedPickerState == null }) {}
-
         with(scope) {
             autoCenteringEnabled = autoCenter
             content()
@@ -122,13 +121,12 @@ public class PickerGroupScope {
      * @param selected If the [Picker] is selected.
      * @param onSelected Action triggered when the [Picker] is selected by clicking.
      * @param modifier [Modifier] to be applied to the [Picker].
-     * @param contentDescription Text used by accessibility services to describe what the selected
-     *   option represents. This text should be localized, such as by using
-     *   [androidx.compose.ui.res.stringResource] or similar. Typically, the content description is
-     *   inferred via derivedStateOf to avoid unnecessary recompositions, like this: val description
-     *   by remember { derivedStateOf { /* expression using state.selectedOption */ } }.
+     * @param contentDescription A block which computes text used by accessibility services to
+     *   describe what the selected option represents. This text should be localized, such as by
+     *   using [androidx.compose.ui.res.stringResource] or similar.
      * @param focusRequester Optional [FocusRequester] for the [Picker]. If not provided, a local
      *   instance of [FocusRequester] will be created to handle the focus between different pickers.
+     *   If it is provided, the caller is responsible for handling the focus.
      * @param verticalSpacing The amount of vertical spacing in [Dp] between items. Can be negative,
      *   which can be useful for Text if it has plenty of whitespace.
      * @param readOnlyLabel A slot for providing a label, displayed above the selected option when
@@ -143,58 +141,57 @@ public class PickerGroupScope {
         selected: Boolean,
         onSelected: () -> Unit,
         modifier: Modifier = Modifier,
-        contentDescription: String? = null,
+        contentDescription: (() -> String)? = null,
         focusRequester: FocusRequester? = null,
         readOnlyLabel: @Composable (BoxScope.() -> Unit)? = null,
         verticalSpacing: Dp = 0.dp,
-        option: @Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit
+        option: @Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit,
     ) {
         val touchExplorationServicesEnabled by
             LocalTouchExplorationStateProvider.current.touchExplorationState()
-        val pickerFocusRequester = focusRequester ?: rememberActiveFocusRequester()
 
-        HierarchicalFocusCoordinator(requiresFocus = { selected }) {
-            Picker(
-                state = pickerState,
-                contentDescription = contentDescription,
-                readOnly = !selected,
-                modifier =
-                    modifier
-                        .then(
-                            // If auto center is enabled, apply auto centering modifier on
-                            // selected picker to center it.
-                            if (selected && autoCenteringEnabled) Modifier.autoCenteringTarget()
-                            else Modifier
-                        )
-                        // Do not need focusable as it's already set in ScalingLazyColumn
-                        .focusRequester(pickerFocusRequester),
-                readOnlyLabel = readOnlyLabel,
-                onSelected = onSelected,
-                verticalSpacing = verticalSpacing,
-                userScrollEnabled = !touchExplorationServicesEnabled || selected,
-                option = { optionIndex ->
-                    Box(
-                        if (touchExplorationServicesEnabled || selected) {
-                            Modifier
-                        } else
-                            Modifier.pointerInput(Unit) {
-                                coroutineScope {
-                                    // Keep looking for touch events on the picker if it is
-                                    // not selected
-                                    while (true) {
-                                        awaitEachGesture {
-                                            awaitFirstDown(requireUnconsumed = false)
-                                            onSelected()
-                                        }
-                                    }
+        val latestOnSelected by rememberUpdatedState(onSelected)
+        Picker(
+            state = pickerState,
+            contentDescription = contentDescription,
+            readOnly = !selected,
+            modifier =
+                modifier
+                    .then(
+                        // If auto center is enabled, apply auto centering modifier on
+                        // selected picker to center it.
+                        if (selected && autoCenteringEnabled) Modifier.autoCenteringTarget()
+                        else Modifier
+                    )
+                    .then(
+                        Modifier.pointerInput(touchExplorationServicesEnabled, selected) {
+                            // better to restart this PointerInputScope when the keys change
+                            // than trigger the entire modifier chain
+                            if (touchExplorationServicesEnabled || selected) {
+                                return@pointerInput
+                            }
+                            coroutineScope {
+                                awaitEachGesture {
+                                    awaitFirstDown(requireUnconsumed = false)
+                                    latestOnSelected()
                                 }
                             }
-                    ) {
-                        option(optionIndex, selected)
-                    }
-                }
-            )
-        }
+                        }
+                    )
+                    .hierarchicalFocusGroup(active = selected)
+                    .then(
+                        // If the user provided a focus requester, we add it here, otherwise,
+                        // we take care of focus using the HFC.
+                        focusRequester?.let { Modifier.focusRequester(it) }
+                            ?: Modifier.requestFocusOnHierarchyActive()
+                    ),
+            // Do not need focusable as it's already set in ScalingLazyColumn
+            readOnlyLabel = readOnlyLabel,
+            onSelected = latestOnSelected,
+            verticalSpacing = verticalSpacing,
+            userScrollEnabled = !touchExplorationServicesEnabled || selected,
+            option = { optionIndex -> option(optionIndex, selected) },
+        )
     }
 
     internal var autoCenteringEnabled by mutableStateOf(false)
@@ -203,6 +200,7 @@ public class PickerGroupScope {
 /*
  * A row that horizontally aligns the center of the first child that has
  * Modifier.autoCenteringTarget() with the center of this row.
+ * The change of centered child is animated.
  * If no child has that modifier, the whole row is horizontally centered.
  * Vertically, each child is centered.
  */
@@ -210,8 +208,24 @@ public class PickerGroupScope {
 private fun AutoCenteringRow(
     modifier: Modifier = Modifier,
     propagateMinConstraints: Boolean,
-    content: @Composable () -> Unit
+    autoCenter: Boolean,
+    content: @Composable () -> Unit,
 ) {
+    // Use a sentinel value to detect the initial state, allowing us to differentiate
+    // between the very first composition and subsequent states where no item is selected.
+    var targetCenteringOffset by remember { mutableFloatStateOf(CenteringOffsetNotInitialized) }
+
+    // If the sentinel value is still set, we are in the initial state. The offset for
+    // the animation should be 0f until the first layout pass calculates the actual default offset.
+    val offsetForAnimation =
+        if (targetCenteringOffset == CenteringOffsetNotInitialized) 0f else targetCenteringOffset
+
+    val animatedCenteringOffset by
+        animateFloatAsState(
+            targetValue = offsetForAnimation,
+            animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        )
+
     Layout(modifier = modifier, content = content) { measurables, parentConstraints ->
         // Reset the min width and height of the constraints used to measure child composables
         // if min constraints are not supposed to propagated.
@@ -221,13 +235,31 @@ private fun AutoCenteringRow(
             } else {
                 parentConstraints.copyMaxDimensions()
             }
+
         val placeables = measurables.fastMap { it.measure(constraints) }
-        val centeringOffset = computeCenteringOffset(placeables)
+        // Try to find an explicitly selected picker to center.
+        val newTargetOffset = findTargetCenteringOffset(placeables)
+
+        if (newTargetOffset != null) {
+            // A specific picker is selected, so we update the target offset.
+            targetCenteringOffset = newTargetOffset.toFloat()
+        } else {
+            // No specific picker is selected.
+            // If this is the first composition (sentinel value is present),
+            // calculate and set the default offset (which centers the first item).
+            // Otherwise, we do nothing, preserving the last known centered position.
+            if (targetCenteringOffset == CenteringOffsetNotInitialized) {
+                targetCenteringOffset =
+                    computeDefaultCenteringOffset(placeables, autoCenter).toFloat()
+            }
+        }
+
         val rowWidth =
             if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
         val rowHeight = calculateHeight(constraints, placeables)
+
         layout(width = rowWidth, height = rowHeight) {
-            var x = rowWidth / 2f - centeringOffset
+            var x = rowWidth / 2f - animatedCenteringOffset
             placeables.fastForEach {
                 it.placeRelative(x.roundToInt(), ((rowHeight - it.height) / 2f).roundToInt())
                 x += it.width
@@ -237,22 +269,35 @@ private fun AutoCenteringRow(
 }
 
 /**
- * Calculates the center for the list of [Placeable]. Returns the offset which can be applied on
- * parent composable to center the contents. If [autoCenteringTarget] is applied to any [Placeable],
- * the offset returned will allow to center that particular composable.
+ * Calculates the offset required to center a specific target Placeable, if one is found. A target
+ * is identified by the `Modifier.autoCenteringTarget()`.
+ *
+ * @return The offset in pixels to center the target, or null if no target is found.
  */
-private fun computeCenteringOffset(placeables: List<Placeable>): Int {
-    var sumWidth = 0
+private fun findTargetCenteringOffset(placeables: List<Placeable>): Int? {
+    var currentWidth = 0
     placeables.fastForEach { p ->
         if (p.isAutoCenteringTarget()) {
             // The target centering offset is at the middle of this child.
-            return sumWidth + p.width / 2
+            return currentWidth + p.width / 2
         }
-        sumWidth += p.width
+        currentWidth += p.width
     }
+    return null // No specific target found.
+}
 
-    // No target, center the whole row.
-    return sumWidth / 2
+/**
+ * Calculates the default centering offset for the group when no specific item is targeted. If
+ * auto-centering is enabled, it centers the first item. Otherwise, it centers the entire group.
+ */
+private fun computeDefaultCenteringOffset(placeables: List<Placeable>, autoCenter: Boolean): Int {
+    return if (autoCenter && placeables.isNotEmpty()) {
+        // Default to centering the first item.
+        placeables.first().width / 2
+    } else {
+        // Fallback to centering the whole group.
+        placeables.sumOf { it.width } / 2
+    }
 }
 
 /**
@@ -275,3 +320,5 @@ internal fun Modifier.autoCenteringTarget() =
 internal class AutoCenteringRowParentData
 
 internal fun Placeable.isAutoCenteringTarget() = (parentData as? AutoCenteringRowParentData) != null
+
+private const val CenteringOffsetNotInitialized = Float.MIN_VALUE

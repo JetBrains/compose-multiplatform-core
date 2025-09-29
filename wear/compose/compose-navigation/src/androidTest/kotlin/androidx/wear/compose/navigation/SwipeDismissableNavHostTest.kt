@@ -15,12 +15,15 @@
  */
 package androidx.wear.compose.navigation
 
+import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.os.Build
 import android.window.BackEvent
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,18 +34,25 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.WithTouchSlop
+import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -56,6 +66,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Text
@@ -138,6 +149,29 @@ class SwipeDismissableNavHostTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 36)
+    fun navigates_back_to_previous_level_with_back_button_previous_state_destroyed() {
+        lateinit var navController: NavHostController
+
+        rule.setContentWithBackPressedDispatcher {
+            navController = rememberSwipeDismissableNavController()
+            SwipeDismissWithNavigation(navController)
+        }
+        // Move to next destination.
+        rule.onNodeWithText(START).performClick()
+
+        val nextEntry = navController.getBackStackEntry(NEXT)
+
+        // Now trigger the back button
+        rule.runOnIdle { backPressedDispatcher.onBackPressed() }
+        rule.waitForIdle()
+
+        // Should now display "start".
+        rule.onNodeWithText(START).assertExists()
+        assertThat(nextEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.DESTROYED)
+    }
+
+    @Test
     fun hides_previous_level_when_not_swiping() {
         rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 
@@ -168,6 +202,9 @@ class SwipeDismissableNavHostTest {
 
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
+        // Assert that the foreground screen still holds the focus
+        // Child is the one which has items and it needs to hold the focus to perform scrolling.
+        rule.onNodeWithTag(TEST_TAG_NEXT).onChild().assertIsFocused()
     }
 
     @Test
@@ -205,6 +242,9 @@ class SwipeDismissableNavHostTest {
 
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
+        // Assert that the foreground screen still holds the focus
+        // Child is the one which has items and it needs to hold the focus to perform scrolling.
+        rule.onNodeWithTag(TEST_TAG_NEXT).onChild().assertIsFocused()
     }
 
     @Test
@@ -224,7 +264,7 @@ class SwipeDismissableNavHostTest {
                         var toggle by rememberSaveable { mutableStateOf(false) }
                         Box(
                             modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Column {
                                 ToggleButton(
@@ -233,11 +273,7 @@ class SwipeDismissableNavHostTest {
                                     content = { Text(text = if (toggle) "On" else "Off") },
                                     modifier = Modifier.testTag("ToggleButton"),
                                 )
-                                Button(
-                                    onClick = { navController.navigate(NEXT) },
-                                ) {
-                                    Text("Go")
-                                }
+                                Button(onClick = { navController.navigate(NEXT) }) { Text("Go") }
                             }
                         }
                     }
@@ -273,7 +309,7 @@ class SwipeDismissableNavHostTest {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                             verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             ToggleButton(
                                 checked = toggle,
@@ -281,11 +317,7 @@ class SwipeDismissableNavHostTest {
                                 content = { Text(text = if (toggle) "On" else "Off") },
                                 modifier = Modifier.testTag("ToggleButton"),
                             )
-                            Button(
-                                onClick = { navController.navigate(NEXT) },
-                            ) {
-                                Text("Go")
-                            }
+                            Button(onClick = { navController.navigate(NEXT) }) { Text("Go") }
                         }
                     }
                 }
@@ -296,16 +328,12 @@ class SwipeDismissableNavHostTest {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                             verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Button(onClick = { ++counter }, modifier = Modifier.testTag(COUNTER)) {
                                 Text("$counter")
                             }
-                            Button(
-                                onClick = { navController.navigate(START) },
-                            ) {
-                                Text("Jump")
-                            }
+                            Button(onClick = { navController.navigate(START) }) { Text("Jump") }
                         }
                     }
                 }
@@ -335,6 +363,47 @@ class SwipeDismissableNavHostTest {
         rule.onNodeWithText("Go").performClick()
         rule.waitForIdle()
         rule.onNodeWithText("0").assertExists()
+    }
+
+    @SuppressLint("LocalContextConfigurationRead")
+    @Test
+    fun clip_content_for_round_screens() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            rule.setContent {
+                val originalConfiguration = LocalConfiguration.current
+                val originalContext = LocalContext.current
+
+                val roundScreenConfiguration =
+                    remember(originalConfiguration) {
+                        Configuration(originalConfiguration).apply {
+                            screenLayout = Configuration.SCREENLAYOUT_ROUND_YES
+                        }
+                    }
+                originalContext.resources.configuration.updateFrom(roundScreenConfiguration)
+
+                CompositionLocalProvider(
+                    LocalContext provides originalContext,
+                    LocalConfiguration provides roundScreenConfiguration,
+                ) {
+                    val navController = rememberSwipeDismissableNavController()
+                    SwipeDismissableNavHost(
+                        navController = navController,
+                        startDestination = START,
+                        modifier = Modifier.background(Color.Blue).testTag(TEST_TAG),
+                    ) {
+                        composable(START) {
+                            // Create a full screen box inside SwipeDismissableNavHost with yellow
+                            // background
+                            Box(modifier = Modifier.fillMaxSize().background(Color.Yellow))
+                        }
+                    }
+                }
+            }
+
+            // Quick check that the content, which is a full-screen yellow box is clipped. If it is
+            // clipped, then background color (Blue) should be visible
+            rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(Color.Blue)
+        }
     }
 
     @Test
@@ -454,25 +523,31 @@ class SwipeDismissableNavHostTest {
     @Composable
     fun SwipeDismissWithNavigation(
         navController: NavHostController = rememberSwipeDismissableNavController(),
-        userSwipeEnabled: Boolean = true
+        userSwipeEnabled: Boolean = true,
     ) {
         SwipeDismissableNavHost(
             navController = navController,
             startDestination = START,
             modifier = Modifier.testTag(TEST_TAG),
-            userSwipeEnabled = userSwipeEnabled
+            userSwipeEnabled = userSwipeEnabled,
         ) {
             composable(START) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CompactChip(
-                        onClick = { navController.navigate(NEXT) },
-                        label = { Text(text = START) }
-                    )
+                    ScalingLazyColumn(modifier = Modifier.testTag(TEST_TAG_START)) {
+                        item {
+                            CompactChip(
+                                onClick = { navController.navigate(NEXT) },
+                                label = { Text(text = START) },
+                            )
+                        }
+                    }
                 }
             }
-            composable("next") {
+            composable(NEXT) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(NEXT)
+                    ScalingLazyColumn(modifier = Modifier.testTag(TEST_TAG_NEXT)) {
+                        item { Text(NEXT) }
+                    }
                 }
             }
         }
@@ -509,3 +584,5 @@ private const val NEXT = "next"
 private const val START = "start"
 private const val COUNTER = "counter"
 private const val TEST_TAG = "test-item"
+private const val TEST_TAG_NEXT = "test-tag-next"
+private const val TEST_TAG_START = "test-tag-start"

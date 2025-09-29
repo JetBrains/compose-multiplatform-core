@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -31,17 +30,18 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalMaterial3Api::class)
 class ListItemScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -52,7 +52,7 @@ class ListItemScreenshotTest {
                 ListItem(
                     headlineContent = { Text("One line list item with 24x24 icon") },
                     leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Red)
+                    colors = ListItemDefaults.colors(containerColor = Color.Red),
                 )
                 HorizontalDivider()
             }
@@ -71,7 +71,7 @@ class ListItemScreenshotTest {
                 HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("One line list item with 24x24 icon") },
-                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) }
+                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                 )
                 HorizontalDivider()
             }
@@ -90,7 +90,7 @@ class ListItemScreenshotTest {
                 HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("One line list item with 24x24 icon") },
-                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) }
+                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                 )
                 HorizontalDivider()
             }
@@ -107,18 +107,18 @@ class ListItemScreenshotTest {
             Column(Modifier.testTag(Tag)) {
                 ListItem(
                     headlineContent = { Text("Two line list item") },
-                    supportingContent = { Text("Secondary text") }
+                    supportingContent = { Text("Secondary text") },
                 )
                 HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("Two line list item") },
-                    overlineContent = { Text("OVERLINE") }
+                    overlineContent = { Text("OVERLINE") },
                 )
                 HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("Two line list item with 24x24 icon") },
                     supportingContent = { Text("Secondary text") },
-                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) }
+                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                 )
                 HorizontalDivider()
             }
@@ -135,18 +135,18 @@ class ListItemScreenshotTest {
             Column(Modifier.testTag(Tag)) {
                 ListItem(
                     headlineContent = { Text("Two line list item") },
-                    supportingContent = { Text("Secondary text") }
+                    supportingContent = { Text("Secondary text") },
                 )
                 HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("Two line list item") },
-                    overlineContent = { Text("OVERLINE") }
+                    overlineContent = { Text("OVERLINE") },
                 )
                 HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("Two line list item with 24x24 icon") },
                     supportingContent = { Text("Secondary text") },
-                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) }
+                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                 )
                 HorizontalDivider()
             }
@@ -165,20 +165,20 @@ class ListItemScreenshotTest {
                     headlineContent = { Text("Three line list item") },
                     overlineContent = { Text("OVERLINE") },
                     supportingContent = { Text("Secondary text") },
-                    trailingContent = { Text("meta") }
-                )
-                HorizontalDivider()
-                ListItem(
-                    headlineContent = { Text("Three line list item") },
-                    overlineContent = { Text("OVERLINE") },
-                    supportingContent = { Text("Secondary text") }
+                    trailingContent = { Text("meta") },
                 )
                 HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("Three line list item") },
                     overlineContent = { Text("OVERLINE") },
                     supportingContent = { Text("Secondary text") },
-                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) }
+                )
+                HorizontalDivider()
+                ListItem(
+                    headlineContent = { Text("Three line list item") },
+                    overlineContent = { Text("OVERLINE") },
+                    supportingContent = { Text("Secondary text") },
+                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                 )
                 HorizontalDivider()
             }
@@ -197,20 +197,20 @@ class ListItemScreenshotTest {
                     headlineContent = { Text("Three line list item") },
                     overlineContent = { Text("OVERLINE") },
                     supportingContent = { Text("Secondary text") },
-                    trailingContent = { Text("meta") }
-                )
-                HorizontalDivider()
-                ListItem(
-                    headlineContent = { Text("Three line list item") },
-                    overlineContent = { Text("OVERLINE") },
-                    supportingContent = { Text("Secondary text") }
+                    trailingContent = { Text("meta") },
                 )
                 HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("Three line list item") },
                     overlineContent = { Text("OVERLINE") },
                     supportingContent = { Text("Secondary text") },
-                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) }
+                )
+                HorizontalDivider()
+                ListItem(
+                    headlineContent = { Text("Three line list item") },
+                    overlineContent = { Text("OVERLINE") },
+                    supportingContent = { Text("Secondary text") },
+                    leadingContent = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                 )
                 HorizontalDivider()
             }

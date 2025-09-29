@@ -1,0 +1,52 @@
+// Signature format: 4.0
+package androidx.xr.projected {
+
+  public final class ProjectedAudioConfig {
+    method @InaccessibleFromKotlin public int[] getChannelCounts();
+    method @InaccessibleFromKotlin public int[] getSampleRatesHz();
+    method @InaccessibleFromKotlin public int getSourceType();
+    property public int[] channelCounts;
+    property public int[] sampleRatesHz;
+    property public int sourceType;
+  }
+
+  public final class ProjectedAudioManager {
+    method public static suspend Object? create(android.content.Context context, androidx.lifecycle.LifecycleOwner lifecycleOwner, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedAudioManager>);
+    method public java.util.List<androidx.xr.projected.ProjectedAudioConfig> getSupportedAudioCaptureConfigs();
+    field public static final androidx.xr.projected.ProjectedAudioManager.Companion Companion;
+  }
+
+  public static final class ProjectedAudioManager.Companion {
+    method public suspend Object? create(android.content.Context context, androidx.lifecycle.LifecycleOwner lifecycleOwner, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedAudioManager>);
+  }
+
+  public final class ProjectedContext {
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createHostDeviceContext(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static android.app.ActivityOptions createProjectedActivityOptions(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createProjectedDeviceContext(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static String? getProjectedDeviceName(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static kotlinx.coroutines.flow.Flow<java.lang.Boolean> isProjectedDeviceConnected(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static boolean isProjectedDeviceContext(android.content.Context context);
+    field public static final androidx.xr.projected.ProjectedContext INSTANCE;
+  }
+
+}
+
+package androidx.xr.projected.permissions {
+
+  public final class ProjectedPermissionsRequestParams {
+    ctor public ProjectedPermissionsRequestParams(java.util.List<java.lang.String> permissions, String? rationale);
+    method @InaccessibleFromKotlin public java.util.List<java.lang.String> getPermissions();
+    method @InaccessibleFromKotlin public String? getRationale();
+    property public java.util.List<java.lang.String> permissions;
+    property public String? rationale;
+  }
+
+  public final class ProjectedPermissionsResultContract extends androidx.activity.result.contract.ActivityResultContract<java.util.List<? extends androidx.xr.projected.permissions.ProjectedPermissionsRequestParams>,java.util.Map<java.lang.String,? extends java.lang.Boolean>> {
+    ctor public ProjectedPermissionsResultContract();
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public android.content.Intent createIntent(android.content.Context context, java.util.List<androidx.xr.projected.permissions.ProjectedPermissionsRequestParams> input);
+    method public java.util.Map<java.lang.String,java.lang.Boolean> parseResult(int resultCode, android.content.Intent? intent);
+  }
+
+}
+

@@ -50,13 +50,14 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import kotlin.coroutines.resume
 import kotlin.math.absoluteValue
-import kotlin.test.Ignore
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Rule
@@ -67,7 +68,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class VelocityTrackingListParityTest {
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     private var layoutManager: LinearLayoutManager? = null
     private var latestComposeVelocity = 0f
@@ -207,7 +208,7 @@ class VelocityTrackingListParityTest {
         }
     }
 
-    @Ignore // b/373631123
+    @SdkSuppress(minSdkVersion = 29)
     @Test
     fun equalLists_withEqualFlings_shouldFinishAtTheSameItem_largeFast() = runBlocking {
         val state = LazyListState()
@@ -250,7 +251,7 @@ class VelocityTrackingListParityTest {
         }
     }
 
-    @Ignore // b/371570954
+    @SdkSuppress(minSdkVersion = 29)
     @Test
     fun equalLists_withEqualFlings_shouldFinishAtTheSameItem_largeVeryFast() = runBlocking {
         val state = LazyListState()
@@ -432,7 +433,7 @@ class VelocityTrackingListParityTest {
         content: @Composable () -> Unit,
     ) {
         onActivity { activity ->
-            activity.setTheme(R.style.Theme_MaterialComponents_Light)
+            activity.setTheme(com.google.android.material.R.style.Theme_MaterialComponents_Light)
             activity.setContentView(layout)
             with(activity.findViewById<ComposeView>(R.id.compose_view)) { setContent(content) }
 
@@ -446,7 +447,7 @@ class VelocityTrackingListParityTest {
                     object : OnScrollListener() {
                         override fun onScrollStateChanged(
                             recyclerView: RecyclerView,
-                            newState: Int
+                            newState: Int,
                         ) {
                             latestRVState = newState
                         }

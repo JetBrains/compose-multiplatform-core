@@ -20,14 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import android.os.Build;
-
 import androidx.camera.testing.impl.mocks.helpers.CallTimes;
 
 import org.junit.Test;
-import org.robolectric.annotation.Config;
 
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class CallTimesTest {
     private final CallTimes mCallTimes = new CallTimes(5);
 

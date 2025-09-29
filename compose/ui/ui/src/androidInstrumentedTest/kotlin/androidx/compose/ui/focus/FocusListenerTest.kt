@@ -43,6 +43,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -51,7 +52,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class FocusListenerTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @OptIn(ExperimentalComposeUiApi::class)
     private val previousFlagValue = ComposeUiFlags.isSemanticAutofillEnabled
@@ -208,12 +209,12 @@ class FocusListenerTest {
     ) : FocusListener {
         override fun onFocusChanged(
             previous: FocusTargetModifierNode?,
-            current: FocusTargetModifierNode?
+            current: FocusTargetModifierNode?,
         ) {
             events +=
                 Pair(
                     previous?.requireSemanticsInfo()?.semanticsId,
-                    current?.requireSemanticsInfo()?.semanticsId
+                    current?.requireSemanticsInfo()?.semanticsId,
                 )
         }
 
@@ -224,7 +225,7 @@ class FocusListenerTest {
 
     private fun ComposeContentTestRule.setContent(
         focusListener: FocusListener,
-        content: @Composable (() -> Unit)
+        content: @Composable (() -> Unit),
     ) {
         setContent {
             val focusOwner = LocalFocusManager.current as FocusOwner

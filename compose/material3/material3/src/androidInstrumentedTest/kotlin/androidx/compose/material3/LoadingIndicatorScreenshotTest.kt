@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.testutils.assertAgainstGolden
@@ -29,6 +28,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,9 +37,9 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @MediumTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class LoadingIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
@@ -78,7 +78,6 @@ class LoadingIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
     @Test
     fun loadingIndicator_determinate() {
-        rule.mainClock.autoAdvance = false
         rule.setMaterialContent(scheme.colorScheme) {
             Box(wrap.testTag(wrapperTestTag)) { LoadingIndicator() }
         }
@@ -87,7 +86,6 @@ class LoadingIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
     @Test
     fun loadingIndicator_indeterminate() {
-        rule.mainClock.autoAdvance = false
         rule.setMaterialContent(scheme.colorScheme) {
             Box(wrap.testTag(wrapperTestTag)) { LoadingIndicator() }
         }
@@ -96,7 +94,6 @@ class LoadingIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
     @Test
     fun containedLoadingIndicator_indeterminate() {
-        rule.mainClock.autoAdvance = false
         rule.setMaterialContent(scheme.colorScheme) {
             Box(wrap.testTag(wrapperTestTag)) { ContainedLoadingIndicator() }
         }
@@ -111,8 +108,6 @@ class LoadingIndicatorScreenshotTest(private val scheme: ColorSchemeWrapper) {
     }
 
     companion object {
-        private const val TestTag = "testTag"
-
         @Parameterized.Parameters(name = "{0}")
         @JvmStatic
         fun parameters() =

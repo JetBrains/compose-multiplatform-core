@@ -25,23 +25,26 @@ import androidx.health.platform.client.proto.DataProto
 import java.time.Instant
 
 /**
- * Creates a new [Metadata] object by copying existing fields and overriding [id], [dataOrigin], and
- * [lastModifiedTime] for testing purposes.
+ * Creates a new [Metadata] object by copying existing fields and overriding specified properties
+ * for testing.
  *
- * This simulates the behavior of the Health Connect implementation, which automatically populates
- * these values during record insertion.
+ * This method facilitates the creation of [Metadata] instances with controlled values, particularly
+ * useful for unit testing scenarios where specific metadata properties need to be set. It
+ * constructs a new [Metadata] object based on the current instance, allowing the modification of
+ * the `id`, `dataOrigin`, and `lastModifiedTime` fields.
  *
- * @param id The ID to assign to the new [Metadata]. Defaults to an empty string.
- * @param dataOrigin The [DataOrigin] to assign to the new [Metadata]. Defaults to a [DataOrigin]
- *   with an empty package name.
- * @param lastModifiedTime The [Instant] representing the last modified time. Defaults to
- *   [Instant.EPOCH].
+ * @param id The ID to assign to the new [Metadata]. If not provided, the ID from the current
+ *   [Metadata] instance will be used.
+ * @param dataOrigin The [DataOrigin] to assign to the new [Metadata]. If not provided, the data
+ *   origin from the current [Metadata] instance will be used.
+ * @param lastModifiedTime The [Instant] representing the last modified time. If not provided, the
+ *   last modified time from the current [Metadata] instance will be used.
  */
 @JvmOverloads
 public fun Metadata.populatedWithTestValues(
-    id: String = "",
-    dataOrigin: DataOrigin = DataOrigin(""),
-    lastModifiedTime: Instant = Instant.EPOCH,
+    id: String = this.id,
+    dataOrigin: DataOrigin = this.dataOrigin,
+    lastModifiedTime: Instant = this.lastModifiedTime,
 ): Metadata {
     val obj = this
     val dataProto =

@@ -80,6 +80,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,7 +89,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ButtonTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun defaultSemantics() {
@@ -292,7 +293,7 @@ class ButtonTest {
                 shape = shape,
                 shapeColor = primary,
                 backgroundColor = surface,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -345,7 +346,7 @@ class ButtonTest {
                 modifier = Modifier.testTag("myButton"),
                 onClick = {},
                 enabled = false,
-                shape = RectangleShape
+                shape = RectangleShape,
             ) {}
         }
 
@@ -357,7 +358,7 @@ class ButtonTest {
                 horizontalPadding = 0.dp,
                 verticalPadding = 0.dp,
                 backgroundColor = surface,
-                shapeColor = onSurface.copy(alpha = 0.12f).compositeOver(surface)
+                shapeColor = onSurface.copy(alpha = 0.12f).compositeOver(surface),
             )
     }
 
@@ -375,7 +376,7 @@ class ButtonTest {
                 onClick = {},
                 enabled = false,
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red),
-                shape = RectangleShape
+                shape = RectangleShape,
             ) {}
         }
 
@@ -387,7 +388,7 @@ class ButtonTest {
                 horizontalPadding = 0.dp,
                 verticalPadding = 0.dp,
                 backgroundColor = surface,
-                shapeColor = onSurface.copy(alpha = 0.12f).compositeOver(surface)
+                shapeColor = onSurface.copy(alpha = 0.12f).compositeOver(surface),
             )
     }
 
@@ -403,7 +404,7 @@ class ButtonTest {
                 onClick = {},
                 enabled = false,
                 shape = RectangleShape,
-                border = null
+                border = null,
             ) {}
         }
 
@@ -416,7 +417,7 @@ class ButtonTest {
                 verticalPadding = 0.dp,
                 shape = RectangleShape,
                 shapeColor = surface,
-                backgroundColor = surface
+                backgroundColor = surface,
             )
     }
 
@@ -431,7 +432,7 @@ class ButtonTest {
                 modifier = Modifier.testTag("myButton"),
                 onClick = {},
                 enabled = false,
-                shape = RectangleShape
+                shape = RectangleShape,
             ) {}
         }
 
@@ -444,7 +445,7 @@ class ButtonTest {
                 verticalPadding = 0.dp,
                 shape = RectangleShape,
                 shapeColor = surface,
-                backgroundColor = surface
+                backgroundColor = surface,
             )
     }
 
@@ -527,7 +528,7 @@ class ButtonTest {
             Button(
                 onClick = {},
                 contentPadding = PaddingValues(),
-                modifier = Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("button")
+                modifier = Modifier.requiredWidthIn(20.dp).requiredHeightIn(15.dp).testTag("button"),
             ) {
                 Spacer(Modifier.requiredSize(10.dp))
             }
@@ -558,7 +559,7 @@ class ButtonTest {
                     modifier =
                         Modifier.weight(1f).onGloballyPositioned {
                             buttonBounds = it.boundsInRoot()
-                        }
+                        },
                 ) {
                     Text("Button")
                 }
@@ -579,7 +580,7 @@ class ButtonTest {
         rule.setMaterialContent {
             Button(
                 onClick = {},
-                modifier = Modifier.onGloballyPositioned { buttonBounds = it.boundsInRoot() }
+                modifier = Modifier.onGloballyPositioned { buttonBounds = it.boundsInRoot() },
             ) {
                 Spacer(
                     Modifier.requiredSize(10.dp).onGloballyPositioned {
@@ -608,7 +609,7 @@ class ButtonTest {
             Box(Modifier.fillMaxSize()) {
                 Button(
                     modifier = Modifier.align(Alignment.Center).testTag(tag).requiredSize(10.dp),
-                    onClick = { clicked = !clicked }
+                    onClick = { clicked = !clicked },
                 ) {
                     Box(Modifier.size(10.dp))
                 }
@@ -628,7 +629,7 @@ class ButtonTest {
 
     private fun assertLeftPaddingIs(
         padding: Dp,
-        button: @Composable (Modifier, @Composable RowScope.() -> Unit) -> Unit
+        button: @Composable (Modifier, @Composable RowScope.() -> Unit) -> Unit,
     ) {
         var parentCoordinates: LayoutCoordinates? = null
         var childCoordinates: LayoutCoordinates? = null

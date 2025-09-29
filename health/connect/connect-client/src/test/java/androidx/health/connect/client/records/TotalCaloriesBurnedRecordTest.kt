@@ -24,7 +24,9 @@ import java.time.Instant
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
+@Config(minSdk = 28)
 @RunWith(AndroidJUnit4::class)
 class TotalCaloriesBurnedRecordTest {
 
@@ -35,8 +37,8 @@ class TotalCaloriesBurnedRecordTest {
                     startTime = Instant.ofEpochMilli(1234L),
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
-                    endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
+                    endZoneOffset = null,
                     energy = 10.calories,
                 )
             )
@@ -75,7 +77,7 @@ class TotalCaloriesBurnedRecordTest {
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
                         metadata = Metadata.manualEntry(),
-                        energy = 400.calories
+                        energy = 400.calories,
                     )
                     .toString()
             )

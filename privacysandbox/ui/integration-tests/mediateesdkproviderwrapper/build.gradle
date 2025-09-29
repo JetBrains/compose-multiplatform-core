@@ -23,26 +23,14 @@ plugins {
 
 android {
     namespace = "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
-    compileSdk = 35
-    compileSdkExtension = 14
-    minSdk = 21
-    buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).buildToolsVersion
-
-    //TODO(b/389890488): This is added to suppress missing stub classes warning from ui-compose.
-    //Can be removed once linked bug is fixed.
-    optimization.keepRules.files += project.file('proguard-rules.pro')
-
+    compileSdk = 36
     bundle {
         packageName = "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
-
         // This is the entry point class to our SDK in the SDK Runtime. It enables backward
         // compatibility support.
         sdkProviderClassName = "androidx.privacysandbox.sdkruntime.provider.SandboxedSdkProviderAdapter"
-
         // This is the class path of our implementation of the SandboxedSdkProviderCompat class.
         compatSdkProviderClassName = "androidx.privacysandbox.ui.integration.mediateesdkprovider.SdkProviderImpl"
-
-        setVersion(1, 0, 0)
     }
 }
 

@@ -15,6 +15,14 @@
         "identifier": "androidx.compose.runtime:runtime",
         "resolvedVersion": "1.7.6"
       },
+      "toConfiguration": "androidTestImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "module",
+        "identifier": "androidx.compose.runtime:runtime",
+        "resolvedVersion": "1.7.6"
+      },
       "toConfiguration": "api"
     },
     {

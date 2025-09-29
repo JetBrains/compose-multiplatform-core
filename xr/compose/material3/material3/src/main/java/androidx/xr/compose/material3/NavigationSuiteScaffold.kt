@@ -20,8 +20,8 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponen
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuite
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteColors
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldComponentOverride
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldComponentOverrideContext
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldOverride
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldOverrideScope
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldState
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldValue
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScope
@@ -76,7 +76,7 @@ public fun NavigationSuiteScaffold(
                 NavigationSuite(
                     layoutType = layoutType,
                     colors = navigationSuiteColors,
-                    content = navigationSuiteItems
+                    content = navigationSuiteItems,
                 )
             }
             content()
@@ -85,7 +85,7 @@ public fun NavigationSuiteScaffold(
 }
 
 /**
- * [NavigationSuiteScaffoldComponentOverride] that uses the XR-specific [NavigationSuiteScaffold].
+ * [NavigationSuiteScaffoldOverride] that uses the XR-specific [NavigationSuiteScaffold].
  *
  * Note that when using this override, the containerColor, contentColor, and any modifiers passed in
  * to the 2D composable are ignored.
@@ -99,16 +99,16 @@ public fun NavigationSuiteScaffold(
  */
 @ExperimentalMaterial3XrApi
 @OptIn(ExperimentalMaterial3AdaptiveComponentOverrideApi::class)
-internal object XrNavigationSuiteScaffoldOverride : NavigationSuiteScaffoldComponentOverride {
+internal object XrNavigationSuiteScaffoldOverride : NavigationSuiteScaffoldOverride {
     @Composable
-    override fun NavigationSuiteScaffoldComponentOverrideContext.NavigationSuiteScaffold() {
+    override fun NavigationSuiteScaffoldOverrideScope.NavigationSuiteScaffold() {
         NavigationSuiteScaffold(
             navigationSuiteItems = navigationSuiteItems,
             modifier = SubspaceModifier,
             layoutType = layoutType,
             navigationSuiteColors = navigationSuiteColors,
             state = state,
-            content = content
+            content = content,
         )
     }
 }

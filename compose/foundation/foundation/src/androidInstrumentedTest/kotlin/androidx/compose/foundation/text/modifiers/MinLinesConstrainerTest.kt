@@ -46,7 +46,7 @@ class MinLinesConstrainerTest {
                 layoutDirection,
                 TextStyle(color = Color.Green),
                 density,
-                fontFamilyResolver
+                fontFamilyResolver,
             )
 
         val minMaxConstrainer =
@@ -55,7 +55,7 @@ class MinLinesConstrainerTest {
                 layoutDirection,
                 TextStyle(color = Color.Blue),
                 density,
-                fontFamilyResolver
+                fontFamilyResolver,
             )
 
         assertThat(previous === minMaxConstrainer).isFalse()
@@ -70,7 +70,7 @@ class MinLinesConstrainerTest {
                 layoutDirection,
                 resolveDefaults(TextStyle(color = Color.Green), layoutDirection),
                 density,
-                fontFamilyResolver
+                fontFamilyResolver,
             )
 
         val minMaxConstrainer =
@@ -79,7 +79,7 @@ class MinLinesConstrainerTest {
                 layoutDirection,
                 TextStyle(color = Color.Green),
                 density,
-                fontFamilyResolver
+                fontFamilyResolver,
             )
 
         assertThat(constrainer === minMaxConstrainer).isTrue()
@@ -95,7 +95,7 @@ class MinLinesConstrainerTest {
                 layoutDirection,
                 TextStyle(color = Color.Green),
                 density,
-                fontFamilyResolver
+                fontFamilyResolver,
             )
 
         val minMaxConstrainer =
@@ -104,7 +104,7 @@ class MinLinesConstrainerTest {
                 layoutDirection,
                 TextStyle(color = Color.Green),
                 density,
-                fontFamilyResolver
+                fontFamilyResolver,
             )
 
         assertThat(previous === minMaxConstrainer).isTrue()

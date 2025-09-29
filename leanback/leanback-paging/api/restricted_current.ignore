@@ -1,0 +1,3 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.leanback.paging.PagingDataAdapter#getLoadStateFlow():
+    Source breaking change: method androidx.leanback.paging.PagingDataAdapter.getLoadStateFlow() can no longer be resolved from Kotlin source

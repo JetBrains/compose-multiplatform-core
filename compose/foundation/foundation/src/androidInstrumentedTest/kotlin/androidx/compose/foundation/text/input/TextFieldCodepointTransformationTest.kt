@@ -45,6 +45,7 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.fail
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +55,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TextFieldCodepointTransformationTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
@@ -68,7 +69,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 codepointTransformation = { _, codepoint -> codepoint + 1 },
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -85,7 +86,7 @@ class TextFieldCodepointTransformationTest {
                 codepointTransformation = { index, codepoint ->
                     if (index % 2 == 0) codepoint + 1 else codepoint - 1
                 },
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -102,7 +103,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 codepointTransformation = codepointTransformation,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -122,7 +123,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 codepointTransformation = CodepointTransformation.mask(mask),
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -143,7 +144,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 codepointTransformation = codepointTransformation,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -162,7 +163,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 codepointTransformation = CodepointTransformation.mask('*'),
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -180,7 +181,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -197,7 +198,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -213,7 +214,7 @@ class TextFieldCodepointTransformationTest {
                 state = state,
                 lineLimits = TextFieldLineLimits.SingleLine,
                 codepointTransformation = { _, codepoint -> codepoint },
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -227,7 +228,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
 
@@ -241,7 +242,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
 
@@ -255,7 +256,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
 
@@ -269,7 +270,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithSurrogate
+                codepointTransformation = MaskWithSurrogate,
             )
         }
 
@@ -283,7 +284,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithSurrogate
+                codepointTransformation = MaskWithSurrogate,
             )
         }
 
@@ -299,7 +300,7 @@ class TextFieldCodepointTransformationTest {
                 modifier = Modifier.testTag(Tag),
                 codepointTransformation = { i, codepoint ->
                     if (i == 1) SurrogateCodepoint else codepoint
-                }
+                },
             )
         }
 
@@ -313,7 +314,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
 
@@ -333,7 +334,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithSurrogate
+                codepointTransformation = MaskWithSurrogate,
             )
         }
 
@@ -370,7 +371,7 @@ class TextFieldCodepointTransformationTest {
                                     String(intArrayOf(codepoint), 0, 1)
                             )
                     }
-                }
+                },
             )
         }
 
@@ -427,7 +428,7 @@ class TextFieldCodepointTransformationTest {
                                     String(intArrayOf(codepoint), 0, 1)
                             )
                     }
-                }
+                },
             )
         }
 
@@ -462,7 +463,7 @@ class TextFieldCodepointTransformationTest {
                                     String(intArrayOf(codepoint), 0, 1)
                             )
                     }
-                }
+                },
             )
         }
 
@@ -501,7 +502,7 @@ class TextFieldCodepointTransformationTest {
                                     String(intArrayOf(codepoint), 0, 1)
                             )
                     }
-                }
+                },
             )
         }
 
@@ -529,7 +530,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithSurrogate
+                codepointTransformation = MaskWithSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -556,7 +557,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -583,7 +584,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithSurrogate
+                codepointTransformation = MaskWithSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -609,7 +610,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -635,7 +636,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithSurrogate
+                codepointTransformation = MaskWithSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -666,7 +667,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -697,7 +698,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -719,7 +720,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithNonSurrogate
+                codepointTransformation = MaskWithNonSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -740,7 +741,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithSurrogate
+                codepointTransformation = MaskWithSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()
@@ -762,7 +763,7 @@ class TextFieldCodepointTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                codepointTransformation = MaskWithSurrogate
+                codepointTransformation = MaskWithSurrogate,
             )
         }
         rule.onNodeWithTag(Tag).requestFocus()

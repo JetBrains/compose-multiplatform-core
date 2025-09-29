@@ -38,6 +38,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.core.view.forEach
 import org.junit.Assert.fail
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -113,6 +114,7 @@ class JUnitUnhandledExceptionTest(activityClass: Class<out ComponentActivity>) {
         composeTestRule.waitForIdle()
     }
 
+    @Ignore("b/397662811")
     @Test
     fun throwDuringTeardown() {
         installContent { DisposableEffect(Unit) { onDispose { throwExpectedException() } } }

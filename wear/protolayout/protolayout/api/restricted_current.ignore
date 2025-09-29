@@ -1,3 +1,17 @@
 // Baseline format: 1.0
-InvalidNullConversion: androidx.wear.protolayout.StateBuilders.State#getKeyToValueMapping():
-    Attempted to remove nullability from java.lang.Object (was NONNULL) in method androidx.wear.protolayout.StateBuilders.State.getKeyToValueMapping()
+RemovedFromKotlin: androidx.wear.protolayout.types.LayoutColor#getDynamicArgb():
+    Source breaking change: method androidx.wear.protolayout.types.LayoutColor.getDynamicArgb() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.wear.protolayout.types.LayoutColor#getStaticArgb():
+    Source breaking change: method androidx.wear.protolayout.types.LayoutColor.getStaticArgb() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.wear.protolayout.types.LayoutColorUtil#createLayoutColor(int):
+    Source breaking change: method androidx.wear.protolayout.types.LayoutColorUtil.createLayoutColor(int) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.wear.protolayout.types.LayoutColorUtil#createLayoutColor(long):
+    Source breaking change: method androidx.wear.protolayout.types.LayoutColorUtil.createLayoutColor(long) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.wear.protolayout.types.LayoutString#getDynamicValue():
+    Source breaking change: method androidx.wear.protolayout.types.LayoutString.getDynamicValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.wear.protolayout.types.LayoutString#getLayoutConstraint():
+    Source breaking change: method androidx.wear.protolayout.types.LayoutString.getLayoutConstraint() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.wear.protolayout.types.LayoutString#getStaticValue():
+    Source breaking change: method androidx.wear.protolayout.types.LayoutString.getStaticValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.wear.protolayout.types.LayoutStringUtil#createLayoutString(String):
+    Source breaking change: method androidx.wear.protolayout.types.LayoutStringUtil.createLayoutString(String) can no longer be resolved from Kotlin source

@@ -67,7 +67,7 @@ internal object MinimumInteractiveModifier : ModifierNodeElement<MinimumInteract
 internal class MinimumInteractiveModifierNode : Modifier.Node(), LayoutModifierNode {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val size = minimumInteractiveComponentSize
         val placeable = measurable.measure(constraints)

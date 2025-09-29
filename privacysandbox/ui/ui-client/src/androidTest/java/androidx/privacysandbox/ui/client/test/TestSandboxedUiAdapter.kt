@@ -23,15 +23,14 @@ import android.os.SystemClock
 import android.view.View
 import androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
-import androidx.privacysandbox.ui.core.SessionConstants
+import androidx.privacysandbox.ui.core.SessionData
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import com.google.common.truth.Truth
-import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 
-class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf("option")) :
+class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf()) :
     AbstractSandboxedUiAdapter() {
 
     companion object {
@@ -41,8 +40,8 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf("opt
     var isSessionOpened = false
     var internalClient: SandboxedUiAdapter.SessionClient? = null
     var testSession: TestSession? = null
-    var isZOrderOnTop = true
-    var sessionConstants: SessionConstants? = null
+    var isZOrderOnTop = false
+    var sessionData: SessionData? = null
 
     // When set to true, the onSessionOpened callback will only be invoked when specified
     // by the test. This is to test race conditions when the session is being loaded.
@@ -55,12 +54,12 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf("opt
 
     override fun openSession(
         context: Context,
-        sessionConstants: SessionConstants,
+        sessionData: SessionData,
         initialWidth: Int,
         initialHeight: Int,
         isZOrderOnTop: Boolean,
         clientExecutor: Executor,
-        client: SandboxedUiAdapter.SessionClient
+        client: SandboxedUiAdapter.SessionClient,
     ) {
         internalClient = client
         testSession = TestSession(context, signalOptions)
@@ -70,7 +69,7 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf("opt
             }
             isSessionOpened = true
             this.isZOrderOnTop = isZOrderOnTop
-            this.sessionConstants = sessionConstants
+            this.sessionData = sessionData
             openSessionLatch.countDown()
         }
     }
@@ -94,7 +93,7 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf("opt
     internal fun wasOnConfigChangedCalled(): Boolean {
         return configChangedLatch.await(
             SandboxedSdkViewTest.UI_INTENSIVE_TIMEOUT,
-            TimeUnit.MILLISECONDS
+            TimeUnit.MILLISECONDS,
         )
     }
 
@@ -109,7 +108,10 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf("opt
     inner class TestSession(context: Context, override val signalOptions: Set<String>) :
         SandboxedUiAdapter.Session {
         var zOrderChangedLatch: CountDownLatch = CountDownLatch(1)
+        var sessionOpenedLatch = CountDownLatch(1)
         var shortestGapBetweenUiChangeEvents = Long.MAX_VALUE
+        var supportedSignalOptions: Set<String>? = null
+        private var hasReceivedFirstUiChangeLatch = CountDownLatch(1)
         private var notifyUiChangedLatch: CountDownLatch = CountDownLatch(1)
         private var latestUiChange: Bundle = Bundle()
         private var hasReceivedFirstUiChange = false
@@ -143,18 +145,29 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf("opt
                 shortestGapBetweenUiChangeEvents =
                     java.lang.Long.min(
                         shortestGapBetweenUiChangeEvents,
-                        SystemClock.elapsedRealtime() - timeReceivedLastUiChange
+                        SystemClock.elapsedRealtime() - timeReceivedLastUiChange,
                     )
             }
             hasReceivedFirstUiChange = true
+            hasReceivedFirstUiChangeLatch.countDown()
             timeReceivedLastUiChange = SystemClock.elapsedRealtime()
             latestUiChange = uiContainerInfo
             notifyUiChangedLatch.countDown()
         }
 
+        override fun notifySessionRendered(supportedSignalOptions: Set<String>) {
+            this.supportedSignalOptions = supportedSignalOptions
+            sessionOpenedLatch.countDown()
+        }
+
         fun assertNoSubsequentUiChanges() {
             notifyUiChangedLatch = CountDownLatch(1)
             Truth.assertThat(notifyUiChangedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
+        }
+
+        fun assertFirstUiChangeReceived() {
+            Truth.assertThat(hasReceivedFirstUiChangeLatch.await(TIMEOUT, TimeUnit.MILLISECONDS))
+                .isTrue()
         }
 
         /**

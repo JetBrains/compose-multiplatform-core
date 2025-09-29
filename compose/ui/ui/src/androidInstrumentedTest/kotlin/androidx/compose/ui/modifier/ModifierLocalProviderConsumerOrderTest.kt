@@ -28,6 +28,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,7 +37,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ModifierLocalProviderConsumerOrderTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val defaultValue = "Default Value"
     private val modifierLocal = modifierLocalOf { defaultValue }
@@ -227,7 +228,7 @@ class ModifierLocalProviderConsumerOrderTest {
 @Composable
 fun ConsumeLocal(
     modifierLocal: ProvidableModifierLocal<String>,
-    consumerValue: MutableState<String>
+    consumerValue: MutableState<String>,
 ) {
     Box(
         ProviderConsumerModifier(modifierLocal, { "" }) {
@@ -239,7 +240,7 @@ fun ConsumeLocal(
 class ProviderConsumerModifier<T>(
     override val key: ProvidableModifierLocal<T>,
     value: () -> T,
-    private val consumer: ModifierLocalReadScope.() -> Unit
+    private val consumer: ModifierLocalReadScope.() -> Unit,
 ) : ModifierLocalConsumer, ModifierLocalProvider<T> {
     override val value by derivedStateOf(value)
 
@@ -248,9 +249,7 @@ class ProviderConsumerModifier<T>(
     }
 }
 
-class ProviderModifier<T>(
-    override val key: ProvidableModifierLocal<T>,
-    value: () -> T,
-) : ModifierLocalProvider<T> {
+class ProviderModifier<T>(override val key: ProvidableModifierLocal<T>, value: () -> T) :
+    ModifierLocalProvider<T> {
     override val value by derivedStateOf(value)
 }

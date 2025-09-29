@@ -23,6 +23,7 @@ import androidx.compose.ui.zIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -32,7 +33,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ModifierNodeVisitChildrenTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun noChildren() {
@@ -140,7 +141,7 @@ class ModifierNodeVisitChildrenTest {
                 Modifier.elementOf(node),
                 { Box(Modifier.elementOf(child1)) },
                 { Box(Modifier.elementOf(child2)) },
-                { Box(Modifier.elementOf(child3)) }
+                { Box(Modifier.elementOf(child3)) },
             )
         }
 

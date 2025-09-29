@@ -58,6 +58,13 @@
     {
       "coordinates": {
         "type": "project",
+        "identifier": ":lifecycle:lifecycle-livedata-core"
+      },
+      "toConfiguration": "testImplementation"
+    },
+    {
+      "coordinates": {
+        "type": "project",
         "identifier": ":lifecycle:lifecycle-runtime"
       },
       "fromConfiguration": "api"

@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -63,7 +64,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ApproachLayoutTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
 
@@ -110,7 +111,7 @@ class ApproachLayoutTest {
                             val constraints =
                                 Constraints.fixed(
                                     lookaheadSize.width - 20,
-                                    lookaheadSize.height - 20
+                                    lookaheadSize.height - 20,
                                 )
                             measurable.measure(constraints).run {
                                 layout(lookaheadSize.width - 20, lookaheadSize.height - 20) {
@@ -144,12 +145,12 @@ class ApproachLayoutTest {
                                             if (isComplete) {
                                                 assertEquals(
                                                     lookaheadPositionInParent,
-                                                    it.positionInParent()
+                                                    it.positionInParent(),
                                                 )
                                             } else {
                                                 assertNotEquals(
                                                     lookaheadPositionInParent,
-                                                    it.positionInParent()
+                                                    it.positionInParent(),
                                                 )
                                             }
                                         }
@@ -206,7 +207,7 @@ class ApproachLayoutTest {
                         }
                         .approachLayout(
                             isMeasurementApproachInProgress = { !isMeasurementApproachComplete },
-                            isPlacementApproachInProgress = { !isPlacementApproachComplete }
+                            isPlacementApproachInProgress = { !isPlacementApproachComplete },
                         ) { measurable, _ ->
                             // Intentionally use different constraints, placement and report
                             // different
@@ -215,7 +216,7 @@ class ApproachLayoutTest {
                             val constraints =
                                 Constraints.fixed(
                                     lookaheadSize.width - 20,
-                                    lookaheadSize.height - 20
+                                    lookaheadSize.height - 20,
                                 )
                             measurable.measure(constraints).run {
                                 layout(lookaheadSize.width - 20, lookaheadSize.height - 20) {
@@ -316,7 +317,7 @@ class ApproachLayoutTest {
 
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable.measure(Constraints.fixed(600, 600)).run {
                         layout(600, 600) { place(0, 0) }
@@ -335,7 +336,7 @@ class ApproachLayoutTest {
                         )
                         .requiredSize(700.dp, 700.dp)
                         .then(TestApproachElement(parentApproachNode)),
-                    propagateMinConstraints = true
+                    propagateMinConstraints = true,
                 ) {
                     Box(
                         Modifier.layout { measurable, constraints ->
@@ -430,7 +431,7 @@ class ApproachLayoutTest {
 
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable.measure(Constraints.fixed(600, 600)).run {
                         layout(600, 600) { place(0, 0) }
@@ -449,7 +450,7 @@ class ApproachLayoutTest {
                         )
                         .requiredSize(700.dp, 700.dp)
                         .then(TestApproachElement(parentApproachNode)),
-                    propagateMinConstraints = true
+                    propagateMinConstraints = true,
                 ) {
                     Box(
                         Modifier.layout { measurable, constraints ->
@@ -535,7 +536,7 @@ class ApproachLayoutTest {
 
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable.measure(constraints).run {
                         layout(width, height) { place(0, 0) }
@@ -581,7 +582,7 @@ class ApproachLayoutTest {
 
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable
                         .measure(
@@ -606,7 +607,7 @@ class ApproachLayoutTest {
 
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable.measure(constraints).run {
                         layout(width, height) { place(0, 0) }
@@ -695,7 +696,7 @@ class ApproachLayoutTest {
                                             layout(placeable.width, placeable.height) {
                                                 placeable.place(0, 0)
                                             }
-                                        }
+                                        },
                                     )
                                     .onPlaced {
                                         // Also consume the coordinates here, this is necessary to
@@ -711,7 +712,7 @@ class ApproachLayoutTest {
                         // Secondary slot - when not in Column
                         Box(
                             modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.BottomEnd
+                            contentAlignment = Alignment.BottomEnd,
                         ) {
                             if (!isInColumn) {
                                 movableContent()
@@ -787,12 +788,12 @@ class ApproachLayoutTest {
                                                                 sourceCoordinates =
                                                                     it.toLookaheadCoordinates(),
                                                                 includeMotionFrameOfReference =
-                                                                    false
+                                                                    false,
                                                             )
                                                 }
                                                 placeable.place(0, 0)
                                             }
-                                        }
+                                        },
                                     )
                         )
                     }
@@ -836,7 +837,7 @@ class ApproachLayoutTest {
                                 )
                             }
                         },
-                        Modifier.fillMaxSize()
+                        Modifier.fillMaxSize(),
                     ) { measurables, constraints ->
                         val placeablesFromMeasurePass =
                             // Only measure half of the children during measure pass and immediately
@@ -848,13 +849,13 @@ class ApproachLayoutTest {
                             minIntrinsicSizes[id] =
                                 IntSize(
                                     measurable.minIntrinsicWidth(constraints.maxHeight),
-                                    measurable.minIntrinsicHeight(constraints.maxWidth)
+                                    measurable.minIntrinsicHeight(constraints.maxWidth),
                                 )
 
                             maxIntrinsicSizes[id] =
                                 IntSize(
                                     measurable.maxIntrinsicWidth(constraints.maxHeight),
-                                    measurable.maxIntrinsicHeight(constraints.maxWidth)
+                                    measurable.maxIntrinsicHeight(constraints.maxWidth),
                                 )
                         }
                         layout(400, 400) {
@@ -880,6 +881,12 @@ class ApproachLayoutTest {
             get() = TODO("Not yet implemented")
 
         override val parentLayoutDirection: LayoutDirection
+            get() = TODO("Not yet implemented")
+
+        override val density: Float
+            get() = TODO("Not yet implemented")
+
+        override val fontScale: Float
             get() = TODO("Not yet implemented")
     }
 

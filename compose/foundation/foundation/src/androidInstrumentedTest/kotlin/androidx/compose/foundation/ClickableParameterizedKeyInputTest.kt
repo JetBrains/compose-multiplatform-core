@@ -49,6 +49,7 @@ import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,11 +73,11 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                 Key.Enter.keyCode,
                 Key.NumPadEnter.keyCode,
                 Key.DirectionCenter.keyCode,
-                Key.Spacebar.keyCode
+                Key.Spacebar.keyCode,
             )
     }
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     @OptIn(ExperimentalTestApi::class)
@@ -91,7 +92,7 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                 modifier =
                     Modifier.testTag("myClickable").focusRequester(focusRequester).clickable {
                         counter++
-                    }
+                    },
             )
         }
         rule.runOnIdle {
@@ -123,7 +124,7 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                     modifier =
                         Modifier.testTag("myClickable")
                             .focusRequester(clickableFocusRequester)
-                            .clickable { counter++ }
+                            .clickable { counter++ },
                 )
             }
         }
@@ -167,7 +168,7 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                     modifier =
                         Modifier.testTag("myClickable")
                             .focusRequester(clickableFocusRequester)
-                            .clickable { counter++ }
+                            .clickable { counter++ },
                 )
             }
         }
@@ -209,8 +210,8 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                     modifier =
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -254,7 +255,7 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                     modifier =
                         Modifier.testTag("clickable")
                             .focusRequester(clickableFocusRequester)
-                            .clickable(interactionSource = interactionSource, indication = null) {}
+                            .clickable(interactionSource = interactionSource, indication = null) {},
                 )
             }
         }
@@ -301,8 +302,8 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                     modifier =
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -365,10 +366,7 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                                 if (it.nativeKeyEvent.repeatCount != 0) repeatCounter++
                                 false
                             }
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                            ) {}
+                            .clickable(interactionSource = interactionSource, indication = null) {},
                 )
             }
         }
@@ -421,8 +419,8 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
                             indication = null,
-                            enabled = enabled.value
-                        ) {}
+                            enabled = enabled.value,
+                        ) {},
                 )
             }
         }
@@ -482,7 +480,7 @@ class ClickableParameterizedKeyInputTest(keyCode: Long) {
                     modifier =
                         Modifier.testTag("myClickable")
                             .focusRequester(focusRequester)
-                            .clickable(onClick = { ++counter })
+                            .clickable(onClick = { ++counter }),
                 )
             }
         }

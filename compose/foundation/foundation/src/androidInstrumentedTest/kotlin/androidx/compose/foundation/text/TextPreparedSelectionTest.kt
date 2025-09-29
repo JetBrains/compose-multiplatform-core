@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,7 +37,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class TextPreparedSelectionTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun textSelection_leftRightMovements() {
@@ -225,7 +226,7 @@ class TextPreparedSelectionTest {
         initText: String = "",
         initSelection: TextRange = TextRange(0),
         rtl: Boolean = false,
-        test: SelectionScope<TextPreparedSelection>.(TextPreparedSelection) -> Unit
+        test: SelectionScope<TextPreparedSelection>.(TextPreparedSelection) -> Unit,
     ) {
         var textLayout: TextLayoutResult? = null
         val direction =
@@ -239,7 +240,7 @@ class TextPreparedSelectionTest {
                 BasicText(
                     text = initText,
                     style = TextStyle(fontFamily = TEST_FONT_FAMILY),
-                    onTextLayout = { textLayout = it }
+                    onTextLayout = { textLayout = it },
                 )
             }
         }
@@ -248,7 +249,7 @@ class TextPreparedSelectionTest {
             TextPreparedSelection(
                 originalText = AnnotatedString(initText),
                 originalSelection = initSelection,
-                layoutResult = textLayout!!
+                layoutResult = textLayout!!,
             )
 
         test(SelectionScope(prepared), prepared)

@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.fail
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +48,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TextAnnotatedStringNodeTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
     val context: Context = InstrumentationRegistry.getInstrumentation().context
 
     @Test
@@ -56,7 +57,7 @@ class TextAnnotatedStringNodeTest {
             TextAnnotatedStringNode(
                 AnnotatedString("text"),
                 TextStyle.Default,
-                createFontFamilyResolver(context)
+                createFontFamilyResolver(context),
             )
         rule.setContent {
             Canvas(Modifier.fillMaxSize()) {
@@ -96,7 +97,7 @@ class TextAnnotatedStringNodeTest {
                     BoxWithConstraints {
                         BasicText(
                             text = AnnotatedString(if (!flag) "" else "LOADED"),
-                            modifier = Modifier.testTag("target")
+                            modifier = Modifier.testTag("target"),
                         )
                     }
                 }
@@ -122,7 +123,7 @@ class TextAnnotatedStringNodeTest {
             TextAnnotatedStringElement(
                 AnnotatedString("til"),
                 TextStyle.Default,
-                createFontFamilyResolver(context)
+                createFontFamilyResolver(context),
             )
 
         val modifier =
@@ -150,7 +151,7 @@ class TextAnnotatedStringNodeTest {
             TextAnnotatedStringElement(
                 AnnotatedString("til"),
                 TextStyle.Default,
-                createFontFamilyResolver(context)
+                createFontFamilyResolver(context),
             )
 
         rule.setContent { Box(Modifier.fillMaxSize() then subject) }

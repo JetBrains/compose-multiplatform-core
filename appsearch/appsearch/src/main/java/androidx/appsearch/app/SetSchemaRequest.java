@@ -30,6 +30,7 @@ import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
+import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
 
 import java.lang.annotation.Retention;
@@ -380,6 +381,33 @@ public final class SetSchemaRequest {
         return mVersion;
     }
 
+    @Override
+    public boolean equals(@Nullable Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof SetSchemaRequest)) {
+            return false;
+        }
+        SetSchemaRequest otherRequest = (SetSchemaRequest) other;
+        return mSchemas.equals(otherRequest.mSchemas)
+                && mSchemasNotDisplayedBySystem.equals(otherRequest.mSchemasNotDisplayedBySystem)
+                && mSchemasVisibleToPackages.equals(otherRequest.mSchemasVisibleToPackages)
+                && mSchemasVisibleToPermissions.equals(otherRequest.mSchemasVisibleToPermissions)
+                && mPubliclyVisibleSchemas.equals(otherRequest.mPubliclyVisibleSchemas)
+                && mSchemasVisibleToConfigs.equals(otherRequest.mSchemasVisibleToConfigs)
+                && mMigrators.equals(otherRequest.mMigrators)
+                && mForceOverride == otherRequest.mForceOverride
+                && mVersion == otherRequest.mVersion;
+    }
+
+    @Override
+    public int hashCode() {
+        return ObjectsCompat.hash(mSchemas, mSchemasNotDisplayedBySystem, mSchemasVisibleToPackages,
+        mSchemasVisibleToPermissions, mPubliclyVisibleSchemas, mSchemasVisibleToConfigs, mMigrators,
+                mForceOverride, mVersion);
+    }
+
     /** Builder for {@link SetSchemaRequest} objects. */
     public static final class Builder {
         private static final int DEFAULT_VERSION = 1;
@@ -539,6 +567,15 @@ public final class SetSchemaRequest {
          *
          * <p>The default behavior, if this method is not called, is to allow types to be
          * displayed on system UI surfaces.
+         *
+         * <!--@exportToFramework:ifJetpack()-->
+         * <p>You can use {@link Features#isFeatureSupported} with the
+         * {@link Features#SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM} Feature to see if
+         * this visibility mode is supported on this backend / API level combination. If not
+         * supported, this function is still safe to call and the configuration will be saved in
+         * the schema, but it will not have any effect and documents will not be visible through
+         * this mechanism on that backend / API level.
+         * <!--@exportToFramework:else() -->
          *
          * @param schemaType The name of an {@link AppSearchSchema} within the same
          *                   {@link SetSchemaRequest}, which will be configured.
@@ -923,6 +960,13 @@ public final class SetSchemaRequest {
          *
          * <p>The default behavior, if this method is not called, is to allow types to be
          * displayed on system UI surfaces.
+         *
+         * <p>You can use {@link Features#isFeatureSupported} with the
+         * {@link Features#SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM} Feature to see if
+         * this visibility mode is supported on this backend / API level combination. If not
+         * supported, this function is still safe to call and the configuration will be saved in
+         * the schema, but it will not have any effect and documents will not be visible through
+         * this mechanism on that backend / API level.
          *
          * <p> Merged list available from {@link #getSchemasNotDisplayedBySystem()}.
          *

@@ -49,6 +49,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,7 +58,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ListItemTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     val icon24x24 by lazy { ImageBitmap(width = 24.dp.toIntPx(), height = 24.dp.toIntPx()) }
     val icon40x40 by lazy { ImageBitmap(width = 40.dp.toIntPx(), height = 40.dp.toIntPx()) }
@@ -91,7 +92,7 @@ class ListItemTest {
             .setMaterialContentForSizeAssertions {
                 ListItem(
                     headlineContent = { Text("Primary text") },
-                    leadingContent = { Icon(icon24x24, null) }
+                    leadingContent = { Icon(icon24x24, null) },
                 )
             }
             .assertHeightIsEqualTo(expectedHeightSmallIcon)
@@ -105,7 +106,7 @@ class ListItemTest {
             .setMaterialContentForSizeAssertions {
                 ListItem(
                     headlineContent = { Text("Primary text") },
-                    supportingContent = { Text("Secondary text") }
+                    supportingContent = { Text("Secondary text") },
                 )
             }
             .assertHeightIsEqualTo(expectedHeightNoIcon)
@@ -121,7 +122,7 @@ class ListItemTest {
                 ListItem(
                     headlineContent = { Text("Primary text") },
                     supportingContent = { Text("Secondary text") },
-                    leadingContent = { Icon(icon24x24, null) }
+                    leadingContent = { Icon(icon24x24, null) },
                 )
             }
             .assertHeightIsEqualTo(expectedHeightWithIcon)
@@ -136,7 +137,7 @@ class ListItemTest {
                 ListItem(
                     overlineContent = { Text("OVERLINE") },
                     headlineContent = { Text("Primary text") },
-                    supportingContent = { Text("Secondary text") }
+                    supportingContent = { Text("Secondary text") },
                 )
             }
             .assertHeightIsEqualTo(expectedHeight)
@@ -279,7 +280,7 @@ class ListItemTest {
                     },
                     trailingContent = {
                         Image(icon24x24, null, Modifier.saveLayout(trailingPosition, trailingSize))
-                    }
+                    },
                 )
             }
         }
@@ -336,7 +337,7 @@ class ListItemTest {
                     },
                     leadingContent = {
                         Image(icon24x24, null, Modifier.saveLayout(iconPosition, iconSize))
-                    }
+                    },
                 )
             }
         }
@@ -383,12 +384,12 @@ class ListItemTest {
                     Image(
                         icon24x24,
                         null,
-                        Modifier.saveLayout(leadingIconPosition, leadingIconSize)
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize),
                     )
                 },
                 trailingContent = {
                     Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                }
+                },
             )
         }
         rule.runOnIdleWithDensity {
@@ -438,12 +439,12 @@ class ListItemTest {
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                         )
                     },
                     trailingContent = {
                         Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                    }
+                    },
                 )
             }
         }
@@ -491,12 +492,12 @@ class ListItemTest {
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                         )
                     },
                     leadingContent = {
                         Image(icon24x24, null, Modifier.saveLayout(iconPosition, iconSize))
-                    }
+                    },
                 )
             }
         }
@@ -557,19 +558,19 @@ class ListItemTest {
                 supportingContent = {
                     Text(
                         "Secondary text",
-                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                     )
                 },
                 leadingContent = {
                     Image(
                         icon24x24,
                         null,
-                        Modifier.saveLayout(leadingIconPosition, leadingIconSize)
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize),
                     )
                 },
                 trailingContent = {
                     Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                }
+                },
             )
         }
         rule.runOnIdleWithDensity {
@@ -635,7 +636,7 @@ class ListItemTest {
                     supportingContent = {
                         Text(
                             "Long supporting text\nwhich will span at least two lines",
-                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                         )
                     },
                     leadingContent = {
@@ -643,7 +644,7 @@ class ListItemTest {
                     },
                     trailingContent = {
                         Image(icon24x24, null, Modifier.saveLayout(trailingPosition, trailingSize))
-                    }
+                    },
                 )
             }
         }
@@ -702,7 +703,7 @@ class ListItemTest {
                     overlineContent = {
                         Text(
                             "OVERLINE",
-                            Modifier.saveLayout(overlineTextPosition, overlineTextSize)
+                            Modifier.saveLayout(overlineTextPosition, overlineTextSize),
                         )
                     },
                     headlineContent = {
@@ -711,7 +712,7 @@ class ListItemTest {
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                         )
                     },
                     leadingContent = {
@@ -719,7 +720,7 @@ class ListItemTest {
                     },
                     trailingContent = {
                         Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                    }
+                    },
                 )
             }
         }
@@ -802,19 +803,19 @@ class ListItemTest {
                 supportingContent = {
                     Text(
                         "Secondary text",
-                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                     )
                 },
                 leadingContent = {
                     Image(
                         icon24x24,
                         null,
-                        Modifier.saveLayout(leadingIconPosition, leadingIconSize)
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize),
                     )
                 },
                 trailingContent = {
                     Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                }
+                },
             )
         }
         rule.runOnIdleWithDensity {
@@ -865,11 +866,9 @@ class ListItemTest {
 
     private fun Dp.toIntPx() = (this.value * rule.density.density).roundToInt()
 
-    private fun Modifier.saveLayout(
-        coords: Ref<Offset>,
-        size: Ref<IntSize>,
-    ): Modifier = onGloballyPositioned { coordinates: LayoutCoordinates ->
-        coords.value = coordinates.positionInRoot()
-        size.value = coordinates.size
-    }
+    private fun Modifier.saveLayout(coords: Ref<Offset>, size: Ref<IntSize>): Modifier =
+        onGloballyPositioned { coordinates: LayoutCoordinates ->
+            coords.value = coordinates.positionInRoot()
+            size.value = coordinates.size
+        }
 }

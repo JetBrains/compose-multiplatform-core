@@ -30,6 +30,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,7 +38,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class RowColumnModifierTest() {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testRow_updatesOnAlignmentChange() {
@@ -56,7 +57,7 @@ class RowColumnModifierTest() {
                                             10.toDp()
                                         } else {
                                             20.toDp()
-                                        }
+                                        },
                                     )
                                     .align(alignment)
                                     .onPlaced {
@@ -99,7 +100,7 @@ class RowColumnModifierTest() {
                                             10.toDp()
                                         } else {
                                             20.toDp()
-                                        }
+                                        },
                                     )
                                     .alignBy(
                                         if (index == 4) {
@@ -181,7 +182,7 @@ class RowColumnModifierTest() {
                                             10.toDp()
                                         } else {
                                             20.toDp()
-                                        }
+                                        },
                                     )
                                     .weight(1f, fill)
                                     .onSizeChanged {
@@ -278,7 +279,7 @@ class RowColumnModifierTest() {
                                         } else {
                                             20.toDp()
                                         },
-                                        20.toDp()
+                                        20.toDp(),
                                     )
                                     .alignBy(
                                         if (index == 4) {

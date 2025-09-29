@@ -43,6 +43,7 @@ import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
@@ -59,7 +60,7 @@ class PopupDismissTest(private val focusable: Boolean) {
         fun initParameters(): Array<Any> = arrayOf(true, false)
     }
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun clickOutsideToDismiss() {
@@ -84,7 +85,7 @@ class PopupDismissTest(private val focusable: Boolean) {
                                 // UiDevice needs screen relative coordinates
                                 @Suppress("DEPRECATION")
                                 btnPos = it.localToRoot(Offset.Zero)
-                            }
+                            },
                 )
 
                 Popup(
@@ -93,7 +94,7 @@ class PopupDismissTest(private val focusable: Boolean) {
                     onDismissRequest = {
                         dismissCounter++
                         latch.countDown()
-                    }
+                    },
                 ) {
                     Box(Modifier.size(100.dp, 100.dp)) {
                         BasicText(text = "Popup", style = TextStyle(textAlign = TextAlign.Center))
@@ -117,7 +118,7 @@ class PopupDismissTest(private val focusable: Boolean) {
 
             device.click(
                 viewPos[0] + btnPos.x.toInt() + btnBounds.width.roundToPx() / 2,
-                viewPos[1] + btnPos.y.toInt() + btnBounds.height.roundToPx() / 2
+                viewPos[1] + btnPos.y.toInt() + btnBounds.height.roundToPx() / 2,
             )
         }
 

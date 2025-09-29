@@ -17,22 +17,19 @@
 package androidx.camera.camera2.pipe
 
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import androidx.camera.camera2.pipe.testing.FakeMetadata
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 internal class RequestTest {
     private val request =
         Request(
             listOf(StreamId(1)),
             parameters = mapOf(CaptureRequest.EDGE_MODE to CaptureRequest.EDGE_MODE_HIGH_QUALITY),
-            extras = mapOf(FakeMetadata.TEST_KEY to 42)
+            extras = mapOf(FakeMetadata.TEST_KEY to 42),
         )
 
     @Test
@@ -101,7 +98,7 @@ internal class RequestTest {
         assertThat(
                 request.getOrDefault(
                     CaptureRequest.CONTROL_AE_MODE,
-                    default = CaptureRequest.CONTROL_AE_MODE_ON
+                    default = CaptureRequest.CONTROL_AE_MODE_ON,
                 )
             )
             .isEqualTo(CaptureRequest.CONTROL_AE_MODE_ON)
