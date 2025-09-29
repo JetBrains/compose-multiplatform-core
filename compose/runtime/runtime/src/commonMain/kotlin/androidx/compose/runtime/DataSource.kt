@@ -22,6 +22,9 @@ import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.applyObservers
 import androidx.compose.runtime.snapshots.sync
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmName
 import kotlin.jvm.JvmStatic
 
@@ -80,6 +83,9 @@ interface DataSource {
      * be thrown.
      */
     fun <T> isolate(block: () -> T): T
+
+
+    fun advanceGlobalSnapshot()
 
     companion object {
         /**
@@ -204,9 +210,11 @@ interface DataSource {
         /**
          * Passed [block] will be run with all the currently set read observers disabled.
          */
+        @OptIn(ExperimentalContracts::class)
         @JvmStatic
         @JvmName("staticIsolate")
         fun <T> withoutReadObservation(block: @DisallowComposableCalls () -> T): T {
+            contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
             val previousDependencyRecorder = threadDependencyRecorder.get()
             threadDependencyRecorder.set { false }
             try {
@@ -237,6 +245,10 @@ interface DataSource {
                 @Suppress("UNCHECKED_CAST")
                 invoke() as T
             }
+        }
+
+        fun advanceGlobalSnapshot() {
+            registeredDataSources.get().forEach { it.advanceGlobalSnapshot() }
         }
     }
 }
