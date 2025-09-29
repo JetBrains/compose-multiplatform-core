@@ -14,14 +14,8 @@
  * limitations under the License.
  */
 
-package androidx.navigation3.ui
+package androidx.compose.ui.tooling.preview
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
-import androidx.navigationevent.NavigationEventDispatcherOwner
-
-@OptIn(InternalComposeApi::class)
-@Composable
-internal actual fun findViewTreeNavigationEventDispatcherOwner(): NavigationEventDispatcherOwner? =
-    findDefaultNavigationEventDispatcherOwner()
+internal actual fun validateUiModes() {
+    // TODO: https://youtrack.jetbrains.com/issue/CMP-2045
+}
