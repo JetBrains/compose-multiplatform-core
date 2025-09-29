@@ -207,6 +207,10 @@ kotlin {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
             resources.srcDirs(unzipTask.map { it.destinationDir })
+
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            }
         }
 
         val jsMain by getting {
