@@ -157,8 +157,11 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
             project.extensions.getByType(AndroidXExtension::class.java)
         val androidxMultiplatformExtension =
             project.extensions.getByType(AndroidXMultiplatformExtension::class.java)
+
+        /* FIXME: Restore after fixing for new buildSrc state
         project.configureMavenArtifactUpload(
             androidxExtension, androidxMultiplatformExtension, componentFactory)
+        */
 
         project.plugins.all { plugin ->
             if (plugin is KotlinMultiplatformPluginWrapper) {
@@ -203,6 +206,7 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
                 configuration.name.startsWith(it, ignoreCase = true)
             }
             val targetVersion = redirection.versionForTargetOrDefault(targetName ?: "")
+            @Suppress("DEPRECATION") // FIXME: Use single-string notation instead.
             project.dependencies.create(
                 redirection.groupId, project.name, targetVersion
             )
