@@ -24,24 +24,19 @@ import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ComposeUIDispatcher
+import androidx.compose.ui.kdt.macos.ComposeApplicationMacOs
+import androidx.compose.ui.kdt.macos.KDTUiDispatcher
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import java.util.concurrent.CountDownLatch
-import kotlin.concurrent.thread
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import org.jetbrains.desktop.macos.Application
-import org.jetbrains.desktop.macos.Event
-import org.jetbrains.desktop.macos.EventHandlerResult
-import org.jetbrains.desktop.macos.GrandCentralDispatch
-import org.jetbrains.desktop.macos.KotlinDesktopToolkit
-import org.jetbrains.desktop.macos.WindowEvent
-import org.jetbrains.desktop.macos.WindowId
 
-interface KdtApplication {
+interface ComposeApplication: AutoCloseable {
     fun exitApplication()
 
 //    val isActive: Boolean
@@ -50,54 +45,36 @@ interface KdtApplication {
 //    suspend fun yieldActivationTo(other: KdtApplication): Boolean
 //    // or
 //    fun requestActivation(): Boolean
+
+    // todo[ps] this functions actually shouldn't be a part of the api
+    // but it's a functions shared across platforms
+    fun globalDensity(): Density
+    fun globalLayoutDirection(): LayoutDirection
+    fun createWindow(): ComposeWindow
+    fun macOsApplication(): ComposeApplicationMacOs?
 }
 
-val LocalKdtApplication = staticCompositionLocalOf<KdtComposeApplication> {
+val LocalComposeApplication = staticCompositionLocalOf<ComposeApplication> {
     error("No Application provided")
 }
 
-class KdtComposeApplication(): KdtApplication {
-    init {
-        KotlinDesktopToolkit.init()
-    }
-    val applicationStarted = CountDownLatch(1)
-    val allWindows = mutableMapOf<WindowId, KdtComposeWindow>()
-    val eventLoopThreadHandler = thread(start = true, name = "EventLoopWatcher") {
-        GrandCentralDispatch.startOnMainThread {
-            Application.init()
-            Application.runEventLoop { event ->
-                when (event) {
-                    is WindowEvent -> {
-                        val window = allWindows[event.windowId]
-                        window?.handleEvent(event)
-                    }
-                    is Event.ApplicationDidFinishLaunching -> {
-                        applicationStarted.countDown()
-                    }
-                    else -> {}
-                }
-                EventHandlerResult.Continue
-            }
-        }
-    }
-    val desktopGpuContext by lazy { DesktopGpuContext() }
-
-    init {
-        applicationStarted.await()
-    }
-
-    override fun exitApplication() {
-        //todo close all resources including GPU context and all
-        Application.stopEventLoop()
-        // todo[ps] join hangs by some reason
-//         eventLoopThreadHandler.join()
-    }
+/**
+ * This function is intended to be called in Dock
+ * to initialize a shared application instance
+ */
+fun initApplication(): ComposeApplication {
+    // todo[ps] support other platforms here
+    val application = ComposeApplicationMacOs()
+    ComposeUIDispatcher = KDTUiDispatcher()
+    return application
 }
 
-fun kdtApplication(content: @Composable () -> Unit) {
-    val application = KdtComposeApplication()
-    ComposeUIDispatcher = KDTUiDispatcher()
-
+/**
+ * This is an entry point into composition, it can be called per frontend.
+ * It's blocking until there are some LunchEffect in composition or some
+ * windows are presented.
+ */
+fun runApplication(application: ComposeApplication, content: @Composable () -> Unit) {
     runBlocking(ComposeUIDispatcher) {
         withContext(YieldFrameClock) {
             GlobalSnapshotManager.ensureStarted()
@@ -114,12 +91,12 @@ fun kdtApplication(content: @Composable () -> Unit) {
                 try {
                     composition.setContent {
                         CompositionLocalProvider(
-                            LocalKdtApplication provides application,
+                            LocalComposeApplication provides application,
                             // Resources which are defined at the application level can use
                             // density to calculate intrinsicSize
                             // todo[ps] invalidate when screen configuration changed
-                            LocalDensity provides globalDensity(),
-                            LocalLayoutDirection provides globalLayoutDirection(),
+                            LocalDensity provides application.globalDensity(),
+                            LocalLayoutDirection provides application.globalLayoutDirection(),
                         ) {
                             content()
                         }
