@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.kdt
+package androidx.compose.ui.kdt.macos
 
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.MainCoroutineDispatcher

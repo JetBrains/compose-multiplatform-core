@@ -18,17 +18,22 @@ package androidx.compose.desktop.examples.kdt
 
 import androidx.compose.desktop.examples.vsync.WindowContent
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.kdt.KdtWindow
-import androidx.compose.ui.kdt.kdtApplication
+import androidx.compose.ui.kdt.Window
+import androidx.compose.ui.kdt.initApplication
+import androidx.compose.ui.kdt.runApplication
 
-fun main() = kdtApplication {
-    AppWindow()
-    AppWindow()
+fun main() {
+    initApplication().use { application ->
+        runApplication(application) {
+            AppWindow()
+            AppWindow()
+        }
+    }
 }
 
 @Composable
 private fun AppWindow() {
-    KdtWindow {
+    Window {
         WindowContent(windowSize = window.contentSize, refreshRate = 120)
     }
 }
