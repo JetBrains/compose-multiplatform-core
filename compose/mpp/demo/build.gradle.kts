@@ -182,6 +182,10 @@ kotlin {
             resources.setSrcDirs(resources.srcDirs)
             // TODO Restore unzipTask
             // resources.srcDirs(unzipTask.map { it.destinationDir })
+
+            dependencies {
+                implementation(libs.kotlinSerializationJson)
+            }
         }
 
         val jsMain by getting {
