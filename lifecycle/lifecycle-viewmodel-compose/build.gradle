@@ -52,7 +52,10 @@ kotlin {
                 api(project(":lifecycle:lifecycle-common"))
                 api(project(":lifecycle:lifecycle-viewmodel"))
                 api("androidx.annotation:annotation:1.9.1")
-                api("org.jetbrains.compose.runtime:runtime:1.8.2")
+
+                // Updated compose-runtime independently from compose-ui to apply migration to AOSP
+                // without breaking compatibility with Compose Multiplatform 1.8
+                api("org.jetbrains.compose.runtime:runtime:1.9.0")
 
                 // Moved from platform dependencies
                 api(project(":lifecycle:lifecycle-viewmodel-savedstate"))
