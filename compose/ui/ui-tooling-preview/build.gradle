@@ -23,6 +23,7 @@
  */
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -33,7 +34,13 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.tooling.preview"
     }
-    jvmStubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -79,13 +86,68 @@ androidXMultiplatform {
             }
         }
 
-        commonStubsMain {
+        // TODO: Align naming: nonAndroidMain
+        skikoMain {
             dependsOn(commonMain)
         }
 
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
+        skikoTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
             dependsOn(jvmMain)
+            dependsOn(skikoMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+            dependsOn(skikoTest)
+        }
+
+        nonJvmMain {
+            dependsOn(commonMain)
+            dependsOn(skikoMain)
+        }
+
+        nonJvmTest {
+            dependsOn(commonTest)
+            dependsOn(skikoTest)
+        }
+
+        nativeMain {
+            dependsOn(nonJvmMain)
+        }
+
+        nativeTest {
+            dependsOn(nonJvmTest)
+        }
+
+        webMain {
+            dependsOn(nonJvmMain)
+        }
+
+        webTest {
+            dependsOn(nonJvmTest)
+        }
+
+        targets.configureEach { target ->
+
+            // TODO: Ignore stubs. Remove together with stubs target
+            if (target.name.endsWith("Stubs")) return
+
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
+            }
+        }
+
+        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
         linuxx64StubsMain {
