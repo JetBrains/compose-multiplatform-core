@@ -22,16 +22,11 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ComposeUIDispatcher
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.window.GlobalDensity
-import androidx.compose.ui.window.GlobalLayoutDirection
 import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 import kotlinx.coroutines.launch
@@ -95,7 +90,8 @@ class KdtComposeApplication(): KdtApplication {
     override fun exitApplication() {
         //todo close all resources including GPU context and all
         Application.stopEventLoop()
-        eventLoopThreadHandler.join()
+        // todo[ps] join hangs by some reason
+//         eventLoopThreadHandler.join()
     }
 }
 
@@ -108,7 +104,6 @@ fun kdtApplication(content: @Composable NoriaContext.() -> Unit) {
             GlobalSnapshotManager.ensureStarted()
 
             val recomposer = Recomposer(coroutineContext)
-            var isOpen by mutableStateOf(true)
 
             launch {
                 recomposer.runRecomposeAndApplyChanges()
@@ -119,16 +114,15 @@ fun kdtApplication(content: @Composable NoriaContext.() -> Unit) {
                 val composition = Composition(applier, recomposer)
                 try {
                     composition.setContent {
-                        if (isOpen) {
-                            CompositionLocalProvider(
-                                LocalKdtApplication provides application,
-                                // Resources which are defined at the application level can use
-                                // density to calculate intrinsicSize
-                                LocalDensity provides GlobalDensity,
-                                LocalLayoutDirection provides GlobalLayoutDirection,
-                            ) {
-                                content()
-                            }
+                        CompositionLocalProvider(
+                            LocalKdtApplication provides application,
+                            // Resources which are defined at the application level can use
+                            // density to calculate intrinsicSize
+                            // todo[ps] invalidate when screen configuration changed
+                            LocalDensity provides globalDensity(),
+                            LocalLayoutDirection provides globalLayoutDirection(),
+                        ) {
+                            content()
                         }
                     }
                     recomposer.close()

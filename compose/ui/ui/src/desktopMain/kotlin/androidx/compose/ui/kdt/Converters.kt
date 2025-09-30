@@ -19,9 +19,13 @@ package androidx.compose.ui.kdt
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
+import org.jetbrains.desktop.macos.Application
 import org.jetbrains.desktop.macos.LogicalSize
+import org.jetbrains.desktop.macos.Screen
+import org.jetbrains.desktop.macos.TextDirection
 
 fun LogicalSize.toIntSize(density: Density = Density(2f)): IntSize {
     return with(density) {
@@ -31,4 +35,18 @@ fun LogicalSize.toIntSize(density: Density = Density(2f)): IntSize {
 
 fun LogicalSize.toDpSize(): DpSize {
     return DpSize(width.dp, height.dp)
+}
+
+fun globalDensity(): Density {
+    val density = Screen.allScreens().mainScreen().scale
+    return Density(density.toFloat(), fontScale = 1f)
+}
+
+// This value is usually stable between system restarts
+// So we can not bothering with its invalidation
+fun globalLayoutDirection(): LayoutDirection {
+    return when (Application.textDirection) {
+        TextDirection.LeftToRight -> LayoutDirection.Ltr
+        TextDirection.RightToLeft -> LayoutDirection.Rtl
+    }
 }
