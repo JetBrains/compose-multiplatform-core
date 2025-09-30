@@ -46,7 +46,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinStdlib)
                 api(project(":compose:material3:material3"))
                 api("androidx.compose.material3.adaptive:adaptive:1.1.0")
-                implementation("androidx.window:window-core:1.4.0-rc01")
+                implementation("androidx.window:window-core:1.4.0")
             }
         }
 
