@@ -50,10 +50,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
-import noria.NoriaContext
 
 @Composable
-fun NoriaContext.AnimatedTransitionExample(rpm: Int) {
+fun AnimatedTransitionExample(rpm: Int) {
     var rotation by remember { mutableStateOf(0f) }
     val infiniteTransition = rememberInfiniteTransition()
     val ticker by infiniteTransition.animateFloat(
@@ -85,7 +84,7 @@ fun NoriaContext.AnimatedTransitionExample(rpm: Int) {
 }
 
 @Composable
-fun NoriaContext.RunningSquares(windowSize: DpSize, refreshRate: Int) {
+fun RunningSquares(windowSize: DpSize, refreshRate: Int) {
     val frameLogger = remember { FrameLogger() }
     val windowIntSize = with(LocalDensity.current) {
         windowSize.toSize().toIntSize()
@@ -123,7 +122,7 @@ fun NoriaContext.RunningSquares(windowSize: DpSize, refreshRate: Int) {
 }
 
 @Composable
-fun NoriaContext.FancyBorder(
+fun FancyBorder(
     modifier: Modifier = Modifier,
     borderWidth: Float = 6f,
     content: @Composable () -> Unit
@@ -231,7 +230,7 @@ fun NoriaContext.FancyBorder(
 }
 
 @Composable
-fun NoriaContext.WindowContent(windowSize: DpSize, refreshRate: Int) {
+fun WindowContent(windowSize: DpSize, refreshRate: Int) {
     FancyBorder(
         modifier = Modifier.fillMaxSize()
     ) {
