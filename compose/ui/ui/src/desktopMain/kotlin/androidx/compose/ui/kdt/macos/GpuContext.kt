@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.kdt
+package androidx.compose.ui.kdt.macos
 
 import org.jetbrains.desktop.macos.MetalCommandQueue
 import org.jetbrains.desktop.macos.MetalDevice
