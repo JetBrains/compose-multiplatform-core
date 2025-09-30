@@ -165,6 +165,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
@@ -429,7 +430,8 @@ fun AppBarWithSearch(
                         ?: Modifier)
                 )
                 .fillMaxWidth()
-                .windowInsetsPadding(windowInsets),
+                .windowInsetsPadding(windowInsets)
+                .semantics { isTraversalGroup = true },
         tonalElevation = if (!isContainerTransparent) tonalElevation else 0.dp,
         shadowElevation = if (!isContainerTransparent) shadowElevation else 0.dp,
     ) {

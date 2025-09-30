@@ -18,12 +18,12 @@ package androidx.navigation3.runtime.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.navigation3.runtime.NavBackStackSerializer
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.samples.RememberNavBackStackSamples.Details
 import androidx.navigation3.runtime.samples.RememberNavBackStackSamples.Home
 import androidx.navigation3.runtime.samples.RememberNavBackStackSamples.Screen
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
 import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
@@ -48,7 +48,7 @@ fun NavBackStackSerializer_withReflection() {
     // This will throw a runtime exception on non-Android platforms during serialization.
     val serializer = NavBackStackSerializer<Screen>()
 
-    val backStack = mutableStateListOf(Home("abc"), Details(42))
+    val backStack = NavBackStack(Home("abc"), Details(42))
     val encoded = encodeToSavedState(serializer, backStack)
     val decoded = decodeFromSavedState(serializer, encoded)
 }
@@ -64,10 +64,10 @@ fun NavBackStackSerializer_withSerializersModule() {
     }
     val configuration = SavedStateConfiguration { serializersModule = module }
 
-    val config = NavBackStackSerializer<Screen>(configuration)
+    val serializer = NavBackStackSerializer<Screen>()
 
     // Pass the same configuration (or at least its serializersModule) to encode/decode:
-    val backStack = mutableStateListOf(Home("abc"), Details(42))
-    val encoded = encodeToSavedState(config, backStack, configuration)
-    val decoded = decodeFromSavedState(config, encoded, configuration)
+    val backStack = NavBackStack(Home("abc"), Details(42))
+    val encoded = encodeToSavedState(serializer, backStack, configuration)
+    val decoded = decodeFromSavedState(serializer, encoded, configuration)
 }

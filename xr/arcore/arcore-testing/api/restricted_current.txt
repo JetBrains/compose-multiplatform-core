@@ -251,17 +251,17 @@ package androidx.xr.arcore.testing {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeEye implements androidx.xr.arcore.internal.Eye {
     ctor public FakeRuntimeEye();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCoarsePose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getCoarseState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeStatus? getCoarseStatus();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getFinePose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getFineState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeStatus? getFineStatus();
     method @InaccessibleFromKotlin public void setCoarsePose(androidx.xr.runtime.math.Pose?);
-    method @InaccessibleFromKotlin public void setCoarseState(androidx.xr.arcore.EyeState?);
+    method @InaccessibleFromKotlin public void setCoarseStatus(androidx.xr.arcore.EyeStatus?);
     method @InaccessibleFromKotlin public void setFinePose(androidx.xr.runtime.math.Pose?);
-    method @InaccessibleFromKotlin public void setFineState(androidx.xr.arcore.EyeState?);
+    method @InaccessibleFromKotlin public void setFineStatus(androidx.xr.arcore.EyeStatus?);
     property public androidx.xr.runtime.math.Pose? coarsePose;
-    property public androidx.xr.arcore.EyeState? coarseState;
+    property public androidx.xr.arcore.EyeStatus? coarseStatus;
     property public androidx.xr.runtime.math.Pose? finePose;
-    property public androidx.xr.arcore.EyeState? fineState;
+    property public androidx.xr.arcore.EyeStatus? fineStatus;
   }
 
   public final class FakeRuntimeFace implements androidx.xr.arcore.internal.Face {

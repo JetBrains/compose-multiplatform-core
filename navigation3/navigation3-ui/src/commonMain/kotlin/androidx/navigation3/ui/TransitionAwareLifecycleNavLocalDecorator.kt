@@ -17,12 +17,14 @@
 package androidx.navigation3.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.rememberLifecycleOwner
 import androidx.navigation3.fastAnyOrAny
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
@@ -42,7 +44,8 @@ internal fun <T : Any> rememberTransitionAwareLifecycleNavEntryDecorator(
                 isInBackStack && !isSettled -> Lifecycle.State.STARTED
                 else /* !isInBackStack */ -> Lifecycle.State.CREATED
             }
-        LifecycleOwner(maxLifecycle = maxLifecycle) { entry.Content() }
+        val owner = rememberLifecycleOwner(maxLifecycle = maxLifecycle)
+        CompositionLocalProvider(LocalLifecycleOwner provides owner) { entry.Content() }
     }
 }
 

@@ -17,14 +17,14 @@
 package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.EyeState
+import androidx.xr.arcore.EyeStatus
 import androidx.xr.arcore.internal.Eye
 import androidx.xr.runtime.math.Pose
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRuntimeEye : Eye {
-    override var coarseState: EyeState? = EyeState.GAZING
+    override var coarseStatus: EyeStatus? = EyeStatus.GAZING
     override var coarsePose: Pose? = Pose()
-    override var fineState: EyeState? = EyeState.GAZING
+    override var fineStatus: EyeStatus? = EyeStatus.GAZING
     override var finePose: Pose? = Pose()
 }

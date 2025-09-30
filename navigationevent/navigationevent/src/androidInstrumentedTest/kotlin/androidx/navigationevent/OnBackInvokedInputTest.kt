@@ -231,36 +231,6 @@ class OnBackInvokedDefaultInputTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 34)
-    fun testDoubleStartHandlerCausesCancel() {
-        val invoker = TestOnBackInvokedDispatcher()
-
-        val dispatcher = NavigationEventDispatcher {}
-        val input = OnBackInvokedDefaultInput(invoker)
-        dispatcher.addInput(input)
-
-        val handler1 = TestNavigationEventHandler()
-
-        dispatcher.addHandler(handler1)
-
-        assertThat(invoker.registerCount).isEqualTo(1)
-
-        invoker.dispatchOnBackStarted(TestBackEvent())
-
-        val handler2 = TestNavigationEventHandler()
-
-        dispatcher.addHandler(handler2)
-
-        invoker.dispatchOnBackStarted(TestBackEvent())
-
-        assertThat(invoker.registerCount).isEqualTo(1)
-
-        assertThat(handler1.onBackCancelledInvocations).isEqualTo(1)
-
-        assertThat(handler2.onBackStartedInvocations).isEqualTo(1)
-    }
-
-    @Test
     fun testDefaultPriority() {
         val invoker = TestOnBackInvokedDispatcher()
 

@@ -20,7 +20,7 @@ import android.widget.TextView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Eye
-import androidx.xr.arcore.EyeState
+import androidx.xr.arcore.EyeStatus
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
@@ -91,10 +91,10 @@ class GazeRenderer(val session: Session, val lifecycleScope: CoroutineScope, var
             getEyeState(config, eye)?.let { view.setBackgroundColor(getColor(it)) }
         }
 
-        fun getColor(state: EyeState): Int {
+        fun getColor(state: EyeStatus): Int {
             return when (state) {
-                EyeState.GAZING -> if (left) GAZE_LEFT else GAZE_RIGHT
-                EyeState.SHUT -> if (left) SHUT_LEFT else SHUT_RIGHT
+                EyeStatus.GAZING -> if (left) GAZE_LEFT else GAZE_RIGHT
+                EyeStatus.SHUT -> if (left) SHUT_LEFT else SHUT_RIGHT
                 else -> INVALID
             }
         }

@@ -43,8 +43,8 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.BitmapMatcher
 import org.junit.rules.RuleChain
-import org.junit.rules.TestName
 import org.junit.rules.TestRule
+import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
@@ -60,9 +60,19 @@ class RemoteComposeScreenshotTestRule(
     moduleDirectory: String,
     private val matcher: BitmapMatcher? = null,
     private val targetPlayer: TargetPlayer,
+    private val includeClassName: Boolean = true,
 ) : TestRule {
     val composeTestRule = createComposeRule()
-    val testName = TestName()
+
+    private lateinit var testDescription: Description
+
+    val testName =
+        object : TestWatcher() {
+
+            override fun starting(description: Description) {
+                testDescription = description
+            }
+        }
     val screenshotRule = AndroidXScreenshotTestRule(moduleDirectory)
 
     val thisRule =
@@ -88,7 +98,7 @@ class RemoteComposeScreenshotTestRule(
     }
 
     fun runScreenshotTest(
-        screenshotName: TestName = testName,
+        screenshotName: Description = testDescription,
         size: Size = displaySize(),
         backgroundColor: Color? = null,
         content: @Composable @RemoteComposable () -> Unit,
@@ -98,7 +108,7 @@ class RemoteComposeScreenshotTestRule(
     }
 
     fun runScreenshotTest(
-        screenshotName: TestName = testName,
+        screenshotName: Description = testDescription,
         size: Size = displaySize(),
         backgroundColor: Color? = null,
         document: CoreDocument,
@@ -179,7 +189,7 @@ class RemoteComposeScreenshotTestRule(
     }
 
     fun ComposeContentTestRule.verifyScreenshot(
-        testName: TestName,
+        testName: Description,
         screenshotRule: AndroidXScreenshotTestRule,
     ) {
         val goldenScreenshotName = testName.goldenIdentifier()
@@ -195,8 +205,15 @@ class RemoteComposeScreenshotTestRule(
      * Valid characters for golden identifiers are [A-Za-z0-9_-] TestParameterInjector adds '[' +
      * parameter_values + ']' + ',' to the test name.
      */
-    fun TestName.goldenIdentifier(): String =
-        methodName.replace("[", "_").replace("]", "").replace(",", "_")
+    fun Description.goldenIdentifier(): String {
+        val testIdentifier =
+            if (includeClassName) {
+                className.substringAfterLast('.') + "_" + methodName
+            } else {
+                methodName
+            }
+        return testIdentifier.replace("[\\[$]".toRegex(), "_").replace("]", "")
+    }
 
     internal companion object {
         fun displaySize(): Size {

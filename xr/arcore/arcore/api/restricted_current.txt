@@ -243,29 +243,29 @@ package androidx.xr.arcore {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class Eye.State {
-    ctor public Eye.State(androidx.xr.arcore.EyeState? coarseEyeState, androidx.xr.runtime.math.Pose? coarseEyePose, androidx.xr.arcore.EyeState? fineEyeState, androidx.xr.runtime.math.Pose? fineEyePose);
+    ctor public Eye.State(androidx.xr.arcore.EyeStatus? coarseEyeStatus, androidx.xr.runtime.math.Pose? coarseEyePose, androidx.xr.arcore.EyeStatus? fineEyeStatus, androidx.xr.runtime.math.Pose? fineEyePose);
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCoarseEyePose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getCoarseEyeState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeStatus? getCoarseEyeStatus();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getFineEyePose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getFineEyeState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeStatus? getFineEyeStatus();
     property public androidx.xr.runtime.math.Pose? coarseEyePose;
-    property public androidx.xr.arcore.EyeState? coarseEyeState;
+    property public androidx.xr.arcore.EyeStatus? coarseEyeStatus;
     property public androidx.xr.runtime.math.Pose? fineEyePose;
-    property public androidx.xr.arcore.EyeState? fineEyeState;
+    property public androidx.xr.arcore.EyeStatus? fineEyeStatus;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class EyeState {
-    ctor public EyeState(int value);
-    field public static final androidx.xr.arcore.EyeState.Companion Companion;
-    field public static final androidx.xr.arcore.EyeState GAZING;
-    field public static final androidx.xr.arcore.EyeState INVALID;
-    field public static final androidx.xr.arcore.EyeState SHUT;
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class EyeStatus {
+    ctor public EyeStatus(int value);
+    field public static final androidx.xr.arcore.EyeStatus.Companion Companion;
+    field public static final androidx.xr.arcore.EyeStatus GAZING;
+    field public static final androidx.xr.arcore.EyeStatus INVALID;
+    field public static final androidx.xr.arcore.EyeStatus SHUT;
   }
 
-  public static final class EyeState.Companion {
-    property public androidx.xr.arcore.EyeState GAZING;
-    property public androidx.xr.arcore.EyeState INVALID;
-    property public androidx.xr.arcore.EyeState SHUT;
+  public static final class EyeStatus.Companion {
+    property public androidx.xr.arcore.EyeStatus GAZING;
+    property public androidx.xr.arcore.EyeStatus INVALID;
+    property public androidx.xr.arcore.EyeStatus SHUT;
   }
 
   public final class Face {
@@ -801,13 +801,13 @@ package androidx.xr.arcore.internal {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Eye {
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCoarsePose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getCoarseState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeStatus? getCoarseStatus();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getFinePose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getFineState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeStatus? getFineStatus();
     property public abstract androidx.xr.runtime.math.Pose? coarsePose;
-    property public abstract androidx.xr.arcore.EyeState? coarseState;
+    property public abstract androidx.xr.arcore.EyeStatus? coarseStatus;
     property public abstract androidx.xr.runtime.math.Pose? finePose;
-    property public abstract androidx.xr.arcore.EyeState? fineState;
+    property public abstract androidx.xr.arcore.EyeStatus? fineStatus;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Face {

@@ -27,12 +27,14 @@ import androidx.navigationevent.NavigationEventTransitionState.Idle
 
 /**
  * This class serves as the Compose-layer adapter for the navigation event system. It holds the
- * developer-defined history partitions ([currentInfo], [backInfo], [forwardInfo]) and subscribes to
- * the local gesture state ([transitionState]) from the [handler].
+ * developer-defined history partitions ([currentInfo], [backInfo], [forwardInfo]) and is updated
+ * with the local [transitionState] by the [NavigationEventHandler] it is provided to.
  *
- * This object is created via `rememberNavigationEventState` and consumed by
+ * This object is created via [rememberNavigationEventState] and consumed by
  * [NavigationEventHandler] to link the hoisted history state with the active handler's callbacks
  * and gesture state.
+ *
+ * @see androidx.navigationevent.compose.NavigationEventHandler
  */
 @Stable
 public class NavigationEventState<T : NavigationEventInfo>
@@ -54,26 +56,22 @@ internal constructor(
     /** History partitions relative to the current position. */
 
     /** A list of destinations the user may navigate back to. */
-    public var backInfo: List<NavigationEventInfo> by mutableStateOf(backInfo)
+    public var backInfo: List<T> by mutableStateOf(backInfo)
         internal set
 
     /** The contextual information for the currently active destination. */
-    public var currentInfo: NavigationEventInfo by mutableStateOf(currentInfo)
+    public var currentInfo: T by mutableStateOf(currentInfo)
         internal set
 
     /** A list of destinations the user may navigate forward to. */
-    public var forwardInfo: List<NavigationEventInfo> by mutableStateOf(forwardInfo)
+    public var forwardInfo: List<T> by mutableStateOf(forwardInfo)
         internal set
 
     /**
      * The internal handler instance associated with this state object. This handler is created and
-     * remembered by `rememberNavigationEventState` and is registered with the dispatcher when
+     * remembered by [rememberNavigationEventState] and is registered with the dispatcher when
      * passed to [NavigationEventHandler]. This guarantees the link between the hoisted state and
      * the active handler.
      */
-    internal val handler =
-        ComposeNavigationEventHandler(
-            initialInfo = currentInfo,
-            onTransitionStateChanged = { transitionState = it },
-        )
+    internal var sourceHandler: NavigationEventHandler<out NavigationEventInfo>? = null
 }

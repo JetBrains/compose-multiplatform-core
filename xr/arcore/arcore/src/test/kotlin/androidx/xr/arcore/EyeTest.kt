@@ -71,14 +71,14 @@ class EyeTest {
     @Test
     fun update_coarseTrackingStateMatchesRuntime() = runBlocking {
         val runtimeEye = FakeRuntimeEye()
-        runtimeEye.coarseState = EyeState.SHUT
+        runtimeEye.coarseStatus = EyeStatus.SHUT
         val underTest = Eye(runtimeEye)
-        check(underTest.state.value.coarseEyeState == EyeState.SHUT)
+        check(underTest.state.value.coarseEyeStatus == EyeStatus.SHUT)
 
-        runtimeEye.coarseState = EyeState.GAZING
+        runtimeEye.coarseStatus = EyeStatus.GAZING
         underTest.update()
 
-        assertThat(underTest.state.value.coarseEyeState).isEqualTo(EyeState.GAZING)
+        assertThat(underTest.state.value.coarseEyeStatus).isEqualTo(EyeStatus.GAZING)
     }
 
     @Test
@@ -100,14 +100,14 @@ class EyeTest {
     @Test
     fun update_fineTrackingStateMatchesRuntime() = runBlocking {
         val runtimeEye = FakeRuntimeEye()
-        runtimeEye.fineState = EyeState.SHUT
+        runtimeEye.fineStatus = EyeStatus.SHUT
         val underTest = Eye(runtimeEye)
-        check(underTest.state.value.fineEyeState == EyeState.SHUT)
+        check(underTest.state.value.fineEyeStatus == EyeStatus.SHUT)
 
-        runtimeEye.fineState = EyeState.GAZING
+        runtimeEye.fineStatus = EyeStatus.GAZING
         underTest.update()
 
-        assertThat(underTest.state.value.fineEyeState).isEqualTo(EyeState.GAZING)
+        assertThat(underTest.state.value.fineEyeStatus).isEqualTo(EyeStatus.GAZING)
     }
 
     @Test

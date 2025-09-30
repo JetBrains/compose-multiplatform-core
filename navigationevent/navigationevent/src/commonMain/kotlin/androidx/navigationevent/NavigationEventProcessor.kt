@@ -112,6 +112,36 @@ internal class NavigationEventProcessor {
     private var inProgressDirection: @Direction Int? = null
 
     /**
+     * The [NavigationEventInput] that initiated the currently active gesture.
+     *
+     * This property is set alongside [inProgressHandler] when a `dispatchOnStarted` event is
+     * successfully processed. Its lifecycle is tied directly to the active gesture (i.e., it is
+     * non-null only when [inProgressHandler] is non-null).
+     *
+     * Its primary purpose is to distinguish event sources. Subsequent dispatch calls (like
+     * `onProgressed` or `onCompleted`) must originate from this same input to be considered part of
+     * the active gesture. Events from other inputs will be ignored or will trigger a cancellation
+     * of this in-progress event.
+     */
+    private var inProgressInput: NavigationEventInput? = null
+
+    /**
+     * A flag indicating whether a predictive gesture is currently in progress.
+     *
+     * This is set to `true` by the predictive `dispatchOnStarted(event)` overload and is cleared
+     * (set to `false`) when the gesture terminates (either completed or cancelled). Its lifecycle
+     * is tied directly to the other in-progress properties (handler, direction, and input).
+     *
+     * This allows the processor to distinguish between a non-predictive and a predictive started
+     * gesture. This is necessary because progress events (`onBackProgressed`,
+     * `onForwardProgressed`) should only be dispatched for predictive gestures.
+     *
+     * @see [NavigationEventInput.isPredictiveBackInProgress]
+     * @see [NavigationEventInput.isPredictiveForwardInProgress]
+     */
+    private var isPredictiveInProgress = false
+
+    /**
      * Holds inputs that were registered without a specific priority.
      *
      * These are typically treated as the lowest priority level, processed only after
@@ -284,6 +314,8 @@ internal class NavigationEventProcessor {
             }
             inProgressHandler = null
             inProgressDirection = null
+            inProgressInput = null
+            isPredictiveInProgress = false
         }
 
         // The `remove()` operation on ArrayDeque is efficient and simply returns `false` if the
@@ -343,64 +375,78 @@ internal class NavigationEventProcessor {
     }
 
     /**
-     * Dispatches an [NavigationEventHandler.onBackStarted] event with the given event to the
-     * highest-priority enabled handler.
+     * Starts a navigation event, which may be predictive or non-predictive.
      *
-     * If an event is currently in progress, it will be cancelled first to ensure a clean state for
-     * the new event. Only the single, highest-priority enabled handler is notified and becomes the
-     * [inProgressHandler].
+     * If [event] is non-null, this starts a **predictive** gesture. The handler's
+     * `doOn...Started()` callback is invoked with the [event] (which contains edge information) and
+     * the state is moved to [NavigationEventTransitionState.InProgress].
+     *
+     * If [event] is null, this starts a **non-predictive** event (e.g., a button press).
+     * `doOn...Started()` is skipped, and the handler will only be notified upon completion or
+     * cancellation.
      *
      * @param input The [NavigationEventInput] that sourced this event.
-     * @param direction The direction of the navigation event being started.
-     * @param event [NavigationEvent] to dispatch to the handler.
+     * @param direction The direction of the navigation event.
+     * @param event The [NavigationEvent], or `null` for non-predictive events.
      */
     fun dispatchOnStarted(
         input: NavigationEventInput,
         direction: @Direction Int,
-        event: NavigationEvent,
+        event: NavigationEvent? = null,
     ) {
-        // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
-
-        if (inProgressHandler != null) {
-            // It's important to ensure that any ongoing operations from previous events are
-            // properly cancelled before starting new ones to maintain a consistent state.
-            dispatchOnCancelled(input, direction)
+        if (isPredictiveInProgress) {
+            return
         }
 
         // Find the highest-priority enabled handler to handle this event.
         val handler = resolveEnabledHandler(direction)
-        if (handler != null) {
-            // Set this handler as the one in progress *before* execution. This ensures
-            // `onCancelled` can be correctly handled if the handler removes itself during
-            // `onEventStarted`.
-            inProgressHandler = handler
-            inProgressDirection = direction
-            when (direction) {
-                TRANSITIONING_BACK -> handler.doOnBackStarted(event)
-                TRANSITIONING_FORWARD -> handler.doOnForwardStarted(event)
-            }
-        }
 
-        _transitionState.value = InProgress(latestEvent = event, direction = direction)
+        // Set this handler as the one in progress *before* execution. This ensures
+        // `onCancelled` can be correctly handled if the handler removes itself during
+        // `onEventStarted`.
+        inProgressHandler = handler
+        inProgressDirection = direction
+        inProgressInput = input
+        isPredictiveInProgress = event != null
+
+        // A non-null event indicates a new predictive gesture is starting.
+        if (event != null) {
+            when (direction) {
+                TRANSITIONING_BACK -> handler?.doOnBackStarted(event)
+                TRANSITIONING_FORWARD -> handler?.doOnForwardStarted(event)
+            }
+
+            _transitionState.value = InProgress(latestEvent = event, direction = direction)
+        } else {
+            // We skip 'doOn...Started()' here. That callback (with NavigationEvent) is only for
+            // predictive gestures (edge data, etc.). Non-predictive events should go straight to
+            // onCompleted to match existing behavior in OnBackPressedDispatcher and Fragments.
+        }
     }
 
     /**
-     * Dispatches an [NavigationEventHandler.onBackProgressed] event with the given event.
+     * Reports progress for a predictive navigation event.
      *
-     * If a handler is currently in progress (from a [dispatchOnStarted] call), only that handler
-     * will be notified. Otherwise, the highest-priority enabled handler will receive the progress
-     * event. This is not a terminal event, so [inProgressHandler] is not cleared.
+     * If a handler is already in progress (from `dispatchOnStarted`), only that handler is
+     * notified. Otherwise, the highest-priority enabled handler is resolved and receives the
+     * progress event. Progress is non-terminal; [inProgressHandler] is not cleared. The transition
+     * state is updated to [NavigationEventTransitionState.InProgress].
      *
      * @param input The [NavigationEventInput] that sourced this event.
-     * @param direction The direction of the navigation event being started.
-     * @param event [NavigationEvent] to dispatch to the handler.
+     * @param direction The direction of the navigation event.
+     * @param event The [NavigationEvent] to dispatch to the handler.
      */
     fun dispatchOnProgressed(
         input: NavigationEventInput,
         direction: @Direction Int,
         event: NavigationEvent,
     ) {
-        // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
+        // Ignore progress events that don't match the currently active predictive gesture.
+        if (
+            input != inProgressInput || direction != inProgressDirection || !isPredictiveInProgress
+        ) {
+            return
+        }
 
         // If there is a handler in progress, only that one is notified.
         // Otherwise, the highest-priority enabled handler is notified.
@@ -416,30 +462,29 @@ internal class NavigationEventProcessor {
     }
 
     /**
-     * Dispatches a navigation completion event to the appropriate handler.
+     * Completes a navigation event.
      *
-     * If a handler is currently in progress, only that one will be notified. Otherwise, the
-     * highest-priority enabled handler for the given [direction] is chosen. Completion is a
-     * terminal event, so [inProgressHandler] is always cleared afterward.
+     * If a handler is in progress, only that handler is notified. Otherwise, the highest-priority
+     * enabled handler for [direction] is resolved. Completion is terminal: [inProgressHandler] and
+     * [inProgressDirection] are cleared and the transition returns to
+     * [NavigationEventTransitionState.Idle].
      *
-     * If no handler handles the event:
-     * - For [TRANSITIONING_BACK], the [onBackCompletedFallback] action is invoked.
-     * - For [TRANSITIONING_FORWARD], no fallback is triggered.
-     *
-     * After dispatching, the dispatcher always transitions back to
-     * [NavigationEventTransitionState.Idle] state.
+     * Fallbacks:
+     * - For [TRANSITIONING_BACK], invoke [onBackCompletedFallback] if no handler is resolved.
+     * - For [TRANSITIONING_FORWARD], no fallback is invoked.
      *
      * @param input The [NavigationEventInput] that sourced this event.
-     * @param direction The direction of the navigation event that completed.
-     * @param onBackCompletedFallback The action to invoke if no handler handles a back completion
-     *   event.
+     * @param direction The direction of the navigation event.
+     * @param onBackCompletedFallback Action to invoke if no back handler completes the event.
      */
     fun dispatchOnCompleted(
         input: NavigationEventInput,
         direction: @Direction Int,
         onBackCompletedFallback: OnBackCompletedFallback?,
     ) {
-        // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
+        if (input != inProgressInput || direction != inProgressDirection) {
+            return
+        }
 
         // If there is a handler in progress, only that one is notified.
         // Otherwise, the highest-priority enabled handler is notified.
@@ -448,6 +493,8 @@ internal class NavigationEventProcessor {
         // Clear in-progress, as 'completed' is a terminal event.
         inProgressHandler = null
         inProgressDirection = null
+        inProgressInput = null
+        isPredictiveInProgress = false
 
         when (direction) {
             TRANSITIONING_BACK -> {
@@ -466,17 +513,19 @@ internal class NavigationEventProcessor {
     }
 
     /**
-     * Dispatches an [NavigationEventHandler.onBackCancelled] event.
+     * Dispatches a cancellation event.
      *
      * If a handler is currently in progress, only it will be notified. Otherwise, the
      * highest-priority enabled handler will be notified. This is a terminal event, clearing the
-     * [inProgressHandler].
+     * [inProgressHandler] and returning the state to [NavigationEventTransitionState.Idle].
      *
      * @param input The [NavigationEventInput] that sourced this event.
-     * @param direction The direction of the navigation event being started.
+     * @param direction The direction of the navigation event being cancelled.
      */
     fun dispatchOnCancelled(input: NavigationEventInput, direction: @Direction Int) {
-        // TODO(mgalhardo): Update sharedProcessor to use input to distinguish events.
+        if (input != inProgressInput || direction != inProgressDirection) {
+            return
+        }
 
         // If there is a handler in progress, only that one is notified.
         // Otherwise, the highest-priority enabled handler is notified.
@@ -485,6 +534,8 @@ internal class NavigationEventProcessor {
         // Clear in-progress, as 'cancelled' is a terminal event.
         inProgressHandler = null
         inProgressDirection = null
+        inProgressInput = null
+        isPredictiveInProgress = false
 
         when (direction) {
             TRANSITIONING_BACK -> handler?.doOnBackCancelled()

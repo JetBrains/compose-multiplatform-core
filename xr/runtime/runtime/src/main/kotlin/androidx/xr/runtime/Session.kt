@@ -24,6 +24,7 @@ import androidx.annotation.RestrictTo
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
@@ -257,17 +258,19 @@ public constructor(
                     CoroutineScope(context = coroutineContext),
                 )
 
-            lifecycleOwner.lifecycle.addObserver(session.lifecycleObserver)
-            if (lifecycleOwner != activity) {
-                activity.lifecycle.addObserver(
-                    observer =
-                        LifecycleEventObserver { _, event ->
-                            when (event) {
-                                Lifecycle.Event.ON_DESTROY -> session.destroy()
-                                else -> {}
+            lifecycleOwner.lifecycleScope.launch {
+                lifecycleOwner.lifecycle.addObserver(session.lifecycleObserver)
+                if (lifecycleOwner != activity) {
+                    activity.lifecycle.addObserver(
+                        observer =
+                            LifecycleEventObserver { _, event ->
+                                when (event) {
+                                    Lifecycle.Event.ON_DESTROY -> session.destroy()
+                                    else -> {}
+                                }
                             }
-                        }
-                )
+                    )
+                }
             }
 
             return SessionCreateSuccess(session)

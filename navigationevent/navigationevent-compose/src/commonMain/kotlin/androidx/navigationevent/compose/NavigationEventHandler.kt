@@ -19,7 +19,10 @@ package androidx.navigationevent.compose
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
+import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventHandler
+import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
 
 /**
@@ -60,10 +63,12 @@ import androidx.navigationevent.NavigationEventTransitionState
  * @param isBackEnabled Controls whether back navigation gestures are handled.
  * @param onBackCancelled Called if a back navigation gesture is cancelled.
  * @param onBackCompleted Called when a back navigation gesture completes.
+ * @throws IllegalArgumentException If the provided [NavigationEventState] is passed to multiple
+ *   [NavigationEventHandler] Composable. Each handler must have its own unique state.
  */
 @Composable
 public fun NavigationEventHandler(
-    state: NavigationEventState<*>,
+    state: NavigationEventState<out NavigationEventInfo>,
     // ---- Forward Events ----
     isForwardEnabled: Boolean = true,
     onForwardCancelled: () -> Unit = {},
@@ -79,19 +84,40 @@ public fun NavigationEventHandler(
             }
             .navigationEventDispatcher
 
-    SideEffect {
-        state.handler.isForwardEnabled = isForwardEnabled
-        state.handler.currentOnForwardCancelled = onForwardCancelled
-        state.handler.currentOnForwardCompleted = onForwardCompleted
+    val sourceHandler =
+        remember(state) {
+            ComposeNavigationEventHandler(
+                initialInfo = state.currentInfo,
+                onTransitionStateChanged = { transitionState ->
+                    state.transitionState = transitionState
+                },
+            )
+        }
 
-        state.handler.isBackEnabled = isBackEnabled
-        state.handler.currentOnBackCancelled = onBackCancelled
-        state.handler.currentOnBackCompleted = onBackCompleted
+    SideEffect {
+        sourceHandler.isForwardEnabled = isForwardEnabled
+        sourceHandler.currentOnForwardCancelled = onForwardCancelled
+        sourceHandler.currentOnForwardCompleted = onForwardCompleted
+
+        sourceHandler.isBackEnabled = isBackEnabled
+        sourceHandler.currentOnBackCancelled = onBackCancelled
+        sourceHandler.currentOnBackCompleted = onBackCompleted
+
+        sourceHandler.setInfo(state.currentInfo, state.backInfo, state.forwardInfo)
     }
 
     DisposableEffect(state) {
-        dispatcher.addHandler(state.handler)
-        onDispose { state.handler.remove() }
+        require(state.sourceHandler == null) {
+            "NavigationEventState '$state' is already registered with a NavigationEventHandler '$sourceHandler'."
+        }
+
+        state.sourceHandler = sourceHandler
+        dispatcher.addHandler(sourceHandler)
+
+        onDispose {
+            sourceHandler.remove()
+            state.sourceHandler = null
+        }
     }
 }
 
@@ -114,7 +140,7 @@ public fun NavigationEventHandler(
  */
 @Composable
 public fun NavigationBackHandler(
-    state: NavigationEventState<*>,
+    state: NavigationEventState<out NavigationEventInfo>,
     isBackEnabled: Boolean = true,
     onBackCancelled: () -> Unit = {},
     onBackCompleted: () -> Unit,
@@ -149,7 +175,7 @@ public fun NavigationBackHandler(
  */
 @Composable
 public fun NavigationForwardHandler(
-    state: NavigationEventState<*>,
+    state: NavigationEventState<out NavigationEventInfo>,
     isForwardEnabled: Boolean = true,
     onForwardCancelled: () -> Unit = {},
     onForwardCompleted: () -> Unit,
@@ -163,4 +189,57 @@ public fun NavigationForwardHandler(
         onBackCompleted = {},
         isBackEnabled = false, // disable back
     )
+}
+
+/** A simple [NavigationEventHandler] that delegates its methods to lambda functions. */
+private class ComposeNavigationEventHandler<T : NavigationEventInfo>(
+    initialInfo: T,
+    private val onTransitionStateChanged: (NavigationEventTransitionState) -> Unit = {},
+) :
+    NavigationEventHandler<T>(
+        initialInfo = initialInfo,
+        isBackEnabled = false,
+        isForwardEnabled = false,
+    ) {
+
+    var currentOnForwardCancelled: () -> Unit = {}
+    var currentOnForwardCompleted: () -> Unit = {}
+    var currentOnBackCancelled: () -> Unit = {}
+    var currentOnBackCompleted: () -> Unit = {}
+
+    override fun onForwardStarted(event: NavigationEvent) {
+        onTransitionStateChanged(transitionState)
+    }
+
+    override fun onForwardProgressed(event: NavigationEvent) {
+        onTransitionStateChanged(transitionState)
+    }
+
+    override fun onForwardCancelled() {
+        onTransitionStateChanged(transitionState)
+        currentOnForwardCancelled.invoke()
+    }
+
+    override fun onForwardCompleted() {
+        onTransitionStateChanged(transitionState)
+        currentOnForwardCompleted.invoke()
+    }
+
+    override fun onBackStarted(event: NavigationEvent) {
+        onTransitionStateChanged(transitionState)
+    }
+
+    override fun onBackProgressed(event: NavigationEvent) {
+        onTransitionStateChanged(transitionState)
+    }
+
+    override fun onBackCancelled() {
+        onTransitionStateChanged(transitionState)
+        currentOnBackCancelled.invoke()
+    }
+
+    override fun onBackCompleted() {
+        onTransitionStateChanged(transitionState)
+        currentOnBackCompleted.invoke()
+    }
 }

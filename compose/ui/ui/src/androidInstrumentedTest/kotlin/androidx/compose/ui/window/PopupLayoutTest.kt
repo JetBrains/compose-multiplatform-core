@@ -379,6 +379,9 @@ class PopupLayoutTest {
 
             var windowOffset: Offset = Offset.Zero
 
+            override fun localToScreen(relativeToLocal: Offset): Offset =
+                relativeToLocal + windowOffset
+
             override fun windowToLocal(relativeToWindow: Offset): Offset =
                 relativeToWindow - windowOffset
 

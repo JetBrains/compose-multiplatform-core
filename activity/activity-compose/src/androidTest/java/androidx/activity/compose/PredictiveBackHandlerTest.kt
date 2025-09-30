@@ -404,7 +404,14 @@ class PredictiveBackHandlerTestApi {
         rule.setContent {
             PredictiveBackHandler(onBack = handler)
             val dispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
-            Button(onClick = { dispatcher.startGestureBack() }) { Text(text = "backPress") }
+            Button(
+                onClick = {
+                    dispatcher.startGestureBack()
+                    dispatcher.api34Complete()
+                }
+            ) {
+                Text(text = "backPress")
+            }
         }
         rule.onNodeWithText("backPress").performClick()
         rule.runOnIdle {

@@ -35,6 +35,9 @@ androidx {
 android {
     namespace = "androidx.compose.remote.frontend"
     compileSdk = 35
+    defaultConfig {
+        minSdk = 26
+    }
 }
 
 dependencies {

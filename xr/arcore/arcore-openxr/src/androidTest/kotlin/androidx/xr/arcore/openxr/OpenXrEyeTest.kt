@@ -20,7 +20,7 @@ import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
-import androidx.xr.arcore.EyeState
+import androidx.xr.arcore.EyeStatus
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -52,8 +52,8 @@ class OpenXrEyeTest {
 
         perceptionManager.updateEyesCoarseTracking(xrTime)
 
-        assertThat(underTestLeft.coarseState).isEqualTo(EyeState.GAZING)
-        assertThat(underTestRight.coarseState).isEqualTo(EyeState.GAZING)
+        assertThat(underTestLeft.coarseStatus).isEqualTo(EyeStatus.GAZING)
+        assertThat(underTestRight.coarseStatus).isEqualTo(EyeStatus.GAZING)
     }
 
     @Test
@@ -78,8 +78,8 @@ class OpenXrEyeTest {
 
         perceptionManager.updateEyesFineTracking(xrTime)
 
-        assertThat(underTestLeft.fineState).isEqualTo(EyeState.GAZING)
-        assertThat(underTestRight.fineState).isEqualTo(EyeState.GAZING)
+        assertThat(underTestLeft.fineStatus).isEqualTo(EyeStatus.GAZING)
+        assertThat(underTestRight.fineStatus).isEqualTo(EyeStatus.GAZING)
     }
 
     @Test

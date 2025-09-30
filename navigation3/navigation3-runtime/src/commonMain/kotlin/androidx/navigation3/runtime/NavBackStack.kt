@@ -16,9 +16,11 @@
 
 package androidx.navigation3.runtime
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.StateObject
-import androidx.compose.runtime.snapshots.StateRecord
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
+import kotlinx.serialization.Serializable
 
 /**
  * A mutable back stack of [NavKey] elements that integrates with Compose state.
@@ -39,60 +41,15 @@ import androidx.compose.runtime.snapshots.StateRecord
  * backStack.removeLast()         // pops stack
  * ```
  *
+ * @sample androidx.navigation3.runtime.samples.NavBackStack_Serializer
  * @constructor Creates a new back stack backed by the provided [SnapshotStateList].
  * @see rememberNavBackStack for lifecycle-aware persistence.
  */
-public expect class NavBackStack<T : NavKey> : MutableList<T>, StateObject, RandomAccess {
+@Serializable(with = NavBackStackSerializer::class)
+public class NavBackStack<T : NavKey> public constructor(internal val base: SnapshotStateList<T>) :
+    MutableList<T> by base, StateObject by base, RandomAccess by base {
 
-    public constructor(base: SnapshotStateList<T>)
+    public constructor() : this(base = mutableStateListOf())
 
-    public constructor()
-
-    public constructor(vararg elements: T)
-
-    override fun add(element: T): Boolean
-
-    override fun remove(element: T): Boolean
-
-    override fun addAll(elements: Collection<T>): Boolean
-
-    override fun addAll(index: Int, elements: Collection<T>): Boolean
-
-    override fun removeAll(elements: Collection<T>): Boolean
-
-    override fun retainAll(elements: Collection<T>): Boolean
-
-    override fun clear()
-
-    override fun set(index: Int, element: T): T
-
-    override fun add(index: Int, element: T)
-
-    override fun removeAt(index: Int): T
-
-    override fun listIterator(): MutableListIterator<T>
-
-    override fun listIterator(index: Int): MutableListIterator<T>
-
-    override fun subList(fromIndex: Int, toIndex: Int): MutableList<T>
-
-    override val size: Int
-
-    override fun isEmpty(): Boolean
-
-    override fun contains(element: T): Boolean
-
-    override fun containsAll(elements: Collection<T>): Boolean
-
-    override fun get(index: Int): T
-
-    override fun indexOf(element: T): Int
-
-    override fun lastIndexOf(element: T): Int
-
-    override fun iterator(): MutableIterator<T>
-
-    override val firstStateRecord: StateRecord
-
-    override fun prependStateRecord(value: StateRecord)
+    public constructor(vararg elements: T) : this(base = mutableStateListOf(*elements))
 }

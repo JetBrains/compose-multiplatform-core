@@ -52,6 +52,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -202,7 +203,8 @@ class SwipeDismissableNavHostTest {
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
         // Assert that the foreground screen still holds the focus
-        rule.onNodeWithTag(TEST_TAG_NEXT).assertIsFocused()
+        // Child is the one which has items and it needs to hold the focus to perform scrolling.
+        rule.onNodeWithTag(TEST_TAG_NEXT).onChild().assertIsFocused()
     }
 
     @Test
@@ -241,7 +243,8 @@ class SwipeDismissableNavHostTest {
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
         // Assert that the foreground screen still holds the focus
-        rule.onNodeWithTag(TEST_TAG_NEXT).assertIsFocused()
+        // Child is the one which has items and it needs to hold the focus to perform scrolling.
+        rule.onNodeWithTag(TEST_TAG_NEXT).onChild().assertIsFocused()
     }
 
     @Test

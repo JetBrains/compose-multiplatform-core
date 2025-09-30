@@ -17,12 +17,10 @@
 package androidx.navigation3.runtime
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSerializable
-import androidx.compose.runtime.toMutableStateList
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
 import androidx.savedstate.serialization.SavedStateConfiguration
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.serializer
 
 /**
  * Provides a [NavBackStack] that is automatically remembered in the Compose hierarchy across
@@ -52,15 +50,13 @@ import kotlinx.serialization.serializer
  */
 @Composable
 public inline fun <reified T : NavKey> rememberNavBackStack(
-    vararg elements: T,
     configuration: SavedStateConfiguration,
+    vararg elements: T,
 ): NavBackStack<NavKey> {
-    val base =
-        rememberSerializable(
-            configuration = configuration,
-            serializer = NavBackStackSerializer<NavKey>(configuration = configuration),
-        ) {
-            elements.toList().toMutableStateList()
-        }
-    return remember { NavBackStack(base) }
+    return rememberSerializable(
+        configuration = configuration,
+        serializer = NavBackStackSerializer<NavKey>(),
+    ) {
+        NavBackStack(*elements)
+    }
 }

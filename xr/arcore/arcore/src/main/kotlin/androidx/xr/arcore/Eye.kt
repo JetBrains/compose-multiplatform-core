@@ -73,12 +73,12 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) : Upd
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public class State(
-        /** The [EyeState] from coarse eye tracking, or `null` if not available. */
-        public val coarseEyeState: EyeState?,
+        /** The [EyeStatus] from coarse eye tracking, or `null` if not available. */
+        public val coarseEyeStatus: EyeStatus?,
         /** The [Pose] from coarse eye tracking, or `null` if not available. */
         public val coarseEyePose: Pose?,
-        /** The [EyeState] from fine eye tracking, or `null` if not available. */
-        public val fineEyeState: EyeState?,
+        /** The [EyeStatus] from fine eye tracking, or `null` if not available. */
+        public val fineEyeStatus: EyeStatus?,
         /** The [Pose] from fine eye tracking, or `null` if not available. */
         public val fineEyePose: Pose?,
     ) {}
@@ -86,9 +86,9 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) : Upd
     private var _state =
         MutableStateFlow(
             State(
-                runtimeEye.coarseState,
+                runtimeEye.coarseStatus,
                 runtimeEye.coarsePose,
-                runtimeEye.fineState,
+                runtimeEye.fineStatus,
                 runtimeEye.finePose,
             )
         )
@@ -104,9 +104,9 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) : Upd
     override suspend fun update() {
         _state.emit(
             State(
-                runtimeEye.coarseState,
+                runtimeEye.coarseStatus,
                 runtimeEye.coarsePose,
-                runtimeEye.fineState,
+                runtimeEye.fineStatus,
                 runtimeEye.finePose,
             )
         )

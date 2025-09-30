@@ -18,7 +18,7 @@ package androidx.xr.arcore.testapp.eyetracking
 
 import android.graphics.Color
 import androidx.xr.arcore.Eye
-import androidx.xr.arcore.EyeState
+import androidx.xr.arcore.EyeStatus
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 
@@ -49,20 +49,20 @@ const val SHUT_LEFT = Color.BLUE
 const val SHUT_RIGHT = Color.YELLOW
 const val INVALID = Color.WHITE
 
-fun getEyeState(config: Config, eye: Eye?): EyeState? = getEyeState(config, eye?.state?.value)
+fun getEyeState(config: Config, eye: Eye?): EyeStatus? = getEyeState(config, eye?.state?.value)
 
-fun getEyeState(config: Config, eye: Eye.State?): EyeState? {
+fun getEyeState(config: Config, eye: Eye.State?): EyeStatus? {
     if (eye == null) return null
 
     return when (config.eyeTracking) {
         Config.EyeTrackingMode.COARSE_TRACKING -> {
-            eye.coarseEyeState
+            eye.coarseEyeStatus
         }
         Config.EyeTrackingMode.FINE_TRACKING -> {
-            eye.fineEyeState
+            eye.fineEyeStatus
         }
         Config.EyeTrackingMode.COARSE_AND_FINE_TRACKING -> {
-            eye.fineEyeState ?: eye.coarseEyeState
+            eye.fineEyeStatus ?: eye.coarseEyeStatus
         }
         else -> {
             return null

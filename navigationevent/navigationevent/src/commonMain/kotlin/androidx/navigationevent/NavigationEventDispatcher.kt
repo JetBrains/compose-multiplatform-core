@@ -355,7 +355,7 @@ private constructor(
     internal fun dispatchOnStarted(
         input: NavigationEventInput,
         direction: @Direction Int,
-        event: NavigationEvent,
+        event: NavigationEvent?,
     ) {
         checkInvariants()
 

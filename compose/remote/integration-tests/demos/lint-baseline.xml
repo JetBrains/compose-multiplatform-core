@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.0.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha05)" variant="all" version="9.0.0-alpha05">
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeCaptureKt.RememberRemoteDocumentInline can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="        RememberRemoteDocumentInline("
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeCaptureKt.RememberRemoteDocumentInline can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="            onDocument = { doc ->"
+        errorLine2="                         ^">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeCaptureKt.RememberRemoteDocumentInline can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="        ) {"
+        errorLine2="          ^">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="WidthModifierKt.fillMaxSize can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="            Greeting(modifier = RemoteModifier.fillMaxSize())"
+        errorLine2="                                ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="WidthModifierKt.fillMaxSize can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="            Greeting(modifier = RemoteModifier.fillMaxSize())"
+        errorLine2="                                               ~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="            RemoteDocumentPlayer("
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                document = documentState!!.document,"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                modifier = modifier.fillMaxSize(),"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                onNamedAction = { _, _, _ -> },"
+        errorLine2="                                ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteModifier can only be accessed from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="fun Greeting(modifier: RemoteModifier = RemoteModifier) {"
+        errorLine2="                       ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteBoxKt.RemoteBox can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="    RemoteBox(modifier = modifier) { RemoteText(text = &quot;Hello world!&quot;) }"
+        errorLine2="                         ~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteBoxKt.RemoteBox can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="    RemoteBox(modifier = modifier) { RemoteText(text = &quot;Hello world!&quot;) }"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteTextKt.RemoteText-qxmPvlg can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="    RemoteBox(modifier = modifier) { RemoteText(text = &quot;Hello world!&quot;) }"
+        errorLine2="                                                       ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeCaptureKt.RememberRemoteDocumentInline can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="        RememberRemoteDocumentInline("
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeCaptureKt.RememberRemoteDocumentInline can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="            onDocument = { doc ->"
+        errorLine2="                         ^">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeCaptureKt.RememberRemoteDocumentInline can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="            content = content,"
+        errorLine2="                      ~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="            RemoteDocumentPlayer("
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                document = documentState!!.document,"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                modifier = Modifier.fillMaxSize(),"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                onNamedAction = { _, _, _ -> },"
+        errorLine2="                                ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v24`) is unnecessary; `minSdkVersion` is 29. Merge all the resources in this folder into `drawable`.">
+        <location
+            file="src/main/res/drawable-v24"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 29. Merge all the resources in this folder into `mipmap-anydpi`.">
+        <location
+            file="src/main/res/mipmap-anydpi-v26"/>
+    </issue>
+
+</issues>

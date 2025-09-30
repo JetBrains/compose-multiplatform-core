@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.kruth.assertThat
 import androidx.room3.ExperimentalRoomApi
 import androidx.room3.Room
+import androidx.room3.immediateTransaction
 import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.integration.kotlintestapp.vo.Author
 import androidx.room3.integration.kotlintestapp.vo.Book
@@ -28,7 +29,8 @@ import androidx.room3.integration.kotlintestapp.vo.PlaylistSongXRef
 import androidx.room3.integration.kotlintestapp.vo.PlaylistWithSongs
 import androidx.room3.integration.kotlintestapp.vo.Publisher
 import androidx.room3.integration.kotlintestapp.vo.Song
-import androidx.room3.withTransaction
+import androidx.room3.support.getSupportWrapper
+import androidx.room3.useWriterConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
@@ -36,7 +38,6 @@ import androidx.test.filters.MediumTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.test.Ignore
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +65,7 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.fail
-import org.junit.AssumptionViolatedException
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -78,7 +79,7 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     private companion object {
         @JvmStatic
         @Parameters(name = "useDriver={0}")
-        fun parameters() = UseDriver.entries.toTypedArray()
+        fun parameters() = arrayOf(UseDriver.ANDROID, UseDriver.BUNDLED)
     }
 
     @After
@@ -111,20 +112,16 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
 
     @Test
     fun collectBooks_first_inTransaction() = runBlocking {
-        if (useDriver != UseDriver.NONE) {
-            throw AssumptionViolatedException(
-                "Tests uses SupportSQLite APIs, not supported with drivers installed."
-            )
-        }
-
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        database.withTransaction {
-            booksDao.insertBookSuspend(TestUtil.BOOK_2)
-            val result = booksDao.getBooksFlow().first()
-            assertThat(result).isEqualTo(listOf(TestUtil.BOOK_1, TestUtil.BOOK_2))
+        database.useWriterConnection { connection ->
+            connection.immediateTransaction {
+                booksDao.insertBookSuspend(TestUtil.BOOK_2)
+                val result = booksDao.getBooksFlow().first()
+                assertThat(result).isEqualTo(listOf(TestUtil.BOOK_1, TestUtil.BOOK_2))
+            }
         }
     }
 
@@ -220,12 +217,6 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
 
     @Test
     fun receiveBooks_update_viaSupportDatabase() = runBlocking {
-        if (useDriver != UseDriver.NONE) {
-            throw AssumptionViolatedException(
-                "Tests uses SupportSQLite APIs, not supported with drivers installed."
-            )
-        }
-
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
@@ -235,12 +226,11 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         assertThat(channel.receive()).containsExactly(TestUtil.BOOK_1)
 
         // Update table without going through Room's transaction APIs
-        database.openHelper.writableDatabase.execSQL(
-            "UPDATE Book SET salesCnt = 5 WHERE bookId = 'b1'"
-        )
+        val supportDb = database.getSupportWrapper()
+        supportDb.execSQL("UPDATE Book SET salesCnt = 5 WHERE bookId = 'b1'")
         // Ask for a refresh to occur, validating trigger is installed without going through Room's
         // transaction APIs.
-        database.invalidationTracker.refreshVersionsAsync()
+        database.invalidationTracker.refreshAsync()
         drain() // drain async invalidate
         yield()
 

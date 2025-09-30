@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.navigation3.runtime
+package androidx.compose.remote.integration.demos.ui.theme
 
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.snapshots.StateObject
+import androidx.compose.ui.graphics.Color
 
-public actual class NavBackStack<T : NavKey>
-public actual constructor(private val base: SnapshotStateList<T>) :
-    MutableList<T> by base, StateObject by base, RandomAccess by base {
+val Purple80 = Color(0xFFD0BCFF)
+val PurpleGrey80 = Color(0xFFCCC2DC)
+val Pink80 = Color(0xFFEFB8C8)
 
-    public actual constructor() : this(base = mutableStateListOf())
-
-    public actual constructor(vararg elements: T) : this(base = mutableStateListOf(*elements))
-}
+val Purple40 = Color(0xFF6650a4)
+val PurpleGrey40 = Color(0xFF625b71)
+val Pink40 = Color(0xFF7D5260)

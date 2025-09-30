@@ -197,14 +197,14 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
                             when (selectedDepthMode) {
                                 DepthMode.RAW ->
                                     when (selectedView) {
-                                        ViewSelection.LEFT -> "Left Smooth"
-                                        ViewSelection.RIGHT -> "Right Smooth"
+                                        ViewSelection.LEFT -> "Left Raw"
+                                        ViewSelection.RIGHT -> "Right Raw"
                                     }
 
                                 DepthMode.SMOOTH ->
                                     when (selectedView) {
-                                        ViewSelection.LEFT -> "Left Raw"
-                                        ViewSelection.RIGHT -> "Right Raw"
+                                        ViewSelection.LEFT -> "Left Smooth"
+                                        ViewSelection.RIGHT -> "Right Smooth"
                                     }
                             }
                         Text(

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,6 +43,32 @@ public abstract class NavigationEventInput() {
 
     /** The [NavigationEventDispatcher] that this input is connected to. */
     internal var dispatcher: NavigationEventDispatcher? = null
+
+    /**
+     * Tracks if a predictive **back** gesture is currently in progress from this input.
+     *
+     * This is set to `true` by [dispatchOnBackStarted] and reset to `false` by
+     * [dispatchOnBackCompleted] or [dispatchOnBackCancelled].
+     *
+     * It's used to identify non-predictive back taps (when this flag is `false`) so that the
+     * required [NavigationEventDispatcher.dispatchOnStarted] call can be injected first.
+     *
+     * @see [NavigationEventProcessor.isPredictiveInProgress]
+     */
+    private var isPredictiveBackInProgress = false
+
+    /**
+     * Tracks if a predictive **forward** gesture is currently in progress from this input.
+     *
+     * This is set to `true` by [dispatchOnForwardStarted] and reset to `false` by
+     * [dispatchOnForwardCompleted] or [dispatchOnForwardCancelled].
+     *
+     * It's used to identify non-predictive forward taps (when this flag is `false`) so that the
+     * required [NavigationEventDispatcher.dispatchOnStarted] call can be injected first.
+     *
+     * @see [NavigationEventProcessor.isPredictiveInProgress]
+     */
+    private var isPredictiveForwardInProgress = false
 
     /** @see [NavigationEventProcessor.addInput] */
     @MainThread
@@ -119,8 +145,15 @@ public abstract class NavigationEventInput() {
      */
     @MainThread
     protected fun dispatchOnBackStarted(event: NavigationEvent) {
-        dispatcher?.dispatchOnStarted(input = this, direction = TRANSITIONING_BACK, event)
-            ?: error("This input is not added to any dispatcher.")
+        val dispatcher = checkNotNull(dispatcher) { "This input is not added to any dispatcher." }
+
+        // Don't allow a new gesture to start if one is already in progress.
+        if (!isPredictiveBackInProgress) {
+            dispatcher.dispatchOnStarted(input = this, direction = TRANSITIONING_BACK, event)
+
+            // This is a predictive event; set the flag before dispatching.
+            isPredictiveBackInProgress = true
+        }
     }
 
     /**
@@ -135,8 +168,11 @@ public abstract class NavigationEventInput() {
      */
     @MainThread
     protected fun dispatchOnBackProgressed(event: NavigationEvent) {
-        dispatcher?.dispatchOnProgressed(input = this, direction = TRANSITIONING_BACK, event)
-            ?: error("This input is not added to any dispatcher.")
+        val dispatcher = checkNotNull(dispatcher) { "This input is not added to any dispatcher." }
+
+        if (isPredictiveBackInProgress) {
+            dispatcher.dispatchOnProgressed(input = this, direction = TRANSITIONING_BACK, event)
+        }
     }
 
     /**
@@ -151,8 +187,19 @@ public abstract class NavigationEventInput() {
      */
     @MainThread
     protected fun dispatchOnBackCancelled() {
-        dispatcher?.dispatchOnCancelled(input = this, direction = TRANSITIONING_BACK)
-            ?: error("This input is not added to any dispatcher.")
+        val dispatcher = checkNotNull(dispatcher) { "This input is not added to any dispatcher." }
+
+        if (!isPredictiveBackInProgress) {
+            // This is a non-predictive tap.
+            // To satisfy the processor's "Start -> Terminal" state machine, we must
+            // inject the non-predictive `dispatchOnStarted()` call first.
+            dispatcher.dispatchOnStarted(input = this, direction = TRANSITIONING_BACK, event = null)
+        }
+
+        dispatcher.dispatchOnCancelled(input = this, direction = TRANSITIONING_BACK)
+
+        // This is a terminal event; always reset the predictive flag.
+        isPredictiveBackInProgress = false
     }
 
     /**
@@ -168,8 +215,19 @@ public abstract class NavigationEventInput() {
      */
     @MainThread
     protected fun dispatchOnBackCompleted() {
-        dispatcher?.dispatchOnCompleted(input = this, direction = TRANSITIONING_BACK)
-            ?: error("This input is not added to any dispatcher.")
+        val dispatcher = checkNotNull(dispatcher) { "This input is not added to any dispatcher." }
+
+        if (!isPredictiveBackInProgress) {
+            // This is a non-predictive tap.
+            // To satisfy the processor's "Start -> Terminal" state machine, we must
+            // inject the non-predictive `dispatchOnStarted()` call first.
+            dispatcher.dispatchOnStarted(input = this, direction = TRANSITIONING_BACK, event = null)
+        }
+
+        dispatcher.dispatchOnCompleted(input = this, direction = TRANSITIONING_BACK)
+
+        // This is a terminal event; always reset the predictive flag.
+        isPredictiveBackInProgress = false
     }
 
     /**
@@ -184,8 +242,15 @@ public abstract class NavigationEventInput() {
      */
     @MainThread
     protected fun dispatchOnForwardStarted(event: NavigationEvent) {
-        dispatcher?.dispatchOnStarted(input = this, direction = TRANSITIONING_FORWARD, event)
-            ?: error("This input is not added to any dispatcher.")
+        val dispatcher = checkNotNull(dispatcher) { "This input is not added to any dispatcher." }
+
+        // Don't allow a new gesture to start if one is already in progress.
+        if (!isPredictiveForwardInProgress) {
+            dispatcher.dispatchOnStarted(input = this, direction = TRANSITIONING_FORWARD, event)
+
+            // This is a predictive event; set the flag before dispatching.
+            isPredictiveForwardInProgress = true
+        }
     }
 
     /**
@@ -200,8 +265,11 @@ public abstract class NavigationEventInput() {
      */
     @MainThread
     protected fun dispatchOnForwardProgressed(event: NavigationEvent) {
-        dispatcher?.dispatchOnProgressed(input = this, direction = TRANSITIONING_FORWARD, event)
-            ?: error("This input is not added to any dispatcher.")
+        val dispatcher = checkNotNull(dispatcher) { "This input is not added to any dispatcher." }
+
+        if (isPredictiveForwardInProgress) {
+            dispatcher.dispatchOnProgressed(input = this, direction = TRANSITIONING_FORWARD, event)
+        }
     }
 
     /**
@@ -216,8 +284,23 @@ public abstract class NavigationEventInput() {
      */
     @MainThread
     protected fun dispatchOnForwardCancelled() {
-        dispatcher?.dispatchOnCancelled(input = this, direction = TRANSITIONING_FORWARD)
-            ?: error("This input is not added to any dispatcher.")
+        val dispatcher = checkNotNull(dispatcher) { "This input is not added to any dispatcher." }
+
+        if (!isPredictiveForwardInProgress) {
+            // This is a non-predictive tap.
+            // To satisfy the processor's "Start -> Terminal" state machine, we must
+            // inject the non-predictive `dispatchOnStarted()` call first.
+            dispatcher.dispatchOnStarted(
+                input = this,
+                direction = TRANSITIONING_FORWARD,
+                event = null,
+            )
+        }
+
+        dispatcher.dispatchOnCancelled(input = this, direction = TRANSITIONING_FORWARD)
+
+        // This is a terminal event; always reset the predictive flag.
+        isPredictiveForwardInProgress = false
     }
 
     /**
@@ -233,7 +316,22 @@ public abstract class NavigationEventInput() {
      */
     @MainThread
     protected fun dispatchOnForwardCompleted() {
-        dispatcher?.dispatchOnCompleted(input = this, direction = TRANSITIONING_FORWARD)
-            ?: error("This input is not added to any dispatcher.")
+        val dispatcher = checkNotNull(dispatcher) { "This input is not added to any dispatcher." }
+
+        if (!isPredictiveForwardInProgress) {
+            // This is a non-predictive tap.
+            // To satisfy the processor's "Start -> Terminal" state machine, we must
+            // inject the non-predictive `dispatchOnStarted()` call first.
+            dispatcher.dispatchOnStarted(
+                input = this,
+                direction = TRANSITIONING_FORWARD,
+                event = null,
+            )
+        }
+
+        dispatcher.dispatchOnCompleted(input = this, direction = TRANSITIONING_FORWARD)
+
+        // This is a terminal event; always reset the predictive flag.
+        isPredictiveForwardInProgress = false
     }
 }

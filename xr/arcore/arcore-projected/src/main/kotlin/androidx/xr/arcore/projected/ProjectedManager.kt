@@ -31,10 +31,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
@@ -56,10 +54,11 @@ internal constructor(
     private val coroutineContext: CoroutineContext,
     private val testPerceptionService: IProjectedPerceptionService? = null,
 ) : LifecycleManager {
-    override val config: Config = Config()
+    override val config: Config
+        get() = perceptionManager.xrResources.config
+
     // TODO(b/411154789): Remove once Session runtime invocations are forced to run sequentially.
     internal var running: Boolean = false
-    private val serviceDeferred = CompletableDeferred<IProjectedPerceptionService>()
     private lateinit var serviceConnection: ServiceConnection
 
     /**
@@ -75,7 +74,7 @@ internal constructor(
             return
         }
 
-        CoroutineScope(coroutineContext).launch {
+        runBlocking {
             val binder = bindPerceptionService(activity)
         }
     }
@@ -122,7 +121,6 @@ internal constructor(
                     override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
                         println("ProjectedManager: onServiceConnected called")
                         val service = IProjectedPerceptionService.Stub.asInterface(binder)
-                        serviceDeferred.complete(service)
                         perceptionManager.xrResources.service = service
                         val config = perceptionManager.xrResources.config
                         val enableVps = config.geospatial != GeospatialMode.DISABLED

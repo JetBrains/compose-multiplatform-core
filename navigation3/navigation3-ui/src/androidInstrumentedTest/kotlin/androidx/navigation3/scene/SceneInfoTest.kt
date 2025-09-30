@@ -64,6 +64,7 @@ internal class NavDisplayInfoTest {
         }
 
         // Simulate a predictive back gesture in progress.
+        input.backStarted(NavigationEvent(progress = 0.1F))
         input.backProgressed(NavigationEvent(progress = 0.5F))
 
         // Wait for the UI to recompose and update the state.

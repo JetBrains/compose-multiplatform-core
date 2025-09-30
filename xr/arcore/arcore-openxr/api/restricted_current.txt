@@ -99,13 +99,13 @@ package androidx.xr.arcore.openxr {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrEye implements androidx.xr.arcore.internal.Eye {
     ctor public OpenXrEye();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getCoarsePose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getCoarseState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeStatus? getCoarseStatus();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getFinePose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeState? getFineState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.EyeStatus? getFineStatus();
     property public androidx.xr.runtime.math.Pose? coarsePose;
-    property public androidx.xr.arcore.EyeState? coarseState;
+    property public androidx.xr.arcore.EyeStatus? coarseStatus;
     property public androidx.xr.runtime.math.Pose? finePose;
-    property public androidx.xr.arcore.EyeState? fineState;
+    property public androidx.xr.arcore.EyeStatus? fineStatus;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrFace implements androidx.xr.arcore.internal.Face {

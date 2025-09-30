@@ -16,15 +16,15 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.xr.arcore.EyeState
+import androidx.xr.arcore.EyeStatus
 import androidx.xr.runtime.math.Pose
 
-internal data class EyeData(val state: EyeState, val pose: Pose) {}
+internal data class EyeData(val state: EyeStatus, val pose: Pose) {}
 
-internal fun EyeState.Companion.fromOpenXrEyeState(nativeValue: Int): EyeState =
+internal fun EyeStatus.Companion.fromOpenXrEyeState(nativeValue: Int): EyeStatus =
     when (nativeValue) {
-        0 -> EyeState.INVALID
-        1 -> EyeState.GAZING
-        2 -> EyeState.SHUT
+        0 -> EyeStatus.INVALID
+        1 -> EyeStatus.GAZING
+        2 -> EyeStatus.SHUT
         else -> throw IllegalStateException("Unknown eye state")
     }

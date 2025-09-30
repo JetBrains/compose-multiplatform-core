@@ -54,6 +54,7 @@ class ThemeTest {
         RemoteComposeScreenshotTestRule(
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
             targetPlayer = TargetPlayer.View,
+            includeClassName = false,
         )
 
     @Test

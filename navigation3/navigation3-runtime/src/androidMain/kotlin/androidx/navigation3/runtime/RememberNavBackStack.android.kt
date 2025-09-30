@@ -18,8 +18,9 @@ package androidx.navigation3.runtime
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSerializable
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
+import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.savedstate.serialization.SavedStateConfiguration
-import kotlinx.serialization.serializer
 
 /**
  * Provides a [NavBackStack] that is automatically remembered in the Compose hierarchy across
@@ -51,5 +52,9 @@ import kotlinx.serialization.serializer
  */
 @Composable
 public fun <T : NavKey> rememberNavBackStack(vararg elements: T): NavBackStack<NavKey> {
-    return rememberSerializable(serializer = serializer()) { NavBackStack(*elements) }
+    return rememberSerializable(
+        serializer = NavBackStackSerializer(elementSerializer = NavKeySerializer())
+    ) {
+        NavBackStack(*elements)
+    }
 }

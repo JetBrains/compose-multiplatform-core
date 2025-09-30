@@ -25,15 +25,15 @@ import org.junit.runner.RunWith
 class EyeStateTest {
     @Test
     fun equals_sameInstance_returnsTrue() {
-        val category = EyeState.INVALID
+        val category = EyeStatus.INVALID
 
         assertThat(category).isEqualTo(category)
     }
 
     @Test
     fun equals_differentInstance_returnsFalse() {
-        val category1 = EyeState.GAZING
-        val category2 = EyeState.SHUT
+        val category1 = EyeStatus.GAZING
+        val category2 = EyeStatus.SHUT
 
         assertThat(category1).isNotEqualTo(category2)
     }

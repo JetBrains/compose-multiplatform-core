@@ -20,28 +20,44 @@ import androidx.kruth.assertThat
 import androidx.room3.ExperimentalRoomApi
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
+import androidx.room3.immediateTransaction
 import androidx.room3.integration.kotlintestapp.TestDatabase
-import androidx.room3.util.useCursor
+import androidx.room3.integration.kotlintestapp.test.TestDatabaseTest.UseDriver
+import androidx.room3.useWriterConnection
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.test.Test
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
-class InMemoryTrackingModeTest {
+@SmallTest
+@RunWith(Parameterized::class)
+class InMemoryTrackingModeTest(private val useDriver: UseDriver) {
+
+    private companion object {
+        @JvmStatic
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = arrayOf(UseDriver.ANDROID, UseDriver.BUNDLED)
+
+        private const val DB_NAME = "test.db"
+        private const val TRACKING_TABLE_NAME = "room_table_modification_log"
+    }
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
     fun setup() {
-        context.deleteDatabase("test.db")
+        context.deleteDatabase(DB_NAME)
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
-    fun persistedTrackingTable() {
-        val database =
-            Room.databaseBuilder<TestDatabase>(context, "test.db")
-                .setInMemoryTrackingMode(false)
-                .build()
+    fun persistedTrackingTable() = runTest {
+        val database = createDatabase(false)
 
         assertThat(findCreateSql(database, "sqlite_master")).isNotEmpty()
         assertThat(findCreateSql(database, "sqlite_temp_master")).isNull()
@@ -49,33 +65,38 @@ class InMemoryTrackingModeTest {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
-    fun temporaryTrackingTable() {
-        val database =
-            Room.databaseBuilder<TestDatabase>(context, "test.db")
-                .setInMemoryTrackingMode(true)
-                .build()
+    fun temporaryTrackingTable() = runTest {
+        val database = createDatabase(true)
 
         assertThat(findCreateSql(database, "sqlite_master")).isNull()
         assertThat(findCreateSql(database, "sqlite_temp_master")).isNotEmpty()
         database.close()
     }
 
-    private fun findCreateSql(database: RoomDatabase, masterTable: String) =
-        database.runInTransaction<String?> {
-            database.openHelper.writableDatabase
-                .query("SELECT name, sql FROM $masterTable")
-                .useCursor { c ->
-                    while (c.moveToNext()) {
-                        if (c.getString(0) == TRACKING_TABLE_NAME) {
-                            return@runInTransaction c.getString(1)
+    @OptIn(ExperimentalRoomApi::class)
+    private fun createDatabase(inMemoryTrackingMode: Boolean) =
+        Room.databaseBuilder<TestDatabase>(context, DB_NAME)
+            .setInMemoryTrackingMode(inMemoryTrackingMode)
+            .apply {
+                if (useDriver == UseDriver.ANDROID) {
+                    setDriver(AndroidSQLiteDriver())
+                } else if (useDriver == UseDriver.BUNDLED) {
+                    setDriver(BundledSQLiteDriver())
+                }
+            }
+            .build()
+
+    private suspend fun findCreateSql(database: RoomDatabase, masterTable: String) =
+        database.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                usePrepared("SELECT name, sql FROM $masterTable") { stmt ->
+                    while (stmt.step()) {
+                        if (stmt.getText(0) == TRACKING_TABLE_NAME) {
+                            return@usePrepared stmt.getText(1)
                         }
                     }
+                    return@usePrepared null
                 }
-            null
+            }
         }
-
-    private companion object {
-        private const val TRACKING_TABLE_NAME = "room_table_modification_log"
-    }
 }

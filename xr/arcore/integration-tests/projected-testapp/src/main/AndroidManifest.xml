@@ -20,12 +20,10 @@
         <activity
             android:name="androidx.xr.arcore.projected.testapp.ProjectedTestAppActivity"
             android:exported="true"
-            android:label="Projected test activity">
+            android:label="Projected test activity"
+            android:requiredDisplayCategory="xr_projected">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="androidx.xr.projected.CATEGORY_PROJECTED" />
-                <category android:name="androidx.xr.projected.CATEGORY_PROJECTED_LAUNCHER" />
             </intent-filter>
         </activity>
     </application>

@@ -20,6 +20,7 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +29,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.isDisplayed
@@ -783,9 +785,9 @@ class TestTwoPaneScene<T : Any>(
     override val content: @Composable (() -> Unit) = {
         val left = entries.first()
         val right = entries.last()
-        Row {
-            Column { left.Content() }
-            Column { right.Content() }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f)) { left.Content() }
+            Column(Modifier.weight(1f)) { right.Content() }
         }
     }
 }

@@ -66,6 +66,25 @@ private class HierarchicalScene<T : Any>(
             }
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as HierarchicalScene<*>
+
+        return key == other.key &&
+            navEntries == other.navEntries &&
+            previousEntries == other.previousEntries
+    }
+
+    override fun hashCode(): Int {
+        return key.hashCode() * 31 + navEntries.hashCode() * 31 + previousEntries.hashCode() * 31
+    }
+
+    override fun toString(): String {
+        return "HierarchicalScene(key=$key, entries=$entries, previousEntries=$previousEntries)"
+    }
 }
 
 private class HierarchicalSceneStrategy<T : Any>(private val columns: Int) : SceneStrategy<T> {
@@ -149,10 +168,8 @@ class HierarchicalSceneTest {
 
     @Test
     fun testOnBack() {
-        lateinit var onBackDispatcher: OnBackPressedDispatcher
         lateinit var backStack: MutableList<Any>
         composeTestRule.setContent {
-            onBackDispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             backStack = remember { mutableStateListOf(first, second) }
             NavDisplay(
                 backStack = backStack,
@@ -174,11 +191,14 @@ class HierarchicalSceneTest {
 
         composeTestRule.runOnIdle { backStack.add(third) }
 
+        composeTestRule.waitForIdle()
+
         assertThat(composeTestRule.onNodeWithText(first).isDisplayed()).isFalse()
         assertThat(composeTestRule.onNodeWithText(second).isDisplayed()).isTrue()
         assertThat(composeTestRule.onNodeWithText(third).isDisplayed()).isTrue()
 
-        composeTestRule.runOnIdle { onBackDispatcher.onBackPressed() }
+        composeTestRule.runOnIdle { backStack.removeLastOrNull() }
+        composeTestRule.waitForIdle()
 
         assertThat(composeTestRule.onNodeWithText(first).isDisplayed()).isTrue()
         assertThat(composeTestRule.onNodeWithText(second).isDisplayed()).isTrue()

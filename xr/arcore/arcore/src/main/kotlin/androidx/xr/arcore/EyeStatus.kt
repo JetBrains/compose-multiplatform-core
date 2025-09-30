@@ -20,14 +20,13 @@ import androidx.annotation.RestrictTo
 
 /** Enum indicating whether an eye is open (gazing) or shut. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-// TODO: b/442623795 -- Rename to EyeStatus to reduce confusion.
-public class EyeState(private val value: Int) {
+public class EyeStatus(private val value: Int) {
     public companion object {
         /** Value indicating information about the eye is unavailable, or invalid. */
-        @JvmField public val INVALID: EyeState = EyeState(0)
+        @JvmField public val INVALID: EyeStatus = EyeStatus(0)
         /** Value indicating the eye is open and looking at something. */
-        @JvmField public val GAZING: EyeState = EyeState(1)
+        @JvmField public val GAZING: EyeStatus = EyeStatus(1)
         /** Value indicating the eye is closed and not looking at something. */
-        @JvmField public val SHUT: EyeState = EyeState(2)
+        @JvmField public val SHUT: EyeStatus = EyeStatus(2)
     }
 }

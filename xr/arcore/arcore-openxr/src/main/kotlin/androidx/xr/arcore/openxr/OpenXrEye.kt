@@ -17,32 +17,32 @@
 package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.EyeState
+import androidx.xr.arcore.EyeStatus
 import androidx.xr.arcore.internal.Eye as Eye
 import androidx.xr.runtime.math.Pose
 
 /** Wraps the OpenXR eye tracking data with the [Eye] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrEye() : Eye {
-    override var coarseState: EyeState? = null
+    override var coarseStatus: EyeStatus? = null
         private set
 
     override var coarsePose: Pose? = null
         private set
 
-    override var fineState: EyeState? = null
+    override var fineStatus: EyeStatus? = null
         private set
 
     override var finePose: Pose? = null
         private set
 
     internal fun updateCoarse(data: EyeData) {
-        coarseState = data.state
+        coarseStatus = data.state
         coarsePose = data.pose
     }
 
     internal fun updateFine(data: EyeData) {
-        fineState = data.state
+        fineStatus = data.state
         finePose = data.pose
     }
 }

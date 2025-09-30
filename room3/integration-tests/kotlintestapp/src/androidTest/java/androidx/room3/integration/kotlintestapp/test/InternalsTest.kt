@@ -24,6 +24,7 @@ import androidx.room3.PrimaryKey
 import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
@@ -94,10 +95,10 @@ class InternalsTest {
     @Before
     fun init() {
         db =
-            Room.inMemoryDatabaseBuilder(
-                    InstrumentationRegistry.getInstrumentation().targetContext,
-                    InternalDb::class.java,
+            Room.inMemoryDatabaseBuilder<InternalDb>(
+                    InstrumentationRegistry.getInstrumentation().targetContext
                 )
+                .setDriver(AndroidSQLiteDriver())
                 .build()
     }
 

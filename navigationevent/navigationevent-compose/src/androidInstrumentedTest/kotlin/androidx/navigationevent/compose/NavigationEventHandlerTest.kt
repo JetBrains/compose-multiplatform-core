@@ -26,6 +26,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.kruth.assertThat
+import androidx.kruth.assertThrows
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
@@ -83,6 +84,28 @@ internal class NavigationEventHandlerTest {
             val history = owner.navigationEventDispatcher.history.value
             assertThat(history.mergedHistory).isEqualTo(listOf(TestInfo(id = 1), TestInfo(id = 2)))
         }
+    }
+
+    @Test
+    fun handler_whenStateIsReused_throwsException() {
+        assertThrows<IllegalArgumentException> {
+                rule.setContent {
+                    NavigationEventDispatcherOwner(parent = owner) {
+                        val state = rememberNavigationEventState(currentInfo = TestInfo(id = 1))
+
+                        // Use it in the first handler (this one is fine)
+                        NavigationEventHandler(state = state, onBackCompleted = {})
+
+                        // Use the *same instance* in a second handler.
+                        // The SideEffect in this one will run the `require` check and fail.
+                        NavigationEventHandler(state = state, onBackCompleted = {})
+                    }
+                }
+            }
+            .hasMessageThat()
+            .matches(
+                "NavigationEventState '.*' is already registered with a NavigationEventHandler '.*'\\."
+            )
     }
 
     @Test

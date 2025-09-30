@@ -17,20 +17,20 @@
 package androidx.xr.arcore.internal
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.EyeState
+import androidx.xr.arcore.EyeStatus
 import androidx.xr.runtime.math.Pose
 
 /** Describes a user's eye information with coarse and fine precision. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface Eye {
-    /** The state of the eye with coarse accuracy */
-    public val coarseState: EyeState?
+    /** The status of the eye with coarse accuracy */
+    public val coarseStatus: EyeStatus?
 
     /** The eye's pose with coarse accuracy */
     public val coarsePose: Pose?
 
-    /** The state of the eye with fine accuracy */
-    public val fineState: EyeState?
+    /** The status of the eye with fine accuracy */
+    public val fineStatus: EyeStatus?
 
     /** the eye's pose with fine accuracy */
     public val finePose: Pose?

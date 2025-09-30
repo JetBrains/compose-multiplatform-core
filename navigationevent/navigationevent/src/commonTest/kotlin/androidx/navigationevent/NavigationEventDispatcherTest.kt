@@ -72,7 +72,24 @@ class NavigationEventDispatcherTest {
     }
 
     @Test
-    fun dispatch_onBackProgressed_sendsEventToHandler() {
+    fun dispatch_onBackProgressed_withStart_sendsEventToHandler() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input = TestNavigationEventInput()
+        dispatcher.addInput(input)
+        input.backStarted(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+
+        assertThat(handler.onBackStartedInvocations).isEqualTo(1)
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(0)
+    }
+
+    @Test
+    fun dispatch_onBackProgressed_withoutStart_ignoresProgress() {
         val dispatcher = NavigationEventDispatcher()
         val handler = TestNavigationEventHandler()
         dispatcher.addHandler(handler)
@@ -82,13 +99,30 @@ class NavigationEventDispatcherTest {
         input.backProgressed(NavigationEvent())
 
         assertThat(handler.onBackStartedInvocations).isEqualTo(0)
-        assertThat(handler.onBackProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(0)
         assertThat(handler.onBackCompletedInvocations).isEqualTo(0)
         assertThat(handler.onBackCancelledInvocations).isEqualTo(0)
     }
 
     @Test
-    fun dispatch_onForwardProgressed_sendsEventToHandler() {
+    fun dispatch_onForwardProgressed_withStart_sendsEventToHandler() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input = TestNavigationEventInput()
+        dispatcher.addInput(input)
+        input.forwardStarted(NavigationEvent())
+        input.forwardProgressed(NavigationEvent())
+
+        assertThat(handler.onForwardStartedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardCancelledInvocations).isEqualTo(0)
+    }
+
+    @Test
+    fun dispatch_onForwardProgressed_withoutStart_ignoresProgress() {
         val dispatcher = NavigationEventDispatcher()
         val handler = TestNavigationEventHandler()
         dispatcher.addHandler(handler)
@@ -98,7 +132,7 @@ class NavigationEventDispatcherTest {
         input.forwardProgressed(NavigationEvent())
 
         assertThat(handler.onForwardStartedInvocations).isEqualTo(0)
-        assertThat(handler.onForwardProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(0)
         assertThat(handler.onForwardCompletedInvocations).isEqualTo(0)
         assertThat(handler.onForwardCancelledInvocations).isEqualTo(0)
     }
@@ -327,60 +361,6 @@ class NavigationEventDispatcherTest {
     }
 
     @Test
-    fun dispatch_newBackNavigationDuringExisting_cancelsPrevious() {
-        val dispatcher = NavigationEventDispatcher()
-        val handler1 = TestNavigationEventHandler()
-        dispatcher.addHandler(handler1)
-        val input = TestNavigationEventInput()
-        dispatcher.addInput(input)
-        input.backStarted(NavigationEvent())
-        assertThat(handler1.onBackStartedInvocations).isEqualTo(1)
-
-        val handler2 = TestNavigationEventHandler()
-        dispatcher.addHandler(handler2)
-
-        // Starting a new navigation must implicitly cancel any gesture already in progress
-        // to ensure a predictable state.
-        input.backStarted(NavigationEvent())
-
-        assertThat(handler1.onBackCancelledInvocations).isEqualTo(1)
-        assertThat(handler2.onBackStartedInvocations).isEqualTo(1)
-
-        input.backCompleted()
-        assertThat(handler2.onBackCompletedInvocations).isEqualTo(1)
-
-        // Verify the cancelled handler receives no further events.
-        assertThat(handler1.onBackCompletedInvocations).isEqualTo(0)
-    }
-
-    @Test
-    fun dispatch_newForwardNavigationDuringExisting_cancelsPrevious() {
-        val dispatcher = NavigationEventDispatcher()
-        val handler1 = TestNavigationEventHandler()
-        dispatcher.addHandler(handler1)
-        val input = TestNavigationEventInput()
-        dispatcher.addInput(input)
-        input.forwardStarted(NavigationEvent())
-        assertThat(handler1.onForwardStartedInvocations).isEqualTo(1)
-
-        val handler2 = TestNavigationEventHandler()
-        dispatcher.addHandler(handler2)
-
-        // Starting a new navigation must implicitly cancel any gesture already in progress
-        // to ensure a predictable state.
-        input.forwardStarted(NavigationEvent())
-
-        assertThat(handler1.onForwardCancelledInvocations).isEqualTo(1)
-        assertThat(handler2.onForwardStartedInvocations).isEqualTo(1)
-
-        input.forwardCompleted()
-        assertThat(handler2.onForwardCompletedInvocations).isEqualTo(1)
-
-        // Verify the cancelled handler receives no further events.
-        assertThat(handler1.onForwardCompletedInvocations).isEqualTo(0)
-    }
-
-    @Test
     fun addHandler_duringInProgressNavigation_ignoresNewHandlerForCurrentEvent() {
         val dispatcher = NavigationEventDispatcher()
 
@@ -591,22 +571,248 @@ class NavigationEventDispatcherTest {
     }
 
     @Test
-    fun dispatch_withoutStart_sendsToTopHandler() {
+    fun dispatch_withoutStart_ignoresProgress() {
         val dispatcher = NavigationEventDispatcher()
         val handler = TestNavigationEventHandler()
         dispatcher.addHandler(handler)
 
-        // Dispatching progress or completed without a start should still notify the top handler.
-        // This handles simple, non-gesture back events.
         val input = TestNavigationEventInput()
         dispatcher.addInput(input)
+
         input.backProgressed(NavigationEvent())
+        input.forwardProgressed(NavigationEvent())
+
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(0)
+    }
+
+    @Test
+    fun dispatch_interleavedBackGestures_onlyProcessesOriginatingInput_completed() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input1 = TestNavigationEventInput()
+        dispatcher.addInput(input1)
+        val input2 = TestNavigationEventInput()
+        dispatcher.addInput(input2)
+
+        input1.backStarted(NavigationEvent())
+        input2.backStarted(NavigationEvent())
+
+        input1.backProgressed(NavigationEvent())
+        input2.backProgressed(NavigationEvent())
+
+        input1.backCompleted()
+        input2.backCompleted()
+
+        assertThat(handler.onBackStartedInvocations).isEqualTo(1)
         assertThat(handler.onBackProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(0)
+    }
+
+    @Test
+    fun dispatch_interleavedBackGestures_onlyProcessesOriginatingInput_cancelled() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input1 = TestNavigationEventInput()
+        dispatcher.addInput(input1)
+        val input2 = TestNavigationEventInput()
+        dispatcher.addInput(input2)
+
+        input1.backStarted(NavigationEvent())
+        input2.backStarted(NavigationEvent())
+
+        input1.backProgressed(NavigationEvent())
+        input2.backProgressed(NavigationEvent())
+
+        input1.backCancelled()
+        input2.backCancelled()
+
+        assertThat(handler.onBackStartedInvocations).isEqualTo(1)
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(1)
+    }
+
+    @Test
+    fun dispatch_interleavedForwardGestures_onlyProcessesOriginatingInput_completed() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input1 = TestNavigationEventInput()
+        dispatcher.addInput(input1)
+        val input2 = TestNavigationEventInput()
+        dispatcher.addInput(input2)
+
+        input1.forwardStarted(NavigationEvent())
+        input2.forwardStarted(NavigationEvent())
+
+        input1.forwardProgressed(NavigationEvent())
+        input2.forwardProgressed(NavigationEvent())
+
+        input1.forwardCompleted()
+        input2.forwardCompleted()
+
+        // Assert that only the first gesture's events were processed
+        assertThat(handler.onForwardStartedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardCancelledInvocations).isEqualTo(0)
+    }
+
+    @Test
+    fun dispatch_interleavedForwardGestures_onlyProcessesOriginatingInput_cancelled() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input1 = TestNavigationEventInput()
+        dispatcher.addInput(input1)
+        val input2 = TestNavigationEventInput()
+        dispatcher.addInput(input2)
+
+        input1.forwardStarted(NavigationEvent())
+        input2.forwardStarted(NavigationEvent())
+
+        input1.forwardProgressed(NavigationEvent())
+        input2.forwardProgressed(NavigationEvent())
+
+        input1.forwardCancelled()
+        input2.forwardCancelled()
+
+        // Assert that only the first gesture's events were processed
+        assertThat(handler.onForwardStartedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardCancelledInvocations).isEqualTo(1)
+    }
+
+    @Test
+    fun dispatch_conflictingGesturesFromSameInput_backWins_completed() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input = TestNavigationEventInput()
+        dispatcher.addInput(input)
+
+        input.backStarted(NavigationEvent())
+        input.forwardStarted(NavigationEvent())
+
+        input.backProgressed(NavigationEvent())
+        input.forwardProgressed(NavigationEvent())
 
         input.backCompleted()
-        assertThat(handler.onBackCompletedInvocations).isEqualTo(1)
+        input.forwardCompleted()
 
-        // Ensure no cancellation was ever triggered.
+        // Assert that only the first gesture (back) was processed
+        assertThat(handler.onBackStartedInvocations).isEqualTo(1)
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(0)
+
+        // Assert that the conflicting forward gesture was ignored
+        assertThat(handler.onForwardStartedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardCancelledInvocations).isEqualTo(0)
+    }
+
+    @Test
+    fun dispatch_conflictingGesturesFromSameInput_backWins_cancelled() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler(isForwardEnabled = true)
+        dispatcher.addHandler(handler)
+
+        val input = TestNavigationEventInput()
+        dispatcher.addInput(input)
+
+        input.backStarted(NavigationEvent())
+        input.forwardStarted(NavigationEvent())
+
+        input.backProgressed(NavigationEvent())
+        input.forwardProgressed(NavigationEvent())
+
+        input.backCancelled()
+        input.forwardCancelled()
+
+        // Assert that only the first gesture (back) was processed
+        assertThat(handler.onBackStartedInvocations).isEqualTo(1)
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(1)
+
+        // Assert that the conflicting forward gesture was ignored
+        assertThat(handler.onForwardStartedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardCancelledInvocations).isEqualTo(0)
+    }
+
+    @Test
+    fun dispatch_conflictingGesturesFromSameInput_forwardWins_completed() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input = TestNavigationEventInput()
+        dispatcher.addInput(input)
+
+        input.forwardStarted(NavigationEvent())
+        input.backStarted(NavigationEvent())
+
+        input.forwardProgressed(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+
+        input.forwardCompleted()
+        input.backCompleted()
+
+        // Assert that only the first gesture (forward) was processed
+        assertThat(handler.onForwardStartedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardCancelledInvocations).isEqualTo(0)
+
+        // Assert that the conflicting back gesture was ignored
+        assertThat(handler.onBackStartedInvocations).isEqualTo(0)
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(0)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(0)
+    }
+
+    @Test
+    fun dispatch_conflictingGesturesFromSameInput_forwardWins_cancelled() {
+        val dispatcher = NavigationEventDispatcher()
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler)
+
+        val input = TestNavigationEventInput()
+        dispatcher.addInput(input)
+
+        input.forwardStarted(NavigationEvent())
+        input.backStarted(NavigationEvent())
+
+        input.forwardProgressed(NavigationEvent())
+        input.backProgressed(NavigationEvent())
+
+        input.forwardCancelled()
+        input.backCancelled()
+
+        // Assert that only the first gesture (forward) was processed
+        assertThat(handler.onForwardStartedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardProgressedInvocations).isEqualTo(1)
+        assertThat(handler.onForwardCompletedInvocations).isEqualTo(0)
+        assertThat(handler.onForwardCancelledInvocations).isEqualTo(1)
+
+        // Assert that the conflicting back gesture was ignored
+        assertThat(handler.onBackStartedInvocations).isEqualTo(0)
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(0)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(0)
         assertThat(handler.onBackCancelledInvocations).isEqualTo(0)
     }
 
@@ -1412,19 +1618,17 @@ class NavigationEventDispatcherTest {
         childDispatcher.addHandler(childHandler)
 
         parentDispatcher.isEnabled = false
-        val initialEvent = NavigationEvent()
         val input = TestNavigationEventInput()
         childDispatcher.addInput(input)
-        input.backStarted(initialEvent)
-        assertThat(childHandler.onBackStartedInvocations).isEqualTo(0)
+        input.backCompleted()
+        assertThat(childHandler.onBackCompletedInvocations).isEqualTo(0)
 
         parentDispatcher.isEnabled = true
 
-        val reEnabledEvent = NavigationEvent()
-        input.backStarted(reEnabledEvent)
+        input.backCompleted()
 
-        assertThat(childHandler.onBackStartedInvocations).isEqualTo(1)
-        assertThat(parentHandler.onBackStartedInvocations).isEqualTo(0)
+        assertThat(childHandler.onBackCompletedInvocations).isEqualTo(1)
+        assertThat(parentHandler.onBackCompletedInvocations).isEqualTo(0)
     }
 
     @Test
@@ -1437,19 +1641,17 @@ class NavigationEventDispatcherTest {
         childDispatcher.addHandler(childHandler)
 
         parentDispatcher.isEnabled = false
-        val initialEvent = NavigationEvent()
         val input = TestNavigationEventInput()
         parentDispatcher.addInput(input)
-        input.backStarted(initialEvent)
-        assertThat(parentHandler.onBackStartedInvocations).isEqualTo(0)
-        assertThat(childHandler.onBackStartedInvocations).isEqualTo(0)
+        input.backCompleted()
+        assertThat(parentHandler.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(childHandler.onBackCompletedInvocations).isEqualTo(0)
 
         parentDispatcher.isEnabled = true
 
-        val reEnabledEvent = NavigationEvent()
-        input.backStarted(reEnabledEvent)
-        assertThat(parentHandler.onBackStartedInvocations).isEqualTo(0)
-        assertThat(childHandler.onBackStartedInvocations).isEqualTo(1)
+        input.backCompleted()
+        assertThat(parentHandler.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(childHandler.onBackCompletedInvocations).isEqualTo(1)
     }
 
     @Test
@@ -1530,18 +1732,16 @@ class NavigationEventDispatcherTest {
         dispatcher.addHandler(handler)
         dispatcher.isEnabled = false
 
-        val preEnableEvent = NavigationEvent()
         val input = TestNavigationEventInput()
         dispatcher.addInput(input)
-        input.backStarted(preEnableEvent)
-        assertThat(handler.onBackStartedInvocations).isEqualTo(0)
+        input.backCompleted()
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(0)
 
         dispatcher.isEnabled = true
 
-        val reEnabledEvent = NavigationEvent()
-        input.backStarted(reEnabledEvent)
+        input.backCompleted()
 
-        assertThat(handler.onBackStartedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(1)
     }
 
     @Test
@@ -2067,8 +2267,6 @@ class NavigationEventDispatcherTest {
                     NavigationEventHistory(currentInfo = settingsInfo, backInfo = listOf(homeInfo))
                 )
         }
-
-    // endregion
 
     // endregion
 
