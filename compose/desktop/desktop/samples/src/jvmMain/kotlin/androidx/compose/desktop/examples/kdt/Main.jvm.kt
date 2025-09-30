@@ -20,8 +20,6 @@ import androidx.compose.desktop.examples.vsync.WindowContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.kdt.KdtWindow
 import androidx.compose.ui.kdt.kdtApplication
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import noria.NoriaContext
 
 fun main() = kdtApplication {
