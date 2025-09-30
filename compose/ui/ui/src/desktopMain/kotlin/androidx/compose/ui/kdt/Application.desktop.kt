@@ -33,7 +33,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import noria.NoriaContext
 import org.jetbrains.desktop.macos.Application
 import org.jetbrains.desktop.macos.Event
 import org.jetbrains.desktop.macos.EventHandlerResult
@@ -95,7 +94,7 @@ class KdtComposeApplication(): KdtApplication {
     }
 }
 
-fun kdtApplication(content: @Composable NoriaContext.() -> Unit) {
+fun kdtApplication(content: @Composable () -> Unit) {
     val application = KdtComposeApplication()
     ComposeUIDispatcher = KDTUiDispatcher()
 

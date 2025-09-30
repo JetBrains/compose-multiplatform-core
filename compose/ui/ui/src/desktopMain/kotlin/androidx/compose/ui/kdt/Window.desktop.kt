@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import kotlinx.atomicfu.atomic
-import noria.NoriaContext
 import org.jetbrains.desktop.macos.Application
 import org.jetbrains.desktop.macos.DisplayLink
 import org.jetbrains.desktop.macos.Event
@@ -41,7 +40,7 @@ import org.jetbrains.skia.Picture
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect
 
-interface KdtWindowScope: NoriaContext {
+interface KdtWindowScope {
     val window: KdtWindow
 }
 
@@ -59,7 +58,7 @@ interface KdtWindow {
 }
 
 @Composable
-fun NoriaContext.KdtWindow(content: @Composable KdtWindowScope.() -> Unit) {
+fun KdtWindow(content: @Composable KdtWindowScope.() -> Unit) {
     val application = LocalKdtApplication.current
     val composeWindow = remember { KdtComposeWindow(application) }
     val windowScope = object: KdtWindowScope {
@@ -138,7 +137,7 @@ class KdtComposeWindow(application: KdtComposeApplication): KdtWindow {
         setupDisplayLayerCallback()
     }
 
-    fun setContent(content: @Composable NoriaContext.() -> Unit) {
+    fun setContent(content: @Composable () -> Unit) {
         scene.setContent(content)
     }
 
