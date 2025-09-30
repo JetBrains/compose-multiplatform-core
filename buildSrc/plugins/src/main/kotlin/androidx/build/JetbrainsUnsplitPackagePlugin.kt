@@ -65,14 +65,8 @@ class JetbrainsUnsplitPackagePlugin : Plugin<Project> {
                             mavenArtifactRepository.url =
                                 URI("https://maven.pkg.jetbrains.space/public/p/compose/dev")
                             mavenArtifactRepository.credentials { credentials ->
-                                credentials.username =
-                                    requireNotNull(project.properties["publishingUsername"]) {
-                                        "No 'publishingUsername' property was found for publishing to ${mavenArtifactRepository.url}"
-                                    } as String
-                                credentials.password =
-                                    requireNotNull(project.properties["publishingPassword"]) {
-                                        "No 'publishingPassword' property was found for publishing to ${mavenArtifactRepository.url}"
-                                    } as String
+                                credentials.username = project.properties["publishingUsername"] as String?
+                                credentials.password = project.properties["publishingPassword"] as String?
                             }
                         }
                         repositoryHandler.mavenLocal()
