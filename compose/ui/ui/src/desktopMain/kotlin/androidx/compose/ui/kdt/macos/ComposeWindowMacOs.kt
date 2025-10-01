@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.kdt.ComposeWindow
-import androidx.compose.ui.kdt.ComposeWindowScope
 import androidx.compose.ui.kdt.toDpSize
 import androidx.compose.ui.kdt.toIntSize
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -37,9 +36,12 @@ import org.jetbrains.desktop.macos.WindowEvent
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect
 
-class ComposeWindowMacOs(application: ComposeApplicationMacOs): ComposeWindow {
+class ComposeWindowMacOs(
+    val application: ComposeApplicationMacOs,
+    val onCloseRequested: () -> Unit
+) : ComposeWindow {
     val window = Window.create()
-    val viewContext = application.desktopGpuContext.createMetalViewContext()
+    val viewContext = application.gpuContext.createMetalViewContext()
 
     init {
         window.attachView(viewContext.view)
@@ -61,6 +63,7 @@ class ComposeWindowMacOs(application: ComposeApplicationMacOs): ComposeWindow {
     var displayLink: DisplayLink? = null
 
     fun preparePicture(): PresentablePicture {
+        // todo[ps] viewContext might be already closed here
         val size = viewContext.view.size()
         val bounds = Rect.makeWH(size.width.toFloat(), size.height.toFloat())
         val canvas = pictureRecorder.beginRecording(bounds)
@@ -75,13 +78,25 @@ class ComposeWindowMacOs(application: ComposeApplicationMacOs): ComposeWindow {
             if (isFrameScheduled.compareAndSet(expect = true, update = false)) {
                 GrandCentralDispatch.dispatchOnMain(highPriority = true) {
                     val presentablePicture = preparePicture()
-                    viewContext.presentAsync(presentablePicture, waitForCATransaction = false, onComplete = {
-                        presentablePicture.close()
-                    })
+                    viewContext.presentAsync(
+                        presentablePicture,
+                        waitForCATransaction = false,
+                        onComplete = {
+                            presentablePicture.close()
+                        })
                 }
             }
         }
         displayLink!!.setRunning(true)
+    }
+
+    /**
+     * This operation might block because it's waiting while display link exits from the callback.
+     */
+    fun destroyDisplayLink() {
+        displayLink!!.setRunning(false)
+        displayLink!!.close()
+        displayLink = null
     }
 
     fun repaintSynchronously() {
@@ -105,12 +120,19 @@ class ComposeWindowMacOs(application: ComposeApplicationMacOs): ComposeWindow {
     }
 
     fun handleEvent(event: WindowEvent) {
-        when(event) {
+        when (event) {
+            // todo[ps] update scene density
+            // todo[ps] check occlusion state
             is Event.WindowScreenChange -> {
                 setupDisplayLink()
             }
+
             is Event.WindowResize -> {
                 scene.size = window.contentSize.toIntSize()
+            }
+
+            is Event.WindowCloseRequest -> {
+                onCloseRequested()
             }
         }
     }
@@ -127,4 +149,12 @@ class ComposeWindowMacOs(application: ComposeApplicationMacOs): ComposeWindow {
         get() = window.isMain
     override val isKey: Boolean
         get() = window.isKey
+
+    override fun close() {
+        application.allWindows.remove(window.windowId())
+        destroyDisplayLink()
+        pictureRecorder.close()
+        application.gpuContext.destroyMetalViewContext(viewContext)
+        window.close()
+    }
 }
