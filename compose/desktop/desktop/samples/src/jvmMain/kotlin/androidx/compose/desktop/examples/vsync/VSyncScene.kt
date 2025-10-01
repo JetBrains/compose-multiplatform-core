@@ -24,10 +24,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material.Checkbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -234,25 +236,31 @@ fun WindowContent(windowSize: DpSize, refreshRate: Int) {
     FancyBorder(
         modifier = Modifier.fillMaxSize()
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize().padding(20.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            BasicText(
-                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
+        Column {
+            var enabled by remember { mutableStateOf(true) }
+            Checkbox(enabled, onCheckedChange = {
+                enabled = it
+            })
+            Box(
+                modifier = Modifier.fillMaxSize().padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BasicText(
+                    text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
                         "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " +
                         "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris " +
                         "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in " +
                         "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. " +
                         "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui " +
                         "officia deserunt mollit anim id est laborum.",
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    fontFamily = FontFamily.Serif,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                 )
-            )
+            }
         }
 //        AnimatedTransitionExample(rpm = 10)
 //        RunningSquares(windowSize, refreshRate)
