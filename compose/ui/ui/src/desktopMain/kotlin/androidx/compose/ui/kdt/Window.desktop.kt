@@ -17,23 +17,10 @@
 package androidx.compose.ui.kdt
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ComposeUIDispatcher
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.kdt.macos.PresentablePicture
-import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
-import kotlinx.atomicfu.atomic
-import org.jetbrains.desktop.macos.DisplayLink
-import org.jetbrains.desktop.macos.Event
-import org.jetbrains.desktop.macos.GrandCentralDispatch
-import org.jetbrains.desktop.macos.Window
-import org.jetbrains.desktop.macos.WindowEvent
-import org.jetbrains.skia.PictureRecorder
-import org.jetbrains.skia.Rect
+import kotlinx.coroutines.awaitCancellation
 
 interface ComposeWindowScope {
     val window: ComposeWindow
@@ -61,6 +48,10 @@ fun Window(content: @Composable ComposeWindowScope.() -> Unit) {
     val composeWindow = remember { application.createWindow() }
     val windowScope = object: ComposeWindowScope {
         override val window: ComposeWindow = composeWindow
+    }
+    // We need this launch effect here to prevent Recomposer form joining
+    LaunchedEffect(Unit) {
+        awaitCancellation()
     }
     composeWindow.setContent {
         windowScope.content()
