@@ -57,6 +57,7 @@ import platform.CoreGraphics.CGRectIntersectsRect
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UILabel
+import platform.UIKit.UIPasteboard
 import platform.UIKit.UIScreen
 import platform.UIKit.accessibilityLabel
 import platform.darwin.vis
@@ -168,6 +169,7 @@ class BasicInteractionTest {
     @Test
     fun testBasicTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
 //        ComposeFoundationFlags.isNewContextMenuEnabled = true
+        UIPasteboard.generalPasteboard().string = "Paste text"
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
                 TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
@@ -184,6 +186,7 @@ class BasicInteractionTest {
     @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testBasicTextField2ToolbarNewContextMenu() = runUIKitInstrumentedTest {
+        UIPasteboard.generalPasteboard().string = "Paste text"
 //        ComposeFoundationFlags.isNewContextMenuEnabled = true
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         setContent {
