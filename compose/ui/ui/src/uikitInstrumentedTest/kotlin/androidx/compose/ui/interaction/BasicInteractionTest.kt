@@ -29,21 +29,37 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
+import androidx.compose.ui.test.findAllNodes
 import androidx.compose.ui.test.findNodeOrNull
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.utils.intersect
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.objcPtr
+import platform.CoreGraphics.CGRectGetHeight
+import platform.CoreGraphics.CGRectGetWidth
+import platform.CoreGraphics.CGRectIntersection
+import platform.CoreGraphics.CGRectIntersectsRect
+import platform.CoreGraphics.CGRectIsEmpty
+import platform.UIKit.NSStringFromCGRect
+import platform.UIKit.UILabel
+import platform.UIKit.UIScreen
+import platform.UIKit.accessibilityLabel
+import platform.darwin.vis
 
 class BasicInteractionTest {
     /**
@@ -182,6 +198,7 @@ class BasicInteractionTest {
 //        ComposeFoundationFlags.isNewContextMenuEnabled = false
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         // Verify elements from context menu present
         delay(2000)
@@ -189,22 +206,26 @@ class BasicInteractionTest {
 
         println(getAccessibilityTree().printTree())
 
-        findNodeWithLabel("Cut").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
+        findAllNodes { it.element is UILabel }.forEach {
+            val label = it.element as UILabel
+            println(">>> LABEL ${label.text} | ${NSStringFromCGRect(label.convertRect(label.bounds, toView = null))}")
         }
-        findNodeWithLabel("Copy").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
+
+        fun assertLabelWithText(text: String) {
+            val label = findNodeOrNull { node ->
+                node.element is UILabel && (node.element as UILabel).text == text
+            }?.element as? UILabel
+            assertNotNull(label, "Didn't find label with text $text")
+            val globalRect = label.convertRect(label.bounds, toView = null)
+            val intersection = CGRectIntersection(UIScreen.mainScreen.bounds, globalRect)
+
+            assertTrue(CGRectGetWidth(intersection) > 1.0 && CGRectGetHeight(intersection) > 0, "Rect ${NSStringFromCGRect(globalRect)} must be visible. Visible size: ${NSStringFromCGRect(intersection)}")
         }
-        findNodeWithLabel("Paste").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
-        findNodeWithLabel("Select All").let {
-            it.assertVisibleInContainer()
-            assertTrue(it.isAccessibilityElement ?: false)
-        }
+
+        assertLabelWithText("Cut")
+        assertLabelWithText("Copy")
+        assertLabelWithText("Paste")
+        assertLabelWithText("Select All")
     }
 
     private fun UIKitInstrumentedTest.waitForContextMenu() {

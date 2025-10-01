@@ -309,7 +309,7 @@ internal fun AccessibilityTestNode.assertVisibleInContainer() {
 
     assertTrue(
         frame.width >= 1.dp && frame.height >= 1.dp,
-        "Element with frame ${this.frame} is not visible or has very small size"
+        "Element with frame ${this.frame} ($frame) is not visible or has very small size"
     )
 }
 
@@ -346,19 +346,23 @@ internal fun UIKitInstrumentedTest.findNodeWithLabelOrNull(label: String) = find
 
 internal fun UIKitInstrumentedTest.findNodeOrNull(
     isValid: (AccessibilityTestNode) -> Boolean
-): AccessibilityTestNode? {
+): AccessibilityTestNode? = findAllNodes(isValid).firstOrNull()
+
+internal fun UIKitInstrumentedTest.findAllNodes(
+    isValid: (AccessibilityTestNode) -> Boolean
+): List<AccessibilityTestNode> {
     waitForIdle()
+    val nodes = mutableListOf<AccessibilityTestNode>()
     val actualTreeRoot = getAccessibilityTree()
 
-    fun check(node: AccessibilityTestNode): AccessibilityTestNode? {
-        return if (isValid(node)) {
-            node
-        } else {
-            node.children?.firstNotNullOfOrNull(::check)
+    fun getAllNodes(node: AccessibilityTestNode) {
+        if (isValid(node)) {
+            nodes.add(node)
         }
+        node.children?.forEach(::getAllNodes)
     }
-
-    return check(node = actualTreeRoot)
+    getAllNodes(actualTreeRoot)
+    return nodes
 }
 
 /**
