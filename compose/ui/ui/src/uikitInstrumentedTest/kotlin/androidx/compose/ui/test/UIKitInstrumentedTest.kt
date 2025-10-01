@@ -49,6 +49,7 @@ import platform.Foundation.NSDate
 import platform.Foundation.NSRunLoop
 import platform.Foundation.dateWithTimeIntervalSinceNow
 import platform.Foundation.runUntilDate
+import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIColor
@@ -328,6 +329,11 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
         _window?.rootViewController = viewController
         _window?.makeKeyAndVisible()
+        dispatch_async(dispatch_get_main_queue()) {
+            println(">> Bounds : ${NSStringFromCGRect(UIScreen.mainScreen.bounds)}")
+            _window?.setBounds(UIScreen.mainScreen.bounds)
+            _window?.setFrame(UIScreen.mainScreen.bounds)
+        }
     }
 
     fun cleanUp() {
