@@ -115,8 +115,7 @@ private val writingToolsBehaviorTypes = listOf(
     "None" to UIWritingToolsBehaviorNone,
     "Default" to UIWritingToolsBehaviorDefault,
     "Limited" to UIWritingToolsBehaviorLimited,
-    "Complete" to UIWritingToolsBehaviorComplete,
-    "Null" to null
+    "Complete" to UIWritingToolsBehaviorComplete
 )
 
 @OptIn(ExperimentalComposeUiApi::class)

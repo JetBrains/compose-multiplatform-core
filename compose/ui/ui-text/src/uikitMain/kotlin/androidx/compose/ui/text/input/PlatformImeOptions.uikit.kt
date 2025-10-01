@@ -27,6 +27,7 @@ import platform.UIKit.UITextAutocorrectionType
 import platform.UIKit.UITextContentType
 import platform.UIKit.UIView
 import platform.UIKit.UIWritingToolsBehavior
+import platform.UIKit.UIWritingToolsBehaviorDefault
 
 @Immutable
 private data class PlatformImeOptionsImpl(
@@ -41,7 +42,7 @@ private data class PlatformImeOptionsImpl(
     val hasExplicitTextContentType: Boolean,
     val inputView: UIView?,
     val inputAccessoryView: UIView?,
-    val writingToolsBehavior: UIWritingToolsBehavior?,
+    val writingToolsBehavior: UIWritingToolsBehavior,
 ): PlatformImeOptions()
 
 /**
@@ -60,7 +61,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
     private var hasExplicitTextContentType: Boolean = false
     private var inputView: UIView? = null
     private var inputAccessoryView: UIView? = null
-    private var writingToolsBehavior: UIWritingToolsBehavior? = null
+    private var writingToolsBehavior: UIWritingToolsBehavior = UIWritingToolsBehaviorDefault
     /**
      * Sets the keyboard type to be used for the text input field.
      * If not set, the value will be derived from [ImeOptions].
@@ -175,7 +176,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/writingtoolsbehavior)
      */
     @ExperimentalComposeUiApi
-    fun writingToolsBehavior(value: UIWritingToolsBehavior?): PlatformImeOptionsConfiguration = apply {
+    fun writingToolsBehavior(value: UIWritingToolsBehavior): PlatformImeOptionsConfiguration = apply {
         writingToolsBehavior = value
     }
 
@@ -259,5 +260,5 @@ val PlatformImeOptions.inputAccessoryView: UIView?
     get() = (this as? PlatformImeOptionsImpl)?.inputAccessoryView
 
 @ExperimentalComposeUiApi
-val PlatformImeOptions.writingToolsBehavior: UIWritingToolsBehavior?
-    get() = (this as? PlatformImeOptionsImpl)?.writingToolsBehavior
+val PlatformImeOptions.writingToolsBehavior: UIWritingToolsBehavior
+    get() = (this as? PlatformImeOptionsImpl)?.writingToolsBehavior ?: UIWritingToolsBehaviorDefault
