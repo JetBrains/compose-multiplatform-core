@@ -263,7 +263,7 @@ fun WindowContent(windowSize: DpSize, refreshRate: Int) = MaterialTheme {
                 )
             }
         }
-//        AnimatedTransitionExample(rpm = 10)
-//        RunningSquares(windowSize, refreshRate)
+        AnimatedTransitionExample(rpm = 10)
+        RunningSquares(windowSize, refreshRate)
     }
 }

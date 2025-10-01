@@ -17,6 +17,7 @@
 package androidx.compose.ui.kdt
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.DpSize
@@ -26,7 +27,7 @@ interface ComposeWindowScope {
     val window: ComposeWindow
 }
 
-interface ComposeWindow {
+interface ComposeWindow : AutoCloseable {
     val size: DpSize
     val contentSize: DpSize
     val isActive: Boolean
@@ -43,10 +44,20 @@ interface ComposeWindow {
 }
 
 @Composable
-fun Window(content: @Composable ComposeWindowScope.() -> Unit) {
+fun Window(
+    onCloseRequested: () -> Unit,
+    content: @Composable ComposeWindowScope.() -> Unit
+) {
     val application = LocalComposeApplication.current
-    val composeWindow = remember { application.createWindow() }
-    val windowScope = object: ComposeWindowScope {
+    // todo[ps] update the callback
+    val composeWindow = remember { application.createWindow(onCloseRequested) }
+    DisposableEffect(Unit) {
+        onDispose {
+            println("close was called on window")
+            composeWindow.close()
+        }
+    }
+    val windowScope = object : ComposeWindowScope {
         override val window: ComposeWindow = composeWindow
     }
     // We need this launch effect here to prevent Recomposer form joining
