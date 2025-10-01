@@ -18,6 +18,10 @@ package androidx.compose.desktop.examples.kdt
 
 import androidx.compose.desktop.examples.vsync.WindowContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.kdt.Window
 import androidx.compose.ui.kdt.initApplication
 import androidx.compose.ui.kdt.runApplication
@@ -33,7 +37,12 @@ fun main() {
 
 @Composable
 private fun AppWindow() {
-    Window {
-        WindowContent(windowSize = window.contentSize, refreshRate = 120)
+    var isWindowShown by remember { mutableStateOf(true) }
+    if (isWindowShown) {
+        Window(onCloseRequested = {
+            isWindowShown = false
+        }) {
+            WindowContent(windowSize = window.contentSize, refreshRate = 120)
+        }
     }
 }

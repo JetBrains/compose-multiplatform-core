@@ -54,19 +54,17 @@ class ComposeApplicationMacOs(): ComposeApplication, AutoCloseable {
                 }
                 EventHandlerResult.Continue
             }
+            for (window in allWindows.values) {
+                window
+            }
+            gpuContext.close()
+            GrandCentralDispatch.close()
         }
     }
-    val desktopGpuContext by lazy { DesktopGpuContext() }
+    val gpuContext by lazy { DesktopGpuContext() }
 
     init {
         applicationStarted.await()
-    }
-
-    override fun exitApplication() {
-        //todo close all resources including GPU context and all
-        Application.stopEventLoop()
-        // todo[ps] join hangs by some reason
-//         eventLoopThreadHandler.join()
     }
 
     override fun macOsApplication(): ComposeApplicationMacOs {
@@ -74,7 +72,10 @@ class ComposeApplicationMacOs(): ComposeApplication, AutoCloseable {
     }
 
     override fun close() {
-        // todo[ps] close the application
+        GrandCentralDispatch.dispatchOnMain {
+            Application.stopEventLoop()
+        }
+        eventLoopThreadHandler.join()
     }
 
     override fun globalDensity(): Density {
@@ -93,8 +94,8 @@ class ComposeApplicationMacOs(): ComposeApplication, AutoCloseable {
         }
     }
 
-    override fun createWindow(): ComposeWindow {
-        val window = ComposeWindowMacOs(this)
+    override fun createWindow(onCloseRequested: () -> Unit): ComposeWindow {
+        val window = ComposeWindowMacOs(this, onCloseRequested)
         allWindows.put(window.window.windowId(), window)
         return window
     }

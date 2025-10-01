@@ -37,8 +37,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 
 interface ComposeApplication: AutoCloseable {
-    fun exitApplication()
-
 //    val isActive: Boolean
 //    val keyWindow: KdtWindow?
 //    val mainWindow: KdtWindow?
@@ -50,7 +48,7 @@ interface ComposeApplication: AutoCloseable {
     // but it's a functions shared across platforms
     fun globalDensity(): Density
     fun globalLayoutDirection(): LayoutDirection
-    fun createWindow(): ComposeWindow
+    fun createWindow(onCloseRequested: () -> Unit): ComposeWindow
     fun macOsApplication(): ComposeApplicationMacOs?
 }
 
@@ -102,6 +100,7 @@ fun runApplication(application: ComposeApplication, content: @Composable () -> U
                         }
                     }
                     recomposer.close()
+                    // this join blocks until there are some `LaunchEffects` in composition
                     recomposer.join()
                 } finally {
                     composition.dispose()
