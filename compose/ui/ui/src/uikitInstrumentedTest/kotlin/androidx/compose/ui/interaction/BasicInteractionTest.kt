@@ -32,6 +32,7 @@ import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeOrNull
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -184,6 +185,8 @@ class BasicInteractionTest {
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         // Verify elements from context menu present
         waitForContextMenu()
+
+        println(getAccessibilityTree().printTree())
 
         findNodeWithLabel("Cut").let {
             it.assertVisibleInContainer()
