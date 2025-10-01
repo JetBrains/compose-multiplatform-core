@@ -184,6 +184,7 @@ class BasicInteractionTest {
 
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         // Verify elements from context menu present
+        delay(2000)
         waitForContextMenu()
 
         println(getAccessibilityTree().printTree())
