@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Checkbox
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -232,7 +233,7 @@ fun FancyBorder(
 }
 
 @Composable
-fun WindowContent(windowSize: DpSize, refreshRate: Int) {
+fun WindowContent(windowSize: DpSize, refreshRate: Int) = MaterialTheme {
     FancyBorder(
         modifier = Modifier.fillMaxSize()
     ) {
