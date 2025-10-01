@@ -169,7 +169,11 @@ class PlatformImeOptionsConfiguration internal constructor() {
         inputAccessoryView = value
     }
 
-
+    /**
+     * Sets the writing tools behavior to apply to the IME.
+     *
+     * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/writingtoolsbehavior)
+     */
     @ExperimentalComposeUiApi
     fun writingToolsBehavior(value: UIWritingToolsBehavior?): PlatformImeOptionsConfiguration = apply {
         writingToolsBehavior = value
