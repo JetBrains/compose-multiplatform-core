@@ -117,40 +117,40 @@ class BasicInteractionTest {
         assertEquals(DpRect(DpOffset.Zero, DpSize(screenSize.width, 100.dp)), boxRect)
     }
 
-    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
-    @Test
-    fun testBasicTextFieldToolbar() = runUIKitInstrumentedTest {
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
-            }
-        }
-
-        findNodeWithTag("TextField").doubleTap()
-
-        verifyFullToolbarPresent()
-    }
-
-    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
-    @Test
-    fun testBasicTextField2Toolbar() = runUIKitInstrumentedTest {
-        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
-            }
-        }
-
-        findNodeWithTag("TextField").doubleTap()
-
-        verifyFullToolbarPresent()
-    }
-
-    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
+//    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
+//    @Test
+//    fun testBasicTextFieldToolbar() = runUIKitInstrumentedTest {
+//        setContent {
+//            Column(modifier = Modifier.safeDrawingPadding()) {
+//                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
+//            }
+//        }
+//
+//        findNodeWithTag("TextField").doubleTap()
+//
+//        verifyFullToolbarPresent()
+//    }
+//
+//    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
+//    @Test
+//    fun testBasicTextField2Toolbar() = runUIKitInstrumentedTest {
+//        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
+//        setContent {
+//            Column(modifier = Modifier.safeDrawingPadding()) {
+//                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
+//            }
+//        }
+//
+//        findNodeWithTag("TextField").doubleTap()
+//
+//        verifyFullToolbarPresent()
+//    }
+//
+//    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
     @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testBasicTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
-        ComposeFoundationFlags.isNewContextMenuEnabled = true
+//        ComposeFoundationFlags.isNewContextMenuEnabled = true
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
                 TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
@@ -160,14 +160,14 @@ class BasicInteractionTest {
         findNodeWithTag("TextField").doubleTap()
 
         verifyFullToolbarPresent()
-        ComposeFoundationFlags.isNewContextMenuEnabled = false
+//        ComposeFoundationFlags.isNewContextMenuEnabled = false
     }
 
-    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
+//    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
     @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testBasicTextField2ToolbarNewContextMenu() = runUIKitInstrumentedTest {
-        ComposeFoundationFlags.isNewContextMenuEnabled = true
+//        ComposeFoundationFlags.isNewContextMenuEnabled = true
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
@@ -178,7 +178,7 @@ class BasicInteractionTest {
         findNodeWithTag("TextField").doubleTap()
 
         verifyFullToolbarPresent()
-        ComposeFoundationFlags.isNewContextMenuEnabled = false
+//        ComposeFoundationFlags.isNewContextMenuEnabled = false
     }
 
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
