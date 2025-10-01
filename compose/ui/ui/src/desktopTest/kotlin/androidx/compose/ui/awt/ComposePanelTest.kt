@@ -723,112 +723,118 @@ class ComposePanelTest {
     }
 
     @Test
-    fun `ComposePanel propagates unconsumed mouse wheel scroll events to parent`() = runApplicationTest {
-        val composePanel = ComposePanel()
-        composePanel.preferredSize = Dimension(200, 200)
-        val scrollState = ScrollState(0)
-        composePanel.setContent {
-            Box(Modifier.size(200.dp).verticalScroll(scrollState).background(Color.Yellow)) {
-                Column(Modifier.fillMaxWidth().height(400.dp)) {
-                    Text("Hello World")
-                    Text("Hello World")
-                    Text("Hello World")
-                    Text("Hello World")
-                    Text("Hello World")
+    fun `ComposePanel propagates unconsumed mouse wheel scroll events to parent`() =
+        ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.withOverride(true) {
+            runApplicationTest {
+                val composePanel = ComposePanel()
+                composePanel.preferredSize = Dimension(200, 200)
+                val scrollState = ScrollState(0)
+                composePanel.setContent {
+                    Box(Modifier.size(200.dp).verticalScroll(scrollState).background(Color.Yellow)) {
+                        Column(Modifier.fillMaxWidth().height(400.dp)) {
+                            Text("Hello World")
+                            Text("Hello World")
+                            Text("Hello World")
+                            Text("Hello World")
+                            Text("Hello World")
+                        }
+                    }
+                }
+
+                val window = JFrame()
+                try {
+                    window.size = Dimension(200, 200)
+                    val scrollPane = JScrollPane(
+                        JPanel().apply {
+                            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                            add(composePanel)
+                            add(javax.swing.Box.createVerticalStrut(1000), BorderLayout.CENTER)
+                        }
+                    )
+                    scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+                    window.contentPane.add(scrollPane, BorderLayout.CENTER)
+                    window.isVisible = true
+
+                    awaitIdle()
+
+                    // Scroll a little and check that compose content was scrolled
+                    composePanel.sendMouseWheelEvent(wheelRotation = 1.0)
+                    awaitIdle()
+                    assertThat(scrollState.value).isGreaterThan(0)
+
+                    // Scroll a lot and check that the Swing JScrollPane was scrolled
+                    // Note that we need two scroll events for now because Compose can't partially consume
+                    // scroll events. So one event is needed to scroll Compose content to the end, and
+                    // another one to scroll JScrollPane.
+                    window.sendMouseWheelEvent(wheelRotation = 1000.0)
+                    awaitIdle()
+                    window.sendMouseWheelEvent(wheelRotation = 1000.0)
+                    assertThat(scrollPane.viewport.viewPosition.y).isGreaterThan(0)
+                } finally {
+                    window.dispose()
                 }
             }
         }
-
-        val window = JFrame()
-        try {
-            window.size = Dimension(200, 200)
-            val scrollPane = JScrollPane(
-                JPanel().apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    add(composePanel)
-                    add(javax.swing.Box.createVerticalStrut(1000), BorderLayout.CENTER)
-                }
-            )
-            scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-            window.contentPane.add(scrollPane, BorderLayout.CENTER)
-            window.isVisible = true
-
-            awaitIdle()
-
-            // Scroll a little and check that compose content was scrolled
-            composePanel.sendMouseWheelEvent(wheelRotation = 1.0)
-            awaitIdle()
-            assertThat(scrollState.value).isGreaterThan(0)
-
-            // Scroll a lot and check that the Swing JScrollPane was scrolled
-            // Note that we need two scroll events for now because Compose can't partially consume
-            // scroll events. So one event is needed to scroll Compose content to the end, and
-            // another one to scroll JScrollPane.
-            window.sendMouseWheelEvent(wheelRotation = 1000.0)
-            awaitIdle()
-            window.sendMouseWheelEvent(wheelRotation = 1000.0)
-            assertThat(scrollPane.viewport.viewPosition.y).isGreaterThan(0)
-        } finally {
-            window.dispose()
-        }
-    }
 
     @Test
-    fun `ComposePanel propagates unconsumed mouse wheel scroll events to sibling`() = runApplicationTest {
-        val composePanel = ComposePanel()
-        val scrollState = ScrollState(0)
-        composePanel.setContent {
-            Box(Modifier.size(200.dp).verticalScroll(scrollState).background(Color.Green)) {
-                Column(Modifier.fillMaxWidth().height(400.dp)) {
-                    Text("Hello World")
-                    Text("Hello World")
-                    Text("Hello World")
-                    Text("Hello World")
-                    Text("Hello World")
+    fun `ComposePanel propagates unconsumed mouse wheel scroll events to sibling`() =
+        ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.withOverride(true) {
+            runApplicationTest {
+                val composePanel = ComposePanel()
+                val scrollState = ScrollState(0)
+                composePanel.setContent {
+                    Box(Modifier.size(200.dp).verticalScroll(scrollState).background(Color.Green)) {
+                        Column(Modifier.fillMaxWidth().height(400.dp)) {
+                            Text("Hello World")
+                            Text("Hello World")
+                            Text("Hello World")
+                            Text("Hello World")
+                            Text("Hello World")
+                        }
+                    }
+                }
+
+                val container = JPanel(null)
+                container.size = Dimension(200, 200)
+
+                val scrollPane = JScrollPane(
+                    JPanel().apply {
+                        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                        add(javax.swing.Box.createVerticalStrut(1000), BorderLayout.CENTER)
+                    }
+                )
+                scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+
+                composePanel.size = Dimension(200, 200)
+                scrollPane.size = Dimension(200, 400)
+
+                val window = JFrame()
+                try {
+                    window.size = Dimension(200, 400)
+                    container.add(composePanel)
+                    container.add(scrollPane)
+
+                    window.contentPane.add(container, BorderLayout.CENTER)
+                    window.isVisible = true
+
+                    awaitIdle()
+
+                    // Scroll a little and check that compose content was scrolled
+                    composePanel.sendMouseWheelEvent(wheelRotation = 1.0)
+                    awaitIdle()
+                    assertThat(scrollState.value).isGreaterThan(0)
+
+                    // Scroll a lot and check that the Swing JScrollPane was scrolled
+                    // Note that we need two scroll events for now because Compose can't partially consume
+                    // scroll events. So one event is needed to scroll Compose content to the end, and
+                    // another one to scroll JScrollPane.
+                    composePanel.sendMouseWheelEvent(wheelRotation = 1000.0)
+                    awaitIdle()
+                    window.sendMouseWheelEvent(wheelRotation = 1000.0)
+                    assertThat(scrollPane.viewport.viewPosition.y).isGreaterThan(0)
+                } finally {
+                    window.dispose()
                 }
             }
         }
-
-        val container = JPanel(null)
-        container.size = Dimension(200, 200)
-
-        val scrollPane = JScrollPane(
-            JPanel().apply {
-                layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                add(javax.swing.Box.createVerticalStrut(1000), BorderLayout.CENTER)
-            }
-        )
-        scrollPane.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-
-        composePanel.size = Dimension(200, 200)
-        scrollPane.size = Dimension(200, 400)
-
-        val window = JFrame()
-        try {
-            window.size = Dimension(200, 400)
-            container.add(composePanel)
-            container.add(scrollPane)
-
-            window.contentPane.add(container, BorderLayout.CENTER)
-            window.isVisible = true
-
-            awaitIdle()
-
-            // Scroll a little and check that compose content was scrolled
-            composePanel.sendMouseWheelEvent(wheelRotation = 1.0)
-            awaitIdle()
-            assertThat(scrollState.value).isGreaterThan(0)
-
-            // Scroll a lot and check that the Swing JScrollPane was scrolled
-            // Note that we need two scroll events for now because Compose can't partially consume
-            // scroll events. So one event is needed to scroll Compose content to the end, and
-            // another one to scroll JScrollPane.
-            composePanel.sendMouseWheelEvent(wheelRotation = 1000.0)
-            awaitIdle()
-            window.sendMouseWheelEvent(wheelRotation = 1000.0)
-            assertThat(scrollPane.viewport.viewPosition.y).isGreaterThan(0)
-        } finally {
-            window.dispose()
-        }
-    }
 }

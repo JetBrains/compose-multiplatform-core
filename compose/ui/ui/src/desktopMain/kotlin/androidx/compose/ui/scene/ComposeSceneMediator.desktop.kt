@@ -472,7 +472,9 @@ internal class ComposeSceneMediator(
         processMouseEvent {
             val processingResult = scene.onMouseWheelEvent(event.position, event)
             if (!processingResult.anyChangeConsumed) {
-                redispatchUnconsumedMouseEvent(event)
+                if (ComposeFeatureFlags.redispatchUnconsumedMouseWheelEvents.value) {
+                    redispatchUnconsumedMouseEvent(event)
+                }
             }
         }
     }
