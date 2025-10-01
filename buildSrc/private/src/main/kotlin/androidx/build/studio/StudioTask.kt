@@ -445,6 +445,10 @@ abstract class StudioTask : DefaultTask() {
                 when (ProjectLayoutType.from(this)) {
                     ProjectLayoutType.ANDROIDX -> RootStudioTask::class.java
                     ProjectLayoutType.PLAYGROUND -> PlaygroundStudioTask::class.java
+
+                    // For JetBrains' fork it's supposed to use IJ IDEA, so it's not required to have a task
+                    // to automatically download and run Android Studio.
+                    ProjectLayoutType.JETBRAINS_FORK -> return
                 }
             tasks.register(STUDIO_TASK, studioTask)
         }
