@@ -25,12 +25,18 @@ import androidx.compose.ui.kdt.ComposeWindow
 import androidx.compose.ui.kdt.toDpSize
 import androidx.compose.ui.kdt.toIntSize
 import androidx.compose.ui.scene.CanvasLayersComposeScene
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerButtons
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import kotlinx.atomicfu.atomic
 import org.jetbrains.desktop.macos.DisplayLink
 import org.jetbrains.desktop.macos.Event
 import org.jetbrains.desktop.macos.GrandCentralDispatch
+import org.jetbrains.desktop.macos.MouseButton
 import org.jetbrains.desktop.macos.Window
 import org.jetbrains.desktop.macos.WindowEvent
 import org.jetbrains.skia.PictureRecorder
@@ -134,6 +140,87 @@ class ComposeWindowMacOs(
             is Event.WindowCloseRequest -> {
                 onCloseRequested()
             }
+
+            // Mouse events
+            is Event.MouseDown -> {
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Press,
+                    position = event.toOffset(window.scaleFactor()),
+                    timeMillis = event.toTimeMillis(),
+                    buttons = getPointerButtons(),
+                    keyboardModifiers = getKeyboardModifiers(),
+                    nativeEvent = event,
+                    button = event.button.toComposePointerButton()
+                )
+            }
+
+            is Event.MouseUp -> {
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Release,
+                    position = event.toOffset(window.scaleFactor()),
+                    timeMillis = event.toTimeMillis(),
+                    buttons = getPointerButtons(),
+                    keyboardModifiers = getKeyboardModifiers(),
+                    nativeEvent = event,
+                    button = event.button.toComposePointerButton()
+                )
+            }
+
+            is Event.MouseMoved -> {
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Move,
+                    position = event.toOffset(window.scaleFactor()),
+                    timeMillis = event.toTimeMillis(),
+                    buttons = getPointerButtons(),
+                    keyboardModifiers = getKeyboardModifiers(),
+                    nativeEvent = event
+                )
+            }
+
+            is Event.MouseDragged -> {
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Move,
+                    position = event.toOffset(window.scaleFactor()),
+                    timeMillis = event.toTimeMillis(),
+                    buttons = getPointerButtons(),
+                    keyboardModifiers = getKeyboardModifiers(),
+                    nativeEvent = event
+                )
+            }
+
+            is Event.MouseEntered -> {
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Enter,
+                    position = event.toOffset(window.scaleFactor()),
+                    timeMillis = event.toTimeMillis(),
+                    buttons = getPointerButtons(),
+                    keyboardModifiers = getKeyboardModifiers(),
+                    nativeEvent = event
+                )
+            }
+
+            is Event.MouseExited -> {
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Exit,
+                    position = event.toOffset(window.scaleFactor()),
+                    timeMillis = event.toTimeMillis(),
+                    buttons = getPointerButtons(),
+                    keyboardModifiers = getKeyboardModifiers(),
+                    nativeEvent = event
+                )
+            }
+
+            is Event.ScrollWheel -> {
+                scene.sendPointerEvent(
+                    eventType = PointerEventType.Scroll,
+                    position = event.toOffset(window.scaleFactor()),
+                    scrollDelta = Offset(event.scrollingDeltaX.toFloat(), event.scrollingDeltaY.toFloat()),
+                    timeMillis = event.toTimeMillis(),
+                    buttons = getPointerButtons(),
+                    keyboardModifiers = getKeyboardModifiers(),
+                    nativeEvent = event
+                )
+            }
         }
     }
 
@@ -157,4 +244,64 @@ class ComposeWindowMacOs(
         application.gpuContext.destroyMetalViewContext(viewContext)
         window.close()
     }
+}
+
+// Mouse event conversion utilities
+internal fun MouseButton.toComposePointerButton(): PointerButton = when (this) {
+    MouseButton.LEFT -> PointerButton.Primary
+    MouseButton.RIGHT -> PointerButton.Secondary
+    MouseButton.MIDDLE -> PointerButton.Tertiary
+    else -> PointerButton(this.value)
+}
+
+internal fun Event.toOffset(scaleFactor: Double): Offset = when (this) {
+    is Event.MouseDown -> {
+        val physical = locationInWindow.toPhysical(scaleFactor)
+        Offset(physical.x.toFloat(), physical.y.toFloat())
+    }
+    is Event.MouseUp -> {
+        val physical = locationInWindow.toPhysical(scaleFactor)
+        Offset(physical.x.toFloat(), physical.y.toFloat())
+    }
+    is Event.MouseMoved -> {
+        val physical = locationInWindow.toPhysical(scaleFactor)
+        Offset(physical.x.toFloat(), physical.y.toFloat())
+    }
+    is Event.MouseDragged -> {
+        val physical = locationInWindow.toPhysical(scaleFactor)
+        Offset(physical.x.toFloat(), physical.y.toFloat())
+    }
+    is Event.MouseEntered -> {
+        val physical = locationInWindow.toPhysical(scaleFactor)
+        Offset(physical.x.toFloat(), physical.y.toFloat())
+    }
+    is Event.MouseExited -> {
+        val physical = locationInWindow.toPhysical(scaleFactor)
+        Offset(physical.x.toFloat(), physical.y.toFloat())
+    }
+    is Event.ScrollWheel -> {
+        val physical = locationInWindow.toPhysical(scaleFactor)
+        Offset(physical.x.toFloat(), physical.y.toFloat())
+    }
+    else -> Offset.Zero
+}
+
+internal fun Event.toTimeMillis(): Long {
+    // Use system time for now since timestamp conversion needs investigation
+    return System.currentTimeMillis()
+}
+
+internal fun getPointerButtons(): PointerButtons {
+    val pressedButtons = Event.pressedMouseButtons()
+    return PointerButtons(
+        isPrimaryPressed = pressedButtons.contains(MouseButton.LEFT),
+        isSecondaryPressed = pressedButtons.contains(MouseButton.RIGHT),
+        isTertiaryPressed = pressedButtons.contains(MouseButton.MIDDLE)
+    )
+}
+
+internal fun getKeyboardModifiers(): PointerKeyboardModifiers {
+    // TODO: Map KeyModifiersSet to PointerKeyboardModifiers
+    // For now return empty modifiers
+    return PointerKeyboardModifiers()
 }
