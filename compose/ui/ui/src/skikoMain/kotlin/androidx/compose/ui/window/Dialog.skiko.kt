@@ -17,6 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -33,6 +34,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
@@ -46,6 +48,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
+import androidx.navigationevent.NavigationEventHandler
+import androidx.navigationevent.NavigationEventInfo
 
 /**
  * The default scrim opacity.
@@ -159,6 +163,20 @@ actual fun Dialog(
     )
 }
 
+// Android dialogs are being shown in the window, so the window handles back gestures by itself.
+// For non-android dialogs we need to handle back gestures otherwise a background scene will do.
+// We can't disable a current NavigationEventDispatcher because all custom user's NavigationEvenHandlers
+// stop working. So we use an empty NavigationEventHandler.
+// Note: usually ESC button sends BackEvent but Dialogs handle ESC clicks by themselves.
+private object EmptyNavigationEventHandler : NavigationEventHandler<NavigationEventInfo>(
+    initialInfo = NavigationEventInfo.None,
+    isBackEnabled = true
+) {
+    override fun onBackCompleted() {
+        //do nothing
+    }
+}
+
 @Composable
 private fun DialogLayout(
     properties: DialogProperties,
@@ -168,6 +186,15 @@ private fun DialogLayout(
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
+    val owner = LocalInternalNavigationEventDispatcherOwner.current!!
+    val dispatcher = owner.navigationEventDispatcher
+    DisposableEffect(dispatcher) {
+        dispatcher.addHandler(EmptyNavigationEventHandler)
+        onDispose {
+            EmptyNavigationEventHandler.remove()
+        }
+    }
+
     val currentContent by rememberUpdatedState(content)
 
     val layer = rememberComposeSceneLayer(
@@ -227,9 +254,10 @@ private fun rememberDialogMeasurePolicy(
         platformInsets = platformInsets,
         usePlatformDefaultWidth = properties.usePlatformDefaultWidth
     ) { contentSize ->
-        val positionWithInsets = positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
-            sizeWithoutInsets.center - contentSize.center
-        }
+        val positionWithInsets =
+            positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
+                sizeWithoutInsets.center - contentSize.center
+            }
         layer.boundsInWindow = IntRect(positionWithInsets, contentSize)
         layer.calculateLocalPosition(positionWithInsets)
     }
