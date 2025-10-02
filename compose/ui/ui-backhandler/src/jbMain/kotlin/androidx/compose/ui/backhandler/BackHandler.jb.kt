@@ -37,7 +37,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 
 @Deprecated("Use NavigationEventHandler instead")
@@ -47,9 +46,8 @@ actual fun PredictiveBackHandler(
     enabled: Boolean,
     onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
 ) {
-    val owner = LocalNavigationEventDispatcherOwner.current ?: return
-    val dispatcher = owner.navigationEventDispatcher
     val coroutineScope = rememberCoroutineScope()
+    val navEventState = rememberNavigationEventState(NavigationEventInfo.None)
 
     var progressChannel: Channel<BackEventCompat>? by remember(onBack) {
         mutableStateOf(null)
@@ -69,26 +67,23 @@ actual fun PredictiveBackHandler(
         }
     }
 
-    LaunchedEffect(enabled) {
-        if (enabled) {
-            dispatcher.transitionState
-                .filterIsInstance<NavigationEventTransitionState.InProgress>()
-                .collect {
-                    val navEvent = it.latestEvent
-                    val swipeEdge = when (navEvent.swipeEdge) {
-                        NavigationEvent.EDGE_RIGHT -> BackEventCompat.EDGE_RIGHT
-                        else -> BackEventCompat.EDGE_LEFT
-                    }
-                    val event = BackEventCompat(
-                        navEvent.touchX, navEvent.touchY, navEvent.progress, swipeEdge
-                    )
-                    getActiveProgressChannel().send(event)
-                }
+    val transitionState = navEventState.transitionState
+    if (transitionState is NavigationEventTransitionState.InProgress) {
+        LaunchedEffect(transitionState) {
+            val navEvent = transitionState.latestEvent
+            val swipeEdge = when (navEvent.swipeEdge) {
+                NavigationEvent.EDGE_RIGHT -> BackEventCompat.EDGE_RIGHT
+                else -> BackEventCompat.EDGE_LEFT
+            }
+            val event = BackEventCompat(
+                navEvent.touchX, navEvent.touchY, navEvent.progress, swipeEdge
+            )
+            getActiveProgressChannel().send(event)
         }
     }
 
     NavigationBackHandler(
-        state = rememberNavigationEventState(NavigationEventInfo.None),
+        state = navEventState,
         isBackEnabled = enabled,
         onBackCancelled = {
             getActiveProgressChannel().close(CancellationException("Cancelled"))
