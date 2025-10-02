@@ -216,6 +216,26 @@ internal interface IosCompositeInput : СompositeInputTestSpec {
             compositionEnd(typedKey),
         )
     }
+
+    @Test
+    fun `input korean-hol`() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
+        eventsSequence(
+            keyEvent(key= "ㅎ", code = "Unidentified", keyCode = 0),
+            beforeInput("insertText", data = "ㅎ", isComposing = false),
+            keyEvent(key= "ㅎ", code = "Unidentified", keyCode = 0, type = "keyup"),
+            keyEvent(key= "ㅗ", code = "Unidentified", keyCode = 0),
+            beforeInput("deleteContentBackward", data = null, isComposing = false),
+            beforeInput("insertText", data = "호", isComposing = false),
+            keyEvent(key= "ㅗ", code = "Unidentified", keyCode = 0, type = "keyup"),
+            keyEvent(key= "ㄹ", code = "Unidentified", keyCode = 0),
+            beforeInput("deleteContentBackward", data = null, isComposing = false),
+            beforeInput("insertText", data = "홀", isComposing = false),
+            keyEvent(key= "ㄹ", code = "Unidentified", keyCode = 0, type = "keyup")
+        ).sendToHtmlInput()
+
+        textFieldValue.awaitAndAssertTextEquals("홀")
+    }
 }
 
 internal interface AndroidCompositeInput : СompositeInputTestSpec {

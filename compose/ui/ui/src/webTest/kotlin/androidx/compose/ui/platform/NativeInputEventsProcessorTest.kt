@@ -567,11 +567,9 @@ class NativeInputEventsProcessorTest {
 
         assertEquals(1, communicator.editCommands.size)
         val command = communicator.editCommands[0]
-        assertTrue(command is DeleteSurroundingTextCommand)
-        assertEquals(2, (command as DeleteSurroundingTextCommand).lengthBeforeCursor)
-        assertEquals(0, command.lengthAfterCursor)
+        assertTrue(command is BackspaceCommand)
 
-        assertEquals("exale text", communicator.currentTextFieldValue().text)
+        assertEquals("examle text", communicator.currentTextFieldValue().text)
     }
 
     @Test

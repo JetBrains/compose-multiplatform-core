@@ -125,7 +125,7 @@ internal abstract class NativeInputEventsProcessor(
                 // this means "deleteContentBackward" happened because of an earlier "keydown" event, so skipping it here
                 if (lastProcessedEventIsBackspace) return@buildList
 
-                if (!currentTextFieldValue.selection.collapsed) {
+                if (currentTextFieldValue.selection.collapsed) {
                     // Likely it's on mobile, where the Backspace has Unidentified key value.
                     // When Compose TextField shows text selection,
                     // a good UX for deleteContentBackward would be to emulate Backspace
