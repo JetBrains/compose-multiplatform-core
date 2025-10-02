@@ -37,7 +37,6 @@ public actual fun <T : Any> defaultTransitionSpec():
     ContentTransform(
         slideIntoContainer(
             towards = AnimatedContentTransitionScope.SlideDirection.Left,
-            initialOffset = { it / 4 },
             animationSpec = tween(DEFAULT_TRANSITION_DURATION_MILLISECOND, easing = IosTransitionEasing),
         ),
         slideOutOfContainer(
