@@ -135,6 +135,7 @@ internal abstract class BaseComposeScene(
 
     override fun hasInvalidations(): Boolean = hasPendingDraws || recomposer.hasPendingWork
 
+    fun test(): Boolean = true
     override fun setContent(content: @Composable () -> Unit) =
         postponeInvalidation("BaseComposeScene:setContent") {
             check(!isClosed) { "setContent called after ComposeScene is closed" }
