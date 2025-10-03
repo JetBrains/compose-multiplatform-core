@@ -105,7 +105,7 @@ final class CMPViewControllerTests: XCTestCase {
 
         rootViewController.dismiss(animated: true)
         
-        await expect(viewController: viewController, toBeInHierarchy: true)
+        await expect(viewController: viewController, toBeInHierarchy: false)
     }
 
     @MainActor
