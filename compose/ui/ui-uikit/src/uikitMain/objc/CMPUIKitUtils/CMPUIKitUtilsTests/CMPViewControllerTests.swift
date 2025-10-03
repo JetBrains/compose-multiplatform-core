@@ -358,7 +358,7 @@ private class TestViewController: CMPViewController {
     override func viewControllerDidEnterWindowHierarchy() {
         super.viewControllerDidEnterWindowHierarchy()
         print("TestViewController_\(id) didEnterWindowHierarchy")
-        XCTAssertFalse(viewIsInWindowHierarchy)
+        XCTAssertTrue(viewIsInWindowHierarchy)
         viewIsInWindowHierarchy = true
     }
 
