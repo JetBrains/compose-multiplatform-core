@@ -57,6 +57,8 @@ import androidx.compose.ui.viewinterop.pointerInteropFilter
 @Deprecated("Use LocalComposeSceneContext instead")
 internal val LocalComposeScene = staticCompositionLocalOf<ComposeScene?> { null }
 
+val LocalTest = staticCompositionLocalOf<ComposeScene?> { null }
+
 /**
  * A virtual container that encapsulates Compose UI content. UI content can be constructed via
  * [setContent] method and with any Composable that manipulates [LayoutNode] tree.
