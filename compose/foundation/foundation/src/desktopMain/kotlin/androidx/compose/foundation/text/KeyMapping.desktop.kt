@@ -19,6 +19,7 @@ package androidx.compose.foundation.text
 import java.awt.event.KeyEvent as AwtKeyEvent
 import androidx.compose.foundation.DesktopPlatform
 import androidx.compose.ui.input.key.Key
+import java.awt.event.KeyEvent.KEY_LOCATION_NUMPAD
 
 internal actual val platformDefaultKeyMapping: KeyMapping
     get() = overriddenDefaultKeyMapping ?: _platformDefaultKeyMapping
@@ -47,17 +48,26 @@ internal actual object MappedKeys {
     actual val Z: Key = Key(AwtKeyEvent.VK_Z)
     actual val Backslash: Key = Key(AwtKeyEvent.VK_BACK_SLASH)
     actual val DirectionLeft: Key = Key(AwtKeyEvent.VK_LEFT)
+    actual val NumPadDirectionLeft: Key = Key(AwtKeyEvent.VK_LEFT, KEY_LOCATION_NUMPAD)
     actual val DirectionRight: Key = Key(AwtKeyEvent.VK_RIGHT)
+    actual val NumPadDirectionRight: Key = Key(AwtKeyEvent.VK_RIGHT, KEY_LOCATION_NUMPAD)
     actual val DirectionUp: Key = Key(AwtKeyEvent.VK_UP)
+    actual val NumPadDirectionUp: Key = Key(AwtKeyEvent.VK_UP, KEY_LOCATION_NUMPAD)
     actual val DirectionDown: Key = Key(AwtKeyEvent.VK_DOWN)
+    actual val NumPadDirectionDown: Key = Key(AwtKeyEvent.VK_DOWN, KEY_LOCATION_NUMPAD)
     actual val DirectionCenter: Key = Key(AwtKeyEvent.VK_ACCEPT)
     actual val PageUp: Key = Key(AwtKeyEvent.VK_PAGE_UP)
+    actual val NumPadPageUp: Key = Key(AwtKeyEvent.VK_PAGE_UP, KEY_LOCATION_NUMPAD)
     actual val PageDown: Key = Key(AwtKeyEvent.VK_PAGE_DOWN)
+    actual val NumPadPageDown: Key = Key(AwtKeyEvent.VK_PAGE_DOWN, KEY_LOCATION_NUMPAD)
     actual val MoveHome: Key = Key(AwtKeyEvent.VK_HOME)
+    actual val NumPadMoveHome: Key = Key(AwtKeyEvent.VK_HOME, KEY_LOCATION_NUMPAD)
     actual val MoveEnd: Key = Key(AwtKeyEvent.VK_END)
+    actual val NumPadMoveEnd: Key = Key(AwtKeyEvent.VK_END, KEY_LOCATION_NUMPAD)
     actual val Insert: Key = Key(AwtKeyEvent.VK_INSERT)
+    actual val NumPadInsert: Key = Key(AwtKeyEvent.VK_INSERT, KEY_LOCATION_NUMPAD)
     actual val Enter: Key = Key(AwtKeyEvent.VK_ENTER)
-    actual val NumPadEnter = Key(AwtKeyEvent.VK_ENTER, AwtKeyEvent.KEY_LOCATION_NUMPAD)
+    actual val NumPadEnter = Key(AwtKeyEvent.VK_ENTER, KEY_LOCATION_NUMPAD)
     actual val Backspace: Key = Key(AwtKeyEvent.VK_BACK_SPACE)
     actual val Delete: Key = Key(AwtKeyEvent.VK_DELETE)
     actual val Paste: Key = Key(AwtKeyEvent.VK_PASTE)

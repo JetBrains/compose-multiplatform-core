@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.text.MappedKeys
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.isAltPressed
@@ -42,15 +43,24 @@ internal expect object MappedKeys {
     val Z: Key
     val Backslash: Key
     val DirectionLeft: Key
+    val NumPadDirectionLeft: Key
     val DirectionRight: Key
+    val NumPadDirectionRight: Key
     val DirectionUp: Key
+    val NumPadDirectionUp: Key
     val DirectionDown: Key
+    val NumPadDirectionDown: Key
     val DirectionCenter: Key
     val PageUp: Key
+    val NumPadPageUp: Key
     val PageDown: Key
+    val NumPadPageDown: Key
     val MoveHome: Key
+    val NumPadMoveHome: Key
     val MoveEnd: Key
+    val NumPadMoveEnd: Key
     val Insert: Key
+    val NumPadInsert: Key
     val Enter: Key
     val NumPadEnter: Key
     val Backspace: Key
@@ -74,7 +84,8 @@ internal fun commonKeyMapping(shortcutModifier: (KeyEvent) -> Boolean): KeyMappi
                 shortcutModifier(event) ->
                     when (event.key) {
                         MappedKeys.C,
-                        MappedKeys.Insert -> KeyCommand.COPY
+                        MappedKeys.Insert,
+                        MappedKeys.NumPadInsert -> KeyCommand.COPY
                         MappedKeys.V -> KeyCommand.PASTE
                         MappedKeys.X -> KeyCommand.CUT
                         MappedKeys.A -> KeyCommand.SELECT_ALL
@@ -85,28 +96,45 @@ internal fun commonKeyMapping(shortcutModifier: (KeyEvent) -> Boolean): KeyMappi
                 event.isCtrlPressed -> null
                 event.isShiftPressed ->
                     when (event.key) {
-                        MappedKeys.DirectionLeft -> KeyCommand.SELECT_LEFT_CHAR
-                        MappedKeys.DirectionRight -> KeyCommand.SELECT_RIGHT_CHAR
-                        MappedKeys.DirectionUp -> KeyCommand.SELECT_UP
-                        MappedKeys.DirectionDown -> KeyCommand.SELECT_DOWN
-                        MappedKeys.PageUp -> KeyCommand.SELECT_PAGE_UP
-                        MappedKeys.PageDown -> KeyCommand.SELECT_PAGE_DOWN
-                        MappedKeys.MoveHome -> KeyCommand.SELECT_LINE_START
-                        MappedKeys.MoveEnd -> KeyCommand.SELECT_LINE_END
-                        MappedKeys.Insert -> KeyCommand.PASTE
+                        MappedKeys.DirectionLeft,
+                        MappedKeys.NumPadDirectionLeft -> KeyCommand.SELECT_LEFT_CHAR
+                        MappedKeys.DirectionRight,
+                        MappedKeys.NumPadDirectionRight -> KeyCommand.SELECT_RIGHT_CHAR
+                        MappedKeys.DirectionUp,
+                        MappedKeys.NumPadDirectionUp -> KeyCommand.SELECT_UP
+                        MappedKeys.DirectionDown,
+                        MappedKeys.NumPadDirectionDown -> KeyCommand.SELECT_DOWN
+                        MappedKeys.PageUp,
+                        MappedKeys.NumPadPageUp -> KeyCommand.SELECT_PAGE_UP
+                        MappedKeys.PageDown,
+                        MappedKeys.NumPadPageDown -> KeyCommand.SELECT_PAGE_DOWN
+                        MappedKeys.MoveHome,
+                        MappedKeys.NumPadMoveHome -> KeyCommand.SELECT_LINE_START
+                        MappedKeys.MoveEnd,
+                        MappedKeys.NumPadMoveEnd -> KeyCommand.SELECT_LINE_END
+                        MappedKeys.Insert,
+                        MappedKeys.NumPadInsert -> KeyCommand.PASTE
                         else -> null
                     }
                 else ->
                     when (event.key) {
-                        MappedKeys.DirectionLeft -> KeyCommand.LEFT_CHAR
-                        MappedKeys.DirectionRight -> KeyCommand.RIGHT_CHAR
-                        MappedKeys.DirectionUp -> KeyCommand.UP
-                        MappedKeys.DirectionDown -> KeyCommand.DOWN
+                        MappedKeys.DirectionLeft,
+                        MappedKeys.NumPadDirectionLeft -> KeyCommand.LEFT_CHAR
+                        MappedKeys.DirectionRight,
+                        MappedKeys.NumPadDirectionRight -> KeyCommand.RIGHT_CHAR
+                        MappedKeys.DirectionUp,
+                        MappedKeys.NumPadDirectionUp -> KeyCommand.UP
+                        MappedKeys.DirectionDown,
+                        MappedKeys.NumPadDirectionDown -> KeyCommand.DOWN
                         MappedKeys.DirectionCenter -> KeyCommand.CENTER
-                        MappedKeys.PageUp -> KeyCommand.PAGE_UP
-                        MappedKeys.PageDown -> KeyCommand.PAGE_DOWN
-                        MappedKeys.MoveHome -> KeyCommand.LINE_START
-                        MappedKeys.MoveEnd -> KeyCommand.LINE_END
+                        MappedKeys.PageUp,
+                        MappedKeys.NumPadPageUp -> KeyCommand.PAGE_UP
+                        MappedKeys.PageDown,
+                        MappedKeys.NumPadPageDown -> KeyCommand.PAGE_DOWN
+                        MappedKeys.MoveHome,
+                        MappedKeys.NumPadMoveHome -> KeyCommand.LINE_START
+                        MappedKeys.MoveEnd,
+                        MappedKeys.NumPadMoveEnd -> KeyCommand.LINE_END
                         MappedKeys.Enter,
                         MappedKeys.NumPadEnter -> KeyCommand.NEW_LINE
                         MappedKeys.Backspace -> KeyCommand.DELETE_PREV_CHAR
@@ -130,18 +158,26 @@ internal val defaultKeyMapping: KeyMapping =
                 return when {
                     event.isShiftPressed && event.isCtrlPressed ->
                         when (event.key) {
-                            MappedKeys.DirectionLeft -> KeyCommand.SELECT_LEFT_WORD
-                            MappedKeys.DirectionRight -> KeyCommand.SELECT_RIGHT_WORD
-                            MappedKeys.DirectionUp -> KeyCommand.SELECT_PREV_PARAGRAPH
-                            MappedKeys.DirectionDown -> KeyCommand.SELECT_NEXT_PARAGRAPH
+                            MappedKeys.DirectionLeft,
+                            MappedKeys.NumPadDirectionLeft -> KeyCommand.SELECT_LEFT_WORD
+                            MappedKeys.DirectionRight,
+                            MappedKeys.NumPadDirectionRight -> KeyCommand.SELECT_RIGHT_WORD
+                            MappedKeys.DirectionUp,
+                            MappedKeys.NumPadDirectionUp -> KeyCommand.SELECT_PREV_PARAGRAPH
+                            MappedKeys.DirectionDown,
+                            MappedKeys.NumPadDirectionDown -> KeyCommand.SELECT_NEXT_PARAGRAPH
                             else -> null
                         }
                     event.isCtrlPressed ->
                         when (event.key) {
-                            MappedKeys.DirectionLeft -> KeyCommand.LEFT_WORD
-                            MappedKeys.DirectionRight -> KeyCommand.RIGHT_WORD
-                            MappedKeys.DirectionUp -> KeyCommand.PREV_PARAGRAPH
-                            MappedKeys.DirectionDown -> KeyCommand.NEXT_PARAGRAPH
+                            MappedKeys.DirectionLeft,
+                            MappedKeys.NumPadDirectionLeft -> KeyCommand.LEFT_WORD
+                            MappedKeys.DirectionRight,
+                            MappedKeys.NumPadDirectionRight -> KeyCommand.RIGHT_WORD
+                            MappedKeys.DirectionUp,
+                            MappedKeys.NumPadDirectionUp -> KeyCommand.PREV_PARAGRAPH
+                            MappedKeys.DirectionDown,
+                            MappedKeys.NumPadDirectionDown -> KeyCommand.NEXT_PARAGRAPH
                             MappedKeys.H -> KeyCommand.DELETE_PREV_CHAR
                             MappedKeys.Delete -> KeyCommand.DELETE_NEXT_WORD
                             MappedKeys.Backspace -> KeyCommand.DELETE_PREV_WORD
@@ -150,8 +186,10 @@ internal val defaultKeyMapping: KeyMapping =
                         }
                     event.isShiftPressed ->
                         when (event.key) {
-                            MappedKeys.MoveHome -> KeyCommand.SELECT_LINE_START
-                            MappedKeys.MoveEnd -> KeyCommand.SELECT_LINE_END
+                            MappedKeys.MoveHome,
+                            MappedKeys.NumPadMoveHome -> KeyCommand.SELECT_LINE_START
+                            MappedKeys.MoveEnd,
+                            MappedKeys.NumPadMoveEnd -> KeyCommand.SELECT_LINE_END
                             else -> null
                         }
                     event.isAltPressed ->

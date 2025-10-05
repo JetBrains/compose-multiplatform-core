@@ -940,21 +940,21 @@ private fun Modifier.slideOnKeyEvents(
                 if (isVertical) {
                     val signForLeftRight = if (isRtl) -1 else 1
                     when (it.key) {
-                        Key.DirectionUp -> {
+                        Key.DirectionUp, Key.NumPadDirectionUp -> {
                             onValueChangeState((value - sign * delta).coerceIn(valueRange))
                             return@onKeyEvent true
                         }
-                        Key.DirectionDown -> {
+                        Key.DirectionDown, Key.NumPadDirectionDown -> {
                             onValueChangeState((value + sign * delta).coerceIn(valueRange))
                             return@onKeyEvent true
                         }
-                        Key.DirectionRight -> {
+                        Key.DirectionRight, Key.NumPadDirectionRight -> {
                             onValueChangeState(
                                 (value + signForLeftRight * delta).coerceIn(valueRange)
                             )
                             return@onKeyEvent true
                         }
-                        Key.DirectionLeft -> {
+                        Key.DirectionLeft, Key.NumPadDirectionLeft -> {
                             onValueChangeState(
                                 (value - signForLeftRight * delta).coerceIn(valueRange)
                             )

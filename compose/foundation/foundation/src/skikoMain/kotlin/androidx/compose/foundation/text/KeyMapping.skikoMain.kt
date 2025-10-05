@@ -39,8 +39,10 @@ internal object defaultSkikoKeyMapping : KeyMapping {
         return when {
             event.isCtrlPressed && event.isShiftPressed -> {
                 when (event.key) {
-                    MappedKeys.MoveHome -> KeyCommand.SELECT_HOME
-                    MappedKeys.MoveEnd -> KeyCommand.SELECT_END
+                    MappedKeys.MoveHome,
+                    MappedKeys.NumPadMoveHome -> KeyCommand.SELECT_HOME
+                    MappedKeys.MoveEnd,
+                    MappedKeys.NumPadMoveEnd -> KeyCommand.SELECT_END
                     else -> null
                 }
             }
@@ -62,28 +64,40 @@ internal fun createMacosDefaultKeyMapping(): KeyMapping {
 
                 event.isShiftPressed && event.isAltPressed ->
                     when (event.key) {
-                        MappedKeys.DirectionLeft -> KeyCommand.SELECT_LEFT_WORD
-                        MappedKeys.DirectionRight -> KeyCommand.SELECT_RIGHT_WORD
-                        MappedKeys.DirectionUp -> KeyCommand.SELECT_PREV_PARAGRAPH
-                        MappedKeys.DirectionDown -> KeyCommand.SELECT_NEXT_PARAGRAPH
+                        MappedKeys.DirectionLeft, MappedKeys.NumPadDirectionLeft ->
+                            KeyCommand.SELECT_LEFT_WORD
+                        MappedKeys.DirectionRight, MappedKeys.NumPadDirectionRight ->
+                            KeyCommand.SELECT_RIGHT_WORD
+                        MappedKeys.DirectionUp, MappedKeys.NumPadDirectionUp ->
+                            KeyCommand.SELECT_PREV_PARAGRAPH
+                        MappedKeys.DirectionDown, MappedKeys.NumPadDirectionDown ->
+                            KeyCommand.SELECT_NEXT_PARAGRAPH
                         else -> null
                     }
 
                 event.isShiftPressed && event.isMetaPressed ->
                     when (event.key) {
-                        MappedKeys.DirectionLeft -> KeyCommand.SELECT_LINE_LEFT
-                        MappedKeys.DirectionRight -> KeyCommand.SELECT_LINE_RIGHT
-                        MappedKeys.DirectionUp -> KeyCommand.SELECT_HOME
-                        MappedKeys.DirectionDown -> KeyCommand.SELECT_END
+                        MappedKeys.DirectionLeft, MappedKeys.NumPadDirectionLeft ->
+                            KeyCommand.SELECT_LINE_LEFT
+                        MappedKeys.DirectionRight, MappedKeys.NumPadDirectionRight ->
+                            KeyCommand.SELECT_LINE_RIGHT
+                        MappedKeys.DirectionUp, MappedKeys.NumPadDirectionUp ->
+                            KeyCommand.SELECT_HOME
+                        MappedKeys.DirectionDown, MappedKeys.NumPadDirectionDown ->
+                            KeyCommand.SELECT_END
                         else -> null
                     }
 
                 event.isMetaPressed ->
                     when (event.key) {
-                        MappedKeys.DirectionLeft -> KeyCommand.LINE_LEFT
-                        MappedKeys.DirectionRight -> KeyCommand.LINE_RIGHT
-                        MappedKeys.DirectionUp -> KeyCommand.HOME
-                        MappedKeys.DirectionDown -> KeyCommand.END
+                        MappedKeys.DirectionLeft, MappedKeys.NumPadDirectionLeft ->
+                            KeyCommand.LINE_LEFT
+                        MappedKeys.DirectionRight, MappedKeys.NumPadDirectionRight ->
+                            KeyCommand.LINE_RIGHT
+                        MappedKeys.DirectionUp, MappedKeys.NumPadDirectionUp ->
+                            KeyCommand.HOME
+                        MappedKeys.DirectionDown, MappedKeys.NumPadDirectionDown ->
+                            KeyCommand.END
                         MappedKeys.Backspace -> KeyCommand.DELETE_FROM_LINE_START
                         else -> null
                     }
@@ -136,17 +150,23 @@ internal fun createMacosDefaultKeyMapping(): KeyMapping {
 
                 event.isShiftPressed ->
                     when (event.key) {
-                        MappedKeys.MoveHome -> KeyCommand.SELECT_HOME
-                        MappedKeys.MoveEnd -> KeyCommand.SELECT_END
+                        MappedKeys.MoveHome,
+                        MappedKeys.NumPadMoveHome -> KeyCommand.SELECT_HOME
+                        MappedKeys.MoveEnd,
+                        MappedKeys.NumPadMoveEnd -> KeyCommand.SELECT_END
                         else -> null
                     }
 
                 event.isAltPressed ->
                     when (event.key) {
-                        MappedKeys.DirectionLeft -> KeyCommand.LEFT_WORD
-                        MappedKeys.DirectionRight -> KeyCommand.RIGHT_WORD
-                        MappedKeys.DirectionUp -> KeyCommand.PREV_PARAGRAPH
-                        MappedKeys.DirectionDown -> KeyCommand.NEXT_PARAGRAPH
+                        MappedKeys.DirectionLeft, MappedKeys.NumPadDirectionLeft ->
+                            KeyCommand.LEFT_WORD
+                        MappedKeys.DirectionRight, MappedKeys.NumPadDirectionRight ->
+                            KeyCommand.RIGHT_WORD
+                        MappedKeys.DirectionUp, MappedKeys.NumPadDirectionUp ->
+                            KeyCommand.PREV_PARAGRAPH
+                        MappedKeys.DirectionDown, MappedKeys.NumPadDirectionDown ->
+                            KeyCommand.NEXT_PARAGRAPH
                         MappedKeys.Delete -> KeyCommand.DELETE_NEXT_WORD
                         MappedKeys.Backspace -> KeyCommand.DELETE_PREV_WORD
                         else -> null

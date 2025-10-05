@@ -303,20 +303,20 @@ private fun Modifier.slideOnKeyEvents(
                 val actualSteps = if (steps > 0) steps + 1 else 100
                 val delta = rangeLength / actualSteps
                 when (it.key) {
-                    Key.DirectionUp -> {
+                    Key.DirectionUp, Key.NumPadDirectionUp -> {
                         onValueChangeState.value((value + delta).coerceIn(valueRange))
                         true
                     }
-                    Key.DirectionDown -> {
+                    Key.DirectionDown, Key.NumPadDirectionDown -> {
                         onValueChangeState.value((value - delta).coerceIn(valueRange))
                         true
                     }
-                    Key.DirectionRight -> {
+                    Key.DirectionRight, Key.NumPadDirectionRight -> {
                         val sign = if (isRtl) -1 else 1
                         onValueChangeState.value((value + sign * delta).coerceIn(valueRange))
                         true
                     }
-                    Key.DirectionLeft -> {
+                    Key.DirectionLeft, Key.NumPadDirectionLeft -> {
                         val sign = if (isRtl) -1 else 1
                         onValueChangeState.value((value - sign * delta).coerceIn(valueRange))
                         true
