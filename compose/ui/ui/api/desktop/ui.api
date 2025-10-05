@@ -1777,12 +1777,21 @@ public final class androidx/compose/ui/input/key/Key$Companion {
 	public final fun getNumPad9-EK5gGoQ ()J
 	public final fun getNumPadAdd-EK5gGoQ ()J
 	public final fun getNumPadComma-EK5gGoQ ()J
+	public final fun getNumPadDirectionDown-EK5gGoQ ()J
+	public final fun getNumPadDirectionLeft-EK5gGoQ ()J
+	public final fun getNumPadDirectionRight-EK5gGoQ ()J
+	public final fun getNumPadDirectionUp-EK5gGoQ ()J
 	public final fun getNumPadDivide-EK5gGoQ ()J
 	public final fun getNumPadDot-EK5gGoQ ()J
 	public final fun getNumPadEnter-EK5gGoQ ()J
 	public final fun getNumPadEquals-EK5gGoQ ()J
+	public final fun getNumPadInsert-EK5gGoQ ()J
 	public final fun getNumPadLeftParenthesis-EK5gGoQ ()J
+	public final fun getNumPadMoveEnd-EK5gGoQ ()J
+	public final fun getNumPadMoveHome-EK5gGoQ ()J
 	public final fun getNumPadMultiply-EK5gGoQ ()J
+	public final fun getNumPadPageDown-EK5gGoQ ()J
+	public final fun getNumPadPageUp-EK5gGoQ ()J
 	public final fun getNumPadRightParenthesis-EK5gGoQ ()J
 	public final fun getNumPadSubtract-EK5gGoQ ()J
 	public final fun getNumber-EK5gGoQ ()J
