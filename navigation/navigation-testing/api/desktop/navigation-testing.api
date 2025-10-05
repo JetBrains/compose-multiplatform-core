@@ -1,3 +1,8 @@
+public final class androidx/navigation/testing/SavedStateHandleFactoryKt {
+	public static final fun invoke (Landroidx/lifecycle/SavedStateHandle$Companion;Ljava/lang/Object;Ljava/util/Map;)Landroidx/lifecycle/SavedStateHandle;
+	public static synthetic fun invoke$default (Landroidx/lifecycle/SavedStateHandle$Companion;Ljava/lang/Object;Ljava/util/Map;ILjava/lang/Object;)Landroidx/lifecycle/SavedStateHandle;
+}
+
 public final class androidx/navigation/testing/TestNavHostController : androidx/navigation/NavHostController {
 	public fun <init> ()V
 	public final fun getBackStack ()Ljava/util/List;
