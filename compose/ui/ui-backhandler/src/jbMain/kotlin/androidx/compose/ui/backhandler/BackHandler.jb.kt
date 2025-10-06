@@ -45,9 +45,10 @@ actual fun PredictiveBackHandler(
     )
     val dispatcher = owner.navigationEventDispatcher
     val coroutineScope = rememberCoroutineScope()
-    val handler = remember(enabled, onBack) {
+    val handler = remember(onBack) {
         ProgressBackEventHandler(enabled, onBack, coroutineScope)
     }
+    handler.isBackEnabled = enabled
 
     DisposableEffect(dispatcher, handler) {
         dispatcher.addHandler(handler)
@@ -64,9 +65,10 @@ actual fun BackHandler(enabled: Boolean, onBack: () -> Unit) {
         "No NavigationEventDispatcher was provided via LocalCompatNavigationEventDispatcherOwner"
     )
     val dispatcher = owner.navigationEventDispatcher
-    val handler = remember(enabled, onBack) {
+    val handler = remember(onBack) {
         BackEventHandler(enabled, onBack)
     }
+    handler.isBackEnabled = enabled
 
     DisposableEffect(dispatcher, handler) {
         dispatcher.addHandler(handler)
