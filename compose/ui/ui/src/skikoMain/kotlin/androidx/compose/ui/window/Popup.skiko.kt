@@ -377,7 +377,7 @@ fun Popup(
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
     val currentOnKeyEvent by rememberUpdatedState(onKeyEvent)
 
-    // any focusable popup must consume all back events
+    // Any focusable [Popup] must consume all back events
     if (properties.focusable) {
         val onBackHandler = remember(currentOnDismissRequest, properties.dismissOnBackPress) {
             OnBackClickEventHandler {
@@ -540,7 +540,3 @@ private fun clipPosition(position: IntOffset, contentSize: IntSize, containerSiz
             position.y.coerceIn(0, containerSize.height - contentSize.height)
         } else 0
     )
-
-private fun KeyEvent.isDismissRequest() =
-    type == KeyEventType.KeyDown && key == Key.Escape
-
