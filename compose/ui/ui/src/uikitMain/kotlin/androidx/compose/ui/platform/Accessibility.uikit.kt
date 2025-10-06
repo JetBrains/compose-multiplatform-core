@@ -516,15 +516,6 @@ private class AccessibilityElement(
         }
     }
 
-    override fun focusEffect(): UIFocusEffect? =
-        if (available(OS.Ios to OSVersion(major = 15))) {
-            UIFocusHaloEffect.effectWithRect(
-                rect = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
-            )
-        } else {
-            null
-        }
-
     private fun nodeSemanticsElements(): List<Any> =
         getOrElse(CachedAccessibilityPropertyKeys.accessibilityElements) {
             listOfNotNull(node.accessibilityInteropView?.also {
@@ -715,6 +706,8 @@ private class AccessibilityElement(
     } else {
         convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
     }
+
+    override fun focusEffectRect(): CValue<CGRect> = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
 
     override fun bounds(): CValue<CGRect> {
         val offset = contentOffset()
