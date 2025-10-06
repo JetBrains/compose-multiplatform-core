@@ -118,9 +118,7 @@ import platform.UIKit.UIAccessibilityTraits
 import platform.UIKit.UICoordinateSpaceProtocol
 import platform.UIKit.UIEdgeInsetsInsetRect
 import platform.UIKit.UIFocusAnimationCoordinator
-import platform.UIKit.UIFocusEffect
 import platform.UIKit.UIFocusEnvironmentProtocol
-import platform.UIKit.UIFocusHaloEffect
 import platform.UIKit.UIFocusItemContainerProtocol
 import platform.UIKit.UIFocusItemProtocol
 import platform.UIKit.UIFocusItemScrollableContainerProtocol
