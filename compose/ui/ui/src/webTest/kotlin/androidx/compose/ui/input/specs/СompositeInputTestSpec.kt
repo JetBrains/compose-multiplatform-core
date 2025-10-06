@@ -147,7 +147,7 @@ internal interface WinCompositeInput : СompositeInputTestSpec {
     }
 
     @Test
-    fun `input korean-hol`() = runApplicationTest {
+    fun `input hangul-hol`() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
         compositionStart("g", "ㅎ")
             .compositionUpdate("h", "호")
@@ -218,7 +218,7 @@ internal interface IosCompositeInput : СompositeInputTestSpec {
     }
 
     @Test
-    fun `input korean-hol`() = runApplicationTest {
+    fun `input hangul-hol`() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
         eventsSequence(
             keyEvent(key= "ㅎ", code = "Unidentified", keyCode = 0),
@@ -272,7 +272,7 @@ internal interface AndroidCompositeInput : СompositeInputTestSpec {
     }
 
     @Test
-    fun `input korean-hol`() = runApplicationTest {
+    fun `input hangul-hol`() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
         compositionStart("g", "ㅎ")
             .compositionUpdate("h", "호")
