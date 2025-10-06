@@ -265,10 +265,6 @@ class BasicInteractionTest {
         // Verify elements from context menu present
         waitForContextMenu()
 
-        findAllNodes { it.element is UILabel }.forEach {
-            val label = it.element as UILabel
-        }
-
         fun assertLabelWithText(text: String) {
             val label = findToolbarUILabelNode(text)?.element as? UILabel
 
