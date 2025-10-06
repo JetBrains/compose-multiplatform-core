@@ -27,40 +27,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
-import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findAllNodes
-import androidx.compose.ui.test.findNodeOrNull
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
-import androidx.compose.ui.test.getAccessibilityTree
+import androidx.compose.ui.test.firstNodeOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.test.utils.intersect
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.objcPtr
 import platform.CoreGraphics.CGRectGetHeight
 import platform.CoreGraphics.CGRectGetWidth
 import platform.CoreGraphics.CGRectIntersection
-import platform.CoreGraphics.CGRectIntersectsRect
-import platform.CoreGraphics.CGRectIsEmpty
 import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UILabel
 import platform.UIKit.UIPasteboard
 import platform.UIKit.UIScreen
-import platform.UIKit.accessibilityLabel
-import platform.darwin.vis
 
 class BasicInteractionTest {
     /**
@@ -135,59 +127,23 @@ class BasicInteractionTest {
         assertEquals(DpRect(DpOffset.Zero, DpSize(screenSize.width, 100.dp)), boxRect)
     }
 
-//    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
-//    @Test
-//    fun testBasicTextFieldToolbar() = runUIKitInstrumentedTest {
-//        setContent {
-//            Column(modifier = Modifier.safeDrawingPadding()) {
-//                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
-//            }
-//        }
-//
-//        findNodeWithTag("TextField").doubleTap()
-//
-//        verifyFullToolbarPresent()
-//    }
-//
-//    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
-//    @Test
-//    fun testBasicTextField2Toolbar() = runUIKitInstrumentedTest {
-//        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
-//        setContent {
-//            Column(modifier = Modifier.safeDrawingPadding()) {
-//                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
-//            }
-//        }
-//
-//        findNodeWithTag("TextField").doubleTap()
-//
-//        verifyFullToolbarPresent()
-//    }
-//
-//    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
-    fun testBasicTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
-//        ComposeFoundationFlags.isNewContextMenuEnabled = true
+    fun testBasicTextFieldToolbar() = runContextMenuTest(false) {
         UIPasteboard.generalPasteboard().string = "Paste text"
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
-                TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
+                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
             }
         }
 
         findNodeWithTag("TextField").doubleTap()
 
         verifyFullToolbarPresent()
-//        ComposeFoundationFlags.isNewContextMenuEnabled = false
     }
 
-//    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
-    fun testBasicTextField2ToolbarNewContextMenu() = runUIKitInstrumentedTest {
+    fun testBasicTextField2Toolbar() = runContextMenuTest(false) {
         UIPasteboard.generalPasteboard().string = "Paste text"
-//        ComposeFoundationFlags.isNewContextMenuEnabled = true
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
@@ -198,31 +154,104 @@ class BasicInteractionTest {
         findNodeWithTag("TextField").doubleTap()
 
         verifyFullToolbarPresent()
-//        ComposeFoundationFlags.isNewContextMenuEnabled = false
+    }
+
+    @Test
+    fun testBasicTextFieldToolbarNewContextMenu() = runContextMenuTest(true) {
+        UIPasteboard.generalPasteboard().string = "Paste text"
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
+            }
+        }
+
+        findNodeWithTag("TextField").doubleTap()
+
+        verifyFullToolbarPresent()
+    }
+
+    @Test
+    fun testBasicTextField2ToolbarNewContextMenu() = runContextMenuTest(true) {
+        UIPasteboard.generalPasteboard().string = "Paste text"
+        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
+            }
+        }
+
+        findNodeWithTag("TextField").doubleTap()
+
+        verifyFullToolbarPresent()
+    }
+
+    @Test
+    fun textToolbarInteraction() = runUIKitInstrumentedTest {
+        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
+            }
+        }
+
+        fun TextFieldState.isFullySelected(): Boolean =
+            selection.start == 0 && selection.end == text.length
+
+        findNodeWithTag("TextField").doubleTap()
+
+        waitForContextMenu()
+        assertFalse(textFieldState.isFullySelected())
+
+        findToolbarUILabelNode("Select All")?.tap()
+
+        waitForIdle()
+        assertTrue(textFieldState.isFullySelected())
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    private fun runContextMenuTest(
+        newContextMenuEnabled: Boolean,
+        testBlock: UIKitInstrumentedTest.() -> Unit
+    ) = runUIKitInstrumentedTest {
+        val oldValue = ComposeFoundationFlags.isNewContextMenuEnabled
+        ComposeFoundationFlags.isNewContextMenuEnabled = newContextMenuEnabled
+        try {
+            testBlock()
+        } finally {
+            ComposeFoundationFlags.isNewContextMenuEnabled = oldValue
+        }
+    }
+
+    private fun UIKitInstrumentedTest.findToolbarUILabelNode(text: String): AccessibilityTestNode? {
+        return firstNodeOrNull { node ->
+            val element = node.element as? UILabel ?: return@firstNodeOrNull false
+            element.text == text
+        }
     }
 
     @OptIn(ExperimentalForeignApi::class)
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         // Verify elements from context menu present
-        delay(2000)
         waitForContextMenu()
-
-        println(getAccessibilityTree().printTree())
 
         findAllNodes { it.element is UILabel }.forEach {
             val label = it.element as UILabel
-            println(">>> LABEL ${label.text} | ${NSStringFromCGRect(label.convertRect(label.bounds, toView = null))}")
         }
 
         fun assertLabelWithText(text: String) {
-            val label = findNodeOrNull { node ->
-                node.element is UILabel && (node.element as UILabel).text == text
-            }?.element as? UILabel
-            assertNotNull(label, "Didn't find label with text $text")
+            val label = findToolbarUILabelNode(text)?.element as? UILabel
+
+            assertNotNull(label, "Can't find UILabel with text '$text'")
+
             val globalRect = label.convertRect(label.bounds, toView = null)
             val intersection = CGRectIntersection(UIScreen.mainScreen.bounds, globalRect)
-
-            assertTrue(CGRectGetWidth(intersection) > 1.0 && CGRectGetHeight(intersection) > 0, "Rect ${NSStringFromCGRect(globalRect)} must be visible. Visible size: ${NSStringFromCGRect(intersection)}")
+            val isLabelVisible = CGRectGetWidth(intersection) >= 1.0 &&
+                CGRectGetHeight(intersection) >= 1.0
+            assertTrue(
+                isLabelVisible,
+                "Rect ${NSStringFromCGRect(globalRect)} must be visible. " +
+                    "Visible size: ${NSStringFromCGRect(intersection)}"
+            )
         }
 
         assertLabelWithText("Cut")
@@ -234,9 +263,11 @@ class BasicInteractionTest {
     private fun UIKitInstrumentedTest.waitForContextMenu() {
         waitForIdle()
         waitUntil {
-            findNodeOrNull { node ->
+            firstNodeOrNull { node ->
                 node.element?.let { it::class.simpleName } == "_UIEditMenuContainerView"
             } != null
         }
+        // Additional delay until animation ends
+        delay(1000)
     }
 }

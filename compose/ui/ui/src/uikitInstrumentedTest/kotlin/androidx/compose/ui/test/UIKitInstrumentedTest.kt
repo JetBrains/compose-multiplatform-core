@@ -329,11 +329,6 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
         _window?.rootViewController = viewController
         _window?.makeKeyAndVisible()
-        dispatch_async(dispatch_get_main_queue()) {
-            println(">> Bounds : ${NSStringFromCGRect(UIScreen.mainScreen.bounds)}")
-            _window?.setBounds(UIScreen.mainScreen.bounds)
-            _window?.setFrame(UIScreen.mainScreen.bounds)
-        }
     }
 
     fun cleanUp() {
