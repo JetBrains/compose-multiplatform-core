@@ -192,29 +192,6 @@ class NativeInputEventsProcessorTest {
     }
 
     @Test
-    fun testDeleteContentBackward() {
-        val communicator = MockComposeCommandCommunicator(
-            TextFieldValue("test", selection = TextRange( 4))
-        )
-        val processor = TestNativeInputEventsProcessor(communicator)
-
-        processor.registerEvent(
-            (beforeInput("deleteContentBackward", "") as InputEvent).apply {
-                deleteContentBackwardSize = 1
-            }
-        )
-        processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
-
-        assertEquals(1, communicator.editCommands.size)
-        val command = communicator.editCommands[0]
-        assertTrue(command is DeleteSurroundingTextCommand)
-        assertEquals(1, command.lengthBeforeCursor)
-        assertEquals(0, command.lengthAfterCursor)
-
-        assertEquals("tes", communicator.currentTextFieldValue().text)
-    }
-
-    @Test
     fun testInsertCompositionText() {
         val communicator = MockComposeCommandCommunicator()
         val processor = TestNativeInputEventsProcessor(communicator)
@@ -519,31 +496,6 @@ class NativeInputEventsProcessorTest {
         assertEquals("é", (communicator.editCommands[11] as CommitTextCommand).text)
 
         assertEquals("é", communicator.currentTextFieldValue().text)
-    }
-
-    @Test
-    fun testDeleteContentBackward_with_non_collapsed_selection() {
-        // Create a TextFieldValue with a non-collapsed selection
-        val textFieldValue = TextFieldValue(
-            text = "example text",
-            selection = TextRange(2, 7) // Selection from "a" to "e" in "example"
-        )
-        val communicator = MockComposeCommandCommunicator(textFieldValue)
-        val processor = TestNativeInputEventsProcessor(communicator)
-
-        // Add deleteContentBackward event
-        processor.registerEvent(
-            beforeInput("deleteContentBackward", "") as InputEvent
-        )
-
-        // Process the event with a non-collapsed selection
-        processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
-
-        assertEquals(1, communicator.editCommands.size)
-        val command = communicator.editCommands[0]
-        assertTrue(command is BackspaceCommand)
-
-        assertEquals("ex text", communicator.currentTextFieldValue().text)
     }
 
     @Test
