@@ -26,11 +26,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.Layout
@@ -48,8 +43,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
-import androidx.navigationevent.NavigationEventHandler
-import androidx.navigationevent.NavigationEventInfo
 
 /**
  * The default scrim opacity.
@@ -128,17 +121,20 @@ actual fun Dialog(
 ) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
 
-    val onKeyEvent = if (properties.dismissOnBackPress) {
-        { event: KeyEvent ->
-            if (event.isDismissRequest()) {
+    val onBackHandler = remember(currentOnDismissRequest, properties.dismissOnBackPress) {
+        OnBackClickEventHandler {
+            if (properties.dismissOnBackPress) {
                 currentOnDismissRequest()
-                true
-            } else {
-                false
             }
         }
-    } else {
-        null
+    }
+    val navigationEventDispatcher =
+        requireNotNull(LocalInternalNavigationEventDispatcherOwner.current) {
+            error("NavigationEventDispatcherOwner not found")
+        }.navigationEventDispatcher
+    DisposableEffect(navigationEventDispatcher, onBackHandler) {
+        navigationEventDispatcher.addHandler(onBackHandler)
+        onDispose { onBackHandler.remove() }
     }
     val onOutsidePointerEvent = if (properties.dismissOnClickOutside) {
         { eventType: PointerEventType, button: PointerButton? ->
@@ -156,52 +152,25 @@ actual fun Dialog(
     }
     DialogLayout(
         modifier = Modifier.semantics { dialog() },
-        onKeyEvent = onKeyEvent,
         onOutsidePointerEvent = onOutsidePointerEvent,
         properties = properties,
         content = content
     )
 }
 
-// Android dialogs are being shown in the window, so the window handles back gestures by itself.
-// For non-android dialogs we need to handle back gestures otherwise a background scene will do.
-// We can't disable a current NavigationEventDispatcher because all custom user's NavigationEvenHandlers
-// stop working. So we use an empty NavigationEventHandler.
-// Note: usually ESC button sends BackEvent but Dialogs handle ESC clicks by themselves.
-private object EmptyNavigationEventHandler : NavigationEventHandler<NavigationEventInfo>(
-    initialInfo = NavigationEventInfo.None,
-    isBackEnabled = true
-) {
-    override fun onBackCompleted() {
-        //do nothing
-    }
-}
-
 @Composable
 private fun DialogLayout(
     properties: DialogProperties,
     modifier: Modifier = Modifier,
-    onPreviewKeyEvent: ((KeyEvent) -> Boolean)? = null,
-    onKeyEvent: ((KeyEvent) -> Boolean)? = null,
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val owner = LocalInternalNavigationEventDispatcherOwner.current!!
-    val dispatcher = owner.navigationEventDispatcher
-    DisposableEffect(dispatcher) {
-        dispatcher.addHandler(EmptyNavigationEventHandler)
-        onDispose {
-            EmptyNavigationEventHandler.remove()
-        }
-    }
-
     val currentContent by rememberUpdatedState(content)
 
     val layer = rememberComposeSceneLayer(
         focusable = true
     )
     layer.scrimColor = properties.scrimColor
-    layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     layer.Content {
         val platformInsets = properties.platformInsets
@@ -262,9 +231,6 @@ private fun rememberDialogMeasurePolicy(
         layer.calculateLocalPosition(positionWithInsets)
     }
 }
-
-private fun KeyEvent.isDismissRequest() =
-    type == KeyEventType.KeyDown && key == Key.Escape
 
 internal fun getDialogScrimBlendMode(isWindowTransparent: Boolean) =
     if (isWindowTransparent) {
