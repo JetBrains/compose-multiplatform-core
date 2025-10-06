@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Checkbox
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -238,10 +239,16 @@ fun WindowContent(windowSize: DpSize, refreshRate: Int) = MaterialTheme {
         modifier = Modifier.fillMaxSize()
     ) {
         Column {
-            var enabled by remember { mutableStateOf(true) }
-            Checkbox(enabled, onCheckedChange = {
-                enabled = it
-            })
+//            var enabled by remember { mutableStateOf(true) }
+//            Checkbox(enabled, onCheckedChange = {
+//                enabled = it
+//            })
+            var textFieldValue by remember { mutableStateOf("Hello world") }
+            TextField(
+                value = textFieldValue,
+                onValueChange = { textFieldValue = it },
+                modifier = Modifier.padding(20.dp)
+            )
             Box(
                 modifier = Modifier.fillMaxSize().padding(20.dp),
                 contentAlignment = Alignment.Center

@@ -26,6 +26,9 @@ import androidx.compose.ui.kdt.toDpSize
 import androidx.compose.ui.kdt.toIntSize
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -221,6 +224,18 @@ class ComposeWindowMacOs(
                     nativeEvent = event
                 )
             }
+
+            // Keyboard events
+            is Event.KeyDown, is Event.KeyUp -> {
+                event.toComposeKeyEvent()?.let { keyEvent ->
+                    scene.sendKeyEvent(keyEvent)
+                }
+            }
+
+            is Event.ModifiersChanged -> {
+                // Modifier changes are reflected in other events
+                // No specific handling needed
+            }
         }
     }
 
@@ -304,4 +319,51 @@ internal fun getKeyboardModifiers(): PointerKeyboardModifiers {
     // TODO: Map KeyModifiersSet to PointerKeyboardModifiers
     // For now return empty modifiers
     return PointerKeyboardModifiers()
+}
+
+// Keyboard event conversion utilities
+internal fun org.jetbrains.desktop.macos.KeyCode.toComposeKey(): Key {
+    // Map macOS KeyCode to Compose Key
+    // KeyCode is a value class wrapping an Int representing the macOS key code
+    // We use hashCode() which returns the underlying Int value
+    return Key(this.hashCode().toLong())
+}
+
+internal fun org.jetbrains.desktop.macos.KeyModifiersSet.toPointerKeyboardModifiers(): PointerKeyboardModifiers {
+    return PointerKeyboardModifiers(
+        isCtrlPressed = control,
+        isMetaPressed = command,
+        isAltPressed = option,
+        isShiftPressed = shift,
+        isCapsLockOn = capsLock,
+        isFunctionPressed = function
+    )
+}
+
+internal fun Event.toComposeKeyEvent(): ComposeKeyEvent? {
+    return when (this) {
+        is Event.KeyDown -> {
+            ComposeKeyEvent(
+                nativeKeyEvent = androidx.compose.ui.input.key.InternalKeyEvent(
+                    key = keyCode.toComposeKey(),
+                    type = KeyEventType.KeyDown,
+                    codePoint = typedCharacters.firstOrNull()?.code ?: 0,
+                    modifiers = modifiers.toPointerKeyboardModifiers(),
+                    nativeEvent = this
+                )
+            )
+        }
+        is Event.KeyUp -> {
+            ComposeKeyEvent(
+                nativeKeyEvent = androidx.compose.ui.input.key.InternalKeyEvent(
+                    key = keyCode.toComposeKey(),
+                    type = KeyEventType.KeyUp,
+                    codePoint = typedCharacters.firstOrNull()?.code ?: 0,
+                    modifiers = modifiers.toPointerKeyboardModifiers(),
+                    nativeEvent = this
+                )
+            )
+        }
+        else -> null
+    }
 }
