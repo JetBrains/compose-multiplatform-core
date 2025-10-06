@@ -21,6 +21,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,7 +35,9 @@ import androidx.compose.ui.test.findAllNodes
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.firstNodeOrNull
+import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
@@ -186,7 +190,34 @@ class BasicInteractionTest {
     }
 
     @Test
-    fun textToolbarInteraction() = runUIKitInstrumentedTest {
+    fun textBasicTextFieldToolbarInteraction() = runUIKitInstrumentedTest {
+        val textFieldValue = mutableStateOf(TextFieldValue("Hello-LongLongLongLongLongLong-text"))
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(
+                    value = textFieldValue.value,
+                    onValueChange = { textFieldValue.value = it },
+                    modifier = Modifier.testTag("TextField")
+                )
+            }
+        }
+
+        fun MutableState<TextFieldValue>.isFullySelected(): Boolean =
+            value.selection.start == 0 && value.selection.end == value.text.length
+
+        findNodeWithTag("TextField").doubleTap()
+
+        waitForContextMenu()
+        assertFalse(textFieldValue.isFullySelected())
+
+        findToolbarUILabelNode("Select All")?.tap()
+
+        waitForIdle()
+        assertTrue(textFieldValue.isFullySelected())
+    }
+
+    @Test
+    fun textBasicTextField2ToolbarInteraction() = runUIKitInstrumentedTest {
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
@@ -269,5 +300,7 @@ class BasicInteractionTest {
         }
         // Additional delay until animation ends
         delay(1000)
+
+        print(getAccessibilityTree().printTree())
     }
 }
