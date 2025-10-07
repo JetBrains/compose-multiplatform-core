@@ -46,4 +46,4 @@ xcrun simctl spawn booted launchctl stop com.apple.SpringBoard
 
 ## Launch tests
 cd compose/ui/ui/src/uikitInstrumentedTest/launcher
-xcodebuild test -scheme Launcher-CI -project Launcher.xcodeproj -destination 'platform=iOS Simulator,name=$TEST_DEVICE'
+xcodebuild test -scheme Launcher-CI -project Launcher.xcodeproj -destination "platform=iOS Simulator,name=$TEST_DEVICE"
