@@ -1366,6 +1366,9 @@ includeProject(":placeholder-tests")
 // Add includedBuild for b/203825166
 includeBuild("placeholder")
 
+// JetBrains' Fork publishing scripts
+includeProject(":mpp")
+
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----
 // ---------------------------------------------------------------------
