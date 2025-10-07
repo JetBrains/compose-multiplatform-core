@@ -94,7 +94,7 @@ android {
 
 androidx {
     name = "Compose Multiplatform BackHandler"
-    publish = Publish.NONE // not published as Androidx library, but published as JetBrains library (see JetBrainsPublication)
+    publish = Publish.SNAPSHOT_AND_RELEASE
     inceptionYear = "2025"
     description = "Provides BackHandler in Compose Multiplatform projects"
     legacyDisableKotlinStrictApiMode = true

@@ -158,7 +158,6 @@ object JetBrainsPublication {
     val projectPathToComponent: Map<String, ComposeComponent> = libraryToComponents.values
         .flatten().associateBy { it.path }
 
-
     val projectPathToLibrary: Map<String, String> = libraryToComponents.entries
         .flatMap { entry -> entry.value.map { entry.key to it  } }
         .associate { it.second.path to it.first }

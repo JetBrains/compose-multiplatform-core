@@ -17,6 +17,7 @@
 package org.jetbrains.androidx.build
 
 import androidx.build.AndroidXExtension
+import androidx.build.Version
 import org.gradle.api.Project
 
 fun Project.changeMavenCoordinatesToJetBrains(androidxExtension: AndroidXExtension) {
@@ -25,5 +26,5 @@ fun Project.changeMavenCoordinatesToJetBrains(androidxExtension: AndroidXExtensi
     val versions = JetBrainsVersionsService.versions(project)
 
     group = JetBrainsPublication.mavenGroupFor(path, androidxExtension.mavenGroup?.group) ?: group
-    version = versions.versionOf(component.library())
+    version = Version(versions.versionOf(component.library()))
 }
