@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE.txt file.
  */
 
-package androidx.compose.test.interaction
+package androidx.compose.ui.interaction
 
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -29,13 +29,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.AccessibilityTestNode
 import androidx.compose.ui.test.UIKitInstrumentedTest
-import androidx.compose.ui.test.findAllNodes
+import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.firstNodeOrNull
-import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
@@ -47,16 +45,9 @@ import androidx.compose.ui.unit.toDpRect
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.CoreGraphics.CGRectGetHeight
-import platform.CoreGraphics.CGRectGetWidth
-import platform.CoreGraphics.CGRectIntersection
-import platform.UIKit.NSStringFromCGRect
-import platform.UIKit.UILabel
 import platform.UIKit.UIPasteboard
-import platform.UIKit.UIScreen
 
 class BasicInteractionTest {
     /**
@@ -82,13 +73,13 @@ class BasicInteractionTest {
         }
 
         assertEquals(0, clicks)
-        findNodeWithLabel(label = "Click me")
+        this.findNodeWithLabel(label = "Click me")
             .tap()
         assertEquals(1, clicks)
-        findNodeWithLabel(label = "Click me")
+        this.findNodeWithLabel(label = "Click me")
             .tap()
         assertEquals(2, clicks)
-        findNodeWithLabel(label = "Click me")
+        this.findNodeWithLabel(label = "Click me")
             .tap()
         assertEquals(3, clicks)
     }
@@ -210,7 +201,7 @@ class BasicInteractionTest {
         waitForContextMenu()
         assertFalse(textFieldValue.isFullySelected())
 
-        findToolbarUILabelNode("Select All")?.tap()
+        findNodeWithLabel("Select All").tap()
 
         waitForIdle()
         assertTrue(textFieldValue.isFullySelected())
@@ -233,7 +224,7 @@ class BasicInteractionTest {
         waitForContextMenu()
         assertFalse(textFieldState.isFullySelected())
 
-        findToolbarUILabelNode("Select All")?.tap()
+        findNodeWithLabel("Select All").tap()
 
         waitForIdle()
         assertTrue(textFieldState.isFullySelected())
@@ -253,38 +244,30 @@ class BasicInteractionTest {
         }
     }
 
-    private fun UIKitInstrumentedTest.findToolbarUILabelNode(text: String): AccessibilityTestNode? {
-        return firstNodeOrNull { node ->
-            val element = node.element as? UILabel ?: return@firstNodeOrNull false
-            element.text == text
-        }
-    }
-
     @OptIn(ExperimentalForeignApi::class)
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         // Verify elements from context menu present
         waitForContextMenu()
 
-        fun assertLabelWithText(text: String) {
-            val label = findToolbarUILabelNode(text)?.element as? UILabel
-
-            assertNotNull(label, "Can't find UILabel with text '$text'")
-
-            val globalRect = label.convertRect(label.bounds, toView = null)
-            val intersection = CGRectIntersection(UIScreen.mainScreen.bounds, globalRect)
-            val isLabelVisible = CGRectGetWidth(intersection) >= 1.0 &&
-                CGRectGetHeight(intersection) >= 1.0
-            assertTrue(
-                isLabelVisible,
-                "Rect ${NSStringFromCGRect(globalRect)} must be visible. " +
-                    "Visible size: ${NSStringFromCGRect(intersection)}"
-            )
+        findNodeWithLabel("Cut").let {
+            it.assertVisibleInContainer()
+            assertTrue(it.isAccessibilityElement ?: false)
         }
 
-        assertLabelWithText("Cut")
-        assertLabelWithText("Copy")
-        assertLabelWithText("Paste")
-        assertLabelWithText("Select All")
+        findNodeWithLabel("Copy").let {
+            it.assertVisibleInContainer()
+            assertTrue(it.isAccessibilityElement ?: false)
+        }
+
+        findNodeWithLabel("Paste").let {
+            it.assertVisibleInContainer()
+            assertTrue(it.isAccessibilityElement ?: false)
+        }
+
+        findNodeWithLabel("Select All").let {
+            it.assertVisibleInContainer()
+            assertTrue(it.isAccessibilityElement ?: false)
+        }
     }
 
     private fun UIKitInstrumentedTest.waitForContextMenu() {
@@ -294,9 +277,7 @@ class BasicInteractionTest {
                 node.element?.let { it::class.simpleName } == "_UIEditMenuContainerView"
             } != null
         }
-        // Additional delay until animation ends
-        delay(1000)
-
-        print(getAccessibilityTree().printTree())
+        // Additional delay to wait until toolbar animation ends
+        delay(500)
     }
 }

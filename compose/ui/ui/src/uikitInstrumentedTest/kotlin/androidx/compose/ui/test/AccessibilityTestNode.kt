@@ -29,7 +29,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UIAccessibilityElement
 import platform.UIKit.UIAccessibilityTraitAdjustable
 import platform.UIKit.UIAccessibilityTraitAllowsDirectInteraction
@@ -80,11 +79,7 @@ import platform.darwin.NSObject
  */
 @OptIn(ExperimentalForeignApi::class)
 internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode {
-    fun buildNode(element: NSObject, isAccessibilityElementContent: Boolean, level: Int): AccessibilityTestNode {
-        (element as? UIView)?.let {
-            println("  ".repeat(level) + "View: ${it::class.simpleName} - ${NSStringFromCGRect(it.frame)}")
-        }
-
+    fun buildNode(element: NSObject, isAccessibilityElementContent: Boolean): AccessibilityTestNode {
         val children = mutableListOf<AccessibilityTestNode>()
         val elements = element.accessibilityElements()
         val accessibilityElementContent = isAccessibilityElementContent || element.isAccessibilityElement
@@ -96,16 +91,16 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
             // for automation.
             if ((element.automationElements?.isNotEmpty() ?: false)) {
                 element.automationElements?.forEach {
-                    children.add(buildNode(it as NSObject, accessibilityElementContent, level + 1))
+                    children.add(buildNode(it as NSObject, accessibilityElementContent))
                 }
             } else if (element is UIView) {
                 element.subviews.forEach {
-                    children.add(buildNode(it as UIView, accessibilityElementContent, level + 1))
+                    children.add(buildNode(it as UIView, accessibilityElementContent))
                 }
             }
         } else if (elements != null) {
             elements.forEach {
-                children.add(buildNode(it as NSObject, accessibilityElementContent, level + 1))
+                children.add(buildNode(it as NSObject, accessibilityElementContent))
             }
         } else {
             val count = element.accessibilityElementCount()
@@ -113,28 +108,28 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
                 when (element) {
                     is UIView -> {
                         element.subviews.forEach {
-                            children.add(buildNode(it as UIView, accessibilityElementContent, level + 1))
+                            children.add(buildNode(it as UIView, accessibilityElementContent))
                         }
                     }
 
                     is UIWindowScene -> {
                         element.windows.filter { !(it as UIWindow).isHidden() }.forEach {
-                            children.add(buildNode(it as UIWindow, accessibilityElementContent, level + 1))
+                            children.add(buildNode(it as UIWindow, accessibilityElementContent))
                         }
                     }
                 }
             } else if (count > 0) {
                 (0 until count).forEach {
                     val child = element.accessibilityElementAtIndex(it) as NSObject
-                    children.add(buildNode(child, accessibilityElementContent, level + 1))
+                    children.add(buildNode(child, accessibilityElementContent))
                 }
             } else if (element is UIView) {
                 element.subviews.forEach {
-                    children.add(buildNode(it as UIView, accessibilityElementContent, level + 1))
+                    children.add(buildNode(it as UIView, accessibilityElementContent))
                 }
             } else if (element is UIWindowScene) {
                 element.windows.filter { !(it as UIWindow).isHidden() }.forEach {
-                    children.add(buildNode(it as UIWindow, accessibilityElementContent, level + 1))
+                    children.add(buildNode(it as UIWindow, accessibilityElementContent))
                 }
             }
         }
@@ -155,10 +150,7 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
         }
     }
 
-    println("-----------------------------------------")
-    return buildNode(appDelegate.window!!.windowScene!!, isAccessibilityElementContent = false, 0).also {
-        println("------------------------------------------")
-    }
+    return buildNode(appDelegate.window!!.windowScene!!, isAccessibilityElementContent = false)
 }
 
 private val allAccessibilityTraits = mapOf(
@@ -310,7 +302,7 @@ internal fun AccessibilityTestNode.normalized(): AccessibilityTestNode? {
 internal fun AccessibilityTestNode.assertVisibleInContainer() {
     var frame = this.frame ?: DpRectZero()
     var iterator = parent
-    while (iterator != null) {
+    while (iterator != null && iterator.element !is UIWindow) {
         frame = frame.intersect(iterator.frame ?: DpRectZero())
         iterator = iterator.parent
     }
