@@ -41,6 +41,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.awaitCancellation
 
@@ -57,7 +63,12 @@ interface PlatformContext {
     /**
      * The value that will be provided to [LocalPlatformScreenReader] by default.
      */
-    val screenReader: PlatformScreenReader
+    val screenReader: PlatformScreenReader get() = EmptyPlatformScreenReader
+
+    /**
+     * Provider of platform owners such as [LifecycleOwner] or [ViewModelStoreOwner].
+     */
+    val ownerProvider: PlatformOwnerProvider get() = EmptyPlatformOwnerProvider
 
     /**
      * Indicates if the compose view is positioned in a transparent window.
@@ -143,7 +154,7 @@ interface PlatformContext {
     /**
      * The value that will be provided to [LocalPlatformWindowInsets] by default.
      */
-    val windowInsets: PlatformWindowInsets get() = DefaultPlatformWindowInsets
+    val windowInsets: PlatformWindowInsets get() = EmptyPlatformWindowInsets
 
     var isKeepScreenOnEnabled: Boolean
         get() = false
@@ -217,12 +228,28 @@ interface PlatformContext {
                 // (hidden textfield cursor, gray titlebar, etc)
                 isWindowFocused = true
             }
-            override val inputModeManager: InputModeManager = DefaultInputModeManager()
 
-            override val screenReader: PlatformScreenReader = object : PlatformScreenReader {
-                override val isActive: Boolean = false
-            }
+            override val inputModeManager = DefaultInputModeManager()
         }
+    }
+}
+
+private object EmptyPlatformScreenReader : PlatformScreenReader {
+    override val isActive: Boolean = false
+}
+
+private object EmptyPlatformOwnerProvider :
+    PlatformOwnerProvider,
+    LifecycleOwner,
+    NavigationEventDispatcherOwner {
+    override val lifecycleOwner get() = this
+    override val navigationEventDispatcherOwner get() = this
+    override val viewModelStoreOwner: ViewModelStoreOwner? get() = null
+    override val lifecycle = LifecycleRegistry.createUnsafe(this)
+    override val navigationEventDispatcher = NavigationEventDispatcher()
+
+    init {
+        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 }
 
@@ -280,7 +307,7 @@ private object EmptyFocusManager : FocusManager {
 }
 
 private object EmptyDragAndDropManager : PlatformDragAndDropManager
-private object DefaultPlatformWindowInsets : PlatformWindowInsets
+private object EmptyPlatformWindowInsets : PlatformWindowInsets
 
 /**
  * Helper delegate to re-send missing events to a new listener.

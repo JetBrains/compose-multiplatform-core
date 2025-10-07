@@ -150,8 +150,18 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependsOn(commonMain)
                 dependencies {
                     implementation(libs.atomicFu)
+
+                    // Required to properly resolve supertypes of DefaultArchitectureComponentsOwner
+                    // Keep in sync with :ui:ui module
                     implementation(project(":lifecycle:lifecycle-runtime-compose"))
-                    implementation(project(":navigationevent:navigationevent-compose"))
+                    implementation(project(":lifecycle:lifecycle-viewmodel"))
+
+                    // implementation(project(":navigationevent:navigationevent"))
+                    // Use direct dependency to AOSP's artifact instead of using project reference
+                    // because this module supports all KMP platforms from the beginning
+                    def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+                    implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
+
                     implementation(project(":compose:ui:ui-backhandler"))
                 }
             }

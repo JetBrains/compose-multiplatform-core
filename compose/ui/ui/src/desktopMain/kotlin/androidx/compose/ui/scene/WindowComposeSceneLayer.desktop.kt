@@ -123,6 +123,7 @@ internal class WindowComposeSceneLayer(
             },
             eventListener = eventListener,
             measureDrawLayerBounds = true,
+            ownerProvider = composeContainer.ownerProvider,
             coroutineContext = compositionContext.effectCoroutineContext,
             skiaLayerComponentFactory = ::createSkiaLayerComponent,
             composeSceneFactory = ::createComposeScene,
