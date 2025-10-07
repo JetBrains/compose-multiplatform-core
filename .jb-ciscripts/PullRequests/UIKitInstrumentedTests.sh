@@ -24,6 +24,11 @@ defaults export com.apple.iphonesimulator - > "$PREF_PLIST"
 echo "$devices" | jq -r '.devices | to_entries[] | select(.key | startswith("com.apple.CoreSimulator.SimRuntime.iOS")) | .value[] | "\(.udid)"' | while read -r UUID; do
     /usr/libexec/PlistBuddy -c "Set :DevicePreferences:$UUID:ConnectHardwareKeyboard false" "$PREF_PLIST" 2>/dev/null || \
     /usr/libexec/PlistBuddy -c "Add :DevicePreferences:$UUID:ConnectHardwareKeyboard bool false" "$PREF_PLIST"
+
+    echo "Home dir:" "$HOME"
+    echo "Simulator plist:" "$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Preferences/com.apple.Accessibility.plist"
+
+    defaults write "$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Preferences/com.apple.Accessibility.plist ApplicationAccessibilityEnabled -bool true"
 done
 
 # Import back the modified plist
