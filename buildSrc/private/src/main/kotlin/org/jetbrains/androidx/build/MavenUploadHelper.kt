@@ -494,15 +494,7 @@ private fun removePreviouslyUploadedArchives(projectArchiveDir: File) {
 private fun Project.addInformativeMetadata(extension: AndroidXExtension, pom: MavenPom) {
     pom.name.set(extension.name)
     pom.description.set(provider { extension.description })
-    pom.url.set(
-        provider {
-            fun defaultUrl() = "https://developer.android.com/jetpack/androidx/releases/" +
-                extension.mavenGroup!!.group.removePrefix("androidx.")
-                    .replace(".", "-") +
-                "#" + extension.project.version()
-            getAlternativeProjectUrl() ?: defaultUrl()
-        }
-    )
+    pom.url.set("https://github.com/JetBrains/compose-multiplatform")
     pom.inceptionYear.set(provider { extension.inceptionYear })
     pom.licenses { licenses ->
         licenses.license { license ->
