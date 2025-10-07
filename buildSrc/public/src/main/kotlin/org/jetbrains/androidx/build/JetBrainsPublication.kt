@@ -18,6 +18,7 @@ package org.jetbrains.androidx.build
 
 import org.jetbrains.androidx.build.JetBrainsPublication.projectPathToLibrary
 import java.io.Serializable
+import org.gradle.api.Project
 
 /**
  * Library groups and associated with them projects and targets that are published when
@@ -161,6 +162,8 @@ object JetBrainsPublication {
     val projectPathToLibrary: Map<String, String> = libraryToComponents.entries
         .flatMap { entry -> entry.value.map { entry.key to it  } }
         .associate { it.second.path to it.first }
+
+    fun shouldPublish(project: Project): Boolean = projectPathToComponent.containsKey(project.path)
 }
 
 class JetBrainsVersions(val libraryToVersion: Map<String, String>) : Serializable {

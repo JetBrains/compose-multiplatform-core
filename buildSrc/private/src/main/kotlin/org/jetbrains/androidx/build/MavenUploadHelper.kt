@@ -89,7 +89,7 @@ fun Project.configureMavenArtifactUpload(
         }
     }
     afterEvaluate {
-        if (!extension.shouldPublish()) {
+        if (!JetBrainsPublication.shouldPublish(project)) {
             return@afterEvaluate
         }
         components.all { component ->

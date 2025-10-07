@@ -231,10 +231,8 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
 
 @OptIn(ExperimentalBCVApi::class)
 private fun enableBinaryCompatibilityValidator(project: Project) {
-    val androidXExtension = project.extensions.findByType(AndroidXExtension::class.java)
-        ?: throw Exception("You have applied AndroidXComposePlugin without AndroidXPlugin")
     project.afterEvaluate {
-        if (androidXExtension.shouldPublish()) {
+        if (JetBrainsPublication.shouldPublish(project)) {
             project.apply(plugin = "org.jetbrains.kotlinx.binary-compatibility-validator")
             project.extensions.getByType(ApiValidationExtension::class.java).apply {
                 klib.enabled = true
