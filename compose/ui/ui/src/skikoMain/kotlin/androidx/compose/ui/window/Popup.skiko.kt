@@ -379,18 +379,15 @@ fun Popup(
 
     // Any focusable [Popup] must consume all back events
     if (properties.focusable) {
-        val onBackHandler = remember(currentOnDismissRequest, properties.dismissOnBackPress) {
-            OnBackClickEventHandler {
-                if (properties.dismissOnBackPress) {
-                    currentOnDismissRequest?.invoke()
-                }
-            }
+        val onBackHandler = remember {
+            OnBackClickEventHandler { currentOnDismissRequest?.invoke() }
         }
+        onBackHandler.backClickIsEnabled = properties.dismissOnBackPress
         val navigationEventDispatcher =
             requireNotNull(LocalInternalNavigationEventDispatcherOwner.current) {
                 error("NavigationEventDispatcherOwner not found")
             }.navigationEventDispatcher
-        DisposableEffect(navigationEventDispatcher, onBackHandler) {
+        DisposableEffect(navigationEventDispatcher) {
             navigationEventDispatcher.addHandler(onBackHandler)
             onDispose { onBackHandler.remove() }
         }

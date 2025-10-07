@@ -120,19 +120,15 @@ actual fun Dialog(
     content: @Composable () -> Unit
 ) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
-
-    val onBackHandler = remember(currentOnDismissRequest, properties.dismissOnBackPress) {
-        OnBackClickEventHandler {
-            if (properties.dismissOnBackPress) {
-                currentOnDismissRequest()
-            }
-        }
+    val onBackHandler = remember {
+        OnBackClickEventHandler(currentOnDismissRequest)
     }
+    onBackHandler.backClickIsEnabled = properties.dismissOnBackPress
     val navigationEventDispatcher =
         requireNotNull(LocalInternalNavigationEventDispatcherOwner.current) {
             error("NavigationEventDispatcherOwner not found")
         }.navigationEventDispatcher
-    DisposableEffect(navigationEventDispatcher, onBackHandler) {
+    DisposableEffect(navigationEventDispatcher) {
         navigationEventDispatcher.addHandler(onBackHandler)
         onDispose { onBackHandler.remove() }
     }

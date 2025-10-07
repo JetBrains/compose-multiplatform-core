@@ -27,20 +27,21 @@ import androidx.navigationevent.NavigationEventInfo
  * but the [onBack] callback will not be invoked.
  */
 internal class OnBackClickEventHandler(
-    private val onBack: (() -> Unit)?,
+    private val onBack: () -> Unit,
 ) : NavigationEventHandler<NavigationEventInfo>(
     initialInfo = NavigationEventInfo.None,
     isBackEnabled = true
 ) {
     private var isProgressEvent = false
+    var backClickIsEnabled: Boolean = true
 
     override fun onBackProgressed(event: NavigationEvent) {
         isProgressEvent = true
     }
 
     override fun onBackCompleted() {
-        if (!isProgressEvent) {
-            onBack?.invoke()
+        if (!isProgressEvent && backClickIsEnabled) {
+            onBack()
         }
         isProgressEvent = false
     }
