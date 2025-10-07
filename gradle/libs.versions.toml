@@ -109,6 +109,7 @@ androidx-annotation = { module = "androidx.annotation:annotation", version.ref =
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
 autoCommon = { module = "com.google.auto:auto-common", version = "1.2.1" }
 atomicFu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicFu" }
+atomicFuGradlePlugin = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "atomicFu" }
 autoServiceAnnotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "autoService" }
 autoService = { module = "com.google.auto.service:auto-service", version.ref = "autoService" }
 autoValue = { module = "com.google.auto.value:auto-value", version.ref = "autoValue" }
