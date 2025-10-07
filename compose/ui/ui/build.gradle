@@ -15,19 +15,20 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.LibraryType
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
+import org.jetbrains.androidx.build.UpdateTranslationsTask
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
     id("kotlinx-atomicfu")
-    id("JetbrainsAndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 dependencies {
 
@@ -163,6 +164,10 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
                 // when updating the runtime version please also update the runtime-saveable version
                 implementation(project(":compose:runtime:runtime"))
+                // We do not publish runtime-retain from the fork (it's KMP-compatible from the start)
+                // api(project(":compose:runtime:runtime-retain"))
+                def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
+                api("androidx.compose.runtime:runtime-retain:$composeVersion")
                 api(project(":compose:runtime:runtime-saveable"))
 
                 api project(":compose:ui:ui-geometry")
@@ -206,6 +211,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     api(project(":compose:ui:ui-text"))
                     api(libs.skikoCommon)
                     implementation(libs.atomicFu)
+                    implementation(project(":compose:ui:ui-backhandler")) //https://youtrack.jetbrains.com/issue/CMP-9008
                     def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
                     implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
                 }

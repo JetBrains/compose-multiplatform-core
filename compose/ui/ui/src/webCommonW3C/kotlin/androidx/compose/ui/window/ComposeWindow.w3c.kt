@@ -22,6 +22,7 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
+import androidx.compose.ui.backhandler.LocalCompatNavigationEventDispatcherOwner
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
@@ -42,6 +43,7 @@ import androidx.compose.ui.input.pointer.composeButton
 import androidx.compose.ui.input.pointer.composeButtons
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
@@ -73,6 +75,8 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
 import kotlin.coroutines.coroutineContext
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
@@ -189,7 +193,7 @@ internal class ComposeWindow(
     private val configuration: ComposeViewportConfiguration,
     content: @Composable () -> Unit,
     private val state: ComposeWindowState
-) : LifecycleOwner, ViewModelStoreOwner {
+) : LifecycleOwner, ViewModelStoreOwner, NavigationEventDispatcherOwner {
     private var isDisposed = false
 
     private val density: Density = Density(
@@ -322,6 +326,7 @@ internal class ComposeWindow(
 
     override val lifecycle = LifecycleRegistry(this)
     override val viewModelStore = ViewModelStore()
+    override val navigationEventDispatcher = NavigationEventDispatcher()
 
     private fun <T : Event> addTypedEvent(
         type: String,
@@ -426,6 +431,8 @@ internal class ComposeWindow(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
                 LocalLifecycleOwner provides this,
                 LocalInternalViewModelStoreOwner provides this,
+                LocalInternalNavigationEventDispatcherOwner provides this,
+                LocalCompatNavigationEventDispatcherOwner provides this,
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides {
                     (platformContext.textInputService as WebTextInputService).getBackingInput() ?: canvas
