@@ -50,7 +50,7 @@ class NavGraphBuilderTest {
         lateinit var navController: TestNavHostController
         val uriString = "https://www.example.com"
         val deeplink = NavDeepLinkRequest.Builder.fromUri(NavUri(uriString)).build()
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -75,7 +75,7 @@ class NavGraphBuilderTest {
         lateinit var navController: TestNavHostController
         val uriString = "https://www.example.com"
         val deeplink = NavDeepLinkRequest.Builder.fromUri(NavUri(uriString)).build()
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -105,7 +105,7 @@ class NavGraphBuilderTest {
         lateinit var navController: TestNavHostController
         val key = "key"
         val arg = "myarg"
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -127,7 +127,7 @@ class NavGraphBuilderTest {
         lateinit var navController: TestNavHostController
         val key = "key"
         val defaultArg = "default"
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -152,7 +152,7 @@ class NavGraphBuilderTest {
         lateinit var navController: TestNavHostController
         val uriString = "https://www.example.com"
         val deeplink = NavDeepLinkRequest.Builder.fromUri(NavUriUtils.parse(uriString)).build()
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -175,7 +175,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationNestedStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -196,7 +196,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationNestedInGraph() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -221,7 +221,7 @@ class NavGraphBuilderTest {
         lateinit var navController: TestNavHostController
         val key = "key"
         val defaultArg = "default"
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -277,7 +277,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationKClassStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -297,7 +297,7 @@ class NavGraphBuilderTest {
     fun testNavigationNestedKClassStart() = runComposeUiTestOnUiThread {
         @Serializable class TestOuterClass
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -322,7 +322,7 @@ class NavGraphBuilderTest {
         @Serializable class NestedGraph
 
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -348,7 +348,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationObjectStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -367,7 +367,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationObjectStartArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -390,7 +390,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationNestedObjectStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -413,7 +413,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationNestedObjectStartArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -440,7 +440,7 @@ class NavGraphBuilderTest {
         @Serializable class NestedGraph
 
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -463,7 +463,7 @@ class NavGraphBuilderTest {
         @Serializable class NestedGraph(val graphArg: Boolean)
 
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -492,7 +492,7 @@ class NavGraphBuilderTest {
         @Serializable class NestedGraph
 
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -518,7 +518,7 @@ class NavGraphBuilderTest {
         @Serializable class NestedGraph
 
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -545,7 +545,7 @@ class NavGraphBuilderTest {
     @Test
     fun testComposableKClass() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -564,7 +564,7 @@ class NavGraphBuilderTest {
     @Test
     fun testComposableKClassArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -586,7 +586,7 @@ class NavGraphBuilderTest {
         @Serializable class TestClass(val arg: CustomType)
 
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -605,7 +605,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNestedComposableKClassArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -632,7 +632,7 @@ class NavGraphBuilderTest {
         lateinit var exception: String
         lateinit var navController: TestNavHostController
         try {
-            setContentWithLifecycleOwner {
+            setContent {
                 navController = TestNavHostController()
                 navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -655,7 +655,7 @@ class NavGraphBuilderTest {
     @Test
     fun testDialogKClass() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
             navController.navigatorProvider.addNavigator(DialogNavigator())
@@ -675,7 +675,7 @@ class NavGraphBuilderTest {
     @Test
     fun testDialogKClassArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(DialogNavigator())
             navController.navigatorProvider.addNavigator(ComposeNavigator())
@@ -698,7 +698,7 @@ class NavGraphBuilderTest {
         @Serializable class TestClass(val arg: CustomType)
 
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(DialogNavigator())
             navController.navigatorProvider.addNavigator(ComposeNavigator())
@@ -718,7 +718,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNestedDialogKClassArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(DialogNavigator())
             navController.navigatorProvider.addNavigator(ComposeNavigator())
@@ -746,7 +746,7 @@ class NavGraphBuilderTest {
         lateinit var exception: String
         lateinit var navController: TestNavHostController
         try {
-            setContentWithLifecycleOwner {
+            setContent {
                 navController = TestNavHostController()
                 navController.navigatorProvider.addNavigator(DialogNavigator())
                 navController.navigatorProvider.addNavigator(ComposeNavigator())
@@ -770,7 +770,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationDialogObjectStartArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(DialogNavigator())
             navController.navigatorProvider.addNavigator(ComposeNavigator())
@@ -792,7 +792,7 @@ class NavGraphBuilderTest {
     @Test
     fun testNavigationDialogNestedObjectStartArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        setContentWithLifecycleOwner {
+        setContent {
             navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
             navController.navigatorProvider.addNavigator(DialogNavigator())

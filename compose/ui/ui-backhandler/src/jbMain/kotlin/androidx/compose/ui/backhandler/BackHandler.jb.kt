@@ -19,11 +19,20 @@
 package androidx.compose.ui.backhandler
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
-import kotlinx.coroutines.CancellationException
+import androidx.compose.ui.InternalComposeUiApi
+import androidx.navigationevent.NavigationEventDispatcherOwner
 import kotlinx.coroutines.flow.Flow
 
+@InternalComposeUiApi
+val LocalCompatNavigationEventDispatcherOwner =
+    staticCompositionLocalOf<NavigationEventDispatcherOwner?> { null }
+
+@OptIn(InternalComposeUiApi::class)
 @Deprecated("Use NavigationEventHandler instead")
 @ExperimentalComposeUiApi
 @Composable
@@ -31,33 +40,38 @@ actual fun PredictiveBackHandler(
     enabled: Boolean,
     onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
 ) {
-    LocalNavigationEventDispatcherOwner.current ?: return
-    /*
-    TODO: https://youtrack.jetbrains.com/issue/CMP-8937
-    NavigationEventHandler(enabled) { progress ->
-        val compatProgress = progress.map { navEvent ->
-            val swipeEdge = when (navEvent.swipeEdge) {
-                NavigationEventSwipeEdge.Left -> BackEventCompat.EDGE_LEFT
-                NavigationEventSwipeEdge.Right -> BackEventCompat.EDGE_RIGHT
-                else -> 0
-            }
-            BackEventCompat(navEvent.touchX, navEvent.touchY, navEvent.progress, swipeEdge)
-        }
-        onBack(compatProgress)
+    val owner = LocalCompatNavigationEventDispatcherOwner.current ?: error(
+        "No NavigationEventDispatcher was provided via LocalCompatNavigationEventDispatcherOwner"
+    )
+    val dispatcher = owner.navigationEventDispatcher
+    val coroutineScope = rememberCoroutineScope()
+    val handler = remember(onBack) {
+        ProgressBackEventHandler(enabled, onBack, coroutineScope)
     }
-    */
+    handler.isBackEnabled = enabled
+
+    DisposableEffect(dispatcher, handler) {
+        dispatcher.addHandler(handler)
+        onDispose { handler.remove() }
+    }
 }
 
+@OptIn(InternalComposeUiApi::class)
 @Deprecated("Use NavigationEventHandler instead")
 @ExperimentalComposeUiApi
 @Composable
 actual fun BackHandler(enabled: Boolean, onBack: () -> Unit) {
-    PredictiveBackHandler(enabled) { progress ->
-        try {
-            progress.collect { /*ignore*/ }
-            onBack()
-        } catch (e: CancellationException) {
-            //ignore
-        }
+    val owner = LocalCompatNavigationEventDispatcherOwner.current ?: error(
+        "No NavigationEventDispatcher was provided via LocalCompatNavigationEventDispatcherOwner"
+    )
+    val dispatcher = owner.navigationEventDispatcher
+    val handler = remember(onBack) {
+        BackEventHandler(enabled, onBack)
+    }
+    handler.isBackEnabled = enabled
+
+    DisposableEffect(dispatcher, handler) {
+        dispatcher.addHandler(handler)
+        onDispose { handler.remove() }
     }
 }

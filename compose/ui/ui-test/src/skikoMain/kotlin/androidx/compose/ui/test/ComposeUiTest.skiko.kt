@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.backhandler.LocalCompatNavigationEventDispatcherOwner
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -44,6 +45,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -456,7 +460,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     @OptIn(InternalComposeUiApi::class)
-    internal inner class SkikoTestOwner : TestOwner, LifecycleOwner {
+    internal inner class SkikoTestOwner :
+        TestOwner,
+        LifecycleOwner,
+        NavigationEventDispatcherOwner {
         override val mainClock
             get() = mainClockImpl
 
@@ -474,6 +481,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
 
         override val lifecycle = LifecycleRegistry.createUnsafe(this)
+        override val navigationEventDispatcher = NavigationEventDispatcher()
 
         fun captureToImage(semanticsNode: SemanticsNode): ImageBitmap =
             this@SkikoComposeUiTest.captureToImage(semanticsNode)
@@ -535,6 +543,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private fun ProvideCommonCompositionLocals(content: @Composable () -> Unit) {
         CompositionLocalProvider(
             LocalLifecycleOwner provides testOwner,
+            LocalNavigationEventDispatcherOwner provides testOwner,
+            LocalCompatNavigationEventDispatcherOwner provides testOwner,
             content = content,
         )
     }
