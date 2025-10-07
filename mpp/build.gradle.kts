@@ -5,14 +5,6 @@ import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.androidx.build.artifactRedirection
 import org.jetbrains.androidx.build.hasRedirection
 
-buildscript {
-    repositories {
-        mavenCentral()
-        maven("https://maven.pkg.jetbrains.space/public/p/compose/internal")
-        maven("https://maven.pkg.jetbrains.space/public/p/space/maven")
-    }
-}
-
 // this module depends on all other modules info, so we need to initialize them first
 (rootProject.allprojects - project).forEach {
     evaluationDependsOn(it.path)
