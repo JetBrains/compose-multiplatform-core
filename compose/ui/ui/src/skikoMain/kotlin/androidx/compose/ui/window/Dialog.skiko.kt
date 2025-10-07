@@ -19,6 +19,7 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -34,6 +35,7 @@ import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.exclude
+import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.union
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
@@ -113,6 +115,7 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
     }
 }
 
+@OptIn(InternalComposeApi::class)
 @Composable
 actual fun Dialog(
     onDismissRequest: () -> Unit,
@@ -125,7 +128,7 @@ actual fun Dialog(
     }
     onBackHandler.backClickIsEnabled = properties.dismissOnBackPress
     val navigationEventDispatcher =
-        requireNotNull(LocalInternalNavigationEventDispatcherOwner.current) {
+        requireNotNull(findDefaultNavigationEventDispatcherOwner()) {
             error("NavigationEventDispatcherOwner not found")
         }.navigationEventDispatcher
     DisposableEffect(navigationEventDispatcher) {
