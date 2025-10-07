@@ -234,6 +234,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.skiko)
                 implementation(libs.atomicFu)
+                implementation(project(":compose:ui:ui-backhandler"))
                 implementation(project(":navigationevent:navigationevent"))
             }
         }

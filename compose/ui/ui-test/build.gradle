@@ -143,7 +143,9 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
                 implementation(libs.atomicFu)
+                implementation(project(":compose:ui:ui-backhandler"))
                 implementation(project(":lifecycle:lifecycle-runtime-compose"))
+                implementation(project(":navigationevent:navigationevent-compose"))
             }
         }
 
