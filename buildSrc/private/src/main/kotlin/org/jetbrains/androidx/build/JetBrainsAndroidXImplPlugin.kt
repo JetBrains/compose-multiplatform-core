@@ -154,10 +154,15 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
     @Suppress("UNREACHABLE_CODE", "UNUSED_VARIABLE")
     override fun apply(project: Project) {
+        check(project.plugins.hasPlugin("AndroidXPlugin")) {
+            "JetBrainsAndroidXPlugin should be applied after AndroidXPlugin"
+        }
+
         val androidxExtension =
             project.extensions.getByType(AndroidXExtension::class.java)
         val androidxMultiplatformExtension =
             project.extensions.getByType(AndroidXMultiplatformExtension::class.java)
+        project.changeMavenCoordinatesToJetBrains(androidxExtension)
         project.configureMavenArtifactUpload(
             androidxExtension, androidxMultiplatformExtension, componentFactory)
 
