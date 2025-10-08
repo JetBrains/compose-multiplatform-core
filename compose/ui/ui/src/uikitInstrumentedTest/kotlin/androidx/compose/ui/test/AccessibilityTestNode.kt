@@ -350,19 +350,19 @@ internal fun UIKitInstrumentedTest.firstNodeOrNull(
 
 internal fun UIKitInstrumentedTest.findAllNodes(
     isValid: (AccessibilityTestNode) -> Boolean
-): List<AccessibilityTestNode> {
+): Sequence<AccessibilityTestNode> {
     waitForIdle()
-    val nodes = mutableListOf<AccessibilityTestNode>()
-    val actualTreeRoot = getAccessibilityTree()
 
-    fun getAllNodes(node: AccessibilityTestNode) {
+    val actualTreeRoot = getAccessibilityTree()
+    fun getAllNodes(node: AccessibilityTestNode): Sequence<AccessibilityTestNode> = sequence {
         if (isValid(node)) {
-            nodes.add(node)
+            yield(node)
         }
-        node.children?.forEach(::getAllNodes)
+        node.children?.forEach { child ->
+            yieldAll(getAllNodes(child))
+        }
     }
-    getAllNodes(actualTreeRoot)
-    return nodes
+    return getAllNodes(actualTreeRoot)
 }
 
 /**
