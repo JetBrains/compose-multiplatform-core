@@ -88,4 +88,14 @@ internal object ComposeFeatureFlags {
     val useInteropBlending: Boolean by lazy {
         System.getProperty("compose.interop.blending").toBoolean()
     }
+
+    /**
+     * Whether to redispatch unconsumed mouse wheel events to the parent heavyweight component.
+     * This allows any scrollable components beneath Compose to be scrolled.
+     *
+     * This flag will be removed in the future, and the default behavior will correspond to a value
+     * of `true`.
+     */
+    val redispatchUnconsumedMouseWheelEvents: Boolean
+        get() = System.getProperty("compose.swing.redispatchMouseWheelEvents", "false").toBoolean()
 }
