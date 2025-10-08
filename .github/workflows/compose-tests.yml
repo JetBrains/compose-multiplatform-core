@@ -139,6 +139,12 @@ jobs:
       - name: Setup Prerequisites
         uses: ./.github/actions/setup-prerequisites
 
+      # Compile tests as a separate step to reduce memory usage and potential OOM during running tests.
+      - name: Compile ${{ matrix.task }} Tests
+        run: |
+          ./gradlew compileTestKotlin${{ matrix.task }} \
+            --no-daemon --stacktrace
+
       - name: Setup Google Chrome
         uses: browser-actions/setup-chrome@v2
         with:
@@ -178,6 +184,12 @@ jobs:
 
       - name: Setup Prerequisites
         uses: ./.github/actions/setup-prerequisites
+
+      # Compile tests as a separate step to reduce memory usage and potential OOM during running tests.
+      - name: Compile ${{ matrix.task }} Tests
+        run: |
+          ./gradlew compileTestKotlin${{ matrix.task }} \
+            --no-daemon --stacktrace
 
       - name: Setup Missing Packages
         run: |
