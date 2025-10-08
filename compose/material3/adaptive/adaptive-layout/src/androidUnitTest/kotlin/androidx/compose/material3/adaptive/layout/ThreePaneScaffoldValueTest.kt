@@ -18,10 +18,13 @@ package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.ui.Alignment
-import androidx.kruth.assertThat
-import kotlin.test.Test
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@RunWith(JUnit4::class)
 class ThreePaneScaffoldValueTest {
     @Test
     fun calculateWithoutHistory_onePaneLayout_noDestination() {

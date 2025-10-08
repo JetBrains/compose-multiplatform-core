@@ -38,12 +38,14 @@ import androidx.compose.material3.adaptive.layout.PaneMotion.Companion.NoMotion
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.kruth.assertThat
-import androidx.kruth.assertWithMessage
-import kotlin.test.Ignore
-import kotlin.test.Test
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@RunWith(JUnit4::class)
 class PaneMotionTest {
     @Test
     fun test_allThreePaneMotions() {
@@ -58,7 +60,6 @@ class PaneMotionTest {
         }
     }
 
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7979
     @Test
     fun test_allDefaultPaneMotionTransitions() {
         NoMotion.assertTransitions(EnterTransition.None, ExitTransition.None)
