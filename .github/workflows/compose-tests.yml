@@ -56,6 +56,7 @@ jobs:
         uses: ./.github/actions/setup-xcode
 
       - name: Run iOS Tests
+        timeout-minutes: 15
         run: |
           ./gradlew testUIKit \
             --no-daemon --stacktrace
@@ -80,6 +81,7 @@ jobs:
         uses: ./.github/actions/setup-xcode
 
       - name: Run iOS Utils Tests
+        timeout-minutes: 15
         shell: bash
         working-directory: compose/ui/ui-uikit/src/uikitMain/objc/CMPUIKitUtils
         run: |
@@ -106,6 +108,7 @@ jobs:
           ./gradlew :compose:ui:ui:linkInstrumentedTestDebugFrameworkUikitSimArm64
 
       - name: Run iOS Instrumented Tests
+        timeout-minutes: 15
         shell: bash
         working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
         run: |
