@@ -390,6 +390,39 @@ class OnGlobalRectChangedTest {
     }
 
     @Test
+    fun callbackCalledForChildWhenParentMoved_1000children() {
+        var position by mutableStateOf(0)
+        var childGlobalPosition = IntOffset(0, 0)
+        rule.setContent {
+            Layout(
+                measurePolicy = { measurables, constraints ->
+                    layout(10, 10) { measurables[0].measure(constraints).place(position, 0) }
+                },
+                content = {
+                    Wrap(minWidth = 10, minHeight = 10) {
+                        repeat(1000) {
+                            Wrap(
+                                minWidth = 10,
+                                minHeight = 10,
+                                modifier =
+                                    if (it == 999)
+                                        Modifier.onLayoutRectChanged(0, 0) { rect ->
+                                            childGlobalPosition = rect.positionInRoot
+                                        }
+                                    else Modifier,
+                            )
+                        }
+                    }
+                },
+            )
+        }
+
+        rule.runOnIdle { position = 10 }
+
+        rule.runOnIdle { assertEquals(IntOffset(10, 0), childGlobalPosition) }
+    }
+
+    @Test
     fun callbacksAreCalledOnlyForPositionedChildren() {
         val latch = CountDownLatch(1)
         var wrap1OnPositionedCalled = false
