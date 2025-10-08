@@ -26,6 +26,7 @@ import androidx.compose.ui.events.keyEvent
 import kotlin.test.Test
 import kotlin.test.assertIs
 import org.w3c.dom.HTMLTextAreaElement
+import androidx.compose.ui.platform.InputEvent as InputEventDetailed
 
 internal interface СompositeInputTestSpec : TextFieldTestSpec {
 
@@ -217,10 +218,14 @@ internal interface SafariCompositeInput : СompositeInputTestSpec {
             beforeInput(inputType = "insertText","ㅎ"),
             keyEvent(key= "ㅎ", code = "KeyG", keyCode = 229),
             keyEvent(key= "ㅎ", code = "KeyG", keyCode = 71, type = "keyup"),
-            beforeInput(inputType = "insertReplacementText","호"),
+            beforeInput(inputType = "insertReplacementText","호").apply {
+                (this as InputEventDetailed).deleteContentBackwardSize = 1
+            },
             keyEvent(key= "ㅗ", code = "KeyH", keyCode = 229),
             keyEvent(key= "ㅗ", code = "KeyH", keyCode = 72, type = "keyup"),
-            beforeInput(inputType = "insertReplacementText","홀"),
+            beforeInput(inputType = "insertReplacementText","홀").apply {
+                (this as InputEventDetailed).deleteContentBackwardSize = 1
+            },
             keyEvent(key= "ㄹ", code = "KeyF", keyCode = 229),
             keyEvent(key= "ㄹ", code = "KeyF", keyCode = 70, type = "keyup"),
         ).sendToHtmlInput()

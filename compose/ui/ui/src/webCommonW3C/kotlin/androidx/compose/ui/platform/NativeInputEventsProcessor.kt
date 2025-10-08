@@ -150,8 +150,6 @@ internal abstract class NativeInputEventsProcessor(
                 val deleteSize = deleteContentBackwardSize
                 if (deleteSize > 0) {
                     add(DeleteSurroundingTextCommand(deleteSize, 0))
-                } else if (deleteSize == 0) {
-                    add(BackspaceCommand())
                 }
 
                 add(CommitTextCommand(data, 1))
