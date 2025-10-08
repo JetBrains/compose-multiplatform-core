@@ -225,6 +225,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         @InternalTestApi
         set
 
+    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner(enforceMainThread = false)
     private val testOwner = SkikoTestOwner()
     private val testContext = TestContext(testOwner)
 
@@ -310,11 +311,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             platformContext = TestContext(),
             invalidate = { }
         )
-        testOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     private fun closeScene() {
-        testOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         scene.close()
     }
 
@@ -449,9 +450,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     @OptIn(InternalComposeUiApi::class)
-    internal inner class SkikoTestOwner :
-        DefaultArchitectureComponentsOwner(),
-        TestOwner {
+    internal inner class SkikoTestOwner : TestOwner {
         override val mainClock
             get() = mainClockImpl
 
@@ -510,7 +509,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     private inner class TestContext : PlatformContext by PlatformContext.Empty {
         override val windowInfo: WindowInfo = TestWindowInfo()
-        override val ownerProvider get() = testOwner
+        override val architectureComponentsOwner get() = this@SkikoComposeUiTest.architectureComponentsOwner
         override val rootForTestListener: PlatformContext.RootForTestListener
             get() = composeRootRegistry
 

@@ -312,7 +312,7 @@ internal class ComposeHostingViewController(
             onFocusBehavior = configuration.onFocusBehavior,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
-            ownerProvider = archComponentsOwner,
+            architectureComponentsOwner = archComponentsOwner,
             coroutineContext = composeCoroutineContext,
             redrawer = metalView.redrawer,
             composeSceneFactory = { invalidate, context ->

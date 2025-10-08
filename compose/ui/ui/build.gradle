@@ -215,9 +215,10 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     // Keep this dependency for compatibility due to https://youtrack.jetbrains.com/issue/KT-60874
                     implementation(project(":compose:ui:ui-backhandler"))
 
-                    // implementation(project(":navigationevent:navigationevent"))
                     // Use direct dependency to AOSP's artifact instead of using project reference
-                    // because this module supports all KMP platforms from the beginning
+                    // because this module supports all KMP platforms from the beginning.
+                    // Project dependency (commented out version) is required for `integration` branch setup
+                    // implementation(project(":navigationevent:navigationevent"))
                     def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
                     implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
                 }

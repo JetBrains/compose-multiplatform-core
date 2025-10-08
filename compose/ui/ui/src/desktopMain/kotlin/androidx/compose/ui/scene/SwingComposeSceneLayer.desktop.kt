@@ -107,7 +107,7 @@ internal class SwingComposeSceneLayer(
             },
             eventListener = eventListener,
             measureDrawLayerBounds = true,
-            ownerProvider = composeContainer.ownerProvider,
+            architectureComponentsOwner = composeContainer.architectureComponentsOwner,
             coroutineContext = compositionContext.effectCoroutineContext,
             skiaLayerComponentFactory = ::createSkiaLayerComponent,
             composeSceneFactory = ::createComposeScene,

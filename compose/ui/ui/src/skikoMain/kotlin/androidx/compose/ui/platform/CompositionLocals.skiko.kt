@@ -51,7 +51,7 @@ val LocalPlatformWindowInsets = staticCompositionLocalOf<PlatformWindowInsets> {
     error("CompositionLocal LocalPlatformWindowInsets not present")
 }
 
-private val PlatformOwnerProvider.values: Array<ProvidedValue<*>>
+private val PlatformArchitectureComponentsOwner.values: Array<ProvidedValue<*>>
     get() {
         val providedValues = mutableListOf(
             androidx.lifecycle.compose.LocalLifecycleOwner provides lifecycleOwner,
@@ -74,7 +74,7 @@ internal fun ProvidePlatformCompositionLocals(
         *values,
         LocalPlatformScreenReader provides platformContext.screenReader,
         LocalPlatformWindowInsets provides platformContext.windowInsets,
-        *platformContext.ownerProvider.values,
+        *platformContext.architectureComponentsOwner.values,
         content = content,
     )
 }

@@ -87,7 +87,7 @@ class ComposeSceneMediatorTest {
             onFocusBehavior = OnFocusBehavior.DoNothing,
             focusedViewsList = null,
             windowContext = PlatformWindowContext(),
-            ownerProvider = DefaultArchitectureComponentsOwner(),
+            architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
             coroutineContext = Dispatchers.Main,
             redrawer = MetalRedrawer(
                 metalLayer = CAMetalLayer(),

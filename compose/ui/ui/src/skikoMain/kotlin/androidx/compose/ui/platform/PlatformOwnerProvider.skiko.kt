@@ -28,7 +28,7 @@ import androidx.navigationevent.NavigationEventDispatcherOwner
  * Provides platform-specific component owners.
  */
 @InternalComposeUiApi
-interface PlatformOwnerProvider {
+interface PlatformArchitectureComponentsOwner {
     val lifecycleOwner: LifecycleOwner
     val navigationEventDispatcherOwner: NavigationEventDispatcherOwner
     val viewModelStoreOwner: ViewModelStoreOwner?
@@ -37,19 +37,23 @@ interface PlatformOwnerProvider {
 }
 
 /**
- * Default implementation of [PlatformOwnerProvider].
+ * Default implementation of [PlatformArchitectureComponentsOwner].
  */
 @InternalComposeUiApi
-open class DefaultArchitectureComponentsOwner :
-    PlatformOwnerProvider,
+open class DefaultArchitectureComponentsOwner(
+    enforceMainThread: Boolean = true,
+) : PlatformArchitectureComponentsOwner,
     LifecycleOwner,
     ViewModelStoreOwner,
     NavigationEventDispatcherOwner {
     override val lifecycleOwner get() = this
     override val navigationEventDispatcherOwner get() = this
     override val viewModelStoreOwner get() = this
-
-    override val lifecycle = LifecycleRegistry(this)
+    override val lifecycle = if (enforceMainThread) {
+        LifecycleRegistry(this)
+    } else {
+        LifecycleRegistry.createUnsafe(this)
+    }
     override val viewModelStore = ViewModelStore()
     override val navigationEventDispatcher = NavigationEventDispatcher()
 }

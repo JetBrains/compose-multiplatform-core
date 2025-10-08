@@ -33,7 +33,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.navigationevent.DesktopNavigationEventInput
 import androidx.compose.ui.platform.DisposableSaveableStateRegistry
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformOwnerProvider
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
@@ -142,7 +142,7 @@ internal class ComposeContainer(
             onWindowContainerPositionChanged()
         }
 
-    val ownerProvider = object : PlatformOwnerProvider {
+    val architectureComponentsOwner = object : PlatformArchitectureComponentsOwner {
         override val lifecycleOwner get() = this@ComposeContainer
         override val navigationEventDispatcherOwner get() = this@ComposeContainer
         override val viewModelStoreOwner get() = this@ComposeContainer
@@ -161,7 +161,7 @@ internal class ComposeContainer(
             DetectEventOutsideLayer(),
             FocusableLayerEventFilter()
         ),
-        ownerProvider = ownerProvider,
+        architectureComponentsOwner = architectureComponentsOwner,
         coroutineContext = coroutineContext,
         skiaLayerComponentFactory = ::createSkiaLayerComponent,
         composeSceneFactory = ::createComposeScene,

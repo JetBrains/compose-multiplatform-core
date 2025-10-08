@@ -28,7 +28,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformOwnerProvider
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.OnFocusBehavior
@@ -65,7 +65,7 @@ internal class UIKitComposeSceneLayer(
     onFocusBehavior: OnFocusBehavior,
     private var focusedViewsList: FocusedViewsList?,
     compositionContext: CompositionContext,
-    private val ownerProvider: PlatformOwnerProvider,
+    private val ownerProvider: PlatformArchitectureComponentsOwner,
     private val coroutineContext: CoroutineContext,
     private val interfaceOrientationState: State<InterfaceOrientation>,
     private val navigationEventDispatcher: NavigationEventDispatcher,
@@ -96,7 +96,7 @@ internal class UIKitComposeSceneLayer(
         onFocusBehavior = onFocusBehavior,
         focusedViewsList = focusedViewsList,
         windowContext = layersViewController.windowContext,
-        ownerProvider = ownerProvider,
+        architectureComponentsOwner = ownerProvider,
         coroutineContext = compositionContext.effectCoroutineContext,
         redrawer = layersViewController.metalView.redrawer,
         composeSceneFactory = ::createComposeScene,

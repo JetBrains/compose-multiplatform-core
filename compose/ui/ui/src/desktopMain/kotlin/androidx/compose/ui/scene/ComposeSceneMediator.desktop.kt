@@ -51,7 +51,7 @@ import androidx.compose.ui.platform.EmptyViewConfiguration
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformOwnerProvider
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
@@ -122,7 +122,7 @@ internal class ComposeSceneMediator(
      */
     private val measureDrawLayerBounds: Boolean = false,
 
-    private val ownerProvider: PlatformOwnerProvider,
+    private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     val coroutineContext: CoroutineContext,
 
     skiaLayerComponentFactory: (ComposeSceneMediator) -> SkiaLayerComponent,
@@ -765,7 +765,7 @@ internal class ComposeSceneMediator(
 
     private inner class DesktopPlatformContext : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
-        override val ownerProvider get() = this@ComposeSceneMediator.ownerProvider
+        override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val isWindowTransparent: Boolean get() = windowContext.isWindowTransparent
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =

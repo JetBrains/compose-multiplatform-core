@@ -43,10 +43,7 @@ import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.navigationevent.NavigationEventDispatcher
-import androidx.navigationevent.NavigationEventDispatcherOwner
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.awaitCancellation
 
@@ -68,7 +65,7 @@ interface PlatformContext {
     /**
      * Provider of platform owners such as [LifecycleOwner] or [ViewModelStoreOwner].
      */
-    val ownerProvider: PlatformOwnerProvider get() = EmptyPlatformOwnerProvider
+    val architectureComponentsOwner: PlatformArchitectureComponentsOwner get() = EmptyArchitectureComponentsOwner
 
     /**
      * Indicates if the compose view is positioned in a transparent window.
@@ -238,16 +235,9 @@ private object EmptyPlatformScreenReader : PlatformScreenReader {
     override val isActive: Boolean = false
 }
 
-private object EmptyPlatformOwnerProvider :
-    PlatformOwnerProvider,
-    LifecycleOwner,
-    NavigationEventDispatcherOwner {
-    override val lifecycleOwner get() = this
-    override val navigationEventDispatcherOwner get() = this
-    override val viewModelStoreOwner: ViewModelStoreOwner? get() = null
-    override val lifecycle = LifecycleRegistry.createUnsafe(this)
-    override val navigationEventDispatcher = NavigationEventDispatcher()
-
+private object EmptyArchitectureComponentsOwner : DefaultArchitectureComponentsOwner(
+    enforceMainThread = false
+) {
     init {
         lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }

@@ -96,7 +96,7 @@ private class ComposeWindow(
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty {
             override val windowInfo get() = _windowInfo
-            override val ownerProvider get() = archComponentsOwner
+            override val architectureComponentsOwner get() = archComponentsOwner
             override val textInputService get() = macosTextInputService
             override fun setPointerIcon(pointerIcon: PointerIcon) {
                 val cursor = (pointerIcon as? MacosCursor)?.cursor ?: NSCursor.arrowCursor
