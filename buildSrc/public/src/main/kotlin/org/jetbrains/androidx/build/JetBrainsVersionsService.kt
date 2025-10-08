@@ -19,6 +19,7 @@ package org.jetbrains.androidx.build
 import org.gradle.api.Project
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import org.jetbrains.androidx.build.JetBrainsPublication.isLibraryRegistered
 
 private const val ARGUMENT_PREFIX = "jetbrains.publication.version."
 
@@ -27,7 +28,7 @@ private fun Project.parseJetBrainsVersions() = JetBrainsVersions(
         .filter { it.startsWith(ARGUMENT_PREFIX) }
         .associate { propertyName ->
             val library = propertyName.replace(ARGUMENT_PREFIX, "")
-            require(JetBrainsVersions.isValid(library)) {
+            require(isLibraryRegistered(library)) {
                 "$propertyName points to a non registered library in the " +
                     "JetBrainsPublication class"
             }

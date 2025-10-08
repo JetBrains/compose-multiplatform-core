@@ -163,11 +163,20 @@ object JetBrainsPublication {
         .associate { it.second.path to it.first }
 
     fun shouldPublish(project: Project): Boolean = projectPathToComponent.containsKey(project.path)
+
+    fun isLibraryRegistered(libraryName: String) =
+        libraryToComponents.containsKey(libraryName)
 }
 
+/**
+ * A set of version that can be assigned to publishing libraries from [JetBrainsPublication].
+ * Only registered libraries are allowed
+ * (use [JetBrainsPublication.isLibraryRegistered] to check)
+ */
 class JetBrainsVersions(val libraryToVersion: Map<String, String>) : Serializable {
     init {
-        val nonRegisteredLibraries = libraryToVersion.keys.filterNot(::isValid)
+        val nonRegisteredLibraries =
+            libraryToVersion.keys.filterNot(JetBrainsPublication::isLibraryRegistered)
         require(nonRegisteredLibraries.isEmpty()) {
             "Libraries $nonRegisteredLibraries are not registered in the JetBrainsPublication class"
         }
@@ -178,9 +187,10 @@ class JetBrainsVersions(val libraryToVersion: Map<String, String>) : Serializabl
     }
 
     companion object {
-        fun isValid(libraryName: String) =
-            JetBrainsPublication.libraryToComponents.containsKey(libraryName)
+
     }
 }
 
-fun ComposeComponent.library() = projectPathToLibrary[path]!!
+fun ComposeComponent.library() = requireNotNull(projectPathToLibrary[path]) {
+    "Library for component with path $path not found"
+}
