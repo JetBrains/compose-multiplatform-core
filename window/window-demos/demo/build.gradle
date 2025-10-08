@@ -102,6 +102,7 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":window:window-testing"))
     androidTestImplementation(project(":window:window-demos:demo-common"))
+    androidTestImplementation(project(":savedstate:savedstate-ktx"))
 
     coreLibraryDesugaring(libs.desugarJdkLibs)
 }

@@ -31,6 +31,10 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.espressoCore)
+
+    // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
+
+    androidTestImplementation(project(":savedstate:savedstate"))
 }
 
 android {
