@@ -150,11 +150,22 @@ public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         }
         val paintBundle = PaintBundle()
         val tmpLastColorLong =
-            if (Build.VERSION.SDK_INT >= 29) {
-                Api29ColorLongHelper.getColorLong(paint, creationState)
+            if (paint is RemotePaint) {
+                val remoteColor = paint.remoteColor
+                if (remoteColor == null) {
+                    paint.getColor().toLong() shl 32
+                } else {
+                    val constantValue = remoteColor.constantValue
+                    if (constantValue == null) {
+                        remoteColor.getIdForCreationState(creationState).toLong() shl
+                            6 or
+                            REMOTE_COMPOSE_EXPRESSION_COLOR_SPACE_ID
+                    } else {
+                        constantValue.pack()
+                    }
+                }
             } else {
-                // Can't use ColorLong prior to API 29.
-                0L
+                paint.getColor().toLong() shl 32
             }
         val tmpLastStrokeWidth = paint.strokeWidth
         val tmpLastTextSize = paint.textSize
@@ -275,13 +286,12 @@ public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
                 lastRemoteColorFilter = tmpLastRemoteColorFilter
                 when (tmpLastRemoteColorFilter) {
                     is RemoteBlendModeColorFilter -> {
-                        val constantColor =
-                            tmpLastRemoteColorFilter.color.evaluateIfConstant(creationState)
+                        val constantColor = tmpLastRemoteColorFilter.color.constantValue
 
                         if (constantColor != null) {
                             // Where possible use a constant instead of an expression.
                             paintBundle.setColorFilter(
-                                constantColor,
+                                constantColor.toArgb(),
                                 colorFilterModeToInt(tmpLastRemoteColorFilter.blendMode),
                             )
                         } else {

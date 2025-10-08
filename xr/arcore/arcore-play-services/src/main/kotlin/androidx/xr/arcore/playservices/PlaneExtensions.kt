@@ -19,7 +19,7 @@ package androidx.xr.arcore.playservices
 import androidx.xr.arcore.runtime.Plane
 import com.google.ar.core.Plane.Type as ARCorePlaneType
 
-/** Create a [androidx.xr.arcore.runtime.internal.Plane.Type] from an AR Core [ARCorePlaneType]. */
+/** Create a [androidx.xr.arcore.runtime.Plane.Type] from an AR Core [ARCorePlaneType]. */
 internal fun Plane.Type.Companion.fromArCoreType(type: ARCorePlaneType): Plane.Type =
     when (type) {
         ARCorePlaneType.HORIZONTAL_DOWNWARD_FACING -> Plane.Type.HORIZONTAL_DOWNWARD_FACING

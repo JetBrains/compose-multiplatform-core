@@ -66,8 +66,6 @@ final class <#A: kotlin/Any> androidx.navigation3.runtime/EntryProviderScope { /
     final inline fun <#A1: reified #A> entry(noinline kotlin/Function1<#A1, kotlin/Any> = ..., kotlin.collections/Map<kotlin/String, kotlin/Any> = ..., noinline kotlin/Function3<#A1, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>) // androidx.navigation3.runtime/EntryProviderScope.entry|entry(kotlin.Function1<0:0,kotlin.Any>;kotlin.collections.Map<kotlin.String,kotlin.Any>;kotlin.Function3<0:0,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){0§<1:0>}[0]
 }
 
-final class <#A: kotlin/Any> androidx.navigation3.runtime/NavEntryDecorator // androidx.navigation3.runtime/NavEntryDecorator|null[0]
-
 open class <#A: kotlin/Any> androidx.navigation3.runtime/NavEntry { // androidx.navigation3.runtime/NavEntry|null[0]
     constructor <init>(#A, kotlin/Any = ..., kotlin.collections/Map<kotlin/String, kotlin/Any> = ..., kotlin/Function3<#A, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>) // androidx.navigation3.runtime/NavEntry.<init>|<init>(1:0;kotlin.Any;kotlin.collections.Map<kotlin.String,kotlin.Any>;kotlin.Function3<1:0,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 
@@ -80,6 +78,10 @@ open class <#A: kotlin/Any> androidx.navigation3.runtime/NavEntry { // androidx.
     open fun equals(kotlin/Any?): kotlin/Boolean // androidx.navigation3.runtime/NavEntry.equals|equals(kotlin.Any?){}[0]
     open fun hashCode(): kotlin/Int // androidx.navigation3.runtime/NavEntry.hashCode|hashCode(){}[0]
     open fun toString(): kotlin/String // androidx.navigation3.runtime/NavEntry.toString|toString(){}[0]
+}
+
+open class <#A: kotlin/Any> androidx.navigation3.runtime/NavEntryDecorator { // androidx.navigation3.runtime/NavEntryDecorator|null[0]
+    constructor <init>(kotlin/Function1<kotlin/Any, kotlin/Unit> = ..., kotlin/Function3<androidx.navigation3.runtime/NavEntry<#A>, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>) // androidx.navigation3.runtime/NavEntryDecorator.<init>|<init>(kotlin.Function1<kotlin.Any,kotlin.Unit>;kotlin.Function3<androidx.navigation3.runtime.NavEntry<1:0>,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 }
 
 open class <#A: kotlin/Any> androidx.navigation3.runtime/NavEntryWrapper : androidx.navigation3.runtime/NavEntry<#A> { // androidx.navigation3.runtime/NavEntryWrapper|null[0]
@@ -97,7 +99,6 @@ final val androidx.navigation3.runtime/androidx_navigation3_runtime_NavEntryDeco
 final val androidx.navigation3.runtime/androidx_navigation3_runtime_NavEntryWrapper$stableprop // androidx.navigation3.runtime/androidx_navigation3_runtime_NavEntryWrapper$stableprop|#static{}androidx_navigation3_runtime_NavEntryWrapper$stableprop[0]
 
 final fun <#A: kotlin/Any> androidx.navigation3.runtime/SavedStateNavEntryDecorator(androidx.compose.runtime.saveable/SaveableStateHolder): androidx.navigation3.runtime/NavEntryDecorator<#A> // androidx.navigation3.runtime/SavedStateNavEntryDecorator|SavedStateNavEntryDecorator(androidx.compose.runtime.saveable.SaveableStateHolder){0§<kotlin.Any>}[0]
-final fun <#A: kotlin/Any> androidx.navigation3.runtime/navEntryDecorator(kotlin/Function1<kotlin/Any, kotlin/Unit> = ..., kotlin/Function3<androidx.navigation3.runtime/NavEntry<#A>, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>): androidx.navigation3.runtime/NavEntryDecorator<#A> // androidx.navigation3.runtime/navEntryDecorator|navEntryDecorator(kotlin.Function1<kotlin.Any,kotlin.Unit>;kotlin.Function3<androidx.navigation3.runtime.NavEntry<0:0>,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> androidx.navigation3.runtime/rememberDecoratedNavEntries(kotlin.collections/List<#A>, kotlin.collections/List<androidx.navigation3.runtime/NavEntryDecorator<#A>>?, kotlin/Function1<#A, androidx.navigation3.runtime/NavEntry<#A>>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): kotlin.collections/List<androidx.navigation3.runtime/NavEntry<#A>> // androidx.navigation3.runtime/rememberDecoratedNavEntries|rememberDecoratedNavEntries(kotlin.collections.List<0:0>;kotlin.collections.List<androidx.navigation3.runtime.NavEntryDecorator<0:0>>?;kotlin.Function1<0:0,androidx.navigation3.runtime.NavEntry<0:0>>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> androidx.navigation3.runtime/rememberDecoratedNavEntries(kotlin.collections/List<androidx.navigation3.runtime/NavEntry<#A>>, kotlin.collections/List<androidx.navigation3.runtime/NavEntryDecorator<#A>>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): kotlin.collections/List<androidx.navigation3.runtime/NavEntry<#A>> // androidx.navigation3.runtime/rememberDecoratedNavEntries|rememberDecoratedNavEntries(kotlin.collections.List<androidx.navigation3.runtime.NavEntry<0:0>>;kotlin.collections.List<androidx.navigation3.runtime.NavEntryDecorator<0:0>>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> androidx.navigation3.runtime/rememberSavedStateNavEntryDecorator(androidx.compose.runtime.saveable/SaveableStateHolder?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int): androidx.navigation3.runtime/NavEntryDecorator<#A> // androidx.navigation3.runtime/rememberSavedStateNavEntryDecorator|rememberSavedStateNavEntryDecorator(androidx.compose.runtime.saveable.SaveableStateHolder?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){0§<kotlin.Any>}[0]

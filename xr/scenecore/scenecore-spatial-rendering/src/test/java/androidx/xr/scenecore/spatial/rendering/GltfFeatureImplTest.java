@@ -25,7 +25,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import androidx.concurrent.futures.ResolvableFuture;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
@@ -34,6 +33,7 @@ import androidx.xr.scenecore.impl.impress.WaterMaterial;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
 import androidx.xr.scenecore.runtime.MaterialResource;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;

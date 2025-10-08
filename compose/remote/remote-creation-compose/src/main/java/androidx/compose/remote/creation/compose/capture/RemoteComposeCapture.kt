@@ -48,7 +48,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import java.io.ByteArrayInputStream
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class Connection(
+public data class HostDisplayInfo(
     val width: Int = Resources.getSystem().displayMetrics.widthPixels,
     val height: Int = Resources.getSystem().displayMetrics.heightPixels,
     val density: Int = Resources.getSystem().displayMetrics.densityDpi,
@@ -76,11 +76,11 @@ public fun rememberRemoteDocument(
 ): MutableState<CoreDocument?> {
     val doc: MutableState<CoreDocument?> = remember { mutableStateOf(null) }
     val densityDpi = LocalConfiguration.current.densityDpi
-    val connection = Connection(size.width.toInt(), size.height.toInt(), densityDpi)
+    val hostDisplayInfo = HostDisplayInfo(size.width.toInt(), size.height.toInt(), densityDpi)
     val done = remember { mutableStateOf(false) }
     RemoteComposeCapture(
         LocalContext.current,
-        connection,
+        hostDisplayInfo,
         true,
         { view, writer ->
             if (!done.value) {
@@ -123,13 +123,17 @@ public fun rememberAsyncRemoteDocument(
 ): MutableState<CoreDocument?> {
     val doc: MutableState<CoreDocument?> = remember { mutableStateOf(null) }
     val densityDpi = LocalConfiguration.current.densityDpi
-    val connection =
-        Connection(width = size.width.toInt(), height = size.height.toInt(), density = densityDpi)
+    val hostDisplayInfo =
+        HostDisplayInfo(
+            width = size.width.toInt(),
+            height = size.height.toInt(),
+            density = densityDpi,
+        )
     val done = remember { mutableStateOf(false) }
     val readyToCapture = remember { mutableStateOf(false) }
     RemoteComposeCapture(
         LocalContext.current,
-        connection,
+        hostDisplayInfo,
         false,
         { view, writer ->
             if (readyToCapture.value && !done.value) {
@@ -171,7 +175,7 @@ public fun displaySize(): Size {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeCapture(
     context: Context,
-    connection: Connection,
+    hostDisplayInfo: HostDisplayInfo,
     public val immediateCapture: Boolean = true,
     public val onPaint: (View, RemoteComposeWriter) -> Boolean,
     public val onCaptureReady: @Composable () -> Unit,
@@ -184,7 +188,7 @@ public class RemoteComposeCapture(
         { captureComposeView, contentWrapper ->
             RemoteComposeExecution(
                 captureComposeView,
-                connection.size,
+                hostDisplayInfo.size,
                 apiLevel,
                 profiles,
                 contentWrapper,
@@ -193,7 +197,7 @@ public class RemoteComposeCapture(
 ) {
     public constructor(
         context: Context,
-        connection: Connection,
+        hostDisplayInfo: HostDisplayInfo,
         immediateCapture: Boolean = true,
         onPaint: (View, RemoteComposeWriter) -> Boolean,
         onCaptureReady: @Composable () -> Unit,
@@ -201,7 +205,7 @@ public class RemoteComposeCapture(
         content: @Composable () -> Unit,
     ) : this(
         context,
-        connection,
+        hostDisplayInfo,
         immediateCapture,
         onPaint,
         onCaptureReady,
@@ -210,7 +214,12 @@ public class RemoteComposeCapture(
         content,
         remoteComposeExecution =
             @Composable { captureComposeView, contentWrapper ->
-                RemoteComposeExecution(captureComposeView, connection.size, profile, contentWrapper)
+                RemoteComposeExecution(
+                    captureComposeView,
+                    hostDisplayInfo.size,
+                    profile,
+                    contentWrapper,
+                )
             },
     )
 
@@ -225,9 +234,9 @@ public class RemoteComposeCapture(
         val virtualDisplay =
             displayManager.createVirtualDisplay(
                 "Projection",
-                connection.width,
-                connection.height,
-                connection.density,
+                hostDisplayInfo.width,
+                hostDisplayInfo.height,
+                hostDisplayInfo.density,
                 SurfaceView(context).holder.surface,
                 0,
             )
@@ -298,7 +307,7 @@ public fun RememberRemoteDocumentInline(
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
-                val connection = Connection()
+                val hostDisplayInfo = HostDisplayInfo()
 
                 CaptureComposeView(
                         context = context,
@@ -317,7 +326,7 @@ public fun RememberRemoteDocumentInline(
                     )
                     .apply {
                         setContent {
-                            RemoteComposeExecution(this, connection.size, profile, content)
+                            RemoteComposeExecution(this, hostDisplayInfo.size, profile, content)
                         }
                     }
             },

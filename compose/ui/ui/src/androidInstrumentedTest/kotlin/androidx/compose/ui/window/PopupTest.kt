@@ -74,6 +74,7 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.Description
 import org.hamcrest.TypeSafeMatcher
@@ -85,7 +86,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PopupTest {
 
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     private val testTag = "testedPopup"
     private val offset = IntOffset(10, 10)

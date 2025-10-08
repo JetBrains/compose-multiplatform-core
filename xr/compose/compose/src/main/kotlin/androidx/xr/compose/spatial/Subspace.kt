@@ -79,19 +79,19 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
 /**
  * Create a 3D area that the app can render spatial content into.
  *
- * If this is the topmost [Subspace] in the compose hierarchy, its size will be determined by the
+ * If this is the topmost Subspace in the compose hierarchy, its size will be determined by the
  * system's recommended content box. This provides a device-specific volume that represents a
  * comfortable, human-scale viewing area, making it the recommended way to create responsive spatial
  * layouts. See [ApplicationSubspace] for more detailed information and customization options for
  * this top-level behavior.
  *
- * If this is nested within another [Subspace] then it will lay out its content in the X and Y
+ * If this is nested within another Subspace then it will lay out its content in the X and Y
  * directions according to the layout logic of its parent in 2D space. It will be constrained in the
- * Z direction according to the constraints imposed by its containing [Subspace].
+ * Z direction according to the constraints imposed by its containing Subspace.
  *
  * This is a no-op and does not render anything in non-XR environments (i.e. Phone and Tablet).
  *
- * On XR devices that cannot currently render spatial UI, the [Subspace] will still create its scene
+ * On XR devices that cannot currently render spatial UI, the Subspace will still create its scene
  * and all of its internal state, even though nothing may be rendered. This is to ensure that the
  * state is maintained consistently in the spatial scene and to allow preparation for the support of
  * rendering spatial UI. State should be maintained by the compose runtime and events that cause the
@@ -120,29 +120,33 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
 /**
  * Create a 3D area that the app can render spatial content into.
  *
- * [ApplicationSubspace] should be used to create the topmost [Subspace] in your application's
- * spatial UI hierarchy. This composable will throw an [IllegalStateException] if it is used to
- * create a Subspace that is nested within another [Subspace] or [ApplicationSubspace]. For nested
- * 3D content areas, use the [Subspace] composable. The [ApplicationSubspace] will inherit its
- * position and scale from the system's recommended position and scale.
+ * ApplicationSubspace creates a Compose for XR's Spatial UI hierarchy (3D Scene Graph) in your
+ * application's regular Compose UI tree. In this Subspace, You can use a @SubspaceComposable to
+ * create 3D UI elements.
+ *
+ * Each call to ApplicationSubspace creates a new, independent Spatial UI hierarchy. It does **not**
+ * inherit the spatial position, orientation, or scale of any parent ApplicationSubspace it is
+ * nested within. Its position and scale are solely decided by the system's recommended position and
+ * scale. To create an embedded Subspace within a SpatialPanel, Orbiter, SpatialPopup and etc, use
+ * the [Subspace] instead.
  *
  * By default, this Subspace is automatically bounded by the system's recommended content box. This
  * box represents a comfortable, human-scale area in front of the user, sized to occupy a
  * significant portion of their view on any given device. Using this default is the suggested way to
  * create responsive spatial layouts that look great without hardcoding dimensions.
- * SubspaceModifiers like SubspaceModifier.fillMaxSize will expand to fill this recommended box.
+ * SubspaceModifiers like `SubspaceModifier.fillMaxSize` will expand to fill this recommended box.
  * This default can be overridden by applying a custom size-based modifier. For unbounded behavior,
- * set `[allowUnboundedSubspace] = true`.
+ * set `allowUnboundedSubspace = true`.
  *
  * This composable is a no-op and does not render anything in non-XR environments (i.e., Phone and
  * Tablet).
  *
- * On XR devices that cannot currently render spatial UI, the [ApplicationSubspace] will still
- * create its scene and all of its internal state, even though nothing may be rendered. This is to
- * ensure that the state is maintained consistently in the spatial scene and to allow preparation
- * for the support of rendering spatial UI. State should be maintained by the compose runtime and
- * events that cause the compose runtime to lose state (app process killed or configuration change)
- * will also cause the ApplicationSubspace to lose its state.
+ * On XR devices that cannot currently render spatial UI, the ApplicationSubspace will still create
+ * its scene and all of its internal state, even though nothing may be rendered. This is to ensure
+ * that the state is maintained consistently in the spatial scene and to allow preparation for the
+ * support of rendering spatial UI. State should be maintained by the compose runtime and events
+ * that cause the compose runtime to lose state (app process killed or configuration change) will
+ * also cause the ApplicationSubspace to lose its state.
  *
  * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
  * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
@@ -161,27 +165,20 @@ public fun ApplicationSubspace(
     // If not in XR, do nothing
     if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
 
-    if (currentComposer.applier is SubspaceNodeApplier) {
-        // We are already in a Subspace, so we can just render the content directly
-        SpatialBox(content = content)
-    } else if (LocalIsInApplicationSubspace.current) {
-        throw IllegalStateException("ApplicationSubspace cannot be nested within another Subspace.")
-    } else {
-        ApplicationSubspace(
-            modifier = modifier,
-            allowUnboundedSubspace = allowUnboundedSubspace,
-            subspaceRootNode = LocalSubspaceRootNode.current,
-            content = content,
-        )
-    }
+    ApplicationSubspace(
+        modifier = modifier,
+        allowUnboundedSubspace = allowUnboundedSubspace,
+        subspaceRootNode = LocalSubspaceRootNode.current,
+        content = content,
+    )
 }
 
 /**
  * Create a Subspace that is rooted in the application space.
  *
- * This is used as the top-level [Subspace] within the context of the default task window. Nested
- * Subspaces should use their nearest Panel that contains the [Subspace] to determine the sizing
- * constraints and position of the [Subspace].
+ * This is used as the top-level Subspace within the context of the default task window. Nested
+ * Subspaces should use their nearest Panel that contains the Subspace to determine the sizing
+ * constraints and position of the Subspace.
  *
  * In the near future when HSM is spatialized, the Subspace should consider the app bounds when
  * determining its top-level constraints.

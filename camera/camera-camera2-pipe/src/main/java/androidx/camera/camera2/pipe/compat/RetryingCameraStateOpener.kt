@@ -36,6 +36,7 @@ import androidx.camera.camera2.pipe.internal.CameraErrorListener
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -85,6 +86,8 @@ internal interface RetryingCameraStateOpener {
         cameraId: CameraId,
         camera2DeviceCloser: Camera2DeviceCloser,
     ): AwaitOpenCameraResult
+
+    fun cancelOpen()
 }
 
 internal interface DevicePolicyManagerWrapper {
@@ -191,6 +194,8 @@ constructor(
     private val cameraInteropConfig: CameraPipe.CameraInteropConfig?,
     private val threads: Threads,
 ) {
+    private var cameraOpenCancelled = CompletableDeferred<Unit>()
+
     internal suspend fun tryOpenCamera(
         cameraId: CameraId,
         attempts: Int,
@@ -219,6 +224,7 @@ constructor(
         //
         // 1. The openCamera() call can block indefinitely on buggy platforms. When this happens,
         //    this halts all camera opening and closing operations, and blocks shutdown.
+        // 2. Even when openCamera() succeeds, the state callbacks may also not come back.
         // 2. There are important, unskippable camera handling routines following the call.
         // 3. The camera opening process can take an unexpectedly long amount of time, for example,
         //    on slow systems, or when opening remote proxy cameras.
@@ -226,11 +232,12 @@ constructor(
         // ---
         //
         // Given the factors, we deal with these issues by compartmentalizing the camera opening
-        // process into 3 jobs:
+        // process into 4 jobs:
         //
         // 1. Launch a job for the openCamera() call.
         // 2. Launch a job to collect state callback results from the framework.
         // 3. Launch a job for timeout and to intervene when openCamera() times out.
+        // 4. Launch a job to force cancel camera opening with a timeout when shutdown is issued.
         //
         // The following utilizes select expressions to sequentially handle these events. When an
         // OpenCameraResult is received through select (from either job 1 or 2), consider the camera
@@ -274,6 +281,13 @@ constructor(
             // Timeout job to monitor and cancel camera opening when it times out.
             var timeoutJob: Job? = launch { delay(CAMERA_OPEN_TIMEOUT_MS) }
 
+            // Cancellation job to await on the camera open cancellation signal and start a
+            // timeout before cancelling camera opening with a timeout error.
+            var cameraOpenCancelJob: Job? = launch {
+                cameraOpenCancelled.await()
+                delay(CAMERA_OPEN_CANCEL_TIMEOUT_MS)
+            }
+
             while (isActive) {
                 try {
                     val result =
@@ -303,6 +317,12 @@ constructor(
                                     null
                                 }
                             }
+
+                            cameraOpenCancelJob?.onJoin {
+                                Log.debug { "tryOpenCamera: Camera open cancelled" }
+                                cameraOpenCancelJob = null
+                                OpenCameraResult(errorCode = CameraError.ERROR_CAMERA_OPEN_TIMEOUT)
+                            }
                         }
                     if (result != null) {
                         Log.info { "Camera open completed: $result" }
@@ -310,6 +330,7 @@ constructor(
                         cameraOpenDeferred?.cancel()
                         resultDeferred?.cancel()
                         timeoutJob?.cancel()
+                        cameraOpenCancelJob?.cancel()
 
                         return@supervisorScope result
                     }
@@ -325,11 +346,21 @@ constructor(
         }
     }
 
+    internal fun cancelOpen() {
+        cameraOpenCancelled.complete(Unit)
+    }
+
     private companion object {
         // The timeout for the CameraManager.openCamera call itself. Note that this is the timeout
         // for making the call and waiting for the call to return, rather than waiting for the
         // whole camera opening process
         const val CAMERA_OPEN_TIMEOUT_MS = 3_000L
+
+        // The timeout for waiting for the camera open result to come back after camera open
+        // cancellation is issued. This is needed because during shutdown, we need to abandon
+        // camera opening attempts in a timely manner, and unfortunately state callbacks don't come
+        // sometimes.
+        const val CAMERA_OPEN_CANCEL_TIMEOUT_MS = 2_000L
     }
 }
 
@@ -447,6 +478,10 @@ constructor(
                 AwaitOpenCameraResult(null, null)
             }
         }
+    }
+
+    override fun cancelOpen() {
+        cameraStateOpener.cancelOpen()
     }
 
     companion object {

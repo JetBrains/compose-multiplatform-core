@@ -49,12 +49,12 @@ internal class WearWidgetProviderImpl(
         requireNotNull(requestParcel) { "Invalid widget request." }
         requireNotNull(callback) { "Invalid widget callback." }
         mainScope.launch {
+            // TODO: Report errors in the callback if any of the following steps fail.
             val request = WearWidgetRequest.fromParcel(requestParcel)
-            request?.let {
-                val widgetContent = widget.provideWidgetContent(context, request)
-                val rawContent = widgetContent.toRawContent()
-                callback.updateWidgetContent(rawContent.toParcel())
-            }
+            val widgetContent = widget.provideWidgetContent(context, request)
+            val rawContent =
+                widgetContent.captureRawContent(context, request.widthDp, request.heightDp)
+            callback.updateWidgetContent(rawContent.toParcel())
         }
     }
 

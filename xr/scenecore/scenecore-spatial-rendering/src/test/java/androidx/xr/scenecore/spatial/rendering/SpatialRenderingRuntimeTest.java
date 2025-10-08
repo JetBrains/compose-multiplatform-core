@@ -25,7 +25,6 @@ import android.app.Activity;
 import androidx.xr.runtime.SubspaceNodeHolder;
 import androidx.xr.runtime.math.FloatSize2d;
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.Material;
 import androidx.xr.scenecore.impl.impress.Texture;
@@ -41,6 +40,7 @@ import androidx.xr.scenecore.runtime.SceneRuntime;
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.TextureResource;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeSceneRuntime;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 

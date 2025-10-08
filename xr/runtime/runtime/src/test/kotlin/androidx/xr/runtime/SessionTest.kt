@@ -119,7 +119,7 @@ class SessionTest {
         underTest = createSession()
 
         assertThat(getSceneRuntime()).isNotNull()
-        assertThat(getRenderingRuntime().getState().name).isEqualTo("CREATED")
+        assertThat(getRenderingRuntime().state.name).isEqualTo("CREATED")
     }
 
     @Test
@@ -288,7 +288,7 @@ class SessionTest {
 
         activityController.resume()
 
-        assertThat(getRenderingRuntime().getState())
+        assertThat(getRenderingRuntime().state)
             .isEqualTo(FakeRenderingRuntime.State.STARTED) // Corresponds to resumed
     }
 
@@ -358,7 +358,7 @@ class SessionTest {
         activityController.pause()
 
         val renderingRuntime = getRenderingRuntime()
-        assertThat(renderingRuntime.getState()).isEqualTo(FakeRenderingRuntime.State.PAUSED)
+        assertThat(renderingRuntime.state).isEqualTo(FakeRenderingRuntime.State.PAUSED)
     }
 
     @Test
@@ -391,7 +391,7 @@ class SessionTest {
         activityController.destroy()
 
         val renderingRuntime = getRenderingRuntime()
-        assertThat(renderingRuntime.getState()).isEqualTo(FakeRenderingRuntime.State.DESTROYED)
+        assertThat(renderingRuntime.state).isEqualTo(FakeRenderingRuntime.State.DESTROYED)
     }
 
     fun destroy_withMultiple_doesNotSetFinalActivity() {

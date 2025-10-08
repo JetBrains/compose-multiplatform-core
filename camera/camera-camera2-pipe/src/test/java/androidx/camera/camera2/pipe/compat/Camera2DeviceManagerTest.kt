@@ -109,6 +109,10 @@ internal class PruningCamera2DeviceManagerImplTest {
             ): AwaitOpenCameraResult {
                 TODO("Not yet implemented")
             }
+
+            override fun cancelOpen() {
+                TODO("Not yet implemented")
+            }
         }
     private val fakeCamera2ErrorProcessor = Camera2ErrorProcessor()
 

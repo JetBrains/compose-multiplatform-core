@@ -61,47 +61,83 @@ class ProjectedTestAppActivity : ComponentActivity() {
         textView = TextView(this)
         textView.text = "\n\n\n\nWaiting for Geospatial Pose..."
         setContentView(textView)
-        lifecycleScope.launch(Dispatchers.IO) { tryCreateSession() }
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(4000)
+            tryCreateSession()
+            lifecycleScope.launch {
+                Log.i(TAG, "before sessionInitialized.await()")
+                sessionInitialized.await()
+                Log.i(TAG, "sessionInitialized.await()")
+                earth = Earth.getInstance(session)
+                // Check VPS availability
+                checkVpsAvailability(37.422, -122.084) // Googleplex coordinates
+                while (true) {
+                    update()
+                    delay(1000)
+                }
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
         Log.i(TAG, "onResume")
-        lifecycleScope.launch {
-            Log.i(TAG, "before sessionInitialized.await()")
-            sessionInitialized.await()
-            Log.i(TAG, "sessionInitialized.await()")
-            earth = Earth.getInstance(session)
-            // Check VPS availability
-            checkVpsAvailability(37.422, -122.084) // Googleplex coordinates
-            while (true) {
-                when (val geospatialPoseResult = earth.createGeospatialPoseFromDevicePose()) {
-                    is CreateGeospatialPoseFromPoseSuccess -> {
-                        val currentGeospatialPose = geospatialPoseResult.pose
-                        if (initialGeospatialPose == null) {
-                            initialGeospatialPose = currentGeospatialPose
-                        }
-                        Log.i(TAG, "GeospatialPose from device pose: ${currentGeospatialPose}")
+    }
 
-                        checkVpsAvailability(
-                            currentGeospatialPose.latitude,
-                            currentGeospatialPose.longitude,
-                        )
-                        val comparisonMessage = testGeospatialConversions(currentGeospatialPose)
+    override fun onPause() {
+        super.onPause()
+        Log.i(TAG, "onPause")
+    }
 
-                        displayToScreen(currentGeospatialPose, vpsStatusMessage, comparisonMessage)
+    override fun onStop() {
+        super.onStop()
+        Log.i(TAG, "onStop")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.i(TAG, "onDestroy")
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        Log.i(TAG, "onRestart")
+    }
+
+    private fun update() {
+        when (val geospatialPoseResult = earth.createGeospatialPoseFromDevicePose()) {
+            is CreateGeospatialPoseFromPoseSuccess -> {
+                val currentGeospatialPose = geospatialPoseResult.pose
+                val isCurrentPoseValid =
+                    currentGeospatialPose.latitude != 0.0 && currentGeospatialPose.longitude != 0.0
+
+                if (!isCurrentPoseValid) {
+                    Log.w(TAG, "Skipping frame due to invalid currentGeospatialPose.")
+                    runOnUiThread {
+                        textView.text = "\n\n\n\nWaiting for a valid Geospatial Pose..."
                     }
-                    else -> {
-                        Log.e(
-                            TAG,
-                            "Failed to get GeospatialPose from device pose: $geospatialPoseResult",
-                        )
-                        runOnUiThread {
-                            textView.text = "Error getting GeospatialPose: $geospatialPoseResult"
-                        }
-                    }
+                    return
                 }
-                delay(1000)
+
+                if (initialGeospatialPose == null) {
+                    initialGeospatialPose = currentGeospatialPose
+                }
+
+                Log.i(TAG, "GeospatialPose from device pose: ${currentGeospatialPose}")
+
+                checkVpsAvailability(
+                    currentGeospatialPose.latitude,
+                    currentGeospatialPose.longitude,
+                )
+                val comparisonMessage = testGeospatialConversions(currentGeospatialPose)
+
+                displayToScreen(currentGeospatialPose, vpsStatusMessage, comparisonMessage)
+            }
+            else -> {
+                Log.e(TAG, "Failed to get GeospatialPose from device pose: $geospatialPoseResult")
+                runOnUiThread {
+                    textView.text = "Error getting GeospatialPose: $geospatialPoseResult"
+                }
             }
         }
     }
@@ -204,11 +240,12 @@ class ProjectedTestAppActivity : ComponentActivity() {
     }
 
     public fun tryCreateSession() {
-        Log.i(TAG, "tryCreateSession")
+        Log.i(TAG, "Session.create(this)")
         when (val result = Session.create(this)) {
             is SessionCreateSuccess -> {
                 session = result.session
                 try {
+                    Log.i(TAG, "session.configure(config)")
                     when (val configResult = session.configure(config)) {
                         is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
                             Log.e(

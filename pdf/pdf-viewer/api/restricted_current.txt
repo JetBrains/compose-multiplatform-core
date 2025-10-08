@@ -189,9 +189,13 @@ package androidx.pdf.selection {
 
   public final class PdfSelectionMenuKeys {
     property public Object CopyKey;
+    property public Object CopyLinkKey;
+    property public Object GoToKey;
     property public Object SelectAllKey;
     property public Object SmartActionKey;
     field public static final Object CopyKey;
+    field public static final Object CopyLinkKey;
+    field public static final Object GoToKey;
     field public static final androidx.pdf.selection.PdfSelectionMenuKeys INSTANCE;
     field public static final Object SelectAllKey;
     field public static final Object SmartActionKey;

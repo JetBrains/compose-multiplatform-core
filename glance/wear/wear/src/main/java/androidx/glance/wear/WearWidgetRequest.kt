@@ -16,38 +16,48 @@
 
 package androidx.glance.wear
 
-import android.util.Log
+import androidx.annotation.Dimension
 import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope.LIBRARY
 import androidx.glance.wear.parcel.WearWidgetRequestParcel
 import androidx.glance.wear.proto.WearWidgetRequestProto
-import java.io.IOException
 
 /**
  * Request for widget contents.
  *
  * @property instanceId The instance id of the widget for this request. The id is created by the
  *   system and is provided when [GlanceWearWidget.onActivated] is called.
- *
- * TODO: also provide the widget type requested and sizing based on the device.
+ * @property widthDp The width in dp of the container for this widget.
+ * @property heightDp The height in dp of the container for this widget.
  */
-public class WearWidgetRequest(public val instanceId: Int) {
+public class WearWidgetRequest
+@RestrictTo(LIBRARY)
+public constructor(
+    public val instanceId: Int,
+    @Dimension(unit = Dimension.DP) public val widthDp: Float,
+    @Dimension(unit = Dimension.DP) public val heightDp: Float,
+) {
 
     /** Convert this request to [WearWidgetRequestParcel]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @RestrictTo(LIBRARY)
     public fun toParcel(): WearWidgetRequestParcel {
-        val requestProto = WearWidgetRequestProto(instance_id = instanceId)
+        val requestProto =
+            WearWidgetRequestProto(
+                instance_id = instanceId,
+                width_dp = widthDp,
+                height_dp = heightDp,
+            )
         return WearWidgetRequestParcel().apply { payload = requestProto.encode() }
     }
 
     internal companion object {
-        fun fromParcel(requestParcel: WearWidgetRequestParcel): WearWidgetRequest? {
-            try {
-                val requestProto = WearWidgetRequestProto.ADAPTER.decode(requestParcel.payload)
-                return WearWidgetRequest(requestProto.instance_id)
-            } catch (ex: IOException) {
-                Log.e(TAG, "Error deserializing WearWidgetRequestParcel payload.", ex)
-            }
-            return null
+        fun fromParcel(requestParcel: WearWidgetRequestParcel): WearWidgetRequest {
+            val requestProto = WearWidgetRequestProto.ADAPTER.decode(requestParcel.payload)
+            return WearWidgetRequest(
+                instanceId = requestProto.instance_id,
+                widthDp = requestProto.width_dp,
+                heightDp = requestProto.height_dp,
+            )
         }
 
         private const val TAG = "WearWidgetRequest"

@@ -24,16 +24,17 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationCallback
 import androidx.biometric.R
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.utils.AuthenticatorUtils
-import androidx.biometric.utils.BiometricErrorData
 import androidx.biometric.utils.DeviceUtils
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
-import java.lang.ref.WeakReference
+import androidx.lifecycle.lifecycleScope
 import java.util.concurrent.Executor
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * A central coordinator for biometric authentication sessions.
@@ -43,12 +44,12 @@ import java.util.concurrent.Executor
  * composing common authentication logic, such as managing state, dispatching results to the client,
  * and handling lifecycle events.
  *
- * This manager observes a [BiometricViewModel] for authentication results and errors, orchestrating
- * the flow of an authentication session from start to finish.
+ * This manager observes a [AuthenticationViewModel] for authentication results and errors,
+ * orchestrating the flow of an authentication session from start to finish.
  *
  * @param context The application context.
  * @param lifecycleOwner The [LifecycleOwner] associated with the authentication session.
- * @param viewModel The [BiometricViewModel] to manage the state of the authentication prompt.
+ * @param viewModel The [AuthenticationViewModel] to manage the state of the authentication prompt.
  * @param confirmCredentialActivityLauncher A [Runnable] to launch the device credential activity.
  * @param clientExecutor The [Executor] on which to run the client's callback methods.
  * @param clientAuthenticationCallback The client's original [AuthenticationCallback] to be invoked.
@@ -56,7 +57,7 @@ import java.util.concurrent.Executor
 internal class AuthenticationManager(
     val context: Context,
     val lifecycleOwner: LifecycleOwner,
-    val viewModel: BiometricViewModel,
+    val viewModel: AuthenticationViewModel,
     val confirmCredentialActivityLauncher: Runnable,
     clientExecutor: Executor,
     clientAuthenticationCallback: AuthenticationCallback,
@@ -92,74 +93,20 @@ internal class AuthenticationManager(
     /** A flag indicating whether the authentication is already prepared. */
     private var isAuthenticationPrepared: Boolean = false
 
-    private val authenticationResultObserver =
-        Observer { authenticationResult: BiometricPrompt.AuthenticationResult? ->
-            if (authenticationResult != null) {
-                if (viewModel.isPromptShowing) {
-                    resultDispatcher.onAuthenticationSucceeded(authenticationResult)
-                }
-                viewModel.setAuthenticationResult(null)
-            }
-        }
-
-    private val authenticationErrorObserver = Observer { authenticationError: BiometricErrorData? ->
-        if (authenticationError != null) {
-            if (viewModel.isPromptShowing) {
-                resultDispatcher.onAuthenticationError(
-                    authenticationError.errorCode,
-                    authenticationError.errorMessage,
-                )
-            }
-            viewModel.setAuthenticationError(null)
-        }
-    }
-
-    private val isAuthenticationFailurePendingObserver =
-        Observer { authenticationFailurePending: Boolean? ->
-            if (authenticationFailurePending != null && authenticationFailurePending) {
-                if (viewModel.isPromptShowing) {
-                    resultDispatcher.onAuthenticationFailed()
-                }
-                viewModel.setAuthenticationFailurePending(false)
-            }
-        }
+    private var callbackObserverJob: Job? = null
 
     /**
      * Observes a negative button press, which is typically used for either canceling the
      * authentication or falling back to the device's credential screen.
      */
-    val isNegativeButtonPressPendingObserver = Observer { negativeButtonPressPending: Boolean? ->
-        if (negativeButtonPressPending != null && negativeButtonPressPending) {
-            if (viewModel.isPromptShowing) {
-                if (context.isManagingDeviceCredentialButton(viewModel.allowedAuthenticators)) {
-                    resultDispatcher.showKMAsFallback()
-                } else {
-                    onCancelButtonPressed()
-                }
-            }
-            viewModel.setNegativeButtonPressPending(false)
-        }
-    }
-
-    init {
-        // When activity/fragment restarts, we need to check |viewModel.isPromptShowing| for
-        // reconnecting view models.
-        val observer = LifecycleEventObserver { owner, event ->
-            when (event) {
-                Lifecycle.Event.ON_START ->
-                    if (viewModel.isPromptShowing) {
-                        prepareAuth()
-                    }
-
-                Lifecycle.Event.ON_DESTROY -> {
-                    destroy()
-                    lifecycleContainer.clearObservers()
-                }
-
-                else -> {}
+    val isNegativeButtonPressPendingObserver = {
+        if (viewModel.isPromptShowing) {
+            if (context.isManagingDeviceCredentialButton(viewModel.allowedAuthenticators)) {
+                resultDispatcher.showKMAsFallback()
+            } else {
+                onCancelButtonPressed()
             }
         }
-        lifecycleContainer.addObserver(observer)
     }
 
     /**
@@ -182,6 +129,25 @@ internal class AuthenticationManager(
         isInitialized = true
         resultDispatcher?.let { this.resultDispatcher = it }
         uiStateObserver?.let { this.uiStateObserver = it }
+
+        // When activity/fragment restarts, we need to check |viewModel.isPromptShowing| for
+        // reconnecting view models.
+        val observer = LifecycleEventObserver { owner, event ->
+            when (event) {
+                Lifecycle.Event.ON_START ->
+                    if (viewModel.isPromptShowing) {
+                        prepareAuth()
+                    }
+
+                Lifecycle.Event.ON_DESTROY -> {
+                    destroy()
+                    lifecycleContainer.clearObservers()
+                }
+
+                else -> {}
+            }
+        }
+        lifecycleContainer.addObserver(observer)
     }
 
     /**
@@ -203,11 +169,10 @@ internal class AuthenticationManager(
         // PromptInfo has to be set prior to others.
         viewModel.setPromptInfo(info)
 
-        viewModel.setIsIdentityCheckAvailable(
+        viewModel.isIdentityCheckAvailable =
             BiometricManager.from(context).isIdentityCheckAvailable()
-        )
 
-        viewModel.setCryptoObject(crypto)
+        viewModel.cryptoObject = crypto
 
         viewModel.setNegativeButtonTextOverride(
             if (context.isManagingDeviceCredentialButton(viewModel.allowedAuthenticators)) {
@@ -220,7 +185,7 @@ internal class AuthenticationManager(
 
         // Fall back to device credential immediately if no known biometrics are available.
         if (context.isKeyguardManagerNeededForNoBiometric(viewModel.allowedAuthenticators)) {
-            viewModel.setDelayingPrompt(false)
+            viewModel.isDelayingPrompt = false
         }
 
         // Check if we should delay showing the authentication prompt.
@@ -242,33 +207,26 @@ internal class AuthenticationManager(
         if (canceledFrom != CanceledFrom.CLIENT && viewModel.isIgnoringCancel) {
             return
         }
+        viewModel.canceledFrom = canceledFrom
         viewModel.cancellationSignalProvider.cancel()
         destroy()
     }
 
     /** Removes any associated UI from the client activity/fragment. */
     fun dismiss() {
-        viewModel.setPromptShowing(false)
-        viewModel.setConfirmingDeviceCredential(false)
+        viewModel.isPromptShowing = false
+        viewModel.isConfirmingDeviceCredential = false
 
         // Wait before showing again to work around a dismissal logic issue on API 29 (b/157783075).
         if (DeviceUtils.shouldDelayShowingPrompt(context, Build.MODEL)) {
-            viewModel.setDelayingPrompt(true)
-            // TODO: add a setDelayedDelayingPrompt in viewmodel and replace this class with
-            // viewModel.setDelayedDelayingPrompt(false, SHOW_PROMPT_DELAY_MS.toLong())
-            mainHandler.postDelayed(
-                StopDelayingPromptRunnable(viewModel),
-                SHOW_PROMPT_DELAY_MS.toLong(),
-            )
+            viewModel.isDelayingPrompt = true
+            viewModel.setDelayedDelayingPrompt(false, SHOW_PROMPT_DELAY_MS.toLong())
         }
         destroy()
     }
 
     /** Prepares the authentication, setting up view model observers. */
     private fun prepareAuth() {
-        viewModel.setAuthenticationError(null)
-        viewModel.setAuthenticationResult(null)
-
         if (isAuthenticationPrepared) {
             return
         }
@@ -285,10 +243,8 @@ internal class AuthenticationManager(
             Build.VERSION.SDK_INT == Build.VERSION_CODES.Q &&
                 AuthenticatorUtils.isDeviceCredentialAllowed(viewModel.allowedAuthenticators)
         ) {
-            viewModel.setIgnoringCancel(true)
-            // TODO: add a setDelayedIgnoringCancel in viewmodel and replace this class with
-            // viewModel.setDelayedIgnoringCancel(false, 250L)
-            mainHandler.postDelayed(StopIgnoringCancelRunnable(viewModel), 250L)
+            viewModel.isIgnoringCancel = true
+            viewModel.setDelayedIgnoringCancel(false, 250L)
         }
 
         // TODO(b/263800618): Add lifecycle observer to cancel authentication when the app enters
@@ -313,24 +269,43 @@ internal class AuthenticationManager(
     }
 
     /**
-     * Connects the [BiometricViewModel] for the ongoing authentication session. This method is
+     * Connects the [AuthenticationViewModel] for the ongoing authentication session. This method is
      * paired with [disconnectCallbackObservers].
      */
     private fun connectCallbackObservers() {
-        viewModel.authenticationResult.observe(lifecycleOwner, authenticationResultObserver)
-        viewModel.authenticationError.observe(lifecycleOwner, authenticationErrorObserver)
-        viewModel
-            .isAuthenticationFailurePending()
-            .observe(lifecycleOwner, isAuthenticationFailurePendingObserver)
+        callbackObserverJob =
+            lifecycleOwner.lifecycleScope.launch {
+                launch {
+                    viewModel.authenticationResult.collect { authenticationResult ->
+                        if (viewModel.isPromptShowing) {
+                            resultDispatcher.onAuthenticationSucceeded(authenticationResult)
+                        }
+                    }
+                }
+                launch {
+                    viewModel.authenticationError.collect { authenticationError ->
+                        if (viewModel.isPromptShowing) {
+                            resultDispatcher.onAuthenticationError(
+                                authenticationError.errorCode,
+                                authenticationError.errorMessage,
+                            )
+                        }
+                    }
+                }
+                launch {
+                    viewModel.isAuthenticationFailurePending.collect {
+                        if (viewModel.isPromptShowing) {
+                            resultDispatcher.onAuthenticationFailed()
+                        }
+                    }
+                }
+            }
     }
 
-    /** Disconnects all observers from the [BiometricViewModel]. */
+    /** Disconnects all observers from the [AuthenticationViewModel]. */
     private fun disconnectCallbackObservers() {
-        viewModel.authenticationResult.removeObserver(authenticationResultObserver)
-        viewModel.authenticationError.removeObserver(authenticationErrorObserver)
-        viewModel
-            .isAuthenticationFailurePending()
-            .removeObserver(isAuthenticationFailurePendingObserver)
+        callbackObserverJob?.cancel()
+        callbackObserverJob = null
     }
 
     /**
@@ -341,7 +316,7 @@ internal class AuthenticationManager(
         val negativeButtonText: CharSequence? = viewModel.negativeButtonText
 
         resultDispatcher.sendErrorAndDismiss(
-            androidx.biometric.BiometricPrompt.ERROR_NEGATIVE_BUTTON,
+            BiometricPrompt.ERROR_NEGATIVE_BUTTON,
             negativeButtonText ?: context.getString(R.string.default_error_msg),
         )
 
@@ -356,14 +331,14 @@ internal class AuthenticationManager(
     private fun showPromptForAuthentication(showAuthentication: () -> Unit) {
         showAuthentication()
 
-        viewModel.setPromptShowing(true)
-        viewModel.setAwaitingResult(true)
+        viewModel.isPromptShowing = true
+        viewModel.isAwaitingResult = true
     }
 
     private companion object {
         /**
          * The amount of time (in milliseconds) to wait before showing the authentication UI if
-         * [BiometricViewModel.isDelayingPrompt] is `true`.
+         * [AuthenticationViewModel.isDelayingPrompt] is `true`.
          */
         private const val SHOW_PROMPT_DELAY_MS = 600
     }
@@ -382,36 +357,5 @@ private class AppLifecycleListener(val onBackgrounded: () -> Unit = {}) : Defaul
     override fun onStop(owner: LifecycleOwner) {
         // app moved to background
         onBackgrounded()
-    }
-}
-
-// TODO(b/178855209): Remove this after converting viewmodel to kotlin
-/**
- * A runnable with a weak reference to a [BiometricViewModel] that can be used to invoke
- * [BiometricViewModel.setDelayingPrompt] with a value of `false`.
- */
-private class StopDelayingPromptRunnable(viewModel: BiometricViewModel?) : Runnable {
-    private val mViewModelRef: WeakReference<BiometricViewModel?> =
-        WeakReference<BiometricViewModel?>(viewModel)
-
-    override fun run() {
-        if (mViewModelRef.get() != null) {
-            mViewModelRef.get()!!.isDelayingPrompt = false
-        }
-    }
-}
-
-/**
- * A runnable with a weak reference to a {@link BiometricViewModel} that can be used to invoke
- * {@link BiometricViewModel#setIgnoringCancel(boolean)} with a value of {@code false}.
- */
-private class StopIgnoringCancelRunnable(viewModel: BiometricViewModel?) : Runnable {
-    private val mViewModelRef: WeakReference<BiometricViewModel?>? =
-        WeakReference<BiometricViewModel?>(viewModel)
-
-    override fun run() {
-        if (mViewModelRef!!.get() != null) {
-            mViewModelRef.get()!!.isIgnoringCancel = false
-        }
     }
 }

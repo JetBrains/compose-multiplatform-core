@@ -32,8 +32,7 @@ public class `$LocalDateTimeFactory` : AppFunctionSerializableFactory<LocalDateT
         val appFunctionDataWithSpec =
             getAppFunctionDataWithSpec(
                 appFunctionData = appFunctionData,
-                qualifiedName =
-                    "androidx.appfunctions.internal.serializableproxies.AppFunctionLocalDateTime",
+                qualifiedName = "java.time.LocalDateTime",
             )
         val year = checkNotNull(appFunctionDataWithSpec.getIntOrNull("year"))
         val month = checkNotNull(appFunctionDataWithSpec.getIntOrNull("month"))
@@ -52,10 +51,7 @@ public class `$LocalDateTimeFactory` : AppFunctionSerializableFactory<LocalDateT
         val appFunctionLocalDateTime_appFunctionSerializable =
             AppFunctionLocalDateTime.fromLocalDateTime(appFunctionSerializable)
 
-        val builder =
-            getAppFunctionDataBuilder(
-                "androidx.appfunctions.internal.serializableproxies.AppFunctionLocalDateTime"
-            )
+        val builder = getAppFunctionDataBuilder("java.time.LocalDateTime")
         val year = appFunctionLocalDateTime_appFunctionSerializable.year
         builder.setInt("year", year)
         val month = appFunctionLocalDateTime_appFunctionSerializable.month

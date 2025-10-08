@@ -93,6 +93,9 @@ public interface Scene<T : Any> {
      * Provide [Scene]-specific information to [androidx.navigation3.ui.NavDisplay].
      *
      * By default includes the metadata of the last [NavEntry] in [entries].
+     *
+     * @sample androidx.navigation3.ui.samples.SceneDefaultTransitionsSample
+     * @sample androidx.navigation3.ui.samples.SceneOverrideEntryTransitionsSample
      */
     public val metadata: Map<String, Any>
         get() = entries.lastOrNull()?.metadata ?: emptyMap()

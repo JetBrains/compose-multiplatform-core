@@ -247,6 +247,20 @@ package androidx.appsearch.builtintypes {
     method public androidx.appsearch.builtintypes.MobileApplication.Builder setUrl(String?);
   }
 
+  @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.JOIN_SPEC_AND_QUALIFIED_ID) @androidx.appsearch.annotation.Document(name="builtin:Nickname") @androidx.appsearch.app.ExperimentalAppSearchApi public class Nickname {
+    method public java.util.List<java.lang.String!> getAlternateNames();
+    method public String getId();
+    method public String getNamespace();
+    method public String getReferencedQualifiedId();
+  }
+
+  public static final class Nickname.Builder {
+    ctor public Nickname.Builder(androidx.appsearch.builtintypes.Nickname);
+    ctor public Nickname.Builder(String, String, String);
+    method public androidx.appsearch.builtintypes.Nickname build();
+    method public androidx.appsearch.builtintypes.Nickname.Builder setAlternateNames(java.util.List<java.lang.String!>?);
+  }
+
   @androidx.appsearch.annotation.Document(name="builtin:Organization") public class Organization extends androidx.appsearch.builtintypes.Thing {
     ctor protected Organization(String, String, int, long, long, String?, java.util.List<java.lang.String!>?, String?, String?, String?, java.util.List<androidx.appsearch.builtintypes.PotentialAction!>, androidx.appsearch.builtintypes.ImageObject?);
     method public androidx.appsearch.builtintypes.ImageObject? getLogo();

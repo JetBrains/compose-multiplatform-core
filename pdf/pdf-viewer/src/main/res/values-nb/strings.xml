@@ -17,6 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="label_copy_link" msgid="869104793055534158">"Kopier linken"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"Gå til"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"Denne filen er beskyttet"</string>
     <string name="label_password_first" msgid="4456258714097111908">"Passord"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"Feil passord. Prøv på nytt."</string>
@@ -30,6 +32,10 @@
     <string name="desc_zoom" msgid="7318480946145947242">"zoom <xliff:g id="FIRST">%1$d</xliff:g> prosent"</string>
     <string name="desc_goto" msgid="1333698934111921601">"Gå til"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"Gå til side <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>"</string>
+    <string name="desc_copy" msgid="385275789223074637">"Kopierer det valgte innholdet til utklippstavlen"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"Kopierer linken til utklippstavlen"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"Går til delen eller siden i PDF-filen"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"Velger all teksten i PDF-filen"</string>
     <string name="desc_page" msgid="6702471448987833953">"Side <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"Blank side"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"Side <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>

@@ -33,14 +33,14 @@ plugins {
 }
 
 dependencies {
+    def composeVersion = "1.9.0"
+
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     api("androidx.annotation:annotation:1.9.1")
+    api("androidx.compose.runtime:runtime:$composeVersion")
     api("androidx.lifecycle:lifecycle-service:2.9.2")
 
-    def composeVersion = "1.9.0"
-
-    implementation("androidx.compose.runtime:runtime:$composeVersion")
     implementation(project(":compose:remote:remote-creation"))
     implementation(project(":compose:remote:remote-creation-compose"))
 
@@ -55,6 +55,7 @@ dependencies {
     androidTestImplementation(project(":compose:remote:test-utils"))
     androidTestImplementation(project(":compose:remote:remote-player-core"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
+    implementation("androidx.compose.ui:ui-graphics:$composeVersion")
     androidTestImplementation("androidx.compose.foundation:foundation:$composeVersion")
 }
 

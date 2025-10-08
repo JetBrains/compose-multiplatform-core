@@ -20,10 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Face
 import androidx.xr.runtime.TrackingState
 
-/**
- * Wraps the native XrFaceStateANDROID with the [androidx.xr.arcore.runtime.internal.Face]
- * interface.
- */
+/** Wraps the native XrFaceStateANDROID with the [androidx.xr.arcore.runtime.Face] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrFace : Updatable, Face {
     public override var trackingState: TrackingState = TrackingState.PAUSED

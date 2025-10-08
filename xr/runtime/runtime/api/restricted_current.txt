@@ -428,10 +428,6 @@ package androidx.xr.runtime.internal {
     ctor public GooglePlayServicesLocationLibraryNotLinkedException(optional Throwable? cause);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface JxrPlatformAdapterFactory extends androidx.xr.runtime.internal.Service {
-    method public androidx.xr.runtime.internal.JxrRuntime createPlatformAdapter(android.app.Activity activity, optional boolean unscaledGravityAlignedActivitySpace);
-  }
-
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface JxrRuntime {
     method public default void configure(androidx.xr.runtime.Config config);
     method public default void destroy();

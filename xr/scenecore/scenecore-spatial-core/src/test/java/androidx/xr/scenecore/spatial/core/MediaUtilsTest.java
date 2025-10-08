@@ -22,10 +22,10 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.runtime.PointSourceParams;
 import androidx.xr.scenecore.runtime.SoundFieldAttributes;
 import androidx.xr.scenecore.runtime.SpatializerConstants;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 
 import com.android.extensions.xr.media.SpatializerExtensions;
 import com.android.extensions.xr.node.Node;

@@ -130,6 +130,7 @@ public class WebViewFeature {
             WARM_UP_RENDERER_PROCESS,
             PRECONNECT,
             HYPERLINK_CONTEXT_MENU_ITEMS,
+            CUSTOM_REQUEST_HEADERS,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -780,6 +781,22 @@ public class WebViewFeature {
      * {@link Profile#clearAllOriginMatchedHeaders()}.
      */
     public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     *
+     * <p>This feature covers
+     * {@link Profile#addCustomHeader(androidx.webkit.CustomHeader)},
+     * {@link Profile#hasCustomHeader(String)},
+     * {@link Profile#getCustomHeaders()},
+     * {@link Profile#getCustomHeaders(String)},
+     * {@link Profile#getCustomHeaders(String, String)},
+     * {@link Profile#clearCustomHeader(String)},
+     * {@link Profile#clearCustomHeader(String, String)}, and
+     * {@link Profile#clearAllCustomHeaders()}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String CUSTOM_REQUEST_HEADERS = "CUSTOM_REQUEST_HEADERS";
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.

@@ -23,11 +23,13 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.biometric.BiometricPrompt
+import androidx.biometric.internal.data.FakeAuthenticationStateRepository
+import androidx.biometric.internal.data.FakePromptConfigRepository
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.utils.BiometricErrorData
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.test.core.app.ApplicationProvider
@@ -35,12 +37,15 @@ import androidx.test.espresso.intent.Intents
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
 import java.util.concurrent.Executor
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -52,10 +57,11 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowKeyguardManager
 
 @RunWith(RobolectricTestRunner::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class AuthenticationHandlerKeyguardManagerTest {
-    @get:Rule val mocks = MockitoJUnit.rule()
     private lateinit var context: Application
-    private val viewModel: BiometricViewModel = BiometricViewModel()
+    private val viewModel: AuthenticationViewModel =
+        AuthenticationViewModel(FakePromptConfigRepository(), FakeAuthenticationStateRepository())
     private val mockLauncherRunnable: Runnable = mock()
     private val mockCallback: BiometricPrompt.AuthenticationCallback = mock()
     private val testExecutor: Executor = MoreExecutors.directExecutor()
@@ -139,28 +145,35 @@ class AuthenticationHandlerKeyguardManagerTest {
     }
 
     @Test
-    fun handleConfirmCredentialResult_resultOk_wasUsingKeyguardManager() {
-        val captor = argumentCaptor<BiometricPrompt.AuthenticationResult>()
-        val observer = mock<Observer<BiometricPrompt.AuthenticationResult>>()
-        viewModel.authenticationResult.observeForever(observer)
+    fun handleConfirmCredentialResult_resultOk_wasUsingKeyguardManager() =
+        runTest(UnconfinedTestDispatcher()) {
+            var authenticationResult: BiometricPrompt.AuthenticationResult? = null
+            val job = launch {
+                viewModel.authenticationResult.collect { authenticationResult = it }
+            }
 
-        handleConfirmCredentialResult(context, viewModel, Activity.RESULT_OK)
+            handleConfirmCredentialResult(context, viewModel, Activity.RESULT_OK)
+            runCurrent()
 
-        verify(observer).onChanged(captor.capture())
-        assertThat(captor.lastValue.authenticationType)
-            .isEqualTo(BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL)
-        assertThat(captor.lastValue.cryptoObject).isNull()
-    }
+            assertThat(authenticationResult).isNotNull()
+            assertThat(authenticationResult!!.authenticationType)
+                .isEqualTo(BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL)
+            assertThat(authenticationResult.cryptoObject).isNull()
+            job.cancel()
+        }
 
     @Test
-    fun handleConfirmCredentialResult_resultCanceled() {
-        val captor = argumentCaptor<BiometricErrorData>()
-        val observer = mock<Observer<BiometricErrorData>>()
-        viewModel.authenticationError.observeForever(observer)
+    fun handleConfirmCredentialResult_resultCanceled() =
+        runTest(UnconfinedTestDispatcher()) {
+            var authenticationError: BiometricErrorData? = null
+            val job = launch { viewModel.authenticationError.collect { authenticationError = it } }
 
-        handleConfirmCredentialResult(context, viewModel, Activity.RESULT_CANCELED)
+            handleConfirmCredentialResult(context, viewModel, Activity.RESULT_CANCELED)
+            runCurrent()
 
-        verify(observer).onChanged(captor.capture())
-        assertThat(captor.lastValue.errorCode).isEqualTo(BiometricPrompt.ERROR_USER_CANCELED)
-    }
+            assertThat(authenticationError).isNotNull()
+            assertThat(authenticationError!!.errorCode)
+                .isEqualTo(BiometricPrompt.ERROR_USER_CANCELED)
+            job.cancel()
+        }
 }

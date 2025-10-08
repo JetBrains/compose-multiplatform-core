@@ -28,7 +28,7 @@ import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-/** Wraps the native [XrSpace] with the [androidx.xr.arcore.runtime.internal.Anchor] interface. */
+/** Wraps the native [XrSpace] with the [androidx.xr.arcore.runtime.Anchor] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrAnchor
 internal constructor(

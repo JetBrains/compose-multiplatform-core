@@ -19,6 +19,7 @@ package androidx.tracing.driver.wire
 import androidx.tracing.driver.AtomicInteger
 import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.DEFAULT_STRING
+import androidx.tracing.driver.LAST_INDEX_WHEN_EMPTY
 import androidx.tracing.driver.METADATA_ENTRIES_EXPECTED_SIZE
 import androidx.tracing.driver.METADATA_TYPE_BOOLEAN
 import androidx.tracing.driver.METADATA_TYPE_DOUBLE
@@ -175,7 +176,12 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                 scratchTrackEvent.counter_value = event.counterLongValue
                 scratchTrackEvent.double_counter_value = event.counterDoubleValue
                 scratchTrackEvent.flow_ids = event.flowIds
-                scratchTrackEvent.categories = event.categories
+                if (event.lastCategoryIndex > LAST_INDEX_WHEN_EMPTY) {
+                    // Categories should only be set when we actually have incoming categories
+                    scratchTrackEvent.categories = event.categories
+                } else {
+                    scratchTrackEvent.categories = emptyList()
+                }
                 // Debug annotations
                 var index = -1
                 event.forEachMetadataEntry { metadataEntry ->

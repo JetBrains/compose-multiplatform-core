@@ -96,7 +96,7 @@ public class RemoteBitmapFont(
      * @return A [RemoteFloat] representing the calculated width in pixels.
      */
     public fun measureWidth(text: RemoteString): RemoteFloat {
-        return RemoteFloatExpression(text.hasConstantValue) { creationState ->
+        return RemoteFloatExpression(constantValue = null) { creationState ->
             floatArrayOf(
                 creationState.document.bitmapTextMeasure(
                     text.getIdForCreationState(creationState),
@@ -115,7 +115,7 @@ public class RemoteBitmapFont(
      * @return A [RemoteFloat] representing the calculated height in pixels.
      */
     public fun measureHeight(text: RemoteString): RemoteFloat {
-        return RemoteFloatExpression(text.hasConstantValue) { creationState ->
+        return RemoteFloatExpression(constantValue = null) { creationState ->
             floatArrayOf(
                 creationState.document.bitmapTextMeasure(
                     text.getIdForCreationState(creationState),

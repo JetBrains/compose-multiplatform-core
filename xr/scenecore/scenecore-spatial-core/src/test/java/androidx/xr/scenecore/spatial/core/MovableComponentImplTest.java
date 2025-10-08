@@ -52,7 +52,6 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.Anchor;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
@@ -69,6 +68,7 @@ import androidx.xr.scenecore.runtime.PanelEntity;
 import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.PlaneSemantic;
 import androidx.xr.scenecore.runtime.PlaneType;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -154,7 +154,8 @@ public class MovableComponentImplTest {
     }
 
     private Entity createTestEntity() {
-        return mFakeRuntime.createGroupEntity(new Pose(), "test", mFakeRuntime.getActivitySpace());
+        return mFakeRuntime.createGroupEntity(new Pose(), "test",
+                mFakeRuntime.getActivitySpace());
     }
 
     private PanelEntity createTestPanelEntity() {
@@ -351,10 +352,12 @@ public class MovableComponentImplTest {
         assertThat(entity.addComponent(movableComponent)).isTrue();
 
         Pose expectedPose =
-                new Pose(new Vector3(2f, 2f, 2f), new Quaternion(0.5f, 0.5f, 0.5f, 0.5f));
+                new Pose(new Vector3(2f, 2f, 2f), new Quaternion(0.5f, 0.5f,
+                        0.5f, 0.5f));
         Vector3 expectedScale = new Vector3(1.2f, 1.2f, 1.2f);
 
-        entity.setPose(new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f, 0f, 1f)));
+        entity.setPose(new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f,
+                0f, 1f)));
         entity.setScale(new Vector3(1f, 1f, 1f));
 
         ReformEvent reformEvent =
@@ -390,9 +393,11 @@ public class MovableComponentImplTest {
 
         assertThat(entity.addComponent(movableComponent)).isTrue();
 
-        Pose expectedPose = new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPose = new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f,
+                0f, 1f));
         Vector3 expectedScale = new Vector3(1f, 1f, 1f);
-        entity.setPose(new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f, 0f, 1f)));
+        entity.setPose(new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f,
+                0f, 1f)));
         entity.setScale(new Vector3(1f, 1f, 1f));
 
         ReformEvent reformEvent =
@@ -792,7 +797,8 @@ public class MovableComponentImplTest {
     public void anchorable_updatesThePoseBasedOnPlanes() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
@@ -800,7 +806,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -858,7 +865,8 @@ public class MovableComponentImplTest {
         // The expected position should be 3 unit above the activity in order to rest on the plane.
         // It is 3 units because the activity space is 1 unit below of the origin and the plane is 2
         // units above it.
-        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
@@ -877,7 +885,8 @@ public class MovableComponentImplTest {
     public void anchorable_nullParent_updatesThePoseBasedOnPlanes() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
@@ -885,7 +894,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -944,7 +954,8 @@ public class MovableComponentImplTest {
         // The expected position should be 3 unit above the activity in order to rest on the plane.
         // It is 3 units because the activity space is 1 unit below of the origin and the plane is 2
         // units above it.
-        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
@@ -958,7 +969,8 @@ public class MovableComponentImplTest {
     public void anchorable_updatesPoseButDoesNotMove_ifNotSystemMovable() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
@@ -966,7 +978,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1024,7 +1037,8 @@ public class MovableComponentImplTest {
         // The expected position should be 3 unit above the activity in order to rest on the plane.
         // It is 3 units because the activity space is 1 unit below of the origin and the plane is 2
         // units above it.
-        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mLastMoveEvent.getUpdatedParent()).isNull();
@@ -1042,7 +1056,8 @@ public class MovableComponentImplTest {
     public void anchorable_withNonActivityParent_updatesPoseBasedOnPlanesAndParent() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
@@ -1050,7 +1065,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(
+                        0f, 2f, 0f, 0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1062,7 +1078,8 @@ public class MovableComponentImplTest {
 
         // Create a parent entity whose pose is below the activity space pose.
         Entity parentEntity = createTestEntity();
-        parentEntity.setPose(new Pose(new Vector3(0f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)));
+        parentEntity.setPose(new Pose(new Vector3(0f, -1f, 0f), new Quaternion(0f,
+                0f, 0f, 1f)));
         PanelEntity entity = createTestPanelEntity();
         entity.setParent(parentEntity);
         // Set anchorPlacement to any plane.
@@ -1113,7 +1130,8 @@ public class MovableComponentImplTest {
         // It is 3 units because the activity space is 1 unit below of the origin and the plane is 2
         // units above it. Since the parent is 1 unit below the activity space, the expected
         // position should be 4 units above the parent.
-        Pose expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
@@ -1127,7 +1145,8 @@ public class MovableComponentImplTest {
     public void anchorableAndScaledParent_updatesThePoseBasedOnPlanes() {
         // Set the activity space pose to be 1 unit to the left of the origin. with a scale of 2.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 2f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 2f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
@@ -1135,7 +1154,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1194,7 +1214,8 @@ public class MovableComponentImplTest {
         // It is 1.5 units because the activity space is 1 unit below of the origin and the plane is
         // 2 units above it and the activity space is scaled by 2.
         Pose expectedPosition =
-                new Pose(new Vector3(.5f, 1.5f, .5f), new Quaternion(0f, 0f, 0f, 1f));
+                new Pose(new Vector3(.5f, 1.5f, .5f), new Quaternion(0f, 0f, 0f,
+                        1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
@@ -1205,7 +1226,8 @@ public class MovableComponentImplTest {
     public void anchorable_withinAnchorDistance_setsAnchorEntity() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -1217,7 +1239,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1284,7 +1307,8 @@ public class MovableComponentImplTest {
         // rotation around the x-axis Which is expected when the panel is rotated into the plane's
         // reference space.
         Pose expectedPosition =
-                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f, 0.707f));
+                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f,
+                        0.707f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(2);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -1299,7 +1323,8 @@ public class MovableComponentImplTest {
     public void anchorable_withinAnchorDistanceAboveAnchor_resetsPose() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -1311,7 +1336,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1367,7 +1393,8 @@ public class MovableComponentImplTest {
         // it would be right above the plane.
         ShadowReformEvent.extract(reformEvent)
                 .setProposedPosition(
-                        new Vec3(1f, 3f + MovableComponentImpl.MIN_PLANE_ANCHOR_DISTANCE / 2f, 1f));
+                        new Vec3(1f, 3f + MovableComponentImpl.MIN_PLANE_ANCHOR_DISTANCE / 2f,
+                                1f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 
@@ -1381,7 +1408,8 @@ public class MovableComponentImplTest {
         // degree rotation around the x-axis Which is expected when the panel is rotated into the
         // plane's reference space.
         Pose expectedPosition =
-                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f, 0.707f));
+                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f,
+                        0.707f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(2);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -1396,7 +1424,8 @@ public class MovableComponentImplTest {
     public void anchorable_withIncorrectPlaneType_doesNotCreateAnchor() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -1408,7 +1437,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1474,7 +1504,8 @@ public class MovableComponentImplTest {
         // It is 3 units because the activity space is 1 unit below of the origin and the plane is 2
         // units above it. However, since the plane is not a table plane, the anchor should not be
         // created.
-        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -1488,7 +1519,8 @@ public class MovableComponentImplTest {
         // of 2.
         float activityScale = 2f;
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), activityScale);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), activityScale);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -1500,7 +1532,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1556,7 +1589,8 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 1  above the origin. so it would need to move up 1 unit to
         // be on the plane. This needs to be divided by the scale of the activity space.
-        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(.5f, .5f, .5f));
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(.5f, .5f,
+                .5f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 
@@ -1570,7 +1604,8 @@ public class MovableComponentImplTest {
         // 90 degree rotation around the x-axis. Which is expected when the panel is rotated into
         // the plane's reference space.
         Pose expectedPosition =
-                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f, 0.707f));
+                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f,
+                        0.707f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(2);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -1586,7 +1621,8 @@ public class MovableComponentImplTest {
     public void anchorable_noPlanes_keepsProposedPose() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
         when(session.getAllPlanes()).thenReturn(ImmutableList.of());
@@ -1634,7 +1670,8 @@ public class MovableComponentImplTest {
         executorService.runAll();
 
         // The expected position should be unchanged from the proposed event
-        Pose expectedPosition = new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
@@ -1644,7 +1681,8 @@ public class MovableComponentImplTest {
     public void anchorable_noPlaneData_keepsProposedPose() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
         Plane plane = mock(Plane.class);
@@ -1692,7 +1730,8 @@ public class MovableComponentImplTest {
         executorService.runAll();
 
         // The expected position should be unchanged from the proposed event
-        Pose expectedPosition = new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
@@ -1703,7 +1742,8 @@ public class MovableComponentImplTest {
     public void anchorable_outsideExtents_keepsProposedPose() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
         Plane plane = mock(Plane.class);
@@ -1711,7 +1751,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(5f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(5f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1764,7 +1805,8 @@ public class MovableComponentImplTest {
         executorService.runAll();
 
         // The expected position should be unchanged from the proposed event
-        Pose expectedPosition = new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
@@ -1775,7 +1817,8 @@ public class MovableComponentImplTest {
     public void anchorable_resetsToActivityPoseAfterAnchoring() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -1787,7 +1830,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1855,7 +1899,8 @@ public class MovableComponentImplTest {
         // degree rotation around the x-axis Which is expected when the panel is rotated into the
         // plane's reference space.
         Pose expectedPosition =
-                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f, 0.707f));
+                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f,
+                        0.707f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(2);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -1881,7 +1926,8 @@ public class MovableComponentImplTest {
 
         // Moving to (1, 4, 1) relative to the activity space. This should pull the entity away from
         // the anchor and it should be reparented to the activity space.
-        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f,
+                0f, 1f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(3);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -1899,7 +1945,8 @@ public class MovableComponentImplTest {
         // of 2.
         float activityScale = 2f;
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), activityScale);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), activityScale);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -1911,7 +1958,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -1966,7 +2014,8 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 1  above the origin. so it would need to move up 1 unit to
         // be on the plane. This needs to be divided by the scale of the activity space.
-        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(.5f, .5f, .5f));
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(.5f, .5f,
+                .5f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 
@@ -1980,7 +2029,8 @@ public class MovableComponentImplTest {
         // 90 degree rotation around the x-axis. Which is expected when the panel is rotated into
         // the plane's reference space.
         Pose expectedPosition =
-                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f, 0.707f));
+                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f,
+                        0.707f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(2);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -1999,7 +2049,8 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 4 above the activity space so it would be off the plane. It
         // should reset to the activity space pose and rotation.
-        ShadowReformEvent.extract(secondReformEvent).setProposedPosition(new Vec3(1f, 4f, 1f));
+        ShadowReformEvent.extract(secondReformEvent).setProposedPosition(new Vec3(1f, 4f,
+                1f));
 
         sendReformEvent(getEntityNode(entity), secondReformEvent);
 
@@ -2009,7 +2060,8 @@ public class MovableComponentImplTest {
 
         // Moving to (1, 4, 1) relative to the activity space. This should pull the entity away from
         // the anchor and it should be reparented to the activity space.
-        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f,
+                0f, 1f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(3);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -2027,7 +2079,8 @@ public class MovableComponentImplTest {
     public void anchorableChildOfEntity_resetsToActivityPoseAfterAnchoring() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -2039,7 +2092,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -2051,7 +2105,8 @@ public class MovableComponentImplTest {
 
         // Create a parent entity whose pose is below the activity space pose.
         Entity parentEntity = createTestEntity();
-        parentEntity.setPose(new Pose(new Vector3(0f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)));
+        parentEntity.setPose(new Pose(new Vector3(0f, -1f, 0f), new Quaternion(0f,
+                0f, 0f, 1f)));
         PanelEntity entity = createTestPanelEntity();
         entity.setParent(parentEntity);
 
@@ -2098,7 +2153,8 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 1 above the origin. It would need to move up 1 unit to be on
         // the plane.
-        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f, 1.0f));
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f,
+                1.0f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 
@@ -2112,7 +2168,8 @@ public class MovableComponentImplTest {
         // degree rotation around the x-axis Which is expected when the panel is rotated into the
         // plane's reference space.
         Pose expectedPosition =
-                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f, 0.707f));
+                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f,
+                        0.707f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(2);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -2128,7 +2185,8 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 4 above the origin so it would be off the plane. It should
         // reset to the activity space pose and rotation.
-        ShadowReformEvent.extract(secondReformEvent).setProposedPosition(new Vec3(1f, 4f, 1f));
+        ShadowReformEvent.extract(secondReformEvent).setProposedPosition(new Vec3(1f, 4f,
+                1f));
 
         sendReformEvent(getEntityNode(entity), secondReformEvent);
 
@@ -2138,7 +2196,8 @@ public class MovableComponentImplTest {
 
         // Moving to (1, 4, 1) relative to the activity space. This should pull the entity away from
         // the anchor and it should be reparented to the activity space not the original parent..
-        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f,
+                0f, 1f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(3);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -2154,7 +2213,8 @@ public class MovableComponentImplTest {
     public void anchorable_shouldDispose_disposesAnchorAfterUnparenting() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -2166,7 +2226,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -2220,7 +2281,8 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 1  above the origin. so it would need to move up 1 unit to
         // be on the plane.
-        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f, 1.0f));
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f,
+                1.0f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 
@@ -2234,7 +2296,8 @@ public class MovableComponentImplTest {
         // degree rotation around the x-axis Which is expected when the panel is rotated into the
         // plane's reference space.
         Pose expectedPosition =
-                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f, 0.707f));
+                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f,
+                        0.707f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(2);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -2253,7 +2316,8 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 4 above the origin so it would be off the plane. It should
         // reset to the activity space pose and rotation.
-        ShadowReformEvent.extract(secondReformEvent).setProposedPosition(new Vec3(1f, 4f, 1f));
+        ShadowReformEvent.extract(secondReformEvent).setProposedPosition(new Vec3(1f, 4f,
+                1f));
 
         sendReformEvent(getEntityNode(entity), secondReformEvent);
 
@@ -2263,7 +2327,8 @@ public class MovableComponentImplTest {
 
         // Moving to (1, 4, 1) relative to the activity space. This should pull the entity away from
         // the anchor and it should be reparented to the activity space.
-        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f,
+                0f, 1f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(3);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -2283,7 +2348,8 @@ public class MovableComponentImplTest {
     public void anchorable_shouldDispose_doeNotDisposeIfAnchorHasChildren() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Anchor anchor = mock(Anchor.class);
@@ -2295,7 +2361,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -2349,7 +2416,8 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 1  above the origin. so it would need to move up 1 unit to
         // be on the plane.
-        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f, 1.0f));
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f,
+                1.0f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 
@@ -2363,7 +2431,8 @@ public class MovableComponentImplTest {
         // degree rotation around the x-axis Which is expected when the panel is rotated into the
         // plane's reference space.
         Pose expectedPosition =
-                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f, 0.707f));
+                new Pose(new Vector3(0f, 0f, 1f), new Quaternion(-0.707f, 0f, 0f,
+                        0.707f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(2);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -2395,7 +2464,8 @@ public class MovableComponentImplTest {
 
         // Moving to (1, 4, 1) relative to the activity space. This should pull the entity away from
         // the anchor and it should be reparented to the activity space.
-        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        expectedPosition = new Pose(new Vector3(1f, 4f, 1f), new Quaternion(0f, 0f,
+                0f, 1f));
 
         assertThat(moveEventListener.mCallCount).isEqualTo(3);
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
@@ -2415,7 +2485,8 @@ public class MovableComponentImplTest {
     public void anchorable_ignoresInvalidPlanes() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         Plane invalidPlane = mock(Plane.class);
@@ -2425,7 +2496,8 @@ public class MovableComponentImplTest {
         // Create a perception plane that is 2 units above the origin and another one that is
         // invalid.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -2436,7 +2508,8 @@ public class MovableComponentImplTest {
         when(plane.getData(any())).thenReturn(planeData);
         // Have a second plane return invalid data, it should be ignored.
         androidx.xr.scenecore.impl.perception.Pose perceptionPoseInvalid =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 0f, 0f, 0f, 0f, 0f, 0f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 0f, 0f,
+                        0f, 0f, 0f, 0f);
         PlaneData planeDataInvalid =
                 new PlaneData(
                         perceptionPoseInvalid,
@@ -2494,7 +2567,8 @@ public class MovableComponentImplTest {
         // The expected position should be 3 unit above the activity in order to rest on the plane.
         // It is 3 units because the activity space is 1 unit below of the origin and the plane is 2
         // units above it.
-        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f, 0f, 0f, 1f));
+        Pose expectedPosition = new Pose(new Vector3(1f, 3f, 1f), new Quaternion(0f,
+                0f, 0f, 1f));
 
         assertPose(moveEventListener.mLastMoveEvent.getCurrentPose(), expectedPosition);
         assertThat(moveEventListener.mCallCount).isEqualTo(1);
@@ -2513,7 +2587,8 @@ public class MovableComponentImplTest {
     public void anchorablePanelEntity_nearPlane_rendersShadow() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
@@ -2521,7 +2596,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -2559,14 +2635,16 @@ public class MovableComponentImplTest {
 
         // Put the proposed position at 1 above the origin. so it would need to move up 1 unit to
         // be on the plane.
-        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f, 1.0f));
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f,
+                1.0f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 
         // Since it is by the plane a call should be made to the panel shadow renderer.
         verify(mPanelShadowRenderer)
                 .updatePanelPose(
-                        new Pose(new Vector3(0f, 2f, 1f), new Quaternion(0f, 0f, 0f, 1f)),
+                        new Pose(new Vector3(0f, 2f, 1f), new Quaternion(0f, 0f,
+                                0f, 1f)),
                         RuntimeUtils.fromPerceptionPose(perceptionPose),
                         (PanelEntityImpl) entity);
     }
@@ -2575,7 +2653,8 @@ public class MovableComponentImplTest {
     public void anchorablePanelEntity_awayFromPlane_hidesShadow() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
@@ -2583,7 +2662,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -2620,7 +2700,8 @@ public class MovableComponentImplTest {
                         /* id= */ 0);
 
         // Put the proposed position at 5 above the origin. so it is far away from the plane.
-        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 5.0f, 1.0f));
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 5.0f,
+                1.0f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 
@@ -2632,7 +2713,8 @@ public class MovableComponentImplTest {
     public void anchorablePanelEntity_endMovement_callsDestroy() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
-                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
+                new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f,
+                        1f)), 1f);
         Session session = Mockito.mock(Session.class);
         Plane plane = mock(Plane.class);
         when(mPerceptionLibrary.getSession()).thenReturn(session);
@@ -2640,7 +2722,8 @@ public class MovableComponentImplTest {
 
         // Create a perception plane that is 2 units above the origin.
         androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f, 0f, 0f, 0f, 1f);
+                new androidx.xr.scenecore.impl.perception.Pose(0f, 2f, 0f,
+                        0f, 0f, 0f, 1f);
         PlaneData planeData =
                 new PlaneData(
                         perceptionPose,
@@ -2675,7 +2758,8 @@ public class MovableComponentImplTest {
                         /* type= */ REFORM_TYPE_MOVE, /* state= */ REFORM_STATE_END, /* id= */ 0);
 
         // Set the reform state to end so that the plane shadow gets destroyed.
-        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f, 1.0f));
+        ShadowReformEvent.extract(reformEvent).setProposedPosition(new Vec3(1.0f, 1.0f,
+                1.0f));
 
         sendReformEvent(getEntityNode(entity), reformEvent);
 

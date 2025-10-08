@@ -44,7 +44,7 @@
     <string name="m3c_date_input_no_input_description" msgid="1237013946323089826">"هیچ‌کدام"</string>
     <string name="m3c_date_input_invalid_not_allowed" msgid="2521768508935305279">"‏تاریخ مجاز نیست: %1$s"</string>
     <string name="m3c_date_input_invalid_for_pattern" msgid="6116910750161463197">"‏تاریخ با الگوی موردانتظار مطابقت ندارد: %1$s"</string>
-    <string name="m3c_date_input_invalid_year_range" msgid="7052898923934555305">"‏تاریخ خارج از بازه زمانی %1$s تا %2$s است"</string>
+    <string name="m3c_date_input_invalid_year_range" msgid="7052898923934555305">"‏تاریخ خارج از محدوده سال %1$s تا %2$s است"</string>
     <string name="m3c_date_picker_switch_to_calendar_mode" msgid="1804346892470238807">"تعویض به حالت ورودی تقویم"</string>
     <string name="m3c_date_picker_switch_to_input_mode" msgid="2219746470065162704">"رفتن به حالت ورودی نوشتاری"</string>
     <string name="m3c_date_picker_scroll_to_later_years" msgid="5727367015496556177">"برای نمایش سال‌های بعد پیمایش کنید"</string>

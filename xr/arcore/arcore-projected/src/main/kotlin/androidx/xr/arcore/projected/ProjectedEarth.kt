@@ -26,10 +26,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 
-/**
- * Currently unimplemented implementation of [androidx.xr.arcore.runtime.internal.Earth] on
- * Projected.
- */
+/** Currently unimplemented implementation of [androidx.xr.arcore.runtime.Earth] on Projected. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedEarth internal constructor(private val xrResources: XrResources) : Earth {
     public override var state: Earth.State = Earth.State.STOPPED

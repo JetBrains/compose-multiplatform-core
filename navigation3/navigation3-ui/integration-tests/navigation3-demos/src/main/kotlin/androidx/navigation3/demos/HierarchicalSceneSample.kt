@@ -43,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
-import androidx.navigation3.runtime.navEntryDecorator
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
@@ -82,7 +81,7 @@ fun HierarchicalSceneSample() {
      * [Scene].
      */
     val sharedEntryInSceneNavEntryDecorator =
-        navEntryDecorator<ColorEntry> { entry ->
+        NavEntryDecorator<ColorEntry> { entry ->
             with(LocalNavSharedTransitionScope.current) {
                 Box(
                     Modifier.sharedElement(

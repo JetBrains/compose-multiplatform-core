@@ -77,8 +77,6 @@ final object androidx.navigation3.ui/NavDisplay { // androidx.navigation3.ui/Nav
     final fun transitionSpec(kotlin/Function1<androidx.compose.animation/AnimatedContentTransitionScope<androidx.navigation3.scene/Scene<*>>, androidx.compose.animation/ContentTransform?>): kotlin.collections/Map<kotlin/String, kotlin/Any> // androidx.navigation3.ui/NavDisplay.transitionSpec|transitionSpec(kotlin.Function1<androidx.compose.animation.AnimatedContentTransitionScope<androidx.navigation3.scene.Scene<*>>,androidx.compose.animation.ContentTransform?>){}[0]
 }
 
-final val androidx.navigation3.scene/LocalEntriesToRenderInCurrentScene // androidx.navigation3.scene/LocalEntriesToRenderInCurrentScene|{}LocalEntriesToRenderInCurrentScene[0]
-    final fun <get-LocalEntriesToRenderInCurrentScene>(): androidx.compose.runtime/ProvidableCompositionLocal<kotlin.collections/Set<kotlin/Any>> // androidx.navigation3.scene/LocalEntriesToRenderInCurrentScene.<get-LocalEntriesToRenderInCurrentScene>|<get-LocalEntriesToRenderInCurrentScene>(){}[0]
 final val androidx.navigation3.scene/androidx_navigation3_scene_DialogScene$stableprop // androidx.navigation3.scene/androidx_navigation3_scene_DialogScene$stableprop|#static{}androidx_navigation3_scene_DialogScene$stableprop[0]
 final val androidx.navigation3.scene/androidx_navigation3_scene_DialogSceneStrategy$stableprop // androidx.navigation3.scene/androidx_navigation3_scene_DialogSceneStrategy$stableprop|#static{}androidx_navigation3_scene_DialogSceneStrategy$stableprop[0]
 final val androidx.navigation3.scene/androidx_navigation3_scene_SceneInfo$stableprop // androidx.navigation3.scene/androidx_navigation3_scene_SceneInfo$stableprop|#static{}androidx_navigation3_scene_SceneInfo$stableprop[0]

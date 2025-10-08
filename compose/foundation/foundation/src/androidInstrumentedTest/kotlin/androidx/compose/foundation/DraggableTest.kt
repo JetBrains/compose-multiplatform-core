@@ -430,6 +430,43 @@ class DraggableTest {
     }
 
     @Test
+    fun draggable_indirectTouchDrag_shouldResetOnOrientationChanged() {
+        var startTrigger = 0
+        var stopTrigger = 0
+        var orientation by mutableStateOf(Orientation.Horizontal)
+        setDraggableContent(enableInitialFocus = true) {
+            Modifier.draggable(
+                orientation,
+                onDragStarted = { startTrigger += 1 },
+                onDragStopped = { stopTrigger += 1 },
+            ) {}
+        }
+        rule.runOnIdle {
+            assertThat(startTrigger).isEqualTo(0)
+            assertThat(stopTrigger).isEqualTo(0)
+        }
+        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeBackward(rule)
+
+        rule.runOnIdle {
+            assertThat(startTrigger).isEqualTo(1)
+            assertThat(stopTrigger).isEqualTo(1)
+        }
+
+        startTrigger = 0
+        stopTrigger = 0
+        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeEvent(rule, sendReleaseEvent = false)
+
+        rule.runOnIdle {
+            assertThat(startTrigger).isEqualTo(1)
+            assertThat(stopTrigger).isEqualTo(0)
+            orientation = Orientation.Vertical // changing orientation will cancel event
+        }
+
+        rule.waitForIdle()
+        assertThat(stopTrigger).isEqualTo(1)
+    }
+
+    @Test
     fun draggable_disabledWontCallLambda() {
         var total = 0f
         val enabled = mutableStateOf(true)

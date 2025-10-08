@@ -41,7 +41,7 @@ import androidx.core.graphics.createBitmap
 public abstract class RemoteBitmap
 internal constructor(
     public val state: RemoteComposeCreationState?,
-    public override val hasConstantValue: Boolean,
+    public override val constantValue: Bitmap?,
 ) : RemoteState<Bitmap> {
 
     // @Deprecated("Use getIdForCreationState directly")
@@ -70,7 +70,7 @@ internal constructor(
             v: Bitmap,
             state: RemoteComposeCreationState? = null,
         ): RemoteBitmap {
-            return MutableRemoteBitmap(state, mutableStateOf(v), false) { creationState ->
+            return MutableRemoteBitmap(state, mutableStateOf(v), v) { creationState ->
                 creationState.document.addBitmap(v)
             }
         }
@@ -88,7 +88,8 @@ internal constructor(
             initialValue: Bitmap,
             state: RemoteComposeCreationState,
         ): RemoteBitmap =
-            MutableRemoteBitmap(state, mutableStateOf(initialValue), false) { creationState ->
+            MutableRemoteBitmap(state, mutableStateOf(initialValue), constantValue = null) {
+                creationState ->
                 creationState.document.addNamedBitmap(name, initialValue)
             }
     }
@@ -108,9 +109,9 @@ internal constructor(
 public class MutableRemoteBitmap(
     state: RemoteComposeCreationState?,
     private val content: MutableState<Bitmap>,
-    hasConstantValue: Boolean,
+    constantValue: Bitmap?,
     private val idProvider: (creationState: RemoteComposeCreationState) -> Int,
-) : RemoteBitmap(state, hasConstantValue), MutableRemoteState<Bitmap> {
+) : RemoteBitmap(state, constantValue), MutableRemoteState<Bitmap> {
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         idProvider(creationState)
@@ -148,7 +149,7 @@ public fun rememberRemoteBitmapValue(
     val state = LocalRemoteComposeCreationState.current
     return remember(name) {
         val initial = value()
-        MutableRemoteBitmap(state, mutableStateOf(initial), false) { creationState ->
+        MutableRemoteBitmap(state, mutableStateOf(initial), constantValue = null) { creationState ->
             creationState.document.addNamedBitmap("$domain:$name", initial)
         }
     }
@@ -167,8 +168,11 @@ public fun rememberRemoteBitmap(
         // We create a bitmap of the specified dimensions as a placeholder. The actual bitmap will
         // be loaded from the URL on the remote side. Providing accurate dimensions can prevent
         // unnecessary relayouts.
-        MutableRemoteBitmap(state, mutableStateOf(createBitmap(width, height)), false) {
-            creationState ->
+        MutableRemoteBitmap(
+            state,
+            mutableStateOf(createBitmap(width, height)),
+            constantValue = null,
+        ) { creationState ->
             creationState.document.addNamedBitmapUrl("$domain:$name", url)
         }
     }

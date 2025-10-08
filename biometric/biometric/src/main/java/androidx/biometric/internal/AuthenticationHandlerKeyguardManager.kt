@@ -29,6 +29,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationCallback
 import androidx.biometric.R
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel
+import androidx.biometric.internal.viewmodel.AuthenticationViewModelFactory
 import androidx.biometric.utils.BiometricErrorData
 import androidx.biometric.utils.KeyguardUtils
 import androidx.fragment.app.Fragment
@@ -51,7 +53,7 @@ import kotlinx.coroutines.Runnable
 internal class AuthenticationHandlerKeyguardManager(
     context: Context,
     lifecycleOwner: LifecycleOwner,
-    viewModel: BiometricViewModel,
+    viewModel: AuthenticationViewModel,
     val confirmCredentialActivityLauncher: Runnable,
     clientExecutor: Executor,
     clientAuthenticationCallback: AuthenticationCallback,
@@ -65,6 +67,10 @@ internal class AuthenticationHandlerKeyguardManager(
             clientExecutor,
             clientAuthenticationCallback,
         )
+
+    init {
+        authenticationManager.initialize()
+    }
 
     override fun authenticate(
         info: BiometricPrompt.PromptInfo,
@@ -89,15 +95,13 @@ public fun handleConfirmCredentialResult(
     viewModelStoreOwner: ViewModelStoreOwner,
     resultCode: Int,
 ) {
-    val viewModel: BiometricViewModel =
-        ViewModelProvider(viewModelStoreOwner)[BiometricViewModel::class.java]
-    handleConfirmCredentialResult(context, viewModel, resultCode)
+    handleConfirmCredentialResult(context, getViewModel(viewModelStoreOwner), resultCode)
 }
 
 @VisibleForTesting
 internal fun handleConfirmCredentialResult(
     context: Context,
-    viewModel: BiometricViewModel,
+    viewModel: AuthenticationViewModel,
     resultCode: Int,
 ) {
     if (resultCode == Activity.RESULT_OK) {
@@ -106,7 +110,7 @@ internal fun handleConfirmCredentialResult(
             // If using KeyguardManager for biometric and credential auth, we don't know which
             // actual authentication type was used.
             authenticationType = BiometricPrompt.AUTHENTICATION_RESULT_TYPE_UNKNOWN
-            viewModel.setUsingKeyguardManagerForBiometricAndCredential(false)
+            viewModel.isUsingKeyguardManagerForBiometricAndCredential = false
         } else {
             authenticationType = BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL
         }
@@ -220,7 +224,7 @@ public class ConfirmCredentialCallerFragment : Fragment() {
     }
 
     // The view model for the ongoing authentication session (non-null after onCreate).
-    private lateinit var viewModel: BiometricViewModel
+    private lateinit var viewModel: AuthenticationViewModel
 
     private val launcher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -253,8 +257,7 @@ public class ConfirmCredentialCallerFragment : Fragment() {
 
 @Suppress("deprecation")
 private fun Context.getConfirmCredentialIntent(viewModelStoreOwner: ViewModelStoreOwner): Intent? {
-    val viewModel: BiometricViewModel =
-        ViewModelProvider(viewModelStoreOwner)[BiometricViewModel::class.java]
+    val viewModel: AuthenticationViewModel = getViewModel(viewModelStoreOwner)
     val keyguardManager = KeyguardUtils.getKeyguardManager(this)
     if (keyguardManager == null) {
         viewModel.setAuthenticationError(
@@ -286,7 +289,7 @@ private fun Context.getConfirmCredentialIntent(viewModelStoreOwner: ViewModelSto
         return null
     }
 
-    viewModel.setConfirmingDeviceCredential(true)
+    viewModel.isConfirmingDeviceCredential = true
     return credentialIntent
 }
 
@@ -343,11 +346,15 @@ private fun findOrAddConfirmCredentialCallerFragment(
  * @param hostedInActivity If one of the activity-based constructors was used.
  * @return A biometric view model tied to the lifecycle owner of the fragment.
  */
-private fun Fragment.getViewModel(hostedInActivity: Boolean): BiometricViewModel {
+private fun Fragment.getViewModel(hostedInActivity: Boolean): AuthenticationViewModel {
     var owner: ViewModelStoreOwner? = if (hostedInActivity) activity else null
     if (owner == null) {
         owner = parentFragment
     }
     checkNotNull(owner) { "view model not found" }
-    return ViewModelProvider(owner)[BiometricViewModel::class.java]
+    return getViewModel(owner)
 }
+
+private fun getViewModel(viewModelStoreOwner: ViewModelStoreOwner): AuthenticationViewModel =
+    ViewModelProvider(viewModelStoreOwner, AuthenticationViewModelFactory())[
+        AuthenticationViewModel::class.java]

@@ -70,12 +70,12 @@ import java.time.LocalDateTime
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public class AppFunctionData
 internal constructor(
-    // TODO: Make it non-null once the constructor that takes qualifiedName has removed
+    // TODO(b/447302747): Make it non-null once the constructor that takes qualifiedName has removed
     internal val spec: AppFunctionDataSpec?,
     internal val genericDocument: GenericDocument,
     internal val extras: Bundle,
 ) {
-    // TODO: Remove this constructor
+    // TODO(b/447302747): Remove this constructor
     internal constructor(
         genericDocument: GenericDocument,
         extras: Bundle,
@@ -917,21 +917,20 @@ internal constructor(
      */
     public class Builder {
 
-        // TODO(b/399823985): Remove this once the constructor that takes qualifiedName has removed
+        // TODO(b/447302747): Remove this once the constructor that takes qualifiedName has removed
         private val qualifiedName: String
-        // TODO(b/399823985): Make it non-null once the constructor that takes qualifiedName has
+        // TODO(b/447302747): Make it non-null once the constructor that takes qualifiedName has
         // removed
         private val spec: AppFunctionDataSpec?
         private var genericDocumentBuilder: GenericDocument.Builder<*>
         private val extrasBuilder = Bundle()
 
-        // TODO(b/399823985): Clean up the usage without providing metadata.
+        // TODO(b/447302747): Clean up the usage without providing metadata.
         /**
          * @param id: Only set this when creating a document for the legacy schema. In the legacy
          *   schema, ID is stored as [GenericDocument.id]. In Jetpack, ID is just a normal property.
          */
-        @RestrictTo(LIBRARY_GROUP)
-        public constructor(qualifiedName: String, id: String = "") {
+        internal constructor(qualifiedName: String, id: String = "") {
             this.qualifiedName = qualifiedName
             spec = null
             genericDocumentBuilder =

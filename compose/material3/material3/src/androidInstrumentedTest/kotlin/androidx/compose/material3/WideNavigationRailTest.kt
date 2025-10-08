@@ -16,6 +16,8 @@
 
 package androidx.compose.material3
 
+import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -69,7 +71,6 @@ import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -553,13 +554,19 @@ class WideNavigationRailTest {
     }
 
     @Test
-    @Ignore("b/422746273")
     fun header_position_centeredArrangement() {
         rule.setMaterialContent(lightColorScheme()) {
+            val windowInsets =
+                if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    WindowInsets()
+                } else {
+                    WideNavigationRailDefaults.windowInsets
+                }
             WideNavigationRail(
                 modifier = Modifier.testTag("rail"),
                 arrangement = Arrangement.Center,
                 header = { Box(Modifier.testTag("header").size(10.dp)) },
+                windowInsets = windowInsets,
             ) {
                 WideNavigationRailItem(
                     modifier = Modifier.testTag("item"),
@@ -587,13 +594,19 @@ class WideNavigationRailTest {
     }
 
     @Test
-    @Ignore("b/422746273")
     fun header_position_bottomArrangement() {
         rule.setMaterialContent(lightColorScheme()) {
+            val windowInsets =
+                if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    WindowInsets()
+                } else {
+                    WideNavigationRailDefaults.windowInsets
+                }
             WideNavigationRail(
                 modifier = Modifier.testTag("rail"),
                 arrangement = Arrangement.Bottom,
                 header = { Box(Modifier.testTag("header").size(10.dp)) },
+                windowInsets = windowInsets,
             ) {
                 WideNavigationRailItem(
                     modifier = Modifier.testTag("item"),

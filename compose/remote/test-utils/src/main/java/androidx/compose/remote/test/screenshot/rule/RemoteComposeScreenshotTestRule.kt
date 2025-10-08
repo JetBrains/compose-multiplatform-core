@@ -24,8 +24,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.compose.player.RemoteDocumentPlayer as ViewRemoteDocumentPlayer
-import androidx.compose.remote.player.compose.RemoteDocumentPlayer as ComposeRemoteDocumentPlayer
+import androidx.compose.remote.player.compose.ExperimentalRemoteComposePlayerApi
+import androidx.compose.remote.player.compose.RemoteComposePlayerFlags
+import androidx.compose.remote.player.compose.RemoteDocumentPlayer
 import androidx.compose.remote.player.core.platform.BitmapLoader
 import androidx.compose.remote.test.screenshot.TargetPlayer
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.BitmapMatcher
+import org.junit.rules.ExternalResource
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.rules.TestWatcher
@@ -51,52 +53,50 @@ import org.junit.runners.model.Statement
 
 /**
  * A [TestRule] that takes screenshots of remote composable functions using devices and the Remote
- * Compose [Compose Player][androidx.compose.remote.player.compose.RemoteDocumentPlayer].
+ * Compose player.
  *
  * @param matcher The algorithm to be used to perform the matching. If null, it will let
  *   [assertAgainstGolden] use its default.
  */
+@OptIn(ExperimentalRemoteComposePlayerApi::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class RemoteComposeScreenshotTestRule(
     moduleDirectory: String,
     private val matcher: BitmapMatcher? = null,
     private val targetPlayer: TargetPlayer,
-    private val includeClassName: Boolean = true,
-) : TestRule {
-    val composeTestRule = createComposeRule()
+) : ExternalResource() {
+    private val composeTestRule = createComposeRule()
+    private val screenshotRule = AndroidXScreenshotTestRule(moduleDirectory)
 
     private lateinit var testDescription: Description
 
-    val testName =
+    private val testName =
         object : TestWatcher() {
 
             override fun starting(description: Description) {
                 testDescription = description
             }
         }
-    val screenshotRule = AndroidXScreenshotTestRule(moduleDirectory)
+
+    private val delegateChain: RuleChain =
+        RuleChain.outerRule(testName).around(composeTestRule).around(screenshotRule)
+
     var bitmapLoader = BitmapLoader.UNSUPPORTED
-
-    val thisRule =
-        object : TestRule {
-            override fun apply(base: Statement, description: Description): Statement {
-                return object : Statement() {
-                    override fun evaluate() {
-                        val result = base.evaluate()
-                        return result
-                    }
-                }
-            }
-        }
-
-    val delegateChain: RuleChain =
-        RuleChain.outerRule(thisRule)
-            .around(testName)
-            .around(composeTestRule)
-            .around(screenshotRule)
 
     override fun apply(base: Statement, description: Description): Statement {
         return delegateChain.apply(base, description)
+    }
+
+    override fun before() {
+        super.before()
+
+        RemoteComposePlayerFlags.isViewPlayerEnabled = targetPlayer == TargetPlayer.View
+    }
+
+    override fun after() {
+        super.after()
+
+        RemoteComposePlayerFlags.isViewPlayerEnabled = true
     }
 
     fun runScreenshotTest(
@@ -169,27 +169,13 @@ class RemoteComposeScreenshotTestRule(
 
     @Composable
     private fun RemoteDocumentPlayer(document: CoreDocument, size: Size) {
-        when (targetPlayer) {
-            TargetPlayer.View -> {
-                ViewRemoteDocumentPlayer(
-                    document,
-                    size.width.toInt(),
-                    size.height.toInt(),
-                    debugMode = 1,
-                    bitmapLoader = bitmapLoader,
-                )
-            }
-
-            TargetPlayer.Compose -> {
-                ComposeRemoteDocumentPlayer(
-                    document,
-                    size.width.toInt(),
-                    size.height.toInt(),
-                    debugMode = 1,
-                    bitmapLoader = bitmapLoader,
-                )
-            }
-        }
+        RemoteDocumentPlayer(
+            document,
+            size.width.toInt(),
+            size.height.toInt(),
+            debugMode = 1,
+            bitmapLoader = bitmapLoader,
+        )
     }
 
     fun ComposeContentTestRule.verifyScreenshot(
@@ -210,12 +196,7 @@ class RemoteComposeScreenshotTestRule(
      * parameter_values + ']' + ',' to the test name.
      */
     fun Description.goldenIdentifier(): String {
-        val testIdentifier =
-            if (includeClassName) {
-                className.substringAfterLast('.') + "_" + methodName
-            } else {
-                methodName
-            }
+        val testIdentifier = className.substringAfterLast('.') + "_" + methodName
         return testIdentifier.replace("[\\[$]".toRegex(), "_").replace("]", "")
     }
 

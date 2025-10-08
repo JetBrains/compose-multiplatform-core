@@ -47,7 +47,7 @@ import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.navEntryDecorator
+import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
@@ -1010,7 +1010,7 @@ class AnimatedTest {
         lateinit var backstack: MutableList<Any>
         val LocalHasProvidedToEntry = compositionLocalOf { false }
         val provider =
-            navEntryDecorator<Any> { entry ->
+            NavEntryDecorator<Any> { entry ->
                 CompositionLocalProvider(LocalHasProvidedToEntry provides true) { entry.Content() }
             }
         var secondEntryIsWrapped = false

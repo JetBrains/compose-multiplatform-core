@@ -76,7 +76,7 @@ import com.squareup.kotlinpoet.TypeVariableName
  *   }
  *
  *   override fun toAppFunctionData(appFunctionSerializable: Location): AppFunctionData {
- *     val builder = AppFunctionData.Builder("")
+ *     val builder = getAppFunctionDataBuilder("")
  *
  *     builder.setDouble("latitude", location.latitude)
  *     builder.setDouble("longitude", location.longitude)

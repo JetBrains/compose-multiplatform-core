@@ -36,7 +36,7 @@ import androidx.pdf.ink.EditablePdfViewerFragment.PageInfoProvider
  * @param pageInfoProvider Provider for page-specific information like zoom and bounds.
  * @param onStrokeStartedListener A listener that is invoked when a new ink stroke is initiated.
  */
-@RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
 internal class WetStrokesViewTouchHandler(
     private val wetStrokesView: InProgressStrokesView,
     private val pageInfoProvider: PageInfoProvider,

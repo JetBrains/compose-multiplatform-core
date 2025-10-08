@@ -30,7 +30,7 @@ import com.google.ar.core.Trackable as ArCoreTrackable
 import com.google.ar.core.exceptions.NotTrackingException
 
 /**
- * Wraps the [ARCorePlane] with an implementation of the [androidx.xr.arcore.runtime.internal.Plane]
+ * Wraps the [ARCorePlane] with an implementation of the [androidx.xr.arcore.runtime.Plane]
  * interface.
  *
  * @property arCorePlane The underlying [ARCorePlane] instance.
@@ -115,7 +115,7 @@ internal constructor(internal val _arCorePlane: ARCorePlane, private val resourc
      * The type of the plane.
      *
      * This property gets the type from the underlying [ARCorePlane] instance, and converts it to a
-     * [androidx.xr.arcore.runtime.internal.Plane.Type].
+     * [androidx.xr.arcore.runtime.Plane.Type].
      *
      * @return The type of the plane.
      */

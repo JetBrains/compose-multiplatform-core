@@ -24,10 +24,10 @@ import static org.mockito.Mockito.when;
 
 import androidx.xr.runtime.NodeHolder;
 import androidx.xr.runtime.TypeHolder;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;

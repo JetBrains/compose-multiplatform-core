@@ -696,6 +696,31 @@ class RetryingCameraStateOpenerTest {
     }
 
     @Test
+    fun cameraStateOpenerCancelsCameraOpens() = runTest {
+        val resultDeferred = async {
+            cameraStateOpener.tryOpenCamera(
+                cameraId0,
+                1,
+                Timestamps.now(fakeTimeSource),
+                cameraDeviceCloser,
+                audioRestrictionController,
+            )
+        }
+
+        advanceUntilIdle()
+
+        // When camera open is cancelled, we should stop the wait for camera open result after a
+        // timeout.
+        cameraStateOpener.cancelOpen()
+        advanceTimeBy(10_000L)
+
+        val result = resultDeferred.getCompleted()
+        assertThat(result.cameraState).isNull()
+        assertThat(result.errorCode).isNotNull()
+        assertThat(result.errorCode).isEqualTo(CameraError.ERROR_CAMERA_OPEN_TIMEOUT)
+    }
+
+    @Test
     fun cameraStateOpenerReturnsCorrectError() = runTest {
         cameraOpener.toThrow = CameraAccessException(CameraAccessException.CAMERA_IN_USE)
         val result =

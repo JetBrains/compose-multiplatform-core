@@ -64,10 +64,10 @@ class RemoteColorTest {
         val expectedColorInt = Color.argb(255, 48, 32, 64)
         val expectedColor = Color.valueOf(expectedColorInt)
         assertThat(context.getColor(resultId)).isEqualTo(expectedColorInt)
-        assertThat(result.alpha.evaluateIfConstant(creationState)).isEqualTo(expectedColor.alpha())
-        assertThat(result.red.evaluateIfConstant(creationState)).isEqualTo(expectedColor.red())
-        assertThat(result.green.evaluateIfConstant(creationState)).isEqualTo(expectedColor.green())
-        assertThat(result.blue.evaluateIfConstant(creationState)).isEqualTo(expectedColor.blue())
+        assertThat(result.alpha.constantValue).isEqualTo(expectedColor.alpha())
+        assertThat(result.red.constantValue).isEqualTo(expectedColor.red())
+        assertThat(result.green.constantValue).isEqualTo(expectedColor.green())
+        assertThat(result.blue.constantValue).isEqualTo(expectedColor.blue())
     }
 
     @Test
@@ -82,10 +82,10 @@ class RemoteColorTest {
         val expectedColorInt = Color.argb(127, 48, 32, 64)
         val expectedColor = Color.valueOf(expectedColorInt)
         assertThat(context.getColor(resultId)).isEqualTo(expectedColorInt)
-        assertThat(result.alpha.evaluateIfConstant(creationState)).isEqualTo(expectedColor.alpha())
-        assertThat(result.red.evaluateIfConstant(creationState)).isEqualTo(expectedColor.red())
-        assertThat(result.green.evaluateIfConstant(creationState)).isEqualTo(expectedColor.green())
-        assertThat(result.blue.evaluateIfConstant(creationState)).isEqualTo(expectedColor.blue())
+        assertThat(result.alpha.constantValue).isEqualTo(expectedColor.alpha())
+        assertThat(result.red.constantValue).isEqualTo(expectedColor.red())
+        assertThat(result.green.constantValue).isEqualTo(expectedColor.green())
+        assertThat(result.blue.constantValue).isEqualTo(expectedColor.blue())
     }
 
     @Test
@@ -99,10 +99,10 @@ class RemoteColorTest {
         makeAndPaintCoreDocument()
 
         assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 191, 128, 64))
-        assertThat(result.alpha.evaluateIfConstant(creationState)).isEqualTo(1f)
-        assertThat(result.red.evaluateIfConstant(creationState)).isEqualTo(0.75f)
-        assertThat(result.green.evaluateIfConstant(creationState)).isEqualTo(0.5f)
-        assertThat(result.blue.evaluateIfConstant(creationState)).isEqualTo(0.25f)
+        assertThat(result.alpha.constantValue).isEqualTo(1f)
+        assertThat(result.red.constantValue).isEqualTo(0.75f)
+        assertThat(result.green.constantValue).isEqualTo(0.5f)
+        assertThat(result.blue.constantValue).isEqualTo(0.25f)
     }
 
     @Test
@@ -169,34 +169,32 @@ class RemoteColorTest {
     }
 
     @Test
-    fun tween() {
+    fun tween0() {
         val red = RemoteColor(Color.RED)
         val green = RemoteColor(Color.GREEN)
-        val result = tween(red, green, RemoteFloat(0.25f))
+        val result = tween(red, green, RemoteFloat(0f))
         val resultId = result.getIdForCreationState(creationState)
         makeAndPaintCoreDocument()
 
-        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 223, 135, 0))
+        assertThat(context.getColor(resultId)).isEqualTo(Color.RED)
     }
 
     @Test
     fun tweenTwice() {
         var redCreated = 0
 
+        val color = Color.RED
         val red =
-            RemoteColor(hasConstantValue = false) { creationState ->
-                val color = Color.RED
-                RemoteColor.InternalState(
-                    RemoteFloat(Color.alpha(color).toFloat() / 255f),
-                    RemoteFloat(Color.red(color).toFloat() / 255f),
-                    RemoteFloat(Color.green(color).toFloat() / 255f),
-                    RemoteFloat(Color.blue(color).toFloat() / 255f),
-                    {
-                        // This should only be created once
-                        redCreated++
-                        creationState.document.addNamedColor("USER:OnPrimaryColor", color)
-                    },
-                )
+            RemoteColor(
+                constantValue = null,
+                RemoteFloat(Color.alpha(color).toFloat() / 255f),
+                RemoteFloat(Color.red(color).toFloat() / 255f),
+                RemoteFloat(Color.green(color).toFloat() / 255f),
+                RemoteFloat(Color.blue(color).toFloat() / 255f),
+            ) { creationState ->
+                // This should only be created once
+                redCreated++
+                creationState.document.addNamedColor("USER:OnPrimaryColor", color)
             }
         val green = RemoteColor(Color.GREEN)
 
@@ -210,6 +208,39 @@ class RemoteColorTest {
 
         assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 223, 135, 0))
         assertThat(redCreated).isEqualTo(1)
+    }
+
+    @Test
+    fun tween0_25() {
+        val red = RemoteColor(Color.RED)
+        val green = RemoteColor(Color.GREEN)
+        val result = tween(red, green, RemoteFloat(0.25f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 223, 135, 0))
+    }
+
+    @Test
+    fun tween0_75() {
+        val red = RemoteColor(Color.RED)
+        val green = RemoteColor(Color.GREEN)
+        val result = tween(red, green, RemoteFloat(0.75f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getColor(resultId)).isEqualTo(Color.argb(255, 135, 223, 0))
+    }
+
+    @Test
+    fun tween1() {
+        val red = RemoteColor(Color.RED)
+        val green = RemoteColor(Color.GREEN)
+        val result = tween(red, green, RemoteFloat(1f))
+        val resultId = result.getIdForCreationState(creationState)
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getColor(resultId)).isEqualTo(Color.GREEN)
     }
 
     @Test
@@ -242,10 +273,10 @@ class RemoteColorTest {
         makeAndPaintCoreDocument()
 
         assertThat(context.getColor(resultId)).isEqualTo(Color.argb(204, 153, 102, 51))
-        assertThat(result.alpha.evaluateIfConstant(creationState)).isEqualTo(0.8f)
-        assertThat(result.red.evaluateIfConstant(creationState)).isEqualTo(0.6f)
-        assertThat(result.green.evaluateIfConstant(creationState)).isEqualTo(0.4f)
-        assertThat(result.blue.evaluateIfConstant(creationState)).isEqualTo(0.2f)
+        assertThat(result.alpha.constantValue).isEqualTo(0.8f)
+        assertThat(result.red.constantValue).isEqualTo(0.6f)
+        assertThat(result.green.constantValue).isEqualTo(0.4f)
+        assertThat(result.blue.constantValue).isEqualTo(0.2f)
     }
 
     @Test
@@ -268,7 +299,7 @@ class RemoteColorTest {
     }
 
     @Test
-    fun evaluateIfConstant_constant() {
+    fun constantValue_constant() {
         val a =
             RemoteColor.fromARGB(
                 RemoteFloat(1f),
@@ -285,12 +316,11 @@ class RemoteColorTest {
             )
         val result = a * b
 
-        assertThat(result.evaluateIfConstant(creationState))
-            .isEqualTo(Color.argb(204, 153, 102, 51))
+        assertThat(result.constantValue?.toArgb()).isEqualTo(Color.argb(204, 153, 102, 51))
     }
 
     @Test
-    fun evaluateIfConstant_notConstant() {
+    fun constantValue_notConstant() {
         val a =
             RemoteColor.fromARGB(
                 RemoteFloat(1f),
@@ -307,22 +337,22 @@ class RemoteColorTest {
             )
         val result = a * b
 
-        assertThat(result.evaluateIfConstant(creationState)).isNull()
+        assertThat(result.constantValue).isNull()
     }
 
     @Test
     fun remoteColorIsCached() {
         val red =
             creationState.getOrCreateNamedState(RemoteColor::class.java, "red", "USER") {
-                RemoteColor.invoke(Color.valueOf(Color.RED))
+                RemoteColor(Color.valueOf(Color.RED))
             }
         val red2 =
             creationState.getOrCreateNamedState(RemoteColor::class.java, "red", "USER") {
-                RemoteColor.invoke(Color.valueOf(Color.RED))
+                RemoteColor(Color.valueOf(Color.RED))
             }
         val green =
             creationState.getOrCreateNamedState(RemoteColor::class.java, "green", "USER") {
-                RemoteColor.invoke(Color.valueOf(Color.GREEN))
+                RemoteColor(Color.valueOf(Color.GREEN))
             }
 
         assertThat(red).isSameInstanceAs(red2)

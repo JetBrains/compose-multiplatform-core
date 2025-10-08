@@ -18,7 +18,6 @@ export OUT_DIR="$(cd $OUT_DIR && pwd)"
 # We update DIST_DIR below to a subdirectory of OUT_DIR to preserve Gradle config cache.
 if [ -n "${DIST_DIR:-}" ]; then
   export ORIGINAL_DIST_DIR="$DIST_DIR"
-  mkdir -p "$ORIGINAL_DIST_DIR"
 fi
 export DIST_DIR="$OUT_DIR/dist"
 mkdir -p "$DIST_DIR"

@@ -15,7 +15,6 @@
   -->
 
 <resources>
-    <!-- TODO: b/438735585 - Support localization for strings of discard changes dialog box -->
     <string name="discard_changes_dialog_title">Discard changes?</string>
     <string name="discard_changes_dialog_message">Your changes are not saved.</string>
     <string name="keep_editing_button">Keep Editing</string>

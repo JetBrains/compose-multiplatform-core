@@ -23,6 +23,7 @@ import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationCallback
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.utils.AuthenticatorUtils
 import androidx.biometric.utils.DeviceUtils
 import androidx.biometric.utils.KeyguardUtils
@@ -65,7 +66,7 @@ internal interface AuthenticationHandler {
         fun create(
             context: Context,
             lifecycleOwner: LifecycleOwner,
-            viewModel: BiometricViewModel,
+            viewModel: AuthenticationViewModel,
             confirmCredentialActivityLauncher: Runnable,
             clientExecutor: Executor?,
             authenticationCallback: AuthenticationCallback?,
@@ -73,9 +74,8 @@ internal interface AuthenticationHandler {
             val allowedAuthenticators = viewModel.allowedAuthenticators
             val isKeyguardManagerNeededForBiometricAndCredential =
                 isKeyguardManagerNeededForBiometricAndCredential(allowedAuthenticators)
-            viewModel.setUsingKeyguardManagerForBiometricAndCredential(
+            viewModel.isUsingKeyguardManagerForBiometricAndCredential =
                 isKeyguardManagerNeededForBiometricAndCredential
-            )
 
             /**
              * The [Executor] on which authentication callback methods will be invoked. Defaults to

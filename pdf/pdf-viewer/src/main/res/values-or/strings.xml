@@ -17,6 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="label_copy_link" msgid="869104793055534158">"ଲିଙ୍କ କପି କରନ୍ତୁ"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"ଜମ୍ପ ଟୁ"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"ଏହି ଫାଇଲ ସୁରକ୍ଷିତ ହୋଇଛି"</string>
     <string name="label_password_first" msgid="4456258714097111908">"ପାସୱାର୍ଡ"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"ଭୁଲ ପାସୱାର୍ଡ। ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।"</string>
@@ -30,6 +32,10 @@
     <string name="desc_zoom" msgid="7318480946145947242">"ଜୁମ <xliff:g id="FIRST">%1$d</xliff:g> ଶତକଡ଼ା"</string>
     <string name="desc_goto" msgid="1333698934111921601">"ଏଠାକୁ ଯାଆନ୍ତୁ"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"<xliff:g id="PAGE_NUMBER">%1$d</xliff:g> ପୃଷ୍ଠାକୁ ଯାଆନ୍ତୁ"</string>
+    <string name="desc_copy" msgid="385275789223074637">"ଚୟନିତ ବିଷୟବସ୍ତୁକୁ ଆପଣଙ୍କ କ୍ଲିପବୋର୍ଡକୁ କପି କରେ"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"ଆପଣଙ୍କର କ୍ଲିପବୋର୍ଡକୁ ଲିଙ୍କ କପି କରେ"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"PDFରେ ଥିବା ବିଭାଗ କିମ୍ବା ପୃଷ୍ଠାକୁ ଯାଏ"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"PDFରେ ଥିବା ସମସ୍ତ ଟେକ୍ସଟକୁ ଚୟନ କରେ"</string>
     <string name="desc_page" msgid="6702471448987833953">"ପୃଷ୍ଠା <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"ଖାଲି ପୃଷ୍ଠା"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"ପୃଷ୍ଠା <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>

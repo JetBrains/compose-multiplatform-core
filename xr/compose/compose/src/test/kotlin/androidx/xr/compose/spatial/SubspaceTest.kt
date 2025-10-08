@@ -47,6 +47,7 @@ import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.sizeIn
 import androidx.xr.compose.subspace.layout.testTag
@@ -124,7 +125,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun subspace_alreadyInSubspace_justRendersContentDirectly() {
+    fun subspace_directlyParentedToSubspace_justRendersContentDirectly() {
         composeTestRule.setContentWithCompatibilityForXr {
             Subspace {
                 Subspace {
@@ -134,7 +135,6 @@ class SubspaceTest {
                 }
             }
         }
-        composeTestRule.waitForIdle()
 
         composeTestRule
             .onSubspaceNodeWithTag("innerPanel")
@@ -144,7 +144,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_alreadyInApplicationSubspace_justRendersContentDirectly() {
+    fun applicationSubspace_directlyParentedToApplicationSubspace_justRendersContentDirectly() {
         composeTestRule.setContentWithCompatibilityForXr {
             ApplicationSubspace {
                 ApplicationSubspace {
@@ -154,13 +154,56 @@ class SubspaceTest {
                 }
             }
         }
-        composeTestRule.waitForIdle()
 
         composeTestRule
             .onSubspaceNodeWithTag("innerPanel")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
             .assertWidthIsEqualTo(100.toDp())
             .assertHeightIsEqualTo(100.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_nestedInSubspace_rendersContentDirectlyAndRespectsOffsets() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialBox(modifier = SubspaceModifier.offset(x = 10.dp, y = 20.dp, z = 30.dp)) {
+                    ApplicationSubspace(
+                        modifier = SubspaceModifier.offset(x = 40.dp, y = 50.dp, z = 60.dp)
+                    ) {
+                        SpatialPanel(SubspaceModifier.size(100.dp).testTag("innerPanel")) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("innerPanel")
+            .assertExists()
+            .assertWidthIsEqualTo(100.dp)
+            .assertHeightIsEqualTo(100.dp)
+            .assertPositionInRootIsEqualTo(40.dp, 50.dp, 60.dp)
+    }
+
+    @Test
+    fun applicationSubspace_nestedInApplicationSubspace_rendersContentAndRespectsOffsets() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialBox(modifier = SubspaceModifier.offset(x = 10.dp, y = 20.dp, z = 30.dp)) {
+                    ApplicationSubspace(
+                        modifier = SubspaceModifier.offset(x = 40.dp, y = 50.dp, z = 60.dp)
+                    ) {
+                        SpatialPanel(SubspaceModifier.size(100.dp).testTag("innerPanel")) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("innerPanel")
+            .assertExists()
+            .assertWidthIsEqualTo(100.dp)
+            .assertHeightIsEqualTo(100.dp)
+            .assertPositionInRootIsEqualTo(40.dp, 50.dp, 60.dp)
     }
 
     @Test
@@ -334,7 +377,6 @@ class SubspaceTest {
                 }
             }
         }
-        composeTestRule.waitForIdle()
 
         val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val outerPanelEntity = outerPanelNode.semanticsEntity
@@ -433,90 +475,6 @@ class SubspaceTest {
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-    }
-
-    @Test
-    fun applicationSubspace_recommendedBoxed_panelEmbedded_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "ApplicationSubspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContentWithCompatibilityForXr {
-                Subspace { SpatialPanel { ApplicationSubspace {} } }
-            }
-        }
-    }
-
-    @Test
-    fun applicationSubspace_unbounded_panelEmbedded_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "ApplicationSubspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContentWithCompatibilityForXr {
-                Subspace { SpatialPanel { ApplicationSubspace(allowUnboundedSubspace = true) {} } }
-            }
-        }
-    }
-
-    @Test
-    fun applicationSubspace_customBounded_panelEmbedded_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "ApplicationSubspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContentWithCompatibilityForXr {
-                Subspace {
-                    SpatialPanel {
-                        ApplicationSubspace(
-                            modifier = SubspaceModifier.sizeIn(minWidth = 0.dp, maxWidth = 100.dp)
-                        ) {}
-                    }
-                }
-            }
-        }
-    }
-
-    @Test
-    fun applicationSubspace_recommendedBoxed_asNestedInUnboundedApplicationSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "ApplicationSubspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContentWithCompatibilityForXr {
-                ApplicationSubspace(allowUnboundedSubspace = true) {
-                    SpatialPanel() { ApplicationSubspace {} }
-                }
-            }
-        }
-    }
-
-    @Test
-    fun applicationSubspace_unbounded_asNestedInUnboundedApplicationSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "ApplicationSubspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContentWithCompatibilityForXr {
-                ApplicationSubspace(allowUnboundedSubspace = true) {
-                    SpatialPanel() { ApplicationSubspace(allowUnboundedSubspace = true) {} }
-                }
-            }
-        }
-    }
-
-    @Test
-    fun applicationSubspace_customBounded_asNestedinCustomBoundedApplicationSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "ApplicationSubspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContentWithCompatibilityForXr {
-                ApplicationSubspace(
-                    modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
-                ) {
-                    SpatialPanel {
-                        ApplicationSubspace(
-                            modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
-                        ) {}
-                    }
-                }
-            }
-        }
     }
 
     @Test
@@ -972,7 +930,6 @@ class SubspaceTest {
                 }
             }
         }
-        composeTestRule.waitForIdle()
 
         val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val outerPanelEntity = outerPanelNode.semanticsEntity

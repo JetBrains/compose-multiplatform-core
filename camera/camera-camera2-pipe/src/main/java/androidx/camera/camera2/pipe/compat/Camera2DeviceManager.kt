@@ -100,8 +100,11 @@ internal interface Camera2DeviceManager {
     /** Submits a request to close the underlying camera. */
     fun close(cameraId: CameraId): Deferred<Unit>
 
-    /** Instructs Camera2DeviceManager to close all cameras. */
-    fun closeAll(): Deferred<Unit>
+    /**
+     * Instructs Camera2DeviceManager to close all cameras. If [forceCancelOpen] is true, we force
+     * cancel any pending camera opens after a timeout.
+     */
+    fun closeAll(forceCancelOpen: Boolean = false): Deferred<Unit>
 }
 
 internal class ActiveCamera(
@@ -247,7 +250,10 @@ constructor(
         return request.deferred
     }
 
-    override fun closeAll(): Deferred<Unit> {
+    override fun closeAll(forceCancelOpen: Boolean): Deferred<Unit> {
+        if (forceCancelOpen) {
+            retryingCameraStateOpener.cancelOpen()
+        }
         val request = RequestCloseAll()
         if (!queue.tryEmit(request)) {
             Log.error { "Camera close all request failed!" }

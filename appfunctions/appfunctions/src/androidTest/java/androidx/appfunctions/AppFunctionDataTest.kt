@@ -24,6 +24,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.ext.SdkExtensions
+import androidx.appfunctions.Attachment.Companion.ATTACHMENT_OBJECT_TYPE_METADATA
+import androidx.appfunctions.Note.Companion.NOTE_OBJECT_TYPE_METADATA
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_COMPONENT_METADATA
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
@@ -1015,11 +1020,27 @@ class AppFunctionDataTest {
     @Test
     fun testDeserialize() {
         val data =
-            AppFunctionData.Builder("androidx.appfunctions.Note")
+            AppFunctionData.Builder(
+                    NOTE_OBJECT_TYPE_METADATA,
+                    AppFunctionComponentsMetadata(
+                        mapOf(
+                            "androidx.appfunctions.Attachment" to ATTACHMENT_OBJECT_TYPE_METADATA,
+                            "androidx.appfunctions.Note" to NOTE_OBJECT_TYPE_METADATA,
+                        )
+                    ),
+                )
                 .setString("title", "Test Title")
                 .setAppFunctionData(
                     "attachment",
-                    AppFunctionData.Builder("androidx.appfunctions.Attachment")
+                    AppFunctionData.Builder(
+                            ATTACHMENT_OBJECT_TYPE_METADATA,
+                            AppFunctionComponentsMetadata(
+                                mapOf(
+                                    "androidx.appfunctions.Attachment" to
+                                        ATTACHMENT_OBJECT_TYPE_METADATA
+                                )
+                            ),
+                        )
                         .setString("uri", "Test Uri")
                         .build(),
                 )
@@ -1034,11 +1055,27 @@ class AppFunctionDataTest {
     @Test
     fun testDeserialize_withQualifiedName() {
         val data =
-            AppFunctionData.Builder("androidx.appfunctions.Note")
+            AppFunctionData.Builder(
+                    NOTE_OBJECT_TYPE_METADATA,
+                    AppFunctionComponentsMetadata(
+                        mapOf(
+                            "androidx.appfunctions.Attachment" to ATTACHMENT_OBJECT_TYPE_METADATA,
+                            "androidx.appfunctions.Note" to NOTE_OBJECT_TYPE_METADATA,
+                        )
+                    ),
+                )
                 .setString("title", "Test Title")
                 .setAppFunctionData(
                     "attachment",
-                    AppFunctionData.Builder("androidx.appfunctions.Attachment")
+                    AppFunctionData.Builder(
+                            ATTACHMENT_OBJECT_TYPE_METADATA,
+                            AppFunctionComponentsMetadata(
+                                mapOf(
+                                    "androidx.appfunctions.Attachment" to
+                                        ATTACHMENT_OBJECT_TYPE_METADATA
+                                )
+                            ),
+                        )
                         .setString("uri", "Test Uri")
                         .build(),
                 )
@@ -1062,7 +1099,16 @@ class AppFunctionDataTest {
     @Test
     fun testDeserialize_missingFactory() {
         val data =
-            AppFunctionData.Builder("androidx.appfunctions-MissingFactoryClass")
+            AppFunctionData.Builder(
+                    AppFunctionObjectTypeMetadata(
+                        properties =
+                            mapOf("item" to AppFunctionStringTypeMetadata(isNullable = false)),
+                        required = listOf("item"),
+                        qualifiedName = "androidx.appfunctions-MissingFactoryClass",
+                        isNullable = false,
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
                 .setString("item", "test")
                 .build()
 
@@ -1074,7 +1120,19 @@ class AppFunctionDataTest {
     @Test
     fun testId_buildAsAppFunctionData_ReadAsGenericDocument() {
         assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.TIRAMISU) >= 13)
-        val data = AppFunctionData.Builder("").setString("id", "123456").build()
+        val data =
+            AppFunctionData.Builder(
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "id",
+                            isRequired = true,
+                            dataType = AppFunctionStringTypeMetadata(isNullable = false),
+                        )
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
+                .setString("id", "123456")
+                .build()
         val gd = data.genericDocument
 
         assertThat(gd.id).isEqualTo("123456")
@@ -1195,7 +1253,7 @@ class AppFunctionDataTest {
         val data =
             AppFunctionData.Builder(
                     TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA,
-                    AppFunctionComponentsMetadata(),
+                    TEST_COMPONENT_METADATA,
                 )
                 .setAppFunctionData(
                     "firstGrant",
@@ -1211,7 +1269,7 @@ class AppFunctionDataTest {
                     "nest",
                     AppFunctionData.Builder(
                             TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA,
-                            AppFunctionComponentsMetadata(),
+                            TEST_COMPONENT_METADATA,
                         )
                         .setAppFunctionData(
                             "secondGrant",
@@ -1464,52 +1522,6 @@ class AppFunctionDataTest {
                             isNullable = false,
                         ),
                 ),
-            )
-
-        val TEST_APP_FUNCTION_URI_GRANT_OBJECT_METADATA =
-            AppFunctionObjectTypeMetadata(
-                properties =
-                    mapOf(
-                        "uri" to
-                            AppFunctionObjectTypeMetadata(
-                                properties =
-                                    mapOf(
-                                        "uri" to AppFunctionStringTypeMetadata(isNullable = false)
-                                    ),
-                                required = listOf("uri"),
-                                qualifiedName = "android.net.Uri",
-                                isNullable = false,
-                            ),
-                        "modeFlags" to AppFunctionIntTypeMetadata(isNullable = false),
-                    ),
-                required = listOf(),
-                qualifiedName = "androidx.appfunctions.AppFunctionUriGrant",
-                isNullable = false,
-            )
-
-        val TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA =
-            AppFunctionObjectTypeMetadata(
-                properties = mapOf("secondGrant" to TEST_APP_FUNCTION_URI_GRANT_OBJECT_METADATA),
-                required = listOf("secondGrant"),
-                qualifiedName = "nest",
-                isNullable = false,
-            )
-
-        val TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA =
-            AppFunctionObjectTypeMetadata(
-                properties =
-                    mapOf(
-                        "firstGrant" to TEST_APP_FUNCTION_URI_GRANT_OBJECT_METADATA,
-                        "nest" to TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA,
-                        "thirdGrants" to
-                            AppFunctionArrayTypeMetadata(
-                                itemType = TEST_APP_FUNCTION_URI_GRANT_OBJECT_METADATA,
-                                isNullable = false,
-                            ),
-                    ),
-                required = listOf("firstGrant", "nest"),
-                qualifiedName = "testObject",
-                isNullable = false,
             )
     }
 }

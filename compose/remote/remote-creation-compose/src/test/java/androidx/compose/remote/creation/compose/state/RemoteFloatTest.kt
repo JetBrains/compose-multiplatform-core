@@ -317,17 +317,15 @@ class RemoteFloatTest {
     }
 
     @Test
-    fun evaluateIfConstant() {
-        assertThat(
-                ((RemoteFloat(10f) - RemoteFloat(5f)) * RemoteFloat(3f)).evaluateIfConstant(
-                    creationState
-                )
-            )
+    fun constantValue_constant() {
+        assertThat(((RemoteFloat(10f) - RemoteFloat(5f)) * RemoteFloat(3f)).constantValue)
             .isEqualTo(15f)
+    }
 
+    @Test
+    fun constantValue_notConstant() {
         assertThat(
-                (RemoteFloat(10f) - RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC))
-                    .evaluateIfConstant(creationState)
+                (RemoteFloat(10f) - RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)).constantValue
             )
             .isNull()
     }

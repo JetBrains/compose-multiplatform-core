@@ -37,7 +37,7 @@ import java.util.UUID
 public class FakeAnchorEntity(
     /**
      * The configuration data used to create this [FakeAnchorEntity]. This field is currently used
-     * by [FakeJxrPlatformAdapter.createAnchorEntity] only.
+     * by [FakeSceneRuntime.createAnchorEntity] only.
      *
      * In tests, this property can be inspected to verify that the anchor was instantiated with the
      * correct parameters, such as bounds or plane type. It can also be modified to simulate
@@ -48,14 +48,13 @@ public class FakeAnchorEntity(
     internal val anchorCreationData: AnchorCreationData = AnchorCreationData(),
 
     /**
-     * The underlying [androidx.xr.arcore.runtime.internal.Anchor] instance that this fake entity
-     * represents.
+     * The underlying [androidx.xr.arcore.runtime.Anchor] instance that this fake entity represents.
      *
      * In tests, this property can be accessed to inspect or modify the state of the underlying
      * (fake) anchor, such as its pose or tracking state. It is initialized by default with a
      * [androidx.xr.arcore.testing.FakeRuntimeAnchor] instance.
      *
-     * @see androidx.xr.arcore.runtime.internal.Anchor
+     * @see androidx.xr.arcore.runtime.Anchor
      * @see androidx.xr.arcore.testing.FakeRuntimeAnchor
      */
     internal val anchor: Anchor = FakeRuntimeAnchor(Pose(), FakeRuntimePlane()),

@@ -40,9 +40,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-/**
- * Wraps the native [ARCore1xEarth] with the [androidx.xr.arcore.runtime.internal.Earth] interface.
- */
+/** Wraps the native [ARCore1xEarth] with the [androidx.xr.arcore.runtime.Earth] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ArCoreEarth internal constructor(private val resources: XrResources) : Earth {
 

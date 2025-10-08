@@ -32,7 +32,6 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjection;
@@ -41,6 +40,7 @@ import androidx.xr.scenecore.runtime.CameraViewActivityPose;
 import androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType;
 import androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov;
 import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;

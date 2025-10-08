@@ -18,10 +18,13 @@ package androidx.pdf.testapp
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.ext.SdkExtensions
 import android.view.View
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -54,6 +57,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var composePdfButton: MaterialButton
     private lateinit var fragmentContainer: FrameLayout
 
+    private val isAnnotationsSupported: Boolean by lazy {
+        SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 18
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -77,6 +85,14 @@ class MainActivity : AppCompatActivity() {
         pageObjectPdfButton = scenarioButtons.pageObjectPdf
         fragmentContainer = mainActivity.pdfInteractionFragmentContainerView
 
+        if (isAnnotationsSupported) {
+            editableFragmentButton.setOnClickListener {
+                launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.EDITABLE_FRAGMENT)
+            }
+        } else {
+            editableFragmentButton.visibility = View.GONE
+        }
+
         singlePdfButton.setOnClickListener { loadFragment(SinglePdfFragment()) }
         tabsViewButton.setOnClickListener { loadFragment(TabsViewPdfFragment()) }
         pageObjectPdfButton.setOnClickListener { loadFragment(PageObjectPdfFragment()) }
@@ -84,9 +100,6 @@ class MainActivity : AppCompatActivity() {
             launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.BASIC_FRAGMENT)
         }
         tabsViewV2Button.setOnClickListener { loadFragment(TabbedPdfViewerFragment()) }
-        editableFragmentButton.setOnClickListener {
-            launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.EDITABLE_FRAGMENT)
-        }
         styledPdfFragmentButton.setOnClickListener {
             launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.STYLED_FRAGMENT)
         }
@@ -107,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private fun launchPdfViewerFragmentV2(fragmentType: MainActivityV2.Companion.FragmentType) {
         val intent = Intent(this, MainActivityV2::class.java)
         val bundle = Bundle()
@@ -167,10 +181,10 @@ class MainActivity : AppCompatActivity() {
         tabsViewButton.visibility = View.VISIBLE
         tabsViewV2Button.visibility = View.VISIBLE
         pdfFragmentV2Button.visibility = View.VISIBLE
-        editableFragmentButton.visibility = View.VISIBLE
         styledPdfFragmentButton.visibility = View.VISIBLE
         xmlStyledPdfFragmentButton.visibility = View.VISIBLE
         pageObjectPdfButton.visibility = View.VISIBLE
+        editableFragmentButton.visibility = if (isAnnotationsSupported) View.VISIBLE else View.GONE
     }
 
     private fun hideButtons() {

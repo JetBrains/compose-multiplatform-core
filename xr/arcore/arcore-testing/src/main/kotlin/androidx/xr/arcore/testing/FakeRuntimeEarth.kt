@@ -24,15 +24,15 @@ import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 
-/** Test-only implementation of [androidx.xr.arcore.runtime.internal.Earth]. */
+/** Test-only implementation of [androidx.xr.arcore.runtime.Earth]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRuntimeEarth(override var state: RuntimeEarth.State = RuntimeEarth.State.STOPPED) :
     RuntimeEarth {
 
     /**
-     * The next [androidx.xr.arcore.runtime.internal.Earth.GeospatialPoseResult] that will be
-     * returned by [createGeospatialPoseFromPose] or [createGeospatialPoseFromDevicePose]. Is reset
-     * after the result is returned.
+     * The next [androidx.xr.arcore.runtime.Earth.GeospatialPoseResult] that will be returned by
+     * [createGeospatialPoseFromPose] or [createGeospatialPoseFromDevicePose]. Is reset after the
+     * result is returned.
      */
     public var nextGeospatialPoseResult: GeospatialPoseResult? = null
 
@@ -68,10 +68,10 @@ public class FakeRuntimeEarth(override var state: RuntimeEarth.State = RuntimeEa
     }
 
     /**
-     * Returns the supplied [androidx.xr.arcore.runtime.internal.Earth.GeospatialPoseResult].
+     * Returns the supplied [androidx.xr.arcore.runtime.Earth.GeospatialPoseResult].
      *
-     * @throws IllegalStateException if no
-     *   [androidx.xr.arcore.runtime.internal.Earth.GeospatialPoseResult] is set.
+     * @throws IllegalStateException if no [androidx.xr.arcore.runtime.Earth.GeospatialPoseResult]
+     *   is set.
      */
     override public fun createGeospatialPoseFromPose(pose: Pose): GeospatialPoseResult {
         maybeThrowException()
@@ -82,10 +82,10 @@ public class FakeRuntimeEarth(override var state: RuntimeEarth.State = RuntimeEa
     }
 
     /**
-     * Returns the supplied [androidx.xr.arcore.runtime.internal.Earth.GeospatialPoseResult].
+     * Returns the supplied [androidx.xr.arcore.runtime.Earth.GeospatialPoseResult].
      *
-     * @throws IllegalStateException if no
-     *   [androidx.xr.arcore.runtime.internal.Earth.GeospatialPoseResult] is set.
+     * @throws IllegalStateException if no [androidx.xr.arcore.runtime.Earth.GeospatialPoseResult]
+     *   is set.
      */
     override public fun createGeospatialPoseFromDevicePose(): GeospatialPoseResult {
         maybeThrowException()

@@ -24,8 +24,7 @@ import androidx.xr.runtime.Config.ConfigMode
 import kotlin.time.ComparableTimeMark
 
 /**
- * Implementation of the [androidx.xr.arcore.runtime.internal.PerceptionRuntime] interface using
- * Projected.
+ * Implementation of the [androidx.xr.arcore.runtime.PerceptionRuntime] interface using Projected.
  *
  * @property lifecycleManager that manages the lifecycle of the Projected session.
  * @property perceptionManager that manages the perception capabilities of a runtime using

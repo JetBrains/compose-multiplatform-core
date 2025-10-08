@@ -26,7 +26,6 @@ import androidx.xr.runtime.math.Matrix3;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.runtime.math.Vector4;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial;
@@ -50,6 +49,7 @@ import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.TextureResource;
 import androidx.xr.scenecore.runtime.TextureSampler;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 
 import com.android.extensions.xr.XrExtensions;
 

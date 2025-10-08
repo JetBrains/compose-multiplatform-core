@@ -29,7 +29,6 @@ import android.view.View;
 import androidx.annotation.VisibleForTesting;
 import androidx.xr.arcore.runtime.Anchor;
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
@@ -69,6 +68,7 @@ import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
 import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.SurfaceFeature;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

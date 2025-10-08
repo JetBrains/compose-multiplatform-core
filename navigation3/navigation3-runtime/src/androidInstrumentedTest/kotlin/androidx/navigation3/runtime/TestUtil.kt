@@ -22,5 +22,5 @@ internal fun <K : Any> createTestNavEntryDecorator(
     onPop: (contentKey: Any) -> Unit = {},
     decorateEntry: @Composable (NavEntry<K>) -> Unit = { entry -> entry.Content() },
 ): NavEntryDecorator<K> {
-    return navEntryDecorator(onPop = onPop) { entry -> decorateEntry(entry) }
+    return NavEntryDecorator(onPop = onPop) { entry -> decorateEntry(entry) }
 }

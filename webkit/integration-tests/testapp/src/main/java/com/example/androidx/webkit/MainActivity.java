@@ -110,6 +110,9 @@ public class MainActivity extends AppCompatActivity {
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.payment_request_activity_title),
                         new Intent(activityContext, PaymentRequestActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.custom_header_activity_title),
+                        new Intent(activityContext, CustomHeaderActivity.class)),
         };
         listView.setItems(menuItems);
     }

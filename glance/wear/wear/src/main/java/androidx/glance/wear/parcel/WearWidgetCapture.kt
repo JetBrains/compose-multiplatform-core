@@ -23,7 +23,7 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.Operations
 import androidx.compose.remote.core.Platform
 import androidx.compose.remote.creation.RemoteComposeWriter
-import androidx.compose.remote.creation.compose.capture.Connection
+import androidx.compose.remote.creation.compose.capture.HostDisplayInfo
 import androidx.compose.remote.creation.compose.capture.PendingIntentAwareWriter
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -44,13 +44,13 @@ internal object WearWidgetCapture {
     @SuppressLint("RestrictedApiAndroidX")
     internal suspend fun capture(
         context: Context,
-        connection: Connection,
+        hostDisplayInfo: HostDisplayInfo,
         content: @Composable @RemoteComposable () -> Unit,
     ): WearWidgetRawContent = suspendCancellableCoroutine { continuation ->
         val pendingIntents = WidgetPendingIntents()
         RemoteComposeCapture(
             context = context,
-            connection = connection,
+            hostDisplayInfo = hostDisplayInfo,
             immediateCapture = true,
             onPaint = { view, writer ->
                 if (continuation.isActive) {

@@ -29,11 +29,11 @@ import static org.mockito.Mockito.verify;
 
 import android.app.Activity;
 
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.runtime.ExrImageResource;
 import androidx.xr.scenecore.runtime.GltfModelResource;
 import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference;
 import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;

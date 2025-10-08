@@ -46,7 +46,6 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Session;
@@ -56,6 +55,7 @@ import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.PlaneSemantic;
 import androidx.xr.scenecore.runtime.PlaneType;
 import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeGltfFeature;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 

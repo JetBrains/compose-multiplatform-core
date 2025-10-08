@@ -35,8 +35,7 @@ import androidx.compose.runtime.remember
  *   might still return `false` due to the cost of tracking their dependencies.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class RemoteLong
-internal constructor(public override val hasConstantValue: Boolean) : RemoteState<Long> {
+public abstract class RemoteLong : RemoteState<Long> {
 
     public abstract val id: Int
 
@@ -50,7 +49,7 @@ internal constructor(public override val hasConstantValue: Boolean) : RemoteStat
          * @return A [MutableRemoteLong] representing the constant value.
          */
         public operator fun invoke(v: Long): RemoteLong {
-            return MutableRemoteLong(mutableLongStateOf(v), true) { creationState ->
+            return MutableRemoteLong(mutableLongStateOf(v), v) { creationState ->
                 creationState.document.addLong(v)
             }
         }
@@ -65,7 +64,8 @@ internal constructor(public override val hasConstantValue: Boolean) : RemoteStat
          */
         @JvmStatic
         public fun createNamedRemoteLong(name: String, initialValue: Long): RemoteLong {
-            return MutableRemoteLong(mutableLongStateOf(initialValue), false) { creationState ->
+            return MutableRemoteLong(mutableLongStateOf(initialValue), constantValue = null) {
+                creationState ->
                 creationState.document.addNamedLong(name, initialValue)
             }
         }
@@ -84,9 +84,9 @@ internal constructor(public override val hasConstantValue: Boolean) : RemoteStat
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MutableRemoteLong(
     private val content: MutableLongState,
-    hasConstantValue: Boolean,
+    public override val constantValue: Long?,
     private val idProvider: (creationState: RemoteComposeCreationState) -> Int,
-) : RemoteLong(hasConstantValue), MutableRemoteState<Long> {
+) : RemoteLong(), MutableRemoteState<Long> {
 
     /**
      * Constructor for [MutableRemoteLong] that allows specifying an optional initial ID. If no ID
@@ -100,7 +100,7 @@ public class MutableRemoteLong(
         id: Int? = null,
     ) : this(
         content,
-        false,
+        constantValue = null,
         { creationState -> id ?: Utils.idFromNan(creationState.document.reserveFloatVariable()) },
     )
 
@@ -153,7 +153,7 @@ public fun rememberRemoteLongValue(
 ): MutableRemoteLong {
     return remember(name) {
         val initial = value()
-        MutableRemoteLong(mutableLongStateOf(initial), false) { creationState ->
+        MutableRemoteLong(mutableLongStateOf(initial), constantValue = null) { creationState ->
             val id = creationState.document.addNamedLong(name, initial)
             creationState.document.setStringName(id.toInt(), "$domain:$name")
             id

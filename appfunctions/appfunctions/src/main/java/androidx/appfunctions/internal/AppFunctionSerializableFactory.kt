@@ -21,7 +21,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionData
-import androidx.appfunctions.internal.Dependencies.appFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 
@@ -48,8 +47,8 @@ public interface AppFunctionSerializableFactory<T : Any> {
     public fun toAppFunctionData(appFunctionSerializable: T): AppFunctionData
 
     // TODO: b/442726462 - Consider decoupling Serializable metadata generation from inventories.
-    private fun getAppFunctionComponentsMetadata(): AppFunctionComponentsMetadata? =
-        appFunctionInventory?.componentsMetadata
+    private fun getAppFunctionComponentsMetadata(): AppFunctionComponentsMetadata =
+        Dependencies.appFunctionInventory?.componentsMetadata ?: AppFunctionComponentsMetadata()
 
     /**
      * Returns an [AppFunctionData.Builder] instance with validation for the serializable specified
@@ -58,11 +57,10 @@ public interface AppFunctionSerializableFactory<T : Any> {
     public fun getAppFunctionDataBuilder(qualifiedName: String): AppFunctionData.Builder {
         val componentsMetadata = getAppFunctionComponentsMetadata()
 
-        if (componentsMetadata == null) return AppFunctionData.Builder(qualifiedName)
-
         val dataTypeMetadata =
             componentsMetadata.dataTypes[qualifiedName] as? AppFunctionObjectTypeMetadata
 
+        // TODO(b/447302747): Remove after resolving affected tests.
         if (dataTypeMetadata == null) return AppFunctionData.Builder(qualifiedName)
 
         return AppFunctionData.Builder(dataTypeMetadata, componentsMetadata)
@@ -77,8 +75,6 @@ public interface AppFunctionSerializableFactory<T : Any> {
         qualifiedName: String,
     ): AppFunctionData {
         val componentsMetadata = getAppFunctionComponentsMetadata()
-
-        if (componentsMetadata == null) return appFunctionData
 
         val dataTypeMetadata =
             componentsMetadata.dataTypes[qualifiedName] as? AppFunctionObjectTypeMetadata

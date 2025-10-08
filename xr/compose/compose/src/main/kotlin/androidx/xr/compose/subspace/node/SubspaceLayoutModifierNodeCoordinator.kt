@@ -63,19 +63,13 @@ internal class SubspaceLayoutModifierNodeCoordinator(
      * The pose of this layout modifier node relative to the root entity of the Compose hierarchy.
      */
     override val poseInRoot: Pose
-        get() =
-            coordinatesInRoot?.poseInRoot?.let { parentPoseInRoot ->
-                parentPoseInRoot.compose(pose)
-            } ?: pose
+        get() = coordinatesInRoot?.poseInRoot?.compose(pose) ?: pose
 
     /**
      * The pose of this layout modifier node relative to its parent entity in the Compose hierarchy.
      */
     override val poseInParentEntity: Pose
-        get() =
-            coordinatesInParentEntity?.poseInParentEntity?.let { parentEntityPose ->
-                parentEntityPose.compose(pose)
-            } ?: pose
+        get() = coordinatesInParentEntity?.poseInParentEntity?.compose(pose) ?: pose
 
     /**
      * The layout coordinates of the parent [SubspaceLayoutNode] up to the root of the hierarchy

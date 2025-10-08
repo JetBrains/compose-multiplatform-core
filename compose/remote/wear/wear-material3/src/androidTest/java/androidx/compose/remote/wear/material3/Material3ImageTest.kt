@@ -42,7 +42,7 @@ class Material3ImageTest {
     @get:Rule
     val remoteComposeTestRule =
         RemoteComposeScreenshotTestRule(
-            moduleDirectory = GOLDEN_REMOTE_COMPOSE,
+            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
             targetPlayer = TargetPlayer.View,
         )
 
@@ -83,8 +83,6 @@ class Material3ImageTest {
     }
 
     internal companion object {
-        const val GOLDEN_REMOTE_COMPOSE = "compose/remote/wear/wear-material3"
-
         // Draws a red cross with a blue background
         fun createImage(tw: Int, th: Int): Bitmap {
             val image = Bitmap.createBitmap(tw, th, Bitmap.Config.ARGB_8888)

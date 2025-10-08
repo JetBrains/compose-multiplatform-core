@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 // TODO(b/386721657): Remove this activity once the switch to V2 completes
 
 @SuppressLint("RestrictedApiAndroidX")
+@Suppress("NewApi")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class MainActivityV2 : AppCompatActivity() {
 
@@ -67,14 +68,14 @@ internal class MainActivityV2 : AppCompatActivity() {
 
     private lateinit var savePdfButton: MaterialButton
 
-    @VisibleForTesting
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    @VisibleForTesting
     private var filePicker: ActivityResultLauncher<String> =
         registerForActivityResult(GetContent()) { uri: Uri? ->
             uri?.let { pdfViewerFragment.documentUri = uri }
         }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     private val createDocumentLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.CreateDocument(MIME_TYPE_PDF)) { uri: Uri?
             ->
@@ -159,7 +160,6 @@ internal class MainActivityV2 : AppCompatActivity() {
         }
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private fun setPdfView() {
         pdfViewerFragment.let {
             val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()

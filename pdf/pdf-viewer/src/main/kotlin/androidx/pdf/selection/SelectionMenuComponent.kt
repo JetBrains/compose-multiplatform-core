@@ -29,6 +29,12 @@ public object PdfSelectionMenuKeys {
     /** Key for the context menu "Copy" item. */
     @JvmField public val CopyKey: Any = Any()
 
+    /** Key for the context menu "Copy link" item. */
+    @JvmField public val CopyLinkKey: Any = Any()
+
+    /** Key for the context menu "Jump" item. */
+    @JvmField public val GoToKey: Any = Any()
+
     /** Key for the context menu "Select all" item. */
     @JvmField public val SelectAllKey: Any = Any()
 

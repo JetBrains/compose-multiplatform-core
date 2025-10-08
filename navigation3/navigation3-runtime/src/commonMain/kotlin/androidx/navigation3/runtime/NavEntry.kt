@@ -24,9 +24,15 @@ import androidx.compose.runtime.Composable
  *
  * @param T the type of the key for this NavEntry
  * @param key key for this entry
- * @param contentKey A unique, stable id that uniquely identifies the content of this NavEntry. To
- *   maximize stability, it should be derived from the [key]. The contentKey type must be saveable
- *   (i.e. on Android, it should be saveable via Android). Defaults to [key].toString().
+ * @param contentKey A unique, stable id that
+ *     1. uniquely identifies the content of this NavEntry
+ *     2. uniquely identifies any [NavEntryDecorator] states associated with this NavEntry.
+ *
+ *    NavEntries that share the same contentKey will be handled as sharing the same content and/or
+ *    [NavEntryDecorator] state. To maximize stability, it should be derived from the [key]. The
+ *    contentKey type must be saveable (i.e. on Android, it should be saveable via Android).
+ *    Defaults to [key].toString().
+ *
  * @param metadata provides information to the display
  * @param content content for this entry to be displayed when this entry is active
  */

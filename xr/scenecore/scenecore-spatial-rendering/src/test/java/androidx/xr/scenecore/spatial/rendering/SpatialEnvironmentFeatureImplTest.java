@@ -24,12 +24,12 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.MaterialData;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.runtime.MaterialResource;
 import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;

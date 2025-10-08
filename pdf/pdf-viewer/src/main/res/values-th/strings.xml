@@ -17,6 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="label_copy_link" msgid="869104793055534158">"คัดลอกลิงก์"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"ข้ามไปที่"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"ไฟล์นี้ได้รับการป้องกัน"</string>
     <string name="label_password_first" msgid="4456258714097111908">"รหัสผ่าน"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"รหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง"</string>
@@ -30,6 +32,10 @@
     <string name="desc_zoom" msgid="7318480946145947242">"ซูม <xliff:g id="FIRST">%1$d</xliff:g> เปอร์เซ็นต์"</string>
     <string name="desc_goto" msgid="1333698934111921601">"ไปที่"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"ไปที่หน้า <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>"</string>
+    <string name="desc_copy" msgid="385275789223074637">"คัดลอกเนื้อหาที่เลือกไปยังคลิปบอร์ด"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"คัดลอกลิงก์ไปยังคลิปบอร์ด"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"ข้ามไปที่ส่วนหรือหน้าใน PDF"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"เลือกข้อความทั้งหมดใน PDF"</string>
     <string name="desc_page" msgid="6702471448987833953">"หน้าที่ <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"หน้าว่างเปล่า"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"หน้า <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>

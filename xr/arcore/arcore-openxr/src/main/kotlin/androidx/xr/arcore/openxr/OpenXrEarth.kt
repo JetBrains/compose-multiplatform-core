@@ -23,9 +23,7 @@ import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 
-/**
- * Currently unimplemented implementation of [androidx.xr.arcore.runtime.internal.Earth] on OpenXR.
- */
+/** Currently unimplemented implementation of [androidx.xr.arcore.runtime.Earth] on OpenXR. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrEarth internal constructor(private val xrResources: XrResources) :
     Earth, Updatable {

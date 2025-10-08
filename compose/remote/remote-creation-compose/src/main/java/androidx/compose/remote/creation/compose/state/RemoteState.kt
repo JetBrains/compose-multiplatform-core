@@ -95,7 +95,13 @@ public interface BaseRemoteState {
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Stable
-public interface RemoteState<T> : State<T>, BaseRemoteState
+public interface RemoteState<T> : State<T>, BaseRemoteState {
+    /** The constant value or null if there isn't one. */
+    public val constantValue: T?
+
+    override val hasConstantValue: Boolean
+        get() = constantValue != null
+}
 
 /**
  * A readable and writable Remote Compose State value.

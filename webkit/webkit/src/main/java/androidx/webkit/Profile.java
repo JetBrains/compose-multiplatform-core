@@ -16,6 +16,7 @@
 
 package androidx.webkit;
 
+import android.os.Build;
 import android.os.CancellationSignal;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
@@ -25,8 +26,10 @@ import android.webkit.WebStorage;
 import android.webkit.WebView;
 
 import androidx.annotation.AnyThread;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.core.os.OutcomeReceiverCompat;
 
@@ -37,6 +40,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -323,6 +327,7 @@ public interface Profile {
     void setOriginMatchedHeader(@NonNull String headerName,
             @NonNull String headerValue, @NonNull Set<String> originRules);
 
+
     /**
      * Returns true if the profile has a value set for the given header name.
      *
@@ -365,6 +370,148 @@ public interface Profile {
     void clearAllOriginMatchedHeaders();
 
     /**
+     * Add a header for outgoing requests that match the given origin rules.
+     * <p>
+     * It applies to all requests that are initiated after this method is called,
+     * including prefetch requests and requests sent from service workers. It does
+     * not apply the header to WebSocket requests.
+     * <p>
+     * Headers added through this API will be present in the set returned by
+     * getRequestHeaders provided in shouldInterceptRequest.
+     * <p>
+     * If this method is called multiple times with headers that have the same name and value,
+     * then the sets of will be merged into a single set.
+     * <p>
+     * If multiple headers with the same name but different values match a request,
+     * then all the values will be sent in a comma-separated list of values
+     * following the guidance for <a
+     * href="https://www.rfc-editor.org/rfc/rfc7230#section-3.2.2">repeated
+     * header fields</a>. This does not take into account whether such merging is safe.
+     *
+     * @param header The header to add.
+     */
+    @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default void addCustomHeader(@NonNull CustomHeader header) {}
+
+    /**
+     * Returns true if the profile has a value set for the given header name.
+     *
+     * @param headerName A
+     *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
+     * @return {@code true} if there is a value mapped for the provided {@code
+     * headerName}, {code false} otherwise.
+     * @see #addCustomHeader(CustomHeader)
+     */
+    @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default boolean hasCustomHeader(@NonNull String headerName) {
+        return false;
+    }
+
+    /**
+     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} or
+     * {@link #setOriginMatchedHeader(String, String, Set)}.
+     */
+    @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
+    @UiThread
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default Set<CustomHeader> getCustomHeaders() {
+        return Collections.emptySet();
+    }
+
+    /**
+     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} or
+     * {@link #setOriginMatchedHeader(String, String, Set)} which have the specified {@code name}.
+     *
+     * @param name Name of headers to get. Case sensitive.
+     */
+    @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
+    @UiThread
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default Set<CustomHeader> getCustomHeaders(@NonNull String name) {
+        return Collections.emptySet();
+    }
+
+    /**
+     * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} or
+     * {@link #setOriginMatchedHeader(String, String, Set)} which have the specified {@code name}
+     * and {@code value}.
+     *
+     * @param name  Name of headers to get. Case sensitive.
+     * @param value Value of headers to get. Case sensitive.
+     */
+    @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
+    @UiThread
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default Set<CustomHeader> getCustomHeaders(@NonNull String name, @NonNull String value) {
+        return Collections.emptySet();
+    }
+
+    /**
+     * Removes the specified headers from the set of headers attached to requests. This will
+     * remove all configured headers that match {@code headerName}.
+     * <p>
+     * It is safe to call this method even if {@code headerName} has not previously been set via
+     * {@link #addCustomHeader(CustomHeader)} or
+     * {@link #setOriginMatchedHeader(String, String, Set)}.
+     *
+     * @param headerName Header to remove.
+     * @see #addCustomHeader(CustomHeader)
+     */
+    @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default void clearCustomHeader(@NonNull String headerName) {
+    }
+
+    /**
+     * Removes the specified header from the set of headers attached to requests.
+     * <p>
+     * It is safe to call this method even if {@code (headerName, headerValue)} has not
+     * previously been set via
+     * {@link #addCustomHeader(CustomHeader)} or
+     * {@link #setOriginMatchedHeader(String, String, Set)}.
+     *
+     * @param headerName  Header name to remove.
+     * @param headerValue Header value to remove.
+     * @see #addCustomHeader(CustomHeader)
+     */
+    @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default void clearCustomHeader(@NonNull String headerName, @NonNull String headerValue) {
+    }
+
+    /**
+     * Remove any currently set headers from being applied to network requests.
+     *
+     * @see #addCustomHeader(CustomHeader)
+     * @see #setOriginMatchedHeader(String, String, Set)
+     */
+    @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    default void clearAllCustomHeaders() {
+    }
+
+    /**
      * Denotes that the Profile#preconnect API surface is experimental.
      * It may change without warning.
      */
@@ -391,7 +538,8 @@ public interface Profile {
      * <p>
      * Multiple origins can be connected to by calling this API multiple times.
      * <p>
-     * See: <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/preconnect">HTML Preconnect Specification</a>
+     * See:
+     * <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/preconnect">HTML Preconnect Specification</a>
      *
      * @param url A url containing the origin to open a connection to.
      */

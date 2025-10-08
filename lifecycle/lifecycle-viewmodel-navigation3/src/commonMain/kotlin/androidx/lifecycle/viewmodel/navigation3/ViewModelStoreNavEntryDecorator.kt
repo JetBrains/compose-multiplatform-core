@@ -37,7 +37,6 @@ import androidx.lifecycle.viewmodel.navigation3.internal.shouldRemoveViewModelSt
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
-import androidx.navigation3.runtime.navEntryDecorator
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
@@ -84,7 +83,7 @@ public fun <T : Any> ViewModelStoreNavEntryDecorator(
             storeOwnerProvider.clearViewModelStoreOwnerForKey(key)
         }
     }
-    return navEntryDecorator(onPop) { entry ->
+    return NavEntryDecorator(onPop) { entry ->
         val viewModelStore = storeOwnerProvider.viewModelStoreForKey(entry.contentKey)
 
         val savedStateRegistryOwner = LocalSavedStateRegistryOwner.current

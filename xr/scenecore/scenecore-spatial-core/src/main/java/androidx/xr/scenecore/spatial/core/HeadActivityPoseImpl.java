@@ -69,7 +69,8 @@ class HeadActivityPoseImpl extends BaseActivityPose implements HeadActivityPose 
             @NonNull Vector3 origin,
             @NonNull Vector3 direction,
             @HitTestFilterValue int hitTestFilter) {
-        return mActivitySpace.hitTestRelativeToActivityPose(origin, direction, hitTestFilter, this);
+        return mActivitySpace.hitTestRelativeToActivityPose(origin, direction, hitTestFilter,
+                this);
     }
 
     /** Gets the pose in the OpenXR reference space. Can be null if it is not yet ready. */
@@ -78,7 +79,8 @@ class HeadActivityPoseImpl extends BaseActivityPose implements HeadActivityPose 
         if (session == null) {
             return mLastOpenXrPose;
         }
-        androidx.xr.scenecore.impl.perception.Pose perceptionHeadPose = session.getHeadPose();
+        androidx.xr.scenecore.impl.perception.Pose perceptionHeadPose =
+                session.getHeadPose();
         if (perceptionHeadPose != null) {
             mLastOpenXrPose = RuntimeUtils.fromPerceptionPose(perceptionHeadPose);
         }

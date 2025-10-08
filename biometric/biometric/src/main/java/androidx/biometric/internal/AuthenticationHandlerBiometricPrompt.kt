@@ -34,13 +34,16 @@ import androidx.biometric.BiometricPrompt.AuthenticationCallback
 import androidx.biometric.BiometricPrompt.CryptoObject
 import androidx.biometric.BiometricPrompt.PromptInfo
 import androidx.biometric.R
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.utils.AuthenticatorUtils
 import androidx.biometric.utils.CryptoObjectUtils
 import androidx.biometric.utils.ErrorUtils
 import androidx.biometric.utils.PromptContentViewUtils
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import java.util.concurrent.Executor
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 private const val TAG = "AuthHandlerBP"
 
@@ -49,13 +52,13 @@ private const val TAG = "AuthHandlerBP"
  * for handling the authentication flow.
  *
  * This handler is responsible for constructing and displaying the system biometric prompt based on
- * the configuration provided in the [BiometricViewModel], and processing the results. It uses an
- * internal [AuthenticationManager] to manage state and interactions.
+ * the configuration provided in the [AuthenticationViewModel], and processing the results. It uses
+ * an internal [AuthenticationManager] to manage state and interactions.
  */
 internal class AuthenticationHandlerBiometricPrompt(
     val context: Context,
     lifecycleOwner: LifecycleOwner,
-    val viewModel: BiometricViewModel,
+    val viewModel: AuthenticationViewModel,
     confirmCredentialActivityLauncher: Runnable,
     val clientExecutor: Executor,
     clientAuthenticationCallback: AuthenticationCallback,
@@ -70,15 +73,11 @@ internal class AuthenticationHandlerBiometricPrompt(
             clientAuthenticationCallback,
         )
 
-    private val isMoreOptionsButtonPressPendingObserver =
-        Observer { moreOptionsButtonPressPending: Boolean? ->
-            if (moreOptionsButtonPressPending != null && moreOptionsButtonPressPending) {
-                if (viewModel.isPromptShowing) {
-                    onMoreOptionsButtonPressed()
-                }
-                viewModel.setMoreOptionsButtonPressPending(false)
-            }
+    private val isMoreOptionsButtonPressPendingObserver = {
+        if (viewModel.isPromptShowing) {
+            onMoreOptionsButtonPressed()
         }
+    }
 
     init {
         val resultDispatcher =
@@ -111,24 +110,27 @@ internal class AuthenticationHandlerBiometricPrompt(
 
         val uiStateObserver =
             object : AuthenticationUiStateObserver {
+                private var uiStateObserverJob: Job? = null
+
                 override fun connectObservers() {
-                    viewModel.isNegativeButtonPressPending.observe(
-                        lifecycleOwner,
-                        authenticationManager.isNegativeButtonPressPendingObserver,
-                    )
-                    viewModel.isMoreOptionsButtonPressPending.observe(
-                        lifecycleOwner,
-                        isMoreOptionsButtonPressPendingObserver,
-                    )
+                    uiStateObserverJob =
+                        lifecycleOwner.lifecycleScope.launch {
+                            launch {
+                                viewModel.isNegativeButtonPressPending.collect {
+                                    authenticationManager.isNegativeButtonPressPendingObserver()
+                                }
+                            }
+                            launch {
+                                viewModel.isMoreOptionsButtonPressPending.collect {
+                                    isMoreOptionsButtonPressPendingObserver()
+                                }
+                            }
+                        }
                 }
 
                 override fun disconnectObservers() {
-                    viewModel.isNegativeButtonPressPending.removeObserver(
-                        authenticationManager.isNegativeButtonPressPendingObserver
-                    )
-                    viewModel.isMoreOptionsButtonPressPending.removeObserver(
-                        isMoreOptionsButtonPressPendingObserver
-                    )
+                    uiStateObserverJob?.cancel()
+                    uiStateObserverJob = null
                 }
             }
         authenticationManager.initialize(resultDispatcher, uiStateObserver)

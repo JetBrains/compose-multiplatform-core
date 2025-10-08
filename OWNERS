@@ -35,6 +35,8 @@ per-file *libraryversions.toml = pbirk@google.com, elabadysayed@google.com
 per-file *docs-public/build.gradle = juanrdz@google.com, diegovela@google.com
 # Compose *
 per-file *libraryversions.toml = juanrdz@google.com
+# Credentials *
+per-file *libraryversions.toml = helenqin@google.com, leecam@google.com, reemabajwa@google.com
 # Glance
 per-file *libraryversions.toml = zakcohen@google.com
 # AppSearch

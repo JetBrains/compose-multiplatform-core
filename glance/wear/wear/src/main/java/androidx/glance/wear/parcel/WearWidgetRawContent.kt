@@ -17,10 +17,8 @@
 package androidx.glance.wear.parcel
 
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.glance.wear.proto.WearWidgetRawContentProto
-import java.io.IOException
 import okio.ByteString.Companion.toByteString
 
 /**
@@ -42,17 +40,12 @@ public class WearWidgetRawContent(public val rcDocument: ByteArray, public val e
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public companion object {
-        public fun fromParcel(contentParcel: WearWidgetRawContentParcel): WearWidgetRawContent? {
-            try {
-                val contentProto = WearWidgetRawContentProto.ADAPTER.decode(contentParcel.payload)
-                return WearWidgetRawContent(
-                    rcDocument = contentProto.rc_document.toByteArray(),
-                    extras = contentParcel.extras,
-                )
-            } catch (ex: IOException) {
-                Log.e(TAG, "Error deserializing WearWidgetRawContentParcel payload.", ex)
-            }
-            return null
+        public fun fromParcel(contentParcel: WearWidgetRawContentParcel): WearWidgetRawContent {
+            val contentProto = WearWidgetRawContentProto.ADAPTER.decode(contentParcel.payload)
+            return WearWidgetRawContent(
+                rcDocument = contentProto.rc_document.toByteArray(),
+                extras = contentParcel.extras,
+            )
         }
 
         private const val TAG = "WearWidgetRequest"

@@ -112,8 +112,8 @@ public open class RemotePaint : Paint {
 
     internal fun getColorLong(creationState: RemoteComposeCreationState): Long? {
         remoteColor?.let {
-            return it.evaluateIfConstant(creationState)?.let { it.toLong() shl 32 }
-                ?: it.getValueForCreationState(creationState)
+            return it.constantValue?.let { it.pack() }
+                ?: it.getIdForCreationState(creationState).toLong()
         }
         return null
     }

@@ -17,6 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="label_copy_link" msgid="869104793055534158">"लिंक कॉपी करें"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"यहां जाएं"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"यह फ़ाइल सुरक्षित है"</string>
     <string name="label_password_first" msgid="4456258714097111908">"पासवर्ड"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"पासवर्ड गलत है. फिर से कोशिश करें."</string>
@@ -30,6 +32,10 @@
     <string name="desc_zoom" msgid="7318480946145947242">"<xliff:g id="FIRST">%1$d</xliff:g> प्रतिशत ज़ूम करें"</string>
     <string name="desc_goto" msgid="1333698934111921601">"यहां जाएं"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"<xliff:g id="PAGE_NUMBER">%1$d</xliff:g> पेज पर जाएं"</string>
+    <string name="desc_copy" msgid="385275789223074637">"इससे, चुने गए कॉन्टेंट को क्लिपबोर्ड पर कॉपी किया जाता है"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"इससे लिंक को क्लिपबोर्ड पर कॉपी किया जाता है"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"इससे PDF में मौजूद सेक्शन या पेज पर जाया जाता है"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"इससे PDF में मौजूद पूरा टेक्स्ट चुना जाता है"</string>
     <string name="desc_page" msgid="6702471448987833953">"पेज <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"पेज खाली है"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"पेज <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>

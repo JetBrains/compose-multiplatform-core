@@ -16,9 +16,11 @@
 
 package androidx.biometric.internal
 
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel
+
 /**
- * An interface for classes that manage the connection and disconnection of [BiometricViewModel]
- * observers for the authentication UI state.
+ * An interface for classes that manage the connection and disconnection of
+ * [AuthenticationViewModel] observers for the authentication UI state.
  */
 internal interface AuthenticationUiStateObserver {
     /** Connects all necessary observers to their respective data sources. */

@@ -236,12 +236,12 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val earth: ArCoreEarth = xrResources.earth
 
-    /** Returns the [androidx.xr.arcore.runtime.internal.ArDevice] instance. */
+    /** Returns the [androidx.xr.arcore.runtime.ArDevice] instance. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val arDevice: ArCoreDevice = xrResources.arDevice
 
     /**
-     * Returns the left [androidx.xr.arcore.runtime.internal.RenderViewpoint] object.
+     * Returns the left [androidx.xr.arcore.runtime.RenderViewpoint] object.
      *
      * This is not available in ARCore.
      */
@@ -249,7 +249,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val leftRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the right [androidx.xr.arcore.runtime.internal.RenderViewpoint] object.
+     * Returns the right [androidx.xr.arcore.runtime.RenderViewpoint] object.
      *
      * This is not available in ARCore.
      */
@@ -257,7 +257,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val rightRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the mono[androidx.xr.arcore.runtime.internal.RenderViewpoint] object.
+     * Returns the mono[androidx.xr.arcore.runtime.RenderViewpoint] object.
      *
      * This is not currently implemented in ARCore.
      */
@@ -265,21 +265,21 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val monoRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the left [androidx.xr.arcore.runtime.internal.DepthMap] object.
+     * Returns the left [androidx.xr.arcore.runtime.DepthMap] object.
      *
      * This is not available in ARCore.
      */
     override val leftDepthMap: DepthMap? = null
 
     /**
-     * Returns the right [androidx.xr.arcore.runtime.internal.DepthMap] object.
+     * Returns the right [androidx.xr.arcore.runtime.DepthMap] object.
      *
      * This is not available in ARCore.
      */
     override val rightDepthMap: DepthMap? = null
 
     /**
-     * Returns the mono [androidx.xr.arcore.runtime.internal.DepthMap] object.
+     * Returns the mono [androidx.xr.arcore.runtime.DepthMap] object.
      *
      * This is not available in ARCore.
      */

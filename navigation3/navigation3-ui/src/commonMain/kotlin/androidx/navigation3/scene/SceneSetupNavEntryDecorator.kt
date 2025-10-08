@@ -24,7 +24,6 @@ import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavEntryDecorator
-import androidx.navigation3.runtime.navEntryDecorator
 
 /** Returns a [SceneSetupNavEntryDecorator] that is remembered across recompositions. */
 @Composable
@@ -45,13 +44,15 @@ internal fun <T : Any> rememberSceneSetupNavEntryDecorator(): NavEntryDecorator<
 internal fun <T : Any> SceneSetupNavEntryDecorator(): NavEntryDecorator<T> {
     val movableContentMap: MutableMap<Any, @Composable (@Composable () -> Unit) -> Unit> =
         mutableStateMapOf()
-    return navEntryDecorator(onPop = { contentKey -> movableContentMap.remove(contentKey) }) { entry
+    return NavEntryDecorator(onPop = { contentKey -> movableContentMap.remove(contentKey) }) { entry
         ->
         val contentKey = entry.contentKey
         // If we should not be rendering this entry here in the current scene, we skip calling
         // entry.Content and all nested content wrappers. If this is the case here, then it means
         // that this entry is being rendered by a different scene somewhere else.
-        if (LocalEntriesToRenderInCurrentScene.current.contains(contentKey)) {
+        val entriesToRender = LocalEntriesToRenderInCurrentScene.current
+        // If no LocalEntriesToRenderInCurrentScene is provided, assume all entries are allowed
+        if (entriesToRender == null || entriesToRender.contains(contentKey)) {
             key(contentKey) {
                 // In case the key is removed from the backstack while this is still
                 // being rendered, we remember the movableContent directly to allow
@@ -80,12 +81,10 @@ internal fun <T : Any> SceneSetupNavEntryDecorator(): NavEntryDecorator<T> {
 /**
  * The entry keys to render in the current [Scene], in the sense of the target of the animation for
  * an [androidx.compose.animation.AnimatedContent] that is transitioning between different scenes.
+ *
+ * If this isn't provided, then all entries in the scene are allowed to be rendered.
  */
-public val LocalEntriesToRenderInCurrentScene: ProvidableCompositionLocal<Set<Any>> =
+internal val LocalEntriesToRenderInCurrentScene: ProvidableCompositionLocal<Set<Any>?> =
     compositionLocalOf {
-        throw IllegalStateException(
-            "Unexpected access to LocalEntriesToRenderInCurrentScene. You should only " +
-                "access LocalEntriesToRenderInCurrentScene inside a NavEntry passed " +
-                "to NavDisplay."
-        )
+        null
     }

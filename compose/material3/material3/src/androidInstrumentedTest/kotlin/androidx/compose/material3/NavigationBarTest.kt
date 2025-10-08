@@ -16,6 +16,8 @@
 
 package androidx.compose.material3
 
+import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -69,7 +71,6 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -171,13 +172,18 @@ class NavigationBarTest {
     }
 
     @Test
-    @Ignore("b/422735600")
     fun navigationBar_size() {
         val height = NavigationBarTokens.TallContainerHeight
         rule
             .setMaterialContentForSizeAssertions {
                 val items = listOf("Songs", "Artists", "Playlists")
-                NavigationBar {
+                val windowInsets =
+                    if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                        WindowInsets()
+                    } else {
+                        NavigationBarDefaults.windowInsets
+                    }
+                NavigationBar(windowInsets = windowInsets) {
                     items.forEachIndexed { index, item ->
                         NavigationBarItem(
                             icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
@@ -438,13 +444,18 @@ class NavigationBarTest {
     }
 
     @Test
-    @Ignore("b/422746273")
     fun navigationBarItemContent_customHeight_withLabel_sizeAndPosition() {
         val defaultHeight = NavigationBarTokens.TallContainerHeight
         val customHeight = 64.dp
 
         rule.setMaterialContent(lightColorScheme()) {
-            NavigationBar(Modifier.height(customHeight)) {
+            val windowInsets =
+                if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    WindowInsets()
+                } else {
+                    NavigationBarDefaults.windowInsets
+                }
+            NavigationBar(modifier = Modifier.height(customHeight), windowInsets = windowInsets) {
                 NavigationBarItem(
                     modifier = Modifier.testTag("item"),
                     icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },

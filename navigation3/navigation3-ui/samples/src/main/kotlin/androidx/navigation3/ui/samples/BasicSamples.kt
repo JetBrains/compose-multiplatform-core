@@ -38,10 +38,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -51,7 +49,6 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.navEntryDecorator
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.runtime.samples.Dashboard
@@ -139,7 +136,7 @@ fun SceneNavSharedEntrySample() {
      * [Scene].
      */
     val sharedEntryInSceneNavEntryDecorator =
-        navEntryDecorator<Any> { entry ->
+        NavEntryDecorator<Any> { entry ->
             with(localNavSharedTransitionScope.current) {
                 Box(
                     Modifier.sharedElement(

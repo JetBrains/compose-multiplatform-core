@@ -17,6 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="label_copy_link" msgid="869104793055534158">"링크 복사"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"바로 이동"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"보호된 파일임"</string>
     <string name="label_password_first" msgid="4456258714097111908">"비밀번호"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"잘못된 비밀번호입니다. 다시 시도하세요."</string>
@@ -30,6 +32,10 @@
     <string name="desc_zoom" msgid="7318480946145947242">"<xliff:g id="FIRST">%1$d</xliff:g>%% 확대/축소"</string>
     <string name="desc_goto" msgid="1333698934111921601">"이동"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"<xliff:g id="PAGE_NUMBER">%1$d</xliff:g> 페이지로 이동"</string>
+    <string name="desc_copy" msgid="385275789223074637">"선택한 콘텐츠를 클립보드에 복사"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"클립보드에 링크 복사"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"PDF의 섹션 또는 페이지로 이동"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"PDF의 모든 텍스트 선택"</string>
     <string name="desc_page" msgid="6702471448987833953">"<xliff:g id="PAGE">%1$d</xliff:g>페이지"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"빈 페이지"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"<xliff:g id="PAGE_NUMBER">%1$d</xliff:g>페이지: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>

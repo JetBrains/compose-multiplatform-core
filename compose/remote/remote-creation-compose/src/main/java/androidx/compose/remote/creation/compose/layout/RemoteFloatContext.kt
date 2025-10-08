@@ -29,27 +29,27 @@ public class RemoteFloatContext(public val state: RemoteComposeCreationState) {
     public fun componentWidth(): RemoteFloat {
         val doc = state.document
         val value = doc.addComponentWidthValue()
-        return RemoteFloatExpression(true, { _ -> floatArrayOf(value) })
+        return RemoteFloatExpression(null, { _ -> floatArrayOf(value) })
     }
 
     public fun componentHeight(): RemoteFloat {
         val doc = state.document
         val value = doc.addComponentHeightValue()
-        return RemoteFloatExpression(true, { _ -> floatArrayOf(value) })
+        return RemoteFloatExpression(null, { _ -> floatArrayOf(value) })
     }
 
     public fun componentCenterX(): RemoteFloat {
         val doc = state.document
         val componentWidthValue = doc.addComponentWidthValue()
         val value = doc.floatExpression(componentWidthValue, 2f, AnimatedFloatExpression.DIV)
-        return RemoteFloatExpression(true, { _ -> floatArrayOf(value) })
+        return RemoteFloatExpression(null, { _ -> floatArrayOf(value) })
     }
 
     public fun componentCenterY(): RemoteFloat {
         val doc = state.document
         val componentHeightValue = doc.addComponentHeightValue()
         val value = doc.floatExpression(componentHeightValue, 2f, AnimatedFloatExpression.DIV)
-        return RemoteFloatExpression(true, { _ -> floatArrayOf(value) })
+        return RemoteFloatExpression(null, { _ -> floatArrayOf(value) })
     }
 }
 

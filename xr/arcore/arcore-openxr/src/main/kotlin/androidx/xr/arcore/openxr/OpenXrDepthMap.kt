@@ -25,8 +25,8 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 /**
- * Wraps the native [XrDepthSwapchainImageANDROID] with the
- * [androidx.xr.arcore.runtime.internal.DepthMap] interface.
+ * Wraps the native [XrDepthSwapchainImageANDROID] with the [androidx.xr.arcore.runtime.DepthMap]
+ * interface.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrDepthMap internal constructor(private val viewIndex: Int) : DepthMap {

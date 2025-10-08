@@ -84,7 +84,7 @@ public value class RemoteIntReference(private val v: Int) {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class RemoteInt
 internal constructor(
-    public override val hasConstantValue: Boolean,
+    public override val constantValue: Int?,
     internal val arrayProvider: (creationState: RemoteComposeCreationState) -> LongArray,
 ) : RemoteState<Int> {
 
@@ -133,14 +133,12 @@ internal constructor(
      *
      * @return A [RemoteFloatExpression] representing this integer as a float.
      */
-    public fun toRemoteFloat(): RemoteFloatExpression {
-        return RemoteFloatExpression(hasConstantValue) { creationState ->
-            val a = arrayForCreationState(creationState)
-            if (a.isLiteral()) {
-                floatArrayOf(a[0].toFloat())
-            } else {
-                floatArrayOf(getFloatIdForCreationState(creationState))
-            }
+    public fun toRemoteFloat(): RemoteFloat {
+        constantValue?.let {
+            return RemoteFloat(it.toFloat())
+        }
+        return RemoteFloatExpression(constantValue = null) { creationState ->
+            floatArrayOf(getFloatIdForCreationState(creationState))
         }
     }
 
@@ -152,18 +150,15 @@ internal constructor(
      * @param flags The flags that control how the number is formatted. See [TextFromFloat].
      */
     public fun toRemoteString(before: Int, flags: Int = TextFromFloat.PAD_PRE_SPACE): RemoteString {
+        constantValue?.let {
+            return RemoteString(floatToString(it.toFloat(), before, 0, flags))
+        }
+
         return MutableRemoteString(
             mutableStateOf(""), // TODO compute the string?,
-            hasConstantValue,
+            constantValue = null,
             object : LazyRemoteString {
                 override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
-                    val a = arrayForCreationState(creationState)
-                    if (a.isLiteral()) {
-                        return creationState.document.textCreateId(
-                            floatToString(a[0].toFloat(), before, 0, flags)
-                        )
-                    }
-
                     return creationState.document.createTextFromFloat(
                         getFloatIdForCreationState(creationState),
                         before,
@@ -175,11 +170,6 @@ internal constructor(
                 override fun computeRequiredCodePointSet(
                     creationState: RemoteComposeCreationState
                 ): Set<String>? {
-                    val a = arrayForCreationState(creationState)
-                    if (a.isLiteral()) {
-                        return floatToString(a[0].toFloat(), before, 0, flags).toCodePointSet()
-                    }
-
                     val preFlags = flags and 12
                     if (before == 1 || preFlags != TextFromFloat.PAD_PRE_SPACE) {
                         return setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
@@ -192,19 +182,6 @@ internal constructor(
     }
 
     /**
-     * If this [RemoteInt] represents a constant value, then this method evaluates it and returns
-     * it, otherwise it returns null.
-     */
-    public fun evaluateIfConstant(creationState: RemoteComposeCreationState): Int? {
-        val a = arrayForCreationState(creationState)
-        return if (a.isLiteral()) {
-            a[0].toInt()
-        } else {
-            null
-        }
-    }
-
-    /**
      * Returns a [RemoteInt] that is a reference of this RemoteInt.
      *
      * This is temporarily useful because the floatArray has a maximum size.
@@ -212,7 +189,7 @@ internal constructor(
     // TODO: Remove the need for this.
     public fun createReference(): RemoteInt {
         return RemoteIntExpression(
-            hasConstantValue,
+            constantValue,
             { creationState -> longArrayOf(getLongIdForCreationState(creationState)) },
         )
     }
@@ -226,13 +203,11 @@ internal constructor(
      *   result directly.
      */
     private fun unaryOp(opCode: Long, directEval: (Int) -> Int): RemoteInt {
-        return RemoteIntExpression(hasConstantValue) { creationState ->
-            val a = arrayForCreationState(creationState)
-            if (a.isLiteral()) {
-                longArrayOf(directEval(a[0].toInt()).toLong())
-            } else {
-                combineToLongArray(creationState, arrayOf(this), opCode)
-            }
+        constantValue?.let {
+            return RemoteInt(directEval(it))
+        }
+        return RemoteIntExpression(constantValue = null) { creationState ->
+            combineToLongArray(creationState, arrayOf(this), opCode)
         }
     }
 
@@ -272,7 +247,7 @@ internal constructor(
          * @return A [RemoteIntExpression] representing the constant integer.
          */
         public operator fun invoke(v: Int): RemoteInt {
-            return RemoteIntExpression(true, { creationState -> longArrayOf(v.toLong()) })
+            return RemoteIntExpression(v, { creationState -> longArrayOf(v.toLong()) })
         }
 
         /**
@@ -316,7 +291,10 @@ internal constructor(
          * @return A [RemoteIntExpression] representing the constant integer.
          */
         public operator fun invoke(v: Long): RemoteInt {
-            return RemoteIntExpression(isConstant(v), { creationState -> longArrayOf(v) })
+            if (isConstant(v)) {
+                return RemoteIntExpression(v.toInt(), { creationState -> longArrayOf(v) })
+            }
+            return RemoteIntExpression(constantValue = null, { creationState -> longArrayOf(v) })
         }
 
         /**
@@ -329,7 +307,7 @@ internal constructor(
          */
         @JvmStatic
         public fun createNamedRemoteInt(name: String, initialValue: Int): RemoteInt {
-            return RemoteIntExpression(false) { creationState ->
+            return RemoteIntExpression(constantValue = null) { creationState ->
                 // TODO: check what happens if the initial value for this is the same as a
                 //  subsequent non-named variable.
                 longArrayOf(creationState.document.addNamedInt(name, initialValue))
@@ -486,13 +464,12 @@ public fun LongArray.isLiteral(): Boolean = size == 1 && RemoteInt.isLiteral(get
  *   result directly.
  */
 private fun binaryOp(a: RemoteInt, b: Int, opCode: Long, directEval: (Int, Int) -> Int): RemoteInt {
-    return RemoteIntExpression(a.hasConstantValue) { creationState ->
-        val aArray = a.arrayForCreationState(creationState)
-        if (aArray.isLiteral()) {
-            longArrayOf(directEval(aArray[0].toInt(), b).toLong())
-        } else {
-            combineToLongArray(creationState, arrayOf(a), b.toLong(), opCode)
-        }
+    val aConst = a.constantValue
+    if (aConst != null) {
+        return RemoteInt(directEval(aConst, b))
+    }
+    return RemoteIntExpression(constantValue = null) { creationState ->
+        combineToLongArray(creationState, arrayOf(a), b.toLong(), opCode)
     }
 }
 
@@ -512,15 +489,13 @@ private fun binaryOp(
     opCode: Long,
     directEval: (Int, Int) -> Int,
 ): RemoteInt {
-    return RemoteIntExpression(a.hasConstantValue && b.hasConstantValue) { creationState ->
-        val aArray = a.arrayForCreationState(creationState)
-        val bArray = b.arrayForCreationState(creationState)
-        if (aArray.isLiteral() && bArray.isLiteral()) {
-            // A and b are both constants so we can evaluate directly.
-            longArrayOf(directEval(aArray[0].toInt(), bArray[0].toInt()).toLong())
-        } else {
-            combineToLongArray(creationState, arrayOf(a, b), opCode)
-        }
+    val aConst = a.constantValue
+    val bConst = b.constantValue
+    if (aConst != null && bConst != null) {
+        return RemoteInt(directEval(aConst, bConst))
+    }
+    return RemoteIntExpression(constantValue = null) { creationState ->
+        combineToLongArray(creationState, arrayOf(a, b), opCode)
     }
 }
 
@@ -538,30 +513,31 @@ internal fun comparisonOp(
     a: RemoteInt,
     b: RemoteInt,
     expressionGenerator: (LongArray, LongArray) -> LongArray,
-    directEval: (Long, Long) -> Long,
-) =
-    RemoteBoolean(
-        RemoteIntExpression(a.hasConstantValue && b.hasConstantValue) { creationState ->
+    directEval: (Int, Int) -> Int,
+): RemoteBoolean {
+    val aConst = a.constantValue
+    val bConst = b.constantValue
+    if (aConst != null && bConst != null) {
+        return RemoteBoolean(RemoteInt(directEval(aConst, bConst)))
+    }
+
+    return RemoteBoolean(
+        RemoteIntExpression(constantValue = null) { creationState ->
             val aArray = a.arrayForCreationState(creationState)
             val bArray = b.arrayForCreationState(creationState)
-            if (aArray.isLiteral() && bArray.isLiteral()) {
-                // A and b are both constants so we can evaluate directly.
-                longArrayOf(directEval(aArray[0], bArray[0]))
+            // A comparisonOp adds five op codes
+            val combinedSize = aArray.size + bArray.size + 5
+            if (combinedSize > MAX_SAFE_LONG_ARRAY) { // Check if new array would exceed limit
+                expressionGenerator(
+                    longArrayOf(a.getLongIdForCreationState(creationState)),
+                    longArrayOf(b.getLongIdForCreationState(creationState)),
+                )
             } else {
-                // Either a or b isn\'t a constant so we need to evaluate dynamically.
-                // A comparisonOp adds five op codes
-                val combinedSize = aArray.size + bArray.size + 5
-                if (combinedSize > MAX_SAFE_LONG_ARRAY) { // Check if new array would exceed limit
-                    expressionGenerator(
-                        longArrayOf(a.getLongIdForCreationState(creationState)),
-                        longArrayOf(b.getLongIdForCreationState(creationState)),
-                    )
-                } else {
-                    expressionGenerator(aArray, bArray)
-                }
+                expressionGenerator(aArray, bArray)
             }
         }
     )
+}
 
 /**
  * Returns a [RemoteInt] that evaluates to the value of [v] with the sign of [sign]. This is a
@@ -601,9 +577,20 @@ public fun max(a: RemoteInt, b: RemoteInt): RemoteInt = binaryOp(a, b, OP_MAX) {
  * @return A [RemoteInt] representing the clamped value.
  */
 public fun clamp(min: RemoteInt, max: RemoteInt, value: RemoteInt): RemoteInt {
-    return RemoteIntExpression(
-        min.hasConstantValue && max.hasConstantValue && value.hasConstantValue
-    ) { creationState ->
+    val minConst = min.constantValue
+    val maxConst = max.constantValue
+    val valueConst = value.constantValue
+    if (minConst != null && maxConst != null && valueConst != null) {
+        return if (valueConst < minConst) {
+            min
+        } else if (valueConst > maxConst) {
+            max
+        } else {
+            value
+        }
+    }
+
+    return RemoteIntExpression(constantValue = null) { creationState ->
         combineToLongArray(creationState, arrayOf(min, max, value), OP_CLAMP)
     }
 }
@@ -620,7 +607,7 @@ public class MutableRemoteInt(
     private val content: MutableIntState,
     public val idProvider: (creationState: RemoteComposeCreationState) -> Long,
 ) :
-    RemoteInt(true, { creationState -> longArrayOf(idProvider(creationState)) }),
+    RemoteInt(constantValue = null, { creationState -> longArrayOf(idProvider(creationState)) }),
     MutableRemoteState<Int> {
 
     /**
@@ -675,15 +662,21 @@ public fun selectIfLT(
     b: RemoteInt,
     ifTrue: RemoteInt,
     ifFalse: RemoteInt,
-): RemoteInt =
-    RemoteIntExpression(
-        a.hasConstantValue &&
-            b.hasConstantValue &&
-            ifTrue.hasConstantValue &&
-            ifFalse.hasConstantValue
-    ) { creationState ->
+): RemoteInt {
+    val constA = a.constantValue
+    val constB = b.constantValue
+    if (constA != null && constB != null) {
+        return if (constA < constB) {
+            ifTrue
+        } else {
+            ifFalse
+        }
+    }
+
+    return RemoteIntExpression(constantValue = null) { creationState ->
         combineToLongArray(creationState, arrayOf(ifFalse, ifTrue, b, a), OP_SUB, OP_IFELSE)
     }
+}
 
 /**
  * Returns a [RemoteInt] that evaluates to [ifTrue] if [a] <= [b], otherwise returns [ifFalse].
@@ -699,15 +692,21 @@ public fun selectIfLE(
     b: RemoteInt,
     ifTrue: RemoteInt,
     ifFalse: RemoteInt,
-): RemoteInt =
-    RemoteIntExpression(
-        a.hasConstantValue &&
-            b.hasConstantValue &&
-            ifTrue.hasConstantValue &&
-            ifFalse.hasConstantValue
-    ) { creationState ->
+): RemoteInt {
+    val constA = a.constantValue
+    val constB = b.constantValue
+    if (constA != null && constB != null) {
+        return if (constA <= constB) {
+            ifTrue
+        } else {
+            ifFalse
+        }
+    }
+
+    return RemoteIntExpression(constantValue = null) { creationState ->
         combineToLongArray(creationState, arrayOf(ifTrue, ifFalse, a, b), OP_SUB, OP_IFELSE)
     }
+}
 
 /**
  * Returns a [RemoteInt] that evaluates to [ifTrue] if [a] > [b], otherwise returns [ifFalse].
@@ -723,15 +722,21 @@ public fun selectIfGT(
     b: RemoteInt,
     ifTrue: RemoteInt,
     ifFalse: RemoteInt,
-): RemoteInt =
-    RemoteIntExpression(
-        a.hasConstantValue &&
-            b.hasConstantValue &&
-            ifTrue.hasConstantValue &&
-            ifFalse.hasConstantValue
-    ) { creationState ->
+): RemoteInt {
+    val constA = a.constantValue
+    val constB = b.constantValue
+    if (constA != null && constB != null) {
+        return if (constA > constB) {
+            ifTrue
+        } else {
+            ifFalse
+        }
+    }
+
+    return RemoteIntExpression(constantValue = null) { creationState ->
         combineToLongArray(creationState, arrayOf(ifFalse, ifTrue, a, b), OP_SUB, OP_IFELSE)
     }
+}
 
 /**
  * Returns a [RemoteInt] that evaluates to [ifTrue] if [a] >= [b], otherwise returns [ifFalse].
@@ -747,15 +752,21 @@ public fun selectIfGE(
     b: RemoteInt,
     ifTrue: RemoteInt,
     ifFalse: RemoteInt,
-): RemoteInt =
-    RemoteIntExpression(
-        a.hasConstantValue &&
-            b.hasConstantValue &&
-            ifTrue.hasConstantValue &&
-            ifFalse.hasConstantValue
-    ) { creationState ->
+): RemoteInt {
+    val constA = a.constantValue
+    val constB = b.constantValue
+    if (constA != null && constB != null) {
+        return if (constA >= constB) {
+            ifTrue
+        } else {
+            ifFalse
+        }
+    }
+
+    return RemoteIntExpression(constantValue = null) { creationState ->
         combineToLongArray(creationState, arrayOf(ifTrue, ifFalse, b, a), OP_SUB, OP_IFELSE)
     }
+}
 
 /**
  * An implementation of [RemoteInt] that represents an integer expression.
@@ -766,9 +777,9 @@ public fun selectIfGE(
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteIntExpression
 internal constructor(
-    hasConstantValue: Boolean,
+    constantValue: Int?,
     arrayProvider: (creationState: RemoteComposeCreationState) -> LongArray,
-) : RemoteInt(hasConstantValue, arrayProvider) {
+) : RemoteInt(constantValue, arrayProvider) {
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int {
         val array = arrayForCreationState(creationState)
@@ -858,7 +869,7 @@ public fun rememberRemoteInt(content: () -> RemoteInt): RemoteInt {
     return remember {
         val remoteInt = content()
         remoteInt.getIdForCreationState(state)
-        RemoteIntExpression(remoteInt.hasConstantValue, remoteInt.arrayProvider)
+        RemoteIntExpression(remoteInt.constantValue, remoteInt.arrayProvider)
     }
 }
 
@@ -880,8 +891,8 @@ public fun rememberRemoteInt(
     val remoteInt = content()
     state.document.setStringName(remoteInt.getIdForCreationState(state), "$domain:$name")
     return remember {
-        // Since this is named, its value can be change, so it\'s not const.
-        RemoteIntExpression(false) { creationState ->
+        // Since this is named, its value can be change, so it's not const.
+        RemoteIntExpression(remoteInt.constantValue) { creationState ->
             longArrayOf(remoteInt.getLongIdForCreationState(creationState))
         }
     }

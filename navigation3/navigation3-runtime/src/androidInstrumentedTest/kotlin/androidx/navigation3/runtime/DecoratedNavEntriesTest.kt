@@ -1222,7 +1222,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack1,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
                             decoratorState1.add(it.contentKey)
                         }
                     ),
@@ -1232,7 +1232,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack2,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
                             decoratorState2.add(it.contentKey)
                         }
                     ),
@@ -1268,7 +1268,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack1,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
                             decoratorState1.add(it.contentKey)
                         }
                     ),
@@ -1281,7 +1281,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack2,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
                             decoratorState2.add(it.contentKey)
                         }
                     ),
@@ -1334,7 +1334,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack1,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
                             decoratorState1.add(it.contentKey)
                         }
                     ),
@@ -1344,7 +1344,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack2,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
                             decoratorState2.add(it.contentKey)
                         }
                     ),
@@ -1403,7 +1403,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack1,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
                             decoratorState1.add(it.contentKey)
                         }
                     ),
@@ -1416,7 +1416,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack2,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
                             decoratorState2.add(it.contentKey)
                         }
                     ),
@@ -1463,7 +1463,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack1,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
                             decoratorState1.add(it.contentKey)
                         }
                     ),
@@ -1473,7 +1473,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack2,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
                             decoratorState2.add(it.contentKey)
                         }
                     ),
@@ -1522,7 +1522,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack1,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
                             decoratorState1.add(it.contentKey)
                         }
                     ),
@@ -1535,7 +1535,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack2,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
                             decoratorState2.add(it.contentKey)
                         }
                     ),
@@ -1582,7 +1582,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack1,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState1.remove(it) }) {
                             decoratorState1.add(it.contentKey)
                         }
                     ),
@@ -1592,7 +1592,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     backStack2,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState2.remove(it) }) {
                             decoratorState2.add(it.contentKey)
                         }
                     ),
@@ -1648,7 +1648,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     if (secondStackState.value == 1) secondStackFirst else secondStackSecond,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState.remove(it) }) {
                             decoratorState.add(it.contentKey)
                         }
                     ),
@@ -1701,7 +1701,7 @@ class DecoratedNavEntriesTest {
                 rememberDecoratedNavEntries(
                     if (secondStackState.value == 1) secondStackFirst else secondStackSecond,
                     listOf(
-                        navEntryDecorator<Int>(onPop = { it -> decoratorState.remove(it) }) {
+                        NavEntryDecorator<Int>(onPop = { it -> decoratorState.remove(it) }) {
                             decoratorState.add(it.contentKey)
                         }
                     ),

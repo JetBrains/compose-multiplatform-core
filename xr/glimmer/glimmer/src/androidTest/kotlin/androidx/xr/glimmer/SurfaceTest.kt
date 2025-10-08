@@ -108,9 +108,9 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class SurfaceTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule val inputModeRule = nonTouchInputModeRule()
+    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
 
     @Before
     fun before() {

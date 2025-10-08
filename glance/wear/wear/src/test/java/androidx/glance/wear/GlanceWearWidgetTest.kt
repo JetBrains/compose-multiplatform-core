@@ -18,6 +18,7 @@ package androidx.glance.wear
 
 import android.content.ComponentName
 import android.content.Context
+import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.glance.wear.parcel.WidgetUpdateClient
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -42,9 +43,12 @@ class GlanceWearWidgetTest {
         verify(mockUpdateClient).requestUpdate(any(), eq(componentName))
     }
 
+    @Suppress("RestrictedApiAndroidX")
     private class TestWidget(updateClient: WidgetUpdateClient) : GlanceWearWidget(updateClient) {
 
         override suspend fun provideWidgetContent(context: Context, request: WearWidgetRequest) =
-            WearWidgetContent(ByteArray(0))
+            WearWidgetContent {
+                RemoteText("Testing...")
+            }
     }
 }

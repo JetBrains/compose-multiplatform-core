@@ -208,7 +208,19 @@ class AppFunctionServiceDelegateTest {
             ExecuteAppFunctionRequest(
                 targetPackageName = context.packageName,
                 functionIdentifier = "succeedFunction",
-                functionParameters = AppFunctionData.Builder("").setLong("testArg", 100L).build(),
+                functionParameters =
+                    AppFunctionData.Builder(
+                            listOf(
+                                AppFunctionParameterMetadata(
+                                    name = "testArg",
+                                    isRequired = true,
+                                    dataType = AppFunctionLongTypeMetadata(isNullable = false),
+                                )
+                            ),
+                            AppFunctionComponentsMetadata(),
+                        )
+                        .setLong("testArg", 100L)
+                        .build(),
             )
 
         val response = runBlocking { delegate.executeFunction(request) }

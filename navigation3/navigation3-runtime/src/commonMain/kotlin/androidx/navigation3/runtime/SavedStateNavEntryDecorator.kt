@@ -17,7 +17,6 @@
 package androidx.navigation3.runtime
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -53,7 +52,7 @@ public fun <T : Any> SavedStateNavEntryDecorator(
 ): NavEntryDecorator<T> {
     val onPop: (Any) -> Unit = { contentKey -> saveableStateHolder.removeState(contentKey) }
 
-    return navEntryDecorator(onPop = onPop) { entry ->
+    return NavEntryDecorator(onPop = onPop) { entry ->
         saveableStateHolder.SaveableStateProvider(entry.contentKey) { entry.Content() }
     }
 }

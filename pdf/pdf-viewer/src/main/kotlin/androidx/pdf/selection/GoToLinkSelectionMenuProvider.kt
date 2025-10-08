@@ -33,7 +33,7 @@ internal class GoToLinkSelectionMenuProvider(private val context: Context) :
 
     private fun getGoToMenuItem(): ContextMenuComponent {
         return DefaultSelectionMenuComponent(
-            key = PdfSelectionMenuKeys.SmartActionKey,
+            key = PdfSelectionMenuKeys.GoToKey,
             label = context.getString(R.string.label_jump_to),
             contentDescription = context.getString(R.string.desc_jump_to),
         ) { pdfView ->

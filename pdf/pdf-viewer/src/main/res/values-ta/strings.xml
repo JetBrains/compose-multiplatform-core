@@ -17,6 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="label_copy_link" msgid="869104793055534158">"இணைப்பை நகலெடு"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"இதற்குச் செல்"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"இந்த ஃபைல் பாதுகாக்கப்பட்டுள்ளது"</string>
     <string name="label_password_first" msgid="4456258714097111908">"கடவுச்சொல்"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"தவறான கடவுச்சொல். மீண்டும் முயலவும்."</string>
@@ -30,6 +32,10 @@
     <string name="desc_zoom" msgid="7318480946145947242">"<xliff:g id="FIRST">%1$d</xliff:g> சதவீத அளவை மாற்று"</string>
     <string name="desc_goto" msgid="1333698934111921601">"இங்கே செல்லும்"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"பக்கம் <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>க்கு செல்லும்"</string>
+    <string name="desc_copy" msgid="385275789223074637">"தேர்ந்தெடுக்கப்பட்டுள்ள உள்ளடக்கத்தைக் கிளிப்போர்டுக்கு நகலெடுக்கும்"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"இணைப்பைக் கிளிப்போர்டுக்கு நகலெடுக்கும்"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"PDF ஃபைலில் பிரிவுக்கோ பக்கத்திற்கோ செல்லும்"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"PDF ஃபைலில் இருக்கும் வார்த்தைகள் அனைத்தையும் தேர்ந்தெடுக்கும்"</string>
     <string name="desc_page" msgid="6702471448987833953">"பக்கம் <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"காலியான பக்கம்"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"பக்கம் <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>

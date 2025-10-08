@@ -141,7 +141,7 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(
                 .build()
         }
         is AppFunctionArrayTypeMetadata -> {
-            this.unsafeBuildReturnValue(result)
+            this.unsafeBuildReturnValue(builder, result)
         }
         else -> {
             throw IllegalStateException("Unknown DataTypeMetadata: ${this::class.java}")
@@ -150,8 +150,10 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(result: Any): AppFunctionData {
-    val builder = AppFunctionData.Builder("")
+private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(
+    builder: AppFunctionData.Builder,
+    result: Any,
+): AppFunctionData {
     return when (val castItemType = itemType) {
         is AppFunctionLongTypeMetadata -> {
             builder

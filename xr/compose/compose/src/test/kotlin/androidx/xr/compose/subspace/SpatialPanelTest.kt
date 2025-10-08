@@ -64,7 +64,7 @@ import androidx.xr.compose.testing.session
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel

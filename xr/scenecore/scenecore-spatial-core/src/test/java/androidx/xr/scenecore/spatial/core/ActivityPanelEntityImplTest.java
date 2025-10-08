@@ -28,13 +28,13 @@ import android.content.Intent;
 import android.graphics.Rect;
 
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.runtime.ActivityPanelEntity;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.SceneRuntime;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;

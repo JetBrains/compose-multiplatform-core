@@ -327,6 +327,12 @@ public final class Flags {
     public static final String FLAG_ENABLE_SHARDED_EMBEDDING_STORAGE =
             FLAG_PREFIX + "enable_sharded_embedding_storage";
 
+    /**
+     * Whether to directly write data to parcel data for remove and commit blob.
+     */
+    public static final String FLAG_ENABLE_DIRECTLY_WRITE_COMMIT_REMOVE_BLOB_RESPONSE =
+            FLAG_PREFIX + "directly_write_commit_remove_blob_response";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -720,5 +726,12 @@ public final class Flags {
     public static boolean enableShardedEmbeddingStorage() {
         // TODO(b/436237337): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
+    }
+
+    /**
+     * Whether to enable directly write to parcel for commit and remove blob response.
+     */
+    public static boolean enableDirectlyWriteCommitRemoveBlobResponse() {
+        return true;
     }
 }

@@ -19,6 +19,7 @@ package androidx.glance.wear
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.glance.wear.parcel.IWearWidgetCallback
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import androidx.glance.wear.parcel.legacy.TileProvider
@@ -89,6 +90,7 @@ class GlanceWearWidgetServiceTest {
         assertThat(binder).isNull()
     }
 
+    @Suppress("RestrictedApiAndroidX")
     class TestWidget : GlanceWearWidget() {
         var instanceId: Int? = null
 
@@ -97,7 +99,7 @@ class GlanceWearWidgetServiceTest {
             request: WearWidgetRequest,
         ): WearWidgetContent {
             instanceId = request.instanceId
-            return WearWidgetContent(ByteArray(0))
+            return WearWidgetContent { RemoteText("Testing...") }
         }
     }
 

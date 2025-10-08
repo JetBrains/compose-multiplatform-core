@@ -21,7 +21,7 @@ import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
 import kotlin.time.ComparableTimeMark
 
-/** Test-only implementation of [androidx.xr.arcore.runtime.internal.PerceptionRuntime] */
+/** Test-only implementation of [androidx.xr.arcore.runtime.PerceptionRuntime] */
 @Suppress("DataClassDefinition")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public data class FakePerceptionRuntime(

@@ -584,7 +584,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 (variant as HasUnitTestBuilder).enableUnitTest = false
             }
             onVariants {
-                it.configureTests()
+                it.configureTests(project.getKeystore())
                 it.configureLocalAsbSigning(project.getKeystore())
             }
         }
@@ -628,7 +628,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             AndroidComponentsExtension<*, out LibraryVariantBuilder, out LibraryVariant>,
     ) {
         androidComponents.onVariants { variant ->
-            variant.configureTests()
+            variant.configureTests(project.getKeystore())
             variant.enableMicrobenchmarkInternalDefaults(project)
             project.validateKotlinModuleFiles(
                 variant.name,
@@ -830,7 +830,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.addToBuildOnServer("assembleRelease")
     }
 
-    private fun HasDeviceTests.configureTests() {
+    private fun HasDeviceTests.configureTests(keystore: File) {
         deviceTests.forEach { (_, deviceTest) ->
             deviceTest.packaging.resources.apply {
                 excludeVersionFiles(this)
@@ -1150,12 +1150,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         @Suppress("UnstableApiUsage") // usage of withDeviceTestBuilder
         withDeviceTestBuilder {
-            @Suppress("DEPRECATION")
-            compilationName = "instrumentedTest"
-            @Suppress("DEPRECATION")
-            defaultSourceSetName = "androidInstrumentedTest"
-            sourceSetTreeName = "test"
-        }
+                @Suppress("DEPRECATION")
+                compilationName = "instrumentedTest"
+                @Suppress("DEPRECATION")
+                defaultSourceSetName = "androidInstrumentedTest"
+                sourceSetTreeName = "test"
+            }
+            .configure { signing.storeFile = project.getKeystore() }
         configureTargetSdkForTests(project.defaultAndroidConfig.targetSdk)
 
         // validate that SDK versions haven't been altered during evaluation

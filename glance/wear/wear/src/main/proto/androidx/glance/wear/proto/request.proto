@@ -23,4 +23,10 @@ message WearWidgetRequestProto {
 
   // The ID of the widget instance for which an update is being requested.
   uint32 instance_id = 1;
+
+  // The width in dp of the container for this widget.
+  float width_dp = 2;
+
+  // The height in dp of the container for this widget.
+  float height_dp = 3;
 }

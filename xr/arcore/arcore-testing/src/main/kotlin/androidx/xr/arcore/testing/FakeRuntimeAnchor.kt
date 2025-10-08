@@ -24,7 +24,7 @@ import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 
-/** Test-only implementation of [androidx.xr.arcore.runtime.internal.Anchor] */
+/** Test-only implementation of [androidx.xr.arcore.runtime.Anchor] */
 public class FakeRuntimeAnchor
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public constructor(

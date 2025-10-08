@@ -17,6 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="label_copy_link" msgid="869104793055534158">"ಲಿಂಕ್ ಕಾಪಿ ಮಾಡಿ"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"ಇಲ್ಲಿಗೆ ಜಂಪ್ ಆಗಿ"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"ಈ ಫೈಲ್ ಅನ್ನು ಸಂರಕ್ಷಿಸಲಾಗಿದೆ"</string>
     <string name="label_password_first" msgid="4456258714097111908">"ಪಾಸ್‌ವರ್ಡ್"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"ಪಾಸ್‌ವರ್ಡ್ ತಪ್ಪಾಗಿದೆ. ಪುನಃ ಪ್ರಯತ್ನಿಸಿ."</string>
@@ -30,6 +32,10 @@
     <string name="desc_zoom" msgid="7318480946145947242">"ಶೇಕಡಾ <xliff:g id="FIRST">%1$d</xliff:g> ರಷ್ಟು ಝೂಮ್ ಮಾಡಿ"</string>
     <string name="desc_goto" msgid="1333698934111921601">"ಇಲ್ಲಿಗೆ ಹೋಗಿ"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"ಪುಟ <xliff:g id="PAGE_NUMBER">%1$d</xliff:g> ಕ್ಕೆ ತೆರಳಿ"</string>
+    <string name="desc_copy" msgid="385275789223074637">"ಆಯ್ಕೆಮಾಡಿದ ಕಂಟೆಂಟ್ ಅನ್ನು ನಿಮ್ಮ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ಕಾಪಿ ಮಾಡುತ್ತದೆ"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"ನಿಮ್ಮ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ಲಿಂಕ್ ಅನ್ನು ಕಾಪಿ ಮಾಡುತ್ತದೆ"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"PDF ನಲ್ಲಿರುವ ವಿಭಾಗ ಅಥವಾ ಪುಟಕ್ಕೆ ಜಂಪ್ ಆಗುತ್ತದೆ"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"PDF ನಲ್ಲಿರುವ ಎಲ್ಲಾ ಪಠ್ಯವನ್ನು ಆಯ್ಕೆ ಮಾಡುತ್ತದೆ"</string>
     <string name="desc_page" msgid="6702471448987833953">"ಪುಟ <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"ಖಾಲಿ ಪುಟ"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"ಪುಟ <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>

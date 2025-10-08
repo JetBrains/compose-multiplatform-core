@@ -24,8 +24,7 @@ import com.google.ar.core.Anchor as ARCore1xAnchor
 import java.util.UUID
 
 /**
- * Wraps the native [ARCore1xAnchor] with the [androidx.xr.arcore.runtime.internal.Anchor]
- * interface.
+ * Wraps the native [ARCore1xAnchor] with the [androidx.xr.arcore.runtime.Anchor] interface.
  *
  * @property arCoreAnchor The underlying [ARCore1xAnchor] instance.
  */

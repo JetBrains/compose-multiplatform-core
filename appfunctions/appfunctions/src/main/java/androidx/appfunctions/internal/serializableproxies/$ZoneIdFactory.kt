@@ -32,10 +32,9 @@ public class `$ZoneIdFactory` : AppFunctionSerializableFactory<ZoneId> {
         val appFunctionDataWithSpec =
             getAppFunctionDataWithSpec(
                 appFunctionData = appFunctionData,
-                qualifiedName =
-                    "androidx.appfunctions.internal.serializableproxies.AppFunctionZoneId",
+                qualifiedName = "java.time.ZoneId",
             )
-        val zoneID = checkNotNull(appFunctionData.getStringOrNull("zoneID"))
+        val zoneID = checkNotNull(appFunctionDataWithSpec.getStringOrNull("zoneID"))
 
         val resultAppFunctionZoneId = AppFunctionZoneId(zoneID)
         return resultAppFunctionZoneId.toZoneId()
@@ -45,10 +44,7 @@ public class `$ZoneIdFactory` : AppFunctionSerializableFactory<ZoneId> {
         val appFunctionZoneId_appFunctionSerializable =
             AppFunctionZoneId.fromZoneId(appFunctionSerializable)
 
-        val builder =
-            getAppFunctionDataBuilder(
-                "androidx.appfunctions.internal.serializableproxies.AppFunctionZoneId"
-            )
+        val builder = getAppFunctionDataBuilder("java.time.ZoneId")
         val zoneID = appFunctionZoneId_appFunctionSerializable.zoneID
         builder.setString("zoneID", zoneID)
 

@@ -31,7 +31,6 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.Fov;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
@@ -41,6 +40,7 @@ import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilter;
 import androidx.xr.scenecore.runtime.CameraViewActivityPose;
 import androidx.xr.scenecore.runtime.GltfFeature;
 import androidx.xr.scenecore.runtime.HitTestResult;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeGltfFeature;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
@@ -152,7 +152,8 @@ public final class OpenXrActivityPoseTest {
                     break;
                 }
                 ViewProjection viewProjection =
-                        new ViewProjection(perceptionPose, new Fov(0, 0, 0, 0));
+                        new ViewProjection(perceptionPose, new Fov(0, 0,
+                                0, 0));
                 when(mSession.getStereoViews())
                         .thenReturn(new ViewProjections(viewProjection, viewProjection));
                 break;
@@ -179,7 +180,8 @@ public final class OpenXrActivityPoseTest {
     public void
             getPoseInActivitySpace_noActivitySpaceOpenXrReferenceSpacePose_returnsIdentityPose() {
         mTestActivityPose = createTestActivityPose();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0,
+                1));
         setPerceptionPose(pose);
         mActivitySpace.mOpenXrReferenceSpacePose = null;
 
@@ -189,7 +191,8 @@ public final class OpenXrActivityPoseTest {
     @Test
     public void getPoseInActivitySpace_whenAtSamePose_returnsIdentityPose() {
         mTestActivityPose = createTestActivityPose();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1).toNormalized());
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0,
+                1).toNormalized());
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(Matrix4.fromPose(pose));
 
@@ -199,7 +202,8 @@ public final class OpenXrActivityPoseTest {
     @Test
     public void getPoseInActivitySpace_returnsDifferencePose() {
         mTestActivityPose = createTestActivityPose();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0,
+                1));
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(Matrix4.Identity);
 
@@ -221,14 +225,16 @@ public final class OpenXrActivityPoseTest {
     public void
             getPoseInActivitySpace_withScaledTranslatedActivitySpace_returnsScaledDifferencePose() {
         mTestActivityPose = createTestActivityPose();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0,
+                1));
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(
                 Matrix4.fromTrs(
                         new Vector3(2f, 3f, 4f),
                         Quaternion.Identity,
                         /* scale= */ new Vector3(2f, 2f, 2f)));
-        Pose expectedPose = new Pose(new Vector3(-0.5f, -1.0f, -1.5f), new Quaternion(0, 1, 0, 1));
+        Pose expectedPose = new Pose(new Vector3(-0.5f, -1.0f, -1.5f), new Quaternion(0,
+                1, 0, 1));
 
         assertPose(mTestActivityPose.getPoseInActivitySpace(), expectedPose);
     }
@@ -236,7 +242,8 @@ public final class OpenXrActivityPoseTest {
     @Test
     public void getPoseInActivitySpace_witRotatedPerceptionPose_returnsDifferencePose() {
         mTestActivityPose = createTestActivityPose();
-        Quaternion perceptionQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f, 90f));
+        Quaternion perceptionQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f,
+                90f));
         Pose pose = new Pose(new Vector3(0, 0, 0), perceptionQuaternion);
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(
@@ -254,7 +261,8 @@ public final class OpenXrActivityPoseTest {
     @Test
     public void getPoseInActivitySpace_witRotatedActivitySpace_returnsDifferencePose() {
         mTestActivityPose = createTestActivityPose();
-        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f, 90f));
+        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f,
+                90f));
         Pose pose = new Pose(new Vector3(0, 0, 0), Quaternion.Identity);
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(
@@ -275,7 +283,8 @@ public final class OpenXrActivityPoseTest {
     @Test
     public void getPoseInActivitySpace_withScaledAndRotatedActivitySpace_returnsDifferencePose() {
         mTestActivityPose = createTestActivityPose();
-        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f, 90f));
+        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f,
+                90f));
         Pose pose = new Pose(new Vector3(1, 1, 1), Quaternion.Identity);
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(
@@ -296,7 +305,8 @@ public final class OpenXrActivityPoseTest {
     public void
             getPoseInActivitySpace_withCustomScaledAndRotatedActivitySpace_returnsDifferencePose() {
         mTestActivityPose = createTestActivityPose();
-        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f, 90f));
+        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f,
+                90f));
         Pose pose = new Pose(new Vector3(1, 1, 1), Quaternion.Identity);
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(
@@ -317,7 +327,8 @@ public final class OpenXrActivityPoseTest {
     public void
             getPoseInActivitySpace_withMinusScaledAndRotatedActivitySpace_returnsDifferencePose() {
         mTestActivityPose = createTestActivityPose();
-        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f, 90f));
+        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f,
+                90f));
         Pose pose = new Pose(new Vector3(1, 1, 1), Quaternion.Identity);
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(
@@ -356,7 +367,8 @@ public final class OpenXrActivityPoseTest {
                         new Vector3(2f, 3f, 4f),
                         Quaternion.Identity,
                         /* scale= */ new Vector3(2f, 2f, 2f)));
-        Pose expectedPose = new Pose(new Vector3(-0.5f, -1.0f, -1.5f), new Quaternion(0, 1, 0, 1));
+        Pose expectedPose = new Pose(new Vector3(-0.5f, -1.0f, -1.5f),
+                new Quaternion(0, 1, 0, 1));
 
         assertPose(mTestActivityPose.getActivitySpacePose(), expectedPose);
     }
@@ -364,7 +376,8 @@ public final class OpenXrActivityPoseTest {
     @Test
     public void getActivitySpacePose_withScaledAndRotatedActivitySpace_returnsDifferencePose() {
         mTestActivityPose = createTestActivityPose();
-        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f, 90f));
+        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f,
+                90f));
         Pose pose = new Pose(new Vector3(1, 1, 1), Quaternion.Identity);
         setPerceptionPose(pose);
         mActivitySpace.setOpenXrReferenceSpacePose(
@@ -384,7 +397,8 @@ public final class OpenXrActivityPoseTest {
     @Test
     public void getActivitySpacePoseWithError_returnsLastKnownPose() {
         mTestActivityPose = createTestActivityPose();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
+        Pose pose = new Pose(new Vector3(1, 1, 1),
+                new Quaternion(0, 1, 0, 1));
         setPerceptionPose(pose);
 
         assertPose(mTestActivityPose.getActivitySpacePose(), pose);
@@ -427,7 +441,8 @@ public final class OpenXrActivityPoseTest {
                         /* rotation= */ Quaternion.Identity,
                         /* scale= */ new Vector3(2f, 2f, 2f)));
 
-        assertVector3(mTestActivityPose.getActivitySpaceScale(), new Vector3(0.5f, 0.5f, 0.5f));
+        assertVector3(mTestActivityPose.getActivitySpaceScale(),
+                new Vector3(0.5f, 0.5f, 0.5f));
 
         Pose userHeadSpaceOffset =
                 new Pose(
@@ -468,7 +483,8 @@ public final class OpenXrActivityPoseTest {
                         openXrPose.getRotation(),
                         /* scale= */ new Vector3(2f, 2f, 2f)));
 
-        assertVector3(mTestActivityPose.getActivitySpaceScale(), new Vector3(0.5f, 0.5f, 0.5f));
+        assertVector3(mTestActivityPose.getActivitySpaceScale(),
+                new Vector3(0.5f, 0.5f, 0.5f));
 
         Pose userHeadSpaceOffset =
                 new Pose(
@@ -502,7 +518,8 @@ public final class OpenXrActivityPoseTest {
 
         Pose transformedPose = childEntity1.transformPoseTo(new Pose(), mTestActivityPose);
 
-        assertPose(transformedPose, new Pose(new Vector3(-2f, -4f, -6f), Quaternion.Identity));
+        assertPose(transformedPose, new Pose(
+                new Vector3(-2f, -4f, -6f), Quaternion.Identity));
     }
 
     @Test
@@ -527,7 +544,8 @@ public final class OpenXrActivityPoseTest {
 
         ListenableFuture<HitTestResult> hitTestResultFuture =
                 mTestActivityPose.hitTest(
-                        new Vector3(1f, 1f, 1f), new Vector3(1f, 1f, 1f), HitTestFilter.SELF_SCENE);
+                        new Vector3(1f, 1f, 1f),
+                        new Vector3(1f, 1f, 1f), HitTestFilter.SELF_SCENE);
         mExecutor.runAll();
         HitTestResult hitTestResult = hitTestResultFuture.get();
 
@@ -562,7 +580,8 @@ public final class OpenXrActivityPoseTest {
 
         ListenableFuture<HitTestResult> hitTestResultFuture =
                 mTestActivityPose.hitTest(
-                        new Vector3(1f, 1f, 1f), new Vector3(1f, 1f, 1f), HitTestFilter.SELF_SCENE);
+                        new Vector3(1f, 1f, 1f),
+                        new Vector3(1f, 1f, 1f), HitTestFilter.SELF_SCENE);
         mExecutor.runAll();
         HitTestResult hitTestResult = hitTestResultFuture.get();
 

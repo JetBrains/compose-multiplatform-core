@@ -658,12 +658,11 @@ class RemoteBooleanTest {
     }
 
     @Test
-    fun evaluateIfConstant() {
-        assertThat((RemoteInt(10) gt RemoteInt(5)).evaluateIfConstant(creationState)).isTrue()
+    fun constantValue() {
+        assertThat((RemoteInt(10) gt RemoteInt(5)).constantValue).isTrue()
 
         assertThat(
-                (RemoteFloat(100f) gt RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC))
-                    .evaluateIfConstant(creationState)
+                (RemoteFloat(100f) gt RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC)).constantValue
             )
             .isNull()
     }

@@ -44,7 +44,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.runtime.Dimensions;
@@ -53,6 +52,7 @@ import androidx.xr.scenecore.runtime.MoveEventListener;
 import androidx.xr.scenecore.runtime.PanelEntity;
 import androidx.xr.scenecore.runtime.ResizeEvent;
 import androidx.xr.scenecore.runtime.ResizeEventListener;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -81,8 +81,10 @@ import java.util.List;
 public class ResizableComponentImplTest {
 
     private static final Dimensions MIN_DIMENSIONS = new Dimensions(0f, 0f, 0f);
-    private static final Dimensions MAX_DIMENSIONS = new Dimensions(10f, 10f, 10f);
-    private static final Dimensions DEFAULT_SIZE = new Dimensions(1.0f, 1.0f, 1.0f);
+    private static final Dimensions MAX_DIMENSIONS =
+            new Dimensions(10f, 10f, 10f);
+    private static final Dimensions DEFAULT_SIZE =
+            new Dimensions(1.0f, 1.0f, 1.0f);
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);
     private final Activity mActivity = mActivityController.create().start().get();
@@ -225,7 +227,8 @@ public class ResizableComponentImplTest {
 
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, new Dimensions(0f, 0f, 0f));
+                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS,
+                        new Dimensions(0f, 0f, 0f));
 
         assertThat(resizableComponent).isNotNull();
 

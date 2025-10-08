@@ -16,6 +16,8 @@
 
 package androidx.compose.material3
 
+import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -45,7 +47,6 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,7 +81,6 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
     }
 
     @Test
-    @Ignore("b/355413615")
     fun wideNavigationRail_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -91,11 +91,17 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             DefaultWideNavigationRail(interactionSource, expanded = scheme.expanded)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "wideNavigationRail_${scheme.name}_pressed_post_api_34"
+            } else {
+                "wideNavigationRail_${scheme.name}_pressed"
+            }
         assertWideNavigationRailMatches(
             scope = scope!!,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "wideNavigationRail_${scheme.name}_pressed",
+            goldenIdentifier = nameId,
         )
     }
 

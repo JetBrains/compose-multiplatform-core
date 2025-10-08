@@ -585,9 +585,8 @@ public class FakeRenderingRuntime(
      * called. When stopRenderer is called, it transitions to [State.PAUSED]. When dispose is
      * called, it transitions to [State.DESTROYED].
      */
-    public fun getState(): Enum<State> {
-        return _state
-    }
+    public val state: Enum<State>
+        get() = _state
 
     override fun resume() {
         _state = State.STARTED

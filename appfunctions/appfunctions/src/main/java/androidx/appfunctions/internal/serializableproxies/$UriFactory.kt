@@ -32,7 +32,7 @@ public class `$UriFactory` : AppFunctionSerializableFactory<Uri> {
         val appFunctionDataWithSpec =
             getAppFunctionDataWithSpec(
                 appFunctionData = appFunctionData,
-                qualifiedName = "androidx.appfunctions.internal.serializableproxies.AppFunctionUri",
+                qualifiedName = "android.net.Uri",
             )
         val uri = checkNotNull(appFunctionDataWithSpec.getStringOrNull("uri"))
 
@@ -43,10 +43,7 @@ public class `$UriFactory` : AppFunctionSerializableFactory<Uri> {
     override fun toAppFunctionData(appFunctionSerializable: Uri): AppFunctionData {
         val appFunctionUri_appFunctionSerializable = AppFunctionUri.fromUri(appFunctionSerializable)
 
-        val builder =
-            getAppFunctionDataBuilder(
-                "androidx.appfunctions.internal.serializableproxies.AppFunctionUri"
-            )
+        val builder = getAppFunctionDataBuilder("android.net.Uri")
         val uri = appFunctionUri_appFunctionSerializable.uri
         builder.setString("uri", uri)
 

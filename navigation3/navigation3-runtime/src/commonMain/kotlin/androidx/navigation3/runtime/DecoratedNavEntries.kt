@@ -19,10 +19,8 @@ package androidx.navigation3.runtime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import kotlin.jvm.JvmSuppressWildcards
 
 /**
@@ -224,7 +222,7 @@ private fun <T : Any> decorateEntry(
                         object : NavEntryWrapper<T>(wrappedEntry) {
                             @Composable
                             override fun Content() {
-                                decorator.navEntryDecorator(wrappedEntry)
+                                decorator.decorate(wrappedEntry)
                             }
                         }
                     }

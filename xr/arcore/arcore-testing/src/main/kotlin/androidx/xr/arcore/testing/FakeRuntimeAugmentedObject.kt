@@ -25,8 +25,7 @@ import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 
 /**
- * Fake implementation of [androidx.xr.arcore.runtime.internal.AugmentedObject] for testing
- * purposes.
+ * Fake implementation of [androidx.xr.arcore.runtime.AugmentedObject] for testing purposes.
  *
  * @property centerPose The pose of the center of the augmented object.
  * @property extents The extents of the augmented object.

@@ -596,30 +596,12 @@
     </issue>
 
     <issue
-        id="UnnecessaryLambdaCreation"
-        message="Creating an unnecessary lambda to emit a captured lambda"
-        errorLine1="        factory = { RemoteComposePlayer(it).apply { init(this) } },"
-        errorLine2="                                                    ~~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/player/RemoteDocumentPlayer.kt"/>
-    </issue>
-
-    <issue
         id="AutoboxingStateCreation"
         message="Prefer `mutableLongStateOf` instead of `mutableStateOf`"
         errorLine1="    public val time: MutableState&lt;Long> = mutableStateOf(0L)"
         errorLine2="                                          ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
-        errorLine1="    var playbackTheme by remember { mutableStateOf(Theme.UNSPECIFIED) }"
-        errorLine2="                                    ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/player/RemoteDocumentPlayer.kt"/>
     </issue>
 
     <issue

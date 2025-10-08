@@ -16,6 +16,8 @@
 
 package androidx.compose.material3
 
+import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -49,7 +51,6 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,7 +83,6 @@ class ShortNavigationBarScreenshotTest {
     }
 
     @Test
-    @Ignore("b/355413615")
     fun equalWeightArrangement_lightTheme_pressed() {
         val interactionSource = MutableInteractionSource()
         lateinit var scope: CoroutineScope
@@ -92,11 +92,17 @@ class ShortNavigationBarScreenshotTest {
             DefaultShortNavigationBar(interactionSource)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "shortNavigationBar_equalWeightArrangement_lightTheme_pressed_post_api_34"
+            } else {
+                "shortNavigationBar_equalWeightArrangement_lightTheme_pressed"
+            }
         assertShortNavigationBarMatches(
             scope = scope,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme_pressed",
+            goldenIdentifier = nameId,
         )
     }
 
@@ -176,7 +182,6 @@ class ShortNavigationBarScreenshotTest {
     }
 
     @Test
-    @Ignore("b/355413615")
     fun equalWeightArrangement_darkTheme_pressed() {
         val interactionSource = MutableInteractionSource()
         lateinit var scope: CoroutineScope
@@ -186,11 +191,17 @@ class ShortNavigationBarScreenshotTest {
             DefaultShortNavigationBar(interactionSource)
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "shortNavigationBar_equalWeightArrangement_darkTheme_pressed_post_api_34"
+            } else {
+                "shortNavigationBar_equalWeightArrangement_darkTheme_pressed"
+            }
         assertShortNavigationBarMatches(
             scope = scope,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_darkTheme_pressed",
+            goldenIdentifier = nameId,
         )
     }
 
@@ -235,7 +246,6 @@ class ShortNavigationBarScreenshotTest {
     }
 
     @Test
-    @Ignore("b/355413615")
     fun centeredArrangement_lightTheme_pressed() {
         val interactionSource = MutableInteractionSource()
         lateinit var scope: CoroutineScope
@@ -249,11 +259,17 @@ class ShortNavigationBarScreenshotTest {
             )
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "shortNavigationBar_centeredArrangement_lightTheme_pressed_post_api_34"
+            } else {
+                "shortNavigationBar_centeredArrangement_lightTheme_pressed"
+            }
         assertShortNavigationBarMatches(
             scope = scope,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(140f, 10f)),
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme_pressed",
+            goldenIdentifier = nameId,
         )
     }
 
@@ -345,7 +361,6 @@ class ShortNavigationBarScreenshotTest {
     }
 
     @Test
-    @Ignore("b/355413615")
     fun centeredArrangement_darkTheme_pressed() {
         val interactionSource = MutableInteractionSource()
         lateinit var scope: CoroutineScope
@@ -359,11 +374,17 @@ class ShortNavigationBarScreenshotTest {
             )
         }
 
+        val nameId =
+            if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                "shortNavigationBar_centeredArrangement_darkTheme_pressed_post_api_34"
+            } else {
+                "shortNavigationBar_centeredArrangement_darkTheme_pressed"
+            }
         assertShortNavigationBarMatches(
             scope = scope,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(140f, 10f)),
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_darkTheme_pressed",
+            goldenIdentifier = nameId,
         )
     }
 

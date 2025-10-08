@@ -18,13 +18,41 @@ package androidx.appfunctions
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.appfunctions.Attachment.Companion.ATTACHMENT_OBJECT_TYPE_METADATA
 import androidx.appfunctions.internal.AppFunctionSerializableFactory
+import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 
 class MissingFactoryClass(val item: String)
 
-data class Attachment(val uri: String)
+data class Attachment(val uri: String) {
+    internal companion object {
+        val ATTACHMENT_OBJECT_TYPE_METADATA: AppFunctionObjectTypeMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("uri" to AppFunctionStringTypeMetadata(isNullable = false)),
+                required = listOf("uri"),
+                qualifiedName = "androidx.appfunctions.Attachment",
+                isNullable = true,
+            )
+    }
+}
 
-data class Note(val title: String, val attachment: Attachment)
+data class Note(val title: String, val attachment: Attachment) {
+    internal companion object {
+
+        val NOTE_OBJECT_TYPE_METADATA: AppFunctionObjectTypeMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "title" to AppFunctionStringTypeMetadata(isNullable = false),
+                        "attachment" to ATTACHMENT_OBJECT_TYPE_METADATA,
+                    ),
+                required = listOf("title"),
+                qualifiedName = "androidx.appfunctions.Note",
+                isNullable = true,
+            )
+    }
+}
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 class `$AttachmentFactory` : AppFunctionSerializableFactory<Attachment> {
@@ -33,7 +61,7 @@ class `$AttachmentFactory` : AppFunctionSerializableFactory<Attachment> {
     }
 
     override fun toAppFunctionData(appFunctionSerializable: Attachment): AppFunctionData {
-        return AppFunctionData.Builder("androidx.appfunctions.Attachment")
+        return getAppFunctionDataBuilder("androidx.appfunctions.Attachment")
             .setString("uri", appFunctionSerializable.uri)
             .build()
     }
@@ -51,7 +79,7 @@ class `$NoteFactory` : AppFunctionSerializableFactory<Note> {
     }
 
     override fun toAppFunctionData(appFunctionSerializable: Note): AppFunctionData {
-        return AppFunctionData.Builder("androidx.appfunctions.Note")
+        return getAppFunctionDataBuilder("androidx.appfunctions.Note")
             .setString("title", appFunctionSerializable.title)
             .setAppFunctionData(
                 "attachment",

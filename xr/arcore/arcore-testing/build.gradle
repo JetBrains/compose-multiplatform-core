@@ -32,7 +32,7 @@ plugins {
 dependencies {
     api(libs.kotlinStdlib)
     api(project(":xr:runtime:runtime"))
-    api(project(":xr:arcore:arcore"))
+    api(project(":xr:arcore:arcore-runtime"))
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
@@ -44,6 +44,7 @@ dependencies {
 }
 
 android {
+    compileSdk = 35
     namespace = "androidx.xr.arcore.testing"
 }
 

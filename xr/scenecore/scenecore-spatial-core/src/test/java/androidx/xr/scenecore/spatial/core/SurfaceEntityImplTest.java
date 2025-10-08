@@ -29,7 +29,6 @@ import androidx.xr.runtime.math.FloatSize2d;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.runtime.CameraViewActivityPose;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
@@ -38,6 +37,7 @@ import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.SurfaceEntity.Shape;
 import androidx.xr.scenecore.runtime.SurfaceFeature;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 import androidx.xr.scenecore.testing.FakeSurfaceFeature;
 

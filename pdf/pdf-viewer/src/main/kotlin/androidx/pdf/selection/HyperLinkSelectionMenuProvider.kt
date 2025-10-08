@@ -35,7 +35,7 @@ internal class HyperLinkSelectionMenuProvider(private val context: Context) :
 
     private fun getCopyLinkMenuItem(): ContextMenuComponent {
         return DefaultSelectionMenuComponent(
-            key = PdfSelectionMenuKeys.SmartActionKey,
+            key = PdfSelectionMenuKeys.CopyLinkKey,
             label = context.getString(R.string.label_copy_link),
             contentDescription = context.getString(R.string.desc_copy_link),
         ) { pdfView ->

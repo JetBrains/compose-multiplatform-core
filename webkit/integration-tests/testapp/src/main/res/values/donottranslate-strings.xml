@@ -139,4 +139,13 @@
     <string name="web_storage_delete_data_button">Delete page data</string>
     <string name="web_storage_delete_complete">Data deletion complete</string>
 
+    <!-- Custom Header -->
+    <string name="custom_header_activity_title">Custom Request Headers</string>
+    <string name="custom_header_name_label">Header Name</string>
+    <string name="custom_header_value_label">Header Value</string>
+    <string name="custom_header_add_button_label">Add custom header</string>
+    <string name="custom_header_clear_button_label">Clear custom headers</string>
+    <string name="custom_header_load_button_label">Load and show headers</string>
+    <string name="custom_header_missing_input_warning">Please enter both header name and value</string>
+
 </resources>

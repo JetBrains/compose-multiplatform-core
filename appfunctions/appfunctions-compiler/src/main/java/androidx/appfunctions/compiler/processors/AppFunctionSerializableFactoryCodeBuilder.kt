@@ -245,7 +245,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
      *     val sampleSerializable_appFunctionSerializable = appFunctionSerializable
      *     val longParam = sampleSerializable_appFunctionSerializable.longParam
      *     val doubleParam = sampleSerializable_appFunctionSerializable.doubleParam
-     *     val builder = AppFunctionData.Builder("...")
+     *     val builder = getAppFunctionDataBuilder("...")
      *     builder.setLong("longParam", longParam)
      *     builder.setDouble("doubleParam", doubleParam)
      *     return builder.build()
@@ -306,7 +306,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
      *         SampleSerializableProxy.fromLocalDateTime(appFunctionSerializable)
      *     val longParam = localDateTime_appFunctionSerializable.longParam
      *     val doubleParam = localDateTime_appFunctionSerializable.doubleParam
-     *     val builder = AppFunctionData.Builder("...")
+     *     val builder = getAppFunctionDataBuilder("...")
      *     builder.setLong("longParam", longParam)
      *     builder.setDouble("doubleParam", doubleParam)
      *     return builder.build()
@@ -356,7 +356,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
      * override fun toAppFunctionData(sampleSerializable: SampleSerializable) : AppFunctionData {
      *     val longParam = sampleSerializable.longParam
      *     val doubleParam = sampleSerializable.doubleParam
-     *     val builder = AppFunctionData.Builder("androidx.appfunctions.compiler.processors.SampleSerializable")
+     *     val builder = getAppFunctionDataBuilder("androidx.appfunctions.compiler.processors.SampleSerializable")
      *     builder.setLong("longParam", longParam)
      *     builder.setDouble("doubleParam", doubleParam)
      *     return builder.build()

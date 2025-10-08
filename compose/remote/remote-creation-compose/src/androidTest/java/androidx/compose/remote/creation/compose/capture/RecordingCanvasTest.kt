@@ -152,6 +152,30 @@ class RecordingCanvasTest {
     }
 
     @Test
+    fun remotePaintColorInt() {
+        val paint = RemotePaint()
+        paint.color = Color.RED
+
+        recordingCanvas.usePaint(paint)
+
+        val operations = inflateOperations()
+        val paintOp = operations[operations.size - 1] as PaintData
+        assertThat(paintOp.mPaintData.toString()).contains("Color(0xffff0000)")
+    }
+
+    @Test
+    fun paintColorInt() {
+        val paint = Paint()
+        paint.color = Color.RED
+
+        recordingCanvas.usePaint(paint)
+
+        val operations = inflateOperations()
+        val paintOp = operations[operations.size - 1] as PaintData
+        assertThat(paintOp.mPaintData.toString()).contains("Color(0xffff0000)")
+    }
+
+    @Test
     fun remotePaintSetColor_colorExpression() {
         val paint = RemotePaint()
         paint.remoteColor =

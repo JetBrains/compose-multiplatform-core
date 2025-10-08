@@ -38,13 +38,8 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
     public override val value: Boolean
         get() = v.value == 0
 
-    /**
-     * Whether or not this RemoteBoolean will always evaluate to the same [value]. This is currently
-     * a conservative check that may report false negatives for some expressions that reference
-     * other expressions since the tracking involved is expensive.
-     */
-    public override val hasConstantValue: Boolean
-        get() = v.hasConstantValue
+    public override val constantValue: Boolean?
+        get() = v.constantValue?.let { it != 0 }
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         v.writeToDocument(creationState)
@@ -86,14 +81,6 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
     public fun toRemoteInt(): RemoteInt = v
 
     /**
-     * If this [RemoteBoolean] represents a constant value, then this method evaluates it and
-     * returns it, otherwise it returns null.
-     */
-    public fun evaluateIfConstant(creationState: RemoteComposeCreationState): Boolean? {
-        return v.evaluateIfConstant(creationState)?.let { it != 0 }
-    }
-
-    /**
      * If this RemoteBoolean evaluates to `true` then the returned value evaluates to [ifTrue]
      * otherwise it evaluates to [ifFalse].
      *
@@ -101,10 +88,18 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
      * @param ifFalse The [RemoteString] to be selected if this boolean is `false`.
      * @return A new [RemoteString] representing the conditionally selected string.
      */
-    public fun select(ifTrue: RemoteString, ifFalse: RemoteString): RemoteString =
-        MutableRemoteString(
+    public fun select(ifTrue: RemoteString, ifFalse: RemoteString): RemoteString {
+        v.constantValue?.let {
+            return if (it != 0) {
+                ifTrue
+            } else {
+                ifFalse
+            }
+        }
+
+        return MutableRemoteString(
             mutableStateOf(""),
-            hasConstantValue && ifTrue.hasConstantValue && ifFalse.hasConstantValue,
+            constantValue = null,
             object : LazyRemoteString {
                 override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
                     return creationState.document.textLookup(
@@ -125,6 +120,7 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
                     )
             },
         )
+    }
 
     /**
      * If this RemoteBoolean evaluates to `true` then the returned value evaluates to [ifTrue]
@@ -134,28 +130,26 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
      * @param ifFalse The [RemoteFloat] to be selected if this boolean is `false`.
      * @return A new [RemoteFloat] representing the conditionally selected float value.
      */
-    public fun select(ifTrue: RemoteFloat, ifFalse: RemoteFloat): RemoteFloat =
-        RemoteFloatExpression(
-            hasConstantValue && ifTrue.hasConstantValue && ifFalse.hasConstantValue,
+    public fun select(ifTrue: RemoteFloat, ifFalse: RemoteFloat): RemoteFloat {
+        v.constantValue?.let {
+            return if (it != 0) {
+                ifTrue
+            } else {
+                ifFalse
+            }
+        }
+        return RemoteFloatExpression(
+            constantValue = null,
             { creationState ->
-                val b = v.arrayForCreationState(creationState)
-                val t = ifTrue.arrayForCreationState(creationState)
-                val f = ifFalse.arrayForCreationState(creationState)
-
-                if (b.isLiteral() && t.isLiteral() && f.isLiteral()) {
-                    // All inputs are constant so evaluate directly.
-                    floatArrayOf(if (b[0] == 1L) t[0] else f[0])
-                } else {
-                    // One of the inputs wasn\'t constant so evaluate dynamically.
-                    floatArrayOf(
-                        *ifFalse.arrayProvider(creationState),
-                        *ifTrue.arrayProvider(creationState),
-                        v.getFloatIdForCreationState(creationState),
-                        AnimatedFloatExpression.IFELSE,
-                    )
-                }
+                floatArrayOf(
+                    *ifFalse.arrayProvider(creationState),
+                    *ifTrue.arrayProvider(creationState),
+                    v.getFloatIdForCreationState(creationState),
+                    AnimatedFloatExpression.IFELSE,
+                )
             },
         )
+    }
 
     /**
      * If this RemoteBoolean evaluates to `true` then the returned value evaluates to [ifTrue]
@@ -165,27 +159,25 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
      * @param ifFalse The [RemoteInt] to be selected if this boolean is `false`.
      * @return A new [RemoteInt] representing the conditionally selected integer value.
      */
-    public fun select(ifTrue: RemoteInt, ifFalse: RemoteInt): RemoteInt =
-        RemoteIntExpression(
-            hasConstantValue && ifTrue.hasConstantValue && ifFalse.hasConstantValue,
+    public fun select(ifTrue: RemoteInt, ifFalse: RemoteInt): RemoteInt {
+        v.constantValue?.let {
+            return if (it != 0) {
+                ifTrue
+            } else {
+                ifFalse
+            }
+        }
+        return RemoteIntExpression(
+            constantValue = null,
             { creationState ->
-                val b = v.arrayForCreationState(creationState)
-                val t = ifTrue.arrayForCreationState(creationState)
-                val f = ifFalse.arrayForCreationState(creationState)
-
-                if (b.isLiteral() && t.isLiteral() && f.isLiteral()) {
-                    // All inputs are constant so evaluate directly.
-                    longArrayOf(if (b[0] == 1L) t[0] else f[0])
-                } else {
-                    // One of the inputs wasn\'t constant so evaluate dynamically.
-                    combineToLongArray(
-                        creationState,
-                        arrayOf(ifFalse, ifTrue, v),
-                        0x100000000L + IntegerExpressionEvaluator.I_IFELSE,
-                    )
-                }
+                combineToLongArray(
+                    creationState,
+                    arrayOf(ifFalse, ifTrue, v),
+                    0x100000000L + IntegerExpressionEvaluator.I_IFELSE,
+                )
             },
         )
+    }
 
     /**
      * If this RemoteBoolean evaluates to `true` then the returned value evaluates to [ifTrue]
@@ -195,29 +187,28 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
      * @param ifFalse The [RemoteBoolean] to be selected if this boolean is `false`.
      * @return A new [RemoteBoolean] representing the conditionally selected integer value.
      */
-    public fun select(ifTrue: RemoteBoolean, ifFalse: RemoteBoolean): RemoteBoolean =
-        RemoteBoolean(
-            RemoteIntExpression(
-                hasConstantValue && ifTrue.hasConstantValue && ifFalse.hasConstantValue,
-                { creationState ->
-                    val b = v.arrayForCreationState(creationState)
-                    val t = ifTrue.v.arrayForCreationState(creationState)
-                    val f = ifFalse.v.arrayForCreationState(creationState)
+    public fun select(ifTrue: RemoteBoolean, ifFalse: RemoteBoolean): RemoteBoolean {
+        v.constantValue?.let {
+            return if (it != 0) {
+                ifTrue
+            } else {
+                ifFalse
+            }
+        }
 
-                    if (b.isLiteral() && t.isLiteral() && f.isLiteral()) {
-                        // All inputs are constant so evaluate directly.
-                        longArrayOf(if (b[0] == 1L) t[0] else f[0])
-                    } else {
-                        // One of the inputs wasn\'t constant so evaluate dynamically.
-                        combineToLongArray(
-                            creationState,
-                            arrayOf(ifFalse.v, ifTrue.v, v),
-                            0x100000000L + IntegerExpressionEvaluator.I_IFELSE,
-                        )
-                    }
+        return RemoteBoolean(
+            RemoteIntExpression(
+                constantValue = null,
+                { creationState ->
+                    combineToLongArray(
+                        creationState,
+                        arrayOf(ifFalse.v, ifTrue.v, v),
+                        0x100000000L + IntegerExpressionEvaluator.I_IFELSE,
+                    )
                 },
             )
         )
+    }
 
     /**
      * If this RemoteBoolean evaluates to `true` then the returned value evaluates to [ifTrue]
@@ -229,8 +220,17 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
      *   an ARGB color).
      * @return A new [RemoteColor] representing the conditionally selected color.
      */
-    public fun select(@ColorInt ifTrue: Int, @ColorInt ifFalse: Int): RemoteColor =
-        tween(ifFalse, ifTrue, v.toRemoteFloat())
+    public fun select(@ColorInt ifTrue: Int, @ColorInt ifFalse: Int): RemoteColor {
+        v.constantValue?.let {
+            return if (it != 0) {
+                RemoteColor(ifTrue)
+            } else {
+                RemoteColor(ifFalse)
+            }
+        }
+
+        return tween(ifFalse, ifTrue, v.toRemoteFloat())
+    }
 
     /**
      * If this RemoteBoolean evaluates to `true` then the returned value evaluates to [ifTrue]
@@ -240,8 +240,17 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
      * @param ifFalse The [RemoteColor] to be selected if this boolean is `false`.
      * @return A new [RemoteColor] representing the conditionally selected color.
      */
-    public fun select(ifTrue: RemoteColor, ifFalse: RemoteColor): RemoteColor =
-        tween(ifFalse, ifTrue, v.toRemoteFloat())
+    public fun select(ifTrue: RemoteColor, ifFalse: RemoteColor): RemoteColor {
+        v.constantValue?.let {
+            return if (it != 0) {
+                ifTrue
+            } else {
+                ifFalse
+            }
+        }
+
+        return tween(ifFalse, ifTrue, v.toRemoteFloat())
+    }
 
     /**
      * Equality operator for [RemoteBoolean]s.

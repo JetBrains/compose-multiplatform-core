@@ -16,6 +16,8 @@
 
 package androidx.compose.material3
 
+import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -64,7 +66,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -95,12 +96,17 @@ class ShortNavigationBarTest {
     }
 
     @Test
-    @Ignore("b/422735600")
     fun bar_size() {
         val height = NavigationBarTokens.ContainerHeight
         rule
             .setMaterialContentForSizeAssertions {
-                ShortNavigationBar {
+                val windowInsets =
+                    if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                        WindowInsets()
+                    } else {
+                        ShortNavigationBarDefaults.windowInsets
+                    }
+                ShortNavigationBar(windowInsets = windowInsets) {
                     repeat(3) { index ->
                         ShortNavigationBarItem(
                             icon = { Icon(Icons.Filled.Favorite, null) },

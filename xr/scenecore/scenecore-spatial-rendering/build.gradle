@@ -35,7 +35,7 @@ dependencies {
     api(libs.jspecify)
     api(libs.kotlinStdlib)
     api(project(":xr:runtime:runtime"))
-    api(project(":xr:scenecore:scenecore"))
+    api(project(":xr:scenecore:scenecore-runtime"))
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("com.google.ar:impress:0.0.7")
@@ -64,6 +64,7 @@ dependencies {
 }
 
 android {
+    compileSdk = 35
     defaultConfig {
         minSdk = 24
     }

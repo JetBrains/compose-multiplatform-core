@@ -170,6 +170,7 @@ val WearFoundationDemos =
                     DemoCategory(
                         "Demos",
                         listOf(
+                            ComposableDemo("Resolution") { RotaryResolutionDemo() },
                             ComposableDemo("Nested scroll with Pager") { NestedScrollPagerDemo() },
                             ComposableDemo("Nested scroll with Lazy Column") {
                                 NestedScrollLazyColumnDemo(false)

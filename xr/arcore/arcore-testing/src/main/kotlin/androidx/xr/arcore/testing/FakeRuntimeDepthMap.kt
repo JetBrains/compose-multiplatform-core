@@ -20,7 +20,7 @@ import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 
-/** Test-only implementation of [androidx.xr.arcore.runtime.internal.DepthMap] */
+/** Test-only implementation of [androidx.xr.arcore.runtime.DepthMap] */
 public class FakeRuntimeDepthMap(
     override var width: Int = 0,
     override var height: Int = 0,

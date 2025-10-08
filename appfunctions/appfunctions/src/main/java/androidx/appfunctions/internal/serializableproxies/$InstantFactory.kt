@@ -32,8 +32,7 @@ public class `$InstantFactory` : AppFunctionSerializableFactory<Instant> {
         val appFunctionDataWithSpec =
             getAppFunctionDataWithSpec(
                 appFunctionData = appFunctionData,
-                qualifiedName =
-                    "androidx.appfunctions.internal.serializableproxies.AppFunctionLocalDateTime",
+                qualifiedName = "java.time.Instant",
             )
         val epochSecond = checkNotNull(appFunctionDataWithSpec.getLongOrNull("epochSecond"))
         val nanoAdjustment = checkNotNull(appFunctionDataWithSpec.getIntOrNull("nanoAdjustment"))
@@ -46,10 +45,7 @@ public class `$InstantFactory` : AppFunctionSerializableFactory<Instant> {
         val appFunctionInstant_appFunctionSerializable =
             AppFunctionInstant.fromInstant(appFunctionSerializable)
 
-        val builder =
-            getAppFunctionDataBuilder(
-                "androidx.appfunctions.internal.serializableproxies.AppFunctionInstant"
-            )
+        val builder = getAppFunctionDataBuilder("java.time.Instant")
         val epochSecond = appFunctionInstant_appFunctionSerializable.epochSecond
         builder.setLong("epochSecond", epochSecond)
         val nanoAdjustment = appFunctionInstant_appFunctionSerializable.nanoAdjustment

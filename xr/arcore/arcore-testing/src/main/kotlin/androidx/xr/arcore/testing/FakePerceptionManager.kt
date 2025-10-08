@@ -36,8 +36,8 @@ import androidx.xr.runtime.math.Vector3
 import java.util.UUID
 
 /**
- * Test-only implementation of [androidx.xr.arcore.runtime.internal.PerceptionManager] used to
- * validate state transitions.
+ * Test-only implementation of [androidx.xr.arcore.runtime.PerceptionManager] used to validate state
+ * transitions.
  */
 @SuppressWarnings("HiddenSuperclass")
 public class FakePerceptionManager : PerceptionManager, AnchorHolder {
@@ -136,33 +136,27 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     }
 
     /**
-     * Adds a [androidx.xr.arcore.runtime.internal.HitResult] to the list that is returned when
-     * calling [hitTest] with any pose.
+     * Adds a [androidx.xr.arcore.runtime.HitResult] to the list that is returned when calling
+     * [hitTest] with any pose.
      */
     public fun addHitResult(hitResult: HitResult) {
         hitResults.add(hitResult)
     }
 
-    /**
-     * Removes all [androidx.xr.arcore.runtime.internal.HitResult] instances passed to
-     * [addHitResult].
-     */
+    /** Removes all [androidx.xr.arcore.runtime.HitResult] instances passed to [addHitResult]. */
     public fun clearHitResults() {
         hitResults.clear()
     }
 
     /**
-     * Adds a [androidx.xr.arcore.runtime.internal.Trackable] to the list that is returned when
-     * calling [trackables].
+     * Adds a [androidx.xr.arcore.runtime.Trackable] to the list that is returned when calling
+     * [trackables].
      */
     public fun addTrackable(trackable: Trackable) {
         trackables.add(trackable)
     }
 
-    /**
-     * Removes all [androidx.xr.arcore.runtime.internal.Trackable] instances passed to
-     * [addTrackable].
-     */
+    /** Removes all [androidx.xr.arcore.runtime.Trackable] instances passed to [addTrackable]. */
     public fun clearTrackables() {
         trackables.clear()
     }

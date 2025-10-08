@@ -17,8 +17,6 @@
 package androidx.datastore.guava
 
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture
 import androidx.datastore.core.CurrentDataProviderStore
 import androidx.datastore.core.DataMigration
@@ -71,16 +69,6 @@ internal constructor(
         return launchFuture(coroutineContext) {
             dataStore.updateData { dataTransform.transform(it) }
         }
-    }
-
-    @Deprecated(
-        "Use updateDataAsync with DataTransform instead.",
-        replaceWith = ReplaceWith("updateDataAsync(DataTransform { transform.apply(it) })"),
-    )
-    // TODO(b/433318718): Remove this function as we no longer need it.
-    @RequiresApi(Build.VERSION_CODES.N)
-    public fun updateDataFunctionAsync(transform: Function<T, T>): ListenableFuture<T> {
-        return launchFuture(coroutineContext) { dataStore.updateData { transform.apply(it) } }
     }
 
     /** Builder class for a [GuavaDataStore]. */

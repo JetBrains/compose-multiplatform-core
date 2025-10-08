@@ -25,14 +25,14 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
 /**
- * Test-only implementation of [androidx.xr.arcore.runtime.internal.Plane]
+ * Test-only implementation of [androidx.xr.arcore.runtime.Plane]
  *
  * The properties of the [FakeRuntimePlane] can be set manually in order to simulate a runtime plane
  * in the environment.
  *
  * For example, for a [FakeRuntimePlane] with
- * [androidx.xr.arcore.runtime.internal.Plane.Label.Companion.WALL],
- * [androidx.xr.arcore.runtime.internal.Plane.Type.Companion.VERTICAL] and
+ * [androidx.xr.arcore.runtime.Plane.Label.Companion.WALL],
+ * [androidx.xr.arcore.runtime.Plane.Type.Companion.VERTICAL] and
  * [androidx.xr.runtime.TrackingState.Companion.PAUSED]:
  * ```
  * val plane = FakeRuntimePlane(type = RuntimePlane.Type.VERTICAL,

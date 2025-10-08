@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.remote.creation.compose.capture.RememberRemoteDocumentInline
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.player.compose.ExperimentalRemoteComposePlayerApi
+import androidx.compose.remote.player.compose.RemoteComposePlayerFlags
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
 import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.runtime.Composable
@@ -31,8 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalWindowInfo
 
 /** Display a Remote Compose Composable in the Android Studio Preview. */
+@OptIn(ExperimentalRemoteComposePlayerApi::class)
 @Composable
 fun RemoteComposePreview(content: @RemoteComposable @Composable () -> Unit) {
+    RemoteComposePlayerFlags.isViewPlayerEnabled = false
     var documentState by remember { mutableStateOf<RemoteComposeDocument?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {

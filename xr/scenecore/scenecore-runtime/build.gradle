@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.AndroidXConfig
 import androidx.build.SoftwareType
 
 plugins {
@@ -40,9 +41,19 @@ dependencies {
     implementation(libs.androidx.core)
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
+
+    // For com.android.xr.extensions.
+    // TODO(b/447454270): Remove this once extensions are in g3.
+    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
+    testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
 }
 
 android {
+    defaultConfig {
+        minSdk = 24
+    }
+    compileSdk = 35
     namespace = "androidx.xr.scenecore.runtime"
 }
 

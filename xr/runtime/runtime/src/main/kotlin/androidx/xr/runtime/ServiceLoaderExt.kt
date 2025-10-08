@@ -67,7 +67,6 @@ internal fun <S : Any> loadProviders(
             providerClass.javaClass.name !in filteredProviderClassNames
         }
 
-    println("Detected filtered service loader classes: $filteredServiceLoaderClasses")
     return providers + filteredServiceLoaderClasses
 }
 

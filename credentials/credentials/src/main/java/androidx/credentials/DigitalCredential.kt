@@ -52,7 +52,9 @@ class DigitalCredential private constructor(val credentialJson: String, data: Bu
 
         internal const val BUNDLE_KEY_REQUEST_JSON = "androidx.credentials.BUNDLE_KEY_REQUEST_JSON"
 
-        private const val BYTE_SIZE_500K = 500000
+        // If the string length exceeds the threshold, the string will be converted to a byte array
+        // during serialization to optimize space usage.
+        private const val STRING_LEN_THRESHOLD = 250000
 
         @JvmStatic
         @Suppress("DEPRECATION")
@@ -71,8 +73,8 @@ class DigitalCredential private constructor(val credentialJson: String, data: Bu
         @JvmStatic
         internal fun toBundle(responseJson: String): Bundle {
             val bundle = Bundle()
-            val jsonBytes = responseJson.toByteArray(Charsets.UTF_8)
-            if (jsonBytes.size >= BYTE_SIZE_500K) {
+            if (responseJson.length >= STRING_LEN_THRESHOLD) {
+                val jsonBytes = responseJson.toByteArray(Charsets.UTF_8)
                 bundle.putByteArray(BUNDLE_KEY_REQUEST_JSON, jsonBytes)
             } else {
                 bundle.putString(BUNDLE_KEY_REQUEST_JSON, responseJson)

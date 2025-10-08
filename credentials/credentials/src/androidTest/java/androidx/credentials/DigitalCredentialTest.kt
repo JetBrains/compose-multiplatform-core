@@ -75,7 +75,7 @@ class DigitalCredentialTest {
 
     @Test
     fun frameworkConversion_largeJson_success() {
-        val largeJson = "{\"key\":\"${"a".repeat(700000)}\"}"
+        val largeJson = "{\"key\":\"${"a".repeat(300000)}\"}"
         val credential = DigitalCredential(largeJson)
         // Add additional data to the request data and candidate query data to make sure
         // they persist after the conversion

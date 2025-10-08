@@ -184,6 +184,7 @@ class CameraStateRobolectricTest(private val config: TestConfig) {
 
         val cameraErrorLatch = CountDownLatch(1)
         var capturedState: CameraState? = null
+        var isErrorCaptured = false
 
         // Act: Bind a use case, which will trigger the camera open call that we've hijacked.
         mainThreadHandler.post {
@@ -199,8 +200,9 @@ class CameraStateRobolectricTest(private val config: TestConfig) {
 
             camera.cameraInfo.cameraState.observe(fakeLifecycleOwner) { state ->
                 // We are interested in the state where an error is first reported.
-                if (state.error != null) {
+                if (state.error != null && !isErrorCaptured) {
                     capturedState = state
+                    isErrorCaptured = true
                     cameraErrorLatch.countDown()
                 }
             }

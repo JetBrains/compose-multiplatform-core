@@ -210,7 +210,16 @@ public abstract class SliceTrack(
             try {
                 block()
             } finally {
-                endSection()
+                if (
+                    threadContextElement.started.compareAndSet(
+                        expected = STATE_BEGIN,
+                        actual = STATE_END,
+                    )
+                ) {
+                    // Only end if still in STATE_STARTED.
+                    // This prevents superfluous endSection() markers.
+                    endSection()
+                }
             }
         }
     }

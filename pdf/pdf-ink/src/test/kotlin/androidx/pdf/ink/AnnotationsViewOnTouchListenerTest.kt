@@ -17,8 +17,10 @@
 package androidx.pdf.ink
 
 import android.content.Context
+import android.graphics.PointF
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -30,17 +32,19 @@ import org.robolectric.RobolectricTestRunner
 class AnnotationsViewOnTouchListenerTest {
     private lateinit var listener: AnnotationsViewOnTouchListener
     private lateinit var view: View
+    private lateinit var context: Context
 
-    // Consistent event timing for sequences
     private var gestureDownTime = 0L
     private var currentEventTimeInGesture = 0L
 
     private lateinit var wetStrokesViewEventTracker: TestTouchEventDispatcher
     private lateinit var pdfViewEventTracker: TestTouchEventDispatcher
 
+    private val touchSlop by lazy { ViewConfiguration.get(context).scaledTouchSlop.toFloat() }
+
     @Before
     fun setUp() {
-        val context: Context = ApplicationProvider.getApplicationContext()
+        context = ApplicationProvider.getApplicationContext()
         view = View(context)
         gestureDownTime = System.currentTimeMillis()
         currentEventTimeInGesture = gestureDownTime
@@ -49,255 +53,196 @@ class AnnotationsViewOnTouchListenerTest {
         pdfViewEventTracker = TestTouchEventDispatcher()
 
         listener =
-            AnnotationsViewOnTouchListener(
-                wetStrokesViewDispatcher = wetStrokesViewEventTracker,
-                pdfViewDispatcher = pdfViewEventTracker,
-            )
+            AnnotationsViewOnTouchListener(context, wetStrokesViewEventTracker, pdfViewEventTracker)
     }
 
-    private fun resetDispatchTrackers() {
-        wetStrokesViewEventTracker.reset()
-        pdfViewEventTracker.reset()
+    @Test
+    fun onTouch_actionDown_dispatchesToWetStrokesViewOnly() {
+        val downEvent =
+            createMotionEvent(MotionEvent.ACTION_DOWN, listOf(PointerInfo(0, PointF(10f, 10f))))
+        listener.onTouch(view, downEvent)
+
+        assertThat(wetStrokesViewEventTracker.callCount()).isEqualTo(1)
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction())
+            .isEqualTo(MotionEvent.ACTION_DOWN)
+        assertThat(pdfViewEventTracker.wasCalled()).isFalse()
     }
 
-    private fun createMotionEvent(
-        action: Int,
-        numPointers: Int = 1,
-        pointerIndexForAction: Int = 0, // For ACTION_POINTER_DOWN/UP
-    ): MotionEvent {
-        currentEventTimeInGesture += 10
-
-        val pointerProperties =
-            Array(numPointers) { index -> MotionEvent.PointerProperties().apply { id = index } }
-        val pointerCoords =
-            Array(numPointers) { index ->
-                MotionEvent.PointerCoords().apply {
-                    x = index * 10f
-                    y = index * 10f
-                }
-            }
-
-        // Determine the final action for the MotionEvent.
-        // For POINTER_DOWN/UP, the action is combined with the pointerIndexForAction.
-        // Otherwise, the original action is used.
-        val effectiveAction =
-            when (action) {
-                MotionEvent.ACTION_POINTER_DOWN,
-                MotionEvent.ACTION_POINTER_UP ->
-                    action or (pointerIndexForAction shl MotionEvent.ACTION_POINTER_INDEX_SHIFT)
-                else -> action
-            }
-
-        return MotionEvent.obtain(
-            /* downTime = */ gestureDownTime,
-            /* eventTime = */ currentEventTimeInGesture,
-            /* action = */ effectiveAction,
-            /* pointerCount = */ numPointers,
-            /* pointerProperties = */ pointerProperties,
-            /* pointerCoords = */ pointerCoords,
-            /* metaState = */ 0,
-            /* buttonState = */ 0,
-            /* xPrecision = */ 1.0f,
-            /* yPrecision = */ 1.0f,
-            /* deviceId = */ 0,
-            /* edgeFlags = */ 0,
-            /* source = */ android.view.InputDevice.SOURCE_TOUCHSCREEN,
-            /* flags = */ 0,
+    @Test
+    fun onTouch_singleTouchMovePastSlop_commitsAndDispatchesMove() {
+        listener.onTouch(
+            view,
+            createMotionEvent(MotionEvent.ACTION_DOWN, listOf(PointerInfo(0, PointF(10f, 10f)))),
         )
+        wetStrokesViewEventTracker.reset()
+
+        val moveEvent =
+            createMotionEvent(
+                MotionEvent.ACTION_MOVE,
+                listOf(PointerInfo(0, PointF(10f + touchSlop + 1, 10f))),
+            )
+        listener.onTouch(view, moveEvent)
+
+        assertThat(wetStrokesViewEventTracker.callCount()).isEqualTo(1)
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction())
+            .isEqualTo(MotionEvent.ACTION_MOVE)
+        assertThat(pdfViewEventTracker.wasCalled()).isFalse()
     }
 
     @Test
-    fun onTouch_actionDown_dispatchesToBothViewDispatchers() {
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
-
-        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
-        assertThat(wetStrokesViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_DOWN)
-        assertThat(pdfViewEventTracker.wasCalled).isTrue()
-        assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_DOWN)
-    }
-
-    @Test
-    fun onTouch_singleTouchMove_dispatchesOnlyToWetStrokesViewDispatcher() {
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
-        resetDispatchTrackers()
-
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_MOVE))
-
-        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
-        assertThat(wetStrokesViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_MOVE)
-        assertThat(pdfViewEventTracker.wasCalled).isFalse()
-        assertThat(pdfViewEventTracker.lastReceivedAction).isNull()
-    }
-
-    @Test
-    fun onTouch_actionPointerDown_sendsCancelToInkAndPointerDownToPdfViewDispatcher() {
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
-        resetDispatchTrackers()
+    fun onTouch_pointerDownBeforeCommit_switchesToPdfView() {
+        listener.onTouch(
+            view,
+            createMotionEvent(MotionEvent.ACTION_DOWN, listOf(PointerInfo(0, PointF(10f, 10f)))),
+        )
+        wetStrokesViewEventTracker.reset()
 
         val pointerDownEvent =
             createMotionEvent(
                 MotionEvent.ACTION_POINTER_DOWN,
-                numPointers = 2,
-                pointerIndexForAction = 1,
+                listOf(PointerInfo(0, PointF(10f, 10f)), PointerInfo(1, PointF(50f, 50f))),
+                1,
             )
         listener.onTouch(view, pointerDownEvent)
 
-        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
-        assertThat(wetStrokesViewEventTracker.lastReceivedAction)
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction())
             .isEqualTo(MotionEvent.ACTION_CANCEL)
-        assertThat(pdfViewEventTracker.wasCalled).isTrue()
-        assertThat(pdfViewEventTracker.lastReceivedAction)
+
+        assertThat(pdfViewEventTracker.callCount()).isEqualTo(2)
+        assertThat(pdfViewEventTracker.receivedEvents[0].actionMasked)
+            .isEqualTo(MotionEvent.ACTION_DOWN)
+        assertThat(pdfViewEventTracker.receivedEvents[1].actionMasked)
             .isEqualTo(MotionEvent.ACTION_POINTER_DOWN)
     }
 
     @Test
-    fun onTouch_multiTouchMove_dispatchesOnlyToPdfViewDispatcher() {
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
+    fun onTouch_pointerDownAfterCommit_staysOnWetStrokesView() {
+        listener.onTouch(
+            view,
+            createMotionEvent(MotionEvent.ACTION_DOWN, listOf(PointerInfo(0, PointF(10f, 10f)))),
+        )
         listener.onTouch(
             view,
             createMotionEvent(
-                MotionEvent.ACTION_POINTER_DOWN,
-                numPointers = 2,
-                pointerIndexForAction = 1,
-            ),
-        ) // Setup multi-touch
-        resetDispatchTrackers()
-
-        val multiMoveEvent = createMotionEvent(MotionEvent.ACTION_MOVE)
-        listener.onTouch(view, multiMoveEvent)
-
-        assertThat(wetStrokesViewEventTracker.wasCalled).isFalse()
-        assertThat(wetStrokesViewEventTracker.lastReceivedAction).isNull()
-        assertThat(pdfViewEventTracker.wasCalled).isTrue()
-        assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_MOVE)
-    }
-
-    @Test
-    fun onTouch_singleTouchUp_dispatchesOnlyToWetStrokesViewDispatcher() {
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
-        resetDispatchTrackers()
-
-        val upEvent = createMotionEvent(MotionEvent.ACTION_UP)
-        listener.onTouch(view, upEvent)
-
-        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
-        assertThat(wetStrokesViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_UP)
-        assertThat(pdfViewEventTracker.wasCalled).isFalse()
-        assertThat(pdfViewEventTracker.lastReceivedAction).isNull()
-    }
-
-    @Test
-    fun onTouch_multiTouchPointerUp_dispatchesOnlyToPdfViewDispatcher() {
-        // Simulates one of two fingers lifting
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
-        listener.onTouch(
-            view,
-            createMotionEvent(
-                MotionEvent.ACTION_POINTER_DOWN,
-                numPointers = 2,
-                pointerIndexForAction = 1,
+                MotionEvent.ACTION_MOVE,
+                listOf(PointerInfo(0, PointF(10f + touchSlop + 1, 10f))),
             ),
         )
-        resetDispatchTrackers()
+        wetStrokesViewEventTracker.reset()
+        pdfViewEventTracker.reset()
 
-        // Second pointer (index 1) lifts, but pointer 0 is still down.
-        val pointerUpEvent =
+        val pointerDownEvent =
             createMotionEvent(
-                MotionEvent.ACTION_POINTER_UP,
-                numPointers = 2,
-                pointerIndexForAction = 1,
+                MotionEvent.ACTION_POINTER_DOWN,
+                listOf(PointerInfo(0, PointF(10f, 10f)), PointerInfo(1, PointF(50f, 50f))),
+                1,
             )
-        listener.onTouch(view, pointerUpEvent)
+        listener.onTouch(view, pointerDownEvent)
 
-        assertThat(wetStrokesViewEventTracker.wasCalled).isFalse()
-        assertThat(pdfViewEventTracker.wasCalled).isTrue()
-        assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_POINTER_UP)
+        assertThat(wetStrokesViewEventTracker.callCount()).isEqualTo(1)
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction())
+            .isEqualTo(MotionEvent.ACTION_POINTER_DOWN)
+        assertThat(pdfViewEventTracker.wasCalled()).isFalse()
     }
 
     @Test
-    fun onTouch_multiTouchLastUp_dispatchesOnlyToPdfViewDispatcher() {
-        // Simulates the last of multiple fingers lifting
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
+    fun onTouch_primaryPointerUpInCommittedDraw_sendsUpAndResets() {
+        listener.onTouch(
+            view,
+            createMotionEvent(MotionEvent.ACTION_DOWN, listOf(PointerInfo(0, PointF(10f, 10f)))),
+        )
         listener.onTouch(
             view,
             createMotionEvent(
-                MotionEvent.ACTION_POINTER_DOWN,
-                numPointers = 2,
-                pointerIndexForAction = 1,
+                MotionEvent.ACTION_MOVE,
+                listOf(PointerInfo(0, PointF(10f + touchSlop + 1, 10f))),
             ),
         )
         listener.onTouch(
             view,
+            createMotionEvent(
+                MotionEvent.ACTION_POINTER_DOWN,
+                listOf(PointerInfo(0, PointF(10f, 10f)), PointerInfo(1, PointF(50f, 50f))),
+                1,
+            ),
+        )
+        wetStrokesViewEventTracker.reset()
+
+        val primaryUpEvent =
             createMotionEvent(
                 MotionEvent.ACTION_POINTER_UP,
-                numPointers = 2,
-                pointerIndexForAction = 1,
-            ),
-        ) // First multi-touch pointer up
-        resetDispatchTrackers()
+                listOf(PointerInfo(0, PointF(10f, 10f)), PointerInfo(1, PointF(50f, 50f))),
+                0,
+            )
+        listener.onTouch(view, primaryUpEvent)
 
-        // Last pointer (index 0) lifts
-        val lastUpEvent = createMotionEvent(MotionEvent.ACTION_UP)
-        listener.onTouch(view, lastUpEvent)
-
-        assertThat(wetStrokesViewEventTracker.wasCalled).isFalse()
-        assertThat(pdfViewEventTracker.wasCalled).isTrue()
-        assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_UP)
+        assertThat(wetStrokesViewEventTracker.callCount()).isEqualTo(1)
+        assertThat(wetStrokesViewEventTracker.lastReceivedAction()).isEqualTo(MotionEvent.ACTION_UP)
+        assertThat(pdfViewEventTracker.wasCalled()).isFalse()
     }
 
-    @Test
-    fun onTouch_actionCancelDuringSingleTouch_dispatchesToWetStrokesViewDispatcher() {
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
-        resetDispatchTrackers()
+    private fun createMotionEvent(
+        action: Int,
+        pointers: List<PointerInfo>,
+        actionPointerIndex: Int = 0,
+    ): MotionEvent {
+        currentEventTimeInGesture += 10
 
-        val cancelEvent = createMotionEvent(MotionEvent.ACTION_CANCEL)
-        listener.onTouch(view, cancelEvent)
+        val pointerProperties =
+            Array(pointers.size) { MotionEvent.PointerProperties().apply { id = pointers[it].id } }
+        val pointerCoords =
+            Array(pointers.size) {
+                MotionEvent.PointerCoords().apply {
+                    x = pointers[it].coords.x
+                    y = pointers[it].coords.y
+                }
+            }
 
-        assertThat(wetStrokesViewEventTracker.wasCalled).isTrue()
-        assertThat(wetStrokesViewEventTracker.lastReceivedAction)
-            .isEqualTo(MotionEvent.ACTION_CANCEL)
-        assertThat(pdfViewEventTracker.wasCalled).isFalse()
-        assertThat(pdfViewEventTracker.lastReceivedAction).isNull()
-    }
-
-    @Test
-    fun onTouch_actionCancelDuringMultiTouch_dispatchesToPdfViewDispatcher() {
-        listener.onTouch(view, createMotionEvent(MotionEvent.ACTION_DOWN))
-        listener.onTouch(
-            view,
-            createMotionEvent(
+        val effectiveAction =
+            when (action) {
                 MotionEvent.ACTION_POINTER_DOWN,
-                numPointers = 2,
-                pointerIndexForAction = 1,
-            ),
+                MotionEvent.ACTION_POINTER_UP ->
+                    action or (actionPointerIndex shl MotionEvent.ACTION_POINTER_INDEX_SHIFT)
+                else -> action
+            }
+
+        return MotionEvent.obtain(
+            gestureDownTime,
+            currentEventTimeInGesture,
+            effectiveAction,
+            pointers.size,
+            pointerProperties,
+            pointerCoords,
+            0,
+            0,
+            1.0f,
+            1.0f,
+            0,
+            0,
+            android.view.InputDevice.SOURCE_TOUCHSCREEN,
+            0,
         )
-        resetDispatchTrackers()
-
-        val cancelEvent =
-            createMotionEvent(MotionEvent.ACTION_CANCEL, numPointers = 2) // numPointers for CANCEL
-        listener.onTouch(view, cancelEvent)
-
-        assertThat(wetStrokesViewEventTracker.wasCalled).isFalse()
-        assertThat(pdfViewEventTracker.wasCalled).isTrue()
-        assertThat(pdfViewEventTracker.lastReceivedAction).isEqualTo(MotionEvent.ACTION_CANCEL)
     }
 
-    companion object {
-        // Helper class to track dispatched events
-        private class TestTouchEventDispatcher : TouchEventDispatcher {
-            var wasCalled = false
-            var lastReceivedAction: Int? = null
+    private class TestTouchEventDispatcher : TouchEventDispatcher {
+        val receivedEvents = mutableListOf<MotionEvent>()
 
-            override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-                wasCalled = true
-                lastReceivedAction = event.actionMasked
-                return true
-            }
-
-            fun reset() {
-                wasCalled = false
-                lastReceivedAction = null
-            }
+        override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+            receivedEvents.add(MotionEvent.obtain(event))
+            return true
         }
+
+        fun reset() {
+            receivedEvents.forEach { it.recycle() }
+            receivedEvents.clear()
+        }
+
+        fun lastReceivedAction(): Int? = receivedEvents.lastOrNull()?.actionMasked
+
+        fun wasCalled(): Boolean = receivedEvents.isNotEmpty()
+
+        fun callCount(): Int = receivedEvents.size
     }
 }
+
+private data class PointerInfo(val id: Int, val coords: PointF)

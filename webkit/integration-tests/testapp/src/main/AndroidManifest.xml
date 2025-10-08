@@ -189,6 +189,9 @@
             android:name=".UiThreadStartupModeActivity"
             android:process=":uiThreadStartupModeActivity"
             android:exported="false" />
+        <activity
+            android:name=".CustomHeaderActivity"
+            android:exported="true" />
         <provider
             android:authorities="com.example.androidx.webkit.DropDataProvider"
             android:name="androidx.webkit.DropDataContentProvider"

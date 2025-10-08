@@ -27,7 +27,6 @@ import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.ActivitySpace
-import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper
 import androidx.xr.scenecore.runtime.CameraViewActivityPose
@@ -71,6 +70,25 @@ import java.util.function.Consumer
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSceneRuntime(public val executor: Executor? = null) :
     SceneRuntime, RenderingEntityFactory {
+
+    /* Tracks the current state of the adapter according to where it is in its lifecycle. */
+    public enum class State {
+        CREATED,
+        STARTED,
+        PAUSED,
+        DESTROYED,
+    }
+
+    private var _state: Enum<State> = State.CREATED
+
+    /**
+     * The current state of the adapter will transition based on the lifecycle of the adapter. It
+     * starts off as [State.CREATED] and transitions to [State.STARTED] when startRenderer is
+     * called. When stopRenderer is called, it transitions to [State.PAUSED]. When dispose is
+     * called, it transitions to [State.DESTROYED].
+     */
+    public val state: Enum<State>
+        get() = _state
 
     override val spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
 
@@ -166,7 +184,7 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         planeType: PlaneType,
         planeSemantic: PlaneSemantic,
         searchTimeout: Duration,
-    ): AnchorEntity {
+    ): FakeAnchorEntity {
         val anchorCreationData =
             FakeAnchorEntity.AnchorCreationData(
                 bounds = bounds,
@@ -178,7 +196,7 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun createAnchorEntity(anchor: Anchor): AnchorEntity {
+    override fun createAnchorEntity(anchor: Anchor): FakeAnchorEntity {
         return FakeAnchorEntity(anchor = anchor)
     }
 
@@ -375,7 +393,7 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
     override fun createAnchorPlacementForPlanes(
         planeTypeFilter: Set<@JvmSuppressWildcards PlaneType>,
         planeSemanticFilter: Set<@JvmSuppressWildcards PlaneSemantic>,
-    ): AnchorPlacement = object : AnchorPlacement {}
+    ): FakeAnchorPlacement = FakeAnchorPlacement(planeTypeFilter, planeSemanticFilter)
 
     override fun createMovableComponent(
         systemMovable: Boolean,

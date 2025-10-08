@@ -460,6 +460,11 @@ public class AndroidRemoteContext extends RemoteContext {
         mRemoteComposeState.updateInteger(id, value);
     }
 
+    @Override
+    public void markVariableDirty(int id) {
+        mRemoteComposeState.markVariableDirty(id);
+    }
+
     /**
      * Overrides the integer value associated with a given ID.
      *

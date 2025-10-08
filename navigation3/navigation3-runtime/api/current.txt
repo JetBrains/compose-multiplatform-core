@@ -76,12 +76,9 @@ package androidx.navigation3.runtime {
     property public java.util.Map<java.lang.String,java.lang.Object> metadata;
   }
 
-  public final class NavEntryDecorator<T> {
-  }
-
-  public final class NavEntryDecoratorKt {
-    method public static <T> androidx.navigation3.runtime.NavEntryDecorator<T> navEntryDecorator(optional kotlin.jvm.functions.Function1<java.lang.Object,kotlin.Unit> onPop, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.NavEntry<T>,kotlin.Unit> decorator);
-    method @BytecodeOnly public static <T> androidx.navigation3.runtime.NavEntryDecorator<T!> navEntryDecorator(kotlin.jvm.functions.Function1<java.lang.Object!,kotlin.Unit!>, kotlin.jvm.functions.Function3<? super androidx.navigation3.runtime.NavEntry<T!>!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
+  public class NavEntryDecorator<T> {
+    ctor public NavEntryDecorator(optional kotlin.jvm.functions.Function1<java.lang.Object,kotlin.Unit> onPop, kotlin.jvm.functions.Function1<? super androidx.navigation3.runtime.NavEntry<T>,kotlin.Unit> decorate);
+    ctor @BytecodeOnly public NavEntryDecorator(kotlin.jvm.functions.Function1<java.lang.Object!,kotlin.Unit!>, kotlin.jvm.functions.Function3<? super androidx.navigation3.runtime.NavEntry<T!>!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
   }
 
   public class NavEntryWrapper<T> extends androidx.navigation3.runtime.NavEntry<T> {

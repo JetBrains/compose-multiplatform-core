@@ -123,7 +123,7 @@ class IntegrationTest {
                 it.appFunctions
             }
 
-        assertThat(appFunctions).hasSize(19)
+        assertThat(appFunctions).hasSize(20)
     }
 
     @Test
@@ -1419,7 +1419,16 @@ class IntegrationTest {
     @Test
     fun deserializeAppFunctionSerializable_failsForInvalidValues() {
         assertFailsWith<IllegalArgumentException> {
-            AppFunctionData.Builder("")
+            AppFunctionData.Builder(
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "value",
+                            isRequired = false,
+                            dataType = AppFunctionIntTypeMetadata(isNullable = true),
+                        )
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
                 .setInt("value", -1)
                 .build()
                 .deserialize(IntEnumSerializable::class.java)
@@ -1429,7 +1438,16 @@ class IntegrationTest {
     @Test
     fun deserializeAppFunctionSerializable_success() {
         val intEnumSerializable =
-            AppFunctionData.Builder("")
+            AppFunctionData.Builder(
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "value",
+                            isRequired = false,
+                            dataType = AppFunctionIntTypeMetadata(isNullable = true),
+                        )
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
                 .setInt("value", 10)
                 .build()
                 .deserialize(IntEnumSerializable::class.java)

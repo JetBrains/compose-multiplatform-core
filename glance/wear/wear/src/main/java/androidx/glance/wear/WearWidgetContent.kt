@@ -16,15 +16,35 @@
 
 package androidx.glance.wear
 
-import android.os.Bundle
+import android.content.Context
+import androidx.compose.remote.creation.compose.capture.HostDisplayInfo
+import androidx.compose.runtime.Composable
+import androidx.glance.wear.parcel.WearWidgetCapture
 import androidx.glance.wear.parcel.WearWidgetRawContent
 
-/** Describes the contents of a Widget. */
-// TODO: change content to be of type `@RemoteComposable @Composable () -> Unit` once the dependency
-//  is available.
-public class WearWidgetContent(private val content: ByteArray) {
+/**
+ * Describes the contents of a Widget.
+ *
+ * @property content The RemoteComposable corresponding to contents of the widget.
+ */
+// TODO: Add @RemoteComposable annotation once it's public.
+public class WearWidgetContent(public val content: @Composable () -> Unit) {
 
-    internal fun toRawContent(): WearWidgetRawContent {
-        return WearWidgetRawContent(rcDocument = content, extras = Bundle.EMPTY)
+    /** Captures the RemoteCompose content. */
+    // TODO: specify size bounds for capture.
+    @Suppress("RestrictedApiAndroidX")
+    internal suspend fun captureRawContent(
+        context: Context,
+        widthDp: Float,
+        heightDp: Float,
+    ): WearWidgetRawContent {
+        return WearWidgetCapture.capture(
+            context,
+            HostDisplayInfo(widthDp.dpToPx(context), heightDp.dpToPx(context)),
+            content,
+        )
     }
 }
+
+private fun Float.dpToPx(context: Context): Int =
+    (this * context.resources.displayMetrics.density).toInt()

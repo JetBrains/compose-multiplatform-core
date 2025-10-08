@@ -16,24 +16,30 @@
 
 package androidx.webkit.internal;
 
+import android.os.Build;
 import android.os.CancellationSignal;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ServiceWorkerController;
 import android.webkit.WebStorage;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.os.OutcomeReceiverCompat;
+import androidx.webkit.CustomHeader;
 import androidx.webkit.PrefetchException;
 import androidx.webkit.Profile;
 import androidx.webkit.SpeculativeLoadingConfig;
 import androidx.webkit.SpeculativeLoadingParameters;
 
+import org.chromium.support_lib_boundary.OriginMatchedHeaderBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
@@ -104,8 +110,7 @@ public class ProfileImpl implements Profile {
     @Profile.ExperimentalUrlPrefetch
     @Override
     public void prefetchUrlAsync(@NonNull String url,
-            @Nullable CancellationSignal cancellationSignal,
-            @NonNull Executor callbackExecutor,
+            @Nullable CancellationSignal cancellationSignal, @NonNull Executor callbackExecutor,
             @NonNull SpeculativeLoadingParameters params,
             @NonNull OutcomeReceiverCompat<Void, PrefetchException> callback) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
@@ -126,8 +131,7 @@ public class ProfileImpl implements Profile {
     @Profile.ExperimentalUrlPrefetch
     @Override
     public void prefetchUrlAsync(@NonNull String url,
-            @Nullable CancellationSignal cancellationSignal,
-            @NonNull Executor callbackExecutor,
+            @Nullable CancellationSignal cancellationSignal, @NonNull Executor callbackExecutor,
             @NonNull OutcomeReceiverCompat<Void, PrefetchException> callback) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
         if (feature.isSupportedByWebView()) {
@@ -140,8 +144,7 @@ public class ProfileImpl implements Profile {
 
     @Profile.ExperimentalUrlPrefetch
     @Override
-    public void clearPrefetchAsync(@NonNull String url,
-            @NonNull Executor callbackExecutor,
+    public void clearPrefetchAsync(@NonNull String url, @NonNull Executor callbackExecutor,
             @NonNull OutcomeReceiverCompat<Void, PrefetchException> callback) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
         if (feature.isSupportedByWebView()) {
@@ -181,8 +184,8 @@ public class ProfileImpl implements Profile {
     @Override
     @ExperimentalOriginMatchedHeader
     @SuppressWarnings("deprecation")
-    public void setOriginMatchedHeader(@NonNull String headerName,
-            @NonNull String headerValue, @NonNull Set<String> originRules) {
+    public void setOriginMatchedHeader(@NonNull String headerName, @NonNull String headerValue,
+            @NonNull Set<String> originRules) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
         if (feature.isSupportedByWebView()) {
             mProfileImpl.setOriginMatchedHeader(headerName, headerValue, originRules);
@@ -225,6 +228,109 @@ public class ProfileImpl implements Profile {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @Override
+    public void addCustomHeader(@NonNull CustomHeader header) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CUSTOM_REQUEST_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.addOriginMatchedHeader(header.getName(), header.getValue(),
+                    header.getRules());
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public boolean hasCustomHeader(@NonNull String headerName) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CUSTOM_REQUEST_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            return mProfileImpl.hasOriginMatchedHeader(headerName);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public @NonNull Set<CustomHeader> getCustomHeaders() {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CUSTOM_REQUEST_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            return getCustomHeadersInternal(null, null);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public @NonNull Set<CustomHeader> getCustomHeaders(@NonNull String name) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CUSTOM_REQUEST_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            return getCustomHeadersInternal(name, null);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public @NonNull Set<CustomHeader> getCustomHeaders(@NonNull String name,
+            @NonNull String value) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CUSTOM_REQUEST_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            return getCustomHeadersInternal(name, value);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private @NonNull Set<CustomHeader> getCustomHeadersInternal(@Nullable String name,
+            @Nullable String value) {
+        HashSet<CustomHeader> headers = new HashSet<>();
+        List<InvocationHandler> originMatchedHeaders =
+                mProfileImpl.getOriginMatchedHeaders(name, value);
+        for (InvocationHandler handler : originMatchedHeaders) {
+            OriginMatchedHeaderBoundaryInterface boundaryObject =
+                    BoundaryInterfaceReflectionUtil.castToSuppLibClass(
+                            OriginMatchedHeaderBoundaryInterface.class, handler);
+            assert boundaryObject != null;
+            headers.add(new CustomHeader(boundaryObject.getName(), boundaryObject.getValue(),
+                    boundaryObject.getRules()));
+        }
+        return headers;
+    }
+
+    @Override
+    public void clearCustomHeader(@NonNull String headerName) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CUSTOM_REQUEST_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.clearOriginMatchedHeader(headerName, null);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void clearCustomHeader(@NonNull String headerName, @NonNull String headerValue) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CUSTOM_REQUEST_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.clearOriginMatchedHeader(headerName, headerValue);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void clearAllCustomHeaders() {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CUSTOM_REQUEST_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.clearAllOriginMatchedHeaders();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
     @Override
     @ExperimentalPreconnect
     public void preconnect(@NonNull String url) {
@@ -235,4 +341,5 @@ public class ProfileImpl implements Profile {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
     }
+
 }
