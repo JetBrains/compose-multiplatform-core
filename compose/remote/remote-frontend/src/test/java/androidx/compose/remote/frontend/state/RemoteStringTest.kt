@@ -24,7 +24,7 @@ import androidx.compose.remote.core.VariableSupport
 import androidx.compose.remote.core.operations.TextFromFloat
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices
 import androidx.compose.remote.frontend.capture.RemoteComposeCreationState
-import androidx.compose.remote.player.view.platform.AndroidRemoteContext
+import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Size
 import com.google.common.truth.Truth.assertThat

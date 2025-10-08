@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+@file:JvmName("RememberNavBackStackKt")
+@file:JvmMultifileClass
+
 package androidx.navigation3.runtime
 
 import androidx.compose.runtime.Composable

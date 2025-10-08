@@ -57,6 +57,9 @@ interface XTypeElement : XHasModifiers, XParameterizable, XElement, XMemberConta
     /** Gets the [XClassName] of the type element. */
     override fun asClassName(): XClassName
 
+    /** Returns the companion object if it exists, or else `null` */
+    val companionObject: XTypeElement?
+
     /** The [XTypeElement] that contains this [XTypeElement] if it is an inner class/interface. */
     val enclosingTypeElement: XTypeElement?
 

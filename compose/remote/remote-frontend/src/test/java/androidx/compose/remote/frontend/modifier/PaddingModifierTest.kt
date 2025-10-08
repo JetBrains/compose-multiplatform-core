@@ -22,7 +22,7 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices
 import androidx.compose.remote.frontend.capture.RemoteComposeCreationState
 import androidx.compose.remote.frontend.state.rf
-import androidx.compose.remote.player.view.platform.AndroidRemoteContext
+import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import androidx.test.filters.SdkSuppress
 import org.junit.Assert.assertTrue

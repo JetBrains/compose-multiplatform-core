@@ -43,6 +43,7 @@ dependencies {
     api("androidx.lifecycle:lifecycle-viewmodel:2.6.1")
     implementation("androidx.lifecycle:lifecycle-common:2.6.1")
     implementation("androidx.lifecycle:lifecycle-runtime:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
     implementation("androidx.savedstate:savedstate:1.2.1")
 
     androidTestImplementation("androidx.annotation:annotation:1.8.1")

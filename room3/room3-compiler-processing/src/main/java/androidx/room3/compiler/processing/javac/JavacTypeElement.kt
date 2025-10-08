@@ -80,6 +80,15 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
         }
     }
 
+    override val companionObject: JavacTypeElement? =
+        // Note: we use the kotlinMetadata to first get the companion object name to avoid parsing
+        // metadata for every enclosed type just to figure out if it's a companion object.
+        kotlinMetadata?.let { km ->
+            getEnclosedTypeElements().filterIsInstance<JavacTypeElement>().singleOrNull {
+                it.name == km.companionObjectName
+            }
+        }
+
     override val closestMemberContainer: JavacTypeElement
         get() = this
 

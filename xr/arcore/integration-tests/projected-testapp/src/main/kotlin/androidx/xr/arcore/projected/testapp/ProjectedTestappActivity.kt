@@ -50,7 +50,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private lateinit var earth: Earth
     private lateinit var textView: TextView
     private var initialGeospatialPose: GeospatialPose? = null
-    private lateinit var vpsAvailabilityResult: VpsAvailabilityResult
+    private var vpsStatusMessage: String = "VPS status: checking..."
     private val sessionInitialized = CompletableDeferred<Unit>()
     private val TAG = "ProjectedTestAppActivity"
     val config: Config = Config(geospatial = Config.GeospatialMode.EARTH)
@@ -82,14 +82,14 @@ class ProjectedTestAppActivity : ComponentActivity() {
                             initialGeospatialPose = currentGeospatialPose
                         }
                         Log.i(TAG, "GeospatialPose from device pose: ${currentGeospatialPose}")
-                        runOnUiThread {
-                            textView.text = "\n\n\n\nGeospatialPose: ${currentGeospatialPose}"
-                        }
+
                         checkVpsAvailability(
                             currentGeospatialPose.latitude,
                             currentGeospatialPose.longitude,
                         )
-                        testGeospatialConversions(currentGeospatialPose)
+                        val comparisonMessage = testGeospatialConversions(currentGeospatialPose)
+
+                        displayToScreen(currentGeospatialPose, vpsStatusMessage, comparisonMessage)
                     }
                     else -> {
                         Log.e(
@@ -106,30 +106,46 @@ class ProjectedTestAppActivity : ComponentActivity() {
         }
     }
 
-    private fun checkVpsAvailability(latitude: Double, longitude: Double) {
-        Log.i(TAG, "checkVpsAvailability latitude: $latitude, longitude: $longitude")
-        lifecycleScope.launch {
-            vpsAvailabilityResult = Earth.checkVpsAvailability(session, latitude, longitude)
-            val vpsMessage =
-                when (vpsAvailabilityResult) {
-                    is VpsAvailabilityAvailable -> "VPS is available."
-                    is VpsAvailabilityErrorInternal ->
-                        "VPS availability check failed with an internal error."
-                    is VpsAvailabilityNetworkError ->
-                        "VPS availability check failed due to a network error."
-                    is VpsAvailabilityNotAuthorized ->
-                        "VPS availability check failed due to an authorization error."
-                    is VpsAvailabilityResourceExhausted ->
-                        "VPS availability check failed due to resource exhaustion."
-                    is VpsAvailabilityUnavailable -> "VPS is unavailable."
-                }
-            Log.i(TAG, "VPS availability: $vpsMessage ($vpsAvailabilityResult)")
-            runOnUiThread { textView.append("\n\nVPS availability: $vpsMessage") }
+    private fun displayToScreen(
+        currentGeospatialPose: GeospatialPose,
+        vpsStatusMessage: String,
+        comparisonMessage: String,
+    ) {
+        runOnUiThread {
+            var text = "\n\n\n\nGeospatialPose: ${currentGeospatialPose}"
+            text += "\n\nVPS availability: $vpsStatusMessage"
+            text += "\n\nComparison:\n$comparisonMessage"
+            textView.text = text
         }
     }
 
-    private fun testGeospatialConversions(currentGeospatialPose: GeospatialPose) {
-        val initialPose = initialGeospatialPose ?: return
+    private fun checkVpsAvailability(latitude: Double, longitude: Double) {
+        Log.i(TAG, "checkVpsAvailability latitude: $latitude, longitude: $longitude")
+        lifecycleScope.launch {
+            val vpsAvailabilityResult = Earth.checkVpsAvailability(session, latitude, longitude)
+            vpsStatusMessage = getVpsMessage(vpsAvailabilityResult)
+            Log.i(TAG, "VPS availability: $vpsStatusMessage ($vpsAvailabilityResult)")
+        }
+    }
+
+    private fun getVpsMessage(vpsAvailabilityResult: VpsAvailabilityResult?): String {
+        return when (vpsAvailabilityResult) {
+            is VpsAvailabilityAvailable -> "VPS is available."
+            is VpsAvailabilityErrorInternal ->
+                "VPS availability check failed with an internal error."
+            is VpsAvailabilityNetworkError ->
+                "VPS availability check failed due to a network error."
+            is VpsAvailabilityNotAuthorized ->
+                "VPS availability check failed due to an authorization error."
+            is VpsAvailabilityResourceExhausted ->
+                "VPS availability check failed due to resource exhaustion."
+            is VpsAvailabilityUnavailable -> "VPS is unavailable."
+            null -> "VPS status: checking..."
+        }
+    }
+
+    private fun testGeospatialConversions(currentGeospatialPose: GeospatialPose): String {
+        val initialPose = initialGeospatialPose ?: return "Initial pose not set"
 
         val initialNonGeoResult = earth.createPoseFromGeospatialPose(initialPose)
         val currentNonGeoResult = earth.createPoseFromGeospatialPose(currentGeospatialPose)
@@ -173,18 +189,17 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 Z diff: $zDiff
             """
                         .trimIndent()
-
                 Log.i(TAG, "Conversion comparison:\n$message")
-                runOnUiThread { textView.append("\n\nComparison:\n$message") }
+                return message
             } else {
                 val error = "Failed to convert Pose to GeospatialPose for comparison"
                 Log.e(TAG, error)
-                runOnUiThread { textView.append("\n\n$error") }
+                return error
             }
         } else {
             val error = "Failed to convert GeospatialPose to Pose for comparison"
             Log.e(TAG, error)
-            runOnUiThread { textView.append("\n\n$error") }
+            return error
         }
     }
 

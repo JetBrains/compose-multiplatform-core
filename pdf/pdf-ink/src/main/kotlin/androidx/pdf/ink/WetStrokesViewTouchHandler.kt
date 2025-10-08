@@ -182,7 +182,7 @@ internal class WetStrokesViewTouchHandler(
     companion object {
         internal val DEFAULT_BRUSH: Brush =
             Brush.createWithColorIntArgb(
-                family = StockBrushes.pressurePenLatest,
+                family = StockBrushes.pressurePen(),
                 colorIntArgb = Color.GREEN,
                 size = 5F,
                 epsilon = 0.15F,

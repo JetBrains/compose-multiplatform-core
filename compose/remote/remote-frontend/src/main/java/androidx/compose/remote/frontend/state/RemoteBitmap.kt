@@ -21,7 +21,7 @@ import android.graphics.Bitmap
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.frontend.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.frontend.capture.RemoteComposeCreationState
-import androidx.compose.remote.player.view.state.RemoteDomains
+import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf

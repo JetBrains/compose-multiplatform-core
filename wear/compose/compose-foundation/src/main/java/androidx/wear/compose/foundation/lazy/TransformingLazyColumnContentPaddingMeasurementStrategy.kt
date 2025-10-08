@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.foundation.lazy
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.layout.MeasureResult
@@ -183,6 +184,13 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             last().offset + last().transformedHeight - maxHeight + afterContentPadding
         }
 
+        fun restoreLayoutCentered(): Unit = gradientDescent {
+            val topSpace = first().offset - beforeContentPadding
+            val bottomSpace =
+                maxHeight - last().offset - last().transformedHeight - afterContentPadding
+            (topSpace - bottomSpace) / 2
+        }
+
         fun fitsScreen(): Boolean =
             with(visibleItems) {
                 val totalHeight =
@@ -202,7 +210,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         itemsCount: Int,
         measuredItemProvider: MeasuredItemProvider,
         keyIndexMap: LazyLayoutKeyIndexMap,
-        itemSpacing: Int,
+        verticalArrangement: Arrangement.Vertical,
         containerConstraints: Constraints,
         anchorItemKey: Any,
         anchorItemIndex: Int,
@@ -213,13 +221,14 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         scrollToBeConsumed: Float,
         layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
     ): TransformingLazyColumnMeasureResult {
+        val itemSpacingPx = with(density) { verticalArrangement.spacing.roundToPx() }
+        measurementScope.itemSpacing = itemSpacingPx
 
         val (anchorItemIndex, previousAnchorPresent) =
             keyIndexMap.getIndex(anchorItemKey).let {
                 // If no item for this key was found, getIndex returns -1. In this case we use
                 // anchorItemIndex as an anchor. We can also assume that as there is no anchor with
-                // this
-                // key, it is not present and was probably deleted or was not yet initialised.
+                // this key, it is not present and was probably deleted or was not yet initialised.
                 if (it == -1) anchorItemIndex to false else it to true
             }
 
@@ -294,26 +303,66 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             addVisibleItemsAfter(measuredItemProvider)
             addVisibleItemsBefore(measuredItemProvider)
 
-            // List is shorter than container.
-            if (fitsScreen()) {
-                // Pinning top item to the top most position.
-                restoreLayoutTopToBottom()
-                canScrollBackward = false
-                canScrollForward = false
-            } else if (isAtTopOrOverscrolledBackwards) {
-                // Top item moved where it is not supposed to be.
-                // Pinning top item to the top most position.
-                restoreLayoutTopToBottom()
-                addVisibleItemsAfter(measuredItemProvider)
-                canScrollBackward = false
-            } else if (isAtBottomOrOverscrolledForward) {
-                // Bottom item moved where it is not supposed to be.
-                // Pinning top item to the bottom most position.
-                restoreLayoutBottomToTop()
-                addVisibleItemsBefore(measuredItemProvider)
-                canScrollForward = false
+            fun restoreLayoutIfNeeded() {
+                if (fitsScreen()) {
+                    // List is shorter than container.
+                    // Since we can't check what type the given arrangement is (mainly because the
+                    // class used to implement Arrangement.spacedBy is not public), we "use it",
+                    // asking it to arrange two small items in a big space, and see where they are
+                    // put, to see if it's one of the arrangements we know. If we can't identify it,
+                    // maybe because is a custom arrangement or an unsupported one, we default to
+                    // top to bottom
+                    val itemSize = 10
+                    val spaceAvailable = 1000
+                    val pilotArrangementResult = IntArray(2) { 0 }
+                    val pilotItems = intArrayOf(itemSize, itemSize)
+                    with(verticalArrangement) {
+                        density.arrange(spaceAvailable, pilotItems, pilotArrangementResult)
+                    }
+                    // How much space is there between the two items, on top of the spacing in the
+                    // arrangement
+                    val extraSpacingBetweenItems =
+                        pilotArrangementResult[1] -
+                            pilotArrangementResult[0] -
+                            itemSize -
+                            itemSpacingPx
+
+                    if (
+                        pilotArrangementResult[1] == spaceAvailable - itemSize &&
+                            abs(extraSpacingBetweenItems) <= 1
+                    ) {
+                        // Bottom Arrangement
+                        restoreLayoutBottomToTop()
+                    } else if (
+                        abs(
+                            pilotArrangementResult[0] -
+                                (spaceAvailable - itemSize - pilotArrangementResult[1])
+                        ) <= 1 && abs(extraSpacingBetweenItems) <= 1
+                    ) {
+                        // Center Arrangement
+                        restoreLayoutCentered()
+                    } else {
+                        // Top Arrangement - the default.
+                        restoreLayoutTopToBottom()
+                    }
+                    canScrollBackward = false
+                    canScrollForward = false
+                } else if (isAtTopOrOverscrolledBackwards) {
+                    // Top item moved where it is not supposed to be.
+                    // Pinning top item to the top most position.
+                    restoreLayoutTopToBottom()
+                    addVisibleItemsAfter(measuredItemProvider)
+                    canScrollBackward = false
+                } else if (isAtBottomOrOverscrolledForward) {
+                    // Bottom item moved where it is not supposed to be.
+                    // Pinning top item to the bottom most position.
+                    restoreLayoutBottomToTop()
+                    addVisibleItemsBefore(measuredItemProvider)
+                    canScrollForward = false
+                }
             }
 
+            restoreLayoutIfNeeded()
             // Calculate new anchor item.
             anchorItem =
                 anchorItem()
@@ -329,22 +378,12 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 correctLayout(anchorItem)
 
                 // Most probably previous anchor item is smaller now, might need to add items before
-                // or
-                // after.
+                // or after.
                 addVisibleItemsAfter(measuredItemProvider)
                 addVisibleItemsBefore(measuredItemProvider)
-
-                if (fitsScreen()) {
-                    canScrollBackward = false
-                    canScrollForward = false
-                } else if (isAtTopOrOverscrolledBackwards) {
-                    restoreLayoutTopToBottom()
-                    canScrollBackward = false
-                } else if (isAtBottomOrOverscrolledForward) {
-                    restoreLayoutBottomToTop()
-                    canScrollForward = false
-                }
             }
+            restoreLayoutIfNeeded()
+
             actuallyVisibleItems =
                 visibleItems.fastFilter { it.isVisible() || (shouldAnimate && it.hasAnimations()) }
         }
@@ -381,7 +420,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 canScrollBackward = canScrollBackward,
                 coroutineScope = coroutineScope,
                 density = density,
-                itemSpacing = itemSpacing,
+                itemSpacing = itemSpacingPx,
                 beforeContentPadding = beforeContentPadding,
                 afterContentPadding = afterContentPadding,
                 childConstraints = childConstraints,

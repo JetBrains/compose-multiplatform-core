@@ -23,6 +23,7 @@ import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.TaskExecutor
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
+import androidx.room3.ExperimentalRoomApi
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.integration.kotlintestapp.NewThreadDispatcher
@@ -150,7 +151,7 @@ class SuspendingQueryTest : TestDatabaseTest() {
         }
     }
 
-    @OptIn(androidx.room3.ExperimentalRoomApi::class)
+    @OptIn(ExperimentalRoomApi::class)
     @Test
     fun allBookSuspend_autoClose() {
         val context: Context = ApplicationProvider.getApplicationContext()

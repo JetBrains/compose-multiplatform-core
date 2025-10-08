@@ -32,7 +32,7 @@ import androidx.compose.remote.frontend.modifier.RemoteModifier
 import androidx.compose.remote.frontend.modifier.fillMaxSize
 import androidx.compose.remote.frontend.modifier.onClick
 import androidx.compose.remote.frontend.modifier.size
-import androidx.compose.remote.player.view.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf

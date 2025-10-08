@@ -121,6 +121,8 @@ dependencies {
     testImplementation(libs.kotlinCoroutinesAndroid)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
+    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.truth)
 
     // Transitive dependencies

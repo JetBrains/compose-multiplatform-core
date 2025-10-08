@@ -282,6 +282,14 @@ private constructor(
     /**
      * List of input properties along with their units that can act as sources for a
      * [BrushBehavior].
+     *
+     * Behaviors that consider properties of the stroke input do not consider alterations to the
+     * visible position of that point in the stroke by brush behaviors that modify that position
+     * (e.g. [Target.POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE]). That is, the position,
+     * velocity, and acceleration of the stroke input may not match the visible position, velocity,
+     * and acceleration of that point in the drawn stroke. The stroke inputs considered by these
+     * behaviors are specifically the "modeled" inputs used to construct the stroke geometry, which
+     * may be upsampled, denoised, or otherwise transformed from the raw stroke input.
      */
     public class Source
     internal constructor(@JvmField internal val value: Int, private val name: String) {
@@ -324,51 +332,52 @@ private constructor(
             public val ORIENTATION_ABOUT_ZERO_IN_RADIANS: Source =
                 Source(5, "ORIENTATION_ABOUT_ZERO_IN_RADIANS")
             /**
-             * Pointer speed with values >= 0 in distance units per second, where one distance unit
-             * is equal to the brush size.
+             * Absolute speed of the modeled stroke input in multiples of the brush size per second.
+             * Note that this value doesn't take into account brush behaviors that offset the
+             * position of the visual tip of the stroke.
              */
             @JvmField
             public val SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source =
                 Source(6, "SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND")
             /**
-             * Signed x component of pointer velocity in distance units per second, where one
-             * distance unit is equal to the brush size.
+             * Signed x component of the velocity of the modeled stroke input in multiples of the
+             * brush size per second. Note that this value doesn't take into account brush behaviors
+             * that offset the visible position of that point in the stroke.
              */
             @JvmField
             public val VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source =
                 Source(7, "VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND")
             /**
-             * Signed y component of pointer velocity in distance units per second, where one
-             * distance unit is equal to the brush size.
+             * Signed y component of the velocity of the modeled stroke input in multiples of the
+             * brush size per second. Note that this value doesn't take into account brush behaviors
+             * that offset the visible position of that point in the stroke.
              */
             @JvmField
             public val VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND: Source =
                 Source(8, "VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND")
             /**
-             * The angle of the stroke's current direction of travel in stroke space, normalized to
-             * the range [0, 2π). A value of 0 indicates the direction of the positive X-axis in
-             * stroke space; a value of π/2 indicates the direction of the positive Y-axis in stroke
-             * space.
+             * Angle of the modeled stroke input's current direction of travel in stroke coordinate
+             * space, normalized to the range [0, 2π). A value of 0 indicates the direction of the
+             * positive x-axis; a value of π/2 indicates the direction of the positive y-axis.
              */
             @JvmField public val DIRECTION_IN_RADIANS: Source = Source(9, "DIRECTION_IN_RADIANS")
             /**
-             * The angle of the stroke's current direction of travel in stroke space, normalized to
-             * the range (-π, π]. A value of 0 indicates the direction of the positive X-axis in
-             * stroke space; a value of π/2 indicates the direction of the positive Y-axis in stroke
-             * space.
+             * Angle of the modeled stroke input's current direction of travel in stroke coordinate
+             * space, normalized to the range (-π, π]. A value of 0 indicates the direction of the
+             * positive x-axis; a value of π/2 indicates the direction of the positive y-axis.
              */
             @JvmField
             public val DIRECTION_ABOUT_ZERO_IN_RADIANS: Source =
                 Source(10, "DIRECTION_ABOUT_ZERO_IN_RADIANS")
             /**
-             * Signed x component of the normalized travel direction, with values in the range
-             * [-1, 1].
+             * Signed x component of the modeled stroke input's current direction of travel in
+             * stroke coordinate space, normalized to the range [-1, 1].
              */
             @JvmField
             public val NORMALIZED_DIRECTION_X: Source = Source(11, "NORMALIZED_DIRECTION_X")
             /**
-             * Signed y component of the normalized travel direction, with values in the range
-             * [-1, 1].
+             * Signed y component of the modeled stroke input's current direction of travel in
+             * stroke coordinate space, normalized to the range [-1, 1].
              */
             @JvmField
             public val NORMALIZED_DIRECTION_Y: Source = Source(12, "NORMALIZED_DIRECTION_Y")
@@ -380,194 +389,179 @@ private constructor(
             public val DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE: Source =
                 Source(13, "DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
-             * The time elapsed, in seconds, from when the stroke started to when this part of the
-             * stroke was drawn. The value remains fixed for any given part of the stroke once
-             * drawn.
+             * Time elapsed in seconds from between the start of the stroke and the current modeled
+             * stroke input. The value remains fixed for any given part of the stroke once drawn.
              */
             @JvmField
             public val TIME_OF_INPUT_IN_SECONDS: Source = Source(14, "TIME_OF_INPUT_IN_SECONDS")
             /**
-             * The time elapsed, in millis, from when the stroke started to when this part of the
-             * stroke was drawn. The value remains fixed for any given part of the stroke once
-             * drawn.
+             * Time elapsed in millis from when the stroke started to when this part of the stroke
+             * was drawn. The value remains fixed for any given part of the stroke once drawn.
              */
             @JvmField
             public val TIME_OF_INPUT_IN_MILLIS: Source = Source(15, "TIME_OF_INPUT_IN_MILLIS")
             /**
              * Distance traveled by the inputs of the current prediction, starting at 0 at the last
-             * non-predicted input, where one distance unit is equal to the brush size. For cases
-             * where prediction hasn't started yet, we don't return a negative value, but clamp to a
-             * min of 0.
+             * non-predicted input, in multiples of the brush size. Zero for inputs before the
+             * predicted portion of the stroke.
              */
             @JvmField
             public val PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE: Source =
                 Source(16, "PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
-             * Elapsed time of the prediction, starting at 0 at the last non-predicted input. For
-             * cases where prediction hasn't started yet, we don't return a negative value, but
-             * clamp to a min of 0.
+             * Elapsed time of the prediction in seconds, starting at 0 at the last non-predicted
+             * input. Zero for inputs before the predicted portion of the stroke.
              */
             @JvmField
             public val PREDICTED_TIME_ELAPSED_IN_SECONDS: Source =
                 Source(17, "PREDICTED_TIME_ELAPSED_IN_SECONDS")
             /**
-             * Elapsed time of the prediction, starting at 0 at the last non-predicted input. For
-             * cases where prediction hasn't started yet, we don't return a negative value, but
-             * clamp to a min of 0.
+             * Elapsed time of the prediction in milliseconds, starting at 0 at the last
+             * non-predicted input. Zero for inputs before the predicted portion of the stroke.
              */
             @JvmField
             public val PREDICTED_TIME_ELAPSED_IN_MILLIS: Source =
                 Source(18, "PREDICTED_TIME_ELAPSED_IN_MILLIS")
             /**
-             * The distance left to be traveled from a given input to the current last input of the
-             * stroke, where one distance unit is equal to the brush size. This value changes for
+             * The distance left to be traveled from a given modeled input to the current last
+             * modeled input of the stroke in multiples of the brush size. This value changes for
              * each input as the stroke is drawn.
              */
             @JvmField
             public val DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE: Source =
                 Source(19, "DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
-             * The amount of time that has elapsed, in seconds, since this part of the stroke was
-             * drawn. This continues to increase even after all stroke inputs have completed, and
-             * can be used to drive stroke animations. This enumerators are only compatible with a
-             * [sourceOutOfRangeBehavior] of [OutOfRange.CLAMP], to ensure that the animation will
-             * eventually end.
+             * Time elapsed in seconds since the modeled stroke input. This continues to increase
+             * even after all stroke inputs have completed, and can be used to drive stroke
+             * animations. This enumerators are only compatible with a [sourceOutOfRangeBehavior] of
+             * [OutOfRange.CLAMP], to ensure that the animation will eventually end.
              */
             @JvmField
             public val TIME_SINCE_INPUT_IN_SECONDS: Source =
                 Source(20, "TIME_SINCE_INPUT_IN_SECONDS")
             /**
-             * The amount of time that has elapsed, in millis, since this part of the stroke was
-             * drawn. This continues to increase even after all stroke inputs have completed, and
-             * can be used to drive stroke animations. This enumerators are only compatible with a
-             * [sourceOutOfRangeBehavior] of [OutOfRange.CLAMP], to ensure that the animation will
-             * eventually end.
+             * Time elapsed in milliseconds since the modeled stroke input. This continues to
+             * increase even after all stroke inputs have completed, and can be used to drive stroke
+             * animations. This enumerators are only compatible with a [sourceOutOfRangeBehavior] of
+             * [OutOfRange.CLAMP], to ensure that the animation will eventually end.
              */
             @JvmField
             public val TIME_SINCE_INPUT_IN_MILLIS: Source = Source(21, "TIME_SINCE_INPUT_IN_MILLIS")
             /**
-             * Directionless pointer acceleration with values >= 0 in distance units per second
-             * squared, where one distance unit is equal to the brush size.
+             * Absolute acceleration of the modeled stroke input in multiples of the brush size per
+             * second squared. Note that this value doesn't take into account brush behaviors that
+             * offset the position of that visible point in the stroke.
              */
             @JvmField
             public val ACCELERATION_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
                 Source(22, "ACCELERATION_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
-             * Signed x component of pointer acceleration in distance units per second squared,
-             * where one distance unit is equal to the brush size.
+             * Signed x component of the acceleration of the modeled stroke input in multiples of
+             * the brush size per second squared. Note that this value doesn't take into account
+             * brush behaviors that offset the position of that visible point in the stroke.
              */
             @JvmField
             public val ACCELERATION_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
                 Source(23, "ACCELERATION_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
-             * Signed y component of pointer acceleration in distance units per second squared,
-             * where one distance unit is equal to the brush size.
+             * Signed y component of the acceleration of the modeled stroke input in multiples of
+             * the brush size per second squared. Note that this value doesn't take into account
+             * brush behaviors that offset the position of that visible point in the stroke.
              */
             @JvmField
             public val ACCELERATION_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
                 Source(24, "ACCELERATION_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
-             * Pointer acceleration along the current direction of travel in distance units per
-             * second squared, where one distance unit is equal to the brush size. A positive value
-             * indicates that the pointer is accelerating along the current direction of travel,
-             * while a negative value indicates that the pointer is decelerating.
+             * Signed component of acceleration of the modeled stroke input in the direction of its
+             * velocity in multiples of the brush size per second squared. Note that this value
+             * doesn't take into account brush behaviors that offset the position of that visible
+             * point in the stroke.
              */
             @JvmField
             public val ACCELERATION_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
                 Source(25, "ACCELERATION_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
             /**
-             * Pointer acceleration perpendicular to the current direction of travel in distance
-             * units per second squared, where one distance unit is equal to the brush size. If the
-             * X- and Y-axes of stroke space were rotated so that the positive X-axis points in the
-             * direction of stroke travel, then a positive value for this source indicates
-             * acceleration along the positive Y-axis (and a negative value indicates acceleration
-             * along the negative Y-axis).
+             * Signed component of acceleration of the modeled stroke input perpendicular to its
+             * velocity, rotated 90 degrees in the direction from the positive x-axis towards the
+             * positive y-axis, in multiples of the brush size per second squared. Note that this
+             * value doesn't take into account brush behaviors that offset the position of that
+             * visible point in the stroke.
              */
             @JvmField
             public val ACCELERATION_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED: Source =
                 Source(26, "ACCELERATION_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED")
-            /**
-             * The physical speed of the input pointer at the point in question, in centimeters per
-             * second.
-             */
+            /** Absolute speed of the modeled stroke input pointer in centimeters per second. */
             @JvmField
             public val INPUT_SPEED_IN_CENTIMETERS_PER_SECOND: Source =
                 Source(27, "INPUT_SPEED_IN_CENTIMETERS_PER_SECOND")
             /**
-             * Signed x component of the physical velocity of the input pointer at the point in
-             * question, in centimeters per second.
+             * Signed x component of the modeled stroke input pointer's velocity in centimeters per
+             * second.
              */
             @JvmField
             public val INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND: Source =
                 Source(28, "INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND")
             /**
-             * Signed y component of the physical velocity of the input pointer at the point in
-             * question, in centimeters per second.
+             * Signed y component of the modeled stroke input pointer's velocity in centimeters per
+             * second.
              */
             @JvmField
             public val INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND: Source =
                 Source(29, "INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND")
             /**
-             * The physical distance traveled by the input pointer from the start of the stroke
-             * along the input path to the point in question, in centimeters.
+             * Distance in centimeters traveled by the modeled stroke input pointer along the input
+             * path from the start of the stroke.
              */
             @JvmField
             public val INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS: Source =
                 Source(30, "INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS")
             /**
-             * The physical distance that the input pointer would have to travel from its actual
-             * last real position along its predicted path to reach the predicted point in question,
-             * in centimeters. For points on the stroke before the predicted portion, this has a
-             * value of zero.
+             * Distance in centimeters alonge the input path from the real portion of the modeled
+             * stroke to this input. Zero for inputs before the predicted portion of the stroke.
              */
             @JvmField
             public val PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS: Source =
                 Source(31, "PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS")
             /**
-             * The directionless physical acceleration of the input pointer at the point in
-             * question, with values >= 0, in centimeters per second squared.
+             * Absolute acceleration of the modeled stroke input pointer in centimeters per second
+             * squared.
              */
             @JvmField
             public val INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
                 Source(32, "INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
-             * Signed x component of the physical acceleration of the input pointer, in centimeters
-             * per second squared.
+             * Signed x component of the acceleration of the modeled stroke input pointer in
+             * centimeters per second squared.
              */
             @JvmField
             public val INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
                 Source(33, "INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
-             * Signed y component of the physical acceleration of the input pointer, in centimeters
-             * per second squared.
+             * Signed y component of the acceleration of the modeled stroke input pointer in
+             * centimeters per second squared.
              */
             @JvmField
             public val INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
                 Source(34, "INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
-             * The physical acceleration of the input pointer along its current direction of travel
-             * at the point in question, in centimeters per second squared. A positive value
-             * indicates that the pointer is accelerating along the current direction of travel,
-             * while a negative value indicates that the pointer is decelerating.
+             * Signed component acceleration of the modeled stroke input pointer in the direction of
+             * its velocity in centimeters per second squared.
              */
             @JvmField
             public val INPUT_ACCELERATION_FORWARD_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
                 Source(35, "INPUT_ACCELERATION_FORWARD_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
-             * The physical acceleration of the input pointer perpendicular to its current direction
-             * of travel at the point in question, in centimeters per second squared. If the X- and
-             * Y-axes of stroke space were rotated so that the positive X-axis points in the
-             * direction of stroke travel, then a positive value for this source indicates
-             * acceleration along the positive Y-axis (and a negative value indicates acceleration
-             * along the negative Y-axis).
+             * Signed component of acceleration of the modeled stroke input pointer perpendicular to
+             * its velocity, rotated 90 degrees in the direction from the positive x-axis towards
+             * the positive y-axis, in centimeters per second squared.
              */
             @JvmField
             public val INPUT_ACCELERATION_LATERAL_IN_CENTIMETERS_PER_SECOND_SQUARED: Source =
                 Source(36, "INPUT_ACCELERATION_LATERAL_IN_CENTIMETERS_PER_SECOND_SQUARED")
             /**
-             * The distance left to be traveled from a given input to the current last input of the
-             * stroke, as a fraction of the current total length of the stroke. This value changes
-             * for each input as the stroke is drawn.
+             * Distance from the current modeled input to the end of the stroke along the input
+             * path, as a fraction of the current total length of the stroke. This value changes for
+             * each input as inputs are added.
              */
             @JvmField
             public val DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH: Source =
@@ -634,35 +628,26 @@ private constructor(
              */
             @JvmField
             public val CORNER_ROUNDING_OFFSET: Target = Target(6, "CORNER_ROUNDING_OFFSET")
-            /**
-             * Adds the target modifier to the brush tip x position, where one distance unit is
-             * equal to the brush size.
-             */
+            /** Adds the target modifier times the brush size to the brush tip x position. */
             @JvmField
             public val POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE: Target =
                 Target(7, "POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE")
-            /**
-             * Adds the target modifier to the brush tip y position, where one distance unit is
-             * equal to the brush size.
-             */
+            /** Adds the target modifier times the brush size to the brush tip y position . */
             @JvmField
             public val POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE: Target =
                 Target(8, "POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
-             * Moves the brush tip center forward (or backward, for negative values) from the input
-             * position, in the current direction of stroke travel, where one distance unit is equal
-             * to the brush size.
+             * Moves the brush tip by the target modifier times the brush size in the direction of
+             * the modeled stroke input's velocity (the opposite direction if the value is
+             * negative).
              */
             @JvmField
             public val POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE: Target =
                 Target(9, "POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE")
             /**
-             * Moves the brush tip center sideways from the input position, relative to the
-             * direction of stroke travel, where one distance unit is equal to the brush size. If
-             * the X- and Y-axes of stroke space were rotated so that the positive X-axis points in
-             * the direction of stroke travel, then a positive value for this offset moves the brush
-             * tip center towards the positive Y-axis (and a negative value moves the brush tip
-             * center towards the negative Y-axis).
+             * Moves the brush tip by the target modifier times the brush size perpendicular to the
+             * modeled stroke input's velocity, rotated 90 degrees in the direction from the
+             * positive x-axis to the positive y-axis.
              */
             @JvmField
             public val POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE: Target =

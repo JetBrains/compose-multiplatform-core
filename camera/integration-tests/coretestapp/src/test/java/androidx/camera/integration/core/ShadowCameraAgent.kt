@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit
 class ShadowCameraAgent(val testHandler: Handler) {
 
     private var listenerRegisteredLatch = CountDownLatch(1)
+    private var nextOpenError: DeviceOpenError? = null
 
     private data class OpenCameraInfo(
         val device: CameraDevice,
@@ -51,6 +52,14 @@ class ShadowCameraAgent(val testHandler: Handler) {
     enum class DeviceErrorScenario {
         ON_ERROR,
         ON_DISCONNECTED,
+    }
+
+    enum class DeviceOpenError(val errorCode: Int) {
+        CAMERA_IN_USE(CameraDevice.StateCallback.ERROR_CAMERA_IN_USE),
+        MAX_CAMERAS_IN_USE(CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE),
+        CAMERA_DISABLED(CameraDevice.StateCallback.ERROR_CAMERA_DISABLED),
+        CAMERA_DEVICE_ERROR(CameraDevice.StateCallback.ERROR_CAMERA_DEVICE),
+        CAMERA_SERVICE_ERROR(CameraDevice.StateCallback.ERROR_CAMERA_SERVICE),
     }
 
     /** Manually triggers the onCameraAvailable callback for all registered listeners. */
@@ -101,6 +110,21 @@ class ShadowCameraAgent(val testHandler: Handler) {
                 openInfo.executor.execute { openInfo.callback.onDisconnected(openInfo.device) }
             }
         }
+    }
+
+    /** Configures the agent to fail the next attempt to open a camera. */
+    fun failNextOpenCameraWith(error: DeviceOpenError?) {
+        nextOpenError = error
+    }
+
+    /**
+     * Checks if an open-camera error has been queued. If so, it consumes the error and returns it.
+     * This is called by the shadow to inject the failure.
+     */
+    fun consumeNextOpenError(): DeviceOpenError? {
+        val error = nextOpenError
+        nextOpenError = null
+        return error
     }
 
     /** Allows a test to wait until a CameraManager.AvailabilityCallback has been registered. */

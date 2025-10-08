@@ -37,6 +37,7 @@
     <string name="lifecycle_open_close_test">Open Close Panel Test Case</string>
     <string name="lifecycle_resize_test">Resizing Panel Test Case</string>
     <string name="lifecycle_runtime_session_test">Runtime Session Test Case</string>
+    <string name="pose_test">Pose Test Case</string>
 
 
     <string name="hello_android_xr">Hello Android XR.</string>

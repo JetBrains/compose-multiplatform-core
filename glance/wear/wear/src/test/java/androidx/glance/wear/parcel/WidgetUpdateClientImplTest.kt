@@ -89,8 +89,7 @@ class WidgetUpdateClientImplTest {
 
     @Test
     fun requestUpdate_canBeCalled() {
-        val id = 17
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, id)
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         Truth.assertThat(otherSysUiFakeReceiver.requestedComponents).isEmpty()
@@ -102,7 +101,7 @@ class WidgetUpdateClientImplTest {
     fun requestUpdate_unbindsAfterCall() {
         val shadowApp = Shadows.shadowOf(appContext as Application?)
 
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, 1)
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         Truth.assertThat(shadowApp.boundServiceConnections).isEmpty()
@@ -111,8 +110,8 @@ class WidgetUpdateClientImplTest {
 
     @Test
     fun requestUpdate_queuesUpdatesWhileBinding() {
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, 11)
-        updateClient.requestUpdate(appContext, ANOTHER_TEST_PROVIDER_COMPONENT, 22)
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
+        updateClient.requestUpdate(appContext, ANOTHER_TEST_PROVIDER_COMPONENT)
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         Truth.assertThat(standardSysUiFakeReceiver.requestedComponents)
@@ -128,45 +127,11 @@ class WidgetUpdateClientImplTest {
 
     @Test
     fun requestUpdate_multipleUpdatesDebounced() {
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, 111)
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, 111)
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         Truth.assertThat(standardSysUiFakeReceiver.requestedComponents).hasSize(1)
-    }
-
-    @Test
-    fun requestUpdateWithId_sendsId() {
-        val id = 27
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, id)
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
-
-        Truth.assertThat(standardSysUiFakeReceiver.requestedComponents)
-            .containsExactly(TEST_PROVIDER_COMPONENT)
-        Truth.assertThat(standardSysUiFakeReceiver.requestedIds).containsExactly(id)
-    }
-
-    @Test
-    fun requestUpdateWithId_multipleIds_multipleServiceCalls() {
-        val id1 = 27
-        val id2 = 28
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, id1)
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, id2)
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
-
-        Truth.assertThat(standardSysUiFakeReceiver.requestedComponents).hasSize(2)
-        Truth.assertThat(standardSysUiFakeReceiver.requestedIds).containsExactly(id1, id2)
-    }
-
-    @Test
-    fun requestUpdateWithId_multipleSameId_debounced() {
-        val id = 123
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, id)
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, id)
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
-
-        Truth.assertThat(standardSysUiFakeReceiver.requestedComponents).hasSize(1)
-        Truth.assertThat(standardSysUiFakeReceiver.requestedIds).hasSize(1)
     }
 
     @Test
@@ -177,7 +142,7 @@ class WidgetUpdateClientImplTest {
             OTHER_SYSUI_RECEIVER_COMPONENT_NAME.packageName,
         )
 
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, 123)
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         Truth.assertThat(standardSysUiFakeReceiver.requestedComponents).isEmpty()
@@ -187,7 +152,7 @@ class WidgetUpdateClientImplTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
     fun requestUpdate_onU_withHigherTargetSdk_usesSysUiPackageFromHomeActivity() {
-        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT, 123)
+        updateClient.requestUpdate(appContext, TEST_PROVIDER_COMPONENT)
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
         Truth.assertThat(standardSysUiFakeReceiver.requestedComponents).isEmpty()

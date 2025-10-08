@@ -159,7 +159,8 @@ internal class SavedStateEncoder(
     internal var key: String = ""
         private set
 
-    override val serializersModule = configuration.serializersModule
+    override val serializersModule
+        get() = configuration.serializersModule
 
     override fun shouldEncodeElementDefault(descriptor: SerialDescriptor, index: Int): Boolean {
         return configuration.encodeDefaults
@@ -234,42 +235,6 @@ internal class SavedStateEncoder(
         savedState.write { putNull(key) }
     }
 
-    private fun encodeIntList(value: List<Int>) {
-        savedState.write { putIntList(key, value) }
-    }
-
-    private fun encodeStringList(value: List<String>) {
-        savedState.write { putStringList(key, value) }
-    }
-
-    private fun encodeBooleanArray(value: BooleanArray) {
-        savedState.write { putBooleanArray(key, value) }
-    }
-
-    private fun encodeCharArray(value: CharArray) {
-        savedState.write { putCharArray(key, value) }
-    }
-
-    private fun encodeDoubleArray(value: DoubleArray) {
-        savedState.write { putDoubleArray(key, value) }
-    }
-
-    private fun encodeFloatArray(value: FloatArray) {
-        savedState.write { putFloatArray(key, value) }
-    }
-
-    private fun encodeIntArray(value: IntArray) {
-        savedState.write { putIntArray(key, value) }
-    }
-
-    private fun encodeLongArray(value: LongArray) {
-        savedState.write { putLongArray(key, value) }
-    }
-
-    private fun encodeStringArray(value: Array<String>) {
-        savedState.write { putStringArray(key, value) }
-    }
-
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
         // We flatten single structured object at root to prevent encoding to a
         // SavedState containing only one SavedState inside. For example, a
@@ -307,38 +272,34 @@ internal class SavedStateEncoder(
         }
     }
 
-    override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
-        val encoded = encodeFormatSpecificTypes(serializer, value)
-        if (!encoded) {
-            super.encodeSerializableValue(serializer, value)
-        }
-    }
-
-    /**
-     * @return `true` if [value] was encoded with SavedState's special representation, `false`
-     *   otherwise.
-     */
     @Suppress("UNCHECKED_CAST")
-    private fun <T> encodeFormatSpecificTypes(
-        serializer: SerializationStrategy<T>,
-        value: T,
-    ): Boolean {
-        val encoded = encodeFormatSpecificTypesOnPlatform(serializer, value)
-        if (!encoded) {
-            when (serializer.descriptor) {
-                intListDescriptor -> encodeIntList(value as List<Int>)
-                stringListDescriptor -> encodeStringList(value as List<String>)
-                booleanArrayDescriptor -> encodeBooleanArray(value as BooleanArray)
-                charArrayDescriptor -> encodeCharArray(value as CharArray)
-                doubleArrayDescriptor -> encodeDoubleArray(value as DoubleArray)
-                floatArrayDescriptor -> encodeFloatArray(value as FloatArray)
-                intArrayDescriptor -> encodeIntArray(value as IntArray)
-                longArrayDescriptor -> encodeLongArray(value as LongArray)
-                stringArrayDescriptor -> encodeStringArray(value as Array<String>)
-                else -> return false
+    override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
+        // First, try any platform-specific types
+        val platformEncoded = encodeFormatSpecificTypesOnPlatform(serializer, value)
+        if (platformEncoded) {
+            // Platform encoder handled it, we're done.
+            return
+        }
+
+        // If platform encoding didn't handle it, try our known fast-path types.
+        when (serializer.descriptor) {
+            intListDescriptor -> savedState.write { putIntList(key, value as List<Int>) }
+            stringListDescriptor -> savedState.write { putStringList(key, value as List<String>) }
+            booleanArrayDescriptor ->
+                savedState.write { putBooleanArray(key, value as BooleanArray) }
+            charArrayDescriptor -> savedState.write { putCharArray(key, value as CharArray) }
+            doubleArrayDescriptor -> savedState.write { putDoubleArray(key, value as DoubleArray) }
+            floatArrayDescriptor -> savedState.write { putFloatArray(key, value as FloatArray) }
+            intArrayDescriptor -> savedState.write { putIntArray(key, value as IntArray) }
+            longArrayDescriptor -> savedState.write { putLongArray(key, value as LongArray) }
+            stringArrayDescriptor ->
+                savedState.write { putStringArray(key, value as Array<String>) }
+            else -> {
+                // This isn't a type we can specially handle.
+                // Fall back to the default serialization behavior.
+                super.encodeSerializableValue(serializer, value)
             }
         }
-        return true
     }
 }
 

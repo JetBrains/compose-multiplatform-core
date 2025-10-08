@@ -19,6 +19,7 @@ package androidx.room3.compiler.processing.ksp
 import androidx.room3.compiler.processing.XConstructorType
 import androidx.room3.compiler.processing.XElement
 import androidx.room3.compiler.processing.XExecutableElementStore
+import androidx.room3.compiler.processing.XExecutableParameterElement
 import androidx.room3.compiler.processing.XExecutableType
 import androidx.room3.compiler.processing.XFiler
 import androidx.room3.compiler.processing.XMessager
@@ -28,6 +29,7 @@ import androidx.room3.compiler.processing.XProcessingEnvConfig
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.javac.XTypeElementStore
+import androidx.room3.compiler.processing.ksp.synthetic.KspSyntheticPropertyMethodElement
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.JsPlatformInfo
@@ -38,14 +40,19 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyAccessor
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeAlias
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Nullability
 import com.google.devtools.ksp.symbol.Variance
 
@@ -129,9 +136,6 @@ internal class KspProcessingEnv(
     override fun getElementsFromPackage(packageName: String) =
         kspResolver.getElementsFromPackage(packageName)
 
-    fun wrapFunctionDeclaration(ksFunction: KSFunctionDeclaration) =
-        kspResolver.wrapFunctionDeclaration(ksFunction)
-
     /**
      * Wraps the given `ksType`.
      *
@@ -163,8 +167,26 @@ internal class KspProcessingEnv(
         allowPrimitives: Boolean,
     ): KspType = kspResolver.wrap(originalAnnotations, ksType, allowPrimitives)
 
-    fun wrapClassDeclaration(declaration: KSClassDeclaration): KspTypeElement =
+    fun wrapDeclaration(declaration: KSDeclaration): KspElement =
+        kspResolver.wrapDeclaration(declaration)
+
+    fun wrapClassDeclaration(declaration: KSClassDeclaration): KspElement =
         kspResolver.wrapClassDeclaration(declaration)
+
+    fun wrapClassDeclarationForNonEnumEntry(declaration: KSClassDeclaration): KspTypeElement =
+        kspResolver.wrapClassDeclarationForNonEnumEntry(declaration)
+
+    fun wrapFunctionDeclaration(declaration: KSFunctionDeclaration) =
+        kspResolver.wrapFunctionDeclaration(declaration)
+
+    fun wrapPropertyDeclaration(declaration: KSPropertyDeclaration) =
+        kspResolver.wrapPropertyDeclaration(declaration)
+
+    fun wrapValueParameter(declaration: KSValueParameter) =
+        kspResolver.wrapValueParameter(declaration)
+
+    fun wrapPropertyAccessor(accessor: KSPropertyAccessor) =
+        kspResolver.wrapPropertyAccessor(accessor)
 
     fun wrapKSFile(file: KSFile): KspMemberContainer = kspResolver.wrapKSFile(file)
 
@@ -230,17 +252,13 @@ private class KspResolver(val env: KspProcessingEnv, val resolver: Resolver) {
         return typeElementStore[KspTypeMapper.swapWithKotlinType(qName)]
     }
 
-    fun wrapFunctionDeclaration(ksFunction: KSFunctionDeclaration): KspExecutableElement {
-        return executableElementStore[ksFunction]
-    }
-
     @OptIn(KspExperimental::class)
     fun getTypeElementsFromPackage(packageName: String): List<XTypeElement> {
         return resolver
             .getDeclarationsFromPackage(packageName)
             .filterIsInstance<KSClassDeclaration>()
             .filterNot { it.classKind == ClassKind.ENUM_ENTRY }
-            .map { this.wrapClassDeclaration(it) }
+            .map { this.wrapClassDeclarationForNonEnumEntry(it) }
             .toList()
     }
 
@@ -419,10 +437,6 @@ private class KspResolver(val env: KspProcessingEnv, val resolver: Resolver) {
             ?: DefaultKspType(env, ksType, originalAnnotations)
     }
 
-    fun wrapClassDeclaration(declaration: KSClassDeclaration): KspTypeElement {
-        return typeElementStore[declaration]
-    }
-
     fun wrapKSFile(file: KSFile): KspMemberContainer {
         return ksFileMemberContainers.getOrPut(file) {
             KspFileMemberContainer(env = env, ksFile = file)
@@ -457,5 +471,48 @@ private class KspResolver(val env: KspProcessingEnv, val resolver: Resolver) {
             }
         }
         return returnType(type1).isSameType(returnType(type2))
+    }
+
+    fun wrapDeclaration(declaration: KSDeclaration): KspElement {
+        return when (declaration) {
+            is KSClassDeclaration -> wrapClassDeclaration(declaration)
+            is KSFunctionDeclaration -> wrapFunctionDeclaration(declaration)
+            is KSPropertyDeclaration -> wrapPropertyDeclaration(declaration)
+            else -> error("Unsupported $declaration")
+        }
+    }
+
+    fun wrapClassDeclaration(declaration: KSClassDeclaration): KspElement {
+        return when (declaration.classKind) {
+            ClassKind.ENUM_ENTRY -> KspEnumEntry.create(env, declaration)
+            else -> wrapClassDeclarationForNonEnumEntry(declaration)
+        }
+    }
+
+    fun wrapClassDeclarationForNonEnumEntry(declaration: KSClassDeclaration): KspTypeElement {
+        check(declaration.classKind != ClassKind.ENUM_ENTRY) { "$declaration is an enum entry" }
+        return typeElementStore[declaration]
+    }
+
+    fun wrapFunctionDeclaration(declaration: KSFunctionDeclaration): KspExecutableElement {
+        return executableElementStore[declaration]
+    }
+
+    fun wrapPropertyDeclaration(declaration: KSPropertyDeclaration): KspFieldElement {
+        return KspFieldElement.create(env, declaration)
+    }
+
+    fun wrapValueParameter(declaration: KSValueParameter): XExecutableParameterElement {
+        return KspExecutableParameterElement.create(env, declaration)
+    }
+
+    fun wrapPropertyAccessor(accessor: KSPropertyAccessor): KspSyntheticPropertyMethodElement? {
+        return wrapPropertyDeclaration(accessor.receiver).let {
+            when (accessor) {
+                is KSPropertyGetter -> it.getter
+                is KSPropertySetter -> it.setter
+                else -> error("Unsupported $accessor class ${accessor::class}")
+            }
+        }
     }
 }

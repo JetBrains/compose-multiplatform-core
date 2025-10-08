@@ -65,7 +65,7 @@ import androidx.compose.remote.frontend.modifier.toComposeUi
 import androidx.compose.remote.frontend.modifier.width
 import androidx.compose.remote.frontend.state.rememberRemoteIntValue
 import androidx.compose.remote.frontend.state.rememberRemoteString
-import androidx.compose.remote.player.view.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.remote.serialization.yaml.YAMLSerializer
 import androidx.compose.runtime.Composable

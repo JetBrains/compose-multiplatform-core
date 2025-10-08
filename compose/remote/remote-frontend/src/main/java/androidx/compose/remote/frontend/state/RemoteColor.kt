@@ -541,8 +541,8 @@ public fun tween(from: RemoteColor, to: RemoteColor, tween: RemoteFloat): Remote
                 {
                     creationState.document
                         .addColorExpression(
-                            fromState.idProvider().toShort(),
-                            toState.idProvider().toShort(),
+                            from.getIdForCreationState(creationState).toShort(),
+                            to.getIdForCreationState(creationState).toShort(),
                             Utils.asNan(tween.getIdForCreationState(creationState)),
                         )
                         .toInt()

@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.remote.frontend.capture.RememberRemoteDocumentInline
 import androidx.compose.remote.frontend.layout.RemoteComposable
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
-import androidx.compose.remote.player.view.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

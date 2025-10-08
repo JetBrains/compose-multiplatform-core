@@ -37,7 +37,8 @@ import androidx.room3.compiler.processing.ksp.KspHasModifiers
 import androidx.room3.compiler.processing.ksp.KspMemberContainer
 import androidx.room3.compiler.processing.ksp.KspProcessingEnv
 import androidx.room3.compiler.processing.ksp.KspType
-import androidx.room3.compiler.processing.ksp.findEnclosingMemberContainer
+import androidx.room3.compiler.processing.ksp.hasJvmStaticAnnotation
+import androidx.room3.compiler.processing.ksp.isEnclosedInCompanionObject
 import androidx.room3.compiler.processing.ksp.jvmDescriptor
 import androidx.room3.compiler.processing.ksp.overrides
 import androidx.room3.compiler.processing.ksp.requireEnclosingMemberContainer
@@ -64,7 +65,7 @@ internal sealed class KspSyntheticPropertyMethodElement(
 ) :
     XMethodElement,
     XEquality,
-    XHasModifiers by KspHasModifiers.createForSyntheticAccessor(field.declaration, accessor) {
+    XHasModifiers by KspHasModifiers.create(accessor, isSyntheticStatic) {
 
     override val propertyName = field.name
 
@@ -101,6 +102,26 @@ internal sealed class KspSyntheticPropertyMethodElement(
 
     final override val closestMemberContainer: XMemberContainer by lazy {
         enclosingElement.closestMemberContainer
+    }
+
+    /**
+     * Returns the synthetic static accessor method for the companion object's enclosing class.
+     *
+     * If the property for this accessor method is declared in a Kotlin companion object, then this
+     * will return the synthetic static accessor method (i.e. getter or setter) owned by the
+     * companion object's enclosing class (to match KAPT). Otherwise, this will return null.
+     */
+    val syntheticStaticAccessor: KspSyntheticPropertyMethodElement? by lazy {
+        // If this is already a synthetic static method don't create another one.
+        if (
+            !isSyntheticStatic &&
+                field.declaration.isEnclosedInCompanionObject() &&
+                (field.declaration.hasJvmStaticAnnotation() || accessor.hasJvmStaticAnnotation())
+        ) {
+            createInternal(env, field, accessor, isSyntheticStatic = true)
+        } else {
+            null
+        }
     }
 
     final override fun isVarArgs() = false
@@ -331,28 +352,10 @@ internal sealed class KspSyntheticPropertyMethodElement(
     }
 
     companion object {
-        fun create(
-            env: KspProcessingEnv,
-            accessor: KSPropertyAccessor,
-            isSyntheticStatic: Boolean,
-        ): KspSyntheticPropertyMethodElement {
-            val enclosingType = accessor.receiver.findEnclosingMemberContainer(env)
+        fun create(env: KspProcessingEnv, field: KspFieldElement, accessor: KSPropertyAccessor) =
+            createInternal(env = env, field = field, accessor = accessor, isSyntheticStatic = false)
 
-            checkNotNull(enclosingType) {
-                "XProcessing does not currently support annotations on top level " +
-                    "properties with KSP. Cannot process $accessor."
-            }
-
-            val field = KspFieldElement(env = env, declaration = accessor.receiver)
-            return create(
-                env = env,
-                field = field,
-                accessor = accessor,
-                isSyntheticStatic = isSyntheticStatic,
-            )
-        }
-
-        fun create(
+        private fun createInternal(
             env: KspProcessingEnv,
             field: KspFieldElement,
             accessor: KSPropertyAccessor,

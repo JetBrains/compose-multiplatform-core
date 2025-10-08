@@ -18,12 +18,16 @@ package androidx.room3.integration.kotlintestapp.test
 
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
+import androidx.room3.ExperimentalRoomApi
 import androidx.room3.Room
 import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.integration.kotlintestapp.dao.BooksDao
-import androidx.room3.withTransaction
+import androidx.room3.integration.kotlintestapp.test.TestDatabaseTest.UseDriver
+import androidx.room3.withReadTransaction
+import androidx.room3.withWriteTransaction
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
@@ -35,16 +39,23 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @MediumTest
-@RunWith(AndroidJUnit4::class)
-class InvalidationTrackerFlowTest {
+@RunWith(Parameterized::class)
+class InvalidationTrackerFlowTest(private val useDriver: UseDriver) {
+
+    private companion object {
+        @JvmStatic
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = arrayOf(UseDriver.BUNDLED, UseDriver.ANDROID)
+    }
 
     private val testCoroutineScope = TestScope()
 
@@ -58,6 +69,13 @@ class InvalidationTrackerFlowTest {
                     ApplicationProvider.getApplicationContext(),
                     TestDatabase::class.java,
                 )
+                .apply {
+                    if (useDriver == UseDriver.ANDROID) {
+                        setDriver(AndroidSQLiteDriver())
+                    } else if (useDriver == UseDriver.BUNDLED) {
+                        setDriver(BundledSQLiteDriver())
+                    }
+                }
                 .setQueryCoroutineContext(testCoroutineScope.coroutineContext)
                 .build()
         booksDao = database.booksDao()
@@ -108,6 +126,7 @@ class InvalidationTrackerFlowTest {
     }
 
     @Test
+    @OptIn(ExperimentalRoomApi::class)
     fun emitOnceForMultipleTablesInTransaction(): Unit = runTest {
         val resultChannel = Channel<Set<String>>(capacity = 10)
         val job =
@@ -119,7 +138,7 @@ class InvalidationTrackerFlowTest {
 
         testScheduler.advanceUntilIdle()
 
-        database.withTransaction {
+        database.withWriteTransaction {
             booksDao.addAuthors(TestUtil.AUTHOR_1)
             booksDao.addPublishers(TestUtil.PUBLISHER)
             booksDao.addBooks(TestUtil.BOOK_1)
@@ -159,8 +178,9 @@ class InvalidationTrackerFlowTest {
     }
 
     @Test
+    @OptIn(ExperimentalRoomApi::class)
     fun collectInTransaction(): Unit = runTest {
-        database.withTransaction {
+        database.withWriteTransaction {
             val result = database.invalidationTracker.createFlow("author").first()
             assertThat(result).containsExactly("author")
         }
@@ -233,6 +253,7 @@ class InvalidationTrackerFlowTest {
     }
 
     @Test
+    @OptIn(ExperimentalRoomApi::class)
     fun mapTransactionQuery() = runTest {
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
@@ -241,7 +262,7 @@ class InvalidationTrackerFlowTest {
         val channel =
             database.invalidationTracker
                 .createFlow("book")
-                .map { database.withTransaction { booksDao.getBooksSuspend() } }
+                .map { database.withReadTransaction { booksDao.getBooksSuspend() } }
                 .produceIn(this)
 
         assertThat(channel.receive()).containsExactly(TestUtil.BOOK_1)
@@ -255,6 +276,7 @@ class InvalidationTrackerFlowTest {
     }
 
     @Test
+    @OptIn(ExperimentalRoomApi::class)
     fun transactionUpdateAndTransactionQuery() = runTest {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
@@ -267,7 +289,7 @@ class InvalidationTrackerFlowTest {
                     .createFlow("author", "publisher")
                     .map {
                         val (books, publishers) =
-                            database.withTransaction {
+                            database.withReadTransaction {
                                 booksDao.getBooksSuspend() to booksDao.getPublishersSuspend()
                             }
                         books.map { book ->
@@ -285,8 +307,8 @@ class InvalidationTrackerFlowTest {
             assertThat(result).containsExactly("book title 1 from publisher 1")
         }
 
-        database.withTransaction {
-            booksDao.addPublishers(TestUtil.PUBLISHER2)
+        database.withWriteTransaction {
+            booksDao.addPublishersSuspend(TestUtil.PUBLISHER2)
             booksDao.addBooks(TestUtil.BOOK_2)
         }
         testScheduler.advanceUntilIdle()
@@ -301,8 +323,10 @@ class InvalidationTrackerFlowTest {
     }
 
     @Test
-    fun invalidTable() {
-        assertThrows<IllegalArgumentException> { database.invalidationTracker.createFlow("foo") }
+    fun invalidTable() = runTest {
+        assertThrows<IllegalArgumentException> {
+                database.invalidationTracker.createFlow("foo").first()
+            }
             .hasMessageThat()
             .isEqualTo("There is no table with name foo")
 

@@ -202,26 +202,7 @@ private fun LayoutSpatialDialog(
         contentSize = contentSize ?: IntSize.Zero,
         pose = Pose(translation = MeterPosition(z = zDepth.meters).toVector3()),
     ) {
-        Box(
-            modifier =
-                Modifier.onClickOutside(
-                        enabled = true,
-                        onClickOutside = {
-                            if (properties.dismissOnClickOutside) {
-                                onDismissRequest()
-                            }
-                        },
-                    )
-                    .constrainTo(
-                        Constraints(
-                            minWidth = 0,
-                            maxWidth = Constraints.Infinity,
-                            minHeight = 0,
-                            maxHeight = Constraints.Infinity,
-                        )
-                    )
-                    .onSizeChanged { contentSize = it }
-        ) {
+        Box(modifier = Modifier.constrainTo(Constraints()).onSizeChanged { contentSize = it }) {
             content()
         }
     }

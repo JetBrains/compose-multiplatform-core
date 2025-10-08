@@ -18,13 +18,12 @@ package androidx.room3.compiler.processing.ksp
 
 import androidx.room3.compiler.processing.XElement
 import androidx.room3.compiler.processing.XRoundEnv
-import androidx.room3.compiler.processing.ksp.synthetic.KspSyntheticPropertyMethodElement
 import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSPropertyAccessor
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
 import com.google.devtools.ksp.symbol.KSValueParameter
 import kotlin.reflect.KClass
 
@@ -52,56 +51,26 @@ internal class KspRoundEnv(
         return buildSet {
                 env.resolver.getSymbolsWithAnnotation(annotationQualifiedName).forEach { symbol ->
                     when (symbol) {
-                        is KSPropertyDeclaration -> {
-                            add(KspFieldElement.create(env, symbol))
-                        }
-                        is KSClassDeclaration -> {
-                            when (symbol.classKind) {
-                                ClassKind.ENUM_ENTRY -> add(KspEnumEntry.create(env, symbol))
-                                else -> add(env.wrapClassDeclaration(symbol))
+                        is KSPropertyDeclaration -> add(env.wrapPropertyDeclaration(symbol))
+                        is KSClassDeclaration -> add(env.wrapClassDeclaration(symbol))
+                        is KSFunctionDeclaration ->
+                            env.wrapFunctionDeclaration(symbol).let { method ->
+                                add(method)
+                                (method as? KspMethodElement)?.syntheticStaticMethod?.let {
+                                    add(it)
+                                }
                             }
-                        }
-                        is KSFunctionDeclaration -> {
-                            add(env.wrapFunctionDeclaration(symbol))
-                        }
-                        is KSPropertyAccessor -> {
-                            if (
-                                symbol.receiver.isStatic() &&
-                                    symbol.receiver.parentDeclaration is KSClassDeclaration &&
-                                    (symbol.receiver.hasJvmStaticAnnotation() ||
-                                        symbol.hasJvmStaticAnnotation())
-                            ) {
-                                // Getter/setter can be copied from companion object to its
-                                // outer class if the field is annotated with @JvmStatic.
-                                add(
-                                    KspSyntheticPropertyMethodElement.create(
-                                        env,
-                                        symbol,
-                                        isSyntheticStatic = true,
-                                    )
-                                )
+                        is KSValueParameter -> add(env.wrapValueParameter(symbol))
+                        is KSPropertyGetter ->
+                            env.wrapPropertyDeclaration(symbol.receiver).let { property ->
+                                property.getter?.let { add(it) }
+                                property.getter?.syntheticStaticAccessor?.let { add(it) }
                             }
-                            // static fields are the properties that are coming from the companion.
-                            // Whether we'll generate method for it or not depends on the JVMStatic
-                            // annotation
-                            if (
-                                !symbol.receiver.isStatic() ||
-                                    symbol.receiver.hasJvmStaticAnnotation() ||
-                                    symbol.hasJvmStaticAnnotation() ||
-                                    symbol.receiver.parentDeclaration !is KSClassDeclaration
-                            ) {
-                                add(
-                                    KspSyntheticPropertyMethodElement.create(
-                                        env,
-                                        symbol,
-                                        isSyntheticStatic = false,
-                                    )
-                                )
+                        is KSPropertySetter ->
+                            env.wrapPropertyDeclaration(symbol.receiver).let { property ->
+                                property.setter?.let { add(it) }
+                                property.setter?.syntheticStaticAccessor?.let { add(it) }
                             }
-                        }
-                        is KSValueParameter -> {
-                            add(KspExecutableParameterElement.create(env, symbol))
-                        }
                         else ->
                             error("Unsupported $symbol with annotation $annotationQualifiedName")
                     }

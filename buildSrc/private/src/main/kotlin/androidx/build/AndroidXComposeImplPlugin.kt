@@ -112,7 +112,6 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                         "camera:camera-compose",
                         "camera:integration-tests",
                         "camera:viewfinder:viewfinder-compose",
-                        "compose:foundation",
                         "compose:material",
                         "compose:material3",
                         "compose:remote",

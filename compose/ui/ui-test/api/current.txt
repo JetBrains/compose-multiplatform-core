@@ -707,10 +707,10 @@ package androidx.compose.ui.test.internal {
 
   @SuppressCompatibility @androidx.compose.ui.test.InternalTestApi public abstract class DelayPropagatingContinuationInterceptorWrapper extends kotlin.coroutines.AbstractCoroutineContextElement implements kotlin.coroutines.ContinuationInterceptor kotlinx.coroutines.Delay {
     ctor public DelayPropagatingContinuationInterceptorWrapper(kotlin.coroutines.ContinuationInterceptor wrappedInterceptor);
-    method @InaccessibleFromJava @Deprecated public suspend Object? delay(long time, kotlin.coroutines.Continuation<? super java.lang.Void>);
-    method @InaccessibleFromJava public kotlinx.coroutines.DisposableHandle invokeOnTimeout(long timeMillis, Runnable block, kotlin.coroutines.CoroutineContext context);
+    method @Deprecated public suspend Object? delay(long time, kotlin.coroutines.Continuation<? super java.lang.Void>);
+    method public kotlinx.coroutines.DisposableHandle invokeOnTimeout(long timeMillis, Runnable block, kotlin.coroutines.CoroutineContext context);
     method @BytecodeOnly public void releaseInterceptedContinuation(kotlin.coroutines.Continuation<? extends java.lang.Object!>);
-    method @InaccessibleFromJava public void scheduleResumeAfterDelay(long timeMillis, kotlinx.coroutines.CancellableContinuation<kotlin.Unit> continuation);
+    method public void scheduleResumeAfterDelay(long timeMillis, kotlinx.coroutines.CancellableContinuation<kotlin.Unit> continuation);
   }
 
 }

@@ -25,7 +25,8 @@ import java.io.IOException
 /**
  * Request for widget contents.
  *
- * @property instanceId The instance id of the widget for this request.
+ * @property instanceId The instance id of the widget for this request. The id is created by the
+ *   system and is provided when [GlanceWearWidget.onActivated] is called.
  *
  * TODO: also provide the widget type requested and sizing based on the device.
  */

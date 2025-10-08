@@ -64,7 +64,11 @@ import androidx.wear.compose.foundation.rotary.rotaryScrollable
  *   after it has been clipped, which is not possible via [modifier] param. You can use it to add a
  *   padding before the first item or after the last one. If you want to add a spacing between each
  *   item use [verticalArrangement].
- * @param verticalArrangement The vertical arrangement of the items.
+ * @param verticalArrangement The vertical arrangement of the items, to be used when there is enough
+ *   space to show all the items. Note that only [Arrangement.Top], [Arrangement.Center] and
+ *   [Arrangement.Bottom] arrangements (including their spacedBy variants, i.e., using spacedBy with
+ *   [Alignment.Top], [Alignment.CenterVertically] and [Alignment.Bottom]) are supported, the
+ *   default is [Arrangement.Top]
  * @param horizontalAlignment The horizontal alignment of the items.
  * @param flingBehavior The fling behavior to be used for the list. This parameter and the
  *   [rotaryScrollableBehavior] (which controls rotary scroll) should produce similar scroll effect

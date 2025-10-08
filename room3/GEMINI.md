@@ -3,7 +3,8 @@
 ## General Instructions:
 
 When modifying any .kt file, format it via the following command:
-`./gradlew :ktCheckFile --format --file <space-separated-list-of-files-to-format>`
+`./gradlew :ktCheckFile --format --file <file>`. If more than one file needs formatting, continue
+adding `--file <next-file>` to the command.
 
 ## Description of sub-projects:
 

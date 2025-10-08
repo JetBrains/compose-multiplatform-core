@@ -58,6 +58,7 @@ import androidx.wear.compose.foundation.samples.TransformingLazyColumnLettersSam
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.integration.demos.common.DemoCategory
+import androidx.wear.compose.material3.demos.ArrangementsDemo
 
 // Declare the swipe to dismiss demos so that we can use this variable as the background composable
 // for the SwipeToDismissDemo itself.
@@ -100,6 +101,7 @@ val WearFoundationDemos =
     DemoCategory(
         "Foundation",
         listOf(
+            ComposableDemo("Arrangements") { ArrangementsDemo() },
             DemoCategory(
                 "Expandables",
                 listOf(

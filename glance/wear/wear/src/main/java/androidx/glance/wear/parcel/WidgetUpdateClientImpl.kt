@@ -32,17 +32,16 @@ import android.util.Log
 import androidx.annotation.GuardedBy
 import androidx.glance.wear.parcel.legacy.TileUpdateRequestData
 import androidx.glance.wear.parcel.legacy.TileUpdateRequesterService
-import androidx.glance.wear.proto.legacy.TileUpdateRequest
 
 internal class WidgetUpdateClientImpl() : WidgetUpdateClient {
     private val lock = Any()
 
-    @GuardedBy("lock") private val pendingIds = mutableSetOf<PendingId>()
+    @GuardedBy("lock") private val pendingUpdates = mutableSetOf<ComponentName>()
     @GuardedBy("lock") private var bindingInProgress = false
 
-    override fun requestUpdate(context: Context, provider: ComponentName, instanceId: Int) {
+    override fun requestUpdate(context: Context, provider: ComponentName) {
         synchronized(lock) {
-            pendingIds.add(PendingId(provider, instanceId))
+            pendingUpdates.add(provider)
 
             if (bindingInProgress) {
                 // Something else kicked off the bind; let that carry on binding.
@@ -66,10 +65,10 @@ internal class WidgetUpdateClientImpl() : WidgetUpdateClient {
             intent,
             object : ServiceConnection {
                 override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                    val pendingIdsCopy =
+                    val pendingUpdatesCopy =
                         synchronized(lock) {
-                            val copy = ArrayList(pendingIds)
-                            pendingIds.clear()
+                            val copy = ArrayList(pendingUpdates)
+                            pendingUpdates.clear()
                             bindingInProgress = false
                             copy
                         }
@@ -77,8 +76,8 @@ internal class WidgetUpdateClientImpl() : WidgetUpdateClient {
                     val updateRequesterService: TileUpdateRequesterService? =
                         TileUpdateRequesterService.Stub.asInterface(service)
 
-                    for (index in 0 until pendingIdsCopy.size) {
-                        updateRequesterService?.sendUpdateRequest(pendingIdsCopy[index])
+                    for (index in 0 until pendingUpdatesCopy.size) {
+                        updateRequesterService?.sendUpdateRequest(pendingUpdatesCopy[index])
                     }
 
                     context.unbindService(this)
@@ -98,15 +97,9 @@ internal class WidgetUpdateClientImpl() : WidgetUpdateClient {
         private const val SYSUI_SETTINGS_KEY = "clockwork_sysui_package"
         private const val TAG = "WidgetUpdateClient"
 
-        private data class PendingId(val provider: ComponentName, val instanceId: Int)
-
-        private fun TileUpdateRequesterService.sendUpdateRequest(id: PendingId) {
+        private fun TileUpdateRequesterService.sendUpdateRequest(provider: ComponentName) {
             try {
-                val protoRequest = TileUpdateRequest(tile_id = id.instanceId)
-                this.requestUpdate(
-                    id.provider,
-                    TileUpdateRequestData(protoRequest.encode(), TileUpdateRequestData.VERSION_1),
-                )
+                this.requestUpdate(provider, TileUpdateRequestData())
             } catch (ex: RemoteException) {
                 Log.w(TAG, "while requesting widget update", ex)
             }

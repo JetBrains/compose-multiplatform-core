@@ -21,6 +21,8 @@ import androidx.kruth.assertWithMessage
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.asClassName
+import androidx.room3.compiler.processing.javac.JavacFieldElement
+import androidx.room3.compiler.processing.javac.JavacMethodElement
 import androidx.room3.compiler.processing.javac.JavacType
 import androidx.room3.compiler.processing.ksp.KspProcessingEnv
 import androidx.room3.compiler.processing.util.Source
@@ -1413,6 +1415,284 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
     }
 
     @Test
+    fun classCompanionAndObject() {
+        val src =
+            Source.kotlin(
+                "ClassSubject.kt",
+                """
+                open class ClassSubject {
+                    val classVal: Int = TODO()
+                    var classVar: Int = TODO()
+                    fun classFun(): String = TODO()
+                    @JvmField var classVarPropJvmField: String = TODO()
+                    @JvmField val classValPropJvmField: String = TODO()
+                    companion object {
+                        val companionVal: Int = TODO()
+                        var companionVar: Int = TODO()
+                        fun companionFun(): String = TODO()
+                        @JvmStatic var companionVarPropJvmStatic: String = TODO()
+                        @get:JvmStatic var companionVarGetterJvmStatic:Int = TODO()
+                        @set:JvmStatic var companionVarSetterJvmStatic:Int = TODO()
+                        @JvmStatic val companionValPropJvmStatic: String = TODO()
+                        @get:JvmStatic val companionValGetterJvmStatic: String = TODO()
+                        @JvmField var companionVarPropJvmField: String = TODO()
+                        @JvmField val companionValPropJvmField: String = TODO()
+                        @JvmStatic fun companionFunJvmStatic(): String = TODO()
+                        const val companionConstVal: String = ""
+                        @get:JvmStatic
+                        const val companionConstValGetterJvmField: String = ""
+                    }
+                }
+                object ObjectSubject {
+                    val objectVal: Int = TODO()
+                    var objectVar: Int = TODO()
+                    fun objectFun(): String = TODO()
+                    @JvmStatic var objectVarPropJvmStatic: String = TODO()
+                    @get:JvmStatic var objectVarGetterJvmStatic:Int = TODO()
+                    @set:JvmStatic var objectVarSetterJvmStatic:Int = TODO()
+                    @JvmStatic val objectValPropJvmStatic: String = TODO()
+                    @get:JvmStatic val objectValGetterJvmStatic: String = TODO()
+                    @JvmField var objectVarPropJvmField: String = TODO()
+                    @JvmField val objectValPropJvmField: String = TODO()
+                    @JvmStatic fun objectFunJvmStatic(): String = TODO()
+                    const val objectConstVal: String = ""
+                    @get:JvmStatic
+                    const val objectConstValGetterJvmField: String = ""
+                }
+                """
+                    .trimIndent(),
+            )
+        runProcessorTest(sources = listOf(src)) { invocation ->
+            data class FieldData(val name: String, val isStatic: Boolean)
+            fun XFieldElement.data() = FieldData(name, isStatic())
+            data class MethodData(
+                val name: String,
+                val isStatic: Boolean,
+                val isGetter: Boolean = false,
+                val isSetter: Boolean = false,
+                val isPropertyMethod: Boolean = isGetter || isSetter,
+            )
+            fun XMethodElement.data() =
+                MethodData(
+                    name = name,
+                    isStatic = isStatic(),
+                    isGetter = isKotlinPropertyGetter(),
+                    isSetter = isKotlinPropertySetter(),
+                    isPropertyMethod = isKotlinPropertyMethod(),
+                )
+            fun XTypeElement.assertFieldData(expectedFieldData: FieldData) {
+                val actualFieldData = getDeclaredField(expectedFieldData.name).data()
+                assertWithMessage("${qualifiedName}.${actualFieldData.name}")
+                    .that(actualFieldData)
+                    .isEqualTo(expectedFieldData)
+            }
+            fun XTypeElement.assertMethodData(expectedMethodData: MethodData) {
+                val actualMethodData = getDeclaredMethodByJvmName(expectedMethodData.name).data()
+                assertWithMessage("${qualifiedName}.${actualMethodData.name}")
+                    .that(actualMethodData)
+                    .isEqualTo(expectedMethodData)
+            }
+
+            val classSubject = invocation.processingEnv.requireTypeElement("ClassSubject")
+            listOf(
+                    FieldData("classVal", isStatic = false),
+                    FieldData("classVar", isStatic = false),
+                    FieldData("classVarPropJvmField", isStatic = false),
+                    FieldData("classValPropJvmField", isStatic = false),
+                    FieldData("companionVal", isStatic = true),
+                    FieldData("companionVar", isStatic = true),
+                    FieldData("companionVarPropJvmStatic", isStatic = true),
+                    FieldData("companionVarGetterJvmStatic", isStatic = true),
+                    FieldData("companionVarSetterJvmStatic", isStatic = true),
+                    FieldData("companionValPropJvmStatic", isStatic = true),
+                    FieldData("companionValGetterJvmStatic", isStatic = true),
+                    FieldData("companionVarPropJvmField", isStatic = true),
+                    FieldData("companionValPropJvmField", isStatic = true),
+                    FieldData("companionConstVal", isStatic = true),
+                    FieldData("companionConstValGetterJvmField", isStatic = true),
+                )
+                .let { expectedFields ->
+                    assertThat(classSubject.getDeclaredFields().map { it.name } - "Companion")
+                        .containsExactlyElementsIn(expectedFields.map { it.name })
+                        .inOrder()
+                    expectedFields.forEach { classSubject.assertFieldData(it) }
+                }
+
+            listOf(
+                    MethodData("getClassVal", isStatic = false, isGetter = true),
+                    MethodData("getClassVar", isStatic = false, isGetter = true),
+                    MethodData("setClassVar", isStatic = false, isSetter = true),
+                    MethodData("classFun", isStatic = false),
+                    MethodData("getCompanionVarPropJvmStatic", isStatic = true, isGetter = true),
+                    MethodData("setCompanionVarPropJvmStatic", isStatic = true, isSetter = true),
+                    MethodData("getCompanionVarGetterJvmStatic", isStatic = true, isGetter = true),
+                    MethodData("setCompanionVarSetterJvmStatic", isStatic = true, isSetter = true),
+                    MethodData("getCompanionValPropJvmStatic", isStatic = true, isGetter = true),
+                    MethodData("getCompanionValGetterJvmStatic", isStatic = true, isGetter = true),
+                    MethodData("companionFunJvmStatic", isStatic = true),
+                )
+                .let { expectedMethods ->
+                    assertThat(classSubject.getDeclaredMethods().map { it.name })
+                        .containsExactlyElementsIn(expectedMethods.map { it.name })
+                        .inOrder()
+                    expectedMethods.forEach { classSubject.assertMethodData(it) }
+                }
+
+            val companionSubject = classSubject.companionObject!!
+            assertThat(companionSubject.getDeclaredFields().map { it.name }).isEmpty()
+
+            buildList {
+                    add(MethodData("getCompanionVal", isStatic = false, isGetter = true))
+                    add(MethodData("getCompanionVar", isStatic = false, isGetter = true))
+                    add(MethodData("setCompanionVar", isStatic = false, isSetter = true))
+                    add(MethodData("companionFun", isStatic = false))
+                    add(
+                        MethodData(
+                            "getCompanionVarPropJvmStatic",
+                            isStatic = false,
+                            isGetter = true,
+                        )
+                    )
+                    if (!invocation.isKsp) {
+                        // TODO(b/290800523): remove synthetic annotation methods from KAPT.
+                        add(
+                            MethodData(
+                                "getCompanionVarPropJvmStatic\$annotations",
+                                isStatic = true,
+                                isPropertyMethod = true,
+                            )
+                        )
+                    }
+                    add(
+                        MethodData(
+                            "setCompanionVarPropJvmStatic",
+                            isStatic = false,
+                            isSetter = true,
+                        )
+                    )
+                    add(
+                        MethodData(
+                            "getCompanionVarGetterJvmStatic",
+                            isStatic = false,
+                            isGetter = true,
+                        )
+                    )
+                    add(
+                        MethodData(
+                            "setCompanionVarGetterJvmStatic",
+                            isStatic = false,
+                            isSetter = true,
+                        )
+                    )
+                    add(
+                        MethodData(
+                            "getCompanionVarSetterJvmStatic",
+                            isStatic = false,
+                            isGetter = true,
+                        )
+                    )
+                    add(
+                        MethodData(
+                            "setCompanionVarSetterJvmStatic",
+                            isStatic = false,
+                            isSetter = true,
+                        )
+                    )
+                    add(
+                        MethodData(
+                            "getCompanionValPropJvmStatic",
+                            isStatic = false,
+                            isGetter = true,
+                        )
+                    )
+                    if (!invocation.isKsp) {
+                        // TODO(b/290800523): remove synthetic annotation methods from KAPT.
+                        add(
+                            MethodData(
+                                "getCompanionValPropJvmStatic\$annotations",
+                                isStatic = true,
+                                isPropertyMethod = true,
+                            )
+                        )
+                    }
+                    add(
+                        MethodData(
+                            "getCompanionValGetterJvmStatic",
+                            isStatic = false,
+                            isGetter = true,
+                        )
+                    )
+                    add(MethodData("companionFunJvmStatic", isStatic = false))
+                }
+                .let { expectedMethods ->
+                    assertThat(companionSubject.getDeclaredMethods().map { it.jvmName })
+                        .containsExactlyElementsIn(expectedMethods.map { it.name })
+                        .inOrder()
+                    expectedMethods.forEach { companionSubject.assertMethodData(it) }
+                }
+
+            val objectSubject = invocation.processingEnv.requireTypeElement("ObjectSubject")
+            listOf(
+                    FieldData("objectVal", isStatic = true),
+                    FieldData("objectVar", isStatic = true),
+                    FieldData("objectVarPropJvmStatic", isStatic = true),
+                    FieldData("objectVarGetterJvmStatic", isStatic = true),
+                    FieldData("objectVarSetterJvmStatic", isStatic = true),
+                    FieldData("objectValPropJvmStatic", isStatic = true),
+                    FieldData("objectValGetterJvmStatic", isStatic = true),
+                    FieldData("objectVarPropJvmField", isStatic = true),
+                    FieldData("objectValPropJvmField", isStatic = true),
+                    FieldData("objectConstVal", isStatic = true),
+                    FieldData("objectConstValGetterJvmField", isStatic = true),
+                )
+                .let { expectedFields ->
+                    assertThat(objectSubject.getDeclaredFields().map { it.name } - "INSTANCE")
+                        .containsExactlyElementsIn(expectedFields.map { it.name })
+                        .inOrder()
+                    expectedFields.forEach { objectSubject.assertFieldData(it) }
+                }
+
+            listOf(
+                    MethodData("getObjectVal", isStatic = false, isGetter = true),
+                    MethodData("getObjectVar", isStatic = false, isGetter = true),
+                    MethodData("setObjectVar", isStatic = false, isSetter = true),
+                    MethodData("objectFun", isStatic = false),
+                    MethodData("getObjectVarPropJvmStatic", isStatic = true, isGetter = true),
+                    MethodData(
+                        "getObjectVarPropJvmStatic\$annotations",
+                        isStatic = true,
+                        isPropertyMethod = true,
+                    ),
+                    MethodData("setObjectVarPropJvmStatic", isStatic = true, isSetter = true),
+                    MethodData("getObjectVarGetterJvmStatic", isStatic = true, isGetter = true),
+                    MethodData("setObjectVarGetterJvmStatic", isStatic = false, isSetter = true),
+                    MethodData("getObjectVarSetterJvmStatic", isStatic = false, isGetter = true),
+                    MethodData("setObjectVarSetterJvmStatic", isStatic = true, isSetter = true),
+                    MethodData("getObjectValPropJvmStatic", isStatic = true, isGetter = true),
+                    MethodData(
+                        "getObjectValPropJvmStatic\$annotations",
+                        isStatic = true,
+                        isPropertyMethod = true,
+                    ),
+                    MethodData("getObjectValGetterJvmStatic", isStatic = true, isGetter = true),
+                    MethodData("objectFunJvmStatic", isStatic = true),
+                )
+                .filter {
+                    // TODO(b/290800523): remove synthetic annotation methods from KAPT.
+                    !invocation.isKsp ||
+                        (it.name != "getObjectVarPropJvmStatic\$annotations" &&
+                            it.name != "getObjectValPropJvmStatic\$annotations")
+                }
+                .let { expectedMethods ->
+                    assertThat(objectSubject.getDeclaredMethods().map { it.name })
+                        .containsExactlyElementsIn(expectedMethods.map { it.name })
+                        .inOrder()
+                    expectedMethods.forEach { objectSubject.assertMethodData(it) }
+                }
+        }
+    }
+
+    @Test
     fun companion() {
         val src =
             Source.kotlin(
@@ -1476,31 +1756,24 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             assertThat(subClass.getAllMethods().jvmNames() - objectMethodNames)
                 .containsExactlyElementsIn(expectedMethodNames)
 
-            // TODO(b/443344468): Skip these checks in KAPT because isKotlinProperty* methods are
-            //  currently broken for companion objects.
-            if (invocation.isKsp) {
-                subject
-                    .getDeclaredMethods()
-                    .filter { it.isKotlinPropertyMethod() }
-                    .let {
-                        assertThat(it.jvmNames())
-                            .containsExactlyElementsIn(expectedPropertyMethodNames)
-                    }
-                subject
-                    .getDeclaredMethods()
-                    .filter { it.isKotlinPropertyGetter() }
-                    .let {
-                        assertThat(it.jvmNames())
-                            .containsExactlyElementsIn(expectedGetterMethodNames)
-                    }
-                subject
-                    .getDeclaredMethods()
-                    .filter { it.isKotlinPropertySetter() }
-                    .let {
-                        assertThat(it.jvmNames())
-                            .containsExactlyElementsIn(expectedSetterMethodNames)
-                    }
-            }
+            subject
+                .getDeclaredMethods()
+                .filter { it.isKotlinPropertyMethod() }
+                .let {
+                    assertThat(it.jvmNames()).containsExactlyElementsIn(expectedPropertyMethodNames)
+                }
+            subject
+                .getDeclaredMethods()
+                .filter { it.isKotlinPropertyGetter() }
+                .let {
+                    assertThat(it.jvmNames()).containsExactlyElementsIn(expectedGetterMethodNames)
+                }
+            subject
+                .getDeclaredMethods()
+                .filter { it.isKotlinPropertySetter() }
+                .let {
+                    assertThat(it.jvmNames()).containsExactlyElementsIn(expectedSetterMethodNames)
+                }
 
             // make sure everything coming from companion is marked as static
             subject.getDeclaredFields().forEach {
@@ -1524,6 +1797,29 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     it.asMemberOf(subClassType)
                 } catch (th: Throwable) {
                     throw AssertionError("Couldn't run asMemberOf for ${it.jvmName}")
+                }
+            }
+
+            // For KAPT, make sure we find the kotlin metadata for all fields and methods.
+            if (!invocation.isKsp) {
+                subject
+                    .getDeclaredFields()
+                    .filter { it.name != "Companion" }
+                    .forEach {
+                        assertWithMessage("Field: ${it.name}")
+                            .that((it as JavacFieldElement).kotlinMetadata)
+                            .isNotNull()
+                    }
+                subject.getDeclaredMethods().forEach {
+                    assertWithMessage("Method: ${it.jvmName}")
+                        .that((it as JavacMethodElement).kotlinMetadata)
+                        .isNotNull()
+                }
+                subject.companionObject!!.getDeclaredFields().isEmpty()
+                subject.companionObject!!.getDeclaredMethods().forEach {
+                    assertWithMessage("Companion method: ${it.jvmName}")
+                        .that((it as JavacMethodElement).kotlinMetadata)
+                        .isNotNull()
                 }
             }
         }
@@ -2005,30 +2301,10 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 } else {
                     assertThat(parent.asClassName()).isEqualTo(Enum::class.asClassName())
                 }
-                // TODO(kuanyingchou): make this more consistent.
                 val methodNames = typeElement.getDeclaredMethods().map { it.jvmName }
                 if (qName == "test.KotlinEnum") {
-                    if (invocation.isKsp) {
-                        if (
-                            isPreCompiled || (invocation.processingEnv as KspProcessingEnv).isKsp2
-                        ) {
-                            assertThat(methodNames)
-                                .containsExactly("enumMethod", "values", "valueOf")
-                        } else {
-                            assertThat(methodNames).containsExactly("enumMethod")
-                        }
-                    } else {
-                        assertThat(methodNames)
-                            .containsExactly(
-                                "values",
-                                "valueOf",
-                                "enumMethod",
-                                // `entries` became stable in Kotlin 1.9.0 but somehow only
-                                // appears
-                                // in KAPT. We can't find an `entries` property in KSP yet.
-                                "getEntries",
-                            )
-                    }
+                    assertThat(methodNames)
+                        .containsExactly("values", "valueOf", "enumMethod", "getEntries")
                 } else {
                     assertThat(methodNames).containsExactly("values", "valueOf", "enumMethod")
                 }

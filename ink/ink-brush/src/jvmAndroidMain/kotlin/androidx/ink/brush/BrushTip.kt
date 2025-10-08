@@ -19,14 +19,12 @@ package androidx.ink.brush
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
-import androidx.ink.geometry.Angle
-import androidx.ink.geometry.AngleRadiansFloat
+import androidx.ink.geometry.AngleDegreesFloat
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 import java.util.Collections.unmodifiableList
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmSynthetic
-import kotlin.math.PI
 
 /**
  * A [BrushTip] consists of parameters that control how stroke inputs are used to model the tip
@@ -61,9 +59,9 @@ private constructor(
         @FloatRange(from = 0.0, toInclusive = false) scaleX: Float = 1f,
         @FloatRange(from = 0.0, toInclusive = false) scaleY: Float = 1f,
         @FloatRange(from = 0.0, to = 1.0) cornerRounding: Float = 1f,
-        @FloatRange(from = -PI / 2, to = PI / 2) @AngleRadiansFloat slant: Float = Angle.ZERO,
+        @FloatRange(from = -90.0, to = 90.0) @AngleDegreesFloat slantDegrees: Float = 0f,
         @FloatRange(from = 0.0, to = 1.0) pinch: Float = 0f,
-        @AngleRadiansFloat rotation: Float = Angle.ZERO,
+        @AngleDegreesFloat rotationDegrees: Float = 0f,
         @FloatRange(from = 0.0, to = 2.0) opacityMultiplier: Float = 1f,
         @FloatRange(from = 0.0, toInclusive = false) particleGapDistanceScale: Float = 0f,
         @IntRange(from = 0L) particleGapDurationMillis: Long = 0L,
@@ -73,9 +71,9 @@ private constructor(
             scaleX,
             scaleY,
             cornerRounding,
-            slant,
+            slantDegrees,
             pinch,
-            rotation,
+            rotationDegrees,
             opacityMultiplier,
             particleGapDistanceScale,
             particleGapDurationMillis,
@@ -118,22 +116,22 @@ private constructor(
         get() = BrushTipNative.getCornerRounding(nativePointer)
 
     /**
-     * Angle in radians used to calculate the initial slant of the tip shape prior to applying
+     * Angle in degrees used to calculate the initial slant of the tip shape prior to applying
      * [rotation].
      *
-     * The value should be in the range [-π/2, π/2] radians, and represents the angle by which
+     * The value should be in the range [-90, 90] degrees, and represents the angle by which
      * "vertical" lines of the tip shape will appear rotated about their intersection with the
-     * x-axis.
+     * x-axis. A positive value will rotate from the positive x-axis towards the positive y-axis.
      *
      * More info: This property is similar to the single-arg CSS skew() transformation. Unlike skew,
      * slant tries to preserve the perimeter of the tip shape as opposed to its area. This is akin
      * to "pressing" a rectangle into a parallelogram with non-right angles while preserving the
      * side lengths.
      */
-    @get:FloatRange(from = -PI / 2, to = PI / 2)
-    @get:AngleRadiansFloat
-    public val slant: Float
-        get() = BrushTipNative.getSlantRadians(nativePointer)
+    @get:FloatRange(from = -90.0, to = 90.0)
+    @get:AngleDegreesFloat
+    public val slantDegrees: Float
+        get() = BrushTipNative.getSlantDegrees(nativePointer)
 
     /**
      * A unitless parameter in the range [0, 1] that controls the separation between two of the
@@ -153,12 +151,13 @@ private constructor(
         get() = BrushTipNative.getPinch(nativePointer)
 
     /**
-     * Angle in radians specifying the initial rotation of the tip shape after applying [scaleX],
-     * [scaleY], [pinch], and [slant].
+     * Angle in degrees specifying the initial rotation of the tip shape after applying [scaleX],
+     * [scaleY], [pinch], and [slantDegrees]. The rotation is in the direction from the positive
+     * x-axis towards the positive y-axis.
      */
-    @get:AngleRadiansFloat
-    public val rotation: Float
-        get() = BrushTipNative.getRotationRadians(nativePointer)
+    @get:AngleDegreesFloat
+    public val rotationDegrees: Float
+        get() = BrushTipNative.getRotationDegrees(nativePointer)
 
     /**
      * Scales the opacity of the base brush color for this tip, independent of `brush_behavior`s. A
@@ -168,6 +167,7 @@ private constructor(
      * by applicable `brush_behavior`s.
      */
     @get:FloatRange(from = 0.0, to = 2.0)
+    @Deprecated("Use brush paint color functions instead.")
     public val opacityMultiplier: Float
         get() = BrushTipNative.getOpacityMultiplier(nativePointer)
 
@@ -200,13 +200,16 @@ private constructor(
      * unchanged.
      */
     @JvmSynthetic
+    @Suppress("Deprecation") // Still considers deprecated opacityMultiplier.
     public fun copy(
         @FloatRange(from = 0.0, toInclusive = false) scaleX: Float = this.scaleX,
         @FloatRange(from = 0.0, toInclusive = false) scaleY: Float = this.scaleY,
         @FloatRange(from = 0.0, to = 1.0) cornerRounding: Float = this.cornerRounding,
-        @FloatRange(from = -PI / 2, to = PI / 2) @AngleRadiansFloat slant: Float = this.slant,
+        @FloatRange(from = -90.0, to = 90.0)
+        @AngleDegreesFloat
+        slantDegrees: Float = this.slantDegrees,
         @FloatRange(from = 0.0, to = 1.0) pinch: Float = this.pinch,
-        @AngleRadiansFloat rotation: Float = this.rotation,
+        @AngleDegreesFloat rotationDegrees: Float = this.rotationDegrees,
         @FloatRange(from = 0.0, to = 2.0) opacityMultiplier: Float = this.opacityMultiplier,
         @FloatRange(from = 0.0, toInclusive = false)
         particleGapDistanceScale: Float = this.particleGapDistanceScale,
@@ -217,9 +220,9 @@ private constructor(
             scaleX,
             scaleY,
             cornerRounding,
-            slant,
+            slantDegrees,
             pinch,
-            rotation,
+            rotationDegrees,
             opacityMultiplier,
             particleGapDistanceScale,
             particleGapDurationMillis,
@@ -230,14 +233,15 @@ private constructor(
      * Returns a [Builder] with values set equivalent to `this`. Java developers, use the returned
      * builder to build a copy of a BrushTip. Kotlin developers, see [copy] method.
      */
+    @Suppress("Deprecation") // Still considers deprecated opacityMultiplier.
     public fun toBuilder(): Builder =
         Builder()
             .setScaleX(scaleX)
             .setScaleY(scaleY)
             .setCornerRounding(cornerRounding)
-            .setSlant(slant)
+            .setSlantDegrees(slantDegrees)
             .setPinch(pinch)
-            .setRotation(rotation)
+            .setRotationDegrees(rotationDegrees)
             .setOpacityMultiplier(opacityMultiplier)
             .setParticleGapDistanceScale(particleGapDistanceScale)
             .setParticleGapDurationMillis(particleGapDurationMillis)
@@ -254,9 +258,9 @@ private constructor(
         private var scaleX: Float = 1f
         private var scaleY: Float = 1f
         private var cornerRounding: Float = 1f
-        private var slant: Float = Angle.ZERO
+        @AngleDegreesFloat private var slantDegrees: Float = 0f
         private var pinch: Float = 0f
-        private var rotation: Float = Angle.ZERO
+        @AngleDegreesFloat private var rotationDegrees: Float = 0f
         private var opacityMultiplier: Float = 1f
         private var particleGapDistanceScale: Float = 0F
         private var particleGapDurationMillis: Long = 0L
@@ -276,18 +280,19 @@ private constructor(
             @FloatRange(from = 0.0, to = 1.0) cornerRounding: Float
         ): Builder = apply { this.cornerRounding = cornerRounding }
 
-        public fun setSlant(
-            @FloatRange(from = -PI / 2, to = PI / 2) @AngleRadiansFloat slant: Float
-        ): Builder = apply { this.slant = slant }
+        public fun setSlantDegrees(
+            @FloatRange(from = -90.0, to = 90.0) @AngleDegreesFloat degrees: Float
+        ): Builder = apply { slantDegrees = degrees }
 
         public fun setPinch(@FloatRange(from = 0.0, to = 1.0) pinch: Float): Builder = apply {
             this.pinch = pinch
         }
 
-        public fun setRotation(@AngleRadiansFloat rotation: Float): Builder = apply {
-            this.rotation = rotation
+        public fun setRotationDegrees(@AngleDegreesFloat degrees: Float): Builder = apply {
+            rotationDegrees = degrees
         }
 
+        @Deprecated("Use brush paint color functions instead.")
         public fun setOpacityMultiplier(
             @FloatRange(from = 0.0, to = 2.0) opacityMultiplier: Float
         ): Builder = apply { this.opacityMultiplier = opacityMultiplier }
@@ -309,9 +314,9 @@ private constructor(
                 scaleX,
                 scaleY,
                 cornerRounding,
-                slant,
+                slantDegrees,
                 pinch,
-                rotation,
+                rotationDegrees,
                 opacityMultiplier,
                 particleGapDistanceScale,
                 particleGapDurationMillis,
@@ -319,27 +324,29 @@ private constructor(
             )
     }
 
+    @Suppress("Deprecation") // Still considers deprecated opacityMultiplier.
     override fun equals(other: Any?): Boolean {
         if (other == null || other !is BrushTip) return false
         return scaleY == other.scaleY &&
             scaleX == other.scaleX &&
             pinch == other.pinch &&
             cornerRounding == other.cornerRounding &&
-            slant == other.slant &&
-            rotation == other.rotation &&
+            slantDegrees == other.slantDegrees &&
+            rotationDegrees == other.rotationDegrees &&
             particleGapDistanceScale == other.particleGapDistanceScale &&
             particleGapDurationMillis == other.particleGapDurationMillis &&
             opacityMultiplier == other.opacityMultiplier &&
             behaviors == other.behaviors
     }
 
+    @Suppress("Deprecation") // Still considers deprecated opacityMultiplier.
     override fun hashCode(): Int {
         var result = scaleX.hashCode()
         result = 31 * result + scaleY.hashCode()
         result = 31 * result + pinch.hashCode()
         result = 31 * result + cornerRounding.hashCode()
-        result = 31 * result + slant.hashCode()
-        result = 31 * result + rotation.hashCode()
+        result = 31 * result + slantDegrees.hashCode()
+        result = 31 * result + rotationDegrees.hashCode()
         result = 31 * result + opacityMultiplier.hashCode()
         result = 31 * result + particleGapDistanceScale.hashCode()
         result = 31 * result + particleGapDurationMillis.hashCode()
@@ -347,10 +354,11 @@ private constructor(
         return result
     }
 
+    @Suppress("Deprecation") // Still outputs deprecated opacityMultiplier.
     override fun toString(): String =
         "BrushTip(scale=($scaleX, $scaleY), cornerRounding=$cornerRounding," +
-            " slant=$slant, pinch=$pinch, rotation=$rotation, opacityMultiplier=$opacityMultiplier," +
-            " particleGapDistanceScale=$particleGapDistanceScale," +
+            " slantDegrees=$slantDegrees, pinch=$pinch, rotationDegrees=$rotationDegrees," +
+            " opacityMultiplier=$opacityMultiplier, particleGapDistanceScale=$particleGapDistanceScale," +
             " particleGapDurationMillis=$particleGapDurationMillis, behaviors=$behaviors)"
 
     /** Delete native BrushTip memory. */
@@ -402,9 +410,9 @@ private object BrushTipNative {
         scaleX: Float,
         scaleY: Float,
         cornerRounding: Float,
-        slant: Float,
+        slantDegrees: Float,
         pinch: Float,
-        rotation: Float,
+        rotationDegrees: Float,
         opacityMultiplier: Float,
         particleGapDistanceScale: Float,
         particleGapDurationMillis: Long,
@@ -420,11 +428,11 @@ private object BrushTipNative {
 
     @UsedByNative external fun getCornerRounding(nativePointer: Long): Float
 
-    @UsedByNative external fun getSlantRadians(nativePointer: Long): Float
+    @UsedByNative @AngleDegreesFloat external fun getSlantDegrees(nativePointer: Long): Float
 
     @UsedByNative external fun getPinch(nativePointer: Long): Float
 
-    @UsedByNative external fun getRotationRadians(nativePointer: Long): Float
+    @UsedByNative @AngleDegreesFloat external fun getRotationDegrees(nativePointer: Long): Float
 
     @UsedByNative external fun getOpacityMultiplier(nativePointer: Long): Float
 

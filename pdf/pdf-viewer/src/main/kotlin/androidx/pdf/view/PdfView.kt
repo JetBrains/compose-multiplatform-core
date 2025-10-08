@@ -41,6 +41,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
 import android.view.inputmethod.InputMethodManager
+import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
@@ -152,6 +153,23 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             invalidate()
         }
 
+    /**
+     * Controls the vertical alignment of a page within the [PdfView].
+     *
+     * This attribute aligns a page within the view when the page's height is smaller than the
+     * view's height. In this state, scrolling and panning are disabled as the entire page is
+     * visible. However, zooming in will re-enable scrolling and panning, aligning page to the top.
+     *
+     * @see VerticalAlignment
+     */
+    @VerticalAlignment
+    public var verticalAlignment: Int = VERTICAL_ALIGNMENT_CENTER
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
+
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var isFormFillingEnabled: Boolean = false
@@ -226,6 +244,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
         if (typedArray.hasValue(R.styleable.PdfView_maxZoom)) {
             maxZoom = typedArray.getFloat(R.styleable.PdfView_maxZoom, maxZoom)
+        }
+        if (typedArray.hasValue(R.styleable.PdfView_verticalAlignment)) {
+            verticalAlignment =
+                typedArray.getInt(R.styleable.PdfView_verticalAlignment, VERTICAL_ALIGNMENT_CENTER)
         }
         typedArray.recycle()
     }
@@ -1289,11 +1311,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
             // to compute the maximum scroll position. Scroll position is absolute, not relative
             val contentHeightPx = toViewCoord(contentHeight.toFloat(), zoom, scroll = 0)
-            return if (contentHeightPx < height) {
+            return if (verticalAlignment == VERTICAL_ALIGNMENT_TOP || contentHeightPx > height) {
+                0
+            } else {
                 // Center vertically
                 -(height - contentHeightPx).roundToInt() / 2
-            } else {
-                0
             }
         }
 
@@ -1301,7 +1323,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
         // to compute the maximum scroll position. Scroll position is absolute, not relative
         val contentHeightPx = toViewCoord(contentHeight.toFloat(), zoom, scroll = 0)
-        return if (contentHeightPx < height) {
+        return if (contentHeightPx < height && verticalAlignment == VERTICAL_ALIGNMENT_TOP) {
+            0
+        } else if (contentHeightPx < height) {
             // Center vertically
             -(height - contentHeightPx).roundToInt() / 2
         } else {
@@ -2068,6 +2092,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         return this
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(VERTICAL_ALIGNMENT_TOP, VERTICAL_ALIGNMENT_CENTER)
+    public annotation class VerticalAlignment
+
     /** Adjusts the position of [PdfView] in response to gestures detected by [GestureTracker] */
     private inner class ZoomScrollGestureHandler : GestureTracker.GestureHandler() {
 
@@ -2385,6 +2414,28 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * e.g. settling on a final position following a fling gesture.
          */
         public const val GESTURE_STATE_SETTLING: Int = 2
+
+        /**
+         * Vertically aligns the page to the top of the PdfView.
+         *
+         * This alignment is used when the page is scaled to fit the view's width, and the resulting
+         * page height is less than the view's height. The top of the page will be positioned at the
+         * top of the [PdfView]. If the scaled page height is greater than the height of [PdfView],
+         * the top of the first page is always at the top of the view by default, and this alignment
+         * will have no effect.
+         */
+        public const val VERTICAL_ALIGNMENT_TOP: Int = 0
+
+        /**
+         * Vertically aligns the page to the center of the PdfView.
+         *
+         * This alignment is used when the page is scaled to fit the view's width, and the resulting
+         * page height is less than the view's height. The top of the page will be positioned at the
+         * center of the [PdfView]. If the scaled page height is greater than the height of
+         * [PdfView], the top of the first page is always at the top of the view by default, and
+         * this alignment will have no effect.
+         */
+        public const val VERTICAL_ALIGNMENT_CENTER: Int = 1
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_INIT_ZOOM: Float = 1.0f
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_MAX_ZOOM: Float = 25.0f

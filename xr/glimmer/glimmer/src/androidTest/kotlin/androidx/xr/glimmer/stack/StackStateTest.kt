@@ -20,22 +20,27 @@ import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeDown
-import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.glimmer.Text
+import androidx.xr.glimmer.performIndirectSwipe
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -50,6 +55,8 @@ import org.junit.runner.RunWith
 class StackStateTest {
 
     @get:Rule val rule = createComposeRule()
+
+    private val focusRequester = FocusRequester()
 
     @Test
     fun initialState_propertiesReturnDefaultValues() {
@@ -114,7 +121,7 @@ class StackStateTest {
         val state = StackState()
         rule.setContent {
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+                items(5) { index -> StackItem("Item $index") }
             }
         }
 
@@ -131,7 +138,7 @@ class StackStateTest {
         rule.setContent {
             scope = rememberCoroutineScope()
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+                items(5) { index -> StackItem("Item $index") }
             }
         }
 
@@ -146,7 +153,7 @@ class StackStateTest {
         val state = StackState()
         rule.setContent {
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+                items(5) { index -> StackItem("Item $index") }
             }
         }
 
@@ -162,7 +169,7 @@ class StackStateTest {
         val state = StackState()
         rule.setContent {
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+                items(5) { index -> StackItem("Item $index") }
             }
         }
 
@@ -183,7 +190,7 @@ class StackStateTest {
         val state = StackState()
         rule.setContent {
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+                items(5) { index -> StackItem("Item $index") }
             }
         }
 
@@ -203,7 +210,7 @@ class StackStateTest {
         val state = StackState()
         rule.setContent {
             VerticalStack(modifier = Modifier.size(100.dp).testTag("stack"), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+                items(5) { index -> StackItem("Item $index") }
             }
         }
 
@@ -226,14 +233,14 @@ class StackStateTest {
     @Test
     fun isScrollInProgress_isTrueDuringSwipe() {
         val state = StackState()
-        rule.setContent {
-            VerticalStack(modifier = Modifier.size(100.dp).testTag("stack"), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+        rule.setContentWithInitialFocus {
+            VerticalStack(modifier = Modifier.size(100.dp), state = state) {
+                items(5) { index -> StackItem("Item $index") }
             }
         }
         rule.mainClock.autoAdvance = false
 
-        rule.onNodeWithTag("stack").performTouchInput { swipeUp() }
+        performIndirectSwipe(100.dp)
 
         assertThat(state.isScrollInProgress).isTrue()
 
@@ -249,7 +256,7 @@ class StackStateTest {
         val state = StackState()
         rule.setContent {
             VerticalStack(modifier = Modifier.size(100.dp), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+                items(5) { index -> StackItem("Item $index") }
             }
         }
         rule.waitForIdle()
@@ -274,9 +281,9 @@ class StackStateTest {
     @Test
     fun lastScrolledForwardAndBackward_areUpdatedAfterSwipe() {
         val state = StackState()
-        rule.setContent {
-            VerticalStack(modifier = Modifier.size(100.dp).testTag("stack"), state = state) {
-                items(5) { index -> Box(modifier = Modifier.fillMaxSize()) { Text("Item $index") } }
+        rule.setContentWithInitialFocus {
+            VerticalStack(modifier = Modifier.size(100.dp), state = state) {
+                items(5) { index -> StackItem("Item $index") }
             }
         }
         rule.waitForIdle()
@@ -284,13 +291,15 @@ class StackStateTest {
         assertThat(state.lastScrolledBackward).isFalse()
         assertThat(state.lastScrolledForward).isFalse()
 
-        rule.onNodeWithTag("stack").performTouchInput { swipeUp() }
+        performIndirectSwipe(100.dp)
         rule.waitForIdle()
 
         assertThat(state.lastScrolledBackward).isFalse()
         assertThat(state.lastScrolledForward).isTrue()
 
-        rule.onNodeWithTag("stack").performTouchInput { swipeDown() }
+        // TODO(b/413429531): remove once VerticalStack supports moving focus automatically.
+        requestFocus()
+        performIndirectSwipe((-100).dp)
         rule.waitForIdle()
 
         assertThat(state.lastScrolledBackward).isTrue()
@@ -306,5 +315,25 @@ class StackStateTest {
         val restored = StackState.Saver.restore(saved)!!
 
         assertThat(restored.topItem).isEqualTo(5)
+    }
+
+    @Composable
+    private fun StackItem(text: String) {
+        Box(modifier = Modifier.fillMaxSize().focusTarget()) { Text(text) }
+    }
+
+    private fun ComposeContentTestRule.setContentWithInitialFocus(content: @Composable () -> Unit) {
+        setContent { Box(Modifier.focusRequester(focusRequester)) { content() } }
+        requestFocus()
+    }
+
+    private fun performIndirectSwipe(distance: Dp) {
+        val distancePx = with(rule.density) { distance.toPx() }
+        rule.onRoot().performIndirectSwipe(rule, distancePx)
+    }
+
+    private fun requestFocus() {
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.waitForIdle()
     }
 }

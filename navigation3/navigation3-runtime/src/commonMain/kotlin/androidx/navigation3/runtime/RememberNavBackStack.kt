@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
+@file:JvmName("RememberNavBackStackKt")
+@file:JvmMultifileClass
+
 package androidx.navigation3.runtime
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.navigation3.runtime.serialization.NavBackStackSerializer
 import androidx.savedstate.serialization.SavedStateConfiguration
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 import kotlinx.serialization.modules.SerializersModule
 
 /**

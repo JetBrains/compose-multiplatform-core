@@ -53,6 +53,10 @@ internal class KspFieldElement(
         listOfNotNull(getter, setter)
     }
 
+    val syntheticStaticAccessors: List<KspSyntheticPropertyMethodElement> by lazy {
+        syntheticAccessors.mapNotNull { it.syntheticStaticAccessor }
+    }
+
     override val getter: KspSyntheticPropertyMethodElement? by lazy {
         declaration.getter?.let { createSyntheticMethod(it) }
     }
@@ -76,12 +80,7 @@ internal class KspFieldElement(
         ) {
             null
         } else {
-            KspSyntheticPropertyMethodElement.create(
-                env = env,
-                field = this,
-                accessor = accessor,
-                isSyntheticStatic = false,
-            )
+            KspSyntheticPropertyMethodElement.create(env = env, field = this, accessor = accessor)
         }
     }
 

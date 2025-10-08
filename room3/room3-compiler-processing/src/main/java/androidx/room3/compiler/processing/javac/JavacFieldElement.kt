@@ -50,11 +50,13 @@ internal class JavacFieldElement(env: JavacProcessingEnv, element: VariableEleme
     }
 
     override val kotlinMetadata: KmPropertyContainer? by lazy {
-        (enclosingElement as? JavacTypeElement)?.kotlinMetadata?.getPropertyMetadata(element)
+        enclosingElement.kotlinMetadata?.getPropertyMetadata(element)
+            // If the metadata isn't in the enclosing class, check the companion object next.
+            ?: enclosingElement.companionObject?.kotlinMetadata?.getPropertyMetadata(element)
     }
 
     private val syntheticMethodForAnnotations: JavacMethodElement? by lazy {
-        (enclosingElement as? JavacTypeElement)?.getSyntheticMethodsForAnnotations()?.singleOrNull {
+        enclosingElement.getSyntheticMethodsForAnnotations().singleOrNull {
             it.name == kotlinMetadata?.syntheticMethodForAnnotations?.name
         }
     }

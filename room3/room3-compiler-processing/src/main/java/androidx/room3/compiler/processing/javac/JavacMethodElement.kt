@@ -71,7 +71,9 @@ internal class JavacMethodElement(env: JavacProcessingEnv, element: ExecutableEl
     }
 
     override val kotlinMetadata: KmFunctionContainer? by lazy {
-        (enclosingElement as? JavacTypeElement)?.kotlinMetadata?.getFunctionMetadata(element)
+        enclosingElement.kotlinMetadata?.getFunctionMetadata(element)
+            // If the metadata isn't in the enclosing class, check the companion object next.
+            ?: enclosingElement.companionObject?.kotlinMetadata?.getFunctionMetadata(element)
     }
 
     override val executableType: JavacMethodType by lazy {

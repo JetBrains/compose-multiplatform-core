@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package androidx.navigation3.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
@@ -24,7 +25,8 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventTransitionState
-import androidx.navigationevent.compose.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import androidx.navigationevent.testing.TestNavigationEventDispatcherOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -53,7 +55,10 @@ internal class NavDisplayInfoTest {
         }
 
         rule.setContent {
-            NavigationEventDispatcherOwner(parent = dispatcherOwner) {
+            // Remember a new child owner, linked to the test's parent dispatcher
+            val childOwner = rememberNavigationEventDispatcherOwner(parent = dispatcherOwner)
+            // Manually provide the new child owner to NavDisplay
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides childOwner) {
                 NavDisplay(
                     backStack = backStack,
                     sceneStrategy = sceneStrategy,

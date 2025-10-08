@@ -32,23 +32,32 @@ import androidx.ink.brush.BrushPaint.TextureOrigin
 import androidx.ink.brush.BrushPaint.TextureSizeUnit
 import androidx.ink.brush.BrushPaint.TextureWrap
 import androidx.ink.geometry.Angle
+import androidx.ink.geometry.AngleDegreesFloat
 import kotlin.jvm.JvmStatic
 
 /**
  * Provides a fixed set of stock [BrushFamily] objects that any app can use.
  *
- * All brush designs are versioned, so apps can safely store input points and brush specs instead of
- * the pixel result, but be able to regenerate strokes from stored input points that look like the
- * strokes originally drawn by the user. Brush designs are intended to evolve over time, and are
- * released as update packs to the stock library.
+ * All stock brushes are versioned, so apps can store input points and brush specs instead of the
+ * pixel result, but be able to regenerate strokes from stored input points that look generally like
+ * the strokes originally drawn by the user. Stock brushes are intended to evolve over time.
  *
- * Each successive brush version will keep to the spirit of the brush, but the actual effect can
+ * Each successive stock brush version will keep to the spirit of the brush, but the details can
  * change between versions. For example, a new version of the highlighter may introduce a variation
  * on how round the tip is, or what sort of curve maps color to pressure.
  *
- * We generally recommend that applications use the latest brush version available; but some use
- * cases, such as art, should be careful to track which version of a brush was used if the document
- * is regenerated, so that the user gets the same visual result.
+ * We generally recommend that applications use the latest brush version available, which is what
+ * the factory functions in this class do by default. But for some artistic use-cases, it may be
+ * useful to specify a specific stock brush version to minimize visual changes when the Ink
+ * dependency is upgraded. For example, the following will always return the initial version of the
+ * marker stock brush.
+ *
+ * ```
+ * val markerBrush = StockBrushes.marker(StockBrushes.MarkerVersion.V1)
+ * ```
+ *
+ * Specific stock brushes may see minor tweaks and bug-fixes when the library is upgraded, but will
+ * avoid major changes in behavior.
  */
 @OptIn(ExperimentalInkCustomBrushApi::class)
 public object StockBrushes {
@@ -59,10 +68,9 @@ public object StockBrushes {
      */
     private const val EMOJI_STAMP_SCALE = 1.5f
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @JvmStatic
-    public val predictionFadeOutBehavior: BrushBehavior =
+    public val predictionFadeOutBehavior: BrushBehavior by lazy {
         BrushBehavior(
             terminalNodes =
                 listOf(
@@ -97,39 +105,63 @@ public object StockBrushes {
                     )
                 )
         )
+    }
 
-    /**
-     * Version 1 of a simple, circular fixed-width brush.
-     *
-     * The behavior of this [BrushFamily] will not meaningfully change in future releases. More
-     * significant updates would be contained in a [BrushFamily] with a different name specifying a
-     * later version number.
-     */
-    @JvmStatic
-    public val markerV1: BrushFamily =
+    /** Version option for the [marker] stock brush factory function. */
+    public class MarkerVersion private constructor(private val name: String) {
+
+        override fun toString(): String = "MarkerVersion.$name"
+
+        public companion object {
+            /** Initial version of a simple, circular fixed-width brush. */
+            @JvmField public val V1: MarkerVersion = MarkerVersion("V1")
+
+            /** Whichever version of marker is currently the latest. */
+            @JvmField public val LATEST: MarkerVersion = V1
+        }
+    }
+
+    private val markerV1 by lazy {
         BrushFamily(
             tip = BrushTip(behaviors = listOf(predictionFadeOutBehavior)),
             inputModel = BrushFamily.SPRING_MODEL,
         )
+    }
 
     /**
-     * The latest version of a simple, circular fixed-width brush.
+     * Factory function for constructing a simple marker brush.
      *
-     * The behavior of this [BrushFamily] may change in future releases, as it always points to the
-     * latest version of the marker.
-     */
-    @JvmStatic public val markerLatest: BrushFamily = markerV1
-
-    /**
-     * Version 1 of a pressure- and speed-sensitive brush that is optimized for handwriting with a
-     * stylus.
-     *
-     * The behavior of this [BrushFamily] will not meaningfully change in future releases. More
-     * significant updates would be contained in a [BrushFamily] with a different name specifying a
-     * later version number.
+     * @param version The version of the marker brush to use. By default, uses the latest version.
      */
     @JvmStatic
-    public val pressurePenV1: BrushFamily =
+    @JvmOverloads
+    public fun marker(version: MarkerVersion = MarkerVersion.LATEST): BrushFamily =
+        when (version) {
+            MarkerVersion.V1 -> markerV1
+            else -> throw IllegalArgumentException("Unsupported marker version: $version")
+        }
+
+    /** Version option for the [pressurePen] stock brush factory function. */
+    public class PressurePenVersion private constructor(private val name: String) {
+
+        override fun toString(): String = "PressurePenVersion.$name"
+
+        public companion object {
+            /**
+             * Initial version of a pressure- and speed-sensitive brush that is optimized for
+             * handwriting with a stylus.
+             */
+            @JvmField public val V1: PressurePenVersion = PressurePenVersion("V1")
+
+            /**
+             * The latest version of a pressure- and speed-sensitive brush that is optimized for
+             * handwriting with a stylus.
+             */
+            @JvmField public val LATEST: PressurePenVersion = V1
+        }
+    }
+
+    private val pressurePenV1 by lazy {
         BrushFamily(
             tip =
                 BrushTip(
@@ -180,33 +212,58 @@ public object StockBrushes {
                 ),
             inputModel = BrushFamily.SPRING_MODEL,
         )
+    }
 
     /**
-     * The latest version of a pressure- and speed-sensitive brush that is optimized for handwriting
-     * with a stylus.
+     * Factory function for constructing a pressure- and speed-sensitive brush that is optimized for
+     * handwriting with a stylus.
      *
-     * The behavior of this [BrushFamily] may change in future releases, as it always points to the
-     * latest version of the pressure pen.
-     */
-    @JvmStatic public val pressurePenLatest: BrushFamily = pressurePenV1
-
-    /**
-     * Version 1 of a chisel-tip brush that is intended for highlighting text in a document (when
-     * used with a translucent brush color).
-     *
-     * The behavior of this [BrushFamily] will not meaningfully change in future releases. More
-     * significant updates would be contained in a [BrushFamily] with a different name specifying a
-     * later version number.
+     * @param version The version of the pressure pen brush to use. By default, uses the latest
+     *   version.
      */
     @JvmStatic
-    public val highlighterV1: BrushFamily =
+    @JvmOverloads
+    public fun pressurePen(version: PressurePenVersion = PressurePenVersion.LATEST): BrushFamily =
+        when (version) {
+            PressurePenVersion.V1 -> pressurePenV1
+            else -> throw IllegalArgumentException("Unsupported pressure pen version: $version")
+        }
+
+    /** Version option for the [highlighter] stock brush factory function. */
+    public class HighlighterVersion private constructor(private val name: String) {
+
+        override fun toString(): String = "HighlighterVersion.$name"
+
+        public companion object {
+            /**
+             * Initial of a chisel-tip brush that is intended for highlighting text in a document
+             * (when used with a translucent brush color).
+             */
+            @JvmField public val V1: HighlighterVersion = HighlighterVersion("V1")
+
+            /**
+             * The latest version of a chisel-tip brush that is intended for highlighting text in a
+             * document (when used with a translucent brush color).
+             */
+            @JvmField public val LATEST: HighlighterVersion = V1
+        }
+    }
+
+    private val selfOverlapToHighlighterV1 =
+        mapOf(
+            SelfOverlap.ANY to lazy { highlighterV1(SelfOverlap.ANY) },
+            SelfOverlap.ACCUMULATE to lazy { highlighterV1(SelfOverlap.ACCUMULATE) },
+            SelfOverlap.DISCARD to lazy { highlighterV1(SelfOverlap.DISCARD) },
+        )
+
+    private fun highlighterV1(selfOverlap: SelfOverlap) =
         BrushFamily(
             tip =
                 BrushTip(
                     scaleX = 0.25f,
                     scaleY = 1f,
                     cornerRounding = 0.3f,
-                    rotation = Angle.degreesToRadians(150f),
+                    rotationDegrees = 150f,
                     behaviors =
                         listOf(
                             predictionFadeOutBehavior,
@@ -252,28 +309,57 @@ public object StockBrushes {
                             ),
                         ),
                 ),
+            paint = BrushPaint(selfOverlap = selfOverlap),
             inputModel = BrushFamily.SPRING_MODEL,
         )
 
     /**
-     * The latest version of a chisel-tip brush that is intended for highlighting text in a document
-     * (when used with a translucent brush color).
+     * Factory function for constructing a chisel-tip brush that is intended for highlighting text
+     * in a document (when used with a translucent brush color).
      *
-     * The behavior of this [BrushFamily] may change in future releases, as it always points to the
-     * latest version of the pressure pen.
-     */
-    @JvmStatic public val highlighterLatest: BrushFamily = highlighterV1
-
-    /**
-     * Version 1 of a brush that appears as rounded rectangles with gaps in between them. This may
-     * be decorative, or can be used to signify a user interaction like free-form (lasso) selection.
-     *
-     * The behavior of this [BrushFamily] will not meaningfully change in future releases. More
-     * significant updates would be contained in a [BrushFamily] with a different name specifying a
-     * later version number.
+     * @param selfOverlap Guidance to renderers on how to treat self-overlapping areas of strokes
+     *   created with this brush. See [SelfOverlap] for more detail. Consider using
+     *   [SelfOverlap.DISCARD] if the visual representation of the stroke must look exactly the same
+     *   across all Android versions, or if the visual representation must match that of an exported
+     *   PDF path or SVG object based on strokes authored using this brush.
+     * @param version The version of the highlighter brush to use. By default, uses the latest
+     *   version.
      */
     @JvmStatic
-    public val dashedLineV1: BrushFamily =
+    @JvmOverloads
+    public fun highlighter(
+        selfOverlap: SelfOverlap = SelfOverlap.ANY,
+        version: HighlighterVersion = HighlighterVersion.LATEST,
+    ): BrushFamily =
+        when (version) {
+            HighlighterVersion.V1 -> {
+                checkNotNull(selfOverlapToHighlighterV1[selfOverlap]) {
+                        "Unrecognized SelfOverlap value: $selfOverlap"
+                    }
+                    .value
+            }
+            else -> throw IllegalArgumentException("Unsupported highlighter version: $version")
+        }
+
+    /** Version option for the [dashedLine] stock brush factory function. */
+    public class DashedLineVersion private constructor(private val name: String) {
+
+        override fun toString(): String = "DashedLineVersion.$name"
+
+        public companion object {
+            /**
+             * Initial version of a brush that appears as rounded rectangles with gaps in between
+             * them. This may be decorative, or can be used to signify a user interaction like
+             * free-form (lasso) selection.
+             */
+            @JvmField public val V1: DashedLineVersion = DashedLineVersion("V1")
+
+            /** The latest version of a dashed-line brush. */
+            @JvmField public val LATEST: DashedLineVersion = V1
+        }
+    }
+
+    private val dashedLineV1 by lazy {
         BrushFamily(
             tip =
                 BrushTip(
@@ -303,16 +389,23 @@ public object StockBrushes {
                 ),
             inputModel = BrushFamily.SPRING_MODEL,
         )
+    }
 
     /**
-     * The latest version of a brush that appears as rounded rectangles with gaps in between them.
-     * This may be decorative, or can be used to signify a user interaction like free-form (lasso)
-     * selection.
+     * Factory function for constructing a brush that appears as rounded rectangles with gaps in
+     * between them. This may be decorative, or can be used to signify a user interaction like
+     * free-form (lasso) selection.
      *
-     * The behavior of this [BrushFamily] may change in future releases, as it always points to the
-     * latest version of the pressure pen.
+     * @param version The version of the dashed line brush to use. By default, uses the latest
+     *   version.
      */
-    @JvmStatic public val dashedLineLatest: BrushFamily = dashedLineV1
+    @JvmStatic
+    @JvmOverloads
+    public fun dashedLine(version: DashedLineVersion = DashedLineVersion.LATEST): BrushFamily =
+        when (version) {
+            DashedLineVersion.V1 -> dashedLineV1
+            else -> throw IllegalArgumentException("Unsupported dashed line version: $version")
+        }
 
     /** The client texture ID for the background of the version-1 pencil brush. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
@@ -331,10 +424,12 @@ public object StockBrushes {
      * The behavior of this [BrushFamily] may change significantly in future releases. Once it has
      * stabilized, it will be renamed to `pencilV1`.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    // TODO: b/373587591 - Change this to be consistent with the other brush factory functions
+    // before
+    // release.
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @JvmStatic
-    public val pencilUnstable: BrushFamily =
+    public val pencilUnstable: BrushFamily by lazy {
         BrushFamily(
             tip = BrushTip(behaviors = listOf(predictionFadeOutBehavior)),
             paint =
@@ -351,13 +446,32 @@ public object StockBrushes {
                 ),
             inputModel = BrushFamily.SPRING_MODEL,
         )
+    }
+
+    /** Version option for the [emojiHighlighter] stock brush factory function. */
+    public class EmojiHighlighterVersion private constructor(private val name: String) {
+
+        override fun toString(): String = "EmojiHighlighterVersion.$name"
+
+        public companion object {
+            /**
+             * Initial version of emoji highlighter, which has a colored streak drawing behind a
+             * moving emoji sticker, possibly with a trail of miniature versions of the chosen emoji
+             * sparkling behind.
+             */
+            @JvmField public val V1: EmojiHighlighterVersion = EmojiHighlighterVersion("V1")
+
+            /** Whichever version of emoji highlighter is currently the latest. */
+            @JvmField public val LATEST: EmojiHighlighterVersion = V1
+        }
+    }
 
     /**
      * A brush coat that looks like a mini emoji.
      *
      * @param clientTextureId the client texture ID of the emoji to appear in the coat.
      * @param tipScale the scale factor to apply to both X and Y dimensions of the mini emoji
-     * @param tipRotation the rotation to apply to the mini emoji
+     * @param tipRotationDegrees the rotation to apply to the mini emoji
      * @param tipParticleGapDistanceScale the scale factor to apply to the particle gap distance
      * @param positionOffsetRangeStart the start of the range for the position offset behavior
      * @param positionOffsetRangeEnd the end of the range for the position offset behavior
@@ -369,7 +483,7 @@ public object StockBrushes {
     private fun miniEmojiCoat(
         clientTextureId: String,
         tipScale: Float,
-        tipRotation: Float,
+        @AngleDegreesFloat tipRotationDegrees: Float,
         tipParticleGapDistanceScale: Float,
         positionOffsetRangeStart: Float,
         positionOffsetRangeEnd: Float,
@@ -384,7 +498,7 @@ public object StockBrushes {
                     scaleX = tipScale,
                     scaleY = tipScale,
                     cornerRounding = 0f,
-                    rotation = tipRotation,
+                    rotationDegrees = tipRotationDegrees,
                     particleGapDistanceScale = tipParticleGapDistanceScale,
                     behaviors =
                         listOf(
@@ -459,44 +573,23 @@ public object StockBrushes {
                                 sizeX = 1f,
                                 sizeY = 1f,
                                 opacity = 0.4f,
-                                mapping = TextureMapping.WINDING,
+                                mapping = TextureMapping.STAMPING,
                                 blendMode = BlendMode.MODULATE,
                             )
                         )
                 ),
         )
 
-    /**
-     * Version 1 of emoji highlighter--a highlighter with an emoji at the head of the stroke, under
-     * the pointer tip.
-     *
-     * In order to use this brush, the [TextureBitmapStore] provided to your renderer must map the
-     * [clientTextureId] to a bitmap; otherwise, no texture will be visible. The emoji bitmap should
-     * be a square, though the image can have a transparent background for emoji shapes that aren't
-     * square.
-     *
-     * The behavior of this [BrushFamily] will not meaningfully change in future releases. More
-     * significant updates would be contained in a [BrushFamily] with a different name specifying a
-     * later version number.
-     *
-     * @param clientTextureId The client texture ID of the emoji to appear at the end of the stroke.
-     *   This ID should map to a square bitmap with a transparent background in the implementation
-     *   of [androidx.ink.brush.TextureBitmapStore] passed to
-     *   [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer.create].
-     * @param showMiniEmojiTrail Whether to show a trail of miniature emojis disappearing from the
-     *   stroke as it is drawn. Note that this will only render properly starting with Android U,
-     *   and before Android U it is recommended to set this to false.
-     */
-    @JvmOverloads
-    public fun emojiHighlighterV1(
+    private fun emojiHighlighterV1(
         clientTextureId: String,
-        showMiniEmojiTrail: Boolean = false,
+        showMiniEmojiTrail: Boolean,
+        selfOverlap: SelfOverlap,
     ): BrushFamily {
         return BrushFamily(
             coats =
-                // Highlighter coat.
                 buildList() {
                     add(
+                        // Highlighter coat.
                         BrushCoat(
                             tip =
                                 BrushTip(
@@ -642,7 +735,8 @@ public object StockBrushes {
                                                     )
                                             ),
                                         ),
-                                )
+                                ),
+                            paint = BrushPaint(selfOverlap = selfOverlap),
                         )
                     )
                     // Minimoji trail coats.
@@ -651,7 +745,7 @@ public object StockBrushes {
                             miniEmojiCoat(
                                 clientTextureId = clientTextureId,
                                 tipScale = 0.4f,
-                                tipRotation = 0f,
+                                tipRotationDegrees = 0f,
                                 tipParticleGapDistanceScale = 1.0f,
                                 luminosityRangeStart = 0.48f,
                                 luminosityRangeEnd = 2.0f,
@@ -665,7 +759,7 @@ public object StockBrushes {
                             miniEmojiCoat(
                                 clientTextureId = clientTextureId,
                                 tipScale = 0.3f,
-                                tipRotation = -Angle.degreesToRadians(35f),
+                                tipRotationDegrees = -35f,
                                 tipParticleGapDistanceScale = 1.3f,
                                 luminosityRangeStart = 0.8f,
                                 luminosityRangeEnd = 2.0f,
@@ -679,7 +773,7 @@ public object StockBrushes {
                             miniEmojiCoat(
                                 clientTextureId = clientTextureId,
                                 tipScale = 0.45f,
-                                tipRotation = Angle.degreesToRadians(45f),
+                                tipRotationDegrees = 45f,
                                 tipParticleGapDistanceScale = 1.8f,
                                 luminosityRangeStart = 0.8f,
                                 luminosityRangeEnd = 2.0f,
@@ -739,16 +833,12 @@ public object StockBrushes {
     }
 
     /**
-     * The latest version of emoji highlighter--a highlighter with an emoji at the head of the
-     * stroke, under the pointer tip.
+     * Factory function for constructing an emoji highlighter brush.
      *
      * In order to use this brush, the [TextureBitmapStore] provided to your renderer must map the
      * [clientTextureId] to a bitmap; otherwise, no texture will be visible. The emoji bitmap should
      * be a square, though the image can have a transparent background for emoji shapes that aren't
      * square.
-     *
-     * The behavior of this [BrushFamily] may change in future releases, as it always points to the
-     * latest version of the emoji highlighter.
      *
      * @param clientTextureId The client texture ID of the emoji to appear at the end of the stroke.
      *   This ID should map to a square bitmap with a transparent background in the implementation
@@ -757,10 +847,30 @@ public object StockBrushes {
      * @param showMiniEmojiTrail Whether to show a trail of miniature emojis disappearing from the
      *   stroke as it is drawn. Note that this will only render properly starting with Android U,
      *   and before Android U it is recommended to set this to false.
+     * @param selfOverlap Guidance to renderers on how to treat self-overlapping areas of strokes
+     *   created with this brush. See [SelfOverlap] for more detail. Consider using
+     *   [SelfOverlap.DISCARD] if the visual representation of the stroke must look exactly the same
+     *   across all Android versions, or if the visual representation must match that of an exported
+     *   PDF path or SVG object based on strokes authored using this brush.
+     * @param version The version of the emoji highlighter to use. By default, uses the latest
+     *   version of the emoji highlighter brush tip and behavior.
      */
+    @JvmStatic
     @JvmOverloads
-    public fun emojiHighlighterLatest(
+    public fun emojiHighlighter(
         clientTextureId: String,
         showMiniEmojiTrail: Boolean = false,
-    ): BrushFamily = emojiHighlighterV1(clientTextureId, showMiniEmojiTrail)
+        selfOverlap: SelfOverlap = SelfOverlap.ANY,
+        version: EmojiHighlighterVersion = EmojiHighlighterVersion.LATEST,
+    ): BrushFamily =
+        when (version) {
+            EmojiHighlighterVersion.V1 ->
+                emojiHighlighterV1(
+                    clientTextureId = clientTextureId,
+                    showMiniEmojiTrail = showMiniEmojiTrail,
+                    selfOverlap = selfOverlap,
+                )
+            else ->
+                throw IllegalArgumentException("Unsupported emoji highlighter version: $version")
+        }
 }

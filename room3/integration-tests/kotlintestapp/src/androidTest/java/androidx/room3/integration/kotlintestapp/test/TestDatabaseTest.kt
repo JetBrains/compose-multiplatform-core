@@ -31,13 +31,12 @@ import org.junit.Before
 import org.junit.Rule
 
 abstract class TestDatabaseTest(protected val useDriver: UseDriver = UseDriver.NONE) {
-    @Rule @JvmField val countingTaskExecutorRule = CountingTaskExecutorRule()
+    @get:Rule val countingTaskExecutorRule = CountingTaskExecutorRule()
     protected lateinit var database: TestDatabase
     protected lateinit var booksDao: BooksDao
     protected lateinit var usersDao: UsersDao
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         database =
             Room.inMemoryDatabaseBuilder(
@@ -58,7 +57,6 @@ abstract class TestDatabaseTest(protected val useDriver: UseDriver = UseDriver.N
     }
 
     @After
-    @Throws(Exception::class)
     fun tearDown() {
         database.close()
     }

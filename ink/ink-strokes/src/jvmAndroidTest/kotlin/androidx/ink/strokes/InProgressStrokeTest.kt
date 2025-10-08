@@ -691,7 +691,7 @@ class InProgressStrokeTest {
 
         assertThat(stroke.getBrushCoatCount()).isEqualTo(1)
         assertThat(stroke.getMeshPartitionCount(0)).isEqualTo(1)
-        assertThat(stroke.getMeshFormat(0, 0)).isNotNull()
+        assertThat(stroke.getMeshFormat(0)).isNotNull()
     }
 
     @Test
@@ -764,7 +764,7 @@ class InProgressStrokeTest {
         }
     }
 
-    private fun makeBrush() = Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f)
+    private fun makeBrush() = Brush(family = StockBrushes.marker(), size = 10f, epsilon = 0.1f)
 
     @OptIn(ExperimentalInkCustomBrushApi::class)
     private fun makeTimeSinceInputBrush(

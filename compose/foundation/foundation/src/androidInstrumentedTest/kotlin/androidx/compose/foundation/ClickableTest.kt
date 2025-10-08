@@ -132,8 +132,7 @@ import org.junit.runner.RunWith
 class ClickableTest {
 
     private val dispatcher = StandardTestDispatcher()
-
-    @OptIn(ExperimentalTestApi::class) @get:Rule val rule = createComposeRule(dispatcher)
+    @get:Rule val rule = createComposeRule(dispatcher)
 
     private val InstanceOf =
         Correspondence.from<Any, KClass<*>>(
@@ -622,7 +621,6 @@ class ClickableTest {
     }
 
     @Test
-    @Ignore("Fixed in follow up CL (aosp/3768764)")
     fun interactionSource_immediateCancel_noScrollableContainer_indirectTouch() {
         val interactionSource = MutableInteractionSource()
 
@@ -1271,7 +1269,6 @@ class ClickableTest {
     }
 
     @Test
-    @Ignore("Fixed in follow up CL (aosp/3768764)")
     fun interactionSource_cancelledGesture_scrollableContainer_indirectTouch() {
         val interactionSource = MutableInteractionSource()
         lateinit var inputModeManager: InputModeManager

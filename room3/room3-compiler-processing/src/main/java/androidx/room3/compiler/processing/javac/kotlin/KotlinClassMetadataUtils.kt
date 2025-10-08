@@ -121,6 +121,8 @@ internal class KmClassContainer(private val env: JavacProcessingEnv, private val
         constructorList.firstOrNull { it.isPrimary() }?.descriptor
     }
 
+    val companionObjectName: String? = kmClass.companionObject
+
     fun isObject() = kmClass.kind == ClassKind.OBJECT
 
     fun isCompanionObject() = kmClass.kind == ClassKind.COMPANION_OBJECT

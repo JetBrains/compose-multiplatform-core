@@ -84,28 +84,89 @@ package androidx.ink.brush {
     property public androidx.ink.brush.InputToolType UNKNOWN;
   }
 
+  public final class SelfOverlap {
+    field public static final androidx.ink.brush.SelfOverlap ACCUMULATE;
+    field public static final androidx.ink.brush.SelfOverlap ANY;
+    field public static final androidx.ink.brush.SelfOverlap.Companion Companion;
+    field public static final androidx.ink.brush.SelfOverlap DISCARD;
+  }
+
+  public static final class SelfOverlap.Companion {
+    property public androidx.ink.brush.SelfOverlap ACCUMULATE;
+    property public androidx.ink.brush.SelfOverlap ANY;
+    property public androidx.ink.brush.SelfOverlap DISCARD;
+  }
+
   public final class StockBrushes {
-    method public androidx.ink.brush.BrushFamily emojiHighlighterLatest(String clientTextureId);
-    method public androidx.ink.brush.BrushFamily emojiHighlighterLatest(String clientTextureId, optional boolean showMiniEmojiTrail);
-    method public androidx.ink.brush.BrushFamily emojiHighlighterV1(String clientTextureId);
-    method public androidx.ink.brush.BrushFamily emojiHighlighterV1(String clientTextureId, optional boolean showMiniEmojiTrail);
-    method @InaccessibleFromKotlin public static androidx.ink.brush.BrushFamily getDashedLineLatest();
-    method @InaccessibleFromKotlin public static androidx.ink.brush.BrushFamily getDashedLineV1();
-    method @InaccessibleFromKotlin public static androidx.ink.brush.BrushFamily getHighlighterLatest();
-    method @InaccessibleFromKotlin public static androidx.ink.brush.BrushFamily getHighlighterV1();
-    method @InaccessibleFromKotlin public static androidx.ink.brush.BrushFamily getMarkerLatest();
-    method @InaccessibleFromKotlin public static androidx.ink.brush.BrushFamily getMarkerV1();
-    method @InaccessibleFromKotlin public static androidx.ink.brush.BrushFamily getPressurePenLatest();
-    method @InaccessibleFromKotlin public static androidx.ink.brush.BrushFamily getPressurePenV1();
-    property public static androidx.ink.brush.BrushFamily dashedLineLatest;
-    property public static androidx.ink.brush.BrushFamily dashedLineV1;
-    property public static androidx.ink.brush.BrushFamily highlighterLatest;
-    property public static androidx.ink.brush.BrushFamily highlighterV1;
-    property public static androidx.ink.brush.BrushFamily markerLatest;
-    property public static androidx.ink.brush.BrushFamily markerV1;
-    property public static androidx.ink.brush.BrushFamily pressurePenLatest;
-    property public static androidx.ink.brush.BrushFamily pressurePenV1;
+    method public static androidx.ink.brush.BrushFamily dashedLine();
+    method public static androidx.ink.brush.BrushFamily dashedLine(optional androidx.ink.brush.StockBrushes.DashedLineVersion version);
+    method public static androidx.ink.brush.BrushFamily emojiHighlighter(String clientTextureId);
+    method public static androidx.ink.brush.BrushFamily emojiHighlighter(String clientTextureId, optional boolean showMiniEmojiTrail);
+    method public static androidx.ink.brush.BrushFamily emojiHighlighter(String clientTextureId, optional boolean showMiniEmojiTrail, optional androidx.ink.brush.SelfOverlap selfOverlap);
+    method public static androidx.ink.brush.BrushFamily emojiHighlighter(String clientTextureId, optional boolean showMiniEmojiTrail, optional androidx.ink.brush.SelfOverlap selfOverlap, optional androidx.ink.brush.StockBrushes.EmojiHighlighterVersion version);
+    method public static androidx.ink.brush.BrushFamily highlighter();
+    method public static androidx.ink.brush.BrushFamily highlighter(optional androidx.ink.brush.SelfOverlap selfOverlap);
+    method public static androidx.ink.brush.BrushFamily highlighter(optional androidx.ink.brush.SelfOverlap selfOverlap, optional androidx.ink.brush.StockBrushes.HighlighterVersion version);
+    method public static androidx.ink.brush.BrushFamily marker();
+    method public static androidx.ink.brush.BrushFamily marker(optional androidx.ink.brush.StockBrushes.MarkerVersion version);
+    method public static androidx.ink.brush.BrushFamily pressurePen();
+    method public static androidx.ink.brush.BrushFamily pressurePen(optional androidx.ink.brush.StockBrushes.PressurePenVersion version);
     field public static final androidx.ink.brush.StockBrushes INSTANCE;
+  }
+
+  public static final class StockBrushes.DashedLineVersion {
+    field public static final androidx.ink.brush.StockBrushes.DashedLineVersion.Companion Companion;
+    field public static final androidx.ink.brush.StockBrushes.DashedLineVersion LATEST;
+    field public static final androidx.ink.brush.StockBrushes.DashedLineVersion V1;
+  }
+
+  public static final class StockBrushes.DashedLineVersion.Companion {
+    property public androidx.ink.brush.StockBrushes.DashedLineVersion LATEST;
+    property public androidx.ink.brush.StockBrushes.DashedLineVersion V1;
+  }
+
+  public static final class StockBrushes.EmojiHighlighterVersion {
+    field public static final androidx.ink.brush.StockBrushes.EmojiHighlighterVersion.Companion Companion;
+    field public static final androidx.ink.brush.StockBrushes.EmojiHighlighterVersion LATEST;
+    field public static final androidx.ink.brush.StockBrushes.EmojiHighlighterVersion V1;
+  }
+
+  public static final class StockBrushes.EmojiHighlighterVersion.Companion {
+    property public androidx.ink.brush.StockBrushes.EmojiHighlighterVersion LATEST;
+    property public androidx.ink.brush.StockBrushes.EmojiHighlighterVersion V1;
+  }
+
+  public static final class StockBrushes.HighlighterVersion {
+    field public static final androidx.ink.brush.StockBrushes.HighlighterVersion.Companion Companion;
+    field public static final androidx.ink.brush.StockBrushes.HighlighterVersion LATEST;
+    field public static final androidx.ink.brush.StockBrushes.HighlighterVersion V1;
+  }
+
+  public static final class StockBrushes.HighlighterVersion.Companion {
+    property public androidx.ink.brush.StockBrushes.HighlighterVersion LATEST;
+    property public androidx.ink.brush.StockBrushes.HighlighterVersion V1;
+  }
+
+  public static final class StockBrushes.MarkerVersion {
+    field public static final androidx.ink.brush.StockBrushes.MarkerVersion.Companion Companion;
+    field public static final androidx.ink.brush.StockBrushes.MarkerVersion LATEST;
+    field public static final androidx.ink.brush.StockBrushes.MarkerVersion V1;
+  }
+
+  public static final class StockBrushes.MarkerVersion.Companion {
+    property public androidx.ink.brush.StockBrushes.MarkerVersion LATEST;
+    property public androidx.ink.brush.StockBrushes.MarkerVersion V1;
+  }
+
+  public static final class StockBrushes.PressurePenVersion {
+    field public static final androidx.ink.brush.StockBrushes.PressurePenVersion.Companion Companion;
+    field public static final androidx.ink.brush.StockBrushes.PressurePenVersion LATEST;
+    field public static final androidx.ink.brush.StockBrushes.PressurePenVersion V1;
+  }
+
+  public static final class StockBrushes.PressurePenVersion.Companion {
+    property public androidx.ink.brush.StockBrushes.PressurePenVersion LATEST;
+    property public androidx.ink.brush.StockBrushes.PressurePenVersion V1;
   }
 
   public fun interface TextureBitmapStore {

@@ -170,7 +170,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                     downEvent,
                     pointerId = downEvent.getPointerId(0),
                     Brush.createWithColorIntArgb(
-                        family = StockBrushes.markerLatest,
+                        family = StockBrushes.marker(),
                         colorIntArgb = TestColors.AVOCADO_GREEN,
                         size = 0.5F,
                         epsilon = 0.001F,
@@ -339,7 +339,11 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                         /*source=*/ 0,
                         /*flags=*/ 0,
                     )
-                    .also { eventTime += 1000L }
+                    .also {
+                        // This closed-over variable is read by later runs of this lambda.
+                        @Suppress("ASSIGNED_VALUE_IS_NEVER_READ")
+                        eventTime += 1000L
+                    }
             }
         val downEvent =
             getMotionEvent(
@@ -586,7 +590,11 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                         /*source=*/ 0,
                         /*flags=*/ 0,
                     )
-                    .also { eventTime += 1000L }
+                    .also {
+                        // This closed-over variable is read by later runs of this lambda.
+                        @Suppress("ASSIGNED_VALUE_IS_NEVER_READ")
+                        eventTime += 1000L
+                    }
             }
         val downEvent =
             getMotionEvent(
@@ -994,7 +1002,10 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             InputStreamBuilder.stylusLine(startX = 15F, startY = 45F, endX = 400F, endY = 600F)
         lateinit var strokeId: InProgressStrokeId
         activityScenarioRule.scenario.onActivity { activity ->
-            activity.inProgressStrokesView.rendererFactory = { CustomRenderer() }
+            @Suppress("DEPRECATION") // Testing deprecated API.
+            activity.inProgressStrokesView.rendererFactory = {
+                CustomRenderer()
+            }
 
             val downEvent = stylusInputStream.getDownEvent()
             strokeId =

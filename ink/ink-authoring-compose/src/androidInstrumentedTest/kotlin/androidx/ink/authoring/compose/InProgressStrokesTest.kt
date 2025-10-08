@@ -31,6 +31,7 @@ import androidx.ink.authoring.testing.MultiTouchInputBuilder
 import androidx.ink.brush.Brush
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.StockBrushes
+import androidx.ink.brush.StockBrushes.MarkerVersion
 import androidx.ink.brush.StockTextureBitmapStore
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onIdle
@@ -73,7 +74,12 @@ class InProgressStrokesTest {
         activityScenarioRule.scenario.onActivity { activity ->
             activity.init(
                 nextBrush = {
-                    Brush.createWithColorIntArgb(StockBrushes.markerV1, AVOCADO_GREEN, 25F, 0.1F)
+                    Brush.createWithColorIntArgb(
+                        StockBrushes.marker(MarkerVersion.V1),
+                        AVOCADO_GREEN,
+                        25F,
+                        0.1F,
+                    )
                 }
             )
         }
@@ -97,7 +103,12 @@ class InProgressStrokesTest {
         activityScenarioRule.scenario.onActivity { activity ->
             activity.init(
                 nextBrush = {
-                    Brush.createWithColorIntArgb(StockBrushes.markerV1, AVOCADO_GREEN, 25F, 0.1F)
+                    Brush.createWithColorIntArgb(
+                        StockBrushes.marker(MarkerVersion.V1),
+                        AVOCADO_GREEN,
+                        25F,
+                        0.1F,
+                    )
                 }
             )
         }
@@ -122,7 +133,12 @@ class InProgressStrokesTest {
         activityScenarioRule.scenario.onActivity { activity ->
             activity.init(
                 nextBrush = {
-                    Brush.createWithColorIntArgb(StockBrushes.markerV1, AVOCADO_GREEN, 25F, 0.1F)
+                    Brush.createWithColorIntArgb(
+                        StockBrushes.marker(MarkerVersion.V1),
+                        AVOCADO_GREEN,
+                        25F,
+                        0.1F,
+                    )
                 }
             )
         }
@@ -147,7 +163,12 @@ class InProgressStrokesTest {
         activityScenarioRule.scenario.onActivity { activity ->
             activity.init(
                 nextBrush = {
-                    Brush.createWithColorIntArgb(StockBrushes.markerV1, AVOCADO_GREEN, 25F, 0.1F)
+                    Brush.createWithColorIntArgb(
+                        StockBrushes.marker(MarkerVersion.V1),
+                        AVOCADO_GREEN,
+                        25F,
+                        0.1F,
+                    )
                 }
             )
         }
@@ -173,7 +194,12 @@ class InProgressStrokesTest {
         activityScenarioRule.scenario.onActivity { activity ->
             activity.init(
                 nextBrush = {
-                    Brush.createWithColorIntArgb(StockBrushes.markerV1, AVOCADO_GREEN, 25F, 0.1F)
+                    Brush.createWithColorIntArgb(
+                        StockBrushes.marker(MarkerVersion.V1),
+                        AVOCADO_GREEN,
+                        25F,
+                        0.1F,
+                    )
                 },
                 nextPointerEventToWorldTransform = { Matrix().apply { scale(x = 2F, y = 3F) } },
                 nextStrokeToWorldTransform = { Matrix().apply { translate(x = 50F, y = 100F) } },
@@ -201,7 +227,12 @@ class InProgressStrokesTest {
             activity.init(
                 consumeMoveTouchEventOfPointerNumber = 0,
                 nextBrush = {
-                    Brush.createWithColorIntArgb(StockBrushes.markerV1, AVOCADO_GREEN, 25F, 0.1F)
+                    Brush.createWithColorIntArgb(
+                        StockBrushes.marker(MarkerVersion.V1),
+                        AVOCADO_GREEN,
+                        25F,
+                        0.1F,
+                    )
                 },
             )
         }
@@ -228,7 +259,7 @@ class InProgressStrokesTest {
             activity.init(
                 nextBrush = {
                     Brush.createWithColorIntArgb(
-                            StockBrushes.markerV1,
+                            StockBrushes.marker(MarkerVersion.V1),
                             if (!usedFirstBrush) AVOCADO_GREEN else DEEP_PURPLE,
                             if (!usedFirstBrush) 25F else 15F,
                             0.1F,
@@ -259,7 +290,7 @@ class InProgressStrokesTest {
             activity.init(
                 nextBrush = {
                     Brush.createWithColorIntArgb(
-                            StockBrushes.markerV1,
+                            StockBrushes.marker(MarkerVersion.V1),
                             if (!usedFirstBrush) AVOCADO_GREEN else DEEP_PURPLE,
                             if (!usedFirstBrush) 25F else 15F,
                             0.1F,
@@ -299,7 +330,7 @@ class InProgressStrokesTest {
             activity.init(
                 nextBrush = {
                     Brush.createWithColorIntArgb(
-                            StockBrushes.markerV1,
+                            StockBrushes.marker(MarkerVersion.V1),
                             if (!usedFirstBrush) AVOCADO_GREEN else DEEP_PURPLE,
                             if (!usedFirstBrush) 25F else 15F,
                             0.1F,
@@ -337,7 +368,12 @@ class InProgressStrokesTest {
         activityScenarioRule.scenario.onActivity { activity ->
             activity.init(
                 nextBrush = {
-                    Brush.createWithColorIntArgb(StockBrushes.markerV1, AVOCADO_GREEN, 25F, 0.1F)
+                    Brush.createWithColorIntArgb(
+                        StockBrushes.marker(MarkerVersion.V1),
+                        AVOCADO_GREEN,
+                        25F,
+                        0.1F,
+                    )
                 },
                 // A rounded rectangle cutout in the center of the first input point.
                 maskPath =

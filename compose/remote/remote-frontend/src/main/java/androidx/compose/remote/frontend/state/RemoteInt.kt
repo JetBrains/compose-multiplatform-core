@@ -27,7 +27,7 @@ import androidx.compose.remote.creation.actions.ValueIntegerExpressionChange
 import androidx.compose.remote.frontend.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.frontend.capture.RemoteComposeCreationState
 import androidx.compose.remote.frontend.layout.RemoteComposable
-import androidx.compose.remote.player.view.state.RemoteDomains
+import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.mutableIntStateOf

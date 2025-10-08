@@ -32,15 +32,14 @@ import org.mockito.kotlin.verify
 class GlanceWearWidgetTest {
 
     @Test
-    fun triggerUpdate_clientRequestsUpdate() {
+    fun triggerUpdate_clientRequestsUpdateForAll() {
         val mockUpdateClient = mock<WidgetUpdateClient>()
         val widget = TestWidget(mockUpdateClient)
         val componentName = ComponentName("my.package", "my.package.MyClass")
-        val instanceId = 123
 
-        widget.triggerUpdate(getApplicationContext(), componentName, instanceId)
+        widget.triggerUpdate(getApplicationContext(), componentName)
 
-        verify(mockUpdateClient).requestUpdate(any(), eq(componentName), eq(instanceId))
+        verify(mockUpdateClient).requestUpdate(any(), eq(componentName))
     }
 
     private class TestWidget(updateClient: WidgetUpdateClient) : GlanceWearWidget(updateClient) {

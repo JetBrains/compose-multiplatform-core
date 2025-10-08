@@ -77,7 +77,6 @@ import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.glimmer.list.performIndirectTouchEvent
 import androidx.xr.glimmer.samples.placeholderImagePainter
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope

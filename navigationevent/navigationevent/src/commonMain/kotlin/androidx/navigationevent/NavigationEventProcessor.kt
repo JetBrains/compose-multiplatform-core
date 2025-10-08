@@ -364,7 +364,7 @@ internal class NavigationEventProcessor {
     }
 
     /** [NavigationEventDispatcher.removeInput] */
-    fun removeInput(dispatcher: NavigationEventDispatcher, input: NavigationEventInput) {
+    fun removeInput(input: NavigationEventInput) {
         // The `remove()` operation on `Set` is efficient and simply returns `false` if the
         // element is not found. There's no need for a preceding `contains()` check.
         overlayInputs.remove(input)

@@ -16,16 +16,18 @@
 
 package androidx.room3.integration.kotlintestapp.test
 
-import androidx.room3.integration.kotlintestapp.vo.Book
+import androidx.arch.core.executor.ArchTaskExecutor
+import androidx.kruth.assertThat
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.room3.integration.kotlintestapp.vo.BookWithPublisher
-import androidx.room3.integration.kotlintestapp.vo.Publisher
 import androidx.test.filters.MediumTest
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.MatcherAssert.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.Test
 
 @MediumTest
-class LiveDataQueryTest : TestDatabaseTest() {
+class LiveDataQueryTest : TestDatabaseTest(UseDriver.ANDROID) {
 
     @Test
     fun observeBooksById() {
@@ -33,9 +35,9 @@ class LiveDataQueryTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        val book = LiveDataTestUtil.awaitValue(booksDao.getBookLiveData(TestUtil.BOOK_1.bookId))
+        val book = awaitValue(booksDao.getBookLiveData(TestUtil.BOOK_1.bookId))
 
-        assertThat(book, `is`<Book>(TestUtil.BOOK_1))
+        assertThat(book).isEqualTo(TestUtil.BOOK_1)
     }
 
     @Test
@@ -44,12 +46,12 @@ class LiveDataQueryTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        var expected =
+        val expected =
             BookWithPublisher(TestUtil.BOOK_1.bookId, TestUtil.BOOK_1.title, TestUtil.PUBLISHER)
-        var expectedList = ArrayList<BookWithPublisher>()
+        val expectedList = ArrayList<BookWithPublisher>()
         expectedList.add(expected)
-        val actual = LiveDataTestUtil.awaitValue(booksDao.getBooksWithPublisherLiveData())
-        assertThat(actual, `is`<List<BookWithPublisher>>(expectedList))
+        val actual = awaitValue(booksDao.getBooksWithPublisherLiveData())
+        assertThat(actual).isEqualTo(expectedList)
     }
 
     @Test
@@ -58,14 +60,28 @@ class LiveDataQueryTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1, TestUtil.BOOK_2)
 
-        var actualPublisherWithBooks =
-            LiveDataTestUtil.awaitValue(
-                booksDao.getPublisherWithBooksLiveData(TestUtil.PUBLISHER.publisherId)
-            )
+        val actualPublisherWithBooks =
+            awaitValue(booksDao.getPublisherWithBooksLiveData(TestUtil.PUBLISHER.publisherId))
 
-        assertThat(actualPublisherWithBooks.publisher, `is`<Publisher>(TestUtil.PUBLISHER))
-        assertThat(actualPublisherWithBooks.books?.size, `is`(2))
-        assertThat(actualPublisherWithBooks.books?.get(0), `is`<Book>(TestUtil.BOOK_1))
-        assertThat(actualPublisherWithBooks.books?.get(1), `is`<Book>(TestUtil.BOOK_2))
+        assertThat(actualPublisherWithBooks.publisher).isEqualTo(TestUtil.PUBLISHER)
+        assertThat(actualPublisherWithBooks.books?.size).isEqualTo(2)
+        assertThat(actualPublisherWithBooks.books?.get(0)).isEqualTo(TestUtil.BOOK_1)
+        assertThat(actualPublisherWithBooks.books?.get(1)).isEqualTo(TestUtil.BOOK_2)
+    }
+
+    private fun <T> awaitValue(liveData: LiveData<T>): T {
+        val latch = CountDownLatch(1)
+        var data: T? = null
+        val observer =
+            object : Observer<T> {
+                override fun onChanged(value: T) {
+                    data = value
+                    liveData.removeObserver(this)
+                    latch.countDown()
+                }
+            }
+        ArchTaskExecutor.getMainThreadExecutor().execute { liveData.observeForever(observer) }
+        latch.await(10, TimeUnit.SECONDS)
+        return data!!
     }
 }

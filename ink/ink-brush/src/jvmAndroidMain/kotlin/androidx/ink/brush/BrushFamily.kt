@@ -274,6 +274,15 @@ private constructor(
         public val EXPERIMENTAL_RAW_POSITION_MODEL: InputModel =
             InputModel.EXPERIMENTAL_RAW_POSITION_MODEL
 
+        /**
+         * A naive model that passes through raw inputs mostly unchanged. This is an experimental
+         * configuration which may be adjusted or removed later.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+        @ExperimentalInkCustomBrushApi
+        @JvmField
+        public val EXPERIMENTAL_NAIVE_MODEL: InputModel = InputModel.EXPERIMENTAL_NAIVE_MODEL
+
         /** The default [InputModel] that will be used by a [BrushFamily] when none is specified. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
         @ExperimentalInkCustomBrushApi
@@ -305,6 +314,7 @@ private constructor(
 
             val SPRING_MODEL = InputModel(1, "SpringModel")
             val EXPERIMENTAL_RAW_POSITION_MODEL = InputModel(2, "ExperimentalRawPositionModel")
+            val EXPERIMENTAL_NAIVE_MODEL = InputModel(3, "ExperimentalNaiveModel")
         }
     }
 }

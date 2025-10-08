@@ -57,6 +57,104 @@ class AppFunctionDataTest {
     }
 
     @Test
+    fun testBuild_missingRequiredFields_throwsException() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "requiredInt",
+                    isRequired = true,
+                    dataType = AppFunctionIntTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "optionalString",
+                    isRequired = false,
+                    dataType = AppFunctionStringTypeMetadata(isNullable = true),
+                ),
+            )
+        val builder = AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata())
+
+        // Attempt to build without setting the required "requiredInt" field
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the optional field but still miss the required one
+        builder.setString("optionalString", "test")
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the required field, now build should succeed
+        builder.setInt("requiredInt", 123)
+        // No exception should be thrown here
+        builder.build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredPendingIntent_throwsException() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "requiredPi",
+                    isRequired = true,
+                    dataType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "optionalString",
+                    isRequired = false,
+                    dataType = AppFunctionStringTypeMetadata(isNullable = true),
+                ),
+            )
+        val builder = AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata())
+
+        // Attempt to build without setting the required "requiredPi" field
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the optional field but still miss the required PendingIntent
+        builder.setString("optionalString", "test")
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the required PendingIntent field, now build should succeed
+        val dummyPendingIntent =
+            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        builder.setPendingIntent("requiredPi", dummyPendingIntent)
+        // No exception should be thrown here
+        builder.build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredPendingIntentList_throwsException() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "requiredPiList",
+                    isRequired = true,
+                    dataType =
+                        AppFunctionArrayTypeMetadata(
+                            itemType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                            isNullable = false,
+                        ),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "optionalInt",
+                    isRequired = false,
+                    dataType = AppFunctionIntTypeMetadata(isNullable = true),
+                ),
+            )
+        val builder = AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata())
+
+        // Attempt to build without setting the required "requiredPiList" field
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the optional field but still miss the required PendingIntent list
+        builder.setInt("optionalInt", 42)
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the required PendingIntent list field, now build should succeed
+        val dummyPendingIntent =
+            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        builder.setPendingIntentList("requiredPiList", listOf(dummyPendingIntent))
+        // No exception should be thrown here
+        builder.build()
+    }
+
+    @Test
     fun testReadWrite_asParameters_conformSpec() {
         val builder =
             AppFunctionData.Builder(TEST_PARAMETER_METADATA, AppFunctionComponentsMetadata())
@@ -892,88 +990,6 @@ class AppFunctionDataTest {
                 listOf(correctInnerDataBuilder.build(), incorrectInnerDataBuilder.build()),
             )
         }
-    }
-
-    @Test
-    fun testRead_nonNullable_failsIfSetToNull() {
-        val parameterMetadata =
-            listOf(
-                AppFunctionParameterMetadata(
-                    name = "intParam",
-                    isRequired = true,
-                    dataType = AppFunctionIntTypeMetadata(isNullable = false),
-                ),
-                AppFunctionParameterMetadata(
-                    name = "stringParam",
-                    isRequired = true,
-                    dataType = AppFunctionStringTypeMetadata(isNullable = false),
-                ),
-                AppFunctionParameterMetadata(
-                    name = "longParam",
-                    isRequired = true,
-                    dataType = AppFunctionLongTypeMetadata(isNullable = false),
-                ),
-                AppFunctionParameterMetadata(
-                    name = "floatParam",
-                    isRequired = true,
-                    dataType = AppFunctionFloatTypeMetadata(isNullable = false),
-                ),
-                AppFunctionParameterMetadata(
-                    name = "doubleParam",
-                    isRequired = true,
-                    dataType = AppFunctionDoubleTypeMetadata(isNullable = false),
-                ),
-                AppFunctionParameterMetadata(
-                    name = "pendingIntentParam",
-                    isRequired = true,
-                    dataType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
-                ),
-                AppFunctionParameterMetadata(
-                    name = "byteArrayParam",
-                    isRequired = true,
-                    dataType =
-                        AppFunctionArrayTypeMetadata(
-                            AppFunctionBytesTypeMetadata(isNullable = false),
-                            isNullable = false,
-                        ),
-                ),
-                AppFunctionParameterMetadata(
-                    name = "objectParam",
-                    isRequired = true,
-                    dataType =
-                        AppFunctionObjectTypeMetadata(
-                            properties = mapOf(),
-                            isNullable = false,
-                            required = listOf(),
-                            qualifiedName = "",
-                        ),
-                ),
-                AppFunctionParameterMetadata(
-                    name = "refParam",
-                    isRequired = true,
-                    dataType =
-                        AppFunctionReferenceTypeMetadata(
-                            referenceDataType = "customType",
-                            isNullable = false,
-                        ),
-                ),
-            )
-        val appFunctionData =
-            AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata()).build()
-
-        assertFailsWith<IllegalArgumentException> { appFunctionData.getIntOrNull("intParam") }
-        assertFailsWith<IllegalArgumentException> { appFunctionData.getStringOrNull("stringParam") }
-        assertFailsWith<IllegalArgumentException> { appFunctionData.getLongOrNull("longParam") }
-        assertFailsWith<IllegalArgumentException> { appFunctionData.getByteArray("byteArrayParam") }
-        assertFailsWith<IllegalArgumentException> { appFunctionData.getFloatOrNull("floatParam") }
-        assertFailsWith<IllegalArgumentException> { appFunctionData.getDoubleOrNull("doubleParam") }
-        assertFailsWith<IllegalArgumentException> {
-            appFunctionData.getPendingIntentOrNull("pendingIntentParam")
-        }
-        assertFailsWith<IllegalArgumentException> {
-            appFunctionData.getAppFunctionData("objectParam")
-        }
-        assertFailsWith<IllegalArgumentException> { appFunctionData.getAppFunctionData("refParam") }
     }
 
     @Test

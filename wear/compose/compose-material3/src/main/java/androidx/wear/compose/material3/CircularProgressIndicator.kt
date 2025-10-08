@@ -232,8 +232,6 @@ public fun CircularProgressIndicator(
  * @param enabled controls the enabled state. Although this component is not clickable, it can be
  *   contained within a clickable component. When enabled is `false`, this component will appear
  *   visually disabled.
- * @param targetProgress Target value if the progress value is to be animated. For a static progress
- *   indicator this should be equal to progress. This parameter is currently not used.
  * @param allowProgressOverflow When progress overflow is allowed, values smaller than 0.0 will be
  *   coerced to 0, while values larger than 1.0 will be wrapped around and shown as overflow with a
  *   different track color [ProgressIndicatorColors.overflowTrackBrush]. For example values 1.2, 2.2
@@ -254,7 +252,6 @@ public fun DrawScope.drawCircularProgressIndicator(
     colors: ProgressIndicatorColors,
     strokeWidth: Dp,
     enabled: Boolean = true,
-    targetProgress: Float = progress, // TODO(b/430544552) remove unused parameter
     allowProgressOverflow: Boolean = false,
     startAngle: Float = CircularProgressIndicatorDefaults.StartAngle,
     endAngle: Float = startAngle,
@@ -312,6 +309,68 @@ public fun DrawScope.drawCircularProgressIndicator(
     }
 }
 
+/**
+ * Draw a simple non-animating circular progress indicator. Prefer to use
+ * [CircularProgressIndicator] directly instead of this method in order to access the recommended
+ * animations, but this method can be used when custom animations are required.
+ *
+ * Example of a circular progress indicator with custom progress animation:
+ *
+ * @sample androidx.wear.compose.material3.samples.CircularProgressIndicatorCustomAnimationSample
+ * @param progress The progress of this progress indicator where 0.0 represents no progress and 1.0
+ *   represents completion.
+ * @param colors [ProgressIndicatorColors] that will be used to resolve the indicator and track
+ *   color for this progress indicator in different states.
+ * @param strokeWidth The stroke width for the progress indicator. The recommended values are
+ *   [CircularProgressIndicatorDefaults.largeStrokeWidth] and
+ *   [CircularProgressIndicatorDefaults.smallStrokeWidth].
+ * @param enabled controls the enabled state. Although this component is not clickable, it can be
+ *   contained within a clickable component. When enabled is `false`, this component will appear
+ *   visually disabled.
+ * @param targetProgress Target value if the progress value is to be animated. For a static progress
+ *   indicator this should be equal to progress. This parameter is currently not used.
+ * @param allowProgressOverflow When progress overflow is allowed, values smaller than 0.0 will be
+ *   coerced to 0, while values larger than 1.0 will be wrapped around and shown as overflow with a
+ *   different track color [ProgressIndicatorColors.overflowTrackBrush]. For example values 1.2, 2.2
+ *   etc will be shown as 20% progress with the overflow color. When progress overflow is not
+ *   allowed, progress values will be coerced into the range 0..1.
+ * @param startAngle The starting position of the progress arc, measured clockwise in degrees (0
+ *   to 360) from the 3 o'clock position. For example, 0 and 360 represent 3 o'clock, 90 and 180
+ *   represent 6 o'clock and 9 o'clock respectively. Default is 270 degrees
+ *   [CircularProgressIndicatorDefaults.StartAngle] (top of the screen).
+ * @param endAngle The ending position of the progress arc, measured clockwise in degrees (0 to 360)
+ *   from the 3 o'clock position. For example, 0 and 360 represent 3 o'clock, 90 and 180 represent 6
+ *   o'clock and 9 o'clock respectively. By default equal to [startAngle].
+ * @param gapSize The size (in Dp) of the gap between the ends of the progress indicator and the
+ *   track. The stroke endcaps are not included in this distance.
+ */
+@Deprecated(
+    "This overload is provided for backwards compatibility with Compose for Wear OS 1.5. " +
+        "A newer overload is available without the unused targetProgress parameter",
+    level = DeprecationLevel.HIDDEN,
+)
+public fun DrawScope.drawCircularProgressIndicator(
+    progress: Float,
+    colors: ProgressIndicatorColors,
+    strokeWidth: Dp,
+    enabled: Boolean = true,
+    targetProgress: Float = progress,
+    allowProgressOverflow: Boolean = false,
+    startAngle: Float = CircularProgressIndicatorDefaults.StartAngle,
+    endAngle: Float = startAngle,
+    gapSize: Dp = CircularProgressIndicatorDefaults.calculateRecommendedGapSize(strokeWidth),
+): Unit =
+    this.drawCircularProgressIndicator(
+        progress = progress,
+        colors = colors,
+        strokeWidth = strokeWidth,
+        enabled = enabled,
+        allowProgressOverflow = allowProgressOverflow,
+        startAngle = startAngle,
+        endAngle = endAngle,
+        gapSize = gapSize,
+    )
+
 /** Animated circular progress indicator implementation without overflow support. */
 @Composable
 private fun AnimatedCircularProgressIndicatorImpl(
@@ -359,7 +418,6 @@ private fun AnimatedCircularProgressIndicatorImpl(
                         strokeWidth = strokeWidth,
                         gapSize = gapSize,
                         enabled = enabled,
-                        targetProgress = animatedProgress.targetValue,
                     )
                 }
             }
@@ -443,7 +501,6 @@ private fun AnimatedCircularProgressIndicatorWithOverflowImpl(
                         strokeWidth = strokeWidth,
                         gapSize = gapSize,
                         enabled = enabled,
-                        targetProgress = animatedProgress.targetValue,
                     )
                 }
             }

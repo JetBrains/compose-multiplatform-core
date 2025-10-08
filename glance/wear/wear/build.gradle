@@ -53,7 +53,7 @@ dependencies {
     testImplementation(libs.truth)
     androidTestImplementation("androidx.core:core-ktx:1.17.0")
     androidTestImplementation(project(":compose:remote:test-utils"))
-    androidTestImplementation(project(":compose:remote:remote-player-view"))
+    androidTestImplementation(project(":compose:remote:remote-player-core"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
     androidTestImplementation("androidx.compose.foundation:foundation:$composeVersion")
 }

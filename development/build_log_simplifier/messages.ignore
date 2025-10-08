@@ -424,3 +424,6 @@ The current default is 'true'\.
 It will be removed in version 10\.0 of the Android Gradle plugin\.
 # b/439073627
 warning Waiting for the other yarn instance to finish.*
+# Kotlinx Benchmark Plugin
+Analyzing \d+ files from .*/(kotlin|jvm|java|processedResources|sources)(.*/.*)
+Writing out Java source to .*benchmark.*

@@ -22,12 +22,12 @@ import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.SystemClock
 import androidx.compose.remote.player.compose.context.ComposePaintContext
 import androidx.compose.remote.player.compose.context.ComposeRemoteContext
-import androidx.compose.remote.player.view.RemoteComposeDocument
-import androidx.compose.remote.player.view.action.NamedActionHandler
-import androidx.compose.remote.player.view.action.StateUpdaterActionCallback
-import androidx.compose.remote.player.view.platform.SettingsRetriever
-import androidx.compose.remote.player.view.state.StateUpdater
-import androidx.compose.remote.player.view.state.StateUpdaterImpl
+import androidx.compose.remote.player.core.RemoteComposeDocument
+import androidx.compose.remote.player.core.action.NamedActionHandler
+import androidx.compose.remote.player.core.action.StateUpdaterActionCallback
+import androidx.compose.remote.player.core.platform.SettingsRetriever
+import androidx.compose.remote.player.core.state.StateUpdater
+import androidx.compose.remote.player.core.state.StateUpdaterImpl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -47,7 +47,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import java.time.Clock
 
 /**
- * This is a player for a [androidx.compose.remote.player.view.RemoteComposeDocument].
+ * This is a player for a [RemoteComposeDocument].
  *
  * <p>It displays the document as well as providing the integration with the Android system (e.g.
  * passing sensor values, etc.). It also exposes player APIs that allows to control how the document

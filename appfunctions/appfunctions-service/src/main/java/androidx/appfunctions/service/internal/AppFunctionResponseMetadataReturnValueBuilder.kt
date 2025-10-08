@@ -71,6 +71,9 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(
 ): AppFunctionData {
     val builder = AppFunctionData.Builder(responseMetadata, componentsMetadata)
     return when (this) {
+        is AppFunctionUnitTypeMetadata -> {
+            AppFunctionData.EMPTY
+        }
         is AppFunctionLongTypeMetadata -> {
             builder
                 .setLong(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE, result as Long)
@@ -120,10 +123,6 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(
                     result as PendingIntent,
                 )
                 .build()
-        }
-        is AppFunctionUnitTypeMetadata -> {
-            // no-op
-            builder.build()
         }
         is AppFunctionObjectTypeMetadata -> {
             builder

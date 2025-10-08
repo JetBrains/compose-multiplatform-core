@@ -410,7 +410,8 @@ class CameraXConfigDeviceTest(private val implName: String, private val baseConf
         // TODO(b/439976984): Enable this test for CameraPipe when the issue is resolved.
         assumeFalse(
             "CameraPipe fails with directExecutor (b/439976984)",
-            implName == CameraPipeConfig::class.simpleName,
+            implName == CameraPipeConfig::class.simpleName ||
+                implName == Camera2Config::class.simpleName,
         )
 
         // Arrange

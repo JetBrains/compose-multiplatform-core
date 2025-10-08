@@ -104,7 +104,6 @@ class AndroidGraphicsConversionExtensionsEmulatorTest {
         private const val E = 5f
         private const val F = 6f
 
-        private val TEST_BRUSH =
-            Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f)
+        private val TEST_BRUSH = Brush(family = StockBrushes.marker(), size = 10f, epsilon = 0.1f)
     }
 }

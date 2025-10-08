@@ -347,7 +347,7 @@ private constructor(
         checkInvariants()
 
         if (inputs.remove(input)) {
-            sharedProcessor.removeInput(dispatcher = this, input)
+            sharedProcessor.removeInput(input)
         }
     }
 
@@ -436,7 +436,7 @@ private constructor(
             // This gives them a chance to clean up their own state, severing the lifecycle link
             // and preventing them from interacting with a disposed object.
             for (input in currentDispatcher.inputs) {
-                sharedProcessor.removeInput(currentDispatcher, input)
+                sharedProcessor.removeInput(input)
             }
             currentDispatcher.inputs.clear()
 

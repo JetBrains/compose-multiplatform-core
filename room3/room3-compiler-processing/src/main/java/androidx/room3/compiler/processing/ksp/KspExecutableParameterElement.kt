@@ -22,7 +22,6 @@ import androidx.room3.compiler.processing.XMemberContainer
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.isArray
 import androidx.room3.compiler.processing.ksp.KspAnnotated.UseSiteFilter.NO_USE_SITE_OR_METHOD_PARAMETER
-import androidx.room3.compiler.processing.ksp.synthetic.KspSyntheticPropertyMethodElement
 import androidx.room3.compiler.processing.util.sanitizeAsJavaParameterName
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertySetter
@@ -130,26 +129,18 @@ internal class KspExecutableParameterElement(
                     "Expected value parameter '$parameter' to contain a parent node."
                 }
             return when (parent) {
-                is KSFunctionDeclaration -> {
-                    val parameterIndex = parent.parameters.indexOf(parameter)
-                    check(parameterIndex > -1) { "Cannot find $parameter in $parent" }
-                    KspExecutableParameterElement(
-                        env = env,
-                        enclosingElement = KspExecutableElement.create(env, parent),
-                        parameter = parameter,
-                        parameterIndex = parameterIndex,
-                    )
-                }
-                is KSPropertySetter ->
-                    KspSyntheticPropertyMethodElement.create(env, parent, isSyntheticStatic = false)
+                is KSFunctionDeclaration ->
+                    env.wrapFunctionDeclaration(parent)
                         .parameters
-                        .single()
+                        .filterIsInstance<KspExecutableParameterElement>()
+                        .find { it.declaration == parameter }
+                is KSPropertySetter -> env.wrapPropertyAccessor(parent)!!.parameters.singleOrNull()
                 else ->
                     error(
                         "Don't know how to create a parameter element whose parent is a " +
                             "'${parent::class}'"
                     )
-            }
+            } ?: error { "Cannot find parameter '$parameter' in parent '$parent'" }
         }
     }
 }

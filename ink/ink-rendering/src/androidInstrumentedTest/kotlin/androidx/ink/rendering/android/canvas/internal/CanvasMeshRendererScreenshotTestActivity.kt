@@ -34,9 +34,7 @@ import androidx.ink.strokes.ImmutableStrokeInputBatch
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
 
-/**
- * An [Activity] to support [CanvasStrokeUnifiedRendererLegacyTest] by rendering a simple stroke.
- */
+/** An [Activity] to support [CanvasMeshRendererScreenshotTest] by rendering a simple stroke. */
 @SuppressLint("UseSdkSuppress") // SdkSuppress is on the test class.
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class CanvasMeshRendererScreenshotTestActivity : Activity() {
@@ -59,7 +57,7 @@ class CanvasMeshRendererScreenshotTestActivity : Activity() {
         // Pink twist stroke.
         private val brush =
             Brush.createWithColorIntArgb(
-                family = StockBrushes.markerLatest,
+                family = StockBrushes.marker(),
                 colorIntArgb = 0x80CC1A99.toInt(),
                 size = 10F,
                 epsilon = 0.1F,
@@ -89,13 +87,62 @@ class CanvasMeshRendererScreenshotTestActivity : Activity() {
             canvas.translate(20F, y)
 
             // The empty stroke should of course not be visible, but the [draw] call should succeed.
-            renderer.draw(canvas, emptyStroke, Matrix.IDENTITY_MATRIX)
+            check(
+                renderer.canDraw(
+                    canvas = canvas,
+                    stroke = emptyStroke,
+                    coatIndex = 0,
+                    paintPreferenceIndex = 0,
+                )
+            )
+            renderer.draw(
+                canvas = canvas,
+                stroke = emptyStroke,
+                coatIndex = 0,
+                paintPreferenceIndex = 0,
+                strokeToScreenTransform = Matrix.IDENTITY_MATRIX,
+                textureAnimationProgress = 0F,
+            )
 
             // Expected result: pink stroke on left, large green rotated stroke on right.
-            canvas.withMatrix(transform) { renderer.draw(canvas, stroke, transform) }
+            check(
+                renderer.canDraw(
+                    canvas = canvas,
+                    stroke = stroke,
+                    coatIndex = 0,
+                    paintPreferenceIndex = 0,
+                )
+            )
+            canvas.withMatrix(transform) {
+                renderer.draw(
+                    canvas = canvas,
+                    stroke = stroke,
+                    coatIndex = 0,
+                    paintPreferenceIndex = 0,
+                    strokeToScreenTransform = transform,
+                    textureAnimationProgress = 0F,
+                )
+            }
 
             canvas.translate(xBetweenStrokes, 0F)
-            canvas.withMatrix(transform2) { renderer.draw(canvas, stroke2, transform2) }
+            check(
+                renderer.canDraw(
+                    canvas = canvas,
+                    stroke = stroke2,
+                    coatIndex = 0,
+                    paintPreferenceIndex = 0,
+                )
+            )
+            canvas.withMatrix(transform2) {
+                renderer.draw(
+                    canvas = canvas,
+                    stroke = stroke2,
+                    coatIndex = 0,
+                    paintPreferenceIndex = 0,
+                    strokeToScreenTransform = transform2,
+                    textureAnimationProgress = 0F,
+                )
+            }
         }
     }
 

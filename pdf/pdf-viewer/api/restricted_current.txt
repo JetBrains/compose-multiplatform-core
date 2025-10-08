@@ -292,6 +292,7 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final float getMaxZoom();
     method @InaccessibleFromKotlin public final float getMinZoom();
     method @InaccessibleFromKotlin public final androidx.pdf.PdfDocument? getPdfDocument();
+    method @InaccessibleFromKotlin public final int getVerticalAlignment();
     method @InaccessibleFromKotlin public final int getVisiblePagesCount();
     method @InaccessibleFromKotlin public final float getZoom();
     method public final android.graphics.PointF? pdfToViewPoint(androidx.pdf.PdfPoint pdfPoint);
@@ -310,6 +311,7 @@ package androidx.pdf.view {
     method @InaccessibleFromKotlin public final void setMaxZoom(float);
     method @InaccessibleFromKotlin public final void setMinZoom(float);
     method @InaccessibleFromKotlin public final void setPdfDocument(androidx.pdf.PdfDocument?);
+    method @InaccessibleFromKotlin public final void setVerticalAlignment(int);
     method @InaccessibleFromKotlin public final void setZoom(float);
     method public final androidx.pdf.PdfPoint? viewToPdfPoint(android.graphics.PointF viewPoint);
     method public final androidx.pdf.PdfPoint? viewToPdfPoint(float x, float y);
@@ -323,18 +325,23 @@ package androidx.pdf.view {
     property public final float maxZoom;
     property public final float minZoom;
     property public final androidx.pdf.PdfDocument? pdfDocument;
+    property public final int verticalAlignment;
     property public final int visiblePagesCount;
     property public final float zoom;
     field public static final androidx.pdf.view.PdfView.Companion Companion;
     field public static final int GESTURE_STATE_IDLE = 0; // 0x0
     field public static final int GESTURE_STATE_INTERACTING = 1; // 0x1
     field public static final int GESTURE_STATE_SETTLING = 2; // 0x2
+    field public static final int VERTICAL_ALIGNMENT_CENTER = 1; // 0x1
+    field public static final int VERTICAL_ALIGNMENT_TOP = 0; // 0x0
   }
 
   public static final class PdfView.Companion {
     property public static int GESTURE_STATE_IDLE;
     property public static int GESTURE_STATE_INTERACTING;
     property public static int GESTURE_STATE_SETTLING;
+    property public static int VERTICAL_ALIGNMENT_CENTER;
+    property public static int VERTICAL_ALIGNMENT_TOP;
   }
 
   public static interface PdfView.LinkClickListener {

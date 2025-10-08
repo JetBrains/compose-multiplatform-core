@@ -31,6 +31,7 @@ import androidx.ink.brush.BrushPaint.TextureWrap
 import androidx.ink.brush.BrushTip
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
+import androidx.ink.brush.SelfOverlap
 import androidx.ink.brush.StockBrushes
 import androidx.ink.geometry.Angle
 import androidx.ink.rendering.test.R
@@ -46,6 +47,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
+import kotlin.math.PI
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -212,13 +214,13 @@ class CanvasStrokeRendererTest {
                         ),
                     ),
                     Pair(
-                        "Winding",
+                        "Stamping",
                         finishedInProgressStroke(
                             texturedBrush(
                                 particleGapDistanceScale = 2f,
                                 textureSizeUnit = TextureSizeUnit.BRUSH_SIZE,
                                 textureSize = 1f,
-                                textureMapping = TextureMapping.WINDING,
+                                textureMapping = TextureMapping.STAMPING,
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -693,6 +695,116 @@ class CanvasStrokeRendererTest {
         assertScreenshot("TextureRotation")
     }
 
+    @Test
+    fun paintPreferences() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.addStrokeRows(
+                listOf(
+                    Pair(
+                        """
+              Texture=none
+              SelfOverlap=any
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = null,
+                            selfOverlap = SelfOverlap.ANY,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=none
+              SelfOverlap=accumulate
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = null,
+                            selfOverlap = SelfOverlap.ACCUMULATE,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=none
+              SelfOverlap=discard
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = null,
+                            selfOverlap = SelfOverlap.DISCARD,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=tiled
+              SelfOverlap=any
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.TILING,
+                            selfOverlap = SelfOverlap.ANY,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=tiled
+              SelfOverlap=accumulate
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.TILING,
+                            selfOverlap = SelfOverlap.ACCUMULATE,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=tiled
+              SelfOverlap=discard
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.TILING,
+                            selfOverlap = SelfOverlap.DISCARD,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=stamped
+              SelfOverlap=any
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.STAMPING,
+                            selfOverlap = SelfOverlap.ANY,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=stamped
+              SelfOverlap=accumulate
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.STAMPING,
+                            selfOverlap = SelfOverlap.ACCUMULATE,
+                        ),
+                    ),
+                    Pair(
+                        """
+              Texture=stamped
+              SelfOverlap=discard
+            """
+                            .trimIndent(),
+                        textureMappingAndSelfOverlapStroke(
+                            textureMapping = TextureMapping.STAMPING,
+                            selfOverlap = SelfOverlap.DISCARD,
+                        ),
+                    ),
+                )
+            )
+        }
+        assertScreenshot("PaintPreferences")
+    }
+
     private fun assertScreenshot(filename: String) {
         onView(withId(R.id.stroke_grid))
             .perform(
@@ -748,7 +860,7 @@ class CanvasStrokeRendererTest {
                 .toImmutable()
 
         fun brush(
-            family: BrushFamily = StockBrushes.markerLatest,
+            family: BrushFamily = StockBrushes.marker(),
             @ColorInt color: Int = TestColors.BLACK,
             size: Float = 15F,
             epsilon: Float = 0.1F,
@@ -810,7 +922,7 @@ class CanvasStrokeRendererTest {
                     sizeY = textureSize,
                     offsetX = textureOffsetX,
                     offsetY = textureOffsetY,
-                    rotation = Angle.degreesToRadians(textureRotationDegrees),
+                    rotationDegrees = textureRotationDegrees,
                     sizeUnit = textureSizeUnit,
                     origin = textureOrigin,
                     mapping = textureMapping,
@@ -891,6 +1003,57 @@ class CanvasStrokeRendererTest {
             val paint = BrushPaint(listOf(textureLayer1, textureLayer2))
             val brush = brush(BrushFamily(paint = paint), color = TestColors.WHITE, size = 40f)
             return finishedInProgressStroke(brush, INPUTS_ZIGZAG)
+        }
+
+        fun textureMappingAndSelfOverlapStroke(
+            textureMapping: TextureMapping?,
+            selfOverlap: SelfOverlap,
+        ): InProgressStroke {
+            val textureLayers = buildList {
+                if (textureMapping != null) {
+                    add(
+                        BrushPaint.TextureLayer(
+                            CanvasStrokeRendererTestActivity.TEXTURE_ID_POOP_EMOJI,
+                            mapping = textureMapping,
+                            sizeX = 1f,
+                            sizeY = 1f,
+                            sizeUnit = TextureSizeUnit.BRUSH_SIZE,
+                        )
+                    )
+                }
+            }
+            val paint = BrushPaint(textureLayers = textureLayers, selfOverlap = selfOverlap)
+            val tip =
+                BrushTip(
+                    cornerRounding = 0.2f,
+                    particleGapDistanceScale = 1.5f,
+                    behaviors =
+                        listOf(
+                            BrushBehavior(
+                                terminalNodes =
+                                    listOf(
+                                        BrushBehavior.TargetNode(
+                                            target =
+                                                BrushBehavior.Target.ROTATION_OFFSET_IN_RADIANS,
+                                            targetModifierRangeStart = -PI.toFloat(),
+                                            targetModifierRangeEnd = PI.toFloat(),
+                                            input =
+                                                BrushBehavior.SourceNode(
+                                                    source =
+                                                        BrushBehavior.Source
+                                                            .DIRECTION_ABOUT_ZERO_IN_RADIANS,
+                                                    sourceValueRangeStart = -PI.toFloat(),
+                                                    sourceValueRangeEnd = PI.toFloat(),
+                                                    sourceOutOfRangeBehavior =
+                                                        BrushBehavior.OutOfRange.REPEAT,
+                                                ),
+                                        )
+                                    )
+                            )
+                        ),
+                )
+            val brush = brush(family = BrushFamily(tip, paint), color = 0x7733fc66)
+            return finishedInProgressStroke(brush, INPUTS_TWIST)
         }
 
         @ColorInt

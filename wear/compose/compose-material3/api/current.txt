@@ -419,8 +419,9 @@ package androidx.wear.compose.material3 {
     method @KotlinOnly @androidx.compose.runtime.Composable public static void CircularProgressIndicator(kotlin.jvm.functions.Function0<java.lang.Float> progress, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional boolean allowProgressOverflow, optional float startAngle, optional float endAngle, optional androidx.wear.compose.material3.ProgressIndicatorColors colors, optional androidx.compose.ui.unit.Dp strokeWidth, optional androidx.compose.ui.unit.Dp gapSize);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void CircularProgressIndicator-HXNGIdc(kotlin.jvm.functions.Function0<java.lang.Float!>, androidx.compose.ui.Modifier?, boolean, boolean, float, float, androidx.wear.compose.material3.ProgressIndicatorColors?, float, float, androidx.compose.runtime.Composer?, int, int);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void CircularProgressIndicator-UuyPYSY(androidx.compose.ui.Modifier?, androidx.wear.compose.material3.ProgressIndicatorColors?, float, float, androidx.compose.runtime.Composer?, int, int);
-    method @KotlinOnly public static void drawCircularProgressIndicator(androidx.compose.ui.graphics.drawscope.DrawScope, float progress, androidx.wear.compose.material3.ProgressIndicatorColors colors, androidx.compose.ui.unit.Dp strokeWidth, optional boolean enabled, optional float targetProgress, optional boolean allowProgressOverflow, optional float startAngle, optional float endAngle, optional androidx.compose.ui.unit.Dp gapSize);
-    method @BytecodeOnly public static void drawCircularProgressIndicator-N_l63oY(androidx.compose.ui.graphics.drawscope.DrawScope, float, androidx.wear.compose.material3.ProgressIndicatorColors, float, boolean, float, boolean, float, float, float);
+    method @KotlinOnly public static void drawCircularProgressIndicator(androidx.compose.ui.graphics.drawscope.DrawScope, float progress, androidx.wear.compose.material3.ProgressIndicatorColors colors, androidx.compose.ui.unit.Dp strokeWidth, optional boolean enabled, optional boolean allowProgressOverflow, optional float startAngle, optional float endAngle, optional androidx.compose.ui.unit.Dp gapSize);
+    method @BytecodeOnly @Deprecated public static void drawCircularProgressIndicator-N_l63oY(androidx.compose.ui.graphics.drawscope.DrawScope!, float, androidx.wear.compose.material3.ProgressIndicatorColors!, float, boolean, float, boolean, float, float, float);
+    method @BytecodeOnly public static void drawCircularProgressIndicator-yFUV9sE(androidx.compose.ui.graphics.drawscope.DrawScope, float, androidx.wear.compose.material3.ProgressIndicatorColors, float, boolean, boolean, float, float, float);
   }
 
   @androidx.compose.runtime.Immutable @androidx.compose.runtime.Stable public final class ColorScheme {
@@ -2037,13 +2038,37 @@ package androidx.wear.compose.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TimePickerColors timePickerColors(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TimePickerColors timePickerColors(optional androidx.compose.ui.graphics.Color selectedPickerContentColor, optional androidx.compose.ui.graphics.Color unselectedPickerContentColor, optional androidx.compose.ui.graphics.Color separatorColor, optional androidx.compose.ui.graphics.Color pickerLabelColor, optional androidx.compose.ui.graphics.Color confirmButtonContentColor, optional androidx.compose.ui.graphics.Color confirmButtonContainerColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TimePickerColors timePickerColors-5tl4gsc(long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TimePickerSelection timePickerSelection(androidx.wear.compose.material3.TimePickerType timePickerType);
+    method @BytecodeOnly @RequiresApi(26) @androidx.compose.runtime.Composable public int timePickerSelection-tgi0kX4(int, androidx.compose.runtime.Composer?, int);
     property public androidx.wear.compose.material3.TimePickerType timePickerType;
     field public static final androidx.wear.compose.material3.TimePickerDefaults INSTANCE;
   }
 
   public final class TimePickerKt {
-    method @KotlinOnly @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.runtime.Composable public static void TimePicker(java.time.LocalTime initialTime, kotlin.jvm.functions.Function1<java.time.LocalTime,kotlin.Unit> onTimePicked, optional androidx.compose.ui.Modifier modifier, optional androidx.wear.compose.material3.TimePickerType timePickerType, optional androidx.wear.compose.material3.TimePickerColors colors);
-    method @BytecodeOnly @RequiresApi(26) @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void TimePicker-0NXZJ5M(java.time.LocalTime, kotlin.jvm.functions.Function1<? super java.time.LocalTime!,kotlin.Unit!>, androidx.compose.ui.Modifier?, int, androidx.wear.compose.material3.TimePickerColors?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.runtime.Composable public static void TimePicker(java.time.LocalTime initialTime, kotlin.jvm.functions.Function1<java.time.LocalTime,kotlin.Unit> onTimePicked, optional androidx.compose.ui.Modifier modifier, optional androidx.wear.compose.material3.TimePickerType timePickerType, optional androidx.wear.compose.material3.TimePickerColors colors, optional androidx.wear.compose.material3.TimePickerSelection initialSelection);
+    method @BytecodeOnly @Deprecated @RequiresApi(26) @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void TimePicker-0NXZJ5M(java.time.LocalTime!, kotlin.jvm.functions.Function1!, androidx.compose.ui.Modifier!, int, androidx.wear.compose.material3.TimePickerColors!, androidx.compose.runtime.Composer!, int, int);
+    method @BytecodeOnly @RequiresApi(26) @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void TimePicker-ORnUXlg(java.time.LocalTime, kotlin.jvm.functions.Function1<? super java.time.LocalTime!,kotlin.Unit!>, androidx.compose.ui.Modifier?, int, androidx.wear.compose.material3.TimePickerColors?, int, androidx.compose.runtime.Composer?, int, int);
+  }
+
+  @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class TimePickerSelection {
+    method @BytecodeOnly public static androidx.wear.compose.material3.TimePickerSelection! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.wear.compose.material3.TimePickerSelection.Companion Companion;
+  }
+
+  public static final class TimePickerSelection.Companion {
+    method @BytecodeOnly public int getConfirmButton-MD0WiFs();
+    method @BytecodeOnly public int getHour-MD0WiFs();
+    method @BytecodeOnly public int getMinute-MD0WiFs();
+    method @BytecodeOnly public int getNone-MD0WiFs();
+    method @BytecodeOnly public int getPeriod-MD0WiFs();
+    method @BytecodeOnly public int getSecond-MD0WiFs();
+    property public androidx.wear.compose.material3.TimePickerSelection ConfirmButton;
+    property public androidx.wear.compose.material3.TimePickerSelection Hour;
+    property public androidx.wear.compose.material3.TimePickerSelection Minute;
+    property public androidx.wear.compose.material3.TimePickerSelection None;
+    property public androidx.wear.compose.material3.TimePickerSelection Period;
+    property public androidx.wear.compose.material3.TimePickerSelection Second;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class TimePickerType {

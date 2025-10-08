@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,7 +50,8 @@ import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
-import androidx.navigationevent.compose.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import androidx.navigationevent.testing.TestNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
@@ -723,7 +725,8 @@ class NavDisplayTest {
         dispatcher.addInput(input)
 
         composeTestRule.setContent {
-            NavigationEventDispatcherOwner(parent = owner) {
+            val childOwner = rememberNavigationEventDispatcherOwner(parent = owner)
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides childOwner) {
                 NavDisplay(
                     backStack = outerBackStack,
                     onBack = {

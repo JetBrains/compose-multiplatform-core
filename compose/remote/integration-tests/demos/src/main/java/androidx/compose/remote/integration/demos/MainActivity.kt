@@ -32,7 +32,7 @@ import androidx.compose.remote.frontend.modifier.fillMaxSize
 import androidx.compose.remote.integration.demos.preview.RemoteComposePreview
 import androidx.compose.remote.integration.demos.ui.theme.RemoteComposeDemosTheme
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
-import androidx.compose.remote.player.view.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

@@ -203,7 +203,7 @@ internal abstract class KspType(
         }
 
         val declaration = ksType.declaration as? KSClassDeclaration
-        declaration?.let { env.wrapClassDeclaration(it) }
+        declaration?.let { env.wrapClassDeclarationForNonEnumEntry(it) }
     }
 
     @OptIn(KspExperimental::class)

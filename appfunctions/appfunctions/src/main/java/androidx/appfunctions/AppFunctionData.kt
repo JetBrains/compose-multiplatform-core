@@ -103,7 +103,8 @@ internal constructor(
         }
         return key == LEGACY_ID_FIELD_KEY ||
             genericDocument.getProperty(key) != null ||
-            extras.containsKey(key)
+            extras.containsKey(key) || // Check direct key in extras
+            extras.containsKey(extrasKey(key)) // Check prefixed key in extras
     }
 
     /**
@@ -1287,7 +1288,8 @@ internal constructor(
         public fun setStringList(key: String, value: List<String>): Builder {
             spec?.validateWriteRequest(
                 key,
-                String()::class.java,
+                String()::class
+                    .java, // Note: String()::class.java is equivalent to String::class.java
                 isCollection = true,
                 targetValue = value,
             )
@@ -1342,10 +1344,25 @@ internal constructor(
             return this
         }
 
-        /** Builds [AppFunctionData] */
+        /**
+         * Builds [AppFunctionData]
+         *
+         * @throws IllegalArgumentException if any required property, as defined by the metadata
+         *   specification, is missing.
+         */
         public fun build(): AppFunctionData {
-            // TODO(b/399823985): validate required fields.
-            return AppFunctionData(spec, genericDocumentBuilder.build(), extrasBuilder)
+            val builtGenericDocument = genericDocumentBuilder.build()
+            val appFunctionData = AppFunctionData(spec, builtGenericDocument, extrasBuilder)
+            spec?.getAllPropertyKeys()?.forEach { propertyKey ->
+                if (spec.isRequired(propertyKey)) {
+                    if (!appFunctionData.containsKey(propertyKey)) {
+                        throw IllegalArgumentException(
+                            "Missing required property: '$propertyKey' for object '$qualifiedName'"
+                        )
+                    }
+                }
+            }
+            return appFunctionData
         }
     }
 

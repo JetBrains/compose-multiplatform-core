@@ -1203,46 +1203,20 @@ class XExecutableElementTest {
                         .isEqualTo(Int::class.asClassName())
                 }
                 element.getDeclaredMethodByJvmName("extStatic").let { method ->
-                    if (invocation.isKsp) {
-                        assertThat(method.isExtensionFunction()).isTrue()
-                    } else {
-                        // TODO(b/443344468): isExtensionFunction is broken in KAPT for companion
-                        //  objects.
-                        assertThat(method.isExtensionFunction()).isFalse()
-                    }
+                    assertThat(method.isExtensionFunction()).isTrue()
                     assertThat(method.isStatic()).isTrue()
-                    if (!invocation.isKsp) {
-                        // TODO(b/443342969): Calling `.type` on a parameter throws an exception
-                        //  due to calling asMemberOf on a companion object function.
-                        assertThat(method.parameters[0].type.asTypeName())
-                            .isEqualTo(String::class.asClassName())
-                    }
+                    assertThat(method.parameters[0].type.asTypeName())
+                        .isEqualTo(String::class.asClassName())
                 }
-                val companionObject =
-                    element.getEnclosedTypeElements().single { it.isCompanionObject() }
-                companionObject.getDeclaredMethodByJvmName("extStatic").let { method ->
+                element.companionObject!!.getDeclaredMethodByJvmName("extStatic").let { method ->
                     assertThat(method.isExtensionFunction()).isTrue()
-                    if (invocation.isKsp) {
-                        // TODO(b/444730030): isStatic is broken in KSP for companion objects.
-                        assertThat(method.isStatic()).isTrue()
-                    } else {
-                        assertThat(method.isStatic()).isFalse()
-                    }
-                    if (!invocation.isKsp) {
-                        // TODO(b/443342969): Calling `.type` on a parameter throws an exception
-                        //  due to calling asMemberOf on a companion object function.
-                        assertThat(method.parameters[0].type.asTypeName())
-                            .isEqualTo(String::class.asClassName())
-                    }
+                    assertThat(method.isStatic()).isFalse()
+                    assertThat(method.parameters[0].type.asTypeName())
+                        .isEqualTo(String::class.asClassName())
                 }
-                companionObject.getDeclaredMethodByJvmName("extCompanion").let { method ->
+                element.companionObject!!.getDeclaredMethodByJvmName("extCompanion").let { method ->
                     assertThat(method.isExtensionFunction()).isTrue()
-                    if (invocation.isKsp) {
-                        // TODO(b/444730030): isStatic is broken in KSP for companion objects.
-                        assertThat(method.isStatic()).isTrue()
-                    } else {
-                        assertThat(method.isStatic()).isFalse()
-                    }
+                    assertThat(method.isStatic()).isFalse()
                     assertThat(method.parameters[0].type.asTypeName())
                         .isEqualTo(String::class.asClassName())
                 }

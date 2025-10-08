@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.foundation.lazy
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.GraphicsContext
@@ -577,7 +578,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         itemHeights: List<Int>,
         keys: List<Any> = List(itemHeights.size) { it },
         transformedHeight: ((Int, TransformingLazyColumnItemScrollProgress) -> Int)? = null,
-        itemSpacing: Int = 0,
+        verticalArrangement: Arrangement.Vertical = Arrangement.Top,
         anchorItemKey: Any = Any(),
         anchorItemIndex: Int = 0,
         anchorItemScrollOffset: Int = 0,
@@ -593,7 +594,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
                     override fun getKey(index: Int): Any? = keys[index]
                 },
-            itemSpacing = itemSpacing,
+            verticalArrangement = verticalArrangement,
             containerConstraints = containerConstraints,
             anchorItemKey = anchorItemKey,
             anchorItemIndex = anchorItemIndex,

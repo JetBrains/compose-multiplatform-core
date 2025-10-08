@@ -29,7 +29,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.Ignore
 import kotlin.test.Test
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.test.runTest

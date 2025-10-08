@@ -66,7 +66,7 @@ class ViewStrokeRendererTestActivity : Activity() {
         private val stroke =
             Stroke(
                 Brush.createWithColorIntArgb(
-                    family = StockBrushes.markerLatest,
+                    family = StockBrushes.marker(),
                     colorIntArgb = TestColors.BLACK,
                     size = 10f,
                     epsilon = 0.1f,

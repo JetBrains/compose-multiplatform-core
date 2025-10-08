@@ -17,18 +17,22 @@
 package androidx.ink.brush
 
 import androidx.annotation.RestrictTo
+import androidx.annotation.Size
 import androidx.ink.geometry.MeshFormat
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
+import java.util.Collections.unmodifiableList
 import kotlin.jvm.JvmOverloads
 import kotlin.jvm.JvmStatic
 
 /**
- * A [BrushCoat] represents one coat of paint applied by a brush. It includes a [BrushPaint] and a
- * [BrushTip] used to apply that paint. Multiple [BrushCoat] can be combined within a single brush;
- * when a stroke drawn by a multi-coat brush is rendered, each coat of paint will be drawn entirely
- * atop the previous coat, even if the stroke crosses over itself, as though each coat were painted
- * in its entirety one at a time.
+ * A [BrushCoat] represents one coat of ink applied by a brush. It includes a `BrushTip` that
+ * describes the structure of that coat, and a non-empty list of possible [BrushPaint] objects -
+ * each one describes how to render the coat structure, and the one [BrushPaint] that is actually
+ * used is the first one in the list that is compatible with the device and renderer. Multiple
+ * [BrushCoat]s can be combined within a single brush; when a stroke drawn by a multi-coat brush is
+ * rendered, each coat of ink will be drawn entirely atop the previous coat, even if the stroke
+ * crosses over itself, as though each coat were painted in its entirety one at a time.
  */
 @ExperimentalInkCustomBrushApi
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
@@ -39,9 +43,43 @@ private constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val nativePointer: Long,
     /** The tip used to apply the paint. */
     public val tip: BrushTip,
-    /** The paint to be applied in this coat. */
-    public val paint: BrushPaint = BrushPaint(),
+    // The [paintPreferences] val below is a defensive copy of this parameter.
+    paintPreferences: List<BrushPaint>,
 ) {
+
+    /**
+     * The [BrushPaint] instances to try to use for rendering, in preference order. The first one
+     * that is compatible with the renderer and the device will be used. Compatibility may be
+     * determined by various parameters of a [BrushPaint] and its underlying
+     * [BrushPaint.TextureLayer] objects. Alternative paints add portability to brushes, so that
+     * fallback versions of strokes can be rendered on devices or renderers that have more limited
+     * functionality. If no paints are compatible, then this [BrushCoat] will not be rendered.
+     */
+    @Size(min = 1)
+    public val paintPreferences: List<BrushPaint> = unmodifiableList(paintPreferences)
+
+    /**
+     * Creates a [BrushCoat] with the given [BrushTip] and ordered preferences for [BrushPaint].
+     *
+     * @param tip The tip used to apply the paint.
+     * @param paintPreferences The paint options to try to use for rendering, in preference order.
+     *   The first one that is compatible with the renderer and the device will be used.
+     */
+    @JvmOverloads
+    public constructor(
+        tip: BrushTip = BrushTip(),
+        @Size(min = 1) paintPreferences: List<BrushPaint> = listOf(BrushPaint()),
+    ) : this(
+        BrushCoatNative.create(
+            tip.nativePointer,
+            paintPreferences.let {
+                require(it.isNotEmpty()) { "BrushCoat.paintPreferences cannot be empty" }
+                it.map { paint -> paint.nativePointer }.toLongArray()
+            },
+        ),
+        tip,
+        paintPreferences,
+    )
 
     /**
      * Creates a [BrushCoat] with the given [tip] and [paint].
@@ -50,21 +88,21 @@ private constructor(
      * @param paint The paint to be applied for this coat.
      */
     @JvmOverloads
-    public constructor(
-        tip: BrushTip = BrushTip(),
-        paint: BrushPaint = BrushPaint(),
-    ) : this(BrushCoatNative.create(tip.nativePointer, paint.nativePointer), tip, paint)
+    public constructor(tip: BrushTip = BrushTip(), paint: BrushPaint) : this(tip, listOf(paint))
 
     /**
      * Creates a copy of `this` and allows named properties to be altered while keeping the rest
      * unchanged.
      */
     @JvmSynthetic
-    public fun copy(tip: BrushTip = this.tip, paint: BrushPaint = this.paint): BrushCoat {
-        return if (tip == this.tip && paint == this.paint) {
+    public fun copy(
+        tip: BrushTip = this.tip,
+        @Size(min = 1) paintPreferences: List<BrushPaint> = this.paintPreferences,
+    ): BrushCoat {
+        return if (tip == this.tip && paintPreferences == this.paintPreferences) {
             this
         } else {
-            BrushCoat(tip, paint)
+            BrushCoat(tip, paintPreferences)
         }
     }
 
@@ -81,7 +119,7 @@ private constructor(
      * Returns a [Builder] with values set equivalent to `this`. Java developers, use the returned
      * builder to build a copy of a BrushCoat.
      */
-    public fun toBuilder(): Builder = Builder().setTip(tip).setPaint(paint)
+    public fun toBuilder(): Builder = Builder().setTip(tip).setPaintPreferences(paintPreferences)
 
     /**
      * Builder for [BrushCoat].
@@ -90,35 +128,38 @@ private constructor(
      * overriding only as needed. For example: `BrushCoat family = new
      * BrushCoat.Builder().tip(presetBrushTip).build();`
      */
+    @Suppress("ScopeReceiverThis")
     public class Builder {
         private var tip: BrushTip = BrushTip()
-        private var paint: BrushPaint = BrushPaint()
+        private var paintPreferences = mutableListOf<BrushPaint>()
 
-        public fun setTip(tip: BrushTip): Builder {
-            this.tip = tip
-            return this
+        public fun setTip(tip: BrushTip): Builder = apply { this.tip = tip }
+
+        public fun addPaintPreference(paint: BrushPaint): Builder = apply {
+            this.paintPreferences.add(paint)
         }
 
-        public fun setPaint(paint: BrushPaint): Builder {
-            this.paint = paint
-            return this
-        }
+        public fun setPaintPreferences(@Size(min = 1) paintPreferences: List<BrushPaint>): Builder =
+            apply {
+                this.paintPreferences.clear()
+                this.paintPreferences.addAll(paintPreferences)
+            }
 
-        public fun build(): BrushCoat = BrushCoat(tip, paint)
+        public fun build(): BrushCoat = BrushCoat(tip, paintPreferences)
     }
 
     override fun equals(other: Any?): Boolean {
         if (other == null || other !is BrushCoat) return false
-        return tip == other.tip && paint == other.paint
+        return this === other || (tip == other.tip && paintPreferences == other.paintPreferences)
     }
 
     override fun hashCode(): Int {
         var result = tip.hashCode()
-        result = 31 * result + paint.hashCode()
+        result = 31 * result + paintPreferences.hashCode()
         return result
     }
 
-    override fun toString(): String = "BrushCoat(tip=$tip, paint=$paint)"
+    override fun toString(): String = "BrushCoat(tip=$tip, paintPreferences=$paintPreferences)"
 
     /** Deletes native BrushCoat memory. */
     // NOMUTANTS -- Not tested post garbage collection.
@@ -149,7 +190,11 @@ private constructor(
             BrushCoat(
                 unownedNativePointer,
                 BrushTip.wrapNative(BrushCoatNative.newCopyOfBrushTip(unownedNativePointer)),
-                BrushPaint.wrapNative(BrushCoatNative.newCopyOfBrushPaint(unownedNativePointer)),
+                List(BrushCoatNative.getBrushPaintPreferencesCount(unownedNativePointer)) { index ->
+                    BrushPaint.wrapNative(
+                        BrushCoatNative.newCopyOfBrushPaintPreference(unownedNativePointer, index)
+                    )
+                },
             )
     }
 }
@@ -160,7 +205,8 @@ private object BrushCoatNative {
     }
 
     /** Create underlying native object and return reference for all subsequent native calls. */
-    @UsedByNative external fun create(tipNativePointer: Long, paintNativePointer: Long): Long
+    @UsedByNative
+    external fun create(tipNativePointer: Long, paintPreferencesNativePointers: LongArray): Long
 
     /** Release the underlying memory allocated in [create]. */
     @UsedByNative external fun free(nativePointer: Long)
@@ -177,9 +223,11 @@ private object BrushCoatNative {
      */
     @UsedByNative external fun newCopyOfBrushTip(nativePointer: Long): Long
 
+    @UsedByNative external fun getBrushPaintPreferencesCount(nativePointer: Long): Int
+
     /**
      * Returns a new, unowned native pointer to a copy of the `BrushPaint` in the pointed-at
      * `BrushCoat`.
      */
-    @UsedByNative external fun newCopyOfBrushPaint(nativePointer: Long): Long
+    @UsedByNative external fun newCopyOfBrushPaintPreference(nativePointer: Long, index: Int): Long
 }

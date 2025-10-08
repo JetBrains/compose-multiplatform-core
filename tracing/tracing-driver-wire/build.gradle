@@ -17,11 +17,11 @@
 
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.squareup.wire")
+    alias(libs.plugins.kotlinBenchmark)
 }
 
 androidXMultiplatform {
@@ -55,6 +55,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.truth)
+                implementation(libs.kotlinBenchmarkRuntime)
             }
         }
         jvmMain {
@@ -98,6 +99,19 @@ wire {
     }
     sourcePath {
         srcDir("src/commonMain/proto")
+    }
+}
+
+benchmark {
+    configurations {
+        // There is always a main configuration that applies to all targets.
+        named("main") {
+            warmups = 1
+        }
+    }
+    targets {
+        // Benchmarks live in the `jvmTest` sourceSet.
+        register("jvmTest")
     }
 }
 

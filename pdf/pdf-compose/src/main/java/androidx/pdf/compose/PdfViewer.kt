@@ -45,6 +45,7 @@ import kotlin.random.Random
  * @param modifier the [Modifier] to be applied to this PDF viewer
  * @param minZoom the minimum zoom / scaling factor that can be applied to the PDF viewer
  * @param maxZoom the maximum zoom / scaling factor that can be applied to the PDF viewer
+ * @param verticalAlignment the alignment of the top page within the view
  * @param fastScrollConfig a [FastScrollConfiguration] instance to customize the fast scoller's
  *   appearance
  * @param onUrlLinkClicked a callback to be invoked when the user taps a URL link in this PDF viewer
@@ -60,6 +61,7 @@ public fun PdfViewer(
     modifier: Modifier = Modifier,
     minZoom: Float = PdfView.DEFAULT_MIN_ZOOM,
     maxZoom: Float = PdfView.DEFAULT_MAX_ZOOM,
+    verticalAlignment: Int = PdfView.VERTICAL_ALIGNMENT_CENTER,
     fastScrollConfig: FastScrollConfiguration =
         FastScrollConfiguration.withDrawableAndDimensionIds(),
     appendContextMenuComponents: (PdfSelectionMenuBuilderScope.() -> Unit)? = null,
@@ -106,6 +108,7 @@ public fun PdfViewer(
             view.pdfDocument = pdfDocument
             view.minZoom = minZoom
             view.maxZoom = maxZoom
+            view.verticalAlignment = verticalAlignment
             view.fastScrollVerticalThumbDrawable = verticalThumbDrawable
             view.fastScrollPageIndicatorBackgroundDrawable = pageIndicatorDrawable
             view.fastScrollPageIndicatorMarginEnd = pageIndicatorMarginEnd

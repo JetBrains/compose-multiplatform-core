@@ -165,7 +165,7 @@ class CameraXInitTest(private val implName: String, private val cameraXConfig: C
                     if (implName == CameraPipeConfig::class.simpleName) {
                         CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE
                     } else {
-                        CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_CAMERA_CAMERA2
+                        CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE
                     }
                 )
         }

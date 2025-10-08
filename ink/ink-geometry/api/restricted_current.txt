@@ -50,18 +50,28 @@ package androidx.ink.geometry {
 
   public final class Angle {
     method @androidx.ink.geometry.AngleRadiansFloat public static float degreesToRadians(@androidx.ink.geometry.AngleDegreesFloat float degrees);
-    method @FloatRange(from=0.0, to=androidx.ink.geometry.Angle.FULL_TURN_RADIANS_DOUBLE) @androidx.ink.geometry.AngleRadiansFloat public static float normalized(@androidx.ink.geometry.AngleRadiansFloat float radians);
-    method @FloatRange(from=-3.141592653589793, to=androidx.ink.geometry.Angle.HALF_TURN_RADIANS_DOUBLE) @androidx.ink.geometry.AngleRadiansFloat public static float normalizedAboutZero(@androidx.ink.geometry.AngleRadiansFloat float radians);
+    method @FloatRange(from=-180.0, to=180.0, fromInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public static float normalizedAboutZeroDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
+    method @FloatRange(from=-3.141592653589793, to=java.lang.Math.PI, fromInclusive=false) @androidx.ink.geometry.AngleRadiansFloat public static float normalizedAboutZeroRadians(@androidx.ink.geometry.AngleRadiansFloat float radians);
+    method @FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public static float normalizedDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
+    method @FloatRange(from=0.0, to=6.283185307179586, toInclusive=false) @androidx.ink.geometry.AngleRadiansFloat public static float normalizedRadians(@androidx.ink.geometry.AngleRadiansFloat float radians);
     method @androidx.ink.geometry.AngleDegreesFloat public static float radiansToDegrees(@androidx.ink.geometry.AngleRadiansFloat float radians);
+    property public float FULL_TURN_DEGREES;
     property public float FULL_TURN_RADIANS;
+    property public float HALF_TURN_DEGREES;
     property public float HALF_TURN_RADIANS;
+    property public float QUARTER_TURN_DEGREES;
     property public float QUARTER_TURN_RADIANS;
-    property public float ZERO;
+    property public float ZERO_DEGREES;
+    property public float ZERO_RADIANS;
+    field @androidx.ink.geometry.AngleDegreesFloat public static final float FULL_TURN_DEGREES;
     field @androidx.ink.geometry.AngleRadiansFloat public static final float FULL_TURN_RADIANS;
+    field @androidx.ink.geometry.AngleDegreesFloat public static final float HALF_TURN_DEGREES;
     field @androidx.ink.geometry.AngleRadiansFloat public static final float HALF_TURN_RADIANS;
     field public static final androidx.ink.geometry.Angle INSTANCE;
+    field @androidx.ink.geometry.AngleDegreesFloat public static final float QUARTER_TURN_DEGREES;
     field @androidx.ink.geometry.AngleRadiansFloat public static final float QUARTER_TURN_RADIANS;
-    field @androidx.ink.geometry.AngleRadiansFloat public static final float ZERO;
+    field @androidx.ink.geometry.AngleDegreesFloat public static final float ZERO_DEGREES;
+    field @androidx.ink.geometry.AngleRadiansFloat public static final float ZERO_RADIANS;
   }
 
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.VALUE_PARAMETER, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.LOCAL_VARIABLE, kotlin.annotation.AnnotationTarget.FIELD}) public @interface AngleDegreesFloat {
@@ -113,7 +123,7 @@ package androidx.ink.geometry {
   public final class ImmutableAffineTransform extends androidx.ink.geometry.AffineTransform {
     ctor public ImmutableAffineTransform(float m00, float m10, float m20, float m01, float m11, float m21);
     ctor public ImmutableAffineTransform(@Size(min=6L) float[] values);
-    method public static androidx.ink.geometry.ImmutableAffineTransform rotate(@androidx.ink.geometry.AngleRadiansFloat float angleOfRotation);
+    method public static androidx.ink.geometry.ImmutableAffineTransform rotateDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
     method public static androidx.ink.geometry.ImmutableAffineTransform scale(float scaleFactor);
     method public static androidx.ink.geometry.ImmutableAffineTransform scale(float xScaleFactor, float yScaleFactor);
     method public static androidx.ink.geometry.ImmutableAffineTransform scaleX(float scaleFactor);
@@ -125,7 +135,7 @@ package androidx.ink.geometry {
   }
 
   public static final class ImmutableAffineTransform.Companion {
-    method public androidx.ink.geometry.ImmutableAffineTransform rotate(@androidx.ink.geometry.AngleRadiansFloat float angleOfRotation);
+    method public androidx.ink.geometry.ImmutableAffineTransform rotateDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
     method public androidx.ink.geometry.ImmutableAffineTransform scale(float scaleFactor);
     method public androidx.ink.geometry.ImmutableAffineTransform scale(float xScaleFactor, float yScaleFactor);
     method public androidx.ink.geometry.ImmutableAffineTransform scaleX(float scaleFactor);
@@ -156,26 +166,26 @@ package androidx.ink.geometry {
 
   public final class ImmutableParallelogram extends androidx.ink.geometry.Parallelogram {
     method public static androidx.ink.geometry.ImmutableParallelogram fromCenterAndDimensions(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height);
-    method public static androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsAndRotation(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation);
-    method public static androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsRotationAndSkew(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float skew);
+    method public static androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsAndRotationInDegrees(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleDegreesFloat float rotationDegrees);
+    method public static androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsRotationInDegreesAndSkew(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleDegreesFloat float rotationDegrees, float skew);
     method public static androidx.ink.geometry.ImmutableParallelogram fromSegmentAndPadding(androidx.ink.geometry.Segment segment, float padding);
     method @InaccessibleFromKotlin public androidx.ink.geometry.ImmutableVec getCenter();
     method @InaccessibleFromKotlin public float getHeight();
-    method @InaccessibleFromKotlin public float getRotation();
+    method @InaccessibleFromKotlin @FloatRange(from=0.0, to=360.0, toInclusive=false) public float getRotationDegrees();
     method @InaccessibleFromKotlin public float getSkew();
-    method @InaccessibleFromKotlin public float getWidth();
+    method @InaccessibleFromKotlin @FloatRange(from=0.0) public float getWidth();
     property public androidx.ink.geometry.ImmutableVec center;
     property public float height;
-    property public float rotation;
+    property @FloatRange(from=0.0, to=360.0, toInclusive=false) public float rotationDegrees;
     property public float skew;
-    property public float width;
+    property @FloatRange(from=0.0) public float width;
     field public static final androidx.ink.geometry.ImmutableParallelogram.Companion Companion;
   }
 
   public static final class ImmutableParallelogram.Companion {
     method public androidx.ink.geometry.ImmutableParallelogram fromCenterAndDimensions(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height);
-    method public androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsAndRotation(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation);
-    method public androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsRotationAndSkew(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float skew);
+    method public androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsAndRotationInDegrees(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleDegreesFloat float rotationDegrees);
+    method public androidx.ink.geometry.ImmutableParallelogram fromCenterDimensionsRotationInDegreesAndSkew(androidx.ink.geometry.ImmutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleDegreesFloat float rotationDegrees, float skew);
     method public androidx.ink.geometry.ImmutableParallelogram fromSegmentAndPadding(androidx.ink.geometry.Segment segment, float padding);
   }
 
@@ -199,7 +209,7 @@ package androidx.ink.geometry {
 
   public final class ImmutableVec extends androidx.ink.geometry.Vec {
     ctor public ImmutableVec(float x, float y);
-    method public static androidx.ink.geometry.ImmutableVec fromDirectionAndMagnitude(@androidx.ink.geometry.AngleRadiansFloat float direction, float magnitude);
+    method public static androidx.ink.geometry.ImmutableVec fromDirectionInDegreesAndMagnitude(@androidx.ink.geometry.AngleDegreesFloat float directionDegrees, float magnitude);
     method @InaccessibleFromKotlin public float getX();
     method @InaccessibleFromKotlin public float getY();
     property public float x;
@@ -208,7 +218,7 @@ package androidx.ink.geometry {
   }
 
   public static final class ImmutableVec.Companion {
-    method public androidx.ink.geometry.ImmutableVec fromDirectionAndMagnitude(@androidx.ink.geometry.AngleRadiansFloat float direction, float magnitude);
+    method public androidx.ink.geometry.ImmutableVec fromDirectionInDegreesAndMagnitude(@androidx.ink.geometry.AngleDegreesFloat float directionDegrees, float magnitude);
   }
 
   public final class Intersection {
@@ -260,14 +270,14 @@ package androidx.ink.geometry {
     ctor public MutableAffineTransform();
     method public androidx.ink.geometry.MutableAffineTransform populateFrom(androidx.ink.geometry.AffineTransform input);
     method public androidx.ink.geometry.MutableAffineTransform populateFromIdentity();
-    method public androidx.ink.geometry.MutableAffineTransform populateFromRotation(@androidx.ink.geometry.AngleRadiansFloat float angleOfRotation);
+    method public androidx.ink.geometry.MutableAffineTransform populateFromRotationDegrees(@androidx.ink.geometry.AngleDegreesFloat float degrees);
     method public androidx.ink.geometry.MutableAffineTransform populateFromScale(float scaleFactor);
     method public androidx.ink.geometry.MutableAffineTransform populateFromScale(float xScaleFactor, float yScaleFactor);
     method public androidx.ink.geometry.MutableAffineTransform populateFromScaleX(float scaleFactor);
     method public androidx.ink.geometry.MutableAffineTransform populateFromScaleY(float scaleFactor);
     method public androidx.ink.geometry.MutableAffineTransform populateFromSkewX(float sx);
     method public androidx.ink.geometry.MutableAffineTransform populateFromSkewY(float sy);
-    method public androidx.ink.geometry.MutableAffineTransform populateFromTranslate(androidx.ink.geometry.Vec offset);
+    method public androidx.ink.geometry.MutableAffineTransform populateFromTranslation(androidx.ink.geometry.Vec offset);
     method public void setValues(float m00, float m10, float m20, float m01, float m11, float m21);
     method public void setValues(@Size(min=6L) float[] values);
   }
@@ -293,22 +303,22 @@ package androidx.ink.geometry {
     ctor public MutableParallelogram();
     method @InaccessibleFromKotlin public androidx.ink.geometry.MutableVec getCenter();
     method @InaccessibleFromKotlin public float getHeight();
-    method @InaccessibleFromKotlin @androidx.ink.geometry.AngleRadiansFloat public float getRotation();
+    method @InaccessibleFromKotlin @FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public float getRotationDegrees();
     method @InaccessibleFromKotlin public float getSkew();
     method @InaccessibleFromKotlin @FloatRange(from=0.0) public float getWidth();
     method public androidx.ink.geometry.MutableParallelogram populateFrom(androidx.ink.geometry.Parallelogram input);
     method public androidx.ink.geometry.MutableParallelogram populateFromCenterAndDimensions(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height);
-    method public androidx.ink.geometry.MutableParallelogram populateFromCenterDimensionsAndRotation(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation);
-    method public androidx.ink.geometry.MutableParallelogram populateFromCenterDimensionsRotationAndSkew(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height, @androidx.ink.geometry.AngleRadiansFloat float rotation, float skew);
+    method public androidx.ink.geometry.MutableParallelogram populateFromCenterDimensionsAndRotationInDegrees(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height, @FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat float rotationDegrees);
+    method public androidx.ink.geometry.MutableParallelogram populateFromCenterDimensionsRotationInDegreesAndSkew(androidx.ink.geometry.MutableVec center, @FloatRange(from=0.0) float width, float height, @FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat float rotationDegrees, float skew);
     method public androidx.ink.geometry.MutableParallelogram populateFromSegmentAndPadding(androidx.ink.geometry.Segment segment, float padding);
     method @InaccessibleFromKotlin public void setCenter(androidx.ink.geometry.MutableVec);
     method @InaccessibleFromKotlin public void setHeight(float);
-    method @InaccessibleFromKotlin public void setRotation(@androidx.ink.geometry.AngleRadiansFloat float);
+    method @InaccessibleFromKotlin public void setRotationDegrees(@FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat float);
     method @InaccessibleFromKotlin public void setSkew(float);
     method @InaccessibleFromKotlin public void setWidth(@FloatRange(from=0.0) float);
     property public androidx.ink.geometry.MutableVec center;
     property public float height;
-    property @androidx.ink.geometry.AngleRadiansFloat public float rotation;
+    property @FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public float rotationDegrees;
     property public float skew;
     property @FloatRange(from=0.0) public float width;
     field public static final androidx.ink.geometry.MutableParallelogram.Companion Companion;
@@ -347,10 +357,10 @@ package androidx.ink.geometry {
   public final class MutableVec extends androidx.ink.geometry.Vec {
     ctor public MutableVec();
     ctor public MutableVec(float x, float y);
-    method public static androidx.ink.geometry.MutableVec fromDirectionAndMagnitude(@androidx.ink.geometry.AngleRadiansFloat float direction, float magnitude);
     method @InaccessibleFromKotlin public float getX();
     method @InaccessibleFromKotlin public float getY();
     method public androidx.ink.geometry.MutableVec populateFrom(androidx.ink.geometry.Vec input);
+    method public androidx.ink.geometry.MutableVec populateFromDirectionInDegreesAndMagnitude(@androidx.ink.geometry.AngleDegreesFloat float directionDegrees, float magnitude);
     method @InaccessibleFromKotlin public void setX(float);
     method @InaccessibleFromKotlin public void setY(float);
     property public float x;
@@ -359,7 +369,6 @@ package androidx.ink.geometry {
   }
 
   public static final class MutableVec.Companion {
-    method public androidx.ink.geometry.MutableVec fromDirectionAndMagnitude(@androidx.ink.geometry.AngleRadiansFloat float direction, float magnitude);
   }
 
   public abstract class Parallelogram {
@@ -373,13 +382,13 @@ package androidx.ink.geometry {
     method public final operator boolean contains(androidx.ink.geometry.ImmutableVec point);
     method @InaccessibleFromKotlin public abstract androidx.ink.geometry.Vec getCenter();
     method @InaccessibleFromKotlin public abstract float getHeight();
-    method @InaccessibleFromKotlin @androidx.ink.geometry.AngleRadiansFloat public abstract float getRotation();
+    method @InaccessibleFromKotlin @FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public abstract float getRotationDegrees();
     method @InaccessibleFromKotlin public abstract float getSkew();
     method @InaccessibleFromKotlin @FloatRange(from=0.0) public abstract float getWidth();
     method public final boolean isAlmostEqual(androidx.ink.geometry.Parallelogram other, @FloatRange(from=0.0) float tolerance);
     property public abstract androidx.ink.geometry.Vec center;
     property public abstract float height;
-    property @androidx.ink.geometry.AngleRadiansFloat public abstract float rotation;
+    property @FloatRange(from=0.0, to=360.0, toInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public abstract float rotationDegrees;
     property public abstract float skew;
     property @FloatRange(from=0.0) public abstract float width;
     field public static final androidx.ink.geometry.Parallelogram.Companion Companion;
@@ -461,9 +470,9 @@ package androidx.ink.geometry {
   }
 
   public abstract class Vec {
-    method @FloatRange(from=0.0, to=java.lang.Math.PI) @androidx.ink.geometry.AngleRadiansFloat public static final float absoluteAngleBetween(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
+    method @FloatRange(from=0.0, to=180.0) @androidx.ink.geometry.AngleDegreesFloat public static final float absoluteAngleBetweenInDegrees(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
     method public static final void add(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs, androidx.ink.geometry.MutableVec output);
-    method @FloatRange(from=-3.141592653589793, to=java.lang.Math.PI) @androidx.ink.geometry.AngleRadiansFloat public final float computeDirection();
+    method @FloatRange(from=-180.0, to=180.0) @androidx.ink.geometry.AngleDegreesFloat public final float computeDirectionDegrees();
     method @FloatRange(from=0.0) public final float computeMagnitude();
     method @FloatRange(from=0.0) public final float computeMagnitudeSquared();
     method public final androidx.ink.geometry.ImmutableVec computeNegation();
@@ -479,11 +488,11 @@ package androidx.ink.geometry {
     method @InaccessibleFromKotlin public abstract float getY();
     method public final boolean isAlmostEqual(androidx.ink.geometry.Vec other);
     method public final boolean isAlmostEqual(androidx.ink.geometry.Vec other, optional @FloatRange(from=0.0) float tolerance);
-    method public final boolean isParallelTo(androidx.ink.geometry.Vec other, @FloatRange(from=0.0) @androidx.ink.geometry.AngleRadiansFloat float angleTolerance);
-    method public final boolean isPerpendicularTo(androidx.ink.geometry.Vec other, @FloatRange(from=0.0) @androidx.ink.geometry.AngleRadiansFloat float angleTolerance);
+    method public final boolean isParallelTo(androidx.ink.geometry.Vec other, @FloatRange(from=0.0) @androidx.ink.geometry.AngleDegreesFloat float toleranceDegrees);
+    method public final boolean isPerpendicularTo(androidx.ink.geometry.Vec other, @FloatRange(from=0.0) @androidx.ink.geometry.AngleDegreesFloat float toleranceDegrees);
     method public static final void multiply(androidx.ink.geometry.Vec lhs, float rhs, androidx.ink.geometry.MutableVec output);
     method public static final void multiply(float lhs, androidx.ink.geometry.Vec rhs, androidx.ink.geometry.MutableVec output);
-    method @FloatRange(from=-3.141592653589793, to=java.lang.Math.PI, fromInclusive=false) @androidx.ink.geometry.AngleRadiansFloat public static final float signedAngleBetween(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
+    method @FloatRange(from=-180.0, to=180.0, fromInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public static final float signedAngleBetweenInDegrees(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
     method public static final void subtract(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs, androidx.ink.geometry.MutableVec output);
     property public abstract float x;
     property public abstract float y;
@@ -492,14 +501,14 @@ package androidx.ink.geometry {
   }
 
   public static final class Vec.Companion {
-    method @FloatRange(from=0.0, to=java.lang.Math.PI) @androidx.ink.geometry.AngleRadiansFloat public float absoluteAngleBetween(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
+    method @FloatRange(from=0.0, to=180.0) @androidx.ink.geometry.AngleDegreesFloat public float absoluteAngleBetweenInDegrees(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
     method public void add(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs, androidx.ink.geometry.MutableVec output);
     method public float determinant(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
     method public void divide(androidx.ink.geometry.Vec lhs, float rhs, androidx.ink.geometry.MutableVec output);
     method public float dotProduct(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
     method public void multiply(androidx.ink.geometry.Vec lhs, float rhs, androidx.ink.geometry.MutableVec output);
     method public void multiply(float lhs, androidx.ink.geometry.Vec rhs, androidx.ink.geometry.MutableVec output);
-    method @FloatRange(from=-3.141592653589793, to=java.lang.Math.PI, fromInclusive=false) @androidx.ink.geometry.AngleRadiansFloat public float signedAngleBetween(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
+    method @FloatRange(from=-180.0, to=180.0, fromInclusive=false) @androidx.ink.geometry.AngleDegreesFloat public float signedAngleBetweenInDegrees(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs);
     method public void subtract(androidx.ink.geometry.Vec lhs, androidx.ink.geometry.Vec rhs, androidx.ink.geometry.MutableVec output);
     property public androidx.ink.geometry.ImmutableVec ORIGIN;
   }

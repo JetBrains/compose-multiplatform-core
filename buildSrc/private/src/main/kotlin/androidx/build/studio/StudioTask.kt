@@ -385,7 +385,7 @@ abstract class StudioTask : DefaultTask() {
         execOperations.exec { execSpec ->
             with(execSpec) {
                 executable("curl")
-                args(url, "--output", tmpDownloadPath)
+                args("-L", url, "--output", tmpDownloadPath)
             }
         }
 

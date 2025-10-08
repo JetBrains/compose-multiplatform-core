@@ -22,6 +22,7 @@ import android.graphics.BitmapShader
 import android.graphics.Color
 import android.graphics.ComposeShader
 import android.graphics.Matrix
+import android.graphics.Paint
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
@@ -40,6 +41,57 @@ class BrushPaintCacheTest {
 
     private fun nestedArrayToMatrix(values: Array<Array<Float>>) =
         Matrix().apply { setValues(values.flatten().toFloatArray()) }
+
+    @Test
+    fun obtain_withDefaultFlags() {
+        val cache = BrushPaintCache(TextureBitmapStore { null })
+        val paint =
+            cache.obtain(
+                BrushPaint(),
+                ComposeColor.Red,
+                brushSize = 1f,
+                StrokeInput(),
+                StrokeInput(),
+            )
+        // Though note that Paint.FILTER_BITMAP_FLAG is set anyways on some configurations before
+        // Android Q and all starting at Android Q. Note that in addition to FILTER_BITMAP_FLAG,
+        // Paint(), but not Paint(flags), also sets ANTI_ALIAS_FLAG implicitly starting at Android
+        // S.
+        assertThat(paint.isAntiAlias).isFalse()
+        assertThat(paint.isFilterBitmap).isTrue()
+        // Flag bitvs are the same, ignoring the flags that may be set by the boolean settings above
+        // instead.
+        assertThat(paint.flags or Paint.FILTER_BITMAP_FLAG)
+            .isEqualTo(Paint(0).flags or Paint.FILTER_BITMAP_FLAG)
+    }
+
+    @Test
+    fun obtain_withSpecifiedFlags() {
+        val cache =
+            BrushPaintCache(
+                TextureBitmapStore { null },
+                additionalPaintFlags = Paint.ANTI_ALIAS_FLAG,
+            )
+        val paint =
+            cache.obtain(
+                BrushPaint(),
+                ComposeColor.Red,
+                brushSize = 1f,
+                StrokeInput(),
+                StrokeInput(),
+                Matrix(),
+            )
+        // Though note that Paint.FILTER_BITMAP_FLAG is set anyways on some configurations before
+        // Android Q and all starting at Android Q. Note that in addition to FILTER_BITMAP_FLAG,
+        // Paint(), but not Paint(flags), also sets ANTI_ALIAS_FLAG implicitly starting at Android
+        // S.
+        assertThat(paint.isAntiAlias).isTrue()
+        assertThat(paint.isFilterBitmap).isTrue()
+        // Flag bitvs are the same, ignoring the flags that may be set by the boolean settings above
+        // instead.
+        assertThat(paint.flags or Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+            .isEqualTo(Paint(0).flags or Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    }
 
     @Test
     fun obtain_positionOnlyWithTexture() {

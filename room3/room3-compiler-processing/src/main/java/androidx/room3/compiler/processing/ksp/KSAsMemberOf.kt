@@ -16,6 +16,7 @@
 
 package androidx.room3.compiler.processing.ksp
 
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -24,21 +25,14 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 /** Returns the type of a property as if it is member of the given [ksType]. */
 internal fun KSPropertyDeclaration.typeAsMemberOf(ksType: KSType?): KSType {
     val resolved = type.resolve()
-    if (isStatic()) {
-        // calling as member with a static would throw as it might be a member of the companion
-        // object
-        return resolved
+    return when {
+        canSkipAsMemberOf() ||
+            ksType == null ||
+            // see: https://github.com/google/ksp/issues/107
+            // asMemberOf might lose the `isError` information hence we should check before calling.
+            resolved.isError -> resolved
+        else -> asMemberOf(containing = ksType)
     }
-    if (ksType == null) {
-        return resolved
-    }
-    // see: https://github.com/google/ksp/issues/107
-    // as member of might lose the `isError` information hence we should check before calling
-    // asMemberOf.
-    if (resolved.isError) {
-        return resolved
-    }
-    return this.asMemberOf(containing = ksType)
 }
 
 internal fun KSValueParameter.typeAsMemberOf(
@@ -46,38 +40,56 @@ internal fun KSValueParameter.typeAsMemberOf(
     ksType: KSType?,
     resolved: KSType = type.resolve(),
 ): KSType {
-    if (functionDeclaration.isStatic()) {
-        // calling as member with a static would throw as it might be a member of the companion
-        // object
-        return resolved
+    return when {
+        functionDeclaration.canSkipAsMemberOf() ||
+            ksType == null ||
+            // see: https://github.com/google/ksp/issues/107
+            // asMemberOf might lose the `isError` information hence we should check before calling.
+            resolved.isError -> resolved
+        else -> {
+            // TODO b/173224718
+            //  this is counter intuitive, we should remove asMemberOf from method parameters.
+            val myIndex = functionDeclaration.parameters.indexOf(this)
+            functionDeclaration.asMemberOf(containing = ksType).parameterTypes[myIndex] ?: resolved
+        }
     }
-    if (resolved.isError) {
-        // see: https://github.com/google/ksp/issues/107
-        // as member of might lose the `isError` information hence we should check before calling
-        // asMemberOf.
-        return resolved
-    }
-    if (ksType == null) {
-        return resolved
-    }
-    val asMember = functionDeclaration.asMemberOf(containing = ksType)
-    // TODO b/173224718
-    // this is counter intuitive, we should remove asMemberOf from method parameters.
-    val myIndex = functionDeclaration.parameters.indexOf(this)
-    return asMember.parameterTypes[myIndex] ?: resolved
 }
 
 internal fun KSFunctionDeclaration.returnTypeAsMemberOf(ksType: KSType?): KSType {
-    val resolved = returnType?.resolve()
+    val resolved = returnType?.resolve() ?: error("cannot find return type for $this")
     return when {
-        resolved == null -> null
-        ksType == null -> resolved
-        resolved.isError -> resolved
-        isStatic() -> {
-            // calling as member with a static would throw as it might be a member of the companion
-            // object
-            resolved
-        }
-        else -> this.asMemberOf(containing = ksType).returnType
-    } ?: error("cannot find return type for $this")
+        canSkipAsMemberOf() ||
+            ksType == null ||
+            // see: https://github.com/google/ksp/issues/107
+            // asMemberOf might lose the `isError` information hence we should check before calling.
+            resolved.isError -> resolved
+        else ->
+            asMemberOf(containing = ksType).returnType
+                ?: error("cannot find return type for $this as member of $ksType")
+    }
 }
+
+internal fun KSFunctionDeclaration.receiverTypeAsMemberOf(ksType: KSType?): KSType {
+    val resolved = extensionReceiver?.resolve() ?: error("cannot find receiver type for $this")
+    return when {
+        canSkipAsMemberOf() ||
+            ksType == null ||
+            // see: https://github.com/google/ksp/issues/107
+            // asMemberOf might lose the `isError` information hence we should check before calling.
+            resolved.isError -> resolved
+        else ->
+            asMemberOf(containing = ksType).extensionReceiverType
+                ?: error("cannot find receiver type for $this as member of $ksType")
+    }
+}
+
+/**
+ * Returns `true` if calling `asMemberOf` isn't required for the given declaration.
+ *
+ * In particular, java static declarations, top level declarations, and declarations within
+ * object/companion object don't require asMemberOf since they can't be overridden. Skipping it
+ * should be more efficient, and avoids cases where calling asMemberOf will throw if passed a
+ * companion object (see: https://issuetracker.google.com/443342969).
+ */
+private fun KSDeclaration.canSkipAsMemberOf() =
+    isJavaStatic() || isTopLevel() || isEnclosedInObject()

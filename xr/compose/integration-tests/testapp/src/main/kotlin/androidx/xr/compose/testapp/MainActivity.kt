@@ -84,6 +84,7 @@ import androidx.xr.compose.testapp.movablescalable.MovableScalable
 import androidx.xr.compose.testapp.panelembeddedsubspace.PanelEmbeddedSubspace
 import androidx.xr.compose.testapp.panelvolume.PanelVolume
 import androidx.xr.compose.testapp.permissionsdialog.PermissionsDialog
+import androidx.xr.compose.testapp.pose.Pose
 import androidx.xr.compose.testapp.resizablepanel.ResizablePanel
 import androidx.xr.compose.testapp.rotation.Rotation
 import androidx.xr.compose.testapp.spacemodechange.SpaceModeActivity
@@ -350,6 +351,7 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.lifecycle_runtime_session_test)) {
                         startTest<RuntimeSessionActivity>()
                     }
+                    TestCaseColumnRowItem(getString(R.string.pose_test)) { startTest<Pose>() }
                 }
             }
         }

@@ -31,7 +31,7 @@ import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices
 import androidx.compose.remote.frontend.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.frontend.layout.RemoteComposable
-import androidx.compose.remote.player.view.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.remote.test.screenshot.TargetPlayer
 import androidx.compose.remote.test.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable

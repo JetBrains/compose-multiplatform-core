@@ -70,6 +70,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -92,7 +93,7 @@ class ImageTest {
     val bgColor = Color.Blue
     val pathColor = Color.Red
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private fun createImageBitmap(): ImageBitmap {
         val image = ImageBitmap(imageWidth, imageHeight)

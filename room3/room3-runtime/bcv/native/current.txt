@@ -6,6 +6,10 @@
 // - Show declarations: true
 
 // Library unique name: <androidx.room3:room3-runtime>
+open annotation class androidx.room3/ExperimentalRoomApi : kotlin/Annotation { // androidx.room3/ExperimentalRoomApi|null[0]
+    constructor <init>() // androidx.room3/ExperimentalRoomApi.<init>|<init>(){}[0]
+}
+
 abstract interface <#A: androidx.room3/RoomDatabase> androidx.room3/RoomDatabaseConstructor { // androidx.room3/RoomDatabaseConstructor|null[0]
     abstract fun initialize(): #A // androidx.room3/RoomDatabaseConstructor.initialize|initialize(){}[0]
 }

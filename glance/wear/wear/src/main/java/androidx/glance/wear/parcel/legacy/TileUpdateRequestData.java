@@ -31,4 +31,8 @@ public final class TileUpdateRequestData extends ProtoParcelable {
     public TileUpdateRequestData(byte @NonNull [] params, int version) {
         super(params, version);
     }
+
+    public TileUpdateRequestData() {
+        this(new byte[] {}, VERSION_1);
+    }
 }

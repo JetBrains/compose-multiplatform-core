@@ -504,6 +504,35 @@ public suspend fun <R> RoomDatabase.useWriterConnection(block: suspend (Transact
         .also { invalidationTracker.refreshAsync() }
 
 /**
+ * Acquire a READ connection and start a [Transactor.SQLiteTransactionType.DEFERRED] transaction to
+ * execute the given [block] within the transaction.
+ *
+ * This function is a shorthand of:
+ * ```
+ * roomDatabase.useReaderConnection { it.withTransaction(DEFERRED) { block() } }
+ * ```
+ */
+@ExperimentalRoomApi
+public suspend fun <R> RoomDatabase.withReadTransaction(block: suspend (PooledConnection) -> R): R =
+    useReaderConnection {
+        it.withTransaction(Transactor.SQLiteTransactionType.DEFERRED, block)
+    }
+
+/**
+ * Acquire a WRITE connection and start a [Transactor.SQLiteTransactionType.IMMEDIATE] transaction
+ * to execute the given [block] within the transaction.
+ *
+ * This function is a shorthand of:
+ * ```
+ * roomDatabase.useWriterConnection { it.withTransaction(IMMEDIATE) { block() } }
+ * ```
+ */
+@ExperimentalRoomApi
+public suspend fun <R> RoomDatabase.withWriteTransaction(
+    block: suspend (PooledConnection) -> R
+): R = useWriterConnection { it.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE, block) }
+
+/**
  * A coroutine context element to mark coroutines that requested the use of a connection.
  *
  * This marker is used to identify database operations external to Room generated code or runtime

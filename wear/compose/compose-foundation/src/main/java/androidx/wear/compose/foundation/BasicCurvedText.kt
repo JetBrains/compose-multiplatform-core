@@ -376,10 +376,9 @@ internal class CurvedTextDelegate {
     }
 
     private fun updateMeasures() {
-        val rect = android.graphics.Rect()
-        paint.getTextBounds(text, 0, text.length, rect)
-
-        textWidth = rect.width().toFloat()
+        // We use measureText and not getTextBounds because the former correctly accounts for the
+        // spacing added when rendering.
+        textWidth = paint.measureText(text)
 
         // Note that ascent is negative, since it's above the baseline (which is at 0).
         val height = paint.fontMetrics.descent - paint.fontMetrics.ascent

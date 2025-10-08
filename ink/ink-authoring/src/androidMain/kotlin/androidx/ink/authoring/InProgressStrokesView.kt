@@ -102,7 +102,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         }
 
     /**
-     * [TextureBitmapStore] used by the default value for [rendererFactory].
+     * [TextureBitmapStore] used to create the [CanvasStrokeRenderer].
      *
      * By default, this is a no-op implementation that does not load any brush textures. The factory
      * functions are called when the renderer is initialized, so if this will be changed to
@@ -119,11 +119,19 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * A function that creates a [CanvasStrokeRenderer] when invoked. The default implementation of
      * this will automatically account for the Android OS version of the device. If you choose to
      * replace the default with an alternate implementation, then you must set this variable before
-     * the first call to [startStroke] or [eagerInit].
+     * the first call to [startStroke] or [eagerInit]. If this is set to a non-default value, the
+     * value of [textureBitmapStore] is ignored.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @Deprecated(
+        "For a non-self-overlapping highlighter, pass SelfOverlap.DISCARD to the selfOverlap " +
+            "parameter of StockBrushes.highlighter."
+    )
     public var rendererFactory: () -> CanvasStrokeRenderer = {
         CanvasStrokeRenderer.create(textureBitmapStore)
     }
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         set(value) {
             check(!isInitialized()) { "Cannot set rendererFactory after initialization." }
             field = value
@@ -304,7 +312,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
     private var renderHelper: InProgressStrokesRenderHelper? = null
 
     private val finishedStrokesView =
-        FinishedStrokesView(context, rendererFactory = rendererFactory)
+        FinishedStrokesView(context, rendererFactory = @Suppress("DEPRECATION") rendererFactory)
 
     // The simplified version of the API assumes that there is only one stroke in progress with a
     // given pointer ID at a time (i.e. that each stroke in a gesture is finished or cancelled
@@ -317,7 +325,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         val existingInstance = renderHelper
         if (existingInstance != null) return existingInstance
 
-        val renderer = rendererFactory()
+        val renderer = @Suppress("DEPRECATION") rendererFactory()
 
         @Suppress("ObsoleteSdkInt") // TODO(b/262911421): Should not need to suppress.
         val result =
@@ -821,6 +829,11 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
     protected override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         addView(finishedStrokesView)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        removeView(finishedStrokesView)
     }
 
     private companion object {

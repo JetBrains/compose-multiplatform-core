@@ -116,7 +116,7 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
                             itemsCount = itemsCount,
                             keyIndexMap = itemProvider.keyIndexMap,
                             measuredItemProvider = measuredItemProvider,
-                            itemSpacing = verticalArrangement.spacing.roundToPx(),
+                            verticalArrangement = verticalArrangement,
                             containerConstraints = containerConstraints,
                             scrollToBeConsumed = scrollToBeConsumed,
                             anchorItemKey = anchorItemKey,

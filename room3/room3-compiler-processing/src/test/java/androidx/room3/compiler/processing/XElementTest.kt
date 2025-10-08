@@ -917,19 +917,7 @@ class XElementTest {
             }
 
             companionObj.getDeclaredFields().let { fields ->
-                if (invocation.isKsp) {
-                    assertThat(fields.map { it.name })
-                        .containsExactly(
-                            "companionObjectProperty",
-                            "companionObjectPropertyJvmStatic",
-                            "companionObjectPropertyJvmField",
-                            "companionObjectPropertyLateinit",
-                            "companionObjectPropertyConst",
-                        )
-                    fields.forEach { assertThat(it.enclosingElement).isEqualTo(companionObj) }
-                } else {
-                    assertThat(companionObj.getDeclaredFields()).isEmpty()
-                }
+                assertThat(companionObj.getDeclaredFields()).isEmpty()
             }
 
             companionObj.getDeclaredMethods().let { methods ->

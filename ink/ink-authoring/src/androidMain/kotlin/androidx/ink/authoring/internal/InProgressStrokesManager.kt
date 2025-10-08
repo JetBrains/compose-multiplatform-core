@@ -1548,10 +1548,20 @@ internal class InProgressStrokesManager(
         inProgressStrokesRenderHelper.requestStrokeCohortHandoffToHwui(finishedStrokes)
     }
 
+    /**
+     * Returns a single texture animation duration for an entire [BrushFamily]. Note that this makes
+     * invalid assumptions that should be fixed before the release of particle texture animation.
+     *
+     * TODO: b/398881704 - Each coat and each paint preference within a coat, and in the future
+     *   possibly each texture layer within a paint preference, can have its own animation duration.
+     *   Instead of calculating the progress here, just pass down the timestamp and have the
+     *   renderer calculate the progress for the draw call for each coat.
+     */
     @OptIn(ExperimentalInkCustomBrushApi::class)
     private fun BrushFamily.computeTextureAnimationDurationMillis(): Long? {
         for (coat in this.coats) {
-            for (layer in coat.paint.textureLayers) {
+            val paint = coat.paintPreferences[0]
+            for (layer in paint.textureLayers) {
                 if (layer.animationFrames > 1) {
                     return layer.animationDurationMillis
                 }

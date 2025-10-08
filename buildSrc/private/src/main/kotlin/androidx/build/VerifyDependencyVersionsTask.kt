@@ -257,6 +257,9 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
     // don't verify baseline profile generating project dependencies
     if (name == "baselineProfile") return false
 
+    // Only used to run kotlinx benchmarks. Artifacts are not published by this configuration.
+    if (name == "benchmarkGenerator.resolver") return false
+
     // don't verify samples
     if (name == "samples") return false
 

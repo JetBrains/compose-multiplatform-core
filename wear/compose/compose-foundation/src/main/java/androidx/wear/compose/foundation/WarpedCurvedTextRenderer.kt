@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.foundation
 
-import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
@@ -32,14 +31,11 @@ import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.util.fastForEach
 import androidx.core.text.TextDirectionHeuristicsCompat
-import androidx.emoji2.bundled.BundledEmojiCompatConfig
 import androidx.emoji2.text.EmojiCompat
 import androidx.emoji2.text.EmojiSpan
 import androidx.graphics.path.PathIterator
 import androidx.graphics.path.PathSegment
 import androidx.graphics.path.iterator
-import androidx.startup.Initializer
-import java.util.concurrent.Executors
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -360,23 +356,6 @@ private class EmojiRunProcessorManager {
                 )
             }
         }
-    }
-}
-
-internal class EmojiCompatInitializer : Initializer<Unit> {
-    override fun create(context: Context) {
-        if (Build.VERSION.SDK_INT >= 29 && Build.VERSION.SDK_INT < 34) {
-            // No need to load if we are not using warping, or we are using the alternate
-            // implementation for API34+
-            val executor = Executors.newSingleThreadExecutor()
-            val config = BundledEmojiCompatConfig(context, executor).setReplaceAll(true)
-            EmojiCompat.init(config)
-        }
-    }
-
-    override fun dependencies(): List<Class<out Initializer<*>>> {
-        // No dependencies on other libraries.
-        return emptyList()
     }
 }
 

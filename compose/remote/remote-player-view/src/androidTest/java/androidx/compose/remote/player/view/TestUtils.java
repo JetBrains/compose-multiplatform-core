@@ -32,6 +32,7 @@ import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.creation.RemoteComposeContextAndroid;
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
+import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 
 import java.io.ByteArrayInputStream;

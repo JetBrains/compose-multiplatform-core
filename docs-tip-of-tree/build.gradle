@@ -86,6 +86,7 @@ dependencies {
     docs(project(":compose:remote:remote-foundation"))
     docs(project(":compose:remote:remote-frontend"))
     docs(project(":compose:remote:remote-player-compose"))
+    docs(project(":compose:remote:remote-player-core"))
     docs(project(":compose:remote:remote-player-view"))
     docs(project(":compose:remote:wear:wear-material3"))
     kmpDocs(project(":compose:runtime:runtime"))

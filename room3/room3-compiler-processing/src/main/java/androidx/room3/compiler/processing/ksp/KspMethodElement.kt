@@ -18,6 +18,7 @@ package androidx.room3.compiler.processing.ksp
 
 import androidx.room3.compiler.processing.XAnnotated
 import androidx.room3.compiler.processing.XExecutableParameterElement
+import androidx.room3.compiler.processing.XHasModifiers
 import androidx.room3.compiler.processing.XMethodElement
 import androidx.room3.compiler.processing.XMethodType
 import androidx.room3.compiler.processing.XType
@@ -42,6 +43,7 @@ internal sealed class KspMethodElement(
         delegate = declaration,
         filter = KspAnnotated.UseSiteFilter.NO_USE_SITE_OR_METHOD,
     ),
+    XHasModifiers by KspHasModifiers.create(declaration, isSyntheticStatic),
     XMethodElement {
 
     override val name: String
@@ -96,6 +98,26 @@ internal sealed class KspMethodElement(
             actualEnclosingElement.declaration!!.requireEnclosingMemberContainer(env)
         } else {
             actualEnclosingElement
+        }
+    }
+
+    /**
+     * Returns the synthetic static method for the companion object's enclosing class.
+     *
+     * If this method is declared in a Kotlin companion object, then this will return the synthetic
+     * static method owned by the companion object's enclosing class (to match KAPT). Otherwise,
+     * this will return null.
+     */
+    val syntheticStaticMethod: KspMethodElement? by lazy {
+        // If this is already a synthetic static method don't create another one.
+        if (
+            !isSyntheticStatic &&
+                declaration.isEnclosedInCompanionObject() &&
+                declaration.hasJvmStaticAnnotation()
+        ) {
+            createInternal(env, declaration, isSyntheticStatic = true)
+        } else {
+            null
         }
     }
 
@@ -191,10 +213,13 @@ internal sealed class KspMethodElement(
     }
 
     companion object {
-        fun create(
+        fun create(env: KspProcessingEnv, declaration: KSFunctionDeclaration) =
+            createInternal(env, declaration, isSyntheticStatic = false)
+
+        private fun createInternal(
             env: KspProcessingEnv,
             declaration: KSFunctionDeclaration,
-            isSyntheticStatic: Boolean = false,
+            isSyntheticStatic: Boolean,
         ): KspMethodElement {
             return if (declaration.modifiers.contains(Modifier.SUSPEND)) {
                 KspSuspendMethodElement(env, declaration, isSyntheticStatic)

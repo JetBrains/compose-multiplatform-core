@@ -516,17 +516,16 @@ public class InProgressStroke {
     }
 
     /**
-     * Gets the [MeshFormat] of the mesh at [partitionIndex] for brush coat [coatIndex] which must
-     * be less than that coat's [getMeshPartitionCount].
+     * Gets the [MeshFormat] for brush coat [coatIndex] which must be between 0 and
+     * [getBrushCoatCount].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun getMeshFormat(@IntRange(from = 0) coatIndex: Int, partitionIndex: Int): MeshFormat {
-        require(partitionIndex >= 0 && partitionIndex < getMeshPartitionCount(coatIndex)) {
-            "Cannot get mesh format at partitionIndex $partitionIndex out of range " +
-                "[0, ${getMeshPartitionCount(coatIndex)})."
+    public fun getMeshFormat(@IntRange(from = 0) coatIndex: Int): MeshFormat {
+        require(coatIndex >= 0 && coatIndex < getBrushCoatCount()) {
+            "Cannot get mesh format at coatIndex $coatIndex out of range [0, ${getBrushCoatCount()})."
         }
         return MeshFormat.wrapNative(
-            InProgressStrokeNative.newCopyOfMeshFormat(nativePointer, coatIndex, partitionIndex)
+            InProgressStrokeNative.newCopyOfMeshFormat(nativePointer, coatIndex)
         )
     }
 
@@ -656,11 +655,10 @@ private object InProgressStrokeNative {
     ): Int
 
     /**
-     * Return the address of a newly allocated copy of the `ink::MeshFormat` belonging to the mesh
-     * at [partitionIndex].
+     * Return the address of a newly allocated copy of the `ink::MeshFormat` for the coat at
+     * [coatIndex].
      */
-    @UsedByNative
-    external fun newCopyOfMeshFormat(nativePointer: Long, coatIndex: Int, partitionIndex: Int): Long
+    @UsedByNative external fun newCopyOfMeshFormat(nativePointer: Long, coatIndex: Int): Long
 
     /** Writes the updated region to [outEnvelope]. */
     @UsedByNative external fun fillUpdatedRegion(nativePointer: Long, outEnvelope: BoxAccumulator)

@@ -28,7 +28,7 @@ import android.util.Range
 import android.util.Rational
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.internal.DisplayInfoManager
+import androidx.camera.camera2.impl.DisplayInfoManager
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
@@ -599,8 +599,7 @@ class ResolutionSelectorDeviceTest(
             )
         } else {
             quirks.contains(
-                androidx.camera.camera2.internal.compat.quirk.AspectRatioLegacyApi21Quirk::class
-                    .java
+                androidx.camera.camera2.compat.quirk.AspectRatioLegacyApi21Quirk::class.java
             )
         }
     }
@@ -615,8 +614,7 @@ class ResolutionSelectorDeviceTest(
             )
         } else {
             hasDeviceQuirk(
-                androidx.camera.camera2.internal.compat.quirk
-                        .Nexus4AndroidLTargetAspectRatioQuirk::class
+                androidx.camera.camera2.compat.quirk.Nexus4AndroidLTargetAspectRatioQuirk::class
                     .java
             )
         }
@@ -628,9 +626,7 @@ class ResolutionSelectorDeviceTest(
                 androidx.camera.camera2.pipe.integration.compat.quirk.ExtraCroppingQuirk::class.java
             )
         } else {
-            hasDeviceQuirk(
-                androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk::class.java
-            )
+            hasDeviceQuirk(androidx.camera.camera2.compat.quirk.ExtraCroppingQuirk::class.java)
         }
 
     // Skips the tests when the devices have any of the quirks that might affect the selected
@@ -649,8 +645,7 @@ class ResolutionSelectorDeviceTest(
             )
         } else {
             hasDeviceQuirk(
-                androidx.camera.camera2.internal.compat.quirk.ExcludedSupportedSizesQuirk::class
-                    .java
+                androidx.camera.camera2.compat.quirk.ExcludedSupportedSizesQuirk::class.java
             )
         }
 
@@ -663,8 +658,7 @@ class ResolutionSelectorDeviceTest(
             )
         } else {
             hasDeviceQuirk(
-                androidx.camera.camera2.internal.compat.quirk.ExtraSupportedOutputSizeQuirk::class
-                    .java
+                androidx.camera.camera2.compat.quirk.ExtraSupportedOutputSizeQuirk::class.java
             )
         }
 
@@ -672,6 +666,6 @@ class ResolutionSelectorDeviceTest(
         if (implName == CameraPipeConfig::class.simpleName) {
             androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks.get(quirkClass)
         } else {
-            androidx.camera.camera2.internal.compat.quirk.DeviceQuirks.get(quirkClass)
+            androidx.camera.camera2.compat.quirk.DeviceQuirks.get(quirkClass)
         } != null
 }

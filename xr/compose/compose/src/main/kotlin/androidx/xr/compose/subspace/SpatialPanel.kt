@@ -329,12 +329,11 @@ public fun <T : View> SpatialAndroidViewPanel(
         modifier = finalModifier,
         update = { view ->
             if (dialogManager.isSpatialDialogActive.value) {
-                view.setOnClickListener(null)
                 view.foreground = DEFAULT_SCRIM_ALPHA.toDrawable()
+                view.setOnClickListener { dialogManager.isSpatialDialogActive.value = false }
             } else {
-                // Re-enable clicks without any action
-                view.setOnClickListener {}
                 view.foreground = Color.TRANSPARENT.toDrawable()
+                view.setOnClickListener(null)
             }
             update(view)
         },
@@ -467,7 +466,7 @@ public fun SpatialPanel(
                             // parent's size.
                             .pointerInput(Unit) {
                                 detectTapGestures {
-                                    // Prevent clicks to compose
+                                    dialogManager.isSpatialDialogActive.value = false
                                 }
                             }
                 )
@@ -636,7 +635,10 @@ public fun SpatialActivityPanel(
             val localContext = LocalContext.current
             val scrimView =
                 remember(localContext) {
-                    View(localContext).apply { foreground = DEFAULT_SCRIM_ALPHA.toDrawable() }
+                    View(localContext).apply {
+                        foreground = DEFAULT_SCRIM_ALPHA.toDrawable()
+                        setOnClickListener { dialogManager.isSpatialDialogActive.value = false }
+                    }
                 }
 
             val entityName = "ScrimPanel-${currentCompositeKeyHashCode}"
@@ -729,7 +731,6 @@ internal fun buildSpatialPanelModifier(
                     anchorPlaneOrientations = dragPolicy.anchorPlaneOrientations,
                     anchorPlaneSemantics = dragPolicy.anchorPlaneSemantics,
                 )
-
             is MovePolicy ->
                 baseModifier.movable(
                     enabled = dragPolicy.isEnabled,
@@ -739,7 +740,6 @@ internal fun buildSpatialPanelModifier(
                     onMoveEnd = dragPolicy.onMoveEnd,
                     onMove = dragPolicy.onMove,
                 )
-
             else -> {
                 baseModifier
             }

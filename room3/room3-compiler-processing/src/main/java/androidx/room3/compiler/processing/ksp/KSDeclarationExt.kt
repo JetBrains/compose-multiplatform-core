@@ -18,6 +18,7 @@ package androidx.room3.compiler.processing.ksp
 
 import androidx.room3.compiler.processing.ksp.synthetic.KspSyntheticFileMemberContainer
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
@@ -51,7 +52,7 @@ internal fun KSDeclaration.findEnclosingMemberContainer(
     env: KspProcessingEnv
 ): KspMemberContainer? {
     val memberContainer =
-        findEnclosingAncestorClassDeclaration()?.let { env.wrapClassDeclaration(it) }
+        findEnclosingAncestorClassDeclaration()?.let { env.wrapClassDeclarationForNonEnumEntry(it) }
             ?: this.containingFile?.let { env.wrapKSFile(it) }
     memberContainer?.let {
         return it
@@ -79,22 +80,37 @@ private fun KSDeclaration.findEnclosingAncestorClassDeclaration(): KSClassDeclar
     while (parent != null && parent !is KSClassDeclaration) {
         parent = parent.parentDeclaration
     }
-    return parent as? KSClassDeclaration
+    return parent
 }
 
-internal fun KSDeclaration.isStatic(): Boolean {
-    return modifiers.contains(Modifier.JAVA_STATIC) ||
-        hasJvmStaticAnnotation() ||
-        // declarations in the companion object move into the enclosing class as statics.
-        // https://kotlinlang.org/docs/java-to-kotlin-interop.html#static-fields
-        this.findEnclosingAncestorClassDeclaration()?.isCompanionObject == true ||
-        when (this) {
-            is KSPropertyAccessor -> this.receiver.findEnclosingAncestorClassDeclaration() == null
-            is KSPropertyDeclaration -> this.findEnclosingAncestorClassDeclaration() == null
-            is KSFunctionDeclaration -> this.findEnclosingAncestorClassDeclaration() == null
-            else -> false
-        }
+internal fun KSDeclaration.isEnclosedInCompanionObject(): Boolean {
+    return parentDeclaration?.isCompanionObject ?: false
 }
+
+internal fun KSDeclaration.isEnclosedInObject(): Boolean {
+    return parentDeclaration?.isObject ?: false
+}
+
+internal fun KSDeclaration.isEnclosedInNamedObject(): Boolean {
+    return parentDeclaration?.isNamedObject ?: false
+}
+
+internal val KSDeclaration.isCompanionObject: Boolean
+    get() = this is KSClassDeclaration && isCompanionObject
+
+internal val KSDeclaration.isObject: Boolean
+    get() = this is KSClassDeclaration && classKind == ClassKind.OBJECT
+
+internal val KSDeclaration.isNamedObject: Boolean
+    get() = this is KSClassDeclaration && isObject && !isCompanionObject
+
+internal fun KSDeclaration.isTopLevel(): Boolean =
+    when (this) {
+        is KSPropertyAccessor -> this.receiver.findEnclosingAncestorClassDeclaration() == null
+        else -> this.findEnclosingAncestorClassDeclaration() == null
+    }
+
+internal fun KSDeclaration.isJavaStatic(): Boolean = modifiers.contains(Modifier.JAVA_STATIC)
 
 internal fun KSDeclaration.isTransient(): Boolean {
     return modifiers.contains(Modifier.JAVA_TRANSIENT) || hasJvmTransientAnnotation()

@@ -20,6 +20,7 @@ import androidx.room3.compiler.processing.XAnnotated
 import androidx.room3.compiler.processing.XConstructorElement
 import androidx.room3.compiler.processing.XConstructorType
 import androidx.room3.compiler.processing.XExecutableParameterElement
+import androidx.room3.compiler.processing.XHasModifiers
 import androidx.room3.compiler.processing.XType
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
@@ -33,6 +34,7 @@ internal open class KspConstructorElement(
         delegate = declaration,
         filter = KspAnnotated.UseSiteFilter.NO_USE_SITE_OR_CONSTRUCTOR,
     ),
+    XHasModifiers by KspHasModifiers.create(declaration),
     XConstructorElement {
 
     override fun isSyntheticConstructorForJvmOverloads() = false

@@ -76,7 +76,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -88,7 +89,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DraggableTest {
 
-    @get:Rule val rule = createComposeRule()
+    val testDispatcher = StandardTestDispatcher()
+    @get:Rule val rule = createComposeRule(testDispatcher)
 
     private val draggableBoxTag = "dragTag"
 
@@ -782,107 +784,109 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_resumesNormally_whenInterruptedWithHigherPriority() = runBlocking {
-        var total = 0f
-        var dragStopped = 0f
-        val state = DraggableState { total += it }
-        setDraggableContent {
-            if (total < 20f) {
-                Modifier.draggable(
-                    orientation = Orientation.Horizontal,
-                    onDragStopped = { dragStopped += 1 },
-                    state = state,
-                )
-            } else Modifier
-        }
-        rule.onNodeWithTag(draggableBoxTag).performTouchInput {
-            down(center)
-            moveBy(Offset(100f, 100f))
-        }
-        val prevTotal =
-            rule.runOnIdle {
-                assertThat(dragStopped).isEqualTo(0f)
-                assertThat(total).isGreaterThan(0f)
-                total
+    fun draggable_resumesNormally_whenInterruptedWithHigherPriority() =
+        runTest(testDispatcher) {
+            var total = 0f
+            var dragStopped = 0f
+            val state = DraggableState { total += it }
+            setDraggableContent {
+                if (total < 20f) {
+                    Modifier.draggable(
+                        orientation = Orientation.Horizontal,
+                        onDragStopped = { dragStopped += 1 },
+                        state = state,
+                    )
+                } else Modifier
             }
-        state.drag(MutatePriority.PreventUserInput) { dragBy(123f) }
-        rule.runOnIdle {
-            assertThat(total).isEqualTo(prevTotal + 123f)
-            assertThat(dragStopped).isEqualTo(1f)
+            rule.onNodeWithTag(draggableBoxTag).performTouchInput {
+                down(center)
+                moveBy(Offset(100f, 100f))
+            }
+            val prevTotal =
+                rule.runOnIdle {
+                    assertThat(dragStopped).isEqualTo(0f)
+                    assertThat(total).isGreaterThan(0f)
+                    total
+                }
+            state.drag(MutatePriority.PreventUserInput) { dragBy(123f) }
+            rule.runOnIdle {
+                assertThat(total).isEqualTo(prevTotal + 123f)
+                assertThat(dragStopped).isEqualTo(1f)
+            }
+            rule.onNodeWithTag(draggableBoxTag).performTouchInput {
+                up()
+                down(center)
+                moveBy(Offset(100f, 100f))
+                up()
+            }
+            rule.runOnIdle { assertThat(total).isGreaterThan(prevTotal + 123f) }
         }
-        rule.onNodeWithTag(draggableBoxTag).performTouchInput {
-            up()
-            down(center)
-            moveBy(Offset(100f, 100f))
-            up()
-        }
-        rule.runOnIdle { assertThat(total).isGreaterThan(prevTotal + 123f) }
-    }
 
     @Test
-    fun draggable_resumesNormally_whenInterruptedWithHigherPriority_indirectTouch() = runBlocking {
-        var total = 0f
-        var dragStopped = 0f
-        val state = DraggableState { total += it }
+    fun draggable_resumesNormally_whenInterruptedWithHigherPriority_indirectTouch() =
+        runTest(testDispatcher) {
+            var total = 0f
+            var dragStopped = 0f
+            val state = DraggableState { total += it }
 
-        setDraggableContent(enableInitialFocus = true) {
-            if (total < 20f) {
-                Modifier.draggable(
-                    orientation = Orientation.Horizontal,
-                    onDragStopped = { dragStopped += 1 },
-                    state = state,
-                )
-            } else Modifier
-        }
-
-        val stepSize = Offset((TouchPadEnd - TouchPadStart) / 10, 0f)
-        var currentTime = SystemClock.uptimeMillis()
-        var currentValue = Offset(TouchPadStart, 0f)
-
-        val downEvent =
-            rule
-                .onNodeWithTag(draggableBoxTag)
-                .sendIndirectTouchPressEvent(rule, currentTime, currentValue)
-        currentTime += 16L
-        currentValue += stepSize
-
-        val (newCurrentTime, newCurrentValue, lastMove) =
-            rule
-                .onNodeWithTag(draggableBoxTag)
-                .sendIndirectTouchMoveEvents(
-                    rule,
-                    5,
-                    currentTime,
-                    currentValue,
-                    16L,
-                    stepSize,
-                    IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-                    previousEvent = downEvent,
-                )
-
-        val prevTotal =
-            rule.runOnIdle {
-                assertThat(dragStopped).isEqualTo(0f)
-                assertThat(total).isGreaterThan(0f)
-                total
+            setDraggableContent(enableInitialFocus = true) {
+                if (total < 20f) {
+                    Modifier.draggable(
+                        orientation = Orientation.Horizontal,
+                        onDragStopped = { dragStopped += 1 },
+                        state = state,
+                    )
+                } else Modifier
             }
-        state.drag(MutatePriority.PreventUserInput) { dragBy(123f) }
-        rule.runOnIdle {
-            assertThat(total).isEqualTo(prevTotal + 123f)
-            assertThat(dragStopped).isEqualTo(1f)
-        }
 
-        rule
-            .onNodeWithTag(draggableBoxTag)
-            .sendIndirectTouchReleaseEvent(
-                rule,
-                newCurrentTime,
-                newCurrentValue,
-                previousEvent = lastMove,
-            )
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward(rule)
-        rule.runOnIdle { assertThat(total).isGreaterThan(prevTotal + 123f) }
-    }
+            val stepSize = Offset((TouchPadEnd - TouchPadStart) / 10, 0f)
+            var currentTime = SystemClock.uptimeMillis()
+            var currentValue = Offset(TouchPadStart, 0f)
+
+            val downEvent =
+                rule
+                    .onNodeWithTag(draggableBoxTag)
+                    .sendIndirectTouchPressEvent(rule, currentTime, currentValue)
+            currentTime += 16L
+            currentValue += stepSize
+
+            val (newCurrentTime, newCurrentValue, lastMove) =
+                rule
+                    .onNodeWithTag(draggableBoxTag)
+                    .sendIndirectTouchMoveEvents(
+                        rule,
+                        5,
+                        currentTime,
+                        currentValue,
+                        16L,
+                        stepSize,
+                        IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+                        previousEvent = downEvent,
+                    )
+
+            val prevTotal =
+                rule.runOnIdle {
+                    assertThat(dragStopped).isEqualTo(0f)
+                    assertThat(total).isGreaterThan(0f)
+                    total
+                }
+            state.drag(MutatePriority.PreventUserInput) { dragBy(123f) }
+            rule.runOnIdle {
+                assertThat(total).isEqualTo(prevTotal + 123f)
+                assertThat(dragStopped).isEqualTo(1f)
+            }
+
+            rule
+                .onNodeWithTag(draggableBoxTag)
+                .sendIndirectTouchReleaseEvent(
+                    rule,
+                    newCurrentTime,
+                    newCurrentValue,
+                    previousEvent = lastMove,
+                )
+            rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward(rule)
+            rule.runOnIdle { assertThat(total).isGreaterThan(prevTotal + 123f) }
+        }
 
     @Test
     fun draggable_noNestedDrag() {

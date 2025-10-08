@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
+import androidx.xr.glimmer.performIndirectSwipe
 import androidx.xr.glimmer.setGlimmerThemeContent
 import org.junit.Test
 import org.junit.runner.RunWith

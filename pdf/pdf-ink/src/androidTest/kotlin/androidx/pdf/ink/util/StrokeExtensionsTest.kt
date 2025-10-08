@@ -83,7 +83,7 @@ class StrokeExtensionsTest {
             listOf(createStrokeInput(x = 10f, y = 20f), createStrokeInput(x = 30f, y = 40f))
         val brush =
             Brush.createWithColorIntArgb(
-                family = StockBrushes.pressurePenLatest,
+                family = StockBrushes.pressurePen(),
                 colorIntArgb = Color.Blue.toArgb(),
                 size = 1f,
                 epsilon = 0.1f,
@@ -144,7 +144,7 @@ class StrokeExtensionsTest {
     private companion object {
         private val DEFAULT_BRUSH =
             Brush.createWithColorIntArgb(
-                family = StockBrushes.pressurePenLatest,
+                family = StockBrushes.pressurePen(),
                 colorIntArgb = Color.Black.toArgb(),
                 size = 5f,
                 epsilon = 0.1f,

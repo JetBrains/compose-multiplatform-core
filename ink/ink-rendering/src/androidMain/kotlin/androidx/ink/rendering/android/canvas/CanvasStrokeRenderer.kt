@@ -23,7 +23,6 @@ import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.nativeloader.NativeLoader
-import androidx.ink.rendering.android.canvas.internal.CanvasPathRenderer
 import androidx.ink.rendering.android.canvas.internal.CanvasStrokeUnifiedRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke
@@ -276,8 +275,7 @@ public interface CanvasStrokeRenderer {
             forcePathRendering: Boolean,
             textureStore: TextureBitmapStore = TextureBitmapStore { null },
         ): CanvasStrokeRenderer {
-            if (!forcePathRendering) return CanvasStrokeUnifiedRenderer(textureStore)
-            return CanvasPathRenderer(textureStore)
+            return CanvasStrokeUnifiedRenderer(textureStore, forcePathRendering)
         }
     }
 }

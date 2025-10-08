@@ -225,19 +225,19 @@ object XConverters {
 
     @JvmStatic
     fun KSClassDeclaration.toXProcessing(env: XProcessingEnv): XTypeElement =
-        (env as KspProcessingEnv).wrapClassDeclaration(this)
+        (env as KspProcessingEnv).wrapClassDeclarationForNonEnumEntry(this)
 
     @JvmStatic
     fun KSFunctionDeclaration.toXProcessing(env: XProcessingEnv): XExecutableElement =
-        KspExecutableElement.create(env as KspProcessingEnv, this)
+        (env as KspProcessingEnv).wrapFunctionDeclaration(this)
 
     @JvmStatic
     fun KSValueParameter.toXProcessing(env: XProcessingEnv): XVariableElement =
-        KspExecutableParameterElement.create(env as KspProcessingEnv, this)
+        (env as KspProcessingEnv).wrapValueParameter(this)
 
     @JvmStatic
     fun KSPropertyDeclaration.toXProcessing(env: XProcessingEnv): XVariableElement =
-        KspFieldElement.create(env as KspProcessingEnv, this)
+        (env as KspProcessingEnv).wrapPropertyDeclaration(this)
 
     @JvmStatic
     fun KSAnnotation.toXProcessing(env: XProcessingEnv): XAnnotation =

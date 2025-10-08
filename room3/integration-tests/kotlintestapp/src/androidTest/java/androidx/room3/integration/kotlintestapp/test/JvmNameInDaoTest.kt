@@ -28,11 +28,12 @@ import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.TypeConverter
 import androidx.room3.TypeConverters
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Test
 
 /**
- * This test has JvmName annotation on @Dao declarations to ensure Room properly handles them.
+ * This test has [JvmName] annotation on @Dao declarations to ensure Room properly handles them.
  *
  * If this this test fails because of the `INAPPLICABLE_JVM_NAME` suppression, we can disable the
  * test if needed. We should not try too hard to support cases when developer disables a compiler
@@ -44,10 +45,8 @@ class JvmNameInDaoTest {
         val entity =
             JvmNameEntity(id = 1, name = "value1", convertedClass = MyConvertedClass("value2"))
         val db =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    JvmNameDb::class.java,
-                )
+            Room.inMemoryDatabaseBuilder<JvmNameDb>(ApplicationProvider.getApplicationContext())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
         try {
             db.getDao().insert(entity)

@@ -27,12 +27,8 @@ import androidx.room3.compiler.processing.testcode.OtherAnnotation
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.compileFiles
 import androidx.room3.compiler.processing.util.getDeclaredMethodByJvmName
-import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.compiler.processing.util.runProcessorTest
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
-import com.squareup.kotlinpoet.INT
-import com.squareup.kotlinpoet.UNIT
-import com.squareup.kotlinpoet.javapoet.JTypeName
 import org.junit.Test
 
 class XRoundEnvTest {
@@ -257,7 +253,7 @@ class XRoundEnvTest {
                     .trimIndent(),
             )
 
-        runKspTest(listOf(source)) { testInvocation ->
+        runProcessorTest(listOf(source)) { testInvocation ->
             val annotatedElements =
                 testInvocation.roundEnv.getElementsAnnotatedWith(TopLevelAnnotation::class)
             assertThat(annotatedElements).hasSize(3)
@@ -279,8 +275,7 @@ class XRoundEnvTest {
                 assertThat(it.isStatic()).isTrue()
             }
             (byName["setMyPropertySetter"] as XMethodElement).let {
-                assertThat(it.returnType.asTypeName().java).isEqualTo(JTypeName.VOID)
-                assertThat(it.returnType.asTypeName().kotlin).isEqualTo(UNIT)
+                assertThat(it.returnType.asTypeName()).isEqualTo(XTypeName.UNIT_VOID)
                 assertThat(it.parameters).hasSize(1)
                 assertThat(it.parameters.first().type.asTypeName())
                     .isEqualTo(XTypeName.PRIMITIVE_INT)
@@ -288,8 +283,7 @@ class XRoundEnvTest {
                 assertThat(it.isStatic()).isTrue()
             }
             (byName["myProperty"] as XFieldElement).let {
-                assertThat(it.type.asTypeName().java).isEqualTo(JTypeName.INT)
-                assertThat(it.type.asTypeName().kotlin).isEqualTo(INT)
+                assertThat(it.type.asTypeName()).isEqualTo(XTypeName.PRIMITIVE_INT)
                 assertThat(it.enclosingElement.asClassName()).isEqualTo(containerClassName)
                 assertThat(it.isStatic()).isTrue()
             }

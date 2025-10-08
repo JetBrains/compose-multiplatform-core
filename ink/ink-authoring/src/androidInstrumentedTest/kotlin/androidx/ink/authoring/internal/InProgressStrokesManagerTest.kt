@@ -2062,7 +2062,7 @@ internal class InProgressStrokesManagerTest {
         assertThat(renderHelper.drawCount).isEqualTo(numDraws)
     }
 
-    private fun makeBrush() = Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f)
+    private fun makeBrush() = Brush(family = StockBrushes.marker(), size = 10f, epsilon = 0.1f)
 }
 
 private class FakeClock(var timeNanos: Long = 0L) {

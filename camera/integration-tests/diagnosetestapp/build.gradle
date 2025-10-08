@@ -61,6 +61,8 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
+    androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
+    androidTestImplementation(project(":concurrent:concurrent-futures"))
     debugImplementation(libs.testCore)
 
     androidTestImplementation(project(":concurrent:concurrent-futures"))

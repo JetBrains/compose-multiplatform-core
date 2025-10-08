@@ -21,6 +21,15 @@
 
     <issue
         id="RestrictedApiAndroidX"
+        message="RemoteComposeDocument can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                    documentState = RemoteComposeDocument(doc)"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
         message="RemoteComposeCaptureKt.RememberRemoteDocumentInline can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
         errorLine1="        ) {"
         errorLine2="          ^">
@@ -51,6 +60,24 @@
         message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
         errorLine1="            RemoteDocumentPlayer("
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeDocument.getDocument can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                document = documentState!!.document,"
+        errorLine2="                                           ~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeDocument.getDocument can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                document = documentState!!.document,"
+        errorLine2="                                           ~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/integration/demos/MainActivity.kt"/>
     </issue>
@@ -138,6 +165,15 @@
 
     <issue
         id="RestrictedApiAndroidX"
+        message="RemoteComposeDocument can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                    documentState = RemoteComposeDocument(doc)"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
         message="RemoteComposeCaptureKt.RememberRemoteDocumentInline can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
         errorLine1="            content = content,"
         errorLine2="                      ~~~~~~~">
@@ -150,6 +186,24 @@
         message="RemoteDocumentPlayerKt.RemoteDocumentPlayer can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
         errorLine1="            RemoteDocumentPlayer("
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeDocument.getDocument can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                document = documentState!!.document,"
+        errorLine2="                                           ~~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteComposeDocument.getDocument can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.compose.remote.integration-tests`)"
+        errorLine1="                document = documentState!!.document,"
+        errorLine2="                                           ~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/integration/demos/preview/RemoteComposePreview.kt"/>
     </issue>

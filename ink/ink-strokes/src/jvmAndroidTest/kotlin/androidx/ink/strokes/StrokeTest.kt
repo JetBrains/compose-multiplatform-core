@@ -123,18 +123,9 @@ class StrokeTest {
                 family =
                     BrushFamily(
                         coats =
-                            // The preferred Kotlin API method, [toImmutableList], is only available
-                            // in google3,
-                            // but this class and method are targeted for Jetpack.
-                            @Suppress("PreferKotlinApi")
-                            ImmutableList.copyOf(
-                                originalBrush.family.coats.map { coat ->
-                                    BrushCoat(
-                                        tip = coat.tip.copy(scaleX = 0.12345f),
-                                        paint = coat.paint,
-                                    )
-                                }
-                            ),
+                            originalBrush.family.coats.map { coat ->
+                                coat.copy(tip = coat.tip.copy(scaleX = 0.12345f))
+                            },
                         clientBrushFamilyId = originalBrush.family.clientBrushFamilyId,
                     ),
                 colorLong = originalBrush.colorLong,
@@ -165,14 +156,10 @@ class StrokeTest {
                 family =
                     originalBrush.family.copy(
                         coats =
-                            // The preferred Kotlin API method, [toImmutableList], is only available
-                            // in google3,
-                            // but this class and method are targeted for Jetpack.
-                            @Suppress("PreferKotlinApi")
-                            ImmutableList.copyOf(
-                                originalBrush.family.coats.map { coat ->
-                                    coat.copy(
-                                        paint =
+                            originalBrush.family.coats.map { coat ->
+                                coat.copy(
+                                    paintPreferences =
+                                        listOf(
                                             BrushPaint(
                                                 ImmutableList.of(
                                                     BrushPaint.TextureLayer(
@@ -199,9 +186,9 @@ class StrokeTest {
                                                     ),
                                                 )
                                             )
-                                    )
-                                }
-                            )
+                                        )
+                                )
+                            }
                     )
             )
         val inputs = makeTestInputs()
@@ -221,79 +208,83 @@ class StrokeTest {
 
     @Test
     fun copy_withNeedsMoreAttributesBrushPaint_createsCopyWithSameInputsAndDifferentShape() {
-        val noWindingBrush = buildTestBrush()
-        val modifiedCoats = noWindingBrush.family.coats.toMutableList()
+        val noStampingBrush = buildTestBrush()
+        val modifiedCoats = noStampingBrush.family.coats.toMutableList()
         modifiedCoats[0] =
             modifiedCoats[0].copy(
-                paint =
-                    BrushPaint(
-                        listOf(
-                            BrushPaint.TextureLayer(
-                                clientTextureId = "test-one",
-                                sizeX = 123.45F,
-                                sizeY = 678.90F,
-                                offsetX = 0.1F,
-                                offsetY = 0.2F,
-                                sizeUnit = BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
-                                mapping = BrushPaint.TextureMapping.WINDING,
+                paintPreferences =
+                    listOf(
+                        BrushPaint(
+                            listOf(
+                                BrushPaint.TextureLayer(
+                                    clientTextureId = "test-one",
+                                    sizeX = 123.45F,
+                                    sizeY = 678.90F,
+                                    offsetX = 0.1F,
+                                    offsetY = 0.2F,
+                                    sizeUnit = BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
+                                    mapping = BrushPaint.TextureMapping.STAMPING,
+                                )
                             )
                         )
                     )
             )
-        val windingBrush =
-            buildTestBrush().copy(family = noWindingBrush.family.copy(coats = modifiedCoats))
+        val stampingBrush =
+            buildTestBrush().copy(family = noStampingBrush.family.copy(coats = modifiedCoats))
         val inputs = makeTestInputs()
-        val noWindingStroke =
+        val noStampingStroke =
             InProgressStroke()
                 .apply {
-                    start(noWindingBrush)
+                    start(noStampingBrush)
                     enqueueInputs(inputs, ImmutableStrokeInputBatch.EMPTY)
                     finishInput()
                     updateShape(0)
                 }
                 .toImmutableWithUnusedAttributesPruned()
-        val changedToWinding = noWindingStroke.copy(brush = windingBrush)
-        assertThat(noWindingStroke.shape.renderGroupFormat(0).attributeCount())
-            .isLessThan(changedToWinding.shape.renderGroupFormat(0).attributeCount())
-        assertThat(changedToWinding.shape).isNotSameInstanceAs(noWindingStroke.shape)
+        val changedToStamping = noStampingStroke.copy(brush = stampingBrush)
+        assertThat(noStampingStroke.shape.renderGroupFormat(0).attributeCount())
+            .isLessThan(changedToStamping.shape.renderGroupFormat(0).attributeCount())
+        assertThat(changedToStamping.shape).isNotSameInstanceAs(noStampingStroke.shape)
     }
 
     @Test
     fun copy_withNeedsFewerAttributesBrushPaint_createsCopyWithSameInputsAndShape() {
-        val noWindingBrush = buildTestBrush()
-        val modifiedCoats = noWindingBrush.family.coats.toMutableList()
+        val noStampingBrush = buildTestBrush()
+        val modifiedCoats = noStampingBrush.family.coats.toMutableList()
         modifiedCoats[0] =
             modifiedCoats[0].copy(
-                paint =
-                    BrushPaint(
-                        listOf(
-                            BrushPaint.TextureLayer(
-                                clientTextureId = "test-one",
-                                sizeX = 123.45F,
-                                sizeY = 678.90F,
-                                offsetX = 0.1F,
-                                offsetY = 0.2F,
-                                sizeUnit = BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
-                                mapping = BrushPaint.TextureMapping.WINDING,
+                paintPreferences =
+                    listOf(
+                        BrushPaint(
+                            listOf(
+                                BrushPaint.TextureLayer(
+                                    clientTextureId = "test-one",
+                                    sizeX = 123.45F,
+                                    sizeY = 678.90F,
+                                    offsetX = 0.1F,
+                                    offsetY = 0.2F,
+                                    sizeUnit = BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
+                                    mapping = BrushPaint.TextureMapping.STAMPING,
+                                )
                             )
                         )
                     )
             )
-        val windingBrush =
-            buildTestBrush().copy(family = noWindingBrush.family.copy(coats = modifiedCoats))
+        val stampingBrush =
+            buildTestBrush().copy(family = noStampingBrush.family.copy(coats = modifiedCoats))
         val inputs = makeTestInputs()
 
-        val windingStroke =
+        val stampingStroke =
             InProgressStroke()
                 .apply {
-                    start(windingBrush)
+                    start(stampingBrush)
                     enqueueInputs(inputs, ImmutableStrokeInputBatch.EMPTY)
                     finishInput()
                     updateShape(0)
                 }
                 .toImmutableWithUnusedAttributesPruned()
-        val changedToNoWinding = windingStroke.copy(brush = noWindingBrush)
-        assertThat(changedToNoWinding.shape).isSameInstanceAs(windingStroke.shape)
+        val changedToNoStamping = stampingStroke.copy(brush = noStampingBrush)
+        assertThat(changedToNoStamping.shape).isSameInstanceAs(stampingStroke.shape)
     }
 
     @Test

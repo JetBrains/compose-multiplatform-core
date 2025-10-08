@@ -26,6 +26,7 @@ import androidx.room3.compiler.processing.ksp.KspAnnotated
 import androidx.room3.compiler.processing.ksp.KspMethodElement
 import androidx.room3.compiler.processing.ksp.KspProcessingEnv
 import androidx.room3.compiler.processing.ksp.KspType
+import androidx.room3.compiler.processing.ksp.receiverTypeAsMemberOf
 import com.google.devtools.ksp.symbol.KSTypeReference
 
 internal class KspSyntheticReceiverParameterElement(
@@ -84,16 +85,10 @@ internal class KspSyntheticReceiverParameterElement(
 
     private fun createAsMemberOf(container: XType?): KspType {
         check(container is KspType?)
-        val asMemberReceiverType =
-            receiverType.resolve().let {
-                if (container?.ksType == null || it.isError) {
-                    return@let it
-                }
-                val asMember =
-                    enclosingElement.declaration.asMemberOf((container as KspType).ksType)
-                checkNotNull(asMember.extensionReceiverType)
-            }
-        return env.wrap(originatingReference = receiverType, ksType = asMemberReceiverType)
+        return env.wrap(
+                originatingReference = receiverType,
+                ksType = enclosingElement.declaration.receiverTypeAsMemberOf(container?.ksType),
+            )
             .copyWithScope(
                 KSTypeVarianceResolverScope.MethodParameter(
                     kspExecutableElement = enclosingElement,

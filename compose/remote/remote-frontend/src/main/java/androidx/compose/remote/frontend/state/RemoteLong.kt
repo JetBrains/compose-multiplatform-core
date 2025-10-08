@@ -21,7 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.Platform
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.frontend.capture.RemoteComposeCreationState
-import androidx.compose.remote.player.view.state.RemoteDomains
+import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableLongState
 import androidx.compose.runtime.mutableLongStateOf

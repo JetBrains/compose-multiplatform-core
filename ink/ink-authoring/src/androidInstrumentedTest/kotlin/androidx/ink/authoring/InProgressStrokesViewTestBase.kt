@@ -180,7 +180,7 @@ open class InProgressStrokesViewTestBase {
 
     protected fun basicBrush(@ColorInt color: Int) =
         Brush.createWithColorIntArgb(
-            family = StockBrushes.markerLatest,
+            family = StockBrushes.marker(),
             colorIntArgb = color,
             size = 25F,
             epsilon = 0.1F,

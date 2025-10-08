@@ -16,6 +16,8 @@
 
 package androidx.tracing.driver
 
+import kotlin.concurrent.Volatile
+
 // False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
 @Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
 @DelicateTracingApi
@@ -36,6 +38,7 @@ internal constructor(
      */
     @field:Suppress("MutableBareField") // public / mutable to minimize overhead
     @JvmField
+    @Volatile // This value is updated by multiple threads (the track, and the sink)
     public var fillCount: Int,
 ) : Poolable<PooledTracePacketArray>(owner) {
     public inline fun forEach(block: (packet: TraceEvent) -> Unit) {

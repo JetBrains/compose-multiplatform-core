@@ -23,11 +23,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.size
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.operations.Theme
-import androidx.compose.remote.player.view.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteComposeDocument
+import androidx.compose.remote.player.core.action.NamedActionHandler
+import androidx.compose.remote.player.core.action.StateUpdaterActionCallback
+import androidx.compose.remote.player.core.state.StateUpdater
 import androidx.compose.remote.player.view.RemoteComposePlayer
-import androidx.compose.remote.player.view.action.NamedActionHandler
-import androidx.compose.remote.player.view.action.StateUpdaterActionCallback
-import androidx.compose.remote.player.view.state.StateUpdater
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

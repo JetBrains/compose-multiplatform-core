@@ -230,7 +230,7 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         }
 
         withActivity { activity ->
-            val brush = Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f)
+            val brush = Brush(family = StockBrushes.marker(), size = 10f, epsilon = 0.1f)
             val stroke = Stroke(brush, ImmutableStrokeInputBatch.EMPTY)
             val handingOff = mapOf(InProgressStrokeId() to FinishedStroke(stroke, Matrix()))
             activity.renderHelper.requestStrokeCohortHandoffToHwui(handingOff)

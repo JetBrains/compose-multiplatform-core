@@ -15,6 +15,7 @@
  */
 package androidx.room3.integration.kotlintestapp.test
 
+import androidx.kruth.assertThat
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Entity
@@ -24,11 +25,10 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomWarnings
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -42,10 +42,8 @@ class ItemWithNullableConstructor {
     @Before
     fun initDb() {
         db =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    Db::class.java,
-                )
+            Room.inMemoryDatabaseBuilder<Db>(ApplicationProvider.getApplicationContext())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
     }
 
@@ -57,7 +55,7 @@ class ItemWithNullableConstructor {
     @Test
     fun insertWithNull() {
         db.getDao().insert(TestItem(null, null))
-        assertThat(db.getDao().get(), `is`(TestItem(1, null)))
+        assertThat(db.getDao().get()).isEqualTo(TestItem(1, null))
     }
 
     @Entity

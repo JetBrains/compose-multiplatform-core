@@ -35,7 +35,7 @@ import androidx.compose.remote.frontend.state.RemoteColor
 import androidx.compose.remote.frontend.state.RemoteFloat
 import androidx.compose.remote.frontend.state.RemotePaint
 import androidx.compose.remote.frontend.test.R
-import androidx.compose.remote.player.view.platform.AndroidRemoteContext
+import androidx.compose.remote.player.core.platform.AndroidRemoteContext
 import androidx.compose.ui.geometry.Size
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4

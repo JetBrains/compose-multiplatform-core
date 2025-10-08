@@ -19,9 +19,11 @@ package androidx.credentials.providerevents
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.Signature
 import android.content.pm.SigningInfo
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import androidx.annotation.RestrictTo
 import androidx.credentials.provider.CallingAppInfo
 import androidx.credentials.providerevents.exception.ImportCredentialsException
@@ -62,6 +64,10 @@ public class IntentHandler {
         private const val EXTRA_CRED_ID = "androidx.credentials.providerevents.extra.CREDENTIAL_ID"
         private const val EXTRA_IMPORT_CREDENTIALS_EXCEPTION =
             "androidx.credentials.providerevents.extra.EXTRA_IMPORT_CREDENTIALS_EXCEPTION"
+        private const val EXTRA_SIGNATURE_COUNT =
+            "androidx.credentials.providerevents.extra.SIGNATURE_COUNT"
+        private const val EXTRA_SIGNATURE_PREFIX =
+            "androidx.credentials.providerevents.extra.SIGNATURE_"
 
         /**
          * Extracts the [ProviderImportCredentialsRequest] from the [Intent] that started the
@@ -80,44 +86,20 @@ public class IntentHandler {
         public fun retrieveProviderImportCredentialsRequest(
             intent: Intent
         ): ProviderImportCredentialsRequest? {
-            val extras = intent.extras
-            if (extras == null) {
-                return null
-            }
-
-            val reqJson = extras.getString(EXTRA_REQUEST_JSON)
-            if (reqJson == null) {
-                return null
-            }
-
-            val callingPackageName = intent.getStringExtra(EXTRA_PACKAGE_NAME)
-            if (callingPackageName.isNullOrEmpty()) {
-                return null
-            }
+            val extras = intent.extras ?: return null
+            val reqJson = extras.getString(EXTRA_REQUEST_JSON) ?: return null
             val credId = intent.getStringExtra(EXTRA_CRED_ID)
             if (credId.isNullOrEmpty()) {
                 return null
             }
-            val uri = intent.data
-            if (uri == null) {
-                return null
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                @Suppress("DEPRECATION")
-                val signingInfo: SigningInfo? = extras.getParcelable(EXTRA_SIGNING_INFO)
-                if (signingInfo == null) {
-                    return null
-                }
-                return ProviderImportCredentialsRequest(
-                    ImportCredentialsRequest(reqJson),
-                    CallingAppInfo.create(callingPackageName, signingInfo, null),
-                    uri,
-                    credId,
-                )
-            } else {
-                // TODO(b/436712597): handle for < P
-                return null
-            }
+            val uri = intent.data ?: return null
+            val callingAppInfo = extractCallingAppInfo(intent, extras) ?: return null
+            return ProviderImportCredentialsRequest(
+                ImportCredentialsRequest(reqJson),
+                callingAppInfo,
+                uri,
+                credId,
+            )
         }
 
         @Suppress("RestrictedApiAndroidX")
@@ -128,22 +110,13 @@ public class IntentHandler {
             intent: Intent,
             uri: Uri,
         ): ProviderImportCredentialsResponse? {
-            if (Build.VERSION.SDK_INT >= 28) {
-                @Suppress("DEPRECATION")
-                val signingInfo: SigningInfo? = intent.getParcelableExtra(EXTRA_SIGNING_INFO)
-                val pckName = intent.getStringExtra(EXTRA_PACKAGE_NAME)
-                if (signingInfo == null || pckName == null) {
-                    return null
-                }
-                val credentialsJson = readFromUri(uri, context)
-                return ProviderImportCredentialsResponse(
-                    ImportCredentialsResponse(credentialsJson),
-                    CallingAppInfo.create(pckName, signingInfo, null),
-                )
-            } else {
-                // TODO(b/436712597): handle for < P
-                return null
-            }
+            val extras = intent.extras ?: return null
+            val callingAppInfo = extractCallingAppInfo(intent, extras) ?: return null
+            val credentialsJson = readFromUri(uri, context)
+            return ProviderImportCredentialsResponse(
+                ImportCredentialsResponse(credentialsJson),
+                callingAppInfo,
+            )
         }
 
         /**
@@ -200,6 +173,33 @@ public class IntentHandler {
             return ImportCredentialsException.fromBundle(
                 intent.getBundleExtra(EXTRA_IMPORT_CREDENTIALS_EXCEPTION) ?: return null
             )
+        }
+
+        @Suppress("RestrictedApiAndroidX")
+        private fun extractCallingAppInfo(intent: Intent, extras: Bundle): CallingAppInfo? {
+            val packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME) ?: return null
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                @Suppress("DEPRECATION")
+                val signingInfo: SigningInfo? = extras.getParcelable(EXTRA_SIGNING_INFO)
+                if (signingInfo == null) {
+                    return null
+                }
+                return CallingAppInfo.create(packageName, signingInfo, null)
+            }
+            val signatureCount = intent.getIntExtra(EXTRA_SIGNATURE_COUNT, /* defaultValue= */ 0)
+            if (signatureCount == 0) {
+                return null
+            }
+            val signatures = mutableListOf<Signature>()
+            for (i in 0 until signatureCount) {
+                val signature = intent.getByteArrayExtra("${EXTRA_SIGNATURE_PREFIX}$i")
+                if (signature == null) {
+                    // cannot find expected signature at count i
+                    return null
+                }
+                signatures.add(Signature(signature))
+            }
+            return CallingAppInfo.create(packageName, signatures, null)
         }
     }
 }

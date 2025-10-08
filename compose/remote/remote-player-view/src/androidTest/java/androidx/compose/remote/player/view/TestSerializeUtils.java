@@ -20,6 +20,7 @@ import static androidx.compose.remote.player.view.TestUtils.createDocument;
 import android.content.Context;
 
 import androidx.compose.remote.core.operations.Theme;
+import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.compose.remote.serialization.yaml.YAMLSerializer;
 
 import java.io.BufferedReader;

@@ -17,7 +17,6 @@
 package androidx.room3.compiler.processing.ksp
 
 import androidx.room3.compiler.processing.XExecutableElement
-import androidx.room3.compiler.processing.XHasModifiers
 import androidx.room3.compiler.processing.XMemberContainer
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeParameterElement
@@ -29,10 +28,7 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 internal abstract class KspExecutableElement(
     env: KspProcessingEnv,
     override val declaration: KSFunctionDeclaration,
-) :
-    KspElement(env, declaration),
-    XExecutableElement,
-    XHasModifiers by KspHasModifiers.create(declaration) {
+) : KspElement(env, declaration), XExecutableElement {
 
     override val jvmDescriptor: String
         get() = this.jvmDescriptor()

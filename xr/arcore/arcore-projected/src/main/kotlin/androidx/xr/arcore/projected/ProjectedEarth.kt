@@ -61,6 +61,10 @@ public class ProjectedEarth internal constructor(private val xrResources: XrReso
                 eus = projectedQuaternion
             }
         val projectedPose = service.createPoseFromGeospatialPose(projectedEarthPose)
+        // TODO: b/446185235 - maybe we need better error handling or in service?
+        if (projectedPose == null) {
+            return Pose()
+        }
         return Pose(
             Vector3(projectedPose.vector.x, projectedPose.vector.y, projectedPose.vector.z),
             Quaternion(projectedPose.q.x, projectedPose.q.y, projectedPose.q.z, projectedPose.q.w),
@@ -88,6 +92,15 @@ public class ProjectedEarth internal constructor(private val xrResources: XrReso
                 q = projectedQuaternion
             }
         val projectedEarthPose = service.createGeospatialPoseFromPose(projectedPose)
+        // TODO: b/446185235 - maybe we need better error handling or in service?
+        if (projectedEarthPose == null) {
+            return Earth.GeospatialPoseResult(
+                geospatialPose = GeospatialPose(0.0, 0.0, 0.0, Quaternion()),
+                horizontalAccuracy = 0.0,
+                verticalAccuracy = 0.0,
+                orientationYawAccuracy = 0.0,
+            )
+        }
         val geospatialPose =
             GeospatialPose(
                 latitude = projectedEarthPose.latitude,
@@ -112,6 +125,15 @@ public class ProjectedEarth internal constructor(private val xrResources: XrReso
     override public fun createGeospatialPoseFromDevicePose(): Earth.GeospatialPoseResult {
         checkTrackingState()
         val projectedEarthPose = service.createGeospatialPoseFromDevicePose()
+        // TODO: b/446185235 - maybe we need better error handling or in service?
+        if (projectedEarthPose == null) {
+            return Earth.GeospatialPoseResult(
+                geospatialPose = GeospatialPose(0.0, 0.0, 0.0, Quaternion()),
+                horizontalAccuracy = 0.0,
+                verticalAccuracy = 0.0,
+                orientationYawAccuracy = 0.0,
+            )
+        }
         val geospatialPose =
             GeospatialPose(
                 latitude = projectedEarthPose.latitude,
