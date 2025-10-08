@@ -19,13 +19,14 @@ package androidx.room3.integration.kotlintestapp.migration
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.room3.Room
+import androidx.room3.RoomDatabase
 import androidx.room3.integration.kotlintestapp.TestDatabase
 import androidx.room3.migration.Migration
 import androidx.room3.testing.MigrationTestHelper
+import androidx.room3.useReaderConnection
 import androidx.room3.useWriterConnection
 import androidx.room3.util.TableInfo
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.execSQL
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -33,6 +34,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.FileNotFoundException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -162,7 +164,6 @@ class MigrationTest {
     }
 
     @Test
-    @Ignore("b/") // Add API to validate dropped tables.
     fun failedToRemoveColumn() {
         testFailure(4, 5)
     }
@@ -246,6 +247,268 @@ class MigrationTest {
     }
 
     @Test
+    fun addDefaultValue() {
+        helper.createDatabase(8).use { connection ->
+            connection.execSQL("INSERT INTO " + MigrationDb.Entity5.TABLE_NAME + " (id) VALUES (1)")
+        }
+
+        helper.runMigrationsAndValidate(9, listOf(MIGRATION_8_9)).use { connection ->
+            connection.prepare("SELECT * FROM " + MigrationDb.Entity5.TABLE_NAME).use {
+                assertThat(it.step()).isTrue()
+                assertThat(it.getInt(0)).isEqualTo(1)
+                assertThat(it.getText(1)).isEqualTo("Unknown")
+            }
+        }
+    }
+
+    @Test
+    fun addDefaultValueWithSurroundingParenthesis() {
+        helper.createDatabase(9).use { connection ->
+            connection.execSQL("INSERT INTO " + MigrationDb.Entity5.TABLE_NAME + " (id) VALUES (1)")
+        }
+
+        helper.runMigrationsAndValidate(10, listOf(MIGRATION_9_10)).use { connection ->
+            connection.prepare("SELECT * FROM " + MigrationDb.Entity5.TABLE_NAME).use {
+                assertThat(it.step()).isTrue()
+                assertThat(it.getInt(0)).isEqualTo(1)
+                assertThat(it.getText(1)).isEqualTo("Unknown")
+                assertThat(it.getInt(2)).isEqualTo(0)
+            }
+        }
+    }
+
+    @Test
+    fun invalidHash() {
+        // Create database at version 1
+        helper.createDatabase(1).use { connection ->
+            // Set its version to 2
+            connection.execSQL("PRAGMA user_version = 2")
+        }
+
+        // Open the database again at version 2 and it should fail identity, replicating the
+        // scenario of:
+        // 1. bumping version code without schema changes
+        // 2. making schema changes and
+        // 3. opening the DB again
+        assertThrows<IllegalStateException> { helper.runMigrationsAndValidate(2, emptyList()) }
+            .hasMessageThat()
+            .apply {
+                contains("Room cannot verify the data integrity.")
+                contains(
+                    "Expected identity hash: aee9a6eed720c059df0f2ee0d6e96d89, " +
+                        "found: 2f3557e56d7f665363f3e20d14787a59"
+                )
+            }
+    }
+
+    @Test
+    fun fallbackToDestructiveMigrationFrom_destructiveMigrationOccursForSuppliedVersion() {
+        helper.createDatabase(6).use { connection ->
+            val dao = MigrationDb.DaoV1(connection)
+            dao.insertIntoEntity1(2, "foo")
+            dao.insertIntoEntity1(3, "bar")
+        }
+
+        val db =
+            Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                .setDriver(AndroidSQLiteDriver())
+                .fallbackToDestructiveMigrationFrom(true, 6)
+                .build()
+        assertThat(db.dao().loadAllEntity1s()).hasSize(0)
+        db.close()
+    }
+
+    @Test
+    fun fallbackToDestructiveMigrationFrom_suppliedValueIsMigrationStartVersion_inconsistent() {
+        helper.createDatabase(6).use { connection ->
+            val dao = MigrationDb.DaoV1(connection)
+            dao.insertIntoEntity1(2, "foo")
+            dao.insertIntoEntity1(3, "bar")
+        }
+
+        assertThrows<IllegalArgumentException> {
+                Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                    .setDriver(AndroidSQLiteDriver())
+                    .addMigrations(MIGRATION_6_7)
+                    .fallbackToDestructiveMigrationFrom(true, 6)
+                    .build()
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Inconsistency detected. A Migration was supplied to addMigration() that " +
+                    "has a start or end version equal to a start version supplied to " +
+                    "fallbackToDestructiveMigrationFrom(). Start version is: 6"
+            )
+    }
+
+    @Test
+    fun fallbackToDestructiveMigrationFrom_suppliedValueIsMigrationEndVersion_inconsistent() {
+        helper.createDatabase(5).use { connection ->
+            val dao = MigrationDb.DaoV1(connection)
+            dao.insertIntoEntity1(2, "foo")
+            dao.insertIntoEntity1(3, "bar")
+        }
+
+        assertThrows<IllegalArgumentException> {
+                Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                    .setDriver(AndroidSQLiteDriver())
+                    .addMigrations(MIGRATION_5_6)
+                    .fallbackToDestructiveMigrationFrom(true, 6)
+                    .build()
+            }
+            .hasMessageThat()
+            .isEqualTo(
+                "Inconsistency detected. A Migration was supplied to addMigration() that " +
+                    "has a start or end version equal to a start version supplied to " +
+                    "fallbackToDestructiveMigrationFrom(). Start version is: 6"
+            )
+    }
+
+    @Test
+    fun fallbackToDestructiveMigration_upgrade() {
+        helper.createDatabase(1).use { connection ->
+            val dao = MigrationDb.DaoV1(connection)
+            dao.insertIntoEntity1(2, "foo")
+            dao.insertIntoEntity1(3, "bar")
+        }
+
+        val db =
+            Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                .setDriver(AndroidSQLiteDriver())
+                .fallbackToDestructiveMigration(false)
+                .build()
+        assertThat(db.dao().loadAllEntity1s()).hasSize(0)
+        db.close()
+    }
+
+    @Test
+    fun fallbackToDestructiveMigration_downgrade() {
+        helper.createDatabase(1000).use { connection ->
+            val dao = MigrationDb.DaoV1(connection)
+            dao.insertIntoEntity1(2, "foo")
+            dao.insertIntoEntity1(3, "bar")
+        }
+
+        val db =
+            Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                .setDriver(AndroidSQLiteDriver())
+                .fallbackToDestructiveMigration(false)
+                .build()
+        assertThat(db.dao().loadAllEntity1s()).hasSize(0)
+        db.close()
+    }
+
+    @Test
+    fun fallbackToDestructiveMigrationOnDowngrade_upgrade() {
+        helper.createDatabase(1).use { connection ->
+            val dao = MigrationDb.DaoV1(connection)
+            dao.insertIntoEntity1(2, "foo")
+            dao.insertIntoEntity1(3, "bar")
+        }
+
+        assertThrows<IllegalStateException> {
+                val db =
+                    Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                        .setDriver(AndroidSQLiteDriver())
+                        .fallbackToDestructiveMigrationOnDowngrade(false)
+                        .build()
+                assertThat(db.dao().loadAllEntity1s()).hasSize(0)
+                db.close()
+            }
+            .hasMessageThat()
+            .startsWith(
+                "A migration from 1 to ${MigrationDb.LATEST_VERSION} was required but not found."
+            )
+    }
+
+    @Test
+    fun fallbackToDestructiveMigrationOnDowngrade_downgrade() {
+        helper.createDatabase(1000).use { connection ->
+            val dao = MigrationDb.DaoV1(connection)
+            dao.insertIntoEntity1(2, "foo")
+            dao.insertIntoEntity1(3, "bar")
+        }
+
+        val db =
+            Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                .setDriver(AndroidSQLiteDriver())
+                .fallbackToDestructiveMigrationOnDowngrade(false)
+                .build()
+        assertThat(db.dao().loadAllEntity1s()).hasSize(0)
+        db.close()
+    }
+
+    @Test
+    fun dropAllTablesDuringDestructiveMigrations() = runTest {
+        helper.createDatabase(1000).use { connection ->
+            connection.execSQL("CREATE TABLE ExtraTable (id INTEGER PRIMARY KEY)")
+            connection.execSQL("CREATE VIEW ExtraView AS SELECT * FROM sqlite_master")
+        }
+
+        var onDestructiveMigrationInvoked = false
+        val db =
+            Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                .setDriver(AndroidSQLiteDriver())
+                .fallbackToDestructiveMigration(true)
+                .addCallback(
+                    object : RoomDatabase.Callback() {
+                        override fun onDestructiveMigration(connection: SQLiteConnection) {
+                            super.onDestructiveMigration(connection)
+                            onDestructiveMigrationInvoked = true
+                        }
+                    }
+                )
+                .build()
+        val tableNames: Set<String> =
+            db.useReaderConnection { connection ->
+                connection.usePrepared("SELECT name FROM sqlite_master") { stmt ->
+                    buildSet {
+                        while (stmt.step()) {
+                            add(stmt.getText(0))
+                        }
+                    }
+                }
+            }
+        db.close()
+
+        // Extra table is no longer present
+        assertThat(tableNames).doesNotContain("ExtraTable")
+        // Extra view is no longer present
+        assertThat(tableNames).doesNotContain("ExtraView")
+        // Android special table is present
+        assertThat(tableNames).contains("android_metadata")
+
+        assertThat(onDestructiveMigrationInvoked).isTrue()
+    }
+
+    @Test
+    fun dropAllTablesDuringDestructiveMigrationsEscapeNames() = runTest {
+        helper.createDatabase(1000).use { connection ->
+            connection.execSQL("CREATE TABLE `order` (id INTEGER PRIMARY KEY)")
+        }
+
+        val db =
+            Room.databaseBuilder<MigrationDb>(context, TEST_DB)
+                .setDriver(AndroidSQLiteDriver())
+                .fallbackToDestructiveMigration(true)
+                .build()
+        val tableNames: Set<String> =
+            db.useReaderConnection { connection ->
+                connection.usePrepared("SELECT name FROM sqlite_master") { stmt ->
+                    buildSet {
+                        while (stmt.step()) {
+                            add(stmt.getText(0))
+                        }
+                    }
+                }
+            }
+        db.close()
+
+        // Extra table is no longer present
+        assertThat(tableNames).doesNotContain("order")
+    }
+
+    @Test
     fun compatModeWithNoOverrideError() {
         class NoOverrideMigration(startVersion: Int, endVersion: Int) :
             Migration(startVersion, endVersion)
@@ -320,71 +583,104 @@ class MigrationTest {
             )
     }
 
-    internal val MIGRATION_1_2: Migration =
+    private val MIGRATION_1_2: Migration =
         object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "CREATE TABLE IF NOT EXISTS `Entity2` (`id` INTEGER NOT NULL," +
                         " `name` TEXT, PRIMARY KEY(`id`))"
                 )
             }
         }
 
-    internal val MIGRATION_2_3: Migration =
+    private val MIGRATION_2_3: Migration =
         object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "ALTER TABLE " + MigrationDb.Entity2.TABLE_NAME + " ADD COLUMN addedInV3 TEXT"
                 )
             }
         }
 
-    internal val MIGRATION_3_4: Migration =
+    private val MIGRATION_3_4: Migration =
         object : Migration(3, 4) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "CREATE TABLE IF NOT EXISTS `Entity3` (`id` INTEGER NOT NULL," +
                         " `removedInV5` TEXT, `name` TEXT, PRIMARY KEY(`id`))"
                 )
             }
         }
 
-    internal val MIGRATION_4_5: Migration =
+    private val MIGRATION_4_5: Migration =
         object : Migration(4, 5) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "CREATE TABLE IF NOT EXISTS `Entity3_New` (`id` INTEGER NOT NULL," +
                         " `name` TEXT, PRIMARY KEY(`id`))"
                 )
-                db.execSQL(
+                connection.execSQL(
                     "INSERT INTO Entity3_New(`id`, `name`) " + "SELECT `id`, `name` FROM Entity3"
                 )
-                db.execSQL("DROP TABLE Entity3")
-                db.execSQL("ALTER TABLE Entity3_New RENAME TO Entity3")
+                connection.execSQL("DROP TABLE Entity3")
+                connection.execSQL("ALTER TABLE Entity3_New RENAME TO Entity3")
             }
         }
 
-    internal val MIGRATION_5_6: Migration =
+    private val MIGRATION_5_6: Migration =
         object : Migration(5, 6) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("DROP TABLE " + MigrationDb.Entity3.TABLE_NAME)
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("DROP TABLE " + MigrationDb.Entity3.TABLE_NAME)
             }
         }
 
-    internal val MIGRATION_6_7: Migration =
+    private val MIGRATION_6_7: Migration =
         object : Migration(6, 7) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
                     "CREATE TABLE IF NOT EXISTS " +
                         MigrationDb.Entity4.TABLE_NAME +
                         " (`id` INTEGER NOT NULL, `name` TEXT, PRIMARY KEY(`id`)," +
                         " FOREIGN KEY(`name`) REFERENCES `Entity1`(`name`)" +
                         " ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED)"
                 )
-                db.execSQL(
+                connection.execSQL(
                     "CREATE UNIQUE INDEX `index_entity1` ON " +
                         MigrationDb.Entity1.TABLE_NAME +
                         " (`name`)"
+                )
+            }
+        }
+
+    private val MIGRATION_8_9: Migration =
+        object : Migration(8, 9) {
+            override fun migrate(connection: SQLiteConnection) {
+                // Add column Entity4.addedInV9 with DEFAULT.
+                connection.execSQL(
+                    "ALTER TABLE " + MigrationDb.Entity5.TABLE_NAME + " RENAME TO save_Entity5"
+                )
+                connection.execSQL(
+                    "CREATE TABLE IF NOT EXISTS " +
+                        MigrationDb.Entity5.TABLE_NAME +
+                        " (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`addedInV9` TEXT DEFAULT 'Unknown')"
+                )
+                connection.execSQL(
+                    "INSERT INTO " +
+                        MigrationDb.Entity5.TABLE_NAME +
+                        " (id) SELECT id FROM save_Entity5"
+                )
+                connection.execSQL("DROP TABLE save_Entity5")
+            }
+        }
+
+    private val MIGRATION_9_10: Migration =
+        object : Migration(9, 10) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    "ALTER TABLE " +
+                        MigrationDb.Entity5.TABLE_NAME +
+                        " ADD COLUMN addedInV10 INTEGER NOT NULL DEFAULT (0)"
                 )
             }
         }
@@ -397,11 +693,13 @@ class MigrationTest {
             MIGRATION_4_5,
             MIGRATION_5_6,
             MIGRATION_6_7,
+            MIGRATION_8_9,
+            MIGRATION_9_10,
         )
 
-    internal class EmptyMigration(startVersion: Int, endVersion: Int) :
+    private class EmptyMigration(startVersion: Int, endVersion: Int) :
         Migration(startVersion, endVersion) {
-        override fun migrate(db: SupportSQLiteDatabase) {
+        override fun migrate(connection: SQLiteConnection) {
             // do nothing
         }
     }

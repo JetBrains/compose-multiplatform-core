@@ -48,5 +48,5 @@ public class SpatialVisibility(@SpatialVisibilityValue public val visibility: In
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(UNKNOWN, OUTSIDE_FOV, PARTIALLY_WITHIN_FOV, WITHIN_FOV)
-    internal annotation class SpatialVisibilityValue
+    public annotation class SpatialVisibilityValue
 }

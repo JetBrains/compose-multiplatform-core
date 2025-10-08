@@ -43,7 +43,7 @@ internal class KspMessager(private val logger: KSPLogger) : XMessager() {
         val nodes =
             sequence {
                     yield((annotationValue as? KspAnnotationValue)?.valueArgument)
-                    yield((annotation as? KspAnnotation)?.ksAnnotated)
+                    yield((annotation as? KspAnnotation)?.ksAnnotation)
                     yield((element as? KspElement)?.declaration)
                 }
                 .filterNotNull()

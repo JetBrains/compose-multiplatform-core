@@ -16,14 +16,14 @@
 
 package androidx.ink.authoring.internal
 
-import androidx.ink.strokes.InProgressStroke
+import androidx.ink.authoring.InkInProgressShape
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
-@RunWith(JUnit4::class)
+@RunWith(AndroidJUnit4::class)
 class InProgressStrokePoolTest {
 
     @Test
@@ -55,7 +55,7 @@ class InProgressStrokePoolTest {
     @Test
     fun trimToSize_whenZero_obtainReturnsNewInstance() {
         val pool = InProgressStrokePool.create()
-        val obtainedBeforeTrim = mutableSetOf<InProgressStroke>()
+        val obtainedBeforeTrim = mutableSetOf<InkInProgressShape>()
         repeat(10) {
             val instance = pool.obtain()
             obtainedBeforeTrim.add(instance)
@@ -70,7 +70,7 @@ class InProgressStrokePoolTest {
     @Test
     fun trimToSize_whenLessThanCurrentPoolSize_obtainReturnsSameInstancesThenNewInstances() {
         val pool = InProgressStrokePool.create()
-        val obtainedBeforeTrim = mutableSetOf<InProgressStroke>()
+        val obtainedBeforeTrim = mutableSetOf<InkInProgressShape>()
         repeat(10) {
             val instance = pool.obtain()
             obtainedBeforeTrim.add(instance)

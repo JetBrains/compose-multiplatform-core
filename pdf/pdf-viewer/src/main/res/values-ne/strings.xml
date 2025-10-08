@@ -17,10 +17,8 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <!-- no translation found for label_copy_link (869104793055534158) -->
-    <skip />
-    <!-- no translation found for label_jump_to (462543500326296329) -->
-    <skip />
+    <string name="label_copy_link" msgid="869104793055534158">"लिंक कपी गर्नुहोस्"</string>
+    <string name="label_jump_to" msgid="462543500326296329">"सीधै यहाँ जानुहोस्:"</string>
     <string name="title_dialog_password" msgid="2018068413709926925">"यो फाइलमा पासवर्ड राखिएको छ"</string>
     <string name="label_password_first" msgid="4456258714097111908">"पासवर्ड"</string>
     <string name="label_password_incorrect" msgid="5291118378657145978">"पासवर्ड गलत छ। फेरि प्रयास गर्नुहोस्।"</string>
@@ -34,14 +32,10 @@
     <string name="desc_zoom" msgid="7318480946145947242">"<xliff:g id="FIRST">%1$d</xliff:g> प्रतिशत जुम गर्नुहोस्"</string>
     <string name="desc_goto" msgid="1333698934111921601">"यहाँ जानुहोस्"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"पेज <xliff:g id="PAGE_NUMBER">%1$d</xliff:g> मा जानुहोस्"</string>
-    <!-- no translation found for desc_copy (385275789223074637) -->
-    <skip />
-    <!-- no translation found for desc_copy_link (4764327179483836535) -->
-    <skip />
-    <!-- no translation found for desc_jump_to (9085362382536609454) -->
-    <skip />
-    <!-- no translation found for desc_select_all (428248654717550270) -->
-    <skip />
+    <string name="desc_copy" msgid="385275789223074637">"चयन गरिएको कन्टेन्ट कपी गरेर तपाईंको क्लिपबोर्डमा पेस्ट गर्छ"</string>
+    <string name="desc_copy_link" msgid="4764327179483836535">"लिंक कपी गरेर तपाईंको क्लिपबोर्डमा पेस्ट गर्छ"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"सीधै PDF को कुनै निश्चित खण्ड वा पेजमा लैजान्छ"</string>
+    <string name="desc_select_all" msgid="428248654717550270">"PDF मा भएका सबै टेक्स्ट चयन गर्छ"</string>
     <string name="desc_page" msgid="6702471448987833953">"पेज <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"यो पेज खाली छ"</string>
     <string name="desc_page_with_text" msgid="2564017005407577604">"पेज <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>

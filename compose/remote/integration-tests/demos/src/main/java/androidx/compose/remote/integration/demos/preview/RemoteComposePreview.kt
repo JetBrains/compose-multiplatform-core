@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 /** Display a Remote Compose Composable in the Android Studio Preview. */
 @OptIn(ExperimentalRemoteComposePlayerApi::class)
 @Composable
+@Suppress("RestrictedApiAndroidX")
 fun RemoteComposePreview(content: @RemoteComposable @Composable () -> Unit) {
     RemoteComposePlayerFlags.isViewPlayerEnabled = false
     var documentState by remember { mutableStateOf<RemoteComposeDocument?>(null) }

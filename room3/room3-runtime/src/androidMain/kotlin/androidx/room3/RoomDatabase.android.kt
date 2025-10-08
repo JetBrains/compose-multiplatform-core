@@ -429,11 +429,11 @@ public actual abstract class RoomDatabase {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getQueryContext(): CoroutineContext {
-        return coroutineScope.coroutineContext
+        return coroutineScope.coroutineContext.minusKey(Job)
     }
 
     internal fun getTransactionContext(): CoroutineContext {
-        return transactionContext
+        return transactionContext.minusKey(Job)
     }
 
     /**

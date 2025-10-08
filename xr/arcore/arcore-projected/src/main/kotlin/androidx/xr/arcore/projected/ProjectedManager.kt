@@ -18,10 +18,13 @@ package androidx.xr.arcore.projected
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.os.IBinder
 import androidx.annotation.RestrictTo
-import androidx.xr.projected.ProjectedServiceBinding
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.GeospatialMode
 import androidx.xr.runtime.TrackingState
@@ -150,8 +153,7 @@ internal constructor(
             // When the coroutine is cancelled, we must unbind the service.
             continuation.invokeOnCancellation { context.unbindService(serviceConnection) }
 
-            val isBindingPermitted =
-                ProjectedServiceBinding.bindPerception(context, serviceConnection)
+            val isBindingPermitted = bindPerception(context, serviceConnection)
             check(isBindingPermitted) {
                 "Projected perception service not found or binding was not permitted."
             }
@@ -160,4 +162,71 @@ internal constructor(
 
     // Verify that Projected is installed and using the current version.
     internal fun checkProjectedSupportedAndUpToDate(activity: Activity) {}
+
+    /**
+     * Binds to a perception projected service using provided [ServiceConnection].
+     *
+     * If service can't be found, the method throws [IllegalStateException]. It means that the
+     * system doesn't include a service supporting Projected XR devices.
+     *
+     * @param context can be either a host [Context] or the Projected device [Context].
+     * @return true if the system is in the process of bringing up a service that your client has
+     *   permission to bind to; false if the system couldn't find the service or if your client
+     *   doesn't have permission to bind to it. Regardless of the return value, you should later
+     *   call unbindService to release the connection.
+     */
+    private fun bindPerception(context: Context, serviceConnection: ServiceConnection): Boolean {
+        return context.bindService(
+            getIntent(context, ACTION_PERCEPTION_BIND),
+            serviceConnection,
+            Context.BIND_AUTO_CREATE,
+        )
+    }
+
+    // LINT.IfChange(get_intent)
+    private fun getIntent(context: Context, intentAction: String): Intent {
+        val intent = Intent(intentAction)
+        val projectedSystemServiceResolveInfo = findProjectedSystemService(context, intent)
+        val foundService =
+            ComponentName(
+                projectedSystemServiceResolveInfo.serviceInfo.packageName,
+                projectedSystemServiceResolveInfo.serviceInfo.name,
+            )
+
+        return Intent().apply {
+            component = foundService
+            action = intentAction
+        }
+    }
+
+    private fun findProjectedSystemService(context: Context, intent: Intent): ResolveInfo {
+        val resolveInfoList: List<ResolveInfo> =
+            context.packageManager.queryIntentServices(intent, PackageManager.GET_RESOLVED_FILTER)
+
+        val resolveInfoSystemApps =
+            resolveInfoList.filter {
+                val applicationInfo =
+                    context.packageManager.getApplicationInfo(
+                        it.serviceInfo.packageName,
+                        /* flags= */ 0,
+                    )
+                (applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+            }
+
+        check(resolveInfoSystemApps.isNotEmpty()) {
+            "System doesn't include a service supporting Projected XR devices."
+        }
+        check(resolveInfoSystemApps.size == 1) {
+            "More than one system service found for action: $intent."
+        }
+
+        return resolveInfoSystemApps.first()
+    }
+
+    // LINT.ThenChange(/xr/projected/projected/src/main/kotlin/androidx/xr/projected/ProjectedServiceBinding.kt:get_intent)
+
+    private companion object {
+        internal const val ACTION_PERCEPTION_BIND: String =
+            "androidx.xr.projected.ACTION_PERCEPTION_BIND"
+    }
 }

@@ -1,5 +1,5 @@
 import androidx.room3.RoomDatabase
-import androidx.room3.util.performBlocking
+import androidx.room3.util.performInTransactionBlocking
 import androidx.room3.util.performInTransactionSuspending
 import javax.`annotation`.processing.Generated
 import kotlin.Function0
@@ -21,7 +21,7 @@ internal class MyDao_Impl(
     this.__db = __db
   }
 
-  public override fun baseConcrete(): Unit = performBlocking(__db, false, true) { _ ->
+  public override fun baseConcrete(): Unit = performInTransactionBlocking(__db) {
     super@MyDao_Impl.baseConcrete()
   }
 
@@ -29,19 +29,19 @@ internal class MyDao_Impl(
     super@MyDao_Impl.baseSuspendConcrete()
   }
 
-  public override fun concrete(): Unit = performBlocking(__db, false, true) { _ ->
+  public override fun concrete(): Unit = performInTransactionBlocking(__db) {
     super@MyDao_Impl.concrete()
   }
 
-  public override fun concreteWithReturn(): String = performBlocking(__db, false, true) { _ ->
+  public override fun concreteWithReturn(): String = performInTransactionBlocking(__db) {
     super@MyDao_Impl.concreteWithReturn()
   }
 
-  public override fun concreteWithParamsAndReturn(text: String, num: Long): String = performBlocking(__db, false, true) { _ ->
+  public override fun concreteWithParamsAndReturn(text: String, num: Long): String = performInTransactionBlocking(__db) {
     super@MyDao_Impl.concreteWithParamsAndReturn(text, num)
   }
 
-  public override fun concreteWithFunctionalParam(block: Function0<Unit>): Unit = performBlocking(__db, false, true) { _ ->
+  public override fun concreteWithFunctionalParam(block: Function0<Unit>): Unit = performInTransactionBlocking(__db) {
     super@MyDao_Impl.concreteWithFunctionalParam(block)
   }
 

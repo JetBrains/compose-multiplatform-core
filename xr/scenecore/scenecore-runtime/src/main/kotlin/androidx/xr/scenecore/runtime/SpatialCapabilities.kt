@@ -42,7 +42,7 @@ public class SpatialCapabilities(public val capabilities: Int) {
                 SPATIAL_CAPABILITY_EMBED_ACTIVITY,
             ],
     )
-    internal annotation class SpatialCapability
+    public annotation class SpatialCapability
 
     public fun hasCapability(@SpatialCapability capability: Int): Boolean =
         (capabilities and capability) == capability

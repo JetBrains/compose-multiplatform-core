@@ -92,7 +92,6 @@ class CanvasStrokeRendererTest {
                             texturedBrush(
                                 textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
                                 textureSize = 10f,
-                                inputModel = BrushFamily.SPRING_MODEL,
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -112,8 +111,7 @@ class CanvasStrokeRendererTest {
                                                 )
                                         ),
                                         BrushCoat(tip = BrushTip(scaleX = 0.5f, scaleY = 0.5f)),
-                                    ),
-                                    inputModel = BrushFamily.SPRING_MODEL,
+                                    )
                                 ),
                                 TestColors.RED,
                             ),
@@ -161,8 +159,7 @@ class CanvasStrokeRendererTest {
                                                         BrushBehavior.OutOfRange.REPEAT,
                                                 ),
                                             )
-                                    ),
-                                    inputModel = BrushFamily.SPRING_MODEL,
+                                    )
                                 ),
                                 TestColors.AVOCADO_GREEN,
                             ),
@@ -880,7 +877,6 @@ class CanvasStrokeRendererTest {
             textureWrapY: TextureWrap = TextureWrap.REPEAT,
             @ColorInt brushColor: Int = TestColors.BLACK,
             brushSize: Float = 15f,
-            inputModel: BrushFamily.InputModel = BrushFamily.SPRING_MODEL,
         ): Brush {
             val tip = BrushTip(particleGapDistanceScale = particleGapDistanceScale)
             val paint =
@@ -896,11 +892,7 @@ class CanvasStrokeRendererTest {
                     textureRotationDegrees = textureRotationDegrees,
                     textureMapping = textureMapping,
                 )
-            return brush(
-                BrushFamily(tip = tip, paint = paint, inputModel = inputModel),
-                brushColor,
-                brushSize,
-            )
+            return brush(BrushFamily(tip = tip, paint = paint), brushColor, brushSize)
         }
 
         fun texturedBrushPaint(

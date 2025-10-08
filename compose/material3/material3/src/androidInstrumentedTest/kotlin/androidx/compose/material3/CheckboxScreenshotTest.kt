@@ -51,7 +51,6 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -107,7 +106,6 @@ class CheckboxScreenshotTest(
     }
 
     @Test
-    @Ignore("b/355413615")
     fun checkBox_pressed() {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(wrap.testTag(wrapperTestTag)) {

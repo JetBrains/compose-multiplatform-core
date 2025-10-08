@@ -68,6 +68,8 @@ public object StockBrushes {
      */
     private const val EMOJI_STAMP_SCALE = 1.5f
 
+    private val STOCK_INPUT_MODEL: BrushFamily.InputModel = BrushFamily.SlidingWindowModel()
+
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @JvmStatic
     public val predictionFadeOutBehavior: BrushBehavior by lazy {
@@ -124,7 +126,7 @@ public object StockBrushes {
     private val markerV1 by lazy {
         BrushFamily(
             tip = BrushTip(behaviors = listOf(predictionFadeOutBehavior)),
-            inputModel = BrushFamily.SPRING_MODEL,
+            inputModel = STOCK_INPUT_MODEL,
         )
     }
 
@@ -210,7 +212,7 @@ public object StockBrushes {
                             ),
                         )
                 ),
-            inputModel = BrushFamily.SPRING_MODEL,
+            inputModel = STOCK_INPUT_MODEL,
         )
     }
 
@@ -250,11 +252,9 @@ public object StockBrushes {
     }
 
     private val selfOverlapToHighlighterV1 =
-        mapOf(
-            SelfOverlap.ANY to lazy { highlighterV1(SelfOverlap.ANY) },
-            SelfOverlap.ACCUMULATE to lazy { highlighterV1(SelfOverlap.ACCUMULATE) },
-            SelfOverlap.DISCARD to lazy { highlighterV1(SelfOverlap.DISCARD) },
-        )
+        listOf(SelfOverlap.ANY, SelfOverlap.ACCUMULATE, SelfOverlap.DISCARD).associateWith {
+            lazy { highlighterV1(it) }
+        }
 
     private fun highlighterV1(selfOverlap: SelfOverlap) =
         BrushFamily(
@@ -310,7 +310,7 @@ public object StockBrushes {
                         ),
                 ),
             paint = BrushPaint(selfOverlap = selfOverlap),
-            inputModel = BrushFamily.SPRING_MODEL,
+            inputModel = STOCK_INPUT_MODEL,
         )
 
     /**
@@ -387,7 +387,7 @@ public object StockBrushes {
                             ),
                         ),
                 ),
-            inputModel = BrushFamily.SPRING_MODEL,
+            inputModel = STOCK_INPUT_MODEL,
         )
     }
 
@@ -444,7 +444,7 @@ public object StockBrushes {
                         )
                     )
                 ),
-            inputModel = BrushFamily.SPRING_MODEL,
+            inputModel = STOCK_INPUT_MODEL,
         )
     }
 
@@ -828,7 +828,7 @@ public object StockBrushes {
                         )
                     )
                 },
-            inputModel = BrushFamily.SPRING_MODEL,
+            inputModel = STOCK_INPUT_MODEL,
         )
     }
 

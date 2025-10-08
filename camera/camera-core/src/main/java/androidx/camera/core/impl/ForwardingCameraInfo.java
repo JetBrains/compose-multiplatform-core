@@ -21,6 +21,7 @@ import android.util.Range;
 import android.util.Size;
 
 import androidx.annotation.IntRange;
+import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
@@ -33,6 +34,7 @@ import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ZoomState;
+import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 
 import org.jspecify.annotations.NonNull;
@@ -117,6 +119,19 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     @Override
     public @NonNull LiveData<CameraState> getCameraState() {
         return mCameraInfoInternal.getCameraState();
+    }
+
+    @VisibleForTesting
+    @Override
+    public void addCameraStateListener(@NonNull Executor executor,
+            @NonNull Consumer<@NonNull CameraState> listener) {
+        mCameraInfoInternal.addCameraStateListener(executor, listener);
+    }
+
+    @VisibleForTesting
+    @Override
+    public void removeCameraStateListener(@NonNull Consumer<@NonNull CameraState> listener) {
+        mCameraInfoInternal.removeCameraStateListener(listener);
     }
 
     @Override

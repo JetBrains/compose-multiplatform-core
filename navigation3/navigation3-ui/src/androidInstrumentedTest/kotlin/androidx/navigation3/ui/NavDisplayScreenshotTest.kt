@@ -32,10 +32,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.Text
@@ -56,15 +53,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.scene.Scene
-import androidx.navigation3.scene.SceneStrategy
-import androidx.navigation3.ui.NavDisplay.popTransitionSpec
+import androidx.navigation3.ui.CardStackSceneStrategy.Companion.CARD_KEY
 import androidx.navigationevent.NavigationEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import kotlin.collections.plus
 import kotlin.test.Test
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -266,6 +260,140 @@ class NavDisplayScreenshotTest {
                 screenshotRule,
                 "testNavDisplayPredictiveBackAnimationsLeftSwipeEdge",
             )
+    }
+
+    @Test
+    fun testNestedPredictiveBackDuringGestureBack() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var backPressedDispatcher: OnBackPressedDispatcher
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second, third) }
+            backPressedDispatcher =
+                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategy = CardStackSceneStrategy(),
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first, metadata = mapOf(CARD_KEY to first)) { RedBox(first) }
+                    second ->
+                        NavEntry(second, metadata = mapOf(CARD_KEY to second)) { BlueBox(second) }
+                    third ->
+                        NavEntry(third, metadata = mapOf(CARD_KEY to third)) { GreenBox(third) }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            backPressedDispatcher.dispatchOnBackStarted(
+                BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+            )
+            backPressedDispatcher.dispatchOnBackProgressed(
+                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testNestedPredictiveBackDuringGestureBack")
+    }
+
+    @Test
+    fun testNestedPredictiveBackAnimationPostBackPressed() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var backPressedDispatcher: OnBackPressedDispatcher
+        val duration = 500
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second, third) }
+            backPressedDispatcher =
+                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategy = CardStackSceneStrategy(duration),
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first, metadata = mapOf(CARD_KEY to first)) { RedBox(first) }
+                    second ->
+                        NavEntry(second, metadata = mapOf(CARD_KEY to second)) { BlueBox(second) }
+                    third ->
+                        NavEntry(third, metadata = mapOf(CARD_KEY to third)) { GreenBox(third) }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            backPressedDispatcher.dispatchOnBackStarted(
+                BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+            )
+            backPressedDispatcher.dispatchOnBackProgressed(
+                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule.mainClock.autoAdvance = false
+        backPressedDispatcher.onBackPressed()
+
+        composeTestRule.mainClock.advanceTimeBy((duration / 2).toLong())
+        // make sure popped entry is not blank screen
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testNestedPredictiveBackAnimationPostBackPressed")
+    }
+
+    @Test
+    fun testNestedPredictiveBackAnimationCompleted() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var backPressedDispatcher: OnBackPressedDispatcher
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second, third) }
+            backPressedDispatcher =
+                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategy = CardStackSceneStrategy(),
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first, metadata = mapOf(CARD_KEY to first)) { RedBox(first) }
+                    second ->
+                        NavEntry(second, metadata = mapOf(CARD_KEY to second)) { BlueBox(second) }
+                    third ->
+                        NavEntry(third, metadata = mapOf(CARD_KEY to third)) { GreenBox(third) }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            backPressedDispatcher.dispatchOnBackStarted(
+                BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+            )
+            backPressedDispatcher.dispatchOnBackProgressed(
+                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
+            )
+        }
+
+        composeTestRule.waitForIdle()
+
+        backPressedDispatcher.onBackPressed()
+
+        composeTestRule.waitForIdle()
+
+        // make sure popped entry is not blank screen
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testNestedPredictiveBackAnimationCompleted")
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -658,6 +786,79 @@ class NavDisplayScreenshotTest {
             .assertAgainstGolden(screenshotRule, "testPopNavigateZIndex")
     }
 
+    @Test
+    fun testNestedPopAnimationsDuringPop() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var backPressedDispatcher: OnBackPressedDispatcher
+        val duration = 300
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second, third) }
+            backPressedDispatcher =
+                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategy = CardStackSceneStrategy(duration),
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first, metadata = mapOf(CARD_KEY to first)) { RedBox(first) }
+                    second ->
+                        NavEntry(second, metadata = mapOf(CARD_KEY to second)) { BlueBox(second) }
+                    third ->
+                        NavEntry(third, metadata = mapOf(CARD_KEY to third)) { GreenBox(third) }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.autoAdvance = false
+        backPressedDispatcher.onBackPressed()
+
+        composeTestRule.mainClock.advanceTimeBy((duration / 2).toLong())
+
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testNestedPopAnimationsDuringPop")
+        composeTestRule.waitForIdle()
+    }
+
+    @Test
+    fun testNestedPopAnimationCompleted() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var backPressedDispatcher: OnBackPressedDispatcher
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second, third) }
+            backPressedDispatcher =
+                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            NavDisplay(
+                backStack = backStack,
+                sceneStrategy = CardStackSceneStrategy(),
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first, metadata = mapOf(CARD_KEY to first)) { RedBox(first) }
+                    second ->
+                        NavEntry(second, metadata = mapOf(CARD_KEY to second)) { BlueBox(second) }
+                    third ->
+                        NavEntry(third, metadata = mapOf(CARD_KEY to third)) { GreenBox(third) }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        backPressedDispatcher.onBackPressed()
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testNestedPopAnimationCompleted")
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     @Test
     fun testNavigateDuplicateZIndex() {
@@ -975,54 +1176,3 @@ private const val first = "first"
 private const val second = "second"
 private const val third = "third"
 private const val forth = "forth"
-
-private class TestAnimatedTwoPaneSceneStrategy<T : Any>(
-    val durationMillis: Int,
-    val overrideEntryAnimations: Boolean = false,
-) : SceneStrategy<T> {
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
-        if (entries.size < 2) return null
-        val lastTwoEntries = entries.takeLast(2)
-        return TestAnimatedTwoPaneScene(
-            durationMillis = durationMillis,
-            overrideEntryAnimations = overrideEntryAnimations,
-            key = lastTwoEntries.first().contentKey,
-            entries = entries.takeLast(2),
-            previousEntries = listOf(),
-        )
-    }
-}
-
-private class TestAnimatedTwoPaneScene<T : Any>(
-    val durationMillis: Int,
-    val overrideEntryAnimations: Boolean,
-    override val key: Any,
-    override val entries: List<NavEntry<T>>,
-    override val previousEntries: List<NavEntry<T>>,
-) : Scene<T> {
-    override val content: @Composable (() -> Unit) = {
-        val left = entries.first()
-        val right = entries.last()
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.weight(1f)) { left.Content() }
-            Column(Modifier.weight(1f)) { right.Content() }
-        }
-    }
-
-    override val metadata: Map<String, Any>
-        get() {
-            // define scene metadata transitions
-            val sceneTransition =
-                slideInHorizontally(tween(durationMillis)) { it / 2 } togetherWith
-                    slideOutHorizontally { -it / 2 }
-            // build scene metadata map
-            val newMetadata =
-                NavDisplay.transitionSpec({ sceneTransition }) +
-                    popTransitionSpec({ sceneTransition })
-            // override NavEntry transitions if necessary
-            return if (overrideEntryAnimations) {
-                entries.last().metadata + newMetadata
-            } else newMetadata + entries.last().metadata
-        }
-}

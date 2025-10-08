@@ -19,10 +19,10 @@ package androidx.xr.scenecore
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 
-@IntDef(Space.PARENT, Space.ACTIVITY, Space.REAL_WORLD)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @Retention(AnnotationRetention.SOURCE)
-internal annotation class SpaceValue
+@IntDef(Space.PARENT, Space.ACTIVITY, Space.REAL_WORLD)
+public annotation class SpaceValue
 
 /** Coordinate spaces in which to apply transformation values. */
 public object Space {

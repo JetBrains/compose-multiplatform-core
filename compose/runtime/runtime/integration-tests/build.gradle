@@ -33,6 +33,7 @@ plugins {
 android {
     compileSdk = 35
     namespace = "androidx.compose.runtime.integrationtests"
+    lint.disable += "ComposeTestRuleDispatcher"
 }
 
 dependencies {

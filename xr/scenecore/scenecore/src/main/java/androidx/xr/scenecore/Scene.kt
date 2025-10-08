@@ -184,6 +184,9 @@ public class Scene : SessionConnector {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override fun close(): Unit {
         entityManager.clear()
+        spatialCapabilitiesListeners.keys.forEach { removeSpatialCapabilitiesChangedListener(it) }
+        clearSpatialModeChangedListener()
+        clearSpatialVisibilityChangedListener()
         removeSceneFromCache(this)
     }
 
@@ -241,6 +244,9 @@ public class Scene : SessionConnector {
     /**
      * Releases the given [Consumer] from receiving updates when the [Session]'s
      * [SpatialCapabilities] change.
+     *
+     * The listeners are automatically released at the end of the Scene's lifecycle even if this
+     * method is not explicitly called.
      *
      * @param listener The Consumer to be removed. It will no longer receive change events.
      */
@@ -327,7 +333,12 @@ public class Scene : SessionConnector {
         listener: Consumer<@SpatialVisibilityValue Int>
     ): Unit = setSpatialVisibilityChangedListener(HandlerExecutor.mainThreadExecutor, listener)
 
-    /** Releases the listener previously added by [setSpatialVisibilityChangedListener]. */
+    /**
+     * Releases the listener previously added by [setSpatialVisibilityChangedListener].
+     *
+     * The listener is automatically released at the end of the Scene's lifecycle even if this
+     * method is not explicitly called.
+     */
     public fun clearSpatialVisibilityChangedListener(): Unit =
         sceneRuntime.clearSpatialVisibilityChangedListener()
 
@@ -369,6 +380,9 @@ public class Scene : SessionConnector {
      * Releases the listener previously set by [setSpatialModeChangedListener] and reinstates the
      * default behavior of automatically updating the [keyEntity]'s pose and scale on the main
      * thread executor.
+     *
+     * The listener is automatically released at the end of the Scene's lifecycle even if this
+     * method is not explicitly called.
      */
     public fun clearSpatialModeChangedListener() {
         spatialModeChangedListener = defaultSpatialModeChangedListener

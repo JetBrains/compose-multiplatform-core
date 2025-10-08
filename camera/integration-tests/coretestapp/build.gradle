@@ -70,7 +70,7 @@ dependencies {
     implementation(project(":camera:camera-extensions"))
 
     // Needed because AGP enforces same version between main and androidTest classpaths
-    implementation(project(":concurrent:concurrent-futures"))
+    implementation("androidx.concurrent:concurrent-futures:1.1.0")
 
     // Android Support Library
     api(libs.constraintLayout)
@@ -108,7 +108,7 @@ dependencies {
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.truth)
 
-    androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
+    androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(project(":internal-testutils-lifecycle"))
     androidTestImplementation(project(":internal-testutils-truth"))

@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
@@ -26,6 +27,7 @@ import androidx.xr.scenecore.runtime.SceneRuntime
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
+import kotlin.test.assertFailsWith
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,6 +65,7 @@ class MainPanelEntityTest {
                 runtimes =
                     listOf(fakePerceptionRuntimeFactory.createRuntime(activity), mockSceneRuntime),
             )
+        session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
     }
 
     @Test
@@ -79,6 +82,22 @@ class MainPanelEntityTest {
         session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(listener)
         verify(mockSceneRuntime)
             .addPerceivedResolutionChangedListener(eq(HandlerExecutor.mainThreadExecutor), any())
+    }
+
+    @Test
+    fun addPerceivedResolutionChangedListener_withoutDeviceTracking_throwsIllegalStateException() {
+        // Disable head tracking
+        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
+
+        val listener = Consumer<IntSize2d> {}
+        val exception =
+            assertFailsWith<IllegalStateException> {
+                session.scene.mainPanelEntity.addPerceivedResolutionChangedListener(listener)
+            }
+
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo("Config.DeviceTrackingMode is not set to LastKnown.")
     }
 
     @Test
@@ -152,5 +171,22 @@ class MainPanelEntityTest {
         rtListeners[1].accept(testRtDimensions2)
         verify(listener1).accept(IntSize2d(10, 20)) // Still called once
         verify(listener2).accept(IntSize2d(30, 40))
+    }
+
+    @Test
+    fun dispose_removesPerceivedResolutionChangedListener() {
+        val listener = Consumer<IntSize2d> {}
+        val executor = directExecutor()
+        val mainPanelEntity = session.scene.mainPanelEntity
+
+        mainPanelEntity.addPerceivedResolutionChangedListener(executor, listener)
+        val rtListenerCaptor = argumentCaptor<Consumer<RtPixelDimensions>>()
+        verify(mockSceneRuntime)
+            .addPerceivedResolutionChangedListener(eq(executor), rtListenerCaptor.capture())
+
+        mainPanelEntity.dispose()
+
+        verify(mockSceneRuntime)
+            .removePerceivedResolutionChangedListener(rtListenerCaptor.firstValue)
     }
 }

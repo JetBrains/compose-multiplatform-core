@@ -143,7 +143,7 @@ private fun Root(
                 }
             }
     ) {
-        InProgressStrokes(
+        InProgressStrokesImpl(
             nextBrush = nextBrush,
             nextPointerEventToWorldTransform = nextPointerEventToWorldTransform,
             nextStrokeToWorldTransform = nextStrokeToWorldTransform,

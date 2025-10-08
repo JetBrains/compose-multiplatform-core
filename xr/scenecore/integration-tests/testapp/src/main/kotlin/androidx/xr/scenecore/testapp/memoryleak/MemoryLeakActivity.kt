@@ -72,7 +72,6 @@ class MemoryLeakActivity : AppCompatActivity() {
         Log.w("MemoryLeakActivity", "onDestroy called")
         mGltfManager.ClearListeners()
         mSurfaceEntityManager.ClearListeners()
-        session!!.scene.clearSpatialVisibilityChangedListener()
         findViewById<FloatingActionButton>(R.id.bottomCenterFab).setOnClickListener(null)
         findViewById<Toolbar>(R.id.top_app_bar).setNavigationOnClickListener(null)
     }

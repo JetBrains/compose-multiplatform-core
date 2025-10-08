@@ -60,10 +60,10 @@ class StrokeExtensionsTest {
         // Arrange
         val inputs =
             listOf(
-                createStrokeInput(x = 10f, y = 20f),
-                createStrokeInput(x = 30f, y = 40f),
-                createStrokeInput(x = 5f, y = 15f),
-                createStrokeInput(x = 35f, y = 45f),
+                createStrokeInput(x = 10f, y = 20f, eventTime = 0L),
+                createStrokeInput(x = 30f, y = 40f, eventTime = 100L),
+                createStrokeInput(x = 5f, y = 15f, eventTime = 200L),
+                createStrokeInput(x = 35f, y = 45f, eventTime = 300L),
             )
         val stroke = createStroke(inputs)
         val expectedBounds = RectF(5f, 15f, 35f, 45f)
@@ -80,7 +80,10 @@ class StrokeExtensionsTest {
         // Arrange
         val pageNum = 3
         val inputs =
-            listOf(createStrokeInput(x = 10f, y = 20f), createStrokeInput(x = 30f, y = 40f))
+            listOf(
+                createStrokeInput(x = 10f, y = 20f, eventTime = 0L),
+                createStrokeInput(x = 30f, y = 40f, eventTime = 100L),
+            )
         val brush =
             Brush.createWithColorIntArgb(
                 family = StockBrushes.pressurePen(),

@@ -21,9 +21,9 @@ import android.graphics.Path
 import androidx.annotation.UiThread
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
+import androidx.ink.authoring.InkInProgressShape
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.geometry.MutableBox
-import androidx.ink.strokes.InProgressStroke
 
 /**
  * Manages rendering of in-progress strokes and the synchronized handoff of strokes from being in
@@ -158,15 +158,11 @@ internal interface InProgressStrokesRenderHelper {
     fun prepareToDrawInModifiedRegion(modifiedRegionInMainView: MutableBox)
 
     /**
-     * Draw an [InProgressStroke] in the region previously prepared with
+     * Draw an [InkInProgressShape] in the region previously prepared with
      * [prepareToDrawInModifiedRegion]. This may be called multiple times per modified region with
-     * different [InProgressStroke] objects. Called on the render thread.
+     * different [InkInProgressShape] objects. Called on the render thread.
      */
-    fun drawInModifiedRegion(
-        inProgressStroke: InProgressStroke,
-        strokeToMainViewTransform: Matrix,
-        textureAnimationProgress: Float,
-    )
+    fun drawInModifiedRegion(inProgressShape: InkInProgressShape, strokeToMainViewTransform: Matrix)
 
     /**
      * Cleans up what was initialized in [prepareToDrawInModifiedRegion]. Called on the render

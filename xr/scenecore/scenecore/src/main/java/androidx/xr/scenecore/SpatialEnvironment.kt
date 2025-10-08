@@ -210,6 +210,8 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
     /**
      * Remove a listener previously added by [addOnPassthroughOpacityChangedListener].
      *
+     * Remaining listeners are automatically removed when the SpatialEnvironment is destroyed.
+     *
      * @param listener The previously-added [Consumer<Float>] listener to be removed.
      */
     public fun removeOnPassthroughOpacityChangedListener(listener: Consumer<Float>) {
@@ -303,6 +305,8 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
 
     /**
      * Remove a listener previously added by [addOnSpatialEnvironmentChangedListener].
+     *
+     * Remaining listeners are automatically removed when the SpatialEnvironment is destroyed.
      *
      * @param listener The previously-added [Consumer<Boolean>] listener to be removed.
      */

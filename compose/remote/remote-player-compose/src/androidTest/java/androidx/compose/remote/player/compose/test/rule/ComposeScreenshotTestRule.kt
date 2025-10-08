@@ -25,6 +25,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.BitmapMatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.rules.TestWatcher
@@ -42,7 +43,7 @@ class ComposeScreenshotTestRule(
     moduleDirectory: String,
     private val matcher: BitmapMatcher? = null,
 ) : TestRule {
-    private val composeTestRule = createComposeRule()
+    private val composeTestRule = createComposeRule(StandardTestDispatcher())
     private val screenshotRule = AndroidXScreenshotTestRule(moduleDirectory)
 
     private lateinit var testDescription: Description

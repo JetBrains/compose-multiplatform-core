@@ -20,9 +20,12 @@ import android.app.PendingIntent
 import android.app.appsearch.GenericDocument
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
 import android.os.ext.SdkExtensions
 import androidx.appfunctions.Attachment.Companion.ATTACHMENT_OBJECT_TYPE_METADATA
 import androidx.appfunctions.Note.Companion.NOTE_OBJECT_TYPE_METADATA
@@ -399,6 +402,8 @@ class AppFunctionDataTest {
     @Test
     fun testReadWrite_asObject_conformSpec() {
         val builder = AppFunctionData.Builder(TEST_OBJECT_METADATA, AppFunctionComponentsMetadata())
+        val testBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        val testGameCharacter = GameCharacter(name = "Test", level = 10, characterClass = "test")
 
         builder.setInt("int", 234)
         builder.setLong("long", 123L)
@@ -410,6 +415,8 @@ class AppFunctionDataTest {
             "pendingIntent",
             PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
+        builder.setParcelable("bitmap", testBitmap)
+        builder.setParcelable("customParcelable", testGameCharacter)
         builder.setIntArray("intArray", intArrayOf(4, 5, 6))
         builder.setLongArray("longArray", longArrayOf(1L, 2L, 3L))
         builder.setFloatArray("floatArray", floatArrayOf(10.0f, 20.0f, 30.0f))
@@ -424,6 +431,8 @@ class AppFunctionDataTest {
                 PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             ),
         )
+        builder.setParcelableList("bitmapList", listOf(testBitmap))
+        builder.setParcelableList("customParcelableList", listOf(testGameCharacter))
         val data = builder.build()
 
         assertThat(data.getInt("int")).isEqualTo(234)
@@ -436,6 +445,9 @@ class AppFunctionDataTest {
             .isEqualTo(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
             )
+        assertThat(data.getParcelable("bitmap", Bitmap::class.java)).isEqualTo(testBitmap)
+        assertThat(data.getParcelable("customParcelable", GameCharacter::class.java))
+            .isEqualTo(testGameCharacter)
         assertThat(data.getIntArray("intArray")).asList().containsExactly(4, 5, 6)
         assertThat(data.getLongArray("longArray")).asList().containsExactly(1L, 2L, 3L)
         assertThat(data.getFloatArray("floatArray"))
@@ -456,6 +468,10 @@ class AppFunctionDataTest {
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
                 PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             )
+        assertThat(data.getParcelableList("bitmapList", Bitmap::class.java))
+            .containsExactly(testBitmap)
+        assertThat(data.getParcelableList("customParcelableList", GameCharacter::class.java))
+            .containsExactly(testGameCharacter)
     }
 
     @Test
@@ -1335,6 +1351,53 @@ class AppFunctionDataTest {
                             Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
                 ),
             )
+    }
+
+    @Test
+    fun getParcelable_withWrongParcelableName_returnsNull() {
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        val gameCharacter = GameCharacter(name = "Test", level = 10, characterClass = "Warrior")
+        val data =
+            AppFunctionData.Builder(TEST_OBJECT_METADATA, TEST_COMPONENT_METADATA)
+                .setParcelable(key = "bitmap", bitmap)
+                .setParcelableList(key = "customParcelableList", listOf(gameCharacter))
+                .build()
+
+        assertThat(data.getParcelable("bitmap", GameCharacter::class.java)).isNull()
+        assertThat(data.getParcelableList("customParcelableList", Bitmap::class.java)).isNull()
+    }
+
+    /** A custom Parcelable class representing a game character, implemented manually. */
+    private data class GameCharacter(val name: String, val level: Int, val characterClass: String) :
+        Parcelable {
+
+        constructor(
+            parcel: Parcel
+        ) : this(
+            name = parcel.readString() ?: "",
+            level = parcel.readInt(),
+            characterClass = parcel.readString() ?: "",
+        )
+
+        override fun writeToParcel(parcel: Parcel, flags: Int) {
+            parcel.writeString(name)
+            parcel.writeInt(level)
+            parcel.writeString(characterClass)
+        }
+
+        override fun describeContents(): Int {
+            return 0
+        }
+
+        companion object CREATOR : Parcelable.Creator<GameCharacter> {
+            override fun createFromParcel(parcel: Parcel): GameCharacter {
+                return GameCharacter(parcel)
+            }
+
+            override fun newArray(size: Int): Array<GameCharacter?> {
+                return arrayOfNulls(size)
+            }
+        }
     }
 
     companion object {

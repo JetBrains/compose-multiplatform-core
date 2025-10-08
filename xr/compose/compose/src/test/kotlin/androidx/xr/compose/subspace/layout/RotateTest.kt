@@ -91,6 +91,19 @@ class RotateTest {
     }
 
     @Test
+    fun rotate_defaultPitchYawRoll_appliesIdentity() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialPanel(SubspaceModifier.testTag("panel").rotate()) { Text(text = "Panel") }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertRotationInRootIsEqualTo(Quaternion.Identity)
+    }
+
+    @Test
     fun rotate_quaternionOverload_isAppliedCorrectly() {
         val rotation = Quaternion.fromAxisAngle(Vector3(1f, 1f, 0f).toNormalized(), 60f)
 

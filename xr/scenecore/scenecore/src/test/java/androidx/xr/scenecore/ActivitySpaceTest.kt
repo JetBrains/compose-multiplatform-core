@@ -190,4 +190,36 @@ class ActivitySpaceTest {
             activitySpace.setScale(Vector3.One, Space.PARENT)
         }
     }
+
+    @Test
+    fun dispose_removesBoundsChangedListeners() {
+        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val listener = Consumer<FloatSize3d> {}
+
+        activitySpace.addOnBoundsChangedListener(listener)
+        val rtListenerCaptor = argumentCaptor<RtActivitySpace.OnBoundsChangedListener>()
+        verify(mockActivitySpace).addOnBoundsChangedListener(rtListenerCaptor.capture())
+        val rtListener = rtListenerCaptor.firstValue
+
+        activitySpace.dispose()
+
+        verify(mockActivitySpace).removeOnBoundsChangedListener(rtListener)
+    }
+
+    @Test
+    fun dispose_removesSpaceUpdatedListeners() {
+        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val listener = Runnable {}
+        activitySpace.addOnSpaceUpdatedListener(listener)
+        verify(mockActivitySpace).setOnSpaceUpdatedListener(any(), anyOrNull())
+        activitySpace.dispose()
+        verify(mockActivitySpace).setOnSpaceUpdatedListener(eq(null), eq(null))
+    }
+
+    @Test
+    fun dispose_callingTwiceDoesNotCrash() {
+        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        activitySpace.dispose()
+        activitySpace.dispose()
+    }
 }

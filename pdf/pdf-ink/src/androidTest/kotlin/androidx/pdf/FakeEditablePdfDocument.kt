@@ -275,7 +275,7 @@ internal open class FakeEditablePdfDocument(
         return edit
     }
 
-    override fun commitEdits(): EditsResult {
+    override suspend fun commitEdits(): EditsResult {
         return EditsResult(edits.values.map { it.editId }, listOf())
     }
 

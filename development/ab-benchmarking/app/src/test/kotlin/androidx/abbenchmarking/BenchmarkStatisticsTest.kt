@@ -42,10 +42,10 @@ class BenchmarkStatisticsTest {
 
         // THEN the resulting interval should not contain zero, indicating a significant difference
         // The expected values are deterministic due to the fixed random seed.
-        assertThat(ci.first).isWithin(0.01).of(17.0)
-        assertThat(ci.second).isWithin(0.01).of(23.0)
-        assertThat(ci.first).isGreaterThan(0.0)
-        assertThat(ci.second).isGreaterThan(0.0)
+        assertThat(ci.lower).isWithin(0.01).of(17.0)
+        assertThat(ci.upper).isWithin(0.01).of(23.0)
+        assertThat(ci.lower).isGreaterThan(0.0)
+        assertThat(ci.upper).isGreaterThan(0.0)
     }
 
     @Test
@@ -60,24 +60,103 @@ class BenchmarkStatisticsTest {
 
         // THEN the resulting interval should contain zero, suggesting no significant difference
         // The expected values are deterministic due to the fixed random seed.
-        assertThat(ci.first).isWithin(0.01).of(-2.0)
-        assertThat(ci.second).isWithin(0.01).of(4.0)
-        assertThat(ci.first).isLessThan(0.0)
-        assertThat(ci.second).isGreaterThan(0.0)
+        assertThat(ci.lower).isWithin(0.01).of(-2.0)
+        assertThat(ci.upper).isWithin(0.01).of(4.0)
+        assertThat(ci.lower).isLessThan(0.0)
+        assertThat(ci.upper).isGreaterThan(0.0)
     }
 
     @Test
-    fun calculateBootstrapCIMedianDifference_withEmptyInput() {
+    fun calculateBCaCIMedianDifference_withClearDifference() {
+        // GIVEN two datasets with clearly different medians
+        val data1 = doubleArrayOf(98.0, 99.0, 100.0, 101.0, 102.0) // Median: 100.0
+        val data2 = doubleArrayOf(118.0, 119.0, 120.0, 121.0, 122.0) // Median: 120.0
+        val observedMedianDiff = 20.0
+
+        // WHEN the BCa confidence interval is calculated
+        val ci = calculateBCaCIMedianDifference(data1, data2, observedMedianDiff)
+
+        // THEN the interval should not contain zero
+        // With simple symmetric data, BCa can be close to percentile, which is fine.
+        assertThat(ci.lower).isWithin(0.01).of(16.76)
+        assertThat(ci.upper).isWithin(0.01).of(22.0)
+        assertThat(ci.lower).isGreaterThan(0.0)
+    }
+
+    @Test
+    fun calculateBCaCIMedianDifference_withOverlappingData() {
+        // GIVEN two datasets with similar medians
+        val data1 = doubleArrayOf(98.0, 99.0, 100.0, 101.0, 102.0) // Median: 100.0
+        val data2 = doubleArrayOf(99.0, 100.0, 101.0, 102.0, 103.0) // Median: 101.0
+        val observedMedianDiff = 1.0
+
+        // WHEN the BCa confidence interval is calculated
+        val ci = calculateBCaCIMedianDifference(data1, data2, observedMedianDiff)
+
+        // THEN the interval should contain zero
+        assertThat(ci.lower).isWithin(0.01).of(-2.24)
+        assertThat(ci.upper).isWithin(0.01).of(3.0)
+        assertThat(ci.lower).isLessThan(0.0)
+        assertThat(ci.upper).isGreaterThan(0.0)
+    }
+
+    @Test
+    fun calculateBCaCIMedianDifference_fallsBackToBootstrapCI_whenBiasIsUndefined() {
+        // GIVEN two datasets where all elements are identical within each set.
+        // This creates a scenario where all bootstrap replicates of the median difference
+        // are identical to the observed median difference.
+        val data1 = doubleArrayOf(10.0, 10.0, 10.0, 10.0, 10.0) // Median: 10.0
+        val data2 = doubleArrayOf(20.0, 20.0, 20.0, 20.0, 20.0) // Median: 20.0
+        val observedMedianDiff = 10.0
+
+        // In this case, every bootstrap median difference will be exactly 10.0.
+        // This makes the proportion of bootstrap replicates less than the observed median diff
+        // (10.0)
+        // equal to 0. The bias-correction factor (z₀) becomes infinite, and the BCa method
+        // must fall back to the standard percentile bootstrap method.
+
+        // and GIVEN the standard output is redirected to capture the warning
+        val originalOut = System.out
+        val outContent = ByteArrayOutputStream()
+        System.setOut(PrintStream(outContent))
+
+        // WHEN the BCa confidence interval is calculated
+        val bcaResult = calculateBCaCIMedianDifference(data1, data2, observedMedianDiff)
+
+        // THEN the system should print a fallback warning
+        val consoleOutput = outContent.toString()
+        assertThat(consoleOutput)
+            .contains(
+                "Warning: Bias-correction factor is undefined (z₀ is infinite). " +
+                    "Falling back to the standard percentile confidence interval."
+            )
+
+        // AND the result from BCa should be identical to a direct call to the percentile method
+        val bootstrapResult = calculateBootstrapCIMedianDifference(data1, data2)
+
+        assertThat(bcaResult.lower).isEqualTo(bootstrapResult.lower)
+        assertThat(bcaResult.upper).isEqualTo(bootstrapResult.upper)
+
+        // AND the result itself should be a single point, since there's no variation
+        assertThat(bcaResult.lower).isWithin(tolerance).of(10.0)
+        assertThat(bcaResult.upper).isWithin(tolerance).of(10.0)
+
+        // FINALLY, restore the original standard output
+        System.setOut(originalOut)
+    }
+
+    @Test
+    fun calculateBCaCIMedianDifference_withEmptyInput() {
         // GIVEN one empty dataset
         val data1 = doubleArrayOf(1.0, 2.0, 3.0)
         val data2 = doubleArrayOf()
 
         // WHEN the confidence interval is calculated
-        val ci = calculateBootstrapCIMedianDifference(data1, data2)
+        val ci = calculateBCaCIMedianDifference(data1, data2, Double.NaN)
 
         // THEN the result should be NaN for both bounds
-        assertThat(ci.first).isNaN()
-        assertThat(ci.second).isNaN()
+        assertThat(ci.lower).isNaN()
+        assertThat(ci.upper).isNaN()
     }
 
     @Test
@@ -102,6 +181,8 @@ class BenchmarkStatisticsTest {
 
         // The p-value should be very low, indicating a significant difference.
         assertThat(stats.pValue).isLessThan(0.05)
+        // AND confidence intervals should not contain zero
+        assertThat(stats.medianDiffCI.lower).isGreaterThan(0.0)
     }
 
     @Test
@@ -119,6 +200,9 @@ class BenchmarkStatisticsTest {
 
         // The p-value should be high, indicating no significant difference.
         assertThat(stats.pValue).isGreaterThan(0.05)
+        // AND confidence intervals should contain zero
+        assertThat(stats.medianDiffCI.lower).isLessThan(0.0)
+        assertThat(stats.medianDiffCI.upper).isGreaterThan(0.0)
     }
 
     @Test
@@ -146,8 +230,8 @@ class BenchmarkStatisticsTest {
         val stats = calculateStatistics(dataA, dataB)
 
         // THEN the calculated median difference should fall within the confidence interval
-        assertThat(stats.medianDiff).isAtLeast(stats.medianDiffCI.first)
-        assertThat(stats.medianDiff).isAtMost(stats.medianDiffCI.second)
+        assertThat(stats.medianDiff).isAtLeast(stats.medianDiffCI.lower)
+        assertThat(stats.medianDiff).isAtMost(stats.medianDiffCI.upper)
     }
 
     @Test
@@ -172,13 +256,13 @@ class BenchmarkStatisticsTest {
                 medianDiff = 10.0,
                 medianDiffPercent = 10.101,
                 pValue = 0.04,
-                medianDiffCI = Pair(8.1, 12.2),
-                medianDiffCIPercent = Pair(8.18, 12.32),
+                medianDiffCI = ConfidenceInterval(8.1, 12.2),
+                medianDiffCIPercent = ConfidenceInterval(8.18, 12.32),
             )
         val benchmarkName = "MyBenchmarkTest"
 
         // and GIVEN the standard output is redirected to capture the result
-        val originalOut = java.lang.System.out
+        val originalOut = System.out
         val outContent = ByteArrayOutputStream()
         System.setOut(PrintStream(outContent))
 
@@ -240,8 +324,8 @@ Result:                  Statistically significant difference.
                 medianDiff = 10.0,
                 medianDiffPercent = 10.101,
                 pValue = 0.04567,
-                medianDiffCI = Pair(8.1, 12.2),
-                medianDiffCIPercent = Pair(8.18, 12.32),
+                medianDiffCI = ConfidenceInterval(8.1, 12.2),
+                medianDiffCIPercent = ConfidenceInterval(8.18, 12.32),
             )
         val benchmarkName = "MyBenchmarkTest"
 

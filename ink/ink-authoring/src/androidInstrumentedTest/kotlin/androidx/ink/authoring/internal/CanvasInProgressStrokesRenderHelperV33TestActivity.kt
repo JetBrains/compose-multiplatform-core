@@ -27,6 +27,7 @@ import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
+import androidx.ink.authoring.InkInProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.geometry.AffineTransform
@@ -148,7 +149,7 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
             CanvasInProgressStrokesRenderHelperV33(
                 mainView,
                 delegatingCallback,
-                delegatingRenderer,
+                InkInProgressShapeRenderer(delegatingRenderer),
                 fakeThreads.uiThreadExecutors,
                 fakeThreads.renderThreadExecutors,
             )

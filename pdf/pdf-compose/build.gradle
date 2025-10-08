@@ -62,6 +62,9 @@ android {
         compileSdk = 36
         compileSdkExtension = 19
     }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }
 
 androidx {

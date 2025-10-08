@@ -38,7 +38,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 
@@ -160,7 +160,7 @@ fun getHomeTabEntries(
     if (backStack.isEmpty()) backStack.add(Home)
     val homeDecorators =
         listOf<NavEntryDecorator<NavKey>>(
-            rememberSavedStateNavEntryDecorator(),
+            rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
         )
     val homeEntryProvider =
@@ -188,7 +188,7 @@ fun getUserTabEntries(
     if (backStack.isEmpty()) backStack.add(User)
     val userDecorators =
         listOf<NavEntryDecorator<NavKey>>(
-            rememberSavedStateNavEntryDecorator(),
+            rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
         )
     val userEntryProvider =

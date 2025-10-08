@@ -31,8 +31,12 @@ import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.core.CameraState
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.LiveDataObservable
+import androidx.core.util.Consumer
 import androidx.lifecycle.MutableLiveData
+import java.util.concurrent.Executor
 import javax.inject.Inject
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 @CameraScope
 public class CameraStateAdapter @Inject constructor() {
@@ -48,6 +52,9 @@ public class CameraStateAdapter @Inject constructor() {
     @GuardedBy("lock") private var currentCameraStateError: CameraState.StateError? = null
 
     @GuardedBy("lock") private var isRemoved = false
+
+    @GuardedBy("lock")
+    private val cameraStateListeners = mutableMapOf<Consumer<CameraState>, Executor>()
 
     init {
         postCameraState(CameraInternal.State.CLOSED)
@@ -128,7 +135,15 @@ public class CameraStateAdapter @Inject constructor() {
         stateError: CameraState.StateError? = null,
     ) {
         cameraInternalState.postValue(internalState)
-        cameraState.setOrPostValue(CameraState.create(internalState.toCameraState(), stateError))
+
+        val publicState = CameraState.create(internalState.toCameraState(), stateError)
+
+        cameraState.setOrPostValue(publicState)
+
+        val listeners = synchronized(lock) { cameraStateListeners.entries.toList() }
+        listeners.forEach { (listener, executor) ->
+            executor.execute { listener.accept(publicState) }
+        }
     }
 
     /**
@@ -222,6 +237,14 @@ public class CameraStateAdapter @Inject constructor() {
                 }
             else -> null
         }
+
+    internal fun addCameraStateListener(executor: Executor, listener: Consumer<CameraState>) {
+        synchronized(lock) { cameraStateListeners[listener] = executor }
+    }
+
+    internal fun removeCameraStateListener(listener: Consumer<CameraState>) {
+        synchronized(lock) { cameraStateListeners.remove(listener) }
+    }
 
     internal data class CombinedCameraState(
         val state: CameraInternal.State,

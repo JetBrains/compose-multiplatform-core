@@ -24,8 +24,6 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -433,8 +432,7 @@ object BottomSheetDefaults {
 @Composable
 internal fun DragHandleWithTooltip(modifier: Modifier, content: @Composable (() -> Unit)) {
     val dragHandleDescription = getString(Strings.BottomSheetDragHandleDescription)
-    Row(Modifier.fillMaxWidth()) {
-        Spacer(Modifier.fillMaxWidth().weight(1f))
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         TooltipBox(
             modifier = modifier,
             positionProvider =
@@ -443,7 +441,6 @@ internal fun DragHandleWithTooltip(modifier: Modifier, content: @Composable (() 
             state = rememberTooltipState(),
             content = content,
         )
-        Spacer(Modifier.fillMaxWidth().weight(1f))
     }
 }
 

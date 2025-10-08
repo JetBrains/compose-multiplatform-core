@@ -67,6 +67,10 @@ internal class PdfRendererAnnotationsProcessor(private val renderer: PdfDocument
         editIds
             .groupBy { it.pageNum }
             .forEach { pageNum, editIds ->
+                if (pageNum < 0 || pageNum > renderer.pageCount) {
+                    failures.addAll(editIds)
+                    return@forEach
+                }
                 renderer.withPage(pageNum) { page ->
                     editIds.forEach {
                         try {
@@ -111,6 +115,10 @@ internal class PdfRendererAnnotationsProcessor(private val renderer: PdfDocument
         annotations
             .groupBy { it.editId.pageNum }
             .forEach { (pageNum, annotationsData) ->
+                if (pageNum < 0 || pageNum > renderer.pageCount) {
+                    failures.addAll(annotationsData.map { it.editId })
+                    return@forEach
+                }
                 renderer.withPage(pageNum) { page ->
                     annotationsData.forEach { annotationData ->
                         try {

@@ -95,15 +95,6 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         setupMainPanel()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        session!!.scene.clearSpatialVisibilityChangedListener()
-        session!!
-            .scene
-            .mainPanelEntity
-            .removePerceivedResolutionChangedListener(mPerceivedResolutionListener)
-    }
-
     private fun createHeadLockedPanel() {
         mHeadLockedPanelView = DebugTextLinearView(context = this)
         mHeadLockedPanelView.setName("Spatial Visibility")

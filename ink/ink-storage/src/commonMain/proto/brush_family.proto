@@ -42,11 +42,28 @@ message BrushFamily {
   // version of the code that has removed this feature.
   message ExperimentalNaiveModel {}
 
+  // Averages nearby inputs together within a sliding time window.
+  message SlidingWindowModel {
+    // The duration over which to average together nearby raw inputs. Typically
+    // this should be somewhere in the 1 ms to 100 ms range. The default value
+    // is 20 ms.
+    optional float window_size_seconds = 1 [default = 0.02];
+    // The maximum duration between modeled inputs; if raw inputs are spaced
+    // more than this far apart in time, then additional modeled inputs will be
+    // inserted between them. Set this to infinity to disable upsampling.  The
+    // default value is 1/180 seconds.
+    //
+    // This is an experimental field which may be removed later.
+    optional float experimental_upsampling_period_seconds = 2
+        [default = 0.00555555555];
+  }
+
   message InputModel {
     oneof input_model {
       SpringModel spring_model = 2;
       ExperimentalRawPositionModel experimental_raw_position_model = 3;
       ExperimentalNaiveModel experimental_naive_model = 4;
+      SlidingWindowModel sliding_window_model = 5;
     }
     // Was legacy InputModel type, reserved needs to be outside oneof
     reserved 1;

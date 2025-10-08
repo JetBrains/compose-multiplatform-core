@@ -48,9 +48,12 @@ package androidx.datastore.preferences.core {
   }
 
   public final class PreferencesFactory {
-    method public static androidx.datastore.preferences.core.Preferences create(androidx.datastore.preferences.core.Preferences.Pair<? extends java.lang.Object?>... pairs);
-    method public static androidx.datastore.preferences.core.Preferences createEmpty();
-    method public static androidx.datastore.preferences.core.MutablePreferences createMutable(androidx.datastore.preferences.core.Preferences.Pair<? extends java.lang.Object?>... pairs);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences create(androidx.datastore.preferences.core.Preferences.Pair<? extends java.lang.Object?>... pairs);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences createEmpty();
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.MutablePreferences createMutable(androidx.datastore.preferences.core.Preferences.Pair<? extends java.lang.Object?>... pairs);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences emptyPreferences();
+    method @KotlinOnly public static androidx.datastore.preferences.core.MutablePreferences mutablePreferencesOf(androidx.datastore.preferences.core.Preferences.Pair<? extends java.lang.Object?>... pairs);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences preferencesOf(androidx.datastore.preferences.core.Preferences.Pair<? extends java.lang.Object?>... pairs);
   }
 
   public final class PreferencesFileSerializer implements androidx.datastore.core.Serializer<androidx.datastore.preferences.core.Preferences> {
@@ -62,14 +65,22 @@ package androidx.datastore.preferences.core {
   }
 
   public final class PreferencesKeys {
-    method public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Boolean> booleanKey(String name);
-    method public static androidx.datastore.preferences.core.Preferences.Key<byte[]> byteArrayKey(String name);
-    method public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Double> doubleKey(String name);
-    method public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Float> floatKey(String name);
-    method public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Integer> intKey(String name);
-    method public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Long> longKey(String name);
-    method public static androidx.datastore.preferences.core.Preferences.Key<java.lang.String> stringKey(String name);
-    method public static androidx.datastore.preferences.core.Preferences.Key<java.util.Set<java.lang.String>> stringSetKey(String name);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Boolean> booleanKey(String name);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Boolean> booleanPreferencesKey(String name);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences.Key<byte[]> byteArrayKey(String name);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences.Key<byte[]> byteArrayPreferencesKey(String name);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Double> doubleKey(String name);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Double> doublePreferencesKey(String name);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Float> floatKey(String name);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Float> floatPreferencesKey(String name);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Integer> intKey(String name);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Integer> intPreferencesKey(String name);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Long> longKey(String name);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Long> longPreferencesKey(String name);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences.Key<java.lang.String> stringKey(String name);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences.Key<java.lang.String> stringPreferencesKey(String name);
+    method @InaccessibleFromKotlin public static androidx.datastore.preferences.core.Preferences.Key<java.util.Set<java.lang.String>> stringSetKey(String name);
+    method @KotlinOnly public static androidx.datastore.preferences.core.Preferences.Key<java.util.Set<java.lang.String>> stringSetPreferencesKey(String name);
   }
 
   public final class PreferencesKt {

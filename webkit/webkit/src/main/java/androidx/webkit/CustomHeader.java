@@ -17,7 +17,7 @@
 package androidx.webkit;
 
 
-import androidx.annotation.RestrictTo;
+import android.webkit.WebView;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -26,12 +26,12 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Representation of a custom header mapping.
+ * A HTTP header name-value pair that will be sent on all requests to origins that match the
+ * given origin rules.
  *
  * @see Profile#addCustomHeader(CustomHeader)
  * @see Profile#getCustomHeaders()
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class CustomHeader {
     private final @NonNull String mName;
     private final @NonNull String mValue;
@@ -55,28 +55,43 @@ public class CustomHeader {
         mRules = originRules;
     }
 
-    /** Header name */
+    /** HTTP Header name */
     public @NonNull String getName() {
         return mName;
     }
 
-    /** Header value */
+    /** HTTP Header value */
     public @NonNull String getValue() {
         return mValue;
     }
 
-    /** Origin patterns where this header is being sent. */
+    /**
+     * Origin patterns where this header is being sent.
+     * <p>
+     * The rules use the format described in the documentation for
+     * {@link WebViewCompat#addWebMessageListener(WebView, String, Set, WebViewCompat.WebMessageListener)}.
+     */
     public @NonNull Set<String> getRules() {
         return mRules;
     }
 
+    /**
+     * HashCode for {@link CustomHeader} is derived from the individual fields.-
+     */
     @Override
     public int hashCode() {
         return Objects.hash(mName, mValue, mRules);
     }
 
+    /**
+     * Two instances of {@link CustomHeader} are equal if the header name and value, and rule set
+     * are equal.
+     */
     @Override
     public boolean equals(@Nullable Object obj) {
+        if (this == obj) {
+            return true;
+        }
         if (!(obj instanceof CustomHeader)) {
             return false;
         }

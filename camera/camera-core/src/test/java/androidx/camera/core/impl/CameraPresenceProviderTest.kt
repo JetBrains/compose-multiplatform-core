@@ -553,9 +553,9 @@ class CameraPresenceProviderTest {
         private const val CAMERA_ID_0 = "0"
         private const val CAMERA_ID_1 = "1"
         private const val CAMERA_ID_EXTERNAL = "2"
-        private val IDENTIFIER_0 = CameraIdentifier.create(CAMERA_ID_0)
-        private val IDENTIFIER_1 = CameraIdentifier.create(CAMERA_ID_1)
-        private val IDENTIFIER_EXTERNAL = CameraIdentifier.create(CAMERA_ID_EXTERNAL)
+        private val IDENTIFIER_0 = CameraIdentifier.Factory.create(CAMERA_ID_0)
+        private val IDENTIFIER_1 = CameraIdentifier.Factory.create(CAMERA_ID_1)
+        private val IDENTIFIER_EXTERNAL = CameraIdentifier.Factory.create(CAMERA_ID_EXTERNAL)
     }
 
     private class MutableObservable<T> : Observable<T> {

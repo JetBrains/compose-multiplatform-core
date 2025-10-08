@@ -27,6 +27,7 @@ import androidx.room3.Transactor.SQLiteTransactionType
 import androidx.room3.concurrent.AtomicBoolean
 import androidx.room3.concurrent.AtomicInt
 import androidx.room3.paging.util.INITIAL_ITEM_COUNT
+import androidx.room3.paging.util.queryContext
 import androidx.room3.paging.util.queryDatabase
 import androidx.room3.paging.util.queryItemCount
 import kotlinx.coroutines.CancellationException
@@ -120,7 +121,7 @@ internal class CommonLimitOffsetImpl<Value : Any>(
      */
     private suspend fun initialLoad(params: LoadParams<Int>): LoadResult<Int, Value> {
         // Load in the database's coroutine context since useConnection is unconfined.
-        return withContext(db.getCoroutineScope().coroutineContext) {
+        return withContext(db.queryContext) {
             db.useConnection(isReadOnly = true) { connection ->
                 // Using a transaction to ensure initial load's data integrity.
                 connection.withTransaction(SQLiteTransactionType.DEFERRED) {
@@ -150,7 +151,7 @@ internal class CommonLimitOffsetImpl<Value : Any>(
             )
         // TODO(b/192269858): Create a better API to facilitate source invalidation.
         // Manually check if database has been updated. If so, invalidate the source and the result.
-        withContext(db.getCoroutineScope().coroutineContext) {
+        withContext(db.queryContext) {
             if (db.invalidationTracker.refresh(*tables)) {
                 pagingSource.invalidate()
             }

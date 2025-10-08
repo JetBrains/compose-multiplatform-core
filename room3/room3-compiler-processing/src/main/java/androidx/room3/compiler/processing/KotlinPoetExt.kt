@@ -24,6 +24,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.javapoet.KClassName
+import com.squareup.kotlinpoet.javapoet.KTypeVariableName
 
 internal val KOTLIN_NONE_TYPE_NAME: KClassName =
     KClassName("androidx.room3.compiler.processing.error", "NotAType")
@@ -67,12 +68,13 @@ object FunSpecHelper {
             if (executableElement.isSuspendFunction()) {
                 addModifiers(KModifier.SUSPEND)
             }
-            // TODO(b/251316420): Add type variable names
+            addTypeVariables(
+                resolvedType.typeVariables.map { it.asTypeName().kotlin as KTypeVariableName }
+            )
             val parameterTypes =
                 resolvedType.parameterTypes.let {
                     // Drop the synthetic Continuation param of suspend functions, always at the
-                    // last
-                    // position.
+                    // last position.
                     // TODO(b/254135327): Revisit with the introduction of a target language.
                     if (resolvedType.isSuspendFunction()) it.dropLast(1) else it
                 }

@@ -632,7 +632,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
             // CameraUseCaseAdapter
             // to ensure a correct lookup in the repository. It acts as the key.
             val cameraUseCaseAdapterId =
-                CameraIdentifier.fromAdapterInfos(
+                CameraIdentifier.Factory.fromAdapterInfos(
                     primaryAdapterCameraInfo,
                     secondaryAdapterCameraInfo,
                 )
@@ -708,7 +708,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
             val cameraConfig = getCameraConfig(cameraSelector, cameraInfoInternal)
 
             val key =
-                CameraIdentifier.create(
+                CameraIdentifier.Factory.create(
                     cameraInfoInternal.cameraId,
                     null,
                     cameraConfig.compatibilityId,

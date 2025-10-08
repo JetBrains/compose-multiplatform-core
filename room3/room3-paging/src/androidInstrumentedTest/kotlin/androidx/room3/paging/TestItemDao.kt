@@ -16,6 +16,7 @@
 
 package androidx.room3.paging
 
+import androidx.paging.PagingSource
 import androidx.room3.Dao
 import androidx.room3.Delete
 import androidx.room3.Insert
@@ -31,4 +32,7 @@ interface TestItemDao {
 
     @Query("DELETE FROM TestItem WHERE id >= :start AND id <= :end")
     fun deleteTestItems(start: Int, end: Int): Int
+
+    @Query("SELECT * FROM TestItem ORDER BY id ASC")
+    fun getItemsPagingSource(): PagingSource<Int, TestItem>
 }

@@ -30,6 +30,7 @@ import androidx.room3.vo.TransactionFunction
 class TransactionFunctionAdapter(
     private val functionName: String,
     private val jvmMethodName: String,
+    private val typeParamNames: List<String>,
     private val callType: TransactionFunction.CallType,
 ) {
     fun createDelegateToSuperCode(
@@ -43,8 +44,8 @@ class TransactionFunctionAdapter(
             val delegateInvokeFormat = buildString {
                 val invokeExpr =
                     when (scope.language) {
-                        CodeLanguage.JAVA -> scope.getJavaInvokeExpr(daoName, daoImplName)
-                        CodeLanguage.KOTLIN -> scope.getKotlinInvokeExpr(daoImplName)
+                        CodeLanguage.JAVA -> getJavaInvokeExpr(daoName, daoImplName)
+                        CodeLanguage.KOTLIN -> getKotlinInvokeExpr(daoImplName)
                     }
                 append("%L")
                 delegateInvokeArgs.add(invokeExpr)
@@ -71,10 +72,7 @@ class TransactionFunctionAdapter(
         }
     }
 
-    private fun CodeGenScope.getJavaInvokeExpr(
-        daoName: XClassName,
-        daoImplName: XClassName,
-    ): XCodeBlock =
+    private fun getJavaInvokeExpr(daoName: XClassName, daoImplName: XClassName): XCodeBlock =
         when (callType) {
             TransactionFunction.CallType.CONCRETE -> {
                 XCodeBlock.of("%T.super.%N(", daoImplName, jvmMethodName)
@@ -93,6 +91,15 @@ class TransactionFunctionAdapter(
             }
         }
 
-    private fun CodeGenScope.getKotlinInvokeExpr(daoImplName: XClassName): XCodeBlock =
-        XCodeBlock.of("super@%T.%N(", daoImplName, functionName)
+    private fun getKotlinInvokeExpr(daoImplName: XClassName): XCodeBlock =
+        if (typeParamNames.isEmpty()) {
+            XCodeBlock.of("super@%T.%N(", daoImplName, functionName)
+        } else {
+            XCodeBlock.of(
+                "super@%T.%N<%L>(",
+                daoImplName,
+                functionName,
+                typeParamNames.joinToString(),
+            )
+        }
 }

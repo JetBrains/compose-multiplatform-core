@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+@Suppress("RestrictedApiAndroidX")
 fun Main(modifier: Modifier = Modifier) {
     var documentState by remember { mutableStateOf<RemoteComposeDocument?>(null) }
 
@@ -89,8 +90,13 @@ fun Main(modifier: Modifier = Modifier) {
 
 @RemoteComposable
 @Composable
+@Suppress("RestrictedApiAndroidX")
 fun Greeting(modifier: RemoteModifier = RemoteModifier) {
     RemoteBox(modifier = modifier) { RemoteText(text = "Hello world!") }
 }
 
-@Preview @RemoteComposable @Composable fun GreetingPreview() = RemoteComposePreview { Greeting() }
+@Suppress("RestrictedApiAndroidX")
+@Preview
+@RemoteComposable
+@Composable
+fun GreetingPreview() = RemoteComposePreview { Greeting() }

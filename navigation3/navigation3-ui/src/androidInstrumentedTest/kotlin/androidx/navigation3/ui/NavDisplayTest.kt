@@ -19,18 +19,14 @@ package androidx.navigation3.ui
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.isDisplayed
@@ -43,10 +39,8 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.DialogSceneStrategy
-import androidx.navigation3.scene.Scene
-import androidx.navigation3.scene.SceneStrategy
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
@@ -294,7 +288,7 @@ class NavDisplayTest {
             NavDisplay(
                 backStack = backStack,
                 onBack = { backStack.removeAt(backStack.lastIndex) },
-                entryDecorators = listOf(rememberSavedStateNavEntryDecorator()),
+                entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
             ) {
                 when (it) {
                     first ->
@@ -387,8 +381,8 @@ class NavDisplayTest {
         composeTestRule.setContent {
             val backStack1 = rememberNavBackStack(First)
             val backStack2 = rememberNavBackStack(Second)
-            val decorator1 = listOf(rememberSavedStateNavEntryDecorator<NavKey>())
-            val decorator2 = listOf(rememberSavedStateNavEntryDecorator<NavKey>())
+            val decorator1 = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>())
+            val decorator2 = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>())
             backStackState = remember { mutableStateOf(1) }
             decoratorState = remember { mutableStateOf(1) }
 
@@ -719,19 +713,24 @@ class NavDisplayTest {
                     onBack = {
                         // Back handlers are no-ops here: we only care about crash behavior.
                     },
-                ) {
-                    NavEntry(first) { // Home
-                        Text("parent='$first',child='null'")
-                    }
-                    NavEntry(second) { // Detail
-                        NavDisplay(
-                            backStack = innerBackStack,
-                            onBack = {
-                                // Same rationale as above.
-                            },
-                        ) {
-                            NavEntry(third) { Text("parent='$second',child='$third'") }
-                        }
+                ) { key ->
+                    when (key) {
+                        first ->
+                            NavEntry(first) { // Home
+                                Text("parent='$first',child='null'")
+                            }
+                        second ->
+                            NavEntry(second) { // Detail
+                                NavDisplay(
+                                    backStack = innerBackStack,
+                                    onBack = {
+                                        // Same rationale as above.
+                                    },
+                                ) {
+                                    NavEntry(third) { Text("parent='$second',child='$third'") }
+                                }
+                            }
+                        else -> error("Cannot find NavEntry for $key")
                     }
                 }
             }
@@ -766,31 +765,3 @@ private const val forth = "forth"
 @Serializable object First : NavKey
 
 @Serializable object Second : NavKey
-
-class TestTwoPaneScene<T : Any>(
-    override val key: Any,
-    override val entries: List<NavEntry<T>>,
-    override val previousEntries: List<NavEntry<T>>,
-) : Scene<T> {
-    override val content: @Composable (() -> Unit) = {
-        val left = entries.first()
-        val right = entries.last()
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.weight(1f)) { left.Content() }
-            Column(Modifier.weight(1f)) { right.Content() }
-        }
-    }
-}
-
-class TestTwoPaneSceneStrategy<T : Any> : SceneStrategy<T> {
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
-        if (entries.size < 2) return null
-        val lastTwoEntries = entries.takeLast(2)
-        return TestTwoPaneScene(
-            key = lastTwoEntries.first().contentKey,
-            entries = entries.takeLast(2),
-            previousEntries = listOf(),
-        )
-    }
-}

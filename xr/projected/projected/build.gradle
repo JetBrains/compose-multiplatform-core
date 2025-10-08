@@ -63,6 +63,9 @@ android {
             version = 1
         }
     }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }
 
 androidx {

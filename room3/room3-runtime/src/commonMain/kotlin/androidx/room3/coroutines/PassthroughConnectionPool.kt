@@ -82,8 +82,9 @@ private class PassthroughConnection(
     private var nestedTransactionCount = AtomicInt(0)
     private var currentTransactionType: Transactor.SQLiteTransactionType? = null
 
-    override val rawConnection: SQLiteConnection
-        get() = delegate
+    override suspend fun <R> useRawConnection(block: (SQLiteConnection) -> R): R {
+        return block.invoke(delegate)
+    }
 
     override suspend fun <R> usePrepared(sql: String, block: (SQLiteStatement) -> R): R {
         return if (inTransaction() && transactionWrapper != null) {
@@ -156,8 +157,8 @@ private class PassthroughConnection(
 
     private inner class PassthroughTransactor<T> : TransactionScope<T>, RawConnectionAccessor {
 
-        override val rawConnection: SQLiteConnection
-            get() = this@PassthroughConnection.rawConnection
+        override suspend fun <R> useRawConnection(block: (SQLiteConnection) -> R): R =
+            this@PassthroughConnection.useRawConnection(block)
 
         override suspend fun <R> usePrepared(sql: String, block: (SQLiteStatement) -> R): R {
             return this@PassthroughConnection.usePrepared(sql, block)

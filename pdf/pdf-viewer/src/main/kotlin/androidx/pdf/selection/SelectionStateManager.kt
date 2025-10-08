@@ -35,13 +35,12 @@ import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.toViewSelection
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
-import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.selection.model.GoToLinkSelection
 import androidx.pdf.selection.model.HyperLinkSelection
 import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
 import androidx.pdf.view.PageManager
-import androidx.pdf.view.PageMetadataLoader
+import androidx.pdf.view.layout.PageMetadataLoader
 import kotlin.collections.firstOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -119,12 +118,11 @@ internal class SelectionStateManager(
             SelectionUiSignal.PlayHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         )
         // Check for a link at this point.
-        if (PdfFeatureFlags.isLinkSelectionEnabled) {
-            pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
-                if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return
-                if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return
-            }
+        pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
+            if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return
+            if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return
         }
+        // Check for a text at this point.
         updateRangeSelectionAsync(pdfPoint, pdfPoint)
     }
 

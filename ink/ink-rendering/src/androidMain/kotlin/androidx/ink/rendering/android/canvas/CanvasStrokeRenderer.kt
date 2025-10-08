@@ -18,6 +18,7 @@ package androidx.ink.rendering.android.canvas
 
 import android.graphics.Canvas
 import android.graphics.Matrix
+import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
@@ -120,7 +121,7 @@ public interface CanvasStrokeRenderer {
         canvas: Canvas,
         stroke: Stroke,
         strokeToScreenTransform: AffineTransform,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 
     /**
@@ -162,7 +163,7 @@ public interface CanvasStrokeRenderer {
         canvas: Canvas,
         stroke: Stroke,
         strokeToScreenTransform: Matrix,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 
     /**
@@ -200,7 +201,7 @@ public interface CanvasStrokeRenderer {
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
         strokeToScreenTransform: AffineTransform,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 
     /**
@@ -238,7 +239,7 @@ public interface CanvasStrokeRenderer {
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
         strokeToScreenTransform: Matrix,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 
     public companion object {

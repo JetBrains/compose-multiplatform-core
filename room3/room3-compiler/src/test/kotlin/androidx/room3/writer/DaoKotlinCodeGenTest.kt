@@ -1461,11 +1461,32 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
               }
 
               @Transaction
+              internal open fun concreteInternalWithReturn(): Long {
+                return 0L
+              }
+
+              @Transaction
+              open suspend fun suspendConcreteWithReturn(): Long {
+                return 0L
+              }
+
+
+              @Transaction
               open fun concreteWithVararg(vararg arr: Long) {
               }
 
               @Transaction
               open suspend fun suspendConcreteWithVararg(vararg arr: Long) {
+              }
+
+              @Transaction
+              open fun <R> concreteWithTypeParam() {
+              
+              }
+
+              @Transaction
+              open suspend fun <R> suspendConcreteWithTypeParam() {
+              
               }
             }
 

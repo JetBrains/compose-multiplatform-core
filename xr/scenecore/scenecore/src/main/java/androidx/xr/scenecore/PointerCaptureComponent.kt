@@ -62,7 +62,7 @@ private constructor(
                 PointerCaptureState.POINTER_CAPTURE_STOPPED,
             ]
     )
-    internal annotation class PointerCaptureStateValue
+    public annotation class PointerCaptureStateValue
 
     /** Defines the possible states of a [PointerCaptureComponent]. */
     public object PointerCaptureState {

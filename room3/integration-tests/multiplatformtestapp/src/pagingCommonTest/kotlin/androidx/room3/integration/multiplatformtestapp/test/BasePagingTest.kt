@@ -64,6 +64,7 @@ abstract class BasePagingTest {
                 )
             ) as PagingSource.LoadResult.Page
         assertThat(loadAll.data).containsExactlyElementsIn(sampleEntities)
+        db.close()
     }
 
     @Test
@@ -96,6 +97,7 @@ abstract class BasePagingTest {
                 )
             ) as PagingSource.LoadResult.Page
         assertThat(loadAll.data).containsExactlyElementsIn(listOf(entity2, entity3))
+        db.close()
     }
 
     @Database(

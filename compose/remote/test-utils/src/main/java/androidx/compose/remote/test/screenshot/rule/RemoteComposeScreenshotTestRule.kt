@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.BitmapMatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.rules.ExternalResource
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
@@ -65,7 +66,7 @@ class RemoteComposeScreenshotTestRule(
     private val matcher: BitmapMatcher? = null,
     private val targetPlayer: TargetPlayer,
 ) : ExternalResource() {
-    private val composeTestRule = createComposeRule()
+    private val composeTestRule = createComposeRule(StandardTestDispatcher())
     private val screenshotRule = AndroidXScreenshotTestRule(moduleDirectory)
 
     private lateinit var testDescription: Description

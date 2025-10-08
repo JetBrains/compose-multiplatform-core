@@ -25,6 +25,7 @@ import android.util.Range
 import android.util.Size
 import android.view.Surface
 import androidx.annotation.OptIn
+import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
@@ -73,6 +74,7 @@ import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.Timebase
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.internal.StreamSpecsCalculator
+import androidx.core.util.Consumer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import java.util.concurrent.Executor
@@ -209,6 +211,16 @@ constructor(
     override fun getExposureState(): ExposureState = cameraControlStateAdapter.exposureState
 
     override fun getCameraState(): LiveData<CameraState> = cameraStateAdapter.cameraState
+
+    @VisibleForTesting
+    override fun addCameraStateListener(executor: Executor, listener: Consumer<CameraState>) {
+        cameraStateAdapter.addCameraStateListener(executor, listener)
+    }
+
+    @VisibleForTesting
+    override fun removeCameraStateListener(listener: Consumer<CameraState>) {
+        cameraStateAdapter.removeCameraStateListener(listener)
+    }
 
     override fun addSessionCaptureCallback(
         executor: Executor,

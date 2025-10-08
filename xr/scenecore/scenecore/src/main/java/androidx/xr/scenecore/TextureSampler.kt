@@ -121,9 +121,10 @@ constructor(
         public const val WRAP_MODE_MIRRORED_REPEAT: Int = 2
 
         /** Defines the constants for texture wrap modes. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(value = [WRAP_MODE_CLAMP_TO_EDGE, WRAP_MODE_REPEAT, WRAP_MODE_MIRRORED_REPEAT])
-        internal annotation class WrapMode
+        public annotation class WrapMode
 
         /** No filtering. Nearest neighbor is used. */
         public const val MINIFICATION_FILTER_NEAREST: Int = 0
@@ -143,6 +144,7 @@ constructor(
         public const val MINIFICATION_FILTER_LINEAR_MIPMAP_LINEAR: Int = 5
 
         /** Defines the constants for texture minification filters. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(
             value =
@@ -155,7 +157,7 @@ constructor(
                     MINIFICATION_FILTER_LINEAR_MIPMAP_LINEAR,
                 ]
         )
-        internal annotation class MinificationFilter
+        public annotation class MinificationFilter
 
         /** No filtering. Nearest neighbor is used. */
         public const val MAGNIFICATION_FILTER_NEAREST: Int = 0
@@ -163,9 +165,10 @@ constructor(
         public const val MAGNIFICATION_FILTER_LINEAR: Int = 1
 
         /** Defines the constants for texture magnification filters. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(value = [MAGNIFICATION_FILTER_NEAREST, MAGNIFICATION_FILTER_LINEAR])
-        internal annotation class MagnificationFilter
+        public annotation class MagnificationFilter
 
         /** The comparison function is not used. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -178,7 +181,7 @@ constructor(
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(value = [COMPARE_MODE_NONE, COMPARE_MODE_COMPARE_TO_TEXTURE])
-        internal annotation class CompareMode
+        public annotation class CompareMode
 
         /** Passes if the incoming depth is less than or equal to the stored depth. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -221,6 +224,6 @@ constructor(
                     COMPARE_FUNCTION_NEVER,
                 ]
         )
-        internal annotation class CompareFunction
+        public annotation class CompareFunction
     }
 }

@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore
 
+import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -33,6 +34,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class AnchorEntityTest {
@@ -142,5 +144,29 @@ class AnchorEntityTest {
         assertThrows(UnsupportedOperationException::class.java) {
             anchorEntity.setScale(Vector3.One, Space.PARENT)
         }
+    }
+
+    @Test
+    fun dispose_clearsListeners() {
+        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+
+        anchorEntity.setOnStateChangedListener(directExecutor(), {})
+        anchorEntity.setOnSpaceUpdatedListener(directExecutor(), {})
+
+        verify(mockAnchorEntityImpl).setOnStateChangedListener(any())
+        assertThat(anchorEntity.onStateChangedListener).isNotNull()
+
+        anchorEntity.dispose()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(null, null)
+        assertThat(anchorEntity.onStateChangedListener).isNull()
+    }
+
+    @Test
+    fun dispose_callingTwiceDoesNotCrash() {
+        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+        anchorEntity.dispose()
+        anchorEntity.dispose()
     }
 }

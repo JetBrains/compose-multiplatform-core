@@ -89,7 +89,7 @@ public class CameraPresenceProvider(
 
         this.cameraValidator = cameraValidator
         this.currentFilteredIds =
-            cameraFactory.availableCameraIds.map { CameraIdentifier.create(it) }
+            cameraFactory.availableCameraIds.map { CameraIdentifier.Factory.create(it) }
         this.cameraFactory = cameraFactory
         this.cameraRepository = cameraRepository
         this.sourcePresenceObservable = cameraFactory.cameraPresenceSource
@@ -145,7 +145,7 @@ public class CameraPresenceProvider(
                     val oldFilteredIds = currentFilteredIds
                     val potentialNewIds =
                         factory.getAvailableCameraIds(rawIdStrings).map {
-                            CameraIdentifier.create(it)
+                            CameraIdentifier.Factory.create(it)
                         }
 
                     val removedCameras = oldFilteredIds.toSet() - potentialNewIds.toSet()
@@ -178,7 +178,8 @@ public class CameraPresenceProvider(
             }
 
             // Now, get the definitive new list from the factory's updated state.
-            val newFilteredIds = factory.availableCameraIds.map { CameraIdentifier.create(it) }
+            val newFilteredIds =
+                factory.availableCameraIds.map { CameraIdentifier.Factory.create(it) }
 
             // If the final list results in no change, we can stop.
             if (newFilteredIds == currentFilteredIds) {

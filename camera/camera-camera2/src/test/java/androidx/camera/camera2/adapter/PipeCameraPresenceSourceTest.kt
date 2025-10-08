@@ -52,8 +52,8 @@ class PipeCameraPresenceSourceTest {
     private lateinit var mockContext: Context
     private lateinit var mockCameraManager: CameraManager
 
-    private val id1 = CameraIdentifier.create("1")
-    private val id2 = CameraIdentifier.create("2")
+    private val id1 = CameraIdentifier.Factory.create("1")
+    private val id2 = CameraIdentifier.Factory.create("2")
     private val pipeId1 = CameraId.fromCamera2Id("1")
     private val pipeId2 = CameraId.fromCamera2Id("2")
 

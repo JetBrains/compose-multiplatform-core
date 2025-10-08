@@ -26,6 +26,7 @@ import androidx.sqlite.SQLiteConnection
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 
 /** Performs a database operation. */
@@ -38,8 +39,9 @@ public actual suspend fun <R> performSuspending(
 ): R =
     withContext(db.getCoroutineContext(inTransaction)) {
         db.internalPerform(isReadOnly, inTransaction) { connection ->
-            val rawConnection = (connection as RawConnectionAccessor).rawConnection
-            block.invoke(rawConnection)
+            (connection as RawConnectionAccessor).useRawConnection { rawConnection ->
+                block.invoke(rawConnection)
+            }
         }
     }
 
@@ -50,7 +52,7 @@ public actual suspend fun <R> performSuspending(
  */
 internal actual suspend fun RoomDatabase.getCoroutineContext(
     inTransaction: Boolean
-): CoroutineContext = getCoroutineScope().coroutineContext
+): CoroutineContext = getCoroutineScope().coroutineContext.minusKey(Job)
 
 /**
  * Utility function to wrap a suspend block in Room's transaction coroutine.

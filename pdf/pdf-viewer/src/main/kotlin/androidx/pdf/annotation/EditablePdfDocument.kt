@@ -92,7 +92,7 @@ public abstract class EditablePdfDocument : PdfDocument {
     public abstract fun updateEdit(editId: EditId, edit: PdfEdit): PdfEdit
 
     /** Commits all PdfEdits to the PDF document. */
-    public abstract fun commitEdits(): EditsResult
+    public abstract suspend fun commitEdits(): EditsResult
 
     /**
      * Returns an immutable snapshot of all [PdfEdit]s, organized by page number.

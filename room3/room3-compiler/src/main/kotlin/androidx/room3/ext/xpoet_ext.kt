@@ -309,6 +309,8 @@ object RoomMemberNames {
     val DB_UTIL_SUPPORT_DB_TO_CONNECTION = RoomTypeNames.DB_UTIL.packageMember("toSQLiteConnection")
     val DB_UTIL_PERFORM_IN_TRANSACTION_SUSPENDING =
         RoomTypeNames.DB_UTIL.packageMember("performInTransactionSuspending")
+    val DB_UTIL_PERFORM_IN_TRANSACTION_BLOCKING =
+        RoomTypeNames.DB_UTIL.packageMember("performInTransactionBlocking")
     val CURSOR_UTIL_GET_COLUMN_INDEX = RoomTypeNames.CURSOR_UTIL.packageMember("getColumnIndex")
     val CURSOR_UTIL_GET_COLUMN_INDEX_OR_THROW =
         RoomTypeNames.CURSOR_UTIL.packageMember("getColumnIndexOrThrow")
@@ -377,6 +379,25 @@ fun CallableTypeSpecBuilder(parameterTypeName: XTypeName, callBody: XFunSpec.Bui
                 .build()
         )
     }
+
+fun Function0TypeSpec(returnTypeName: XTypeName, callBody: XFunSpec.Builder.() -> Unit) =
+    XTypeSpec.anonymousClassBuilder("")
+        .apply {
+            superclass(Function0::class.asClassName().parametrizedBy(returnTypeName))
+            addFunction(
+                XFunSpec.builder(
+                        name = "invoke",
+                        visibility = VisibilityModifier.PUBLIC,
+                        isOverride = true,
+                    )
+                    .apply {
+                        returns(returnTypeName)
+                        callBody()
+                    }
+                    .build()
+            )
+        }
+        .build()
 
 fun Function1TypeSpec(
     parameterTypeName: XTypeName,
@@ -470,7 +491,7 @@ fun InvokeWithLambdaParameter(
                     "%L($argsFormatString, (%L) -> {\n",
                     functionCall,
                     *args.toTypedArray(),
-                    lambdaSpec.parameterName,
+                    lambdaSpec.parameterName ?: "",
                 )
                 indent()
                 val bodyScope = scope.fork()
@@ -494,18 +515,35 @@ fun InvokeWithLambdaParameter(
                         .joinToString(separator = ", ")
                 val adjustedArgs = buildList {
                     addAll(args)
-                    add(
-                        Function1TypeSpec(
-                            parameterTypeName = lambdaSpec.parameterTypeName,
-                            parameterName = lambdaSpec.parameterName,
-                            returnTypeName = lambdaSpec.returnTypeName,
-                            callBody = {
-                                val bodyScope = scope.fork()
-                                with(lambdaSpec) { bodyScope.builder.body(bodyScope) }
-                                addCode(bodyScope.generate())
-                            },
-                        )
-                    )
+                    val functionTypeSpec =
+                        if (
+                            lambdaSpec.parameterTypeName == null || lambdaSpec.parameterName == null
+                        ) {
+                            check(
+                                lambdaSpec.parameterTypeName == null &&
+                                    lambdaSpec.parameterName == null
+                            )
+                            Function0TypeSpec(
+                                returnTypeName = lambdaSpec.returnTypeName,
+                                callBody = {
+                                    val bodyScope = scope.fork()
+                                    with(lambdaSpec) { bodyScope.builder.body(bodyScope) }
+                                    addCode(bodyScope.generate())
+                                },
+                            )
+                        } else {
+                            Function1TypeSpec(
+                                parameterTypeName = lambdaSpec.parameterTypeName,
+                                parameterName = lambdaSpec.parameterName,
+                                returnTypeName = lambdaSpec.returnTypeName,
+                                callBody = {
+                                    val bodyScope = scope.fork()
+                                    with(lambdaSpec) { bodyScope.builder.body(bodyScope) }
+                                    addCode(bodyScope.generate())
+                                },
+                            )
+                        }
+                    add(functionTypeSpec)
                     if (continuationParamName != null) {
                         add(continuationParamName)
                     }
@@ -515,7 +553,10 @@ fun InvokeWithLambdaParameter(
         }
         CodeLanguage.KOTLIN -> {
             val argsFormatString = argFormat.joinToString(separator = ", ")
-            if (lambdaSpec.parameterTypeName.rawTypeName != KotlinTypeNames.CONTINUATION) {
+            if (lambdaSpec.parameterTypeName == null || lambdaSpec.parameterName == null) {
+                check(lambdaSpec.parameterTypeName == null && lambdaSpec.parameterName == null)
+                add("%L($argsFormatString) {\n", functionCall, *args.toTypedArray())
+            } else if (lambdaSpec.parameterTypeName.rawTypeName != KotlinTypeNames.CONTINUATION) {
                 add(
                     "%L($argsFormatString) { %L ->\n",
                     functionCall,
@@ -535,10 +576,14 @@ fun InvokeWithLambdaParameter(
     }
 }
 
-/** Describes the lambda to be generated with [InvokeWithLambdaParameter]. */
+/**
+ * Describes the lambda to be generated with [InvokeWithLambdaParameter].
+ *
+ * If the lambda has no parameters, then both [parameterTypeName] and [parameterName] can be null.
+ */
 abstract class LambdaSpec(
-    val parameterTypeName: XTypeName,
-    val parameterName: String,
+    val parameterTypeName: XTypeName?,
+    val parameterName: String?,
     val returnTypeName: XTypeName,
     val javaLambdaSyntaxAvailable: Boolean,
 ) {

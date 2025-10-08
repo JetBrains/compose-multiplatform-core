@@ -78,6 +78,9 @@ dependencies {
 android {
     compileSdk = 35
     namespace = "androidx.camera.compose"
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }
 
 androidx {

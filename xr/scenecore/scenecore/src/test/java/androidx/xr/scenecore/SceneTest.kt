@@ -501,4 +501,48 @@ class SceneTest {
         rtListener.onSpatialModeChanged(recommendedPose, recommendedScale)
         shadowOf(Looper.getMainLooper()).idle()
     }
+
+    @Test
+    fun sceneClose_removesSpatialCapabilitiesListeners() {
+        val capabilitiesListener = Consumer<SpatialCapabilities> {}
+        session.scene.addSpatialCapabilitiesChangedListener(capabilitiesListener)
+        val rtCapabilitiesListenerCaptor = argumentCaptor<Consumer<RtSpatialCapabilities>>()
+        verify(mockSceneRuntime)
+            .addSpatialCapabilitiesChangedListener(any(), rtCapabilitiesListenerCaptor.capture())
+        val rtCapabilitiesListener = rtCapabilitiesListenerCaptor.firstValue
+
+        session.scene.close()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(mockSceneRuntime).removeSpatialCapabilitiesChangedListener(rtCapabilitiesListener)
+    }
+
+    @Test
+    fun sceneClose_clearsSpatialVisibilityListener() {
+        val visibilityListener = Consumer<@SpatialVisibilityValue Int> {}
+        session.scene.setSpatialVisibilityChangedListener(visibilityListener)
+        verify(mockSceneRuntime).setSpatialVisibilityChangedListener(any(), any())
+
+        session.scene.close()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(mockSceneRuntime).clearSpatialVisibilityChangedListener()
+    }
+
+    @Test
+    fun sceneClose_clearsSpatialModeChangeListener() {
+        var modeChangeListenerCalled = false
+        val modeChangeListener =
+            Consumer<SpatialModeChangeEvent> { modeChangeListenerCalled = true }
+        session.scene.setSpatialModeChangedListener(modeChangeListener)
+        val rtModeChangeListenerCaptor = argumentCaptor<RtSpatialModeChangeListener>()
+        verify(mockSceneRuntime).spatialModeChangeListener = rtModeChangeListenerCaptor.capture()
+        val rtModeChangeListener = rtModeChangeListenerCaptor.firstValue
+
+        session.scene.close()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        rtModeChangeListener.onSpatialModeChanged(Pose.Identity, Vector3.One)
+        assertThat(modeChangeListenerCalled).isFalse()
+    }
 }

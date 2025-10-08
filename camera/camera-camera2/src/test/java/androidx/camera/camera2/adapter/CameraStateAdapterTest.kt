@@ -29,7 +29,9 @@ import androidx.camera.core.CameraState.ERROR_CAMERA_REMOVED
 import androidx.camera.core.CameraState.ERROR_MAX_CAMERAS_IN_USE
 import androidx.camera.core.CameraState.ERROR_OTHER_RECOVERABLE_ERROR
 import androidx.camera.core.impl.CameraInternal
+import androidx.core.util.Consumer
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.MoreExecutors
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.internal.DoNotInstrument
@@ -378,5 +380,71 @@ internal class CameraStateAdapterTest {
         val finalState = cameraStateAdapter.cameraState.value!!
         assertThat(finalState.type).isEqualTo(CameraState.Type.CLOSED)
         assertThat(finalState.error?.code).isEqualTo(ERROR_CAMERA_REMOVED)
+    }
+
+    @Test
+    fun listenerIsCalled_whenStateChanges() {
+        // Arrange
+        val listener = TestStateListener()
+        cameraStateAdapter.addCameraStateListener(MoreExecutors.directExecutor(), listener)
+        ShadowLooper.idleMainLooper()
+
+        // Act
+        cameraStateAdapter.onGraphUpdated(cameraGraph1)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarting)
+        ShadowLooper.idleMainLooper()
+
+        // Assert
+        assertThat(listener.states.last().type).isEqualTo(CameraState.Type.OPENING)
+
+        // Act
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarted)
+        ShadowLooper.idleMainLooper()
+
+        // Assert
+        assertThat(listener.states.last().type).isEqualTo(CameraState.Type.OPEN)
+    }
+
+    @Test
+    fun listenerIsNotCalled_afterRemoval() {
+        // Arrange
+        val listener = TestStateListener()
+        cameraStateAdapter.addCameraStateListener(MoreExecutors.directExecutor(), listener)
+        cameraStateAdapter.removeCameraStateListener(listener)
+        ShadowLooper.idleMainLooper()
+
+        // Act
+        cameraStateAdapter.onGraphUpdated(cameraGraph1)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarting)
+        ShadowLooper.idleMainLooper()
+
+        // Assert
+        assertThat(listener.states).isEmpty()
+    }
+
+    @Test
+    fun onRemoved_notifiesListener() {
+        // Arrange
+        val listener = TestStateListener()
+        cameraStateAdapter.addCameraStateListener(MoreExecutors.directExecutor(), listener)
+        ShadowLooper.idleMainLooper()
+
+        // Act
+        cameraStateAdapter.onRemoved()
+        ShadowLooper.idleMainLooper()
+
+        // Assert
+        val finalState = listener.states.last()
+        assertThat(finalState.type).isEqualTo(CameraState.Type.CLOSED)
+        assertThat(finalState.error).isNotNull()
+        assertThat(finalState.error!!.code).isEqualTo(ERROR_CAMERA_REMOVED)
+    }
+
+    private class TestStateListener : Consumer<CameraState> {
+        val states = mutableListOf<CameraState>()
+
+        override fun accept(t: CameraState) {
+            states.add(t)
+        }
     }
 }

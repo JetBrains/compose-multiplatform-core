@@ -16,15 +16,24 @@
 
 package androidx.xr.arcore.testing
 
+import android.os.IBinder
 import androidx.kruth.assertThat
 import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.ExportableAnchor
 import androidx.xr.runtime.math.Pose
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class FakeRuntimeAnchorTest {
+
+    @Before
+    fun setUp() {
+        // Reset the static anchor count before each test to prevent resource exhaustion.
+        FakeRuntimeAnchor.anchorsCreatedCount = 0
+    }
 
     @Test
     fun constructor_anchorHolderNotNull_isAttached() {
@@ -60,5 +69,28 @@ class FakeRuntimeAnchorTest {
         underTest.detach()
 
         assertThat(underTest.isAttached).isFalse()
+    }
+
+    @Test
+    fun anchor_isExportableAnchor() {
+        val underTest = FakeRuntimeAnchor(Pose())
+
+        assertThat(underTest).isInstanceOf<ExportableAnchor>()
+    }
+
+    @Test
+    fun nativePointer_returnsNonNullValue() {
+        val underTest = FakeRuntimeAnchor(Pose())
+
+        assertThat(underTest.nativePointer).isNotNull()
+        assertThat(underTest.nativePointer).isNotEqualTo(0L)
+    }
+
+    @Test
+    fun anchorToken_returnsNonNullBinder() {
+        val underTest = FakeRuntimeAnchor(Pose())
+
+        assertThat(underTest.anchorToken).isNotNull()
+        assertThat(underTest.anchorToken).isInstanceOf<IBinder>()
     }
 }

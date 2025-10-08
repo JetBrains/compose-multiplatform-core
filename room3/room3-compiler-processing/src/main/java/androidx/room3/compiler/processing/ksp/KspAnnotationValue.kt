@@ -18,6 +18,7 @@ package androidx.room3.compiler.processing.ksp
 
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.InternalXAnnotationValue
+import androidx.room3.compiler.processing.XMethodElement
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.isArray
 import com.google.devtools.ksp.getClassDeclarationByName
@@ -29,20 +30,66 @@ import com.google.devtools.ksp.symbol.KSValueArgument
 
 internal class KspAnnotationValue(
     val env: KspProcessingEnv,
-    private val owner: KspAnnotation,
-    override val valueType: XType,
     val valueArgument: KSValueArgument,
-    private val valueProvider: () -> Any? = { owner.unwrap(valueType, valueArgument) },
+    private val method: XMethodElement,
+    override val valueType: XType,
+    private val valueProvider: () -> Any?,
 ) : InternalXAnnotationValue() {
 
     override val name: String
-        get() =
-            valueArgument.name?.asString() ?: error("Value argument $this does not have a name.")
+        get() = method.propertyName ?: method.name
+
+    override val jvmName: String
+        get() = method.jvmName
 
     override val value: Any? by lazy { valueProvider.invoke() }
+
+    companion object {
+        fun create(env: KspProcessingEnv, valueArgument: KSValueArgument): KspAnnotationValue {
+            val method = findMethod(env, valueArgument)
+            val valueType = method.returnType
+            return KspAnnotationValue(
+                env,
+                valueArgument,
+                method,
+                valueType,
+                valueProvider = { unwrap(env, method, valueType, valueArgument) },
+            )
+        }
+
+        private fun findMethod(
+            env: KspProcessingEnv,
+            valueArgument: KSValueArgument,
+        ): XMethodElement {
+            val ksAnnotation = (valueArgument.parent as KSAnnotation)
+            val ksDeclaration =
+                ksAnnotation.annotationType.resolve().declaration.replaceTypeAliases()
+            val typeElement =
+                env.wrapClassDeclarationForNonEnumEntry(ksDeclaration as KSClassDeclaration)
+            val valueName =
+                valueArgument.name?.asString()
+                    ?: error("Value $valueArgument does not have a name.")
+            return typeElement.getDeclaredMethods().single {
+                // Whether "name" or "propertyName" is used just depends on whether the annotation
+                // is declared in a Java or Kotlin file, respectively. However, things get more
+                // complicated when there is an @JvmName on the annotation value. In this case, if
+                // the usage is a Java file then the "jvmName" is used. If the usage site is a
+                // Kotlin file then "propertyName" or "jvmName" is used depending on whether the
+                // usage site is being viewed from source or classpath (due to a bug in KSP,
+                // https://github.com/google/ksp/issues/2620). For simplicity, just allow matches
+                // from either rather than trying to figure out exactly which scenario we're in.
+                valueName == (it.propertyName ?: it.name) || valueName == it.jvmName
+            }
+        }
+    }
 }
 
-internal fun KspAnnotation.unwrap(valueType: XType, valueArgument: KSValueArgument): Any? {
+internal fun unwrap(
+    env: KspProcessingEnv,
+    method: XMethodElement,
+    valueType: XType,
+    valueArgument: KSValueArgument,
+): Any? {
     fun unwrap(value: Any?): Any? {
         return when (value) {
             // Enums in KSP2
@@ -101,10 +148,14 @@ internal fun KspAnnotation.unwrap(valueType: XType, valueArgument: KSValueArgume
                         else -> result
                     }
                     .filterNotNull()
-                    .map {
-                        KspAnnotationValue(env, this, valueType.componentType, valueArgument) {
-                            convertValueToType(it, valueType.componentType)
-                        }
+                    .map { value ->
+                        KspAnnotationValue(
+                            env,
+                            valueArgument,
+                            method,
+                            valueType = valueType.componentType,
+                            valueProvider = { convertValueToType(value, valueType.componentType) },
+                        )
                     }
             }
             else -> convertValueToType(result, valueType)

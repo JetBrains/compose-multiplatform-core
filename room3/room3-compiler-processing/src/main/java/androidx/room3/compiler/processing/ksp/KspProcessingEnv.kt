@@ -52,6 +52,7 @@ import com.google.devtools.ksp.symbol.KSTypeAlias
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.KSValueArgument
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Nullability
 import com.google.devtools.ksp.symbol.Variance
@@ -187,6 +188,10 @@ internal class KspProcessingEnv(
 
     fun wrapPropertyAccessor(accessor: KSPropertyAccessor) =
         kspResolver.wrapPropertyAccessor(accessor)
+
+    fun wrapAnnotation(declaration: KSAnnotation) = kspResolver.wrapAnnotation(declaration)
+
+    fun wrapAnnotationValue(value: KSValueArgument) = kspResolver.wrapAnnotationValue(value)
 
     fun wrapKSFile(file: KSFile): KspMemberContainer = kspResolver.wrapKSFile(file)
 
@@ -514,5 +519,13 @@ private class KspResolver(val env: KspProcessingEnv, val resolver: Resolver) {
                 else -> error("Unsupported $accessor class ${accessor::class}")
             }
         }
+    }
+
+    fun wrapAnnotation(declaration: KSAnnotation): KspAnnotation {
+        return KspAnnotation(env, declaration)
+    }
+
+    fun wrapAnnotationValue(value: KSValueArgument): KspAnnotationValue {
+        return KspAnnotationValue.create(env, value)
     }
 }

@@ -114,6 +114,9 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * Releases the given [Consumer] from receiving updates when the ActivitySpace's boundary
      * changes.
      *
+     * All listeners are automatically removed when the ActivitySpace is disposed even if this
+     * method is not explicitly called.
+     *
      * @param listener The Consumer to be removed from receiving updates.
      */
     public fun removeOnBoundsChangedListener(listener: Consumer<FloatSize3d>) {
@@ -163,7 +166,12 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
     public fun addOnSpaceUpdatedListener(listener: Runnable): Unit =
         addOnSpaceUpdatedListener(DirectExecutor, listener)
 
-    /** Removes the previously-added listener. */
+    /**
+     * Removes the previously-added listener.
+     *
+     * All listeners are automatically removed when the ActivitySpace is disposed even if this
+     * method is not explicitly called.
+     */
     public fun removeOnSpaceUpdatedListener(listener: Runnable) {
         checkNotDisposed()
         spaceUpdatedListeners.remove(listener)
@@ -274,5 +282,11 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
             Space.REAL_WORLD -> super.getScale(relativeTo)
             else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
         }
+    }
+
+    override fun dispose() {
+        boundsListeners.keys.forEach { removeOnBoundsChangedListener(it) }
+        spaceUpdatedListeners.keys.forEach { removeOnSpaceUpdatedListener(it) }
+        super.dispose()
     }
 }

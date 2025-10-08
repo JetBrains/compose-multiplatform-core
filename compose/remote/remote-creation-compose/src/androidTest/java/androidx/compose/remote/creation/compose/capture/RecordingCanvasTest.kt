@@ -25,7 +25,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.Operation
-import androidx.compose.remote.core.Operations
+import androidx.compose.remote.core.Profiles
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.PaintData
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
@@ -68,7 +68,7 @@ class RecordingCanvasTest {
             1f,
             Size(WIDTH.toFloat(), HEIGHT.toFloat()),
             CoreDocument.DOCUMENT_API_LEVEL,
-            Operations.PROFILE_ANDROIDX,
+            Profiles.PROFILE_ANDROIDX,
         )
 
     private val recordingCanvas =
@@ -235,6 +235,28 @@ class RecordingCanvasTest {
         val paintOp = operations[operations.size - 1] as PaintData
         assertThat(paintOp.mPaintData.toString())
             .contains("ColorFilterID(color=[45], mode=MULTIPLY)")
+    }
+
+    @Test
+    fun remotePaintSetRemoteColorFilter_clearColorExpression() {
+        val paint = RemotePaint()
+        paint.remoteColorFilter =
+            RemoteBlendModeColorFilter(
+                RemoteColor.fromARGB(
+                    RemoteFloat(1f),
+                    RemoteFloat(0.8f),
+                    RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC),
+                    RemoteFloat(0.5f),
+                ),
+                BlendMode.MULTIPLY,
+            )
+        recordingCanvas.usePaint(paint)
+
+        recordingCanvas.usePaint(Paint())
+
+        val operations = inflateOperations()
+        val paintOp = operations[operations.size - 1] as PaintData
+        assertThat(paintOp.mPaintData.toString()).contains("clearColorFilter")
     }
 
     @Test

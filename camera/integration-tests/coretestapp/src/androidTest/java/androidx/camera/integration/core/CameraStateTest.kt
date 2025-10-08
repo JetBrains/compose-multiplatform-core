@@ -33,14 +33,22 @@ import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.core.util.Consumer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -249,5 +257,96 @@ class CameraStateTest(
         assertThat(observedOpening).isTrue()
         assertThat(openLatch.await(3, TimeUnit.SECONDS)).isTrue()
         assertThat(observedOpen).isTrue() // Check if OPEN was observed after OPENING
+    }
+
+    @Test
+    fun cameraStateListener_isCalled_whenStateChanges() = runBlocking {
+        val preview = createPreview()
+
+        val openListener =
+            AwaitingStateListener(cameraProvider, cameraSelector, CameraState.Type.OPEN)
+
+        withContext(Dispatchers.Main) {
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+        }
+
+        openListener.awaitState()
+
+        val closeListener =
+            AwaitingStateListener(cameraProvider, cameraSelector, CameraState.Type.CLOSED)
+
+        withContext(Dispatchers.Main) { cameraProvider.unbindAll() }
+
+        closeListener.awaitState()
+    }
+
+    @Test
+    fun cameraStateListener_isNotCalled_afterRemoval() = runBlocking {
+        val preview = createPreview()
+
+        val openListener =
+            AwaitingStateListener(cameraProvider, cameraSelector, CameraState.Type.OPEN)
+
+        val camera =
+            withContext(Dispatchers.Main) {
+                cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+            }
+
+        openListener.awaitState()
+
+        val closeListener =
+            AwaitingStateListener(cameraProvider, cameraSelector, CameraState.Type.CLOSED)
+
+        camera.cameraInfo.removeCameraStateListener(closeListener)
+
+        withContext(Dispatchers.Main) { cameraProvider.unbindAll() }
+
+        assertTimeout { closeListener.awaitState(100.milliseconds) }
+    }
+
+    private suspend fun assertTimeout(block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (_: TimeoutCancellationException) {}
+    }
+
+    /**
+     * A [CameraState] listening consumer that waits for a specific [CameraState.Type].
+     *
+     * This listener is attached to corresponding camera upon initialization and receives camera
+     * states updates on a background thread. The [awaitState] method can be used to suspend until
+     * the state is observed.
+     *
+     * @param cameraProvider The [ProcessCameraProvider] used to get camera info.
+     * @param cameraSelector The [CameraSelector] for the camera to observe.
+     * @param stateType The [CameraState.Type] to wait for.
+     */
+    private class AwaitingStateListener(
+        private val cameraProvider: ProcessCameraProvider,
+        private val cameraSelector: CameraSelector,
+        private val stateType: CameraState.Type,
+    ) : Consumer<CameraState> {
+        private val deferred = CompletableDeferred<Unit>()
+        private val executorService = Executors.newSingleThreadExecutor()
+
+        init {
+            cameraProvider
+                .getCameraInfo(cameraSelector)
+                .addCameraStateListener(executorService, this)
+        }
+
+        override fun accept(value: CameraState) {
+            if (stateType == value.type) {
+                deferred.complete(Unit)
+            }
+        }
+
+        suspend fun awaitState(timeout: Duration = 5.seconds) {
+            withTimeout(timeout) { deferred.await() }
+
+            cameraProvider.getCameraInfo(cameraSelector).removeCameraStateListener(this)
+
+            executorService.shutdown()
+        }
     }
 }

@@ -104,5 +104,6 @@ internal fun newConnectionPool(
 
 /** Defines an object that provides 'raw' access to a connection. */
 internal interface RawConnectionAccessor {
-    val rawConnection: SQLiteConnection
+
+    suspend fun <R> useRawConnection(block: (SQLiteConnection) -> R): R
 }

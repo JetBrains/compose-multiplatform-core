@@ -26,14 +26,20 @@ import androidx.xr.runtime.math.Vector3
 /**
  * Rotate a subspace element (i.e. Panel) in space with regards to the center of the element.
  * Parameter rotation angles are specified in degrees. The rotations are applied with the order
- * pitch, then yaw, then roll.
+ * pitch, then yaw, then roll. If no values are provided, no rotation is applied.
  *
- * @param pitch Rotation around the x-axis. The x-axis is the axis width is measured on.
- * @param yaw Rotation around the y-axis. The y-axis is the axis height is measured on.
- * @param roll Rotation around the z-axis. The z-axis is the axis depth is measured on.
+ * @param pitch Rotation around the x-axis. Defaults to `0.0f`. The x-axis is the axis width is
+ *   measured on.
+ * @param yaw Rotation around the y-axis. Defaults to `0.0f`. The y-axis is the axis height is
+ *   measured on.
+ * @param roll Rotation around the z-axis. Defaults to `0.0f`. The z-axis is the axis depth is
+ *   measured on.
  */
-public fun SubspaceModifier.rotate(pitch: Float, yaw: Float, roll: Float): SubspaceModifier =
-    this.then(RotationElement(pitch, yaw, roll))
+public fun SubspaceModifier.rotate(
+    pitch: Float = 0.0f,
+    yaw: Float = 0.0f,
+    roll: Float = 0.0f,
+): SubspaceModifier = this.then(RotationElement(pitch, yaw, roll))
 
 /**
  * Rotate a subspace element (i.e. Panel) in space with regards to the center of the element. The

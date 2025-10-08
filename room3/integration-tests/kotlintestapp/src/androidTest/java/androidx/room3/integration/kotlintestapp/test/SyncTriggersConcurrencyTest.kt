@@ -16,132 +16,124 @@
 
 package androidx.room3.integration.kotlintestapp.test
 
-import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.room3.Dao
 import androidx.room3.Database
-import androidx.room3.Delete
 import androidx.room3.Entity
 import androidx.room3.Insert
-import androidx.room3.InvalidationTracker
 import androidx.room3.OnConflictStrategy
 import androidx.room3.PrimaryKey
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.room3.integration.kotlintestapp.test.TestDatabaseTest.UseDriver
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import java.util.UUID
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.test.Ignore
-import kotlin.test.assertTrue
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newFixedThreadPoolContext
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
 // Verifies b/215583326
 @LargeTest
-@RunWith(AndroidJUnit4::class)
-class SyncTriggersConcurrencyTest {
+@RunWith(Parameterized::class)
+class SyncTriggersConcurrencyTest(val useDriver: UseDriver) {
 
-    @Rule @JvmField val countingTaskExecutorRule = CountingTaskExecutorRule()
+    private companion object {
 
-    private lateinit var executor: ExecutorService
+        private const val DB_NAME = "sample.db"
+        private const val TABLE_NAME = "sample"
+
+        private const val CONCURRENCY = 4
+        private const val CHECK_ITERATIONS = 200
+
+        @JvmStatic
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = arrayOf(UseDriver.ANDROID, UseDriver.BUNDLED)
+    }
+
+    private val applicationContext = InstrumentationRegistry.getInstrumentation().targetContext
+
+    private lateinit var dispatcher: ExecutorCoroutineDispatcher
     private lateinit var database: SampleDatabase
     private lateinit var terminationSignal: AtomicBoolean
 
     @Before
+    @OptIn(DelicateCoroutinesApi::class)
     fun setup() {
-        val applicationContext = InstrumentationRegistry.getInstrumentation().targetContext
-        val threadId = AtomicInteger()
-        executor =
-            Executors.newCachedThreadPool { runnable ->
-                Thread(runnable).apply {
-                    name = "invalidation_tracker_test_worker_${threadId.getAndIncrement()}"
-                }
-            }
+        applicationContext.deleteDatabase(DB_NAME)
+        dispatcher = newFixedThreadPoolContext(Int.MAX_VALUE, "invalidation_tracker_test_thread_")
         database =
-            Room.databaseBuilder(applicationContext, SampleDatabase::class.java, DB_NAME).build()
-        terminationSignal = AtomicBoolean()
+            Room.databaseBuilder<SampleDatabase>(applicationContext, DB_NAME)
+                .apply {
+                    if (useDriver == UseDriver.ANDROID) {
+                        setDriver(AndroidSQLiteDriver())
+                    } else if (useDriver == UseDriver.BUNDLED) {
+                        setDriver(BundledSQLiteDriver())
+                    }
+                }
+                .setQueryCoroutineContext(dispatcher)
+                .build()
+        terminationSignal = AtomicBoolean(false)
     }
 
     @After
     fun tearDown() {
         terminationSignal.set(true)
-        executor.shutdown()
-        val terminated = executor.awaitTermination(1L, TimeUnit.SECONDS)
-        countingTaskExecutorRule.drainTasks(500, TimeUnit.MILLISECONDS)
         database.close()
-        InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase(DB_NAME)
-        check(terminated)
-        check(countingTaskExecutorRule.isIdle)
+        dispatcher.cancel()
+        applicationContext.deleteDatabase(DB_NAME)
     }
 
     @Test
-    @Ignore // Flaky test b/330789066
-    fun test() {
+    fun test() = runTest {
         val invalidationTracker = database.invalidationTracker
 
-        // Launch CONCURRENCY number of tasks which stress the InvalidationTracker by repeatedly
-        // registering and unregistering observers.
+        // Launch CONCURRENCY number of jobs which stress the InvalidationTracker by repeatedly
+        // creating and canceling flows.
         repeat(CONCURRENCY) {
-            executor.execute(StressRunnable(invalidationTracker, terminationSignal))
+            launch(dispatcher) {
+                while (!terminationSignal.get()) {
+                    invalidationTracker.createFlow(TABLE_NAME).collect { cancel() }
+                }
+            }
         }
 
         // Repeatedly, CHECK_ITERATIONS number of times:
-        // 1. Add an observer
+        // 1. Create a Flow (starts observation)
         // 2. Insert an entity
-        // 4. Remove the observer
-        // 5. Assert that the observer received an invalidation call.
+        // 4. Cancel the Flow (stops observation)
+        // 5. No deadlock = assertion that invalidation was received
         val dao = database.getDao()
         repeat(CHECK_ITERATIONS) { iteration ->
-            val checkObserver = TestObserver(expectedInvalidationCount = 1)
-            invalidationTracker.addObserver(checkObserver)
-            try {
-                val entity = SampleEntity(UUID.randomUUID().toString())
-                dao.insert(entity)
-                val countedDown = checkObserver.latch.await(10L, TimeUnit.SECONDS)
-                assertTrue(countedDown, "iteration $iteration timed out")
-            } finally {
-                invalidationTracker.removeObserver(checkObserver)
-            }
-        }
-    }
-
-    /**
-     * Stresses the invalidation tracker by repeatedly adding and removing an observer.
-     *
-     * @property invalidationTracker the invalidation tracker
-     * @property terminationSignal when set to true, signals the loop to terminate
-     */
-    private class StressRunnable(
-        private val invalidationTracker: InvalidationTracker,
-        private val terminationSignal: AtomicBoolean,
-    ) : Runnable {
-
-        val observer = TestObserver()
-
-        override fun run() {
-            while (!terminationSignal.get()) {
-                invalidationTracker.addObserver(observer)
-                invalidationTracker.removeObserver(observer)
-            }
-        }
-    }
-
-    private class TestObserver(expectedInvalidationCount: Int = 0) :
-        InvalidationTracker.Observer(SampleEntity::class.java.simpleName) {
-
-        val latch = CountDownLatch(expectedInvalidationCount)
-
-        override fun onInvalidated(tables: Set<String>) {
-            latch.countDown()
+            val collectingLatch = CompletableDeferred<Unit>()
+            val collectedLatch = CompletableDeferred<Unit>()
+            val collectJob =
+                launch(dispatcher) {
+                    invalidationTracker.createFlow(TABLE_NAME).collectIndexed { i, _ ->
+                        when (i) {
+                            0 -> collectingLatch.complete(Unit) // initial emission
+                            1 -> collectedLatch.complete(Unit) // invalidation emission
+                            else -> error("Received too many invalidations")
+                        }
+                    }
+                }
+            collectingLatch.await() // wait for collection to start
+            dao.insert(SampleEntity(iteration.toString()))
+            collectedLatch.await() // wait for invalidation
+            collectJob.cancelAndJoin()
         }
     }
 
@@ -152,19 +144,8 @@ class SyncTriggersConcurrencyTest {
 
     @Dao
     interface SampleDao {
-
         @Insert(onConflict = OnConflictStrategy.REPLACE) fun insert(count: SampleEntity)
-
-        @Delete fun delete(count: SampleEntity)
     }
 
-    @Entity class SampleEntity(@PrimaryKey val id: String)
-
-    companion object {
-
-        private const val DB_NAME = "sample.db"
-
-        private const val CONCURRENCY = 4
-        private const val CHECK_ITERATIONS = 200
-    }
+    @Entity(tableName = TABLE_NAME) class SampleEntity(@PrimaryKey val id: String)
 }

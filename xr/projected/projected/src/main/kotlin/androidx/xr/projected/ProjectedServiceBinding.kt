@@ -37,28 +37,6 @@ import androidx.annotation.RestrictTo
 public object ProjectedServiceBinding {
 
     internal const val ACTION_BIND: String = "androidx.xr.projected.ACTION_BIND"
-    internal const val ACTION_PERCEPTION_BIND: String =
-        "androidx.xr.projected.ACTION_PERCEPTION_BIND"
-
-    /**
-     * Binds to a perception projected service using provided [ServiceConnection].
-     *
-     * If service can't be found, the method throws [IllegalStateException]. It means that the
-     * system doesn't include a service supporting Projected XR devices.
-     *
-     * @param context can be either a host [Context] or the Projected device [Context].
-     * @return true if the system is in the process of bringing up a service that your client has
-     *   permission to bind to; false if the system couldn't find the service or if your client
-     *   doesn't have permission to bind to it. Regardless of the return value, you should later
-     *   call unbindService to release the connection.
-     */
-    @JvmStatic
-    public fun bindPerception(context: Context, serviceConnection: ServiceConnection): Boolean =
-        context.bindService(
-            getIntent(context, ACTION_PERCEPTION_BIND),
-            serviceConnection,
-            Context.BIND_AUTO_CREATE,
-        )
 
     /**
      * Binds to a service using provided [ServiceConnection].
@@ -80,6 +58,7 @@ public object ProjectedServiceBinding {
             Context.BIND_AUTO_CREATE,
         )
 
+    // LINT.IfChange(get_intent)
     private fun getIntent(context: Context, intentAction: String): Intent {
         val intent = Intent(intentAction)
         val projectedSystemServiceResolveInfo = findProjectedSystemService(context, intent)
@@ -118,4 +97,6 @@ public object ProjectedServiceBinding {
 
         return resolveInfoSystemApps.first()
     }
+
+    // LINT.ThenChange(/xr/arcore/arcore-projected/src/main/kotlin/androidx/xr/arcore/projected/ProjectedManager.kt:get_intent)
 }

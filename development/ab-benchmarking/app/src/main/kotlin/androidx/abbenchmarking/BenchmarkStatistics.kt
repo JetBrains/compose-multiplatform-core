@@ -16,8 +16,12 @@
 package androidx.abbenchmarking
 
 import kotlin.math.cbrt
+import kotlin.math.pow
 import kotlin.random.Random
+import org.apache.commons.math3.distribution.NormalDistribution
+import org.apache.commons.math3.stat.StatUtils
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+import org.apache.commons.math3.stat.descriptive.rank.Percentile
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest
 import org.jetbrains.letsPlot.export.ggsave
 import org.jetbrains.letsPlot.geom.geomHistogram
@@ -25,6 +29,14 @@ import org.jetbrains.letsPlot.ggsize
 import org.jetbrains.letsPlot.label.ggtitle
 import org.jetbrains.letsPlot.letsPlot
 import org.jetbrains.letsPlot.pos.positionIdentity
+
+/**
+ * Represents the lower and upper bounds of a confidence interval.
+ *
+ * @property lower The lower bound of the confidence interval.
+ * @property upper The upper bound of the confidence interval.
+ */
+data class ConfidenceInterval(val lower: Double, val upper: Double)
 
 /**
  * Contains the data class for storing statistical results and all functions related to performing
@@ -48,8 +60,8 @@ data class StatisticsResult(
     val medianDiff: Double,
     val medianDiffPercent: Double,
     val pValue: Double,
-    val medianDiffCI: Pair<Double, Double>,
-    val medianDiffCIPercent: Pair<Double, Double>,
+    val medianDiffCI: ConfidenceInterval,
+    val medianDiffCIPercent: ConfidenceInterval,
 )
 
 /**
@@ -60,8 +72,8 @@ data class StatisticsResult(
  * replacement from each dataset, calculates the difference in medians for each pair of resampled
  * datasets, and then determines the range that contains the central 95% of these differences.
  *
- * How to interpret the result: The returned `Pair` represents the lower and upper bounds of the 95%
- * confidence interval.
+ * How to interpret the result: The returned `ConfidenceInterval` represents the lower and upper
+ * bounds of the 95% confidence interval.
  * - If the interval (e.g., `[2.5, 5.0]`) does not contain zero, it suggests that there is a
  *   statistically significant difference between the medians of the underlying populations from
  *   which the samples were drawn.
@@ -74,16 +86,16 @@ data class StatisticsResult(
  * @param data2 The second dataset.
  * @param numSamples The number of bootstrap samples to generate.
  * @param confidenceLevel The desired confidence level.
- * @return A Pair containing the lower and upper bounds of the confidence interval.
+ * @return A ConfidenceInterval containing the lower and upper bounds of the confidence interval.
  */
 internal fun calculateBootstrapCIMedianDifference(
     data1: DoubleArray,
     data2: DoubleArray,
     numSamples: Int = 10000,
     confidenceLevel: Double = 0.95,
-): Pair<Double, Double> {
+): ConfidenceInterval {
     if (data1.isEmpty() || data2.isEmpty()) {
-        return Pair(Double.NaN, Double.NaN)
+        return ConfidenceInterval(Double.NaN, Double.NaN)
     }
     val random = Random(42) // Use a fixed seed for deterministic results
     val medianDiffs = DoubleArray(numSamples)
@@ -105,7 +117,126 @@ internal fun calculateBootstrapCIMedianDifference(
     medianDiffs.sort()
     val lowerIndex = ((1.0 - confidenceLevel) / 2.0 * numSamples).toInt()
     val upperIndex = (numSamples - lowerIndex - 1)
-    return Pair(medianDiffs[lowerIndex], medianDiffs[upperIndex])
+    return ConfidenceInterval(medianDiffs[lowerIndex], medianDiffs[upperIndex])
+}
+
+/**
+ * Calculates the Bias-Corrected and Accelerated (BCa) bootstrap confidence interval for the
+ * difference in medians between two datasets.
+ *
+ * This method provides a more robust and accurate confidence interval than the standard percentile
+ * bootstrap. It improves upon the percentile method by correcting for two potential sources of
+ * error:
+ * 1. **Bias**: A systematic difference between the median of the bootstrap distribution and the
+ *    original sample's median difference. Corrected by the bias-correction factor `z0`.
+ * 2. **Skewness**: A non-symmetrical bootstrap distribution, which can lead to inaccurate
+ *    intervals. Corrected by the acceleration factor `a`, which estimates the rate of change of the
+ *    standard error of the statistic.
+ *
+ * The acceleration factor `a` is estimated using the computationally intensive but accurate
+ * jackknife resampling method.
+ *
+ * @param data1 The first dataset (e.g., from Branch A).
+ * @param data2 The second dataset (e.g., from Branch B).
+ * @param observedMedianDiff The pre-calculated median difference (`median(data2) - median(data1)`).
+ * @param numBootstrapSamples The number of bootstrap resamples to generate. SciPy defaults to 9999.
+ * @param confidenceLevel The desired confidence level for the interval (e.g., 0.95 for 95% CI).
+ * @return A ConfidenceInterval containing the lower and upper bounds of the BCa confidence
+ *   interval. If bias-correction is not possible, it falls back to the standard percentile method.
+ */
+internal fun calculateBCaCIMedianDifference(
+    data1: DoubleArray,
+    data2: DoubleArray,
+    observedMedianDiff: Double,
+    numBootstrapSamples: Int = 10000,
+    confidenceLevel: Double = 0.95,
+): ConfidenceInterval {
+    if (data1.isEmpty() || data2.isEmpty()) {
+        return ConfidenceInterval(Double.NaN, Double.NaN)
+    }
+
+    val random = Random(42)
+    val n1 = data1.size
+    val n2 = data2.size
+    val standardNormal = NormalDistribution(0.0, 1.0)
+    val percentile = Percentile()
+
+    // --- Step 1: Generate bootstrap replicates of the statistic ---
+    // Create a distribution of median differences by repeatedly resampling the original data.
+    val bootstrapReplicates =
+        DoubleArray(numBootstrapSamples) {
+            val resample1 = DoubleArray(n1) { data1[random.nextInt(n1)] }
+            val resample2 = DoubleArray(n2) { data2[random.nextInt(n2)] }
+            val median1 = percentile.evaluate(resample1)
+            val median2 = percentile.evaluate(resample2)
+            median2 - median1
+        }
+    val sortedBootstrapReplicates = bootstrapReplicates.sortedArray()
+
+    // --- Step 2: Calculate the bias-correction factor (z₀) ---
+    // This measures the median bias of the bootstrap distribution.
+    val numBelow = bootstrapReplicates.count { it < observedMedianDiff }
+    val proportionBelow = numBelow.toDouble() / numBootstrapSamples
+
+    // Robustness: If the original statistic is an extremum of the bootstrap distribution,
+    // z₀ would be infinite. In this case, BCa is not well-defined, so we fall back to the
+    // simpler percentile method, which is more stable.
+    if (proportionBelow == 0.0 || proportionBelow == 1.0) {
+        println(
+            "Warning: Bias-correction factor is undefined (z₀ is infinite). " +
+                "Falling back to the standard percentile confidence interval."
+        )
+        return calculateBootstrapCIMedianDifference(
+            data1,
+            data2,
+            numBootstrapSamples,
+            confidenceLevel,
+        )
+    }
+    val z0 = standardNormal.inverseCumulativeProbability(proportionBelow)
+
+    // --- Step 3: Calculate the acceleration factor (a) using the Jackknife method ---
+    // This estimates the skewness of the statistic's sampling distribution.
+    val jackknifeEstimates = DoubleArray(n1 + n2)
+    val originalMedian1 = percentile.evaluate(data1)
+    val originalMedian2 = percentile.evaluate(data2)
+
+    // Jackknife on the first dataset
+    for (i in 0 until n1) {
+        val jackknifeSample = data1.filterIndexed { index, _ -> index != i }.toDoubleArray()
+        jackknifeEstimates[i] = originalMedian2 - percentile.evaluate(jackknifeSample)
+    }
+    // Jackknife on the second dataset
+    for (i in 0 until n2) {
+        val jackknifeSample = data2.filterIndexed { index, _ -> index != i }.toDoubleArray()
+        jackknifeEstimates[n1 + i] = percentile.evaluate(jackknifeSample) - originalMedian1
+    }
+
+    val jackknifeMean = StatUtils.mean(jackknifeEstimates)
+    val numerator = jackknifeEstimates.sumOf { (jackknifeMean - it).pow(3) }
+    val denominator = 6 * jackknifeEstimates.sumOf { (jackknifeMean - it).pow(2) }.pow(1.5)
+
+    // Robustness: If all jackknife estimates are identical, the denominator will be zero.
+    // In this case, there is no skewness to correct for, so acceleration is zero.
+    val a = if (denominator == 0.0) 0.0 else numerator / denominator
+
+    // --- Step 4: Calculate the BCa interval endpoints (α₁, α₂) ---
+    // Adjust the confidence level percentiles using the bias (z₀) and acceleration (a) factors.
+    val alpha = (1.0 - confidenceLevel) / 2.0
+    val zAlpha1 = standardNormal.inverseCumulativeProbability(alpha)
+    val zAlpha2 = standardNormal.inverseCumulativeProbability(1.0 - alpha)
+
+    val term1 = z0 + zAlpha1
+    val adjustedAlpha1 = standardNormal.cumulativeProbability(z0 + term1 / (1.0 - a * term1))
+
+    val term2 = z0 + zAlpha2
+    val adjustedAlpha2 = standardNormal.cumulativeProbability(z0 + term2 / (1.0 - a * term2))
+
+    // --- Step 5: Find the corresponding percentiles from the bootstrap distribution ---
+    val lowerBound = percentile.evaluate(sortedBootstrapReplicates, adjustedAlpha1 * 100)
+    val upperBound = percentile.evaluate(sortedBootstrapReplicates, adjustedAlpha2 * 100)
+
+    return ConfidenceInterval(lowerBound, upperBound)
 }
 
 fun calculateStatistics(data1: DoubleArray, data2: DoubleArray): StatisticsResult {
@@ -146,10 +277,11 @@ fun calculateStatistics(data1: DoubleArray, data2: DoubleArray): StatisticsResul
     val mannWhitneyUTest = MannWhitneyUTest()
     val pValue = mannWhitneyUTest.mannWhitneyUTest(data1, data2)
 
-    val medianDiffCI = calculateBootstrapCIMedianDifference(data1, data2)
-    val ciLowerPercent = if (median1 != 0.0) (medianDiffCI.first / median1) * 100 else 0.0
-    val ciUpperPercent = if (median1 != 0.0) (medianDiffCI.second / median1) * 100 else 0.0
-    val medianDiffCIPercent = Pair(ciLowerPercent, ciUpperPercent)
+    // Calculate BCa Confidence Interval for Median Difference
+    val medianDiffCI = calculateBCaCIMedianDifference(data1, data2, medianDiff)
+    val ciLowerPercent = if (median1 != 0.0) (medianDiffCI.lower / median1) * 100 else 0.0
+    val ciUpperPercent = if (median1 != 0.0) (medianDiffCI.upper / median1) * 100 else 0.0
+    val medianDiffCIPercent = ConfidenceInterval(ciLowerPercent, ciUpperPercent)
 
     return StatisticsResult(
         count1 = n1.toInt(),
@@ -207,10 +339,10 @@ internal fun printSummary(benchmarkName: String, stats: StatisticsResult) {
         "Median Difference:   | ${"%.2f".format(stats.medianDiff)} ns (${"%.2f".format(stats.medianDiffPercent)}%)"
     )
     println(
-        "95% CI of Diff:      | [${"%.2f".format(stats.medianDiffCI.first)}, ${"%.2f".format(stats.medianDiffCI.second)}] ns ([${"%.2f".format(stats.medianDiffCIPercent.first)}%, ${"%.2f".format(stats.medianDiffCIPercent.second)}%])"
+        "95% CI of Diff:      | [${"%.2f".format(stats.medianDiffCI.lower)}, ${"%.2f".format(stats.medianDiffCI.upper)}] ns ([${"%.2f".format(stats.medianDiffCIPercent.lower)}%, ${"%.2f".format(stats.medianDiffCIPercent.upper)}%])"
     )
     // Check if the interval contains zero.
-    if (stats.medianDiffCI.first < 0 && stats.medianDiffCI.second > 0) {
+    if (stats.medianDiffCI.lower < 0 && stats.medianDiffCI.upper > 0) {
         println(
             "\nThe confidence interval contains zero, suggesting no statistically significant difference between the medians."
         )
@@ -247,10 +379,10 @@ internal fun printCsvOutput(benchmarkName: String, stats: StatisticsResult) {
                 "p-value" to "%.4f".format(pValue),
                 "median_diff_%" to "%.2f%%".format(medianDiffPercent),
                 "median_diff" to "%.2f".format(medianDiff),
-                "median_diff_ci_lower" to "%.2f".format(medianDiffCI.first),
-                "median_diff_ci_upper" to "%.2f".format(medianDiffCI.second),
-                "median_diff_ci_lower_%" to "%.2f%%".format(medianDiffCIPercent.first),
-                "median_diff_ci_upper_%" to "%.2f%%".format(medianDiffCIPercent.second),
+                "median_diff_ci_lower" to "%.2f".format(medianDiffCI.lower),
+                "median_diff_ci_upper" to "%.2f".format(medianDiffCI.upper),
+                "median_diff_ci_lower_%" to "%.2f%%".format(medianDiffCIPercent.lower),
+                "median_diff_ci_upper_%" to "%.2f%%".format(medianDiffCIPercent.upper),
             )
         }
     // Generate the header and data row from the single source of truth

@@ -54,7 +54,7 @@ public val Int.rf: RemoteFloat
 /** Extension property to convert a [Float] to a [RemoteFloat]. */
 public val Float.rf: RemoteFloat
     get() {
-        return RemoteFloatExpression(this) { _ -> floatArrayOf(this) }
+        return RemoteFloat(this)
     }
 
 /** Extension function to get either a Float ID or a Float literal from a [Number]. */
@@ -257,35 +257,80 @@ public abstract class RemoteFloat : Number(), RemoteState<Float> {
         binaryOp(this, v, AnimatedFloatExpression.MIN) { a, b -> kotlin.math.min(a, b) }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] plus [v]. */
-    public operator fun plus(v: Float): RemoteFloat =
-        binaryOp(this, v, AnimatedFloatExpression.ADD) { a, b -> a + b }
+    public operator fun plus(v: Float): RemoteFloat {
+        if (v == 0f) {
+            return this
+        }
+        return binaryOp(this, v, AnimatedFloatExpression.ADD) { a, b -> a + b }
+    }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] plus [v]. */
-    public operator fun plus(v: RemoteFloat): RemoteFloat =
-        binaryOp(this, v, AnimatedFloatExpression.ADD) { a, b -> a + b }
+    public operator fun plus(v: RemoteFloat): RemoteFloat {
+        if (v.constantValue != null && v.constantValue == 0f) {
+            return this
+        }
+        if (constantValue != null && constantValue == 0f) {
+            return v
+        }
+        return binaryOp(this, v, AnimatedFloatExpression.ADD) { a, b -> a + b }
+    }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] minus [v]. */
-    public operator fun minus(v: Float): RemoteFloat = binaryOp(this, v, SUB) { a, b -> a - b }
+    public operator fun minus(v: Float): RemoteFloat {
+        if (v == 0f) {
+            return this
+        }
+        return binaryOp(this, v, SUB) { a, b -> a - b }
+    }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] minus [v]. */
-    public operator fun minus(v: RemoteFloat): RemoteFloat =
-        binaryOp(this, v, SUB) { a, b -> a - b }
+    public operator fun minus(v: RemoteFloat): RemoteFloat {
+        if (v.constantValue != null && v.constantValue == 0f) {
+            return this
+        }
+        return binaryOp(this, v, SUB) { a, b -> a - b }
+    }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] times [v]. */
-    public operator fun times(v: Float): RemoteFloat =
-        binaryOp(this, v, AnimatedFloatExpression.MUL) { a, b -> a * b }
+    public operator fun times(v: Float): RemoteFloat {
+        if (v == 1f) {
+            return this
+        }
+        if (constantValue != null && constantValue == 1f) {
+            return RemoteFloat(v)
+        }
+        return binaryOp(this, v, AnimatedFloatExpression.MUL) { a, b -> a * b }
+    }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] times [v]. */
-    public operator fun times(v: RemoteFloat): RemoteFloat =
-        binaryOp(this, v, AnimatedFloatExpression.MUL) { a, b -> a * b }
+    public operator fun times(v: RemoteFloat): RemoteFloat {
+        if (v.constantValue != null && v.constantValue == 1f) {
+            return this
+        }
+        if (constantValue != null && constantValue == 1f) {
+            return v
+        }
+        return binaryOp(this, v, AnimatedFloatExpression.MUL) { a, b -> a * b }
+    }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] div [v]. */
-    public operator fun div(v: Float): RemoteFloat =
-        binaryOp(this, v, AnimatedFloatExpression.DIV) { a, b -> a / b }
+    public operator fun div(v: Float): RemoteFloat {
+        if (v == 1f) {
+            return this
+        }
+        return binaryOp(this, v, AnimatedFloatExpression.DIV) { a, b -> a / b }
+    }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] div [v]. */
-    public operator fun div(v: RemoteFloat): RemoteFloat =
-        binaryOp(this, v, AnimatedFloatExpression.DIV) { a, b -> a / b }
+    public operator fun div(v: RemoteFloat): RemoteFloat {
+        if (v.constantValue != null && v.constantValue == 1f) {
+            return this
+        }
+        if (constantValue != null && constantValue == 1f) {
+            return v
+        }
+        return binaryOp(this, v, AnimatedFloatExpression.DIV) { a, b -> a / b }
+    }
 
     /** Converts this [RemoteFloat] to a [RemoteDp] */
     public fun asRemoteDp(): RemoteDp {

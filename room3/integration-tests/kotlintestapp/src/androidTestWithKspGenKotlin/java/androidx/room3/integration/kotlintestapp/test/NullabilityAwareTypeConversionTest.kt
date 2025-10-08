@@ -29,21 +29,18 @@ import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.TypeConverter
 import androidx.room3.TypeConverters
-import androidx.room3.util.useCursor
-import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.room3.useReaderConnection
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * This test can only pass in KSP with the new type converter store, which is why it is only in the
- * KSP specific source set.
- */
-@RunWith(AndroidJUnit4::class)
 @SmallTest
+@RunWith(AndroidJUnit4::class)
 class NullabilityAwareTypeConversionTest {
     lateinit var dao: UserDao
     private val nullableConvertors = NullableTypeConverters()
@@ -51,10 +48,10 @@ class NullabilityAwareTypeConversionTest {
     @Before
     fun init() {
         dao =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    NullAwareConverterDatabase::class.java,
+            Room.inMemoryDatabaseBuilder<NullAwareConverterDatabase>(
+                    ApplicationProvider.getApplicationContext()
                 )
+                .setDriver(AndroidSQLiteDriver())
                 .addTypeConverter(nullableConvertors)
                 .build()
                 .userDao
@@ -226,15 +223,25 @@ class NullabilityAwareTypeConversionTest {
          * Return raw data in the database so that we can assert what is in the database without
          * room's converters
          */
-        fun getRawData(): String {
-            return buildString {
-                db.query(SimpleSQLiteQuery("SELECT * FROM user")).useCursor {
-                    if (it.moveToNext()) {
-                        append(it.getInt(0))
-                        append("-")
-                        append(it.getString(1))
-                        append("-")
-                        append(it.getString(2))
+        fun getRawData(): String = runBlocking {
+            buildString {
+                db.useReaderConnection { connection ->
+                    connection.usePrepared("SELECT * FROM user") {
+                        if (it.step()) {
+                            append(it.getInt(0))
+                            append("-")
+                            if (it.isNull(1)) {
+                                append("null")
+                            } else {
+                                append(it.getText(1))
+                            }
+                            append("-")
+                            if (it.isNull(2)) {
+                                append("null")
+                            } else {
+                                append(it.getText(2))
+                            }
+                        }
                     }
                 }
             }
@@ -261,7 +268,7 @@ class NullabilityAwareTypeConversionTest {
 
         @TypeConverter
         fun toCountry(string: String): Country {
-            return Country.values().find { it.countryCode == string }
+            return Country.entries.find { it.countryCode == string }
                 ?: throw IllegalArgumentException("Country code '$string' not found")
         }
     }
@@ -283,7 +290,7 @@ class NullabilityAwareTypeConversionTest {
             if (string == null) {
                 return null
             }
-            return Country.values().find { it.countryCode == string }
+            return Country.entries.find { it.countryCode == string }
                 ?: throw IllegalArgumentException("Country code '$string' not found")
         }
     }

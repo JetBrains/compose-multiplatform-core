@@ -268,11 +268,5 @@ private val supportingEntry: NavEntry<TestKey> =
 
 private val nonSupportingPaneEntry: NavEntry<TestKey> = NavEntry(HomeKey) {}
 
-private val MockDualPaneScaffoldDirective =
-    PaneScaffoldDirective.Default.copy(
-        maxHorizontalPartitions = 2,
-        horizontalPartitionSpacerSize = 16.dp,
-    )
-
 private val MockDualVerticalPaneScaffoldDirective =
     PaneScaffoldDirective.Default.copy(maxVerticalPartitions = 2)

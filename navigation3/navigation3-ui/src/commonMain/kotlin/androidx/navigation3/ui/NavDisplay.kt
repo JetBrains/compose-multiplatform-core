@@ -41,8 +41,8 @@ import androidx.compose.ui.util.fastForEachReversed
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import androidx.navigation3.scene.LocalEntriesToRenderInCurrentScene
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.LocalEntriesToExcludeFromCurrentScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneInfo
 import androidx.navigation3.scene.SceneState
@@ -178,7 +178,8 @@ public fun <T : Any> NavDisplay(
             backStack.removeLastOrNull()
         }
     },
-    entryDecorators: List<NavEntryDecorator<T>> = listOf(rememberSavedStateNavEntryDecorator()),
+    entryDecorators: List<NavEntryDecorator<T>> =
+        listOf(rememberSaveableStateHolderNavEntryDecorator()),
     sceneStrategy: SceneStrategy<T> = SinglePaneSceneStrategy(),
     sizeTransform: SizeTransform? = null,
     transitionSpec: AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform =
@@ -425,7 +426,7 @@ public fun <T : Any> NavDisplay(
     // Determine which entries should be rendered within each currently rendered scene,
     // using the z-index of each screen to always show the entry on the topmost screen
     // The map is Pair<KCLass<Scene<T>, Scene.key> to a Set of NavEntry.key values
-    val sceneToRenderableEntryMap =
+    val sceneToExcludedEntryMap =
         remember(sceneMap.entries.toList(), overlayScenes.toList(), zIndices.toString()) {
             buildMap {
                 val scenes = mutableListOf<Scene<T>>()
@@ -460,7 +461,7 @@ public fun <T : Any> NavDisplay(
                             .map { it.contentKey }
                             .filterNot(coveredEntryKeys::contains)
                             .toSet()
-                    put(scene::class to scene.key, newlyCoveredEntryKeys)
+                    put(scene::class to scene.key, coveredEntryKeys.toMutableSet())
                     coveredEntryKeys.addAll(newlyCoveredEntryKeys)
                 }
             }
@@ -477,21 +478,15 @@ public fun <T : Any> NavDisplay(
 
     // check if in gesture back
     if (inPredictiveBack) {
-        if (
-            transition.currentState::class != previousScene::class ||
-                transition.currentState.key != previousScene.key
-        ) {
-            LaunchedEffect(previousScene::class, previousScene.key, progress) {
+        if (transition.currentState != previousScene) {
+            LaunchedEffect(previousScene, progress) {
                 // Retarget on key change; seek on progress updates.
                 transitionState.seekTo(progress, previousScene)
             }
         }
     } else {
-        LaunchedEffect(scene::class, scene.key) {
-            if (
-                transitionState.currentState::class != scene::class ||
-                    transitionState.currentState.key != scene.key
-            ) {
+        LaunchedEffect(scene) {
+            if (transitionState.currentState != scene) {
                 // We are animating to the final state for regular navigate forward and regular pop
                 transitionState.animateTo(scene)
             } else {
@@ -568,8 +563,8 @@ public fun <T : Any> NavDisplay(
         CompositionLocalProvider(
             LocalNavTransitionSettledState provides isSettled,
             LocalNavAnimatedContentScope provides this,
-            LocalEntriesToRenderInCurrentScene provides
-                sceneToRenderableEntryMap.getValue(targetScene::class to targetScene.key),
+            LocalEntriesToExcludeFromCurrentScene provides
+                sceneToExcludedEntryMap.getValue(targetScene::class to targetScene.key),
         ) {
             targetScene.content()
         }
@@ -596,8 +591,8 @@ public fun <T : Any> NavDisplay(
     // Show all OverlayScene instances above the AnimatedContent
     overlayScenes.fastForEachReversed { overlayScene ->
         CompositionLocalProvider(
-            LocalEntriesToRenderInCurrentScene provides
-                sceneToRenderableEntryMap.getValue(overlayScene::class to overlayScene.key)
+            LocalEntriesToExcludeFromCurrentScene provides
+                sceneToExcludedEntryMap.getValue(overlayScene::class to overlayScene.key)
         ) {
             overlayScene.content.invoke()
         }

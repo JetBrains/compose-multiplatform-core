@@ -22,6 +22,7 @@ import android.os.Build
 import android.view.MotionEvent
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
+import androidx.ink.authoring.InkInProgressShape
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.authoring.latency.latencyDataEqual
 import androidx.ink.brush.Brush
@@ -35,7 +36,6 @@ import androidx.ink.brush.StockBrushes
 import androidx.ink.geometry.ImmutableBox
 import androidx.ink.geometry.MutableBox
 import androidx.ink.strokes.ImmutableStrokeInputBatch
-import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.StrokeInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -804,8 +804,7 @@ internal class InProgressStrokesManagerTest {
             .prepareToDrawInModifiedRegion(modifiedRegionCaptor.capture())
         assertThat(modifiedRegionCaptor.firstValue.width).isFinite()
         assertThat(modifiedRegionCaptor.firstValue.height).isFinite()
-        verify(inProgressStrokesRenderHelper)
-            .drawInModifiedRegion(any<InProgressStroke>(), any(), any())
+        verify(inProgressStrokesRenderHelper).drawInModifiedRegion(any<InkInProgressShape>(), any())
         verify(inProgressStrokesRenderHelper).afterDrawInModifiedRegion()
     }
 
@@ -829,8 +828,7 @@ internal class InProgressStrokesManagerTest {
         assertThat(modifiedRegionCaptor.firstValue.xMax).isPositiveInfinity()
         assertThat(modifiedRegionCaptor.firstValue.yMin).isNegativeInfinity()
         assertThat(modifiedRegionCaptor.firstValue.yMax).isPositiveInfinity()
-        verify(inProgressStrokesRenderHelper)
-            .drawInModifiedRegion(any<InProgressStroke>(), any(), any())
+        verify(inProgressStrokesRenderHelper).drawInModifiedRegion(any<InkInProgressShape>(), any())
         verify(inProgressStrokesRenderHelper).afterDrawInModifiedRegion()
     }
 
@@ -846,8 +844,7 @@ internal class InProgressStrokesManagerTest {
             manager.startStroke(event, event.getPointerId(0), Matrix(), Matrix(), makeBrush(), 0f)
         // The specifics of this are validated in a test focused on startStroke.
         verify(inProgressStrokesRenderHelper).prepareToDrawInModifiedRegion(any())
-        verify(inProgressStrokesRenderHelper)
-            .drawInModifiedRegion(any<InProgressStroke>(), any(), any())
+        verify(inProgressStrokesRenderHelper).drawInModifiedRegion(any<InkInProgressShape>(), any())
         verify(inProgressStrokesRenderHelper).afterDrawInModifiedRegion()
 
         val moveEvent = MotionEvent.obtain(321, 325, MotionEvent.ACTION_MOVE, 10f, 20f, 0)
@@ -862,7 +859,7 @@ internal class InProgressStrokesManagerTest {
         assertThat(modifiedRegionCaptor.firstValue.yMin).isNegativeInfinity()
         assertThat(modifiedRegionCaptor.firstValue.yMax).isPositiveInfinity()
         verify(inProgressStrokesRenderHelper, times(2))
-            .drawInModifiedRegion(any<InProgressStroke>(), any(), any())
+            .drawInModifiedRegion(any<InkInProgressShape>(), any())
         verify(inProgressStrokesRenderHelper, times(2)).afterDrawInModifiedRegion()
     }
 
@@ -1844,7 +1841,7 @@ internal class InProgressStrokesManagerTest {
 
         // Let it render. The exact animation progress should have been sent to the renderer.
         renderHelper.runRenderThreadToIdle()
-        assertThat(renderHelper.lastTextureAnimationProgress).isEqualTo(3.21f)
+        assertThat(renderHelper.lastUpdateSystemElapsedTimeMillis).isEqualTo(321)
 
         // Update the animation progress and extend the stroke.
         clock.advanceByMillis(17)
@@ -1854,7 +1851,7 @@ internal class InProgressStrokesManagerTest {
 
         // Let it render again. The renderer should've been called with the new animation progress.
         renderHelper.runRenderThreadToIdle()
-        assertThat(renderHelper.lastTextureAnimationProgress).isEqualTo(3.38f)
+        assertThat(renderHelper.lastUpdateSystemElapsedTimeMillis).isEqualTo(338)
 
         // Update the animation progress and finish the stroke.
         clock.advanceByMillis(28)
@@ -1864,7 +1861,7 @@ internal class InProgressStrokesManagerTest {
 
         // One more render. Renderer again should see the latest progress value.
         renderHelper.runRenderThreadToIdle()
-        assertThat(renderHelper.lastTextureAnimationProgress).isEqualTo(3.66f)
+        assertThat(renderHelper.lastUpdateSystemElapsedTimeMillis).isEqualTo(366)
     }
 
     @Test
@@ -2121,12 +2118,12 @@ private class FakeInProgressStrokePool : InProgressStrokePool {
         trimToSizeLastValue = null
     }
 
-    override fun obtain(): InProgressStroke {
+    override fun obtain(): InkInProgressShape {
         obtainCount++
         return real.obtain()
     }
 
-    override fun recycle(inProgressStroke: InProgressStroke) {
+    override fun recycle(inProgressStroke: InkInProgressShape) {
         recycleCount++
         real.recycle(inProgressStroke)
     }
@@ -2159,7 +2156,7 @@ private class FakeAsyncRenderHelper(
     public var lastModifiedRegion: ImmutableBox? = null
         private set
 
-    public var lastTextureAnimationProgress: Float? = null
+    public var lastUpdateSystemElapsedTimeMillis: Long? = null
         private set
 
     fun runRenderThreadToIdle(): Boolean {
@@ -2195,13 +2192,12 @@ private class FakeAsyncRenderHelper(
     }
 
     override fun drawInModifiedRegion(
-        inProgressStroke: InProgressStroke,
+        inProgressShape: InkInProgressShape,
         strokeToMainViewTransform: Matrix,
-        textureAnimationProgress: Float,
     ) {
         assertOnRenderThread()
         drawCount++
-        lastTextureAnimationProgress = textureAnimationProgress
+        lastUpdateSystemElapsedTimeMillis = inProgressShape.lastUpdateSystemElapsedTimeMillis
     }
 
     override fun afterDrawInModifiedRegion() {

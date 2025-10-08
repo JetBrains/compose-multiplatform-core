@@ -57,6 +57,7 @@ androidXMultiplatform {
                 it.pickFirsts.add("mockito-extensions/org.mockito.plugins.StackTraceCleanerProvider")
             }
         }
+        lint.disable += "ComposeTestRuleDispatcher"
     }
     desktop()
     mac()

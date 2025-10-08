@@ -18,7 +18,7 @@ package androidx.compose.remote.creation.compose.state
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.Operations
+import androidx.compose.remote.core.Profiles.PROFILE_ANDROIDX
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
@@ -44,7 +44,7 @@ class RemoteBitmapFontTest {
             density = 1f,
             Size(1f, 1f),
             CoreDocument.DOCUMENT_API_LEVEL,
-            Operations.PROFILE_ANDROIDX,
+            PROFILE_ANDROIDX,
         )
 
     val bitmapFont =

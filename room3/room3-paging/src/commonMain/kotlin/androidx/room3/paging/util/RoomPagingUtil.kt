@@ -28,12 +28,18 @@ import androidx.paging.PagingSource.LoadResult
 import androidx.paging.PagingState
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomRawQuery
+import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 
 /** The default itemCount value */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val INITIAL_ITEM_COUNT: Int = -1
+
+/** The [CoroutineContext] with the database's dispatcher to perform queries. */
+internal val RoomDatabase.queryContext: CoroutineContext
+    get() = this.getCoroutineScope().coroutineContext.minusKey(Job)
 
 /**
  * Calculates query limit based on LoadType.
@@ -99,7 +105,6 @@ public fun getOffset(params: LoadParams<Int>, key: Int, itemCount: Int): Int {
  *
  * @param params load params to calculate query limit and offset
  * @param sourceQuery user provided database query
- * @param db the [RoomDatabase] to query from
  * @param itemCount the db row count, triggers a new PagingSource generation if itemCount changes,
  *   i.e. items are added / removed
  * @param convertRows the function to iterate data with provided [androidx.sqlite.SQLiteStatement]
@@ -156,7 +161,7 @@ public suspend fun <Value : Any> queryDatabase(
 public suspend fun queryItemCount(sourceQuery: RoomRawQuery, db: RoomDatabase): Int {
     val countQuery = "SELECT COUNT(*) FROM ( ${sourceQuery.sql} )"
     // Query in the database's coroutine context since useConnection is unconfined.
-    return withContext(db.getCoroutineScope().coroutineContext) {
+    return withContext(db.queryContext) {
         db.useConnection(isReadOnly = true) { connection ->
             connection.usePrepared(countQuery) { stmt ->
                 sourceQuery.getBindingFunction().invoke(stmt)

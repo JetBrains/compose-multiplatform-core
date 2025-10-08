@@ -799,5 +799,9 @@ RemovedFromKotlin: androidx.health.connect.client.units.Volume#getMilliliters():
     Source breaking change: method androidx.health.connect.client.units.Volume.getMilliliters() can no longer be resolved from Kotlin source
 
 
+RemovedMethod: androidx.health.connect.client.HealthConnectClientExt#deleteRecords(androidx.health.connect.client.HealthConnectClient, androidx.health.connect.client.time.TimeRangeFilter, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Binary breaking change: Removed method androidx.health.connect.client.HealthConnectClientExt.deleteRecords(androidx.health.connect.client.HealthConnectClient,androidx.health.connect.client.time.TimeRangeFilter,kotlin.coroutines.Continuation<? super kotlin.Unit>)
+RemovedMethod: androidx.health.connect.client.HealthConnectClientExt#deleteRecords(androidx.health.connect.client.HealthConnectClient, java.util.List<java.lang.String>, java.util.List<java.lang.String>, kotlin.coroutines.Continuation<? super kotlin.Unit>):
+    Binary breaking change: Removed method androidx.health.connect.client.HealthConnectClientExt.deleteRecords(androidx.health.connect.client.HealthConnectClient,java.util.List<java.lang.String>,java.util.List<java.lang.String>,kotlin.coroutines.Continuation<? super kotlin.Unit>)
 RemovedMethod: androidx.health.connect.client.time.TimeRangeFilter#TimeRangeFilter():
     Binary breaking change: Removed constructor androidx.health.connect.client.time.TimeRangeFilter()

@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.GltfEntity as RtGltfEntity
@@ -36,9 +37,10 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     // TODO: b/417750821 - Add an OnAnimationEvent() Listener interface
 
     /** Specifies the current animation state of the GltfModelEntity. */
-    @IntDef(AnimationState.PLAYING, AnimationState.STOPPED)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)
-    internal annotation class AnimationStateValue
+    @IntDef(AnimationState.PLAYING, AnimationState.STOPPED)
+    public annotation class AnimationStateValue
 
     /** Specifies the current animation state of the GltfModelEntity. */
     public object AnimationState {

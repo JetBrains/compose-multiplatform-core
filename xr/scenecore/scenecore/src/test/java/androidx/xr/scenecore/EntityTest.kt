@@ -761,30 +761,33 @@ class EntityTest {
     }
 
     @Test
-    fun panelEntity_getPerceivedResolution_headTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(headTracking = Config.HeadTrackingMode.DISABLED))
+    fun panelEntity_getPerceivedResolution_deviceTrackingDisabled_throwsIllegalStateException() {
+        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
 
         val exception =
             assertFailsWith<IllegalStateException> { panelEntity.getPerceivedResolution() }
-        assertThat(exception.message).isEqualTo("Config.HeadTrackingMode is set to Disabled.")
+        assertThat(exception.message)
+            .isEqualTo("Config.DeviceTrackingMode is not set to LastKnown.")
     }
 
     @Test
-    fun surfaceEntity_getPerceivedResolution_headTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(headTracking = Config.HeadTrackingMode.DISABLED))
+    fun surfaceEntity_getPerceivedResolution_deviceTrackingDisabled_throwsIllegalStateException() {
+        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
 
         val exception =
             assertFailsWith<IllegalStateException> { surfaceEntity.getPerceivedResolution() }
-        assertThat(exception.message).isEqualTo("Config.HeadTrackingMode is set to Disabled.")
+        assertThat(exception.message)
+            .isEqualTo("Config.DeviceTrackingMode is not set to LastKnown.")
     }
 
     @Test
-    fun activityPanelEntity_getPerceivedResolution_headTrackingDisabled_throwsIllegalStateException() {
-        session.configure(Config(headTracking = Config.HeadTrackingMode.DISABLED))
+    fun activityPanelEntity_getPerceivedResolution_deviceTrackingDisabled_throwsIllegalStateException() {
+        session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
 
         val exception =
             assertFailsWith<IllegalStateException> { activityPanelEntity.getPerceivedResolution() }
-        assertThat(exception.message).isEqualTo("Config.HeadTrackingMode is set to Disabled.")
+        assertThat(exception.message)
+            .isEqualTo("Config.DeviceTrackingMode is not set to LastKnown.")
     }
 
     @Test

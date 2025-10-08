@@ -30,6 +30,7 @@ import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.gradle.isRoot
 import androidx.build.kythe.configureProjectForKzipTasks
 import androidx.build.license.addLicensesToPublishedArtifacts
+import androidx.build.lint.ValidateLintChecks
 import androidx.build.resources.configurePublicResourcesStub
 import androidx.build.sbom.configureSbomPublishing
 import androidx.build.sbom.validateAllArchiveInputsRecognized
@@ -117,7 +118,6 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -639,25 +639,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.disableStrictVersionConstraints()
         project.configureJavaCompilationWarnings(androidXExtension)
         project.setUpCheckDocsTask(androidXExtension)
-        project.enforceDeviceTestsForMultiplatform()
-    }
-
-    // Sets up android instrumented tests and includes common tests regardless of if they have
-    // been explicitly configured.
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    private fun Project.enforceDeviceTestsForMultiplatform() {
-        project.multiplatformExtension?.let {
-            val commonTestSourceSet = it.sourceSets.getByName("commonTest")
-            val androidInstrumentedTestSourceSet =
-                it.sourceSets.getByName("androidInstrumentedTest")
-            val commonTestFilesExist = commonTestSourceSet.kotlin.files.isNotEmpty()
-            if (commonTestFilesExist) {
-                androidInstrumentedTestSourceSet.dependsOn(commonTestSourceSet)
-                androidInstrumentedTestSourceSet.dependencies {
-                    implementation(getLibraryByName("testRunner"))
-                }
-            }
-        }
     }
 
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
@@ -1494,13 +1475,14 @@ private fun Project.validateLintVersionTestExists(androidXExtension: AndroidXExt
         return
     }
     kotlinExtensionOrNull?.let { extension ->
-        val projectFiles = extension.sourceSets.flatMap { it.kotlin.files }
-        // if the project doesn't define a registry it doesn't make sense to test versions
-        if (projectFiles.none { it.name.contains("Registry") }) {
-            return
-        }
-        projectFiles.find { it.name == "ApiLintVersionsTest.kt" }
-            ?: throw GradleException("Lint projects should include ApiLintVersionsTest.kt")
+        val validateLintChecks =
+            tasks.register("validateLintChecks", ValidateLintChecks::class.java) { task ->
+                task.cacheEvenIfNoOutputs()
+                task.sourceDirectories.from(
+                    extension.sourceSets.flatMap { it.kotlin.sourceDirectories }
+                )
+            }
+        addToBuildOnServer(validateLintChecks)
     }
 }
 

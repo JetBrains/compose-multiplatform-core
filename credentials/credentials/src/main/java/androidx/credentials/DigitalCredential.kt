@@ -23,6 +23,13 @@ import androidx.credentials.internal.RequestValidationHelper
 /**
  * Represents the user's digital credential, generally used for verification or sign-in purposes.
  *
+ * Notice, this class does not necessarily always represents a successful digital credential.
+ * Depending on the protocol in your request, the [credentialJson] may contain a failure response
+ * generated from the provider. Therefore, please follow the protocol specification to parse the
+ * [credentialJson] and determine the failure / success response. For example,
+ * [here](https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#name-error-response)
+ * is the error response definition for the OpenID for Verifiable Presentations protocol.
+ *
  * @property credentialJson the digital credential in the JSON format; the latest format is defined
  *   at https://wicg.github.io/digital-credentials/#the-digitalcredential-interface
  */

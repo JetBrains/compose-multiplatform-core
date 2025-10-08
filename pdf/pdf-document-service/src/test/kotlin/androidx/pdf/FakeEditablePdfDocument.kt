@@ -85,7 +85,7 @@ internal class FakeEditablePdfDocument(
         TODO("Not yet implemented")
     }
 
-    override fun commitEdits(): EditsResult {
+    override suspend fun commitEdits(): EditsResult {
         TODO("Not yet implemented")
     }
 

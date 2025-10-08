@@ -330,7 +330,7 @@ class StrokeTest {
     @Test
     fun copy_withChangedBrushInputModel_createsCopyWithSameInputs() {
         val originalBrush = buildTestBrush()
-        assertThat(originalBrush.family.inputModel).isEqualTo(BrushFamily.SPRING_MODEL)
+        assertThat(originalBrush.family.inputModel).isEqualTo(BrushFamily.DEFAULT_INPUT_MODEL)
         val inputModelChangedBrush =
             originalBrush.copy(
                 family =

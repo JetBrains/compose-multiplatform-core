@@ -121,12 +121,13 @@ private constructor(
         public class NoFeathering : EdgeFeatheringParams() {}
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         SurfaceProtection.SURFACE_PROTECTION_NONE,
         SurfaceProtection.SURFACE_PROTECTION_PROTECTED,
     )
-    @Retention(AnnotationRetention.SOURCE)
-    internal annotation class SurfaceProtectionValue
+    public annotation class SurfaceProtectionValue
 
     /**
      * Specifies whether the [Surface] which backs this [Entity] should be backed by
@@ -151,9 +152,10 @@ private constructor(
         public const val SURFACE_PROTECTION_PROTECTED: Int = 1
     }
 
-    @IntDef(SuperSampling.SUPER_SAMPLING_NONE, SuperSampling.SUPER_SAMPLING_PENTAGON)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
-    internal annotation class SuperSamplingValue
+    @IntDef(SuperSampling.SUPER_SAMPLING_NONE, SuperSampling.SUPER_SAMPLING_PENTAGON)
+    public annotation class SuperSamplingValue
 
     /**
      * Specifies whether super sampling should be enabled for this surface. Super sampling can
@@ -179,6 +181,8 @@ private constructor(
      *
      * @see https://developer.android.com/reference/androidx/media3/common/C.StereoMode
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         StereoMode.STEREO_MODE_MONO,
         StereoMode.STEREO_MODE_TOP_BOTTOM,
@@ -186,8 +190,7 @@ private constructor(
         StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
         StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY,
     )
-    @Retention(AnnotationRetention.SOURCE)
-    internal annotation class StereoModeValue
+    public annotation class StereoModeValue
 
     public object StereoMode {
         /** Each eye will see the entire surface (no separation) */
@@ -224,6 +227,8 @@ private constructor(
          *
          * These values are a superset of androidx.media3.common.C.ColorSpace.
          */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @Retention(AnnotationRetention.SOURCE)
         @IntDef(
             ColorSpace.COLOR_SPACE_BT709,
             ColorSpace.COLOR_SPACE_BT601_PAL,
@@ -233,8 +238,7 @@ private constructor(
             ColorSpace.COLOR_SPACE_DCI_P3,
             ColorSpace.COLOR_SPACE_ADOBE_RGB,
         )
-        @Retention(AnnotationRetention.SOURCE)
-        internal annotation class ColorSpaceValue
+        public annotation class ColorSpaceValue
 
         public object ColorSpace {
             /** Please see androidx.media3.common.C.COLOR_SPACE_BT709 */
@@ -253,6 +257,8 @@ private constructor(
             public const val COLOR_SPACE_ADOBE_RGB: Int = 0xf3
         }
 
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @Retention(AnnotationRetention.SOURCE)
         @IntDef(
             ColorTransfer.COLOR_TRANSFER_LINEAR,
             ColorTransfer.COLOR_TRANSFER_SRGB,
@@ -261,8 +267,7 @@ private constructor(
             ColorTransfer.COLOR_TRANSFER_ST2084,
             ColorTransfer.COLOR_TRANSFER_HLG,
         )
-        @Retention(AnnotationRetention.SOURCE)
-        internal annotation class ColorTransferValue
+        public annotation class ColorTransferValue
 
         /**
          * Specifies the color transfer function of the media asset drawn on the surface.
@@ -291,9 +296,10 @@ private constructor(
             public const val COLOR_TRANSFER_HLG: Int = 7
         }
 
-        @IntDef(ColorRange.COLOR_RANGE_FULL, ColorRange.COLOR_RANGE_LIMITED)
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(AnnotationRetention.SOURCE)
-        internal annotation class ColorRangeValue
+        @IntDef(ColorRange.COLOR_RANGE_FULL, ColorRange.COLOR_RANGE_LIMITED)
+        public annotation class ColorRangeValue
 
         /**
          * Specifies the color range of the media asset drawn on the surface.
@@ -692,14 +698,14 @@ private constructor(
      *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
      *       the calculation is invalid or unavailable.
      *
-     * @throws [IllegalStateException] if [Session.config.headTracking] is set to
-     *   [Config.HeadTrackingMode.DISABLED].
+     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     *   [Config.DeviceTrackingMode.LAST_KNOWN].
      * @see PerceivedResolutionResult
      */
     public fun getPerceivedResolution(): PerceivedResolutionResult {
         checkNotDisposed()
-        check(lifecycleManager.config.headTracking != Config.HeadTrackingMode.DISABLED) {
-            "Config.HeadTrackingMode is set to Disabled."
+        check(lifecycleManager.config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN) {
+            "Config.DeviceTrackingMode is not set to LastKnown."
         }
         return rtEntity!!.getPerceivedResolution().toPerceivedResolutionResult()
     }

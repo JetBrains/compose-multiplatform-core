@@ -86,8 +86,75 @@ class BrushFamilyTest {
 
     @Test
     fun inputModelToString_returnsExpectedValues() {
-
         assertThat(BrushFamily.SPRING_MODEL.toString()).isEqualTo("SpringModel")
+        assertThat(BrushFamily.EXPERIMENTAL_RAW_POSITION_MODEL.toString())
+            .isEqualTo("ExperimentalRawPositionModel")
+        assertThat(BrushFamily.EXPERIMENTAL_NAIVE_MODEL.toString())
+            .isEqualTo("ExperimentalNaiveModel")
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                        windowDurationMillis = 47,
+                        upsamplingFrequencyHz = 150,
+                    )
+                    .toString()
+            )
+            .isEqualTo("SlidingWindowModel(windowDurationMillis=47, upsamplingFrequencyHz=150)")
+    }
+
+    @Test
+    fun inputModelEquals() {
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+            .isEqualTo(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+        assertThat(BrushFamily.SPRING_MODEL).isEqualTo(BrushFamily.SPRING_MODEL)
+
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+            .isNotEqualTo(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 48,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+            .isNotEqualTo(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 151,
+                )
+            )
+        assertThat(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
+            .isNotEqualTo(BrushFamily.SPRING_MODEL)
+        assertThat(BrushFamily.SPRING_MODEL)
+            .isNotEqualTo(
+                BrushFamily.SlidingWindowModel(
+                    windowDurationMillis = 47,
+                    upsamplingFrequencyHz = 150,
+                )
+            )
     }
 
     @Test

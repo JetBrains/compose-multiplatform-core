@@ -61,7 +61,7 @@ public class PipeCameraPresenceSource(
                 .map { pipeCameraIdList ->
                     pipeCameraIdList.mapNotNull { pipeId ->
                         try {
-                            CameraIdentifier.create(pipeId.value)
+                            CameraIdentifier.Factory.create(pipeId.value)
                         } catch (ex: Exception) {
                             Log.w(
                                 TAG,
@@ -110,7 +110,7 @@ public class PipeCameraPresenceSource(
                     val newIdentifiers =
                         systemCameraIds.mapNotNull {
                             try {
-                                CameraIdentifier.create(it)
+                                CameraIdentifier.Factory.create(it)
                             } catch (e: IllegalArgumentException) {
                                 Log.w(
                                     TAG,

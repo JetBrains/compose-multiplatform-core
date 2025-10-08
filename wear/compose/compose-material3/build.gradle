@@ -81,6 +81,9 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
     testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.wear.compose.material3"
 }

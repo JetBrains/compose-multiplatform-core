@@ -26,7 +26,7 @@ import androidx.room3.ProvidedAutoMigrationSpec
 import androidx.room3.RoomDatabase
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.testing.MigrationTestHelper
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.execSQL
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -107,7 +107,7 @@ class ProvidedAutoMigrationSpecTest {
         internal class MyProvidedAutoMigration() : AutoMigrationSpec {
             var onPostMigrateCalled = false
 
-            override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            override fun onPostMigrate(connection: SQLiteConnection) {
                 onPostMigrateCalled = true
             }
         }

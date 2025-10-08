@@ -11,16 +11,14 @@ jellefresen@google.com
 juliamcclellan@google.com
 lpf@google.com
 mount@google.com
-natnaelbelay@google.com
 omarismail@google.com
 radhanakade@google.com
 seanmcq@google.com
-tiem@google.com
 sindhujasubr@google.com
 
 # docs
 per-file docs-tip-of-tree/build.gradle = set noparent
-per-file docs-tip-of-tree/build.gradle = asfalcone@google.com, juliamcclellan@google.com, aurimas@google.com, alanv@google.com, natnaelbelay@google.com, tiem@google.com, omarismail@google.com
+per-file docs-tip-of-tree/build.gradle = asfalcone@google.com, juliamcclellan@google.com, aurimas@google.com, alanv@google.com, omarismail@google.com
 
 # settings.gradle
 per-file *settings.gradle = set noparent

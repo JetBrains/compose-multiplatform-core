@@ -22,6 +22,16 @@ interface XAnnotationValue {
     val name: String
 
     /**
+     * The name of the property in JVM.
+     *
+     * Use this name when you need to generate Java code accessing this annotation value.
+     *
+     * Note that accessing this property requires resolving jvmName for Kotlin sources, which is an
+     * expensive operation that includes type resolution (in KSP).
+     */
+    val jvmName: String
+
+    /**
      * The value set on the annotation property, or the default value if it was not explicitly set.
      *
      * Possible types are:

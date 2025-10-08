@@ -5,10 +5,14 @@ RemovedDeprecatedMethod: androidx.activity.ActivityViewModelLazyKt#viewModels(an
 
 RemovedFromBytecode: androidx.activity.ActivityViewModelLazyKt#viewModels(androidx.activity.ComponentActivity, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.viewmodel.CreationExtras>, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.ViewModelProvider.Factory>):
     Binary breaking change: method androidx.activity.ActivityViewModelLazyKt.viewModels(androidx.activity.ComponentActivity,kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>,kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>) has been removed from bytecode
+RemovedFromBytecode: androidx.activity.result.ActivityResultLauncherKt#launch(androidx.activity.result.ActivityResultLauncher<java.lang.Void>, androidx.core.app.ActivityOptionsCompat):
+    Binary breaking change: method androidx.activity.result.ActivityResultLauncherKt.launch(androidx.activity.result.ActivityResultLauncher<kotlin.Unit>,androidx.core.app.ActivityOptionsCompat) has been removed from bytecode
 
 
 RemovedFromJava: androidx.activity.ActivityViewModelLazyKt#viewModels(androidx.activity.ComponentActivity, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.viewmodel.CreationExtras>, kotlin.jvm.functions.Function0<? extends androidx.lifecycle.ViewModelProvider.Factory>):
     Source breaking change: method androidx.activity.ActivityViewModelLazyKt.viewModels(androidx.activity.ComponentActivity,kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>,kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>) can no longer be resolved from Java source
+RemovedFromJava: androidx.activity.result.ActivityResultLauncherKt#launch(androidx.activity.result.ActivityResultLauncher<java.lang.Void>, androidx.core.app.ActivityOptionsCompat):
+    Source breaking change: method androidx.activity.result.ActivityResultLauncherKt.launch(androidx.activity.result.ActivityResultLauncher<kotlin.Unit>,androidx.core.app.ActivityOptionsCompat) can no longer be resolved from Java source
 RemovedFromJava: androidx.activity.result.PickVisualMediaRequestKt#PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType):
     Source breaking change: method androidx.activity.result.PickVisualMediaRequestKt.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType) can no longer be resolved from Java source
 RemovedFromJava: androidx.activity.result.PickVisualMediaRequestKt#PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VisualMediaType, int):
@@ -27,24 +31,20 @@ RemovedFromKotlin: androidx.activity.BackEventCompat#getTouchY():
     Source breaking change: method androidx.activity.BackEventCompat.getTouchY() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.ComponentActivity#getActivityResultRegistry():
     Source breaking change: method androidx.activity.ComponentActivity.getActivityResultRegistry() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.activity.ComponentActivity#getDefaultViewModelProviderFactory():
-    Source breaking change: method androidx.activity.ComponentActivity.getDefaultViewModelProviderFactory() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.ComponentActivity#getFullyDrawnReporter():
     Source breaking change: method androidx.activity.ComponentActivity.getFullyDrawnReporter() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.ComponentActivity#getLastCustomNonConfigurationInstance():
     Source breaking change: method androidx.activity.ComponentActivity.getLastCustomNonConfigurationInstance() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.ComponentActivity#getOnBackPressedDispatcher():
     Source breaking change: method androidx.activity.ComponentActivity.getOnBackPressedDispatcher() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.activity.ComponentActivity#getSavedStateRegistry():
-    Source breaking change: method androidx.activity.ComponentActivity.getSavedStateRegistry() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.activity.ComponentActivity#getViewModelStore():
-    Source breaking change: method androidx.activity.ComponentActivity.getViewModelStore() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.activity.ComponentDialog#getLifecycle():
-    Source breaking change: method androidx.activity.ComponentDialog.getLifecycle() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.ComponentDialog#getOnBackPressedDispatcher():
     Source breaking change: method androidx.activity.ComponentDialog.getOnBackPressedDispatcher() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.activity.ComponentDialog#getSavedStateRegistry():
-    Source breaking change: method androidx.activity.ComponentDialog.getSavedStateRegistry() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.EdgeToEdge#enable(androidx.activity.ComponentActivity):
+    Source breaking change: method androidx.activity.EdgeToEdge.enable(androidx.activity.ComponentActivity) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.EdgeToEdge#enable(androidx.activity.ComponentActivity, androidx.activity.SystemBarStyle):
+    Source breaking change: method androidx.activity.EdgeToEdge.enable(androidx.activity.ComponentActivity,androidx.activity.SystemBarStyle) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.EdgeToEdge#enable(androidx.activity.ComponentActivity, androidx.activity.SystemBarStyle, androidx.activity.SystemBarStyle):
+    Source breaking change: method androidx.activity.EdgeToEdge.enable(androidx.activity.ComponentActivity,androidx.activity.SystemBarStyle,androidx.activity.SystemBarStyle) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.FullyDrawnReporter#isFullyDrawnReported():
     Source breaking change: method androidx.activity.FullyDrawnReporter.isFullyDrawnReported() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.FullyDrawnReporterOwner#getFullyDrawnReporter():
@@ -55,12 +55,22 @@ RemovedFromKotlin: androidx.activity.OnBackPressedCallback#setEnabled(boolean):
     Source breaking change: method androidx.activity.OnBackPressedCallback.setEnabled(boolean) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.OnBackPressedDispatcherOwner#getOnBackPressedDispatcher():
     Source breaking change: method androidx.activity.OnBackPressedDispatcherOwner.getOnBackPressedDispatcher() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.ViewTreeFullyDrawnReporterOwner#get(android.view.View):
+    Source breaking change: method androidx.activity.ViewTreeFullyDrawnReporterOwner.get(android.view.View) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.ViewTreeFullyDrawnReporterOwner#set(android.view.View, androidx.activity.FullyDrawnReporterOwner):
+    Source breaking change: method androidx.activity.ViewTreeFullyDrawnReporterOwner.set(android.view.View,androidx.activity.FullyDrawnReporterOwner) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.ViewTreeOnBackPressedDispatcherOwner#get(android.view.View):
+    Source breaking change: method androidx.activity.ViewTreeOnBackPressedDispatcherOwner.get(android.view.View) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.ViewTreeOnBackPressedDispatcherOwner#set(android.view.View, androidx.activity.OnBackPressedDispatcherOwner):
+    Source breaking change: method androidx.activity.ViewTreeOnBackPressedDispatcherOwner.set(android.view.View,androidx.activity.OnBackPressedDispatcherOwner) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.result.ActivityResult#getData():
     Source breaking change: method androidx.activity.result.ActivityResult.getData() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.result.ActivityResult#getResultCode():
     Source breaking change: method androidx.activity.result.ActivityResult.getResultCode() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.result.ActivityResultLauncher#getContract():
     Source breaking change: method androidx.activity.result.ActivityResultLauncher.getContract() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.activity.result.ActivityResultLauncherKt#launchUnit(androidx.activity.result.ActivityResultLauncher<kotlin.Unit>, androidx.core.app.ActivityOptionsCompat):
+    Source breaking change: method androidx.activity.result.ActivityResultLauncherKt.launchUnit(androidx.activity.result.ActivityResultLauncher<kotlin.Unit>,androidx.core.app.ActivityOptionsCompat) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.result.ActivityResultRegistryOwner#getActivityResultRegistry():
     Source breaking change: method androidx.activity.result.ActivityResultRegistryOwner.getActivityResultRegistry() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.activity.result.IntentSenderRequest#getFillInIntent():

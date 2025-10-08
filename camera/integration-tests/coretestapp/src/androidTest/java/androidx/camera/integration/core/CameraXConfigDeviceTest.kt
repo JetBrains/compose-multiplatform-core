@@ -718,14 +718,14 @@ class CameraXConfigDeviceTest(private val implName: String, private val baseConf
         initialVisibleIds: Set<String>,
     ) : CameraFactory by delegate {
         private val cameraPresenceSource =
-            FakeObservable(initialVisibleIds.map { CameraIdentifier.create(it) })
+            FakeObservable(initialVisibleIds.map { CameraIdentifier.Factory.create(it) })
 
         @Volatile private var visibleCameraIds: Set<String> = initialVisibleIds
 
         fun setVisibleCameraIds(ids: Set<String>) {
             visibleCameraIds = ids
             // When the visible cameras change, push an update through our fake observable.
-            cameraPresenceSource.setValue(ids.map { CameraIdentifier.create(it) })
+            cameraPresenceSource.setValue(ids.map { CameraIdentifier.Factory.create(it) })
         }
 
         override fun getAvailableCameraIds(): Set<String> = visibleCameraIds

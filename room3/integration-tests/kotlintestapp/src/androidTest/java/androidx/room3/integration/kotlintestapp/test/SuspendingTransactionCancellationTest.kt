@@ -17,9 +17,9 @@
 package androidx.room3.integration.kotlintestapp.test
 
 import androidx.kruth.assertThat
+import androidx.room3.ExperimentalRoomApi
 import androidx.room3.integration.kotlintestapp.vo.Book
-import androidx.room3.withTransaction
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.room3.withWriteTransaction
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
@@ -36,15 +36,26 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
 // see b/148181325
-@RunWith(AndroidJUnit4::class)
-class SuspendingTransactionCancellationTest : TestDatabaseTest() {
+@RunWith(Parameterized::class)
+class SuspendingTransactionCancellationTest(driver: UseDriver) : TestDatabaseTest(driver) {
+
+    private companion object {
+        @JvmStatic
+        @Parameters(name = "useDriver={0}")
+        fun parameters() = arrayOf(UseDriver.ANDROID, UseDriver.BUNDLED)
+    }
+
     @Before
     fun prepareDb() = runBlocking {
         booksDao = database.booksDao()
@@ -60,7 +71,7 @@ class SuspendingTransactionCancellationTest : TestDatabaseTest() {
 
     @Test
     @SmallTest
-    fun canceledTransaction() = runBlocking {
+    fun canceledTransaction() = runTest {
         val toBeCancelled = async { getBook { throw CancellationException("custom-cancel") } }
         val cancelled = runCatching { toBeCancelled.await() }
         assertThat(cancelled.exceptionOrNull()?.message).isEqualTo("custom-cancel")
@@ -70,7 +81,7 @@ class SuspendingTransactionCancellationTest : TestDatabaseTest() {
 
     @Test
     @SmallTest
-    fun canceledTransaction_viaJob_afterTransactionStarts() = runBlocking {
+    fun canceledTransaction_viaJob_afterTransactionStarts() = runTest {
         val transactionStarted = CompletableDeferred<Unit>()
         val toBeCancelled = launch {
             getBook {
@@ -105,7 +116,7 @@ class SuspendingTransactionCancellationTest : TestDatabaseTest() {
 
                 toBeCancelled.cancel()
                 // now should be able to read again
-                withTimeout(10_000) { assertThat(getBook()).isEqualTo(TestUtil.BOOK_1) }
+                withTimeout(1_000) { assertThat(getBook()).isEqualTo(TestUtil.BOOK_1) }
             }
         }
 
@@ -120,30 +131,30 @@ class SuspendingTransactionCancellationTest : TestDatabaseTest() {
      */
     @Test
     @MediumTest
-    fun canceledTransaction_immediatelyOnTheSameThread() =
+    fun canceledTransaction_immediatelyOnTheSameThread() = runTest {
         repeat(10) {
-            runBlocking {
-                // see b/148181325
-                // cancelling a coroutine from the same thread (hence immediately) was deadlocking
-                // room ktx transactions.
-                val immediateMainScope =
-                    CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-                InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                    val toBeCancelled =
-                        immediateMainScope.launch {
-                            getBook {
-                                suspendCancellableCoroutine<Unit> {
-                                    // infinite
-                                }
+            // see b/148181325
+            // cancelling a coroutine from the same thread (hence immediately) was deadlocking
+            // room ktx transactions.
+            val immediateMainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val toBeCancelled =
+                    immediateMainScope.launch {
+                        getBook {
+                            suspendCancellableCoroutine<Unit> {
+                                // infinite
                             }
                         }
-                    toBeCancelled.cancel()
-                }
-                immediateMainScope.cancel()
-                // now should be able to read again
-                withTimeout(10_000) { assertThat(getBook()).isEqualTo(TestUtil.BOOK_1) }
+                    }
+                toBeCancelled.cancel()
+            }
+            immediateMainScope.cancel()
+            // now should be able to read again
+            withContext(Dispatchers.Main.immediate) {
+                withTimeout(1_000) { assertThat(getBook()).isEqualTo(TestUtil.BOOK_1) }
             }
         }
+    }
 
     @Test
     @LargeTest
@@ -151,11 +162,12 @@ class SuspendingTransactionCancellationTest : TestDatabaseTest() {
         repeat(100) { canceledTransaction_immediatelyOnTheSameThread() }
 
     /** Reads data from the database but also runs the given code inside the transaction. */
+    @OptIn(ExperimentalRoomApi::class)
     private suspend fun getBook(
         // executed after method starts
         inTransaction: (suspend () -> Unit)? = null
     ): Book {
-        return database.withTransaction {
+        return database.withWriteTransaction {
             inTransaction?.invoke()
             booksDao.getBookSuspend(TestUtil.BOOK_1.bookId)
         }

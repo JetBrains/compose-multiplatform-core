@@ -48,6 +48,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.4.1")
     implementation(project(":compose-hero-benchmarks:poxedex-compose:app"))
     implementation(project(":compose-hero-benchmarks:pokedex-views:app"))
+    implementation(project(":compose:ui:ui-util"))
     implementation("com.github.bumptech.glide:glide:4.16.0")
     ksp("com.github.bumptech.glide:ksp:4.16.0")
 

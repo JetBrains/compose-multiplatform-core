@@ -41,6 +41,9 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
     namespace = "androidx.wear.compose.integration.demos"
 }
 

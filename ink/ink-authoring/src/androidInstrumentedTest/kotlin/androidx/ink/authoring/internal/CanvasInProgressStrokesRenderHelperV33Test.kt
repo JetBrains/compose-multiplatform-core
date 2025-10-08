@@ -23,6 +23,7 @@ import android.view.SurfaceView
 import androidx.graphics.surface.SurfaceControlCompat
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
+import androidx.ink.authoring.InkInProgressShape
 import androidx.ink.authoring.internal.CanvasInProgressStrokesRenderHelperV33.Bounds
 import androidx.ink.brush.Brush
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
@@ -198,7 +199,7 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         withActivity { activity ->
             whenever(callback.onDraw()).then {
                 activity.renderHelper.prepareToDrawInModifiedRegion(MutableBox())
-                activity.renderHelper.drawInModifiedRegion(InProgressStroke(), Matrix(), 0F)
+                activity.renderHelper.drawInModifiedRegion(InkInProgressShape(), Matrix())
                 activity.renderHelper.afterDrawInModifiedRegion()
             }
 

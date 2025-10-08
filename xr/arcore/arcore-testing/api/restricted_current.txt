@@ -133,10 +133,12 @@ package androidx.xr.arcore.testing {
     property public Exception? lifecycleCreateException;
   }
 
-  public final class FakeRuntimeAnchor implements androidx.xr.arcore.runtime.Anchor {
+  public final class FakeRuntimeAnchor implements androidx.xr.arcore.runtime.Anchor androidx.xr.arcore.runtime.ExportableAnchor {
     ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public FakeRuntimeAnchor(androidx.xr.runtime.math.Pose pose, optional androidx.xr.arcore.testing.AnchorHolder? anchorHolder, optional boolean isTrackingAvailable);
     method public void detach();
+    method @InaccessibleFromKotlin public android.os.IBinder getAnchorToken();
     method @InaccessibleFromKotlin public static int getAnchorsCreatedCount();
+    method @InaccessibleFromKotlin public long getNativePointer();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Anchor.PersistenceState getPersistenceState();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
@@ -149,8 +151,10 @@ package androidx.xr.arcore.testing {
     method @InaccessibleFromKotlin public void setPose(androidx.xr.runtime.math.Pose);
     method @InaccessibleFromKotlin public void setTrackingState(androidx.xr.runtime.TrackingState);
     method @InaccessibleFromKotlin public void setUuid(java.util.UUID?);
+    property public android.os.IBinder anchorToken;
     property public boolean isAttached;
     property public boolean isTrackingAvailable;
+    property public long nativePointer;
     property public androidx.xr.arcore.runtime.Anchor.PersistenceState persistenceState;
     property public androidx.xr.runtime.math.Pose pose;
     property public androidx.xr.runtime.TrackingState trackingState;

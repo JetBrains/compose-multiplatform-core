@@ -43,9 +43,10 @@ dependencies {
     lintPublish(project(":wear:protolayout:protolayout-lint"))
 
     testImplementation(libs.testExtJunit)
-    testImplementation(libs.testExtTruth)
     testImplementation(libs.testRunner)
     testImplementation(libs.kotlinTest)
+    testImplementation(libs.truth)
+    testImplementation(libs.junit)
     testImplementation(project(":wear:protolayout:protolayout-expression-pipeline"))
 }
 

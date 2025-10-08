@@ -33,6 +33,7 @@ androidXMultiplatform {
         compileSdk = 35
         namespace = "androidx.constraintlayout.compose"
         androidResources.enable = true
+        lint.disable += "ComposeTestRuleDispatcher"
     }
 
     sourceSets {

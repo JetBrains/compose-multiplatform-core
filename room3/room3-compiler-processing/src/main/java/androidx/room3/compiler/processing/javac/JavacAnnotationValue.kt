@@ -39,7 +39,10 @@ internal class JavacAnnotationValue(
     },
 ) : InternalXAnnotationValue() {
     override val name: String
-        get() = method.element.simpleName.toString()
+        get() = method.propertyName ?: method.name
+
+    override val jvmName: String
+        get() = method.jvmName
 
     override val value: Any? by lazy { valueProvider.invoke() }
 }

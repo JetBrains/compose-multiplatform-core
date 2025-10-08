@@ -113,7 +113,8 @@ internal class CameraGraphImplTest {
     private val cameraController =
         CameraControllerSimulator(cameraContext, graphId, graphConfig, fakeGraphProcessor)
     private val cameraControllerProvider: () -> CameraControllerSimulator = { cameraController }
-    private val streamGraph = StreamGraphImpl(metadata, graphConfig, cameraControllerProvider)
+    private val streamGraph =
+        StreamGraphImpl(metadata, graphConfig, cameraControllerProvider, mock())
     private val imageSourceMap = ImageSourceMap(graphConfig, streamGraph, imageSources)
     private val frameDistributor = FrameDistributor(imageSourceMap.imageSources, frameCaptureQueue)
     private val surfaceGraph =

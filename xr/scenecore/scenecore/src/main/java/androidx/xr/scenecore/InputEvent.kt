@@ -96,7 +96,7 @@ public class InputEvent(
         Source.SOURCE_MOUSE,
         Source.SOURCE_GAZE_AND_GESTURE,
     )
-    internal annotation class SourceValue
+    public annotation class SourceValue
 
     /** Specifies the source (e.g. hands, controller, head) of the input event. */
     public object Source {
@@ -145,7 +145,7 @@ public class InputEvent(
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(Pointer.POINTER_TYPE_DEFAULT, Pointer.POINTER_TYPE_LEFT, Pointer.POINTER_TYPE_RIGHT)
-    internal annotation class PointerType
+    public annotation class PointerType
 
     /** Specifies the pointer type (e.g. left, right or default) of the input event. */
     public object Pointer {
@@ -177,7 +177,7 @@ public class InputEvent(
         Action.ACTION_HOVER_ENTER,
         Action.ACTION_HOVER_EXIT,
     )
-    internal annotation class ActionValue
+    public annotation class ActionValue
 
     /** Specifies the action (e.g. down, up, move, etc.) of the input event. */
     public object Action {

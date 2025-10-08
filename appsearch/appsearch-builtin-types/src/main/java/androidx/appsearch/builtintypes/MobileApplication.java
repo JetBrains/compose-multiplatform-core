@@ -165,14 +165,14 @@ public class MobileApplication extends Thing {
         /**
          * Constructor for {@link Builder}.
          *
-         * @param id The id of the document.
          * @param namespace The namespace of the document.
+         * @param id The id of the document.
          * @param packageName The package name of the application.
          * @param sha256Certificate The SHA-256 certificate of the application.
          */
-        public Builder(@NonNull String id, @NonNull String namespace, @NonNull String packageName,
+        public Builder(@NonNull String namespace, @NonNull String id, @NonNull String packageName,
                 byte @NonNull [] sha256Certificate) {
-            super(Preconditions.checkNotNull(id), Preconditions.checkNotNull(namespace),
+            super(Preconditions.checkNotNull(namespace), Preconditions.checkNotNull(id),
                     Preconditions.checkNotNull(packageName),
                     Preconditions.checkNotNull(sha256Certificate));
         }
@@ -196,7 +196,7 @@ public class MobileApplication extends Thing {
         private String mClassName;
         private boolean mBuilt = false;
 
-        BuilderImpl(@NonNull String id, @NonNull String namespace, @NonNull String packageName,
+        BuilderImpl(@NonNull String namespace, @NonNull String id, @NonNull String packageName,
                 byte @NonNull [] sha256Certificate) {
             super(namespace, id);
             mPackageName = Preconditions.checkNotNull(packageName);

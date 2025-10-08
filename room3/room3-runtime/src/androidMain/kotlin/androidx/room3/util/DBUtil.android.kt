@@ -51,8 +51,9 @@ public actual suspend fun <R> performSuspending(
 ): R =
     db.compatCoroutineExecute(inTransaction) {
         db.internalPerform(isReadOnly, inTransaction) { connection ->
-            val rawConnection = (connection as RawConnectionAccessor).rawConnection
-            block.invoke(rawConnection)
+            (connection as RawConnectionAccessor).useRawConnection { rawConnection ->
+                block.invoke(rawConnection)
+            }
         }
     }
 
@@ -74,8 +75,9 @@ public fun <R> performBlocking(
             // do not support real SAVEPOINT-based nested transactions.
             val inTransaction = !(db.inCompatibilityMode() && db.inTransaction()) && inTransaction
             db.internalPerform(isReadOnly, inTransaction) { connection ->
-                val rawConnection = (connection as RawConnectionAccessor).rawConnection
-                block.invoke(rawConnection)
+                (connection as RawConnectionAccessor).useRawConnection { rawConnection ->
+                    block.invoke(rawConnection)
+                }
             }
         }
     }
@@ -101,6 +103,23 @@ public actual suspend fun <R> performInTransactionSuspending(
             db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
         }
     }
+
+/** Blocking version of [performInTransactionSuspending] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+public fun <R> performInTransactionBlocking(db: RoomDatabase, block: () -> R): R {
+    db.assertNotMainThread()
+    db.assertNotSuspendingTransaction()
+    val context = db.suspendingTransactionContext.get() ?: EmptyCoroutineContext
+    return runBlockingUninterruptible {
+        withContext(context) {
+            // If in compatibility mode and the database is already in a transaction, then do not
+            // start a nested transaction to avoid the overhead and because the SupportSQLite APIs
+            // do not support real SAVEPOINT-based nested transactions.
+            val inTransaction = !db.inCompatibilityMode() || !db.inTransaction()
+            db.internalPerform(false, inTransaction) { block.invoke() }
+        }
+    }
+}
 
 /**
  * Compatibility suspend function execution with driver usage. This will maintain the dispatcher

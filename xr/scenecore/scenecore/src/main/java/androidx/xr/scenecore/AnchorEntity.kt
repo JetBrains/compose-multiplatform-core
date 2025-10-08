@@ -19,6 +19,7 @@ package androidx.xr.scenecore
 import android.annotation.SuppressLint
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.Anchor
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
@@ -46,7 +47,7 @@ public class AnchorEntity
 private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
     BaseEntity<RtAnchorEntity>(rtEntity, entityManager) {
 
-    private var onStateChangedListener: Consumer<@StateValue Int>? = null
+    @VisibleForTesting internal var onStateChangedListener: Consumer<@StateValue Int>? = null
     private var onStateChangedExecutor: Executor = HandlerExecutor.mainThreadExecutor
 
     /** The current tracking state for this AnchorEntity. */
@@ -58,10 +59,11 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         }
 
     /** Specifies the current tracking state of the Anchor. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Retention(AnnotationRetention.SOURCE)
     @Target(AnnotationTarget.TYPE)
     @IntDef(State.ANCHORED, State.UNANCHORED, State.TIMEDOUT, State.ERROR)
-    @Retention(AnnotationRetention.SOURCE)
-    internal annotation class StateValue
+    public annotation class StateValue
 
     public object State {
         /**
@@ -268,7 +270,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      * or unregisters the current listener if set to null.
      *
      * The listener will fire with the current [AnchorEntity.State] value immediately upon
-     * registration.
+     * registration. It will be automatically unregistered when the entity is disposed.
      */
     public fun setOnStateChangedListener(listener: Consumer<@StateValue Int>?) {
         setOnStateChangedListener(HandlerExecutor.mainThreadExecutor, listener)
@@ -278,7 +280,8 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      * Registers a listener to be invoked on the given [Executor] when the AnchorEntity's state
      * changes, or unregisters the current listener if set to null.
      *
-     * The listener will fire with the current State value immediately upon registration.
+     * The listener will fire with the current State value immediately upon registration. It will be
+     * automatically unregistered when the entity is disposed.
      *
      * @param executor: The executor on which the specified listener will fire.
      * @param listener: The listener to fire upon invoking this method, and all subsequent state
@@ -297,7 +300,8 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      * The callback is triggered on the supplied [Executor] by any anchor movements such as those
      * made by the underlying perception stack to maintain the anchor's position relative to the
      * real world. Any cached data relative to the activity space or any other "space" should be
-     * updated when this callback is triggered.
+     * updated when this callback is triggered. It will be automatically unregistered when the
+     * entity is disposed.
      *
      * @param executor The executor to run the listener on.
      * @param listener The listener to register if non-null, else stops listening if null.
@@ -313,7 +317,8 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
      * The callback is triggered on the default SceneCore [Executor] by any anchor movements such as
      * those made by the underlying perception stack to maintain the anchor's position relative to
      * the real world. Any cached data relative to the activity space or any other "space" should be
-     * updated when this callback is triggered.
+     * updated when this callback is triggered. It will be automatically unregistered when the
+     * entity is disposed.
      *
      * @param listener The listener to register if non-null, else stops listening if null.
      */
@@ -411,5 +416,13 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
             Space.REAL_WORLD -> super.getScale(relativeTo)
             else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
         }
+    }
+
+    override fun dispose() {
+        if (rtEntity != null) {
+            setOnSpaceUpdatedListener(null)
+            setOnStateChangedListener(null)
+        }
+        super.dispose()
     }
 }

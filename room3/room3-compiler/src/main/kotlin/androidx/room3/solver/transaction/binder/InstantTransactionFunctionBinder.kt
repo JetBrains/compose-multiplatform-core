@@ -27,8 +27,7 @@ import androidx.room3.compiler.processing.isVoid
 import androidx.room3.ext.InvokeWithLambdaParameter
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LambdaSpec
-import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_BLOCKING
-import androidx.room3.ext.SQLiteDriverTypeNames
+import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_IN_TRANSACTION_BLOCKING
 import androidx.room3.solver.CodeGenScope
 import androidx.room3.solver.transaction.result.TransactionFunctionAdapter
 
@@ -53,18 +52,14 @@ class InstantTransactionFunctionBinder(
         val performBlock =
             InvokeWithLambdaParameter(
                 scope = scope,
-                functionName = DB_UTIL_PERFORM_BLOCKING,
-                argFormat = listOf("%N", "%L", "%L"),
-                args = listOf(dbProperty, /* isReadOnly= */ false, /* inTransaction= */ true),
+                functionName = DB_UTIL_PERFORM_IN_TRANSACTION_BLOCKING,
+                argFormat = listOf("%N"),
+                args = listOf(dbProperty),
                 lambdaSpec =
                     object :
                         LambdaSpec(
-                            parameterTypeName = SQLiteDriverTypeNames.CONNECTION,
-                            parameterName =
-                                when (scope.language) {
-                                    CodeLanguage.JAVA -> scope.getTmpVar("_connection")
-                                    CodeLanguage.KOTLIN -> "_"
-                                },
+                            parameterTypeName = null,
+                            parameterName = null,
                             returnTypeName = returnType.asTypeName().box(),
                             javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                         ) {

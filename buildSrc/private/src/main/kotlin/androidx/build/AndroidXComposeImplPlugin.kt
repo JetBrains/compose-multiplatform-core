@@ -105,53 +105,10 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                     disable.add("ListIterator")
                 }
 
-                // Paths for which we want to disable ComposeTestRuleDispatcher
-                val ignoreComposeTestRuleDispatcherFilter =
-                    listOf(
-                        "activity:activity-compose",
-                        "camera:camera-compose",
-                        "camera:integration-tests",
-                        "camera:viewfinder:viewfinder-compose",
-                        "compose:remote",
-                        "compose:runtime",
-                        "compose:ui:ui",
-                        "compose:ui:ui-benchmark",
-                        "compose:ui:ui-inspection",
-                        "compose:ui:ui-test",
-                        "compose:ui:ui-test-junit4",
-                        "compose:ui:ui-tooling",
-                        "constraintlayout:constraintlayout-compose",
-                        "core:core-backported-fixes",
-                        "fragment:fragment-compose",
-                        "hilt:hilt-lifecycle-viewmodel-compose",
-                        "hilt:hilt-navigation-compose",
-                        "lifecycle:lifecycle-runtime-compose",
-                        "lifecycle:lifecycle-viewmodel-compose",
-                        "lifecycle:lifecycle-viewmodel-navigation3",
-                        "navigation:navigation-compose",
-                        "navigation:navigation-fragment-compose",
-                        "navigation3:navigation3-ui",
-                        "navigation3:navigation3-runtime",
-                        "navigationevent:navigationevent-compose",
-                        "paging:paging-compose",
-                        "pdf:pdf-compose",
-                        "photopicker:photopicker-compose",
-                        "privacysandbox:ui:ui-client-compose",
-                        "tv:tv-material",
-                        "wear:compose:compose-foundation",
-                        "wear:compose:compose-material",
-                        "wear:compose:compose-material-core",
-                        "wear:compose:compose-material3",
-                        "wear:compose:compose-navigation",
-                        "wear:compose:integration-tests",
-                        "xr:compose",
-                        "xr:glimmer",
-                        "xr:projected:projected",
-                    )
-
-                // Disable ComposeTestRuleDispatcher if not in a matching path
-                if (ignoreComposeTestRuleDispatcherFilter.any { path.contains(it) }) {
-                    disable.add("ComposeTestRuleDispatcher")
+                // If the ComposeTestRuleDispatcher lint rule isn't disabled in the module's
+                // build.gradle file, it will be added to the error set.
+                if (!disable.contains("ComposeTestRuleDispatcher")) {
+                    error.add("ComposeTestRuleDispatcher")
                 }
 
                 // b/333784604 Disable ConfigurationScreenWidthHeight for wear libraries, it

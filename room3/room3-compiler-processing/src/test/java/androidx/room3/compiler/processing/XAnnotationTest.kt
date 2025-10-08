@@ -48,6 +48,7 @@ import androidx.room3.compiler.processing.util.runProcessorTest
 import androidx.room3.compiler.processing.util.runProcessorTestWithoutKsp
 import com.squareup.kotlinpoet.javapoet.JAnnotationSpec
 import com.squareup.kotlinpoet.javapoet.JClassName
+import java.io.File
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -59,11 +60,12 @@ typealias OtherAnnotationTypeAlias = OtherAnnotation
 class XAnnotationTest(private val preCompiled: Boolean) {
     private fun runTest(
         sources: List<Source>,
+        classpath: List<File> = emptyList(),
         kotlincArgs: List<String> = emptyList(),
         handler: (XTestInvocation) -> Unit,
     ) {
         if (preCompiled) {
-            val compiled = compileFiles(sources)
+            val compiled = compileFiles(sources, classpath)
             val hasKotlinSources = sources.any { it is Source.KotlinSource }
             val kotlinSources =
                 if (hasKotlinSources) {
@@ -77,11 +79,16 @@ class XAnnotationTest(private val preCompiled: Boolean) {
             runProcessorTest(
                 sources = newSources,
                 handler = handler,
-                classpath = compiled,
+                classpath = compiled + classpath,
                 kotlincArguments = kotlincArgs,
             )
         } else {
-            runProcessorTest(sources = sources, handler = handler, kotlincArguments = kotlincArgs)
+            runProcessorTest(
+                sources = sources,
+                classpath = classpath,
+                handler = handler,
+                kotlincArguments = kotlincArgs,
+            )
         }
     }
 
@@ -551,6 +558,124 @@ class XAnnotationTest(private val preCompiled: Boolean) {
             val annotation = subject.requireAnnotation<JavaAnnotationWithTypeReferences>()
             val annotationValue = annotation.getAsTypeList("value").single()
             assertThat(annotationValue.asTypeName().java).isEqualTo(String::class.asJTypeName())
+        }
+    }
+
+    @Test
+    fun kotlinAnnotationValueOrder() {
+        val annotatedSubject =
+            Source.kotlin(
+                "AnnotatedSubject.kt",
+                """
+                package foo.bar
+                @MyOrderedAnnotation(a = "a", b = "b", c = "c")
+                class AnnotatedSubject
+                """
+                    .trimIndent(),
+            )
+        val kotlinAnnotation =
+            Source.kotlin(
+                "MyOrderedAnnotation.kt",
+                """
+                package foo.bar
+                annotation class MyOrderedAnnotation(
+                    val c: String,
+                    val a: String,
+                    @get:JvmName("newB")
+                    val b: String
+                )
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(annotatedSubject),
+            classpath = compileFiles(listOf(kotlinAnnotation)),
+        ) { invocation ->
+            val typeElement =
+                invocation.processingEnv.requireTypeElement("foo.bar.AnnotatedSubject")
+            val annotation =
+                typeElement.getAllAnnotations().single {
+                    it.qualifiedName == "foo.bar.MyOrderedAnnotation"
+                }
+            assertThat(annotation.annotationValues.map { it.name })
+                .containsExactly("c", "a", "b")
+                .inOrder()
+            assertThat(annotation.annotationValues.map { it.jvmName })
+                .containsExactly("c", "a", "newB")
+                .inOrder()
+            assertThat(annotation.annotationValues.map { it.value })
+                .containsExactly("c", "a", "b")
+                .inOrder()
+            assertThat(annotation.typeElement.getDeclaredMethods().map { it.name })
+                .containsExactly("getC", "getA", "getB")
+                .inOrder()
+            assertThat(annotation.typeElement.getDeclaredMethods().map { it.propertyName })
+                .containsExactly("c", "a", "b")
+                .inOrder()
+            assertThat(annotation.typeElement.getDeclaredMethods().map { it.jvmName })
+                .containsExactly("c", "a", "newB")
+                .inOrder()
+        }
+    }
+
+    @Test
+    fun nestedKotlinAnnotationValueOrder() {
+        val annotatedSubject =
+            Source.kotlin(
+                "AnnotatedSubject.kt",
+                """
+                package foo.bar
+                @MyObject.MyInterface.MyOrderedAnnotation(a = "a", b = "b", c = "c")
+                class AnnotatedSubject
+                """
+                    .trimIndent(),
+            )
+        val kotlinAnnotation =
+            Source.kotlin(
+                "MyObject.kt",
+                """
+                package foo.bar
+                object MyObject {
+                    interface MyInterface {
+                        annotation class MyOrderedAnnotation(
+                            val c: String,
+                            val a: String,
+                            @get:JvmName("newB")
+                            val b: String
+                        )
+                    }
+                }
+                """
+                    .trimIndent(),
+            )
+        runTest(
+            sources = listOf(annotatedSubject),
+            classpath = compileFiles(listOf(kotlinAnnotation)),
+        ) { invocation ->
+            val typeElement =
+                invocation.processingEnv.requireTypeElement("foo.bar.AnnotatedSubject")
+            val annotation =
+                typeElement.getAllAnnotations().single {
+                    it.qualifiedName == "foo.bar.MyObject.MyInterface.MyOrderedAnnotation"
+                }
+            assertThat(annotation.annotationValues.map { it.name })
+                .containsExactly("c", "a", "b")
+                .inOrder()
+            assertThat(annotation.annotationValues.map { it.jvmName })
+                .containsExactly("c", "a", "newB")
+                .inOrder()
+            assertThat(annotation.annotationValues.map { it.value })
+                .containsExactly("c", "a", "b")
+                .inOrder()
+            assertThat(annotation.typeElement.getDeclaredMethods().map { it.name })
+                .containsExactly("getC", "getA", "getB")
+                .inOrder()
+            assertThat(annotation.typeElement.getDeclaredMethods().map { it.propertyName })
+                .containsExactly("c", "a", "b")
+                .inOrder()
+            assertThat(annotation.typeElement.getDeclaredMethods().map { it.jvmName })
+                .containsExactly("c", "a", "newB")
+                .inOrder()
         }
     }
 

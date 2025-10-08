@@ -211,23 +211,72 @@ internal constructor(
         }
     }
 
-    public operator fun plus(v: Int): RemoteInt = binaryOp(this, v, OP_ADD) { a, b -> a + b }
+    public operator fun plus(v: Int): RemoteInt {
+        if (v == 0) {
+            return this
+        }
+        return binaryOp(this, v, OP_ADD) { a, b -> a + b }
+    }
 
-    public operator fun minus(v: Int): RemoteInt = binaryOp(this, v, OP_SUB) { a, b -> a - b }
+    public operator fun minus(v: Int): RemoteInt {
+        if (v == 0) {
+            return this
+        }
+        return binaryOp(this, v, OP_SUB) { a, b -> a - b }
+    }
 
-    public operator fun times(v: Int): RemoteInt = binaryOp(this, v, OP_MUL) { a, b -> a * b }
+    public operator fun times(v: Int): RemoteInt {
+        if (v == 1) {
+            return this
+        }
+        if (constantValue != null && constantValue == 1) {
+            return RemoteInt(v)
+        }
+        return binaryOp(this, v, OP_MUL) { a, b -> a * b }
+    }
 
-    public operator fun div(v: Int): RemoteInt = binaryOp(this, v, OP_DIV) { a, b -> a / b }
+    public operator fun div(v: Int): RemoteInt {
+        if (v == 1) {
+            return this
+        }
+        return binaryOp(this, v, OP_DIV) { a, b -> a / b }
+    }
 
     public operator fun rem(v: Int): RemoteInt = binaryOp(this, v, OP_MOD) { a, b -> a % b }
 
-    public operator fun plus(v: RemoteInt): RemoteInt = binaryOp(this, v, OP_ADD) { a, b -> a + b }
+    public operator fun plus(v: RemoteInt): RemoteInt {
+        if (v.constantValue != null && v.constantValue == 0) {
+            return this
+        }
+        if (constantValue != null && constantValue == 0) {
+            return v
+        }
+        return binaryOp(this, v, OP_ADD) { a, b -> a + b }
+    }
 
-    public operator fun minus(v: RemoteInt): RemoteInt = binaryOp(this, v, OP_SUB) { a, b -> a - b }
+    public operator fun minus(v: RemoteInt): RemoteInt {
+        if (v.constantValue != null && v.constantValue == 0) {
+            return this
+        }
+        return binaryOp(this, v, OP_SUB) { a, b -> a - b }
+    }
 
-    public operator fun times(v: RemoteInt): RemoteInt = binaryOp(this, v, OP_MUL) { a, b -> a * b }
+    public operator fun times(v: RemoteInt): RemoteInt {
+        if (v.constantValue != null && v.constantValue == 1) {
+            return this
+        }
+        if (constantValue != null && constantValue == 1) {
+            return v
+        }
+        return binaryOp(this, v, OP_MUL) { a, b -> a * b }
+    }
 
-    public operator fun div(v: RemoteInt): RemoteInt = binaryOp(this, v, OP_DIV) { a, b -> a / b }
+    public operator fun div(v: RemoteInt): RemoteInt {
+        if (v.constantValue != null && v.constantValue == 1) {
+            return this
+        }
+        return binaryOp(this, v, OP_DIV) { a, b -> a / b }
+    }
 
     public operator fun rem(v: RemoteInt): RemoteInt = binaryOp(this, v, OP_MOD) { a, b -> a % b }
 
@@ -892,7 +941,7 @@ public fun rememberRemoteInt(
     state.document.setStringName(remoteInt.getIdForCreationState(state), "$domain:$name")
     return remember {
         // Since this is named, its value can be change, so it's not const.
-        RemoteIntExpression(remoteInt.constantValue) { creationState ->
+        RemoteIntExpression(constantValue = null) { creationState ->
             longArrayOf(remoteInt.getLongIdForCreationState(creationState))
         }
     }

@@ -23,7 +23,7 @@ import android.os.Bundle
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.remote.creation.compose.action.pendingIntentAction
-import androidx.compose.remote.creation.compose.capture.HostDisplayInfo
+import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
@@ -88,10 +88,11 @@ class WearWidgetCaptureTest {
             widgetPendingIntents: WidgetPendingIntents,
             content: @Composable () -> Unit,
         ) {
-            val hostDisplayInfo = HostDisplayInfo(400, 400, LocalConfiguration.current.densityDpi)
+            val creationDisplayInfo =
+                CreationDisplayInfo(400, 400, LocalConfiguration.current.densityDpi)
             RemoteComposeCapture(
                 LocalContext.current,
-                hostDisplayInfo,
+                creationDisplayInfo,
                 true,
                 { view, writer -> true },
                 @Composable {},
@@ -102,13 +103,17 @@ class WearWidgetCaptureTest {
 
         @Composable
         internal fun CaptureWidgetContentData(content: @Composable () -> Unit) {
-            val hostDisplayInfo = HostDisplayInfo(400, 400, 320)
+            val creationDisplayInfo = CreationDisplayInfo(400, 400, 320)
             val context = LocalContext.current
 
             val data = remember { mutableStateOf<WearWidgetRawContent?>(null) }
             LaunchedEffect(Unit) {
                 data.value =
-                    WearWidgetCapture.capture(context, hostDisplayInfo, @Composable { content() })
+                    WearWidgetCapture.capture(
+                        context,
+                        creationDisplayInfo,
+                        @Composable { content() },
+                    )
             }
 
             Column {

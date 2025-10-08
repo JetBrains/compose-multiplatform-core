@@ -25,6 +25,7 @@ import androidx.customview.view.AbsSavedState
 import androidx.pdf.formfilling.FormFillingEditTextState
 import androidx.pdf.models.FormEditRecord
 import androidx.pdf.selection.SelectionModel
+import androidx.pdf.view.layout.PaginationModel
 
 /** [AbsSavedState] implementation for [PdfView] */
 internal class PdfViewSavedState : AbsSavedState {

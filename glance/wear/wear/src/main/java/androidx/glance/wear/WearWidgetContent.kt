@@ -17,7 +17,7 @@
 package androidx.glance.wear
 
 import android.content.Context
-import androidx.compose.remote.creation.compose.capture.HostDisplayInfo
+import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
 import androidx.compose.runtime.Composable
 import androidx.glance.wear.parcel.WearWidgetCapture
 import androidx.glance.wear.parcel.WearWidgetRawContent
@@ -40,7 +40,7 @@ public class WearWidgetContent(public val content: @Composable () -> Unit) {
     ): WearWidgetRawContent {
         return WearWidgetCapture.capture(
             context,
-            HostDisplayInfo(widthDp.dpToPx(context), heightDp.dpToPx(context)),
+            CreationDisplayInfo(widthDp.dpToPx(context), heightDp.dpToPx(context)),
             content,
         )
     }

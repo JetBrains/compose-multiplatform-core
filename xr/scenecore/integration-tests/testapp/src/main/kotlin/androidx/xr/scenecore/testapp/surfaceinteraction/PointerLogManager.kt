@@ -184,8 +184,14 @@ class PointerLogManager(context: Context, session: Session) {
             return String.format("%02d", count % 100)
         }
 
+        private fun Vector3.toShortString(): String {
+            return String.format("[%.2f, %.2f, %.2f]", x, y, z)
+        }
+
         override fun toString(): String {
-            var str = "$pointerTypeStr ${source.toSourceString()}:"
+            var str =
+                "$pointerTypeStr ${source.toSourceString()}: org${origin.toShortString()}" +
+                    " dir${direction.toShortString()}"
             str +=
                 "\n    [PRESS]" +
                     " DOWN: " +
@@ -211,7 +217,12 @@ class PointerLogManager(context: Context, session: Session) {
             } else {
                 str += String.format("%02d", hitInfoCount % 100)
                 for (i in 0..hitInfos.size - 1) {
-                    str += " [${i}]${hitInfos[i].hitPosition}"
+                    val hitPos = hitInfos[i].hitPosition
+                    if (hitPos != null) {
+                        str += " [${i}]:${hitPos.toShortString()}"
+                    } else {
+                        str += " [${i}]:null"
+                    }
                 }
             }
             return str

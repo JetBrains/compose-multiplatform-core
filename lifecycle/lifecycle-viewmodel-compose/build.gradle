@@ -36,6 +36,7 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 35
         namespace = "androidx.lifecycle.viewmodel.compose"
+        lint.disable += "ComposeTestRuleDispatcher"
     }
     desktop()
     mac()

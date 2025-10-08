@@ -42,7 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
-import androidx.xr.compose.material3.SpaceModeToggleButton
+import androidx.xr.compose.material3.SpaceToggleButton
 
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
@@ -59,7 +59,7 @@ internal fun XrSettingsPane(
         ) {
             ListItem(
                 headlineContent = {
-                    SpaceModeToggleButton(
+                    SpaceToggleButton(
                         Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp)
                     )
                 }

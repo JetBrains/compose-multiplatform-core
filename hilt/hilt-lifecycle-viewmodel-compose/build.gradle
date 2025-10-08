@@ -67,6 +67,9 @@ android {
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.lifecycle.viewmodel.compose.TestRunner"
     }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
     namespace = "androidx.hilt.lifecycle.viewmodel.compose"
 }
 

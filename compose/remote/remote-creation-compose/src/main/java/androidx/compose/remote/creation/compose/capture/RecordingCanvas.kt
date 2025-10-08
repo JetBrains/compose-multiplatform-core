@@ -281,9 +281,6 @@ public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
                 lastRemoteColorFilter != tmpLastRemoteColorFilter
         ) {
             if (tmpLastRemoteColorFilter != null) {
-                lastColorFilterColor = tmpLastColorFilterColor
-                lastColorFilterMode = tmpLastColorFilterMode
-                lastRemoteColorFilter = tmpLastRemoteColorFilter
                 when (tmpLastRemoteColorFilter) {
                     is RemoteBlendModeColorFilter -> {
                         val constantColor = tmpLastRemoteColorFilter.color.constantValue
@@ -304,22 +301,25 @@ public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
                 }
                 send = true
             } else if (tmpLastColorFilter is BlendModeColorFilter) {
-                lastColorFilter = tmpLastColorFilter
-                lastColorFilterColor = tmpLastColorFilterColor
-                lastColorFilterMode = tmpLastColorFilterMode
-                lastRemoteColorFilter = tmpLastRemoteColorFilter
                 paintBundle.setColorFilter(
                     tmpLastColorFilter.color,
                     colorFilterModeToInt(tmpLastColorFilter.mode),
                 )
                 send = true
-            } else if (tmpLastColorFilter == null && lastColorFilter != null) {
-                lastColorFilter = null
+            }
+
+            if (
+                (tmpLastRemoteColorFilter == null && tmpLastColorFilter == null) &&
+                    (lastRemoteColorFilter != null || lastColorFilter != null)
+            ) {
                 paintBundle.clearColorFilter()
                 send = true
-            } else {
-                lastColorFilter = null
             }
+
+            lastColorFilter = tmpLastColorFilter
+            lastColorFilterColor = tmpLastColorFilterColor
+            lastColorFilterMode = tmpLastColorFilterMode
+            lastRemoteColorFilter = tmpLastRemoteColorFilter
         }
 
         val paintBlendMode = paint.blendMode

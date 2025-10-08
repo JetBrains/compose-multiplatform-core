@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.processing.Generated;
 import kotlin.coroutines.Continuation;
+import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 
 @Generated("androidx.room3.RoomProcessor")
@@ -43,10 +44,10 @@ public final class ComplexDao_Impl extends ComplexDao {
 
   @Override
   public boolean transactionMethod(final int i, final String s, final long l) {
-    return DBUtil.performBlocking(__db, false, true, new Function1<SQLiteConnection, Boolean>() {
+    return DBUtil.performInTransactionBlocking(__db, new Function0<Boolean>() {
       @Override
       @NonNull
-      public Boolean invoke(@NonNull final SQLiteConnection _connection) {
+      public Boolean invoke() {
         return ComplexDao_Impl.super.transactionMethod(i, s, l);
       }
     });

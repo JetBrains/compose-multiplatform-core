@@ -77,7 +77,9 @@ package androidx.xr.arcore.testing {
 
   public final class FakeRuntimeAnchor {
     method public void detach();
+    method @InaccessibleFromKotlin public android.os.IBinder getAnchorToken();
     method @InaccessibleFromKotlin public static int getAnchorsCreatedCount();
+    method @InaccessibleFromKotlin public long getNativePointer();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Anchor.PersistenceState getPersistenceState();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();

@@ -104,9 +104,10 @@ package androidx.activity {
   }
 
   public final class EdgeToEdge {
-    method public static void enable(androidx.activity.ComponentActivity);
-    method public static void enable(androidx.activity.ComponentActivity, optional androidx.activity.SystemBarStyle statusBarStyle);
-    method public static void enable(androidx.activity.ComponentActivity, optional androidx.activity.SystemBarStyle statusBarStyle, optional androidx.activity.SystemBarStyle navigationBarStyle);
+    method @InaccessibleFromKotlin public static void enable(androidx.activity.ComponentActivity);
+    method @InaccessibleFromKotlin public static void enable(androidx.activity.ComponentActivity, optional androidx.activity.SystemBarStyle statusBarStyle);
+    method @InaccessibleFromKotlin public static void enable(androidx.activity.ComponentActivity, optional androidx.activity.SystemBarStyle statusBarStyle, optional androidx.activity.SystemBarStyle navigationBarStyle);
+    method @KotlinOnly public static void enableEdgeToEdge(androidx.activity.ComponentActivity, optional androidx.activity.SystemBarStyle statusBarStyle, optional androidx.activity.SystemBarStyle navigationBarStyle);
   }
 
   public final class FullyDrawnReporter {
@@ -183,13 +184,17 @@ package androidx.activity {
   }
 
   public final class ViewTreeFullyDrawnReporterOwner {
-    method public static androidx.activity.FullyDrawnReporterOwner? get(android.view.View);
-    method public static void set(android.view.View, androidx.activity.FullyDrawnReporterOwner fullyDrawnReporterOwner);
+    method @KotlinOnly public static androidx.activity.FullyDrawnReporterOwner? findViewTreeFullyDrawnReporterOwner(android.view.View);
+    method @InaccessibleFromKotlin public static androidx.activity.FullyDrawnReporterOwner? get(android.view.View);
+    method @InaccessibleFromKotlin public static void set(android.view.View, androidx.activity.FullyDrawnReporterOwner fullyDrawnReporterOwner);
+    method @KotlinOnly public static void setViewTreeFullyDrawnReporterOwner(android.view.View, androidx.activity.FullyDrawnReporterOwner fullyDrawnReporterOwner);
   }
 
   public final class ViewTreeOnBackPressedDispatcherOwner {
-    method public static androidx.activity.OnBackPressedDispatcherOwner? get(android.view.View);
-    method public static void set(android.view.View, androidx.activity.OnBackPressedDispatcherOwner onBackPressedDispatcherOwner);
+    method @KotlinOnly public static androidx.activity.OnBackPressedDispatcherOwner? findViewTreeOnBackPressedDispatcherOwner(android.view.View);
+    method @InaccessibleFromKotlin public static androidx.activity.OnBackPressedDispatcherOwner? get(android.view.View);
+    method @InaccessibleFromKotlin public static void set(android.view.View, androidx.activity.OnBackPressedDispatcherOwner onBackPressedDispatcherOwner);
+    method @KotlinOnly public static void setViewTreeOnBackPressedDispatcherOwner(android.view.View, androidx.activity.OnBackPressedDispatcherOwner onBackPressedDispatcherOwner);
   }
 
 }
@@ -271,7 +276,8 @@ package androidx.activity.result {
 
   public final class ActivityResultLauncherKt {
     method public static void launch(androidx.activity.result.ActivityResultLauncher<java.lang.Void?>, optional androidx.core.app.ActivityOptionsCompat? options);
-    method public static void launchUnit(androidx.activity.result.ActivityResultLauncher<kotlin.Unit>, optional androidx.core.app.ActivityOptionsCompat? options);
+    method @KotlinOnly public static void launch(androidx.activity.result.ActivityResultLauncher<kotlin.Unit>, optional androidx.core.app.ActivityOptionsCompat? options);
+    method @InaccessibleFromKotlin public static void launchUnit(androidx.activity.result.ActivityResultLauncher<kotlin.Unit>, optional androidx.core.app.ActivityOptionsCompat? options);
   }
 
   public abstract class ActivityResultRegistry {

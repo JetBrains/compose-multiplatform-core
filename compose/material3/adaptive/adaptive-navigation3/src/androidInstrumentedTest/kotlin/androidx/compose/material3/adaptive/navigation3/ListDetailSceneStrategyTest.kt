@@ -20,29 +20,17 @@ package androidx.compose.material3.adaptive.navigation3
 
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
-import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.onNodeWithText
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.scene.Scene
-import androidx.navigation3.ui.NavDisplay
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -55,12 +43,6 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ListDetailSceneStrategyTest {
     @get:Rule val composeRule = createComposeRule(StandardTestDispatcher())
-
-    val HomeScreenTestTag = "HomeScreen"
-    val ListScreenTestTag = "ListScreen"
-    val DetailScreenTestTag = "DetailScreen"
-    val DetailPlaceholderScreenTestTag = "PlaceholderScreen"
-    val ExtraScreenTestTag = "ExtraScreen"
 
     @Test
     fun calculateScene_singlePane_nullListDetailScene() {
@@ -277,6 +259,25 @@ class ListDetailSceneStrategyTest {
     }
 
     @Test
+    fun dualPane_backstackWithListDetail_navigate_showsNewDetail() {
+        val backStack = mutableStateListOf(HomeKey, ListKey, DetailKey("abc"))
+        composeRule.setContent {
+            NavScreen(backStack = backStack, directive = MockDualPaneScaffoldDirective)
+        }
+        composeRule.onNodeWithTag(ListScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(DetailScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("Detail(abc)").assertIsDisplayed()
+
+        backStack.add(DetailKey("def"))
+
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag(ListScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(DetailScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("Detail(abc)").assertIsNotDisplayed()
+        composeRule.onNodeWithText("Detail(def)").assertIsDisplayed()
+    }
+
+    @Test
     fun dualPane_backstackWithListDetailExtra_showsDetailAndExtra() {
         val backStack = mutableStateListOf(HomeKey, ListKey, DetailKey("abc"), ExtraKey("abc"))
         composeRule.setContent {
@@ -296,9 +297,15 @@ class ListDetailSceneStrategyTest {
             backPressedDispatcher =
                 LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
         }
+        composeRule.onNodeWithTag(DetailScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(ExtraScreenTestTag).assertIsDisplayed()
+
         composeRule.runOnIdle { backPressedDispatcher.onBackPressed() }
 
         assertThat(backStack).containsExactly(HomeKey, ListKey, DetailKey("abc")).inOrder()
+        composeRule.onNodeWithTag(DetailScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(ListScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(ExtraScreenTestTag).assertIsNotDisplayed()
     }
 
     @Test
@@ -314,9 +321,16 @@ class ListDetailSceneStrategyTest {
             backPressedDispatcher =
                 LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
         }
+        composeRule.onNodeWithTag(DetailScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(ListScreenTestTag).assertIsDisplayed()
+
         composeRule.runOnIdle { backPressedDispatcher.onBackPressed() }
 
+        composeRule.waitForIdle()
+
         assertThat(backStack).containsExactly(HomeKey, ListKey).inOrder()
+        composeRule.onNodeWithTag(DetailScreenTestTag).assertIsNotDisplayed()
+        composeRule.onNodeWithTag(ListScreenTestTag).assertIsDisplayed()
     }
 
     @Test
@@ -328,64 +342,14 @@ class ListDetailSceneStrategyTest {
             backPressedDispatcher =
                 LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
         }
+        composeRule.onNodeWithTag(DetailScreenTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(ListScreenTestTag).assertIsDisplayed()
+
         composeRule.runOnIdle { backPressedDispatcher.onBackPressed() }
 
+        composeRule.onNodeWithTag(DetailScreenTestTag).assertIsNotDisplayed()
+        composeRule.onNodeWithTag(ListScreenTestTag).assertIsNotDisplayed()
         assertThat(backStack).containsExactly(HomeKey).inOrder()
-    }
-
-    @Composable
-    fun NavScreen(
-        backStack: List<TestKey>,
-        backNavigationBehavior: BackNavigationBehavior =
-            BackNavigationBehavior.PopUntilScaffoldValueChange,
-        directive: PaneScaffoldDirective =
-            calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()),
-    ) {
-        val listDetailSceneStrategy =
-            rememberListDetailSceneStrategy<TestKey>(
-                backNavigationBehavior = backNavigationBehavior,
-                directive = directive,
-            )
-        NavDisplay(
-            backStack = backStack,
-            modifier = Modifier.fillMaxSize(),
-            sceneStrategy = listDetailSceneStrategy,
-            entryProvider =
-                entryProvider {
-                    entry<HomeKey> {
-                        Box(Modifier.testTag(HomeScreenTestTag).size(100.dp).background(Color.Red))
-                    }
-
-                    entry<ListKey>(
-                        metadata =
-                            ListDetailSceneStrategy.listPane(ListKey) {
-                                Box(
-                                    Modifier.testTag(DetailPlaceholderScreenTestTag)
-                                        .size(100.dp)
-                                        .background(Color.Cyan)
-                                )
-                            }
-                    ) {
-                        Box(
-                            Modifier.testTag(ListScreenTestTag).size(100.dp).background(Color.Green)
-                        )
-                    }
-
-                    entry<DetailKey>(metadata = ListDetailSceneStrategy.detailPane(ListKey)) {
-                        Box(
-                            Modifier.testTag(DetailScreenTestTag)
-                                .size(100.dp)
-                                .background(Color.Blue)
-                        )
-                    }
-
-                    entry<ExtraKey>(metadata = ListDetailSceneStrategy.extraPane(ListKey)) {
-                        Box(
-                            Modifier.testTag(ExtraScreenTestTag).size(100.dp).background(Color.Gray)
-                        )
-                    }
-                },
-        )
     }
 }
 
@@ -396,9 +360,3 @@ private val detailEntry: NavEntry<TestKey> =
     NavEntry(DetailKey("1"), metadata = ListDetailSceneStrategy.detailPane()) {}
 
 private val nonListDetailEntry: NavEntry<TestKey> = NavEntry(HomeKey) {}
-
-private val MockDualPaneScaffoldDirective =
-    PaneScaffoldDirective.Default.copy(
-        maxHorizontalPartitions = 2,
-        horizontalPartitionSpacerSize = 16.dp,
-    )

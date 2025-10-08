@@ -80,6 +80,7 @@ import androidx.pdf.view.fastscroll.FastScrollDrawer
 import androidx.pdf.view.fastscroll.FastScrollGestureDetector
 import androidx.pdf.view.fastscroll.FastScroller
 import androidx.pdf.view.fastscroll.getDimensions
+import androidx.pdf.view.layout.PageMetadataLoader
 import com.google.android.material.snackbar.Snackbar
 import java.util.LinkedList
 import java.util.Queue

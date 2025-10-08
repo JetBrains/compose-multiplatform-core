@@ -29,7 +29,6 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.core.os.OutcomeReceiverCompat;
 
@@ -334,7 +333,7 @@ public interface Profile {
      * @param headerName A
      *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
      * @return {@code true} if there is a value mapped for the provided {@code
-     *                   headerName}, {code false} otherwise.
+     * headerName}, {code false} otherwise.
      * @see #setOriginMatchedHeader(String, String, Set)
      */
     @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
@@ -393,8 +392,9 @@ public interface Profile {
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    default void addCustomHeader(@NonNull CustomHeader header) {}
+    default void addCustomHeader(@NonNull CustomHeader header) {
+        // default to avoid breaking backwards compatibility.
+    }
 
     /**
      * Returns true if the profile has a value set for the given header name.
@@ -408,8 +408,8 @@ public interface Profile {
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default boolean hasCustomHeader(@NonNull String headerName) {
+        // default to avoid breaking backwards compatibility.
         return false;
     }
 
@@ -422,8 +422,8 @@ public interface Profile {
     @NonNull
     @UiThread
     @RequiresApi(api = Build.VERSION_CODES.N)
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default Set<CustomHeader> getCustomHeaders() {
+        // default to avoid breaking backwards compatibility.
         return Collections.emptySet();
     }
 
@@ -438,8 +438,8 @@ public interface Profile {
     @NonNull
     @UiThread
     @RequiresApi(api = Build.VERSION_CODES.N)
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default Set<CustomHeader> getCustomHeaders(@NonNull String name) {
+        // default to avoid breaking backwards compatibility.
         return Collections.emptySet();
     }
 
@@ -456,8 +456,8 @@ public interface Profile {
     @NonNull
     @UiThread
     @RequiresApi(api = Build.VERSION_CODES.N)
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default Set<CustomHeader> getCustomHeaders(@NonNull String name, @NonNull String value) {
+        // default to avoid breaking backwards compatibility.
         return Collections.emptySet();
     }
 
@@ -475,8 +475,8 @@ public interface Profile {
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default void clearCustomHeader(@NonNull String headerName) {
+        // default to avoid breaking backwards compatibility.
     }
 
     /**
@@ -494,8 +494,8 @@ public interface Profile {
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default void clearCustomHeader(@NonNull String headerName, @NonNull String headerValue) {
+        // default to avoid breaking backwards compatibility.
     }
 
     /**
@@ -507,8 +507,8 @@ public interface Profile {
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default void clearAllCustomHeaders() {
+        // default to avoid breaking backwards compatibility.
     }
 
     /**

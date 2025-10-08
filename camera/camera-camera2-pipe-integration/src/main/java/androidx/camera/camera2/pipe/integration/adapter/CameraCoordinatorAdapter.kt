@@ -133,7 +133,7 @@ public class CameraCoordinatorAdapter(
                 .map { concurrentCameraIds ->
                     concurrentCameraIds
                         .map { cameraId ->
-                            CameraSelector.of(CameraIdentifier.create(cameraId.value))
+                            CameraSelector.of(CameraIdentifier.Factory.create(cameraId.value))
                         }
                         .toList()
                 }

@@ -17,6 +17,8 @@
 package androidx.room3.support
 
 import android.content.Context
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
 import androidx.room3.Dao
@@ -31,6 +33,7 @@ import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
@@ -108,6 +111,30 @@ class AutoClosingDatabaseTest {
         db.close()
     }
 
+    /**
+     * Validate that re-opening the database after auto-closed through a suspend DAO function will
+     * not cause a IO on the main thread.
+     */
+    @Test
+    fun suspendQueryMainThreadAutoClosed() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val currentPolicy = StrictMode.getThreadPolicy()
+            StrictMode.setThreadPolicy(
+                ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().penaltyDeath().build()
+            )
+            try {
+                runBlocking {
+                    db.getUserDao().getAllSuspend()
+                    delay(20) // let db auto-close
+                    db.getUserDao().getAllSuspend()
+                }
+            } finally {
+                StrictMode.setThreadPolicy(currentPolicy)
+            }
+        }
+        db.close()
+    }
+
     @Test
     fun twoThreadsConcurrentlyStressTest() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -177,7 +204,11 @@ class AutoClosingDatabaseTest {
     interface TestUserDao {
         @Insert fun insert(user: TestUser)
 
+        @Insert suspend fun insertSuspend(user: TestUser)
+
         @Query("SELECT * FROM user") fun getAll(): List<TestUser>
+
+        @Query("SELECT * FROM user") suspend fun getAllSuspend(): List<TestUser>
 
         @Query("SELECT * FROM user WHERE id = :id") fun get(id: Long): TestUser
 

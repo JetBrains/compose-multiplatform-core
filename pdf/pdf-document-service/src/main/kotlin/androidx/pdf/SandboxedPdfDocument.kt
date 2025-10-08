@@ -451,7 +451,7 @@ public class SandboxedPdfDocument(
         return annotationsManager.getAnnotationsForPage(pageNum)
     }
 
-    override fun commitEdits(): EditsResult {
+    override suspend fun commitEdits(): EditsResult {
         // TODO: b/437827008 - Implementation of managing PdfEdits in EditablePdfDocument
         return EditsResult(listOf(), listOf())
     }

@@ -27,6 +27,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +43,7 @@ class PaddingModifierTest {
     val creationState =
         RemoteComposeCreationState(AndroidxPlatformServices(), density = 1f, Size(1f, 1f))
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     /** Tests that negative start padding is not allowed. */
     @Test(expected = IllegalArgumentException::class)

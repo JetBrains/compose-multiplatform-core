@@ -66,7 +66,6 @@ class AccessibilityTestActivity : AppCompatActivity() {
         super.onDestroy()
         mGltfManager.ClearListeners()
         mSurfaceEntityManager.ClearListeners()
-        session!!.scene.clearSpatialVisibilityChangedListener()
     }
 
     private fun setupMainPanel() {

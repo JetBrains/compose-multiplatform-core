@@ -216,7 +216,7 @@ object XConverters {
     fun XExecutableParameterElement.toKS(): KSValueParameter =
         (this as KspExecutableParameterElement).declaration as KSValueParameter
 
-    @JvmStatic fun XAnnotation.toKS(): KSAnnotation = (this as KspAnnotation).ksAnnotated
+    @JvmStatic fun XAnnotation.toKS(): KSAnnotation = (this as KspAnnotation).ksAnnotation
 
     @JvmStatic
     fun XAnnotationValue.toKS(): KSValueArgument = (this as KspAnnotationValue).valueArgument
@@ -241,13 +241,11 @@ object XConverters {
 
     @JvmStatic
     fun KSAnnotation.toXProcessing(env: XProcessingEnv): XAnnotation =
-        KspAnnotation(env as KspProcessingEnv, this)
+        (env as KspProcessingEnv).wrapAnnotation(this)
 
     @JvmStatic
-    fun KSValueArgument.toXProcessing(env: XProcessingEnv): XAnnotationValue {
-        val kspAnnotation = (this.parent as KSAnnotation).toXProcessing(env) as KspAnnotation
-        return KspAnnotationValue(env as KspProcessingEnv, kspAnnotation, kspAnnotation.type, this)
-    }
+    fun KSValueArgument.toXProcessing(env: XProcessingEnv): XAnnotationValue =
+        (env as KspProcessingEnv).wrapAnnotationValue(this)
 
     @JvmStatic
     fun KSType.toXProcessing(env: XProcessingEnv): XType =

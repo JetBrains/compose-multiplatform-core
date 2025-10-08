@@ -24,6 +24,7 @@ import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.RawQuery
 import androidx.room3.Relation
+import androidx.room3.RoomRawQuery
 import androidx.room3.RoomWarnings
 import androidx.room3.Transaction
 import androidx.room3.TypeConverters
@@ -41,7 +42,6 @@ import androidx.room3.integration.kotlintestapp.vo.MiniBook
 import androidx.room3.integration.kotlintestapp.vo.Publisher
 import androidx.room3.integration.kotlintestapp.vo.PublisherWithBookSales
 import androidx.room3.integration.kotlintestapp.vo.PublisherWithBooks
-import androidx.sqlite.db.SupportSQLiteQuery
 import com.google.common.base.Optional
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableListMultimap
@@ -53,7 +53,6 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import java.util.Date
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.runBlocking
 
 @Dao
 @TypeConverters(DateConverter::class, AnswerConverter::class)
@@ -204,7 +203,7 @@ interface BooksDao {
     @Query("SELECT * FROM book WHERE salesCnt > :count")
     suspend fun getBooksWithMinSalesCountSuspend(count: Int): List<Book>
 
-    @RawQuery suspend fun getBookWithRawQuerySuspend(query: SupportSQLiteQuery): Book
+    @RawQuery suspend fun getBookWithRawQuerySuspend(query: RoomRawQuery): Book
 
     @Insert suspend fun insertBookSuspend(book: Book)
 
@@ -418,12 +417,6 @@ interface BooksDao {
     suspend fun concreteVoidSuspendFunction() {}
 
     suspend fun concreteSuspendFunctionWithParams(num: Int, text: String) = "$num - $text"
-
-    @Transaction
-    fun functionWithSuspendFunctionalParam(
-        input: Book,
-        action: suspend (input: Book) -> Book,
-    ): Book = runBlocking { action(input) }
 
     @Transaction
     suspend fun suspendFunctionWithSuspendFunctionalParam(

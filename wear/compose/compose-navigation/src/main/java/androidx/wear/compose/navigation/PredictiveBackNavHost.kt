@@ -148,19 +148,15 @@ internal fun PredictiveBackNavHost(
     var progress by remember { mutableFloatStateOf(0f) }
     var inPredictiveBack by remember { mutableStateOf(false) }
     val transitionState = remember { SeekableTransitionState(current) }
-    var blockInput by remember { mutableStateOf(false) }
-
-    PredictiveBackHandler(userSwipeEnabled && !blockInput && backStack.size > 1) { backEvent ->
+    PredictiveBackHandler(userSwipeEnabled && backStack.size > 1) { backEvent ->
         inPredictiveBack = true
         progress = 0f
         try {
             backEvent.collect { progress = it.progress }
-            // Block user input during the final animation
-            blockInput = true
             Animatable(progress).animateTo(1f, TRANSITION_ANIMATION_SPEC) { progress = value }
+            inPredictiveBack = false
             navigateBack()
-        } catch (e: CancellationException) {} finally {
-            blockInput = false
+        } catch (e: CancellationException) {
             inPredictiveBack = false
         }
     }

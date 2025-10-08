@@ -42,6 +42,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
@@ -83,15 +84,16 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     private val useCases = mutableListOf<UseCase>()
 
     private val _toastMessages = MutableSharedFlow<String>()
+    private var activeRecording: Recording? = null
     val toastMessages = _toastMessages.asSharedFlow()
 
     private val _isRearCamera = MutableStateFlow(true)
     val isRearCamera: StateFlow<Boolean>
         get() = _isRearCamera
 
-    private val _isVideoMode = MutableStateFlow(true)
-    val isVideoMode: StateFlow<Boolean>
-        get() = _isVideoMode
+    private val _isVideoOnlyMode = MutableStateFlow(true)
+    val isVideoOnlyMode: StateFlow<Boolean>
+        get() = _isVideoOnlyMode
 
     private val _featureUiList = MutableStateFlow(listOf<FeatureUi>())
     val featureUiList: StateFlow<List<FeatureUi>>
@@ -172,7 +174,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     private suspend fun bindCamera(lifecycleOwner: LifecycleOwner) {
         Log.d(
             TAG,
-            "bindCamera: isVideoMode.value = ${isVideoMode.value}" +
+            "bindCamera: isVideoOnlyMode.value = ${isVideoOnlyMode.value}" +
                 ", featureCombo = $featureCombo, appFeatures = $appFeatures",
         )
 
@@ -224,8 +226,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         }
 
         val previewSize = preview.resolutionInfo?.resolution
-        if (isVideoMode.value) {
-            val videoCaptureSize = videoCapture.resolutionInfo?.resolution
+        val videoCaptureSize = videoCapture.resolutionInfo?.resolution
+        if (isVideoOnlyMode.value) {
             _useCaseDetails.value =
                 "Preview (${previewSize?.width} x ${previewSize?.height})" +
                     "\nVideoCapture (${videoCaptureSize?.width} x ${videoCaptureSize?.height})"
@@ -233,6 +235,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
             val imageCaptureSize = imageCapture.resolutionInfo?.resolution
             _useCaseDetails.value =
                 "Preview (${previewSize?.width} x ${previewSize?.height})" +
+                    "\nVideoCapture (${videoCaptureSize?.width} x ${videoCaptureSize?.height})" +
                     "\nImageCapture (${imageCaptureSize?.width} x ${imageCaptureSize?.height})"
         }
     }
@@ -266,7 +269,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
 
     fun toggleVideoMode(lifecycleOwner: LifecycleOwner) {
         viewModelScope.launch {
-            _isVideoMode.value = !_isVideoMode.value
+            _isVideoOnlyMode.value = !_isVideoOnlyMode.value
             reconfigureUseCasesAndFeatureCombo(lifecycleOwner)
         }
     }
@@ -307,15 +310,16 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     private fun updateAppFeatures(appFeatures: AppFeatures) {
         Log.d(TAG, "updateAppFeatures: appFeatures = $appFeatures")
         this.appFeatures = appFeatures
-        _featureUiList.value = appFeatures.toFeatureUiList(isVideoMode.value)
+        _featureUiList.value = appFeatures.toFeatureUiList(isVideoOnlyMode.value)
     }
 
     fun capture(context: Context) {
-        if (isVideoMode.value) {
-            recordVideo(context)
-        } else {
-            capturePhoto(context)
-        }
+        require(!isVideoOnlyMode.value) { "Capture is not supported in video-only mode!" }
+        capturePhoto(context)
+    }
+
+    fun record(context: Context) {
+        recordVideo(context)
     }
 
     private fun capturePhoto(context: Context) {
@@ -363,33 +367,36 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                     .setDurationLimitMillis(2_050)
                     .build()
 
-            videoCapture.output.prepareRecording(context, mediaStoreOutput).start { event ->
-                when (event) {
-                    is VideoRecordEvent.Start -> {
-                        showToast("Recording started")
-                    }
-                    is VideoRecordEvent.Finalize -> {
-                        if (event.hasError() && event.error != ERROR_DURATION_LIMIT_REACHED) {
-                            showToast("Recording error: ${event.error}")
-                        } else {
-                            showToast("Recording saved to: ${event.outputResults.outputUri}")
+            activeRecording =
+                videoCapture.output.prepareRecording(context, mediaStoreOutput).start { event ->
+                    when (event) {
+                        is VideoRecordEvent.Start -> {
+                            showToast("Recording started")
+                        }
+                        is VideoRecordEvent.Finalize -> {
+                            if (event.hasError() && event.error != ERROR_DURATION_LIMIT_REACHED) {
+                                showToast("Recording error: ${event.error}")
+                            } else {
+                                showToast("Recording saved to: ${event.outputResults.outputUri}")
+                            }
+                            activeRecording = null
                         }
                     }
                 }
-            }
         }
     }
 
     private suspend fun reconfigureUseCasesAndFeatureCombo(lifecycleOwner: LifecycleOwner) {
         useCases.clear()
         useCases.add(preview)
-        if (isVideoMode.value) {
+        if (isVideoOnlyMode.value) {
             useCases.add(videoCapture)
         } else {
+            useCases.add(videoCapture)
             useCases.add(imageCapture)
         }
 
-        if (isVideoMode.value) {
+        if (isVideoOnlyMode.value) {
             featureCombo =
                 FeatureCombo(
                     preferredFeatures =
@@ -424,7 +431,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         viewModelScope.launch {
             val (appFeatures, duration) =
                 measureTimedValue {
-                    if (isVideoMode.value) {
+                    if (isVideoOnlyMode.value) {
                         getVideoModeUnsupportedFeatures()
                     } else {
                         getImageModeUnsupportedFeatures()
@@ -522,7 +529,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     private fun AppFeatures.toCameraXFeatures(): Set<GroupableFeature> {
         val features = mutableSetOf<GroupableFeature>()
 
-        if (!isVideoMode.value) {
+        if (!isVideoOnlyMode.value) {
             if (imageFormat == ImageFormat.JPEG_R) {
                 features.add(GroupableFeature.IMAGE_ULTRA_HDR)
             }

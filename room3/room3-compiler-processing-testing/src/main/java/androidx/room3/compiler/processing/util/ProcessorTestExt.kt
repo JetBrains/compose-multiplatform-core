@@ -434,6 +434,7 @@ fun runKspTest(
  */
 fun compileFiles(
     sources: List<Source>,
+    classpath: List<File> = emptyList(),
     options: Map<String, String> = emptyMap(),
     annotationProcessors: List<Processor> = emptyList(),
     symbolProcessorProviders: List<SymbolProcessorProvider> = emptyList(),
@@ -448,6 +449,7 @@ fun compileFiles(
             arguments =
                 TestCompilationArguments(
                     sources = sources,
+                    classpath = classpath,
                     kaptProcessors = annotationProcessors,
                     symbolProcessorProviders = symbolProcessorProviders,
                     processorOptions = options,
@@ -489,6 +491,7 @@ fun compileFiles(
 fun compileFilesIntoJar(
     outputDirectory: File,
     sources: List<Source>,
+    classpath: List<File> = emptyList(),
     options: Map<String, String> = emptyMap(),
     javacArguments: List<String> = emptyList(),
     kotlincArguments: List<String> = emptyList(),
@@ -499,6 +502,7 @@ fun compileFilesIntoJar(
         compileFiles(
             sources = sources,
             options = options,
+            classpath = classpath,
             annotationProcessors = annotationProcessors,
             symbolProcessorProviders = symbolProcessorProviders,
             javacArguments = javacArguments,

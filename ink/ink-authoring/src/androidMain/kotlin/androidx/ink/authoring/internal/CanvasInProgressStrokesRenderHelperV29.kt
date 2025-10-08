@@ -43,11 +43,11 @@ import androidx.graphics.lowlatency.CanvasFrontBufferedRenderer
 import androidx.graphics.surface.SurfaceControlCompat
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
+import androidx.ink.authoring.InkInProgressShape
+import androidx.ink.authoring.InkInProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.geometry.MutableBox
-import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
-import androidx.ink.strokes.InProgressStroke
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -68,7 +68,7 @@ import kotlin.math.floor
 internal class CanvasInProgressStrokesRenderHelperV29(
     private val mainView: ViewGroup,
     private val callback: InProgressStrokesRenderHelper.Callback,
-    private val renderer: CanvasStrokeRenderer,
+    private val renderer: InkInProgressShapeRenderer,
     private val canvasFrontBufferedRendererWrapper: CanvasFrontBufferedRendererWrapper =
         CanvasFrontBufferedRendererWrapperImpl(),
     frontBufferToHwuiHandoffFactory: (SurfaceView) -> FrontBufferToHwuiHandoff = { surfaceView ->
@@ -286,21 +286,15 @@ internal class CanvasInProgressStrokesRenderHelperV29(
 
     @WorkerThread
     override fun drawInModifiedRegion(
-        inProgressStroke: InProgressStroke,
+        inProgressShape: InkInProgressShape,
         strokeToMainViewTransform: Matrix,
-        textureAnimationProgress: Float,
     ) {
         assertOnRenderThread()
         check(onDrawState.duringDraw) { "Can only render during Callback.onDraw." }
 
         val canvas = checkNotNull(onDrawState.offScreenCanvas)
         canvas.withMatrix(strokeToMainViewTransform) {
-            renderer.draw(
-                canvas,
-                inProgressStroke,
-                strokeToMainViewTransform,
-                textureAnimationProgress,
-            )
+            renderer.draw(canvas, inProgressShape, strokeToMainViewTransform)
         }
     }
 

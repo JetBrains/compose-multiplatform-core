@@ -46,11 +46,11 @@ import androidx.graphics.surface.SurfaceControlCompat
 import androidx.hardware.SyncFenceCompat
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
+import androidx.ink.authoring.InkInProgressShape
+import androidx.ink.authoring.InkInProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.geometry.MutableBox
-import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
-import androidx.ink.strokes.InProgressStroke
 import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
@@ -79,7 +79,7 @@ import kotlin.math.floor
 internal class CanvasInProgressStrokesRenderHelperV33(
     private val mainView: ViewGroup,
     private val callback: InProgressStrokesRenderHelper.Callback,
-    private val renderer: CanvasStrokeRenderer,
+    private val renderer: InkInProgressShapeRenderer,
     private val uiThreadExecutor: ScheduledExecutor =
         Looper.getMainLooper().let { looper ->
             ScheduledExecutorImpl(looper.thread, Handler(looper))
@@ -220,15 +220,10 @@ internal class CanvasInProgressStrokesRenderHelperV33(
 
     @WorkerThread
     override fun drawInModifiedRegion(
-        inProgressStroke: InProgressStroke,
+        inProgressShape: InkInProgressShape,
         strokeToMainViewTransform: Matrix,
-        textureAnimationProgress: Float,
     ) {
-        currentViewport?.drawInModifiedRegion(
-            inProgressStroke,
-            strokeToMainViewTransform,
-            textureAnimationProgress,
-        )
+        currentViewport?.drawInModifiedRegion(inProgressShape, strokeToMainViewTransform)
     }
 
     @WorkerThread
@@ -676,18 +671,12 @@ internal class CanvasInProgressStrokesRenderHelperV33(
 
         @WorkerThread
         fun drawInModifiedRegion(
-            inProgressStroke: InProgressStroke,
+            inProgressShape: InkInProgressShape,
             strokeToMainViewTransform: Matrix,
-            textureAnimationProgress: Float,
         ) {
             val canvas = checkNotNull(renderThreadState.offScreenCanvas)
             canvas.withMatrix(strokeToMainViewTransform) {
-                renderer.draw(
-                    canvas,
-                    inProgressStroke,
-                    strokeToMainViewTransform,
-                    textureAnimationProgress,
-                )
+                renderer.draw(canvas, inProgressShape, strokeToMainViewTransform)
             }
         }
 

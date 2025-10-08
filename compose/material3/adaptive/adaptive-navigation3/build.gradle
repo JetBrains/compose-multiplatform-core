@@ -34,6 +34,7 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 36
         namespace = "androidx.compose.material3.adaptive.navigation3"
+        androidResources.enable = true
     }
     jvmStubs()
     linuxX64Stubs()
@@ -91,8 +92,8 @@ androidXMultiplatform {
 
 androidx {
     name = "Material Adaptive"
-    mavenVersion = LibraryVersions.COMPOSE_MATERIAL3_ADAPTIVE_NAV3
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2025"
     description = "Compose Material Design Adaptive Library"
+    addGoldenImageAssets()
 }

@@ -61,6 +61,9 @@ dependencies {
 android {
     namespace = "androidx.privacysandbox.ui.client.compose"
     compileSdk = 35
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }
 
 androidx {

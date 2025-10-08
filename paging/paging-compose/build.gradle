@@ -45,6 +45,7 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 35
         namespace = "androidx.paging.compose"
+        lint.disable += "ComposeTestRuleDispatcher"
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)

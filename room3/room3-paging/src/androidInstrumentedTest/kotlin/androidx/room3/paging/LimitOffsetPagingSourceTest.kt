@@ -85,6 +85,18 @@ class LimitOffsetPagingSourceTest {
         assertThat(countingTaskExecutorRule.isIdle).isTrue()
     }
 
+    @Test
+    fun daoReturnsNewInstance() {
+        val pagingSource = dao.getItemsPagingSource()
+        pagingSource.invalidate()
+        assertThat(pagingSource.invalid).isTrue()
+
+        val newPagingSource = dao.getItemsPagingSource()
+        assertThat(newPagingSource.invalid).isFalse()
+
+        assertThat(dao.getItemsPagingSource()).isNotSameInstanceAs(pagingSource)
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun load_usesQueryExecutor() = runTest {

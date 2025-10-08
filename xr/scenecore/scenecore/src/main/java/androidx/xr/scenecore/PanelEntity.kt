@@ -105,14 +105,14 @@ internal constructor(
      *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
      *       the calculation is invalid or unavailable.
      *
-     * @throws [IllegalStateException] if [Session.config.headTracking] is set to
-     *   [Config.HeadTrackingMode.DISABLED].
+     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     *   [Config.DeviceTrackingMode.LAST_KNOWN].
      * @see PerceivedResolutionResult
      */
     public fun getPerceivedResolution(): PerceivedResolutionResult {
         checkNotDisposed()
-        check(lifecycleManager.config.headTracking != Config.HeadTrackingMode.DISABLED) {
-            "Config.HeadTrackingMode is set to Disabled."
+        check(lifecycleManager.config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN) {
+            "Config.DeviceTrackingMode is not set to LastKnown."
         }
         return rtEntity!!.getPerceivedResolution().toPerceivedResolutionResult()
     }

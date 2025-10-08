@@ -80,7 +80,7 @@ class VideoInputManager() {
                         val downDistPos = state.downOrigin + state.downDirection
                         val dragStartLenSqr = dragStartLen * dragStartLen
                         if (
-                            (currDistPos - downDistPos).lengthSquared > dragStartLenSqr &&
+                            (currDistPos - downDistPos).lengthSquared > dragStartLenSqr ||
                                 (inputEvent.origin - state.downOrigin).lengthSquared >
                                     dragStartLenSqr
                         ) {

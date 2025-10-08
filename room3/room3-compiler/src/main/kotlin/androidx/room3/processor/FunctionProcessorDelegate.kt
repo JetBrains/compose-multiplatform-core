@@ -164,6 +164,7 @@ class DefaultFunctionProcessorDelegate(
                 TransactionFunctionAdapter(
                     functionName = executableElement.name,
                     jvmMethodName = executableElement.jvmName,
+                    typeParamNames = executableElement.typeParameters.map { it.name },
                     callType = callType,
                 ),
         )
@@ -236,6 +237,7 @@ class SuspendFunctionProcessorDelegate(
                 TransactionFunctionAdapter(
                     functionName = executableElement.name,
                     jvmMethodName = executableElement.jvmName,
+                    typeParamNames = executableElement.typeParameters.map { it.name },
                     callType = callType,
                 ),
             continuationParamName = continuationParam.name,

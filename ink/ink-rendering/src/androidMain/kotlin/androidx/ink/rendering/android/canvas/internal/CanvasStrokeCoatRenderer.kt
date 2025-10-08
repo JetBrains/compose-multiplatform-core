@@ -18,6 +18,7 @@ package androidx.ink.rendering.android.canvas.internal
 
 import android.graphics.Canvas
 import android.graphics.Matrix
+import androidx.annotation.FloatRange
 import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
@@ -43,7 +44,7 @@ internal interface CanvasStrokeCoatRenderer {
         coatIndex: Int,
         paintPreferenceIndex: Int,
         strokeToScreenTransform: Matrix,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 
     /**
@@ -63,7 +64,7 @@ internal interface CanvasStrokeCoatRenderer {
         coatIndex: Int,
         paintPreferenceIndex: Int,
         strokeToScreenTransform: Matrix,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 }
 

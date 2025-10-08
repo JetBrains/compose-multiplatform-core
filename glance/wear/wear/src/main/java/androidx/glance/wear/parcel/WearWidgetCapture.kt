@@ -20,10 +20,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.os.Bundle
 import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.Operations
 import androidx.compose.remote.core.Platform
+import androidx.compose.remote.core.Profiles
 import androidx.compose.remote.creation.RemoteComposeWriter
-import androidx.compose.remote.creation.compose.capture.HostDisplayInfo
+import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.PendingIntentAwareWriter
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -44,13 +44,13 @@ internal object WearWidgetCapture {
     @SuppressLint("RestrictedApiAndroidX")
     internal suspend fun capture(
         context: Context,
-        hostDisplayInfo: HostDisplayInfo,
+        creationDisplayInfo: CreationDisplayInfo,
         content: @Composable @RemoteComposable () -> Unit,
     ): WearWidgetRawContent = suspendCancellableCoroutine { continuation ->
         val pendingIntents = WidgetPendingIntents()
         RemoteComposeCapture(
             context = context,
-            hostDisplayInfo = hostDisplayInfo,
+            creationDisplayInfo = creationDisplayInfo,
             immediateCapture = true,
             onPaint = { view, writer ->
                 if (continuation.isActive) {
@@ -112,7 +112,7 @@ internal class WidgetPendingIntents {
 internal class WearWidgetProfile(widgetPendingIntents: WidgetPendingIntents) :
     Profile(
         CoreDocument.DOCUMENT_API_LEVEL,
-        Operations.PROFILE_WEAR_WIDGETS,
+        Profiles.PROFILE_WEAR_WIDGETS,
         AndroidxPlatformServices(),
         { width, height, contentDescription, profile ->
             WearWidgetRemoteComposeWriter(

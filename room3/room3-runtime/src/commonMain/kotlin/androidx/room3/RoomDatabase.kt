@@ -513,10 +513,9 @@ public suspend fun <R> RoomDatabase.useWriterConnection(block: suspend (Transact
  * ```
  */
 @ExperimentalRoomApi
-public suspend fun <R> RoomDatabase.withReadTransaction(block: suspend (PooledConnection) -> R): R =
-    useReaderConnection {
-        it.withTransaction(Transactor.SQLiteTransactionType.DEFERRED, block)
-    }
+public suspend fun <R> RoomDatabase.withReadTransaction(
+    block: suspend TransactionScope<R>.() -> R
+): R = useReaderConnection { it.withTransaction(Transactor.SQLiteTransactionType.DEFERRED, block) }
 
 /**
  * Acquire a WRITE connection and start a [Transactor.SQLiteTransactionType.IMMEDIATE] transaction
@@ -529,7 +528,7 @@ public suspend fun <R> RoomDatabase.withReadTransaction(block: suspend (PooledCo
  */
 @ExperimentalRoomApi
 public suspend fun <R> RoomDatabase.withWriteTransaction(
-    block: suspend (PooledConnection) -> R
+    block: suspend TransactionScope<R>.() -> R
 ): R = useWriterConnection { it.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE, block) }
 
 /**

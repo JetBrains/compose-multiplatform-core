@@ -639,6 +639,27 @@ package androidx.xr.arcore {
     property public androidx.xr.runtime.math.Pose pose;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Tilt {
+    method @InaccessibleFromKotlin public static androidx.xr.arcore.Tilt getDOWN();
+    method @InaccessibleFromKotlin public static androidx.xr.arcore.Tilt getUNKNOWN();
+    method @InaccessibleFromKotlin public static androidx.xr.arcore.Tilt getUP();
+    field public static final androidx.xr.arcore.Tilt.Companion Companion;
+  }
+
+  public static final class Tilt.Companion {
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Tilt getDOWN();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Tilt getUNKNOWN();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.Tilt getUP();
+    property public static androidx.xr.arcore.Tilt DOWN;
+    property public static androidx.xr.arcore.Tilt UNKNOWN;
+    property public static androidx.xr.arcore.Tilt UP;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class TiltGesture {
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public kotlinx.coroutines.flow.Flow<androidx.xr.arcore.Tilt> detect(androidx.xr.runtime.Session session);
+    field public static final androidx.xr.arcore.TiltGesture INSTANCE;
+  }
+
   public interface Trackable<State> {
     method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Trackable.State> getState();

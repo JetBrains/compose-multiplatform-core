@@ -149,6 +149,8 @@ RemovedFromKotlin: androidx.window.layout.FoldingFeature#getState():
     Source breaking change: method androidx.window.layout.FoldingFeature.getState() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.window.layout.FoldingFeature#isSeparating():
     Source breaking change: method androidx.window.layout.FoldingFeature.isSeparating() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.window.layout.WindowInfoTracker#getOrCreate(android.content.Context):
+    Source breaking change: method androidx.window.layout.WindowInfoTracker.getOrCreate(android.content.Context) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.window.layout.WindowInfoTracker#getSupportedPostures():
     Source breaking change: method androidx.window.layout.WindowInfoTracker.getSupportedPostures() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.window.layout.WindowLayoutInfo#getDisplayFeatures():

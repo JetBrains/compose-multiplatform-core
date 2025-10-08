@@ -17,6 +17,7 @@
 package androidx.room3.integration.multiplatformtestapp.test
 
 import androidx.room3.Room
+import androidx.room3.integration.multiplatformtestapp.test.util.UseDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.platform.app.InstrumentationRegistry
@@ -26,7 +27,7 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 
 @RunWith(Parameterized::class)
-class QueryTest(private val driver: Driver) : BaseQueryTest() {
+class QueryTest(private val driver: UseDriver) : BaseQueryTest() {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
 
@@ -34,8 +35,8 @@ class QueryTest(private val driver: Driver) : BaseQueryTest() {
         return Room.inMemoryDatabaseBuilder<SampleDatabase>(context = instrumentation.targetContext)
             .setDriver(
                 when (driver) {
-                    Driver.BUNDLED -> BundledSQLiteDriver()
-                    Driver.ANDROID -> AndroidSQLiteDriver()
+                    UseDriver.BUNDLED -> BundledSQLiteDriver()
+                    UseDriver.ANDROID -> AndroidSQLiteDriver()
                 }
             )
             .setQueryCoroutineContext(Dispatchers.IO)
@@ -43,11 +44,6 @@ class QueryTest(private val driver: Driver) : BaseQueryTest() {
     }
 
     companion object {
-        @JvmStatic @Parameters(name = "driver={0}") fun drivers() = Driver.entries.toTypedArray()
-    }
-
-    enum class Driver {
-        BUNDLED,
-        ANDROID,
+        @JvmStatic @Parameters(name = "driver={0}") fun drivers() = UseDriver.entries.toTypedArray()
     }
 }

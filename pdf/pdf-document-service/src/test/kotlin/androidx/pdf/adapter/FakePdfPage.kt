@@ -17,6 +17,7 @@
 package androidx.pdf.adapter
 
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.pdf.RenderParams
 import android.graphics.pdf.component.PdfAnnotation
@@ -93,6 +94,13 @@ class FakePdfPage(private val pageNum: Int, override val height: Int, override v
     }
 
     override fun getPageObjects(): List<Pair<Int, PdfPageObject>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getTopPageObjectAtPosition(
+        point: PointF,
+        types: IntArray,
+    ): Pair<Int, PdfPageObject>? {
         TODO("Not yet implemented")
     }
 

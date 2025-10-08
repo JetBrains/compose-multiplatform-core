@@ -61,8 +61,9 @@ package androidx.ink.brush {
   public final class BrushUtil {
     method @CheckResult @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.ink.brush.Brush copyWithAndroidColor(androidx.ink.brush.Brush, android.graphics.Color color, optional androidx.ink.brush.BrushFamily family, optional float size, optional float epsilon);
     method @CheckResult @RequiresApi(android.os.Build.VERSION_CODES.O) public static android.graphics.Color createAndroidColor(androidx.ink.brush.Brush);
+    method @KotlinOnly @CheckResult @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.ink.brush.Brush createBrushWithAndroidColor(androidx.ink.brush.BrushFamily family, android.graphics.Color color, float size, float epsilon);
     method @CheckResult @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.ink.brush.Brush createWithAndroidColor(androidx.ink.brush.Brush.Companion, androidx.ink.brush.BrushFamily family, android.graphics.Color color, float size, float epsilon);
-    method @CheckResult @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.ink.brush.Brush createWithAndroidColor(androidx.ink.brush.BrushFamily family, android.graphics.Color color, float size, float epsilon);
+    method @InaccessibleFromKotlin @CheckResult @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.ink.brush.Brush createWithAndroidColor(androidx.ink.brush.BrushFamily family, android.graphics.Color color, float size, float epsilon);
     method @CheckResult @RequiresApi(android.os.Build.VERSION_CODES.O) public static androidx.ink.brush.Brush.Builder setAndroidColor(androidx.ink.brush.Brush.Builder, android.graphics.Color color);
   }
 

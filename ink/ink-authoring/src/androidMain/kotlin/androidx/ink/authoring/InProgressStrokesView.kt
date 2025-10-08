@@ -325,7 +325,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         val existingInstance = renderHelper
         if (existingInstance != null) return existingInstance
 
-        val renderer = @Suppress("DEPRECATION") rendererFactory()
+        val renderer = InkInProgressShapeRenderer(@Suppress("DEPRECATION") rendererFactory())
 
         @Suppress("ObsoleteSdkInt") // TODO(b/262911421): Should not need to suppress.
         val result =

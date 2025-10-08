@@ -46,7 +46,7 @@ dependencies {
     implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(project(":camera:camera-camera2-pipe"))
-    implementation(project(":concurrent:concurrent-futures-ktx"))
+    implementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.arch.core:core-common:2.1.0")
     implementation(libs.jspecify)
@@ -85,7 +85,7 @@ dependencies {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")
     }
-    androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
+    androidTestImplementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
     androidTestImplementation(project(":internal-testutils-truth"))
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
     androidTestImplementation(libs.guavaAndroid)

@@ -46,7 +46,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.NavDisplay
@@ -67,7 +67,7 @@ fun SceneDefaultTransitionsSample() {
     NavDisplay(
         backStack,
         onBack = { backStack.removeLastOrNull() },
-        entryDecorators = listOf(rememberSavedStateNavEntryDecorator()),
+        entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
         // NavDisplay default transitions slide vertically
         transitionSpec = { slideVertical },
         popTransitionSpec = { slideVertical },
@@ -108,7 +108,7 @@ fun SceneOverrideEntryTransitionsSample() {
     NavDisplay(
         backStack,
         onBack = { backStack.removeLastOrNull() },
-        entryDecorators = listOf(rememberSavedStateNavEntryDecorator()),
+        entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
         // the Scene overrides the NavEntry's slide vertical with slide horizontal transitions
         sceneStrategy = SceneOverrideEntryTransitionsSceneStrategy(),
         entryProvider =
