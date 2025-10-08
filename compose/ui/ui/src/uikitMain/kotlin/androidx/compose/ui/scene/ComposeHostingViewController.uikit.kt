@@ -28,13 +28,11 @@ import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
-import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
-import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
@@ -58,7 +56,6 @@ import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
@@ -315,6 +312,7 @@ internal class ComposeHostingViewController(
             onFocusBehavior = configuration.onFocusBehavior,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
+            architectureComponentsOwner = archComponentsOwner,
             coroutineContext = composeCoroutineContext,
             redrawer = metalView.redrawer,
             composeSceneFactory = { invalidate, context ->
@@ -461,6 +459,7 @@ internal class ComposeHostingViewController(
                     onAccessibilityChanged = ::onAccessibilityChanged,
                     focusedViewsList = if (focusable) focusedViewsList?.childFocusedViewsList() else null,
                     compositionContext = compositionContext,
+                    ownerProvider = archComponentsOwner,
                     coroutineContext = composeCoroutineContext,
                     interfaceOrientationState = interfaceOrientationState,
                     navigationEventDispatcher = archComponentsOwner.navigationEventDispatcher,
@@ -510,9 +509,8 @@ internal class ComposeHostingViewController(
             LocalHapticFeedback provides hapticFeedback,
             LocalUIViewController provides this,
             LocalSystemTheme provides systemThemeState.value,
-            LocalLifecycleOwner provides archComponentsOwner,
-            LocalInternalViewModelStoreOwner provides archComponentsOwner,
-            LocalInternalNavigationEventDispatcherOwner provides archComponentsOwner,
+
+            // TODO: Move to ProvidePlatformCompositionLocals
             LocalSaveableStateRegistry provides savableStateRegistry,
             content = content
         )

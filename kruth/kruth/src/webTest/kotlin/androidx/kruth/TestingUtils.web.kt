@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.navigation.compose
+package androidx.kruth
 
-import androidx.compose.ui.test.ComposeUiTest
-import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import kotlin.math.nextDown as kotlinNextDown
+import kotlin.math.nextUp as kotlinNextUp
 
-@OptIn(ExperimentalTestApi::class)
-internal fun runComposeUiTestOnUiThread(block: ComposeUiTest.() -> Unit) {
-    runComposeUiTest {
-        runOnUiThread { block() }
-    }
-}
+// On JS/WASM, these operations are available only for Double.
+
+internal actual fun Float.nextUp(): Float = toDouble().kotlinNextUp().toFloat()
+
+internal actual fun Float.nextDown(): Float = toDouble().kotlinNextDown().toFloat()

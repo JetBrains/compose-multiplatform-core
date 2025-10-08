@@ -17,7 +17,6 @@
 package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -29,6 +28,7 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
@@ -41,12 +41,6 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigationevent.NavigationEventDispatcher
-import androidx.navigationevent.NavigationEventDispatcherOwner
-import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -231,6 +225,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         @InternalTestApi
         set
 
+    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner(enforceMainThread = false)
     private val testOwner = SkikoTestOwner()
     private val testContext = TestContext(testOwner)
 
@@ -316,11 +311,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             platformContext = TestContext(),
             invalidate = { }
         )
-        testOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     private fun closeScene() {
-        testOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         scene.close()
     }
 
@@ -411,10 +406,10 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     override fun setContent(composable: @Composable () -> Unit) {
         if (isOnUiThread()) {
-            setContentUnsafe(content = composable)
+            scene.setContent(content = composable)
         } else {
             runOnUiThread {
-                setContentUnsafe(content = composable)
+                scene.setContent(content = composable)
             }
 
             // Only wait for idleness if not on the UI thread. If we are on the UI thread, the
@@ -422,10 +417,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             // executing future tasks on the main thread.
             waitForIdle()
         }
-    }
-
-    private fun setContentUnsafe(content: @Composable () -> Unit) = scene.setContent {
-        ProvideCommonCompositionLocals(content)
     }
 
     override fun onNode(
@@ -459,10 +450,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     @OptIn(InternalComposeUiApi::class)
-    internal inner class SkikoTestOwner :
-        TestOwner,
-        LifecycleOwner,
-        NavigationEventDispatcherOwner {
+    internal inner class SkikoTestOwner : TestOwner {
         override val mainClock
             get() = mainClockImpl
 
@@ -478,9 +466,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         override fun runCurrent() {
             mainClockImpl.runCurrent()
         }
-
-        override val lifecycle = LifecycleRegistry.createUnsafe(this)
-        override val navigationEventDispatcher = NavigationEventDispatcher()
 
         fun captureToImage(semanticsNode: SemanticsNode): ImageBitmap =
             this@SkikoComposeUiTest.captureToImage(semanticsNode)
@@ -524,7 +509,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     private inner class TestContext : PlatformContext by PlatformContext.Empty {
         override val windowInfo: WindowInfo = TestWindowInfo()
-
+        override val architectureComponentsOwner get() = this@SkikoComposeUiTest.architectureComponentsOwner
         override val rootForTestListener: PlatformContext.RootForTestListener
             get() = composeRootRegistry
 
@@ -536,15 +521,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             awaitCancellation()
         }
-    }
-
-    @Composable
-    private fun ProvideCommonCompositionLocals(content: @Composable () -> Unit) {
-        CompositionLocalProvider(
-            LocalLifecycleOwner provides testOwner,
-            LocalNavigationEventDispatcherOwner provides testOwner,
-            content = content,
-        )
     }
 }
 
