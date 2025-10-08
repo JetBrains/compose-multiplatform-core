@@ -23,8 +23,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.testing.TestLifecycleOwner
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.FloatingWindow
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
@@ -32,13 +30,18 @@ import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 import androidx.navigation.SupportingPane
 import androidx.navigation.navOptions
-import kotlin.test.BeforeTest
-import kotlin.test.Test
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
 
+@SmallTest
+@RunWith(AndroidJUnit4::class)
 class TestNavigatorStateTest {
     private lateinit var state: TestNavigatorState
 
-    @BeforeTest
+    @Before
     fun setUp() {
         state = TestNavigatorState()
     }
@@ -259,10 +262,7 @@ class TestNavigatorStateTest {
             null,
         )
 
-        val viewModel = ViewModelProvider.create(
-            owner = secondEntry,
-            factory = viewModelFactory { initializer { TestViewModel() } }
-        ).get(TestViewModel::class)
+        val viewModel = ViewModelProvider(secondEntry).get(TestViewModel::class.java)
 
         navigator.popBackStack(secondEntry, true)
         val restoredSecondEntry = state.restoreBackStackEntry(secondEntry)
@@ -403,7 +403,7 @@ class TestNavigatorStateTest {
     }
 
     @Navigator.Name("test")
-    internal class TestNavigator : Navigator<NavDestination>(TEST_NAVIGATOR_NAME) {
+    internal class TestNavigator : Navigator<NavDestination>() {
         override fun createDestination(): NavDestination = NavDestination(this)
     }
 
@@ -427,23 +427,23 @@ class TestNavigatorStateTest {
         }
     }
 
-    @Navigator.Name(TEST_NAVIGATOR_NAME)
-    internal class FloatingWindowTestNavigator : Navigator<FloatingTestDestination>(TEST_NAVIGATOR_NAME) {
+    @Navigator.Name("test")
+    internal class FloatingWindowTestNavigator : Navigator<FloatingTestDestination>() {
         override fun createDestination(): FloatingTestDestination = FloatingTestDestination(this)
     }
 
     internal class FloatingTestDestination(navigator: Navigator<out NavDestination>) :
         NavDestination(navigator), FloatingWindow
 
-    @Navigator.Name(TEST_NAVIGATOR_NAME)
-    internal class SupportingPaneTestNavigator : Navigator<SupportingPaneTestDestination>(TEST_NAVIGATOR_NAME) {
+    @Navigator.Name("test")
+    internal class SupportingPaneTestNavigator : Navigator<SupportingPaneTestDestination>() {
         override fun createDestination(): SupportingPaneTestDestination =
             SupportingPaneTestDestination(this)
     }
 
-    @Navigator.Name(TEST_NAVIGATOR_NAME)
+    @Navigator.Name("test")
     internal class SupportingPaneTestTransitionNavigator :
-        Navigator<SupportingPaneTestDestination>(TEST_NAVIGATOR_NAME) {
+        Navigator<SupportingPaneTestDestination>() {
 
         override fun createDestination(): SupportingPaneTestDestination =
             SupportingPaneTestDestination(this)
@@ -473,5 +473,3 @@ class TestNavigatorStateTest {
         }
     }
 }
-
-private const val TEST_NAVIGATOR_NAME = "test"
