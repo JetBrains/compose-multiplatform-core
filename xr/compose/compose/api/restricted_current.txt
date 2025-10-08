@@ -110,6 +110,9 @@ package androidx.xr.compose.spatial {
     property public androidx.xr.compose.spatial.ContentEdge.Vertical Start;
   }
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalUserSubspaceApi {
+  }
+
   public final class OrbiterDefaults {
     method @BytecodeOnly public float getElevation-D9Ej5fM();
     method @InaccessibleFromKotlin public androidx.xr.compose.subspace.layout.SpatialShape getShape();
@@ -200,6 +203,8 @@ package androidx.xr.compose.spatial {
     method @BytecodeOnly @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void GravityAlignedSubspace(androidx.xr.compose.subspace.layout.SubspaceModifier?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) public static void Subspace(kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi public static void UserSubspace(optional androidx.xr.compose.subspace.layout.SubspaceModifier modifier, optional androidx.xr.compose.subspace.BodyPart lockTo, optional androidx.xr.compose.subspace.LockDimensions lockDimensions, optional androidx.xr.compose.subspace.LockingBehavior behavior, optional boolean allowUnboundedSubspace, kotlin.jvm.functions.Function1<androidx.xr.compose.subspace.SpatialBoxScope,kotlin.Unit> content);
+    method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableOpenTarget(index=0xffffffff) @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi public static void UserSubspace-cW0BTCk(androidx.xr.compose.subspace.layout.SubspaceModifier?, int, androidx.xr.compose.subspace.LockDimensions?, androidx.xr.compose.subspace.LockingBehavior?, boolean, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.SpatialBoxScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
 }
@@ -217,10 +222,56 @@ package androidx.xr.compose.subspace {
     property public boolean isEnabled;
   }
 
+  @SuppressCompatibility @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi @kotlin.jvm.JvmInline public final value class BodyPart {
+    method @BytecodeOnly public static androidx.xr.compose.subspace.BodyPart! box-impl(int);
+    method @BytecodeOnly public int unbox-impl();
+    field public static final androidx.xr.compose.subspace.BodyPart.Companion Companion;
+  }
+
+  public static final class BodyPart.Companion {
+    method @BytecodeOnly public int getHead-SDaINFc();
+    property public androidx.xr.compose.subspace.BodyPart Head;
+  }
+
   public abstract class DragPolicy {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalSubspaceVolumeApi {
+  }
+
+  @SuppressCompatibility @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi public final class LockDimensions {
+    ctor public LockDimensions();
+    ctor public LockDimensions(optional boolean isTranslationXTracked, optional boolean isTranslationYTracked, optional boolean isTranslationZTracked, optional boolean isRotationXTracked, optional boolean isRotationYTracked, optional boolean isRotationZTracked);
+    method @InaccessibleFromKotlin public boolean isRotationXTracked();
+    method @InaccessibleFromKotlin public boolean isRotationYTracked();
+    method @InaccessibleFromKotlin public boolean isRotationZTracked();
+    method @InaccessibleFromKotlin public boolean isTranslationXTracked();
+    method @InaccessibleFromKotlin public boolean isTranslationYTracked();
+    method @InaccessibleFromKotlin public boolean isTranslationZTracked();
+    property public boolean isRotationXTracked;
+    property public boolean isRotationYTracked;
+    property public boolean isRotationZTracked;
+    property public boolean isTranslationXTracked;
+    property public boolean isTranslationYTracked;
+    property public boolean isTranslationZTracked;
+    field public static final androidx.xr.compose.subspace.LockDimensions.Companion Companion;
+  }
+
+  public static final class LockDimensions.Companion {
+    method @InaccessibleFromKotlin public androidx.xr.compose.subspace.LockDimensions getAll();
+    property public androidx.xr.compose.subspace.LockDimensions All;
+  }
+
+  @SuppressCompatibility @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi public abstract class LockingBehavior {
+    method @InaccessibleFromKotlin protected final androidx.xr.runtime.math.Pose getTargetCurrentPose();
+    method @InaccessibleFromKotlin protected final void setTargetCurrentPose(androidx.xr.runtime.math.Pose);
+    property protected final androidx.xr.runtime.math.Pose targetCurrentPose;
+    field public static final androidx.xr.compose.subspace.LockingBehavior.Companion Companion;
+  }
+
+  public static final class LockingBehavior.Companion {
+    method public androidx.xr.compose.subspace.LockingBehavior lazy(optional @IntRange(from=100L) int durationMs);
+    method public androidx.xr.compose.subspace.LockingBehavior static();
   }
 
   public final class MovePolicy extends androidx.xr.compose.subspace.DragPolicy {

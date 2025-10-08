@@ -183,7 +183,6 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
     if (name.startsWith("androidInstrumentedTest")) return false
     if (name.startsWith("androidReleaseUnitTest")) return false
     if (name.startsWith("androidHostTest")) return false
-    if (name.startsWith("androidUnitTest")) return false
     if (name.startsWith("debug")) return false
     if (name.startsWith("androidDebug")) return false
     if (name.startsWith("releaseAndroidTest")) return false

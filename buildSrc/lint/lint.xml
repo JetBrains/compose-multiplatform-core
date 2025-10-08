@@ -37,7 +37,7 @@
         <ignore path="**/src/androidTest/**" />
         <!-- Required for Kotlin multi-platform tests. -->
         <ignore path="**/src/androidInstrumentedTest/**" />
-        <ignore path="**/src/androidUnitTest/**" />
+        <ignore path="**/src/androidHostTest/**" />
     </issue>
     <!-- Disable all lint checks on transformed classes by default. b/283812176 -->
     <issue id="all">

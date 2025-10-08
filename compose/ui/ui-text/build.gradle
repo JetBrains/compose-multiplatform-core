@@ -118,7 +118,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(project(":internal-testutils-fonts"))

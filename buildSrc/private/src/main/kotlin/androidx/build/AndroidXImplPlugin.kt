@@ -1123,11 +1123,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 it.animationsDisabled = true
             }
 
-        @Suppress("UnstableApiUsage") // usage of withHostTestBuilder
-        withHostTestBuilder {
-            @Suppress("DEPRECATION")
-            defaultSourceSetName = "androidUnitTest"
-        }
+        withHostTestBuilder {} // enable Android host tests
 
         @Suppress("UnstableApiUsage") // usage of withDeviceTestBuilder
         withDeviceTestBuilder {

@@ -172,8 +172,7 @@ public fun <T : Any> rememberDecoratedNavEntries(
         }
 
     PrepareBackStack(decoratedEntries, entryDecorators, keysInBackstack, keysInComposition)
-    @Suppress("ListIterator")
-    return remember(entries.toList(), entryDecorators.toList()) { decoratedEntries }
+    return decoratedEntries
 }
 
 /**
@@ -192,44 +191,33 @@ private fun <T : Any> decorateEntry(
     keysInComposition: MutableSet<Any>,
 ): NavEntry<T> {
     val latestDecorators by rememberUpdatedState(decorators)
-    val initial =
-        object : NavEntryWrapper<T>(entry) {
-            @Composable
-            override fun Content() {
-                val keysInComposition = keysInComposition
-                // track if entry is in backstack and/or still in composition
-                DisposableEffect(key1 = contentKey) {
-                    keysInComposition.add(contentKey)
-                    onDispose {
-                        val notInComposition = keysInComposition.remove(contentKey)
-                        val popped = !keysInBackstack.contains(contentKey)
-                        if (popped && notInComposition) {
-                            // we reverse the scopes before popping to imitate the order
-                            // of onDispose calls if each scope/decorator had their own
-                            // onDispose
-                            // calls for clean up
-                            // convert to mutableList first for backwards compat.
-                            latestDecorators.fastForEachReversedOrForEachReversed {
-                                it.onPop(contentKey)
-                            }
-                        }
-                    }
+    val contentKey = entry.contentKey
+    return NavEntry(navEntry = entry) {
+        val keysInComposition = keysInComposition
+        // track if entry is in backstack and/or still in composition
+        DisposableEffect(key1 = contentKey) {
+            keysInComposition.add(contentKey)
+            onDispose {
+                val notInComposition = keysInComposition.remove(contentKey)
+                val popped = !keysInBackstack.contains(contentKey)
+                if (popped && notInComposition) {
+                    // we reverse the scopes before popping to imitate the order
+                    // of onDispose calls if each scope/decorator had their own
+                    // onDispose
+                    // calls for clean up
+                    // convert to mutableList first for backwards compat.
+                    latestDecorators.fastForEachReversedOrForEachReversed { it.onPop(contentKey) }
                 }
-                // wrap entry with decorators then invoke Content
-                decorators
-                    .fastDistinctOrDistinct()
-                    .foldRight(initial = entry) { decorator, wrappedEntry ->
-                        object : NavEntryWrapper<T>(wrappedEntry) {
-                            @Composable
-                            override fun Content() {
-                                decorator.decorate(wrappedEntry)
-                            }
-                        }
-                    }
-                    .Content()
             }
         }
-    return initial
+        // wrap entry with decorators then invoke Content
+        decorators
+            .fastDistinctOrDistinct()
+            .foldRight(initial = entry) { decorator, wrappedEntry ->
+                NavEntry<T>(wrappedEntry) { decorator.decorate(wrappedEntry) }
+            }
+            .Content()
+    }
 }
 
 /**

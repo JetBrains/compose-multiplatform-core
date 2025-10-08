@@ -95,7 +95,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependencies {
                 runtimeOnly(libs.testCore)

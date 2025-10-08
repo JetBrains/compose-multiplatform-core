@@ -53,6 +53,7 @@ dependencies {
     implementation(project(":xr:scenecore:scenecore-spatial-rendering"))
     implementation(project(":xr:arcore:arcore"))
 
+    implementation("androidx.annotation:annotation:1.9.1")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity-compose:1.10.0")
     implementation("androidx.media3:media3-exoplayer:1.6.0")

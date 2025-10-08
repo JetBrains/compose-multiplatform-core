@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.compose.testapp
 
 import android.content.Intent
@@ -99,16 +98,15 @@ import androidx.xr.compose.testapp.ui.components.TestCaseButton
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple40
 import androidx.xr.compose.testapp.ui.theme.Purple80
+import androidx.xr.compose.testapp.usersubspace.UserSubspaceActivity
 import androidx.xr.compose.testapp.videoplayer.VideoPlayerActivity
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
-
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
         obtainUserPermissions()
         setContent {
@@ -245,7 +243,6 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun TestCases() {
         val context = LocalContext.current
-
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(10.dp).verticalScroll(rememberScrollState())) {
@@ -267,11 +264,9 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.cuj_gltf_entity_input_test_case)) {
                         startTest<SplitEngine>(getString(R.string.cuj_gltf_entity_input_test_case))
                     }
-
                     TestCaseColumnRowItem(getString(R.string.spatial_elevation_test)) {
                         startTest<SpatialElevation>()
                     }
-
                     TestCaseColumnRowItem(getString(R.string.spatial_layout_test)) {
                         startTest<SpatialCompose>(getString(R.string.spatial_layout_test))
                     }
@@ -281,7 +276,6 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.backhandling_panel_test)) {
                         startTest<SpatialCompose>(getString(R.string.backhandling_panel_test))
                     }
-
                     TestCaseColumnRowItem(getString(R.string.mode_change_test)) {
                         startTest<ModeChange>()
                     }
@@ -314,6 +308,9 @@ class MainActivity : ComponentActivity() {
                     }
                     TestCaseColumnRowItem(getString(R.string.panel_embedded_subspace_test_case)) {
                         startTest<PanelEmbeddedSubspace>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.user_subspace_test_case)) {
+                        startTest<UserSubspaceActivity>()
                     }
                     TestCaseColumnRowItem(getString(R.string.panel_volume_test_case)) {
                         startTest<PanelVolume>()

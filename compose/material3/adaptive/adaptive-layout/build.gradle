@@ -100,7 +100,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(libs.junit)

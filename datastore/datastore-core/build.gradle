@@ -157,7 +157,7 @@ androidXMultiplatform {
             dependsOn(jvmAndroidTest)
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmAndroidTest)
             dependsOn(androidUnitAndInstrumentedTest)
             dependencies {

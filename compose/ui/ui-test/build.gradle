@@ -124,7 +124,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(androidCommonTest)
             dependencies {
                 implementation(libs.truth)

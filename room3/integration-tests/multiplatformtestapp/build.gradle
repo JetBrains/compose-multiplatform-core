@@ -119,7 +119,7 @@ androidXMultiplatform {
 dependencies {
     def roomCompilerDependency = project(":room3:room3-compiler")
     add("kspAndroidInstrumentedTest", roomCompilerDependency) // Android instrumentation test
-    add("kspAndroidUnitTest", roomCompilerDependency) // Android unit test
+    add("kspAndroidHostTest", roomCompilerDependency) // Android unit test
     add("kspJvmTest", roomCompilerDependency)
     add("kspLinuxX64Test", roomCompilerDependency)
     if (KmpPlatformsKt.enableMac(project)) {

@@ -121,7 +121,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependsOn(nonEmulatorJvmTest)
         }

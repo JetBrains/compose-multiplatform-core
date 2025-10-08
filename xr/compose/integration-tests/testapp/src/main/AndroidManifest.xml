@@ -131,6 +131,11 @@
             android:label="PanelEmbeddedSubspace"
             android:theme="@style/Theme.IntegrationTestsApp" />
         <activity
+            android:name=".usersubspace.UserSubspaceActivity"
+            android:exported="true"
+            android:label="UserSubspace"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
             android:name=".panelvolume.PanelVolume"
             android:exported="true"
             android:label="PanelVolume"

@@ -77,7 +77,7 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonJvmMain)
         }
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonJvmTest)
         }
         androidInstrumentedTest {

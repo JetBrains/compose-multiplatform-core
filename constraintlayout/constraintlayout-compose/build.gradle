@@ -93,7 +93,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmCommonTest)
             dependencies {
                 implementation(libs.kotlinTest)

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.compose.spatial
 
+import android.annotation.SuppressLint
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.annotation.RestrictTo
@@ -24,7 +24,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
@@ -51,19 +53,27 @@ import androidx.xr.compose.platform.SpatialComposeScene
 import androidx.xr.compose.platform.disposableValueOf
 import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.platform.requireActivity
+import androidx.xr.compose.subspace.BodyPart
+import androidx.xr.compose.subspace.LockDimensions
+import androidx.xr.compose.subspace.LockingBehavior
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialBoxScope
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.recommendedSizeIfUnbounded
 import androidx.xr.compose.subspace.node.SubspaceNodeApplier
 import androidx.xr.compose.unit.IntVolumeSize
+import androidx.xr.compose.unit.Meter
+import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.compose.unit.VolumeConstraints
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 
 private val LocalIsInApplicationSubspace: ProvidableCompositionLocal<Boolean> =
@@ -335,7 +345,6 @@ private fun PanelEmbeddedSubspace(
         val placeable = measurables[0].measure(constraints)
         val measuredPlaceholderSize = IntSize(placeable.width, placeable.height)
         layout(measuredPlaceholderSize.width, measuredPlaceholderSize.height) {
-
             // Here we determine the correct position for the 3D content and place the root node.
             // This ensures tighter coordination between the 2D and 3D placement. Note that this is
             // still imperfect as rendering is not explicitly synchronized.
@@ -347,6 +356,119 @@ private fun PanelEmbeddedSubspace(
                 subspaceRootContainer.enabled = true
             }
         }
+    }
+}
+
+/**
+ * Controls the default distance (z-offset) between the content and the BodyPart.
+ *
+ * This offset is applied to push the content in front of the user, so their anchor point (e.g.,
+ * head) is not inside the content. The values are in meters.
+ */
+private object UserSubspaceDefaults {
+    @SuppressLint("PrimitiveInCollection")
+    @OptIn(ExperimentalUserSubspaceApi::class)
+    val OFFSETS: Map<BodyPart, Meter> = mapOf(BodyPart.Head to (-0.5f).meters)
+}
+
+/**
+ * Marks Subspace APIs that are experimental and likely to change or be removed in the future.
+ *
+ * Any usage of a declaration annotated with `@ExperimentalUserSubspaceApi` must be accepted either
+ * by annotating that usage with `@OptIn(ExperimentalUserSubspaceApi::class)` or by propagating the
+ * annotation to the containing declaration.
+ */
+@RequiresOptIn(
+    level = RequiresOptIn.Level.ERROR,
+    message = "This is an experimental API. It may be changed or removed in the future.",
+)
+@Retention(AnnotationRetention.BINARY)
+public annotation class ExperimentalUserSubspaceApi
+
+/**
+ * Create a user-centric 3D space that is ideal for spatial UI content that follows the user's given
+ * body part with configurable following behaviors.
+ *
+ * Each call to `UserSubspace` creates a new, independent spatial UI hierarchy. It does **not**
+ * inherit the spatial position, orientation, or scale of any parent `ApplicationSubspace` it is
+ * nested within. Its position in the world is determined solely by its `lockTo` parameter.
+ *
+ * By default, this Subspace is automatically bounded by the system's recommended content box,
+ * similar to [ApplicationSubspace].
+ *
+ * When using BodyPart.Head as the lockTo target, this API requires headtracking to not be disabled
+ * in the session configuration. If it is disabled, this API will not return anything. The session
+ * configuration should resemble `session.configure( config = session.config.copy(headTracking =
+ * Config.HeadTrackingMode.LAST_KNOWN) )`
+ *
+ * This composable is a no-op in non-XR environments (i.e., Phone and Tablet).
+ *
+ * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
+ * @param lockTo Specifies a part of the body which the Subspace will be locked to.
+ * @param lockDimensions A set of boolean flags to determine the dimensions of movement that are
+ *   tracked. Possible tracking dimensions are: translationX, translationY, translationZ, rotationX,
+ *   rotationY, and rotationZ. By default, all dimensions are tracked. Any dimensions not listed
+ *   will not be tracked. For example if translationY is not listed, this means the content will not
+ *   move as the user moves vertically up and down.
+ * @param behavior determines how the UserSubspace follows the user. It can be made to move faster
+ *   and be more responsive. The default is LockingBehavior.lazy().
+ * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
+ *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
+ *   space.
+ * @param content The 3D content to render within this Subspace.
+ */
+// TODO(b/446871230): Add unit tests for UserSubspace.
+@Composable
+@ComposableOpenTarget(index = -1)
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+@ExperimentalUserSubspaceApi
+public fun UserSubspace(
+    modifier: SubspaceModifier = SubspaceModifier,
+    lockTo: BodyPart = BodyPart.Head,
+    lockDimensions: LockDimensions = LockDimensions.All,
+    behavior: LockingBehavior = LockingBehavior.lazy(),
+    allowUnboundedSubspace: Boolean = false,
+    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
+) {
+    // If not in XR, do nothing
+    if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+
+    if (session.config.headTracking == Config.HeadTrackingMode.DISABLED) {
+        return
+    }
+
+    val userSubspaceRoot by remember {
+        disposableValueOf(GroupEntity.create(session, "UserSubspaceRoot")) { it.dispose() }
+    }
+    SideEffect {
+        session.scene.keyEntity?.getScale(relativeTo = Space.REAL_WORLD)?.let { scale ->
+            userSubspaceRoot.setScale(scale)
+        }
+    }
+
+    LaunchedEffect(behavior) {
+        behavior.configure(
+            session = session,
+            trailingEntity = userSubspaceRoot,
+            lockTo = lockTo,
+            lockDimensions = lockDimensions,
+        )
+    }
+
+    // The content is wrapped in a SpatialBox and we move it slightly ahead of the `lockTo` body
+    // part instead of the user being in the middle of it. But the user is still centered in the
+    // Subspace.
+    ApplicationSubspace(
+        modifier = modifier,
+        allowUnboundedSubspace = allowUnboundedSubspace,
+        subspaceRootNode = userSubspaceRoot,
+    ) {
+        val subspaceOffset =
+            checkNotNull(UserSubspaceDefaults.OFFSETS[lockTo]) {
+                "No offset found for lockTo target."
+            }
+        SpatialBox(modifier = SubspaceModifier.offset(z = subspaceOffset.toDp()), content = content)
     }
 }
 
