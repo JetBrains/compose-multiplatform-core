@@ -19,11 +19,14 @@ package androidx.compose.material3.adaptive.navigationsuite
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.Posture
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
-import androidx.kruth.assertThat
 import androidx.window.core.layout.WindowSizeClass
-import kotlin.test.Test
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@RunWith(JUnit4::class)
 class NavigationSuiteScaffoldTest {
 
     @Test
