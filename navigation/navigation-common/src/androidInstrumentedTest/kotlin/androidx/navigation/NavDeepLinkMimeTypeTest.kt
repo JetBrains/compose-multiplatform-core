@@ -16,11 +16,14 @@
 
 package androidx.navigation
 
-import androidx.kruth.assertThat
-import androidx.kruth.assertWithMessage
-import kotlin.test.Test
-import kotlin.test.fail
+import android.net.Uri
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Assert.fail
+import org.junit.Test
 
+@SmallTest
 class NavDeepLinkMimeTypeTest {
     companion object {
         private const val DEEP_LINK_EXACT_HTTPS = "https://www.example.com"
@@ -60,7 +63,7 @@ class NavDeepLinkMimeTypeTest {
         assertWithMessage("The mimeTypes should match")
             .that(
                 deepLink.matches(
-                    NavDeepLinkRequest(NavUriUtils.parse(DEEP_LINK_EXACT_HTTPS), null, mimeType)
+                    NavDeepLinkRequest(Uri.parse(DEEP_LINK_EXACT_HTTPS), null, mimeType)
                 )
             )
             .isTrue()

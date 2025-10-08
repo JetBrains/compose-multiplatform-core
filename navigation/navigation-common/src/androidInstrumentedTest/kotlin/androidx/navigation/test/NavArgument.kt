@@ -22,6 +22,7 @@ import androidx.navigation.NavType.Companion.FloatType
 import androidx.navigation.NavType.Companion.IntListType
 import androidx.navigation.NavType.Companion.IntType
 import androidx.navigation.NavType.Companion.LongType
+import androidx.navigation.NavType.Companion.ReferenceType
 import androidx.navigation.NavType.Companion.StringArrayType
 import androidx.navigation.NavType.Companion.StringListType
 import androidx.navigation.NavType.Companion.StringType
@@ -52,6 +53,14 @@ fun floatArgument() = NavArgument.Builder().setType(FloatType).build()
 
 fun floatArgument(defaultValue: Float) =
     NavArgument.Builder().setType(FloatType).setDefaultValue(defaultValue).build()
+
+// endregion
+
+// region FloatType
+fun referenceArgument() = NavArgument.Builder().setType(ReferenceType).build()
+
+fun referenceArgument(defaultValue: Int) =
+    NavArgument.Builder().setType(ReferenceType).setDefaultValue(defaultValue).build()
 
 // endregion
 
