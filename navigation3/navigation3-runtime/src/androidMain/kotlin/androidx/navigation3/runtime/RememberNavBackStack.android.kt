@@ -54,7 +54,7 @@ import androidx.savedstate.serialization.SavedStateConfiguration
  * @see NavBackStackSerializer
  */
 @Composable
-public fun <T : NavKey> rememberNavBackStack(vararg elements: T): NavBackStack<NavKey> {
+public fun rememberNavBackStack(vararg elements: NavKey): NavBackStack<NavKey> {
     return rememberSerializable(
         serializer = NavBackStackSerializer(elementSerializer = NavKeySerializer())
     ) {

@@ -24,30 +24,31 @@ import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.Entity
-import androidx.xr.scenecore.internal.ExrImageResource
-import androidx.xr.scenecore.internal.GltfEntity
-import androidx.xr.scenecore.internal.GltfModelResource
-import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec
-import androidx.xr.scenecore.internal.MaterialResource
-import androidx.xr.scenecore.internal.RenderingEntityFactory
-import androidx.xr.scenecore.internal.RenderingRuntime
-import androidx.xr.scenecore.internal.SceneRuntime
-import androidx.xr.scenecore.internal.SpatialEnvironmentExt
-import androidx.xr.scenecore.internal.SubspaceNodeEntity
-import androidx.xr.scenecore.internal.SurfaceEntity
-import androidx.xr.scenecore.internal.TextureResource
-import androidx.xr.scenecore.internal.TextureSampler
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.Entity
+import androidx.xr.scenecore.runtime.ExrImageResource
+import androidx.xr.scenecore.runtime.GltfEntity
+import androidx.xr.scenecore.runtime.GltfModelResource
+import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
+import androidx.xr.scenecore.runtime.MaterialResource
+import androidx.xr.scenecore.runtime.RenderingEntityFactory
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialEnvironmentExt
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity
+import androidx.xr.scenecore.runtime.SurfaceEntity
+import androidx.xr.scenecore.runtime.TextureResource
+import androidx.xr.scenecore.runtime.TextureSampler
 import com.google.common.util.concurrent.Futures.immediateFailedFuture
 import com.google.common.util.concurrent.Futures.immediateFuture
 import com.google.common.util.concurrent.ListenableFuture
 
 /**
- * Test-only implementation of [RenderingRuntime].
+ * Test-only implementation of [androidx.xr.scenecore.runtime.RenderingRuntime].
  *
  * @param entityFactory The factory used to create rendering-related entities. This is typically the
- *   [SceneRuntime] instance, which must also implement [RenderingEntityFactory].
+ *   [androidx.xr.scenecore.runtime.SceneRuntime] instance, which must also implement
+ *   [androidx.xr.scenecore.runtime.RenderingEntityFactory].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRenderingRuntime(
@@ -115,8 +116,8 @@ public class FakeRenderingRuntime(
     /**
      * For test purposes only.
      *
-     * A fake implementation of [MaterialResource] used to simulate a water material within the test
-     * senvironment.
+     * A fake implementation of [androidx.xr.scenecore.runtime.MaterialResource] used to simulate a
+     * water material within the test senvironment.
      *
      * <p>Instances of this class are created by [createWaterMaterial] and can be accessed for
      * verification via the [createdWaterMaterials] list. Tests can inspect the public properties of
@@ -153,16 +154,16 @@ public class FakeRenderingRuntime(
     /**
      * For test purposes only.
      *
-     * A fake implementation of [MaterialResource] used to simulate a Khronos PBR material within
-     * the test environment.
+     * A fake implementation of [androidx.xr.scenecore.runtime.MaterialResource] used to simulate a
+     * Khronos PBR material within the test environment.
      *
      * <p>Instances of this class are created by [createKhronosPbrMaterial]. Tests can inspect the
      * public properties of this class (e.g., [baseColorTexture], [metallicFactor]) to confirm that
      * the code under test correctly configures the material's attributes according to the provided
      * specification.
      *
-     * @param spec The [KhronosPbrMaterialSpec] provided during creation, which defines the initial
-     *   configuration of the material.
+     * @param spec The [androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec] provided during
+     *   creation, which defines the initial configuration of the material.
      */
     public class FakeKhronosPbrMaterial(public val spec: KhronosPbrMaterialSpec) :
         MaterialResource {
@@ -588,27 +589,15 @@ public class FakeRenderingRuntime(
         return _state
     }
 
-    override fun startRenderer() {
+    override fun resume() {
         _state = State.STARTED
     }
 
-    override fun stopRenderer() {
+    override fun pause() {
         _state = State.PAUSED
     }
 
-    override fun dispose() {
-        _state = State.DESTROYED
-    }
-
-    override fun resume() {
-        startRenderer()
-    }
-
-    override fun pause() {
-        stopRenderer()
-    }
-
     override fun destroy() {
-        dispose()
+        _state = State.DESTROYED
     }
 }

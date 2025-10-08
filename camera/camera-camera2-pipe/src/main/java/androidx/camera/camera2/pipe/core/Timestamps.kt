@@ -80,5 +80,5 @@ public object Timestamps {
 
     public inline fun TimestampNs.measureNow(
         timeSource: TimeSource = SystemTimeSource()
-    ): DurationNs = now(timeSource) - this
+    ): DurationNs = now(timeSource).minus(this)
 }

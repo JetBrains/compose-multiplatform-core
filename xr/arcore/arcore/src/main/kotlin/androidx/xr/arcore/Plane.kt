@@ -17,9 +17,9 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor as RuntimeAnchor
-import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
-import androidx.xr.arcore.internal.Plane as RuntimePlane
+import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.Plane as RuntimePlane
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState

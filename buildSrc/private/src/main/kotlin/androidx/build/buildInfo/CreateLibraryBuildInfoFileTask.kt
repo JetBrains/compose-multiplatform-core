@@ -264,7 +264,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             filter { it.group.isAndroidXDependency() }
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
-                        this.artifactId = it.name.toString()
+                        this.artifactId = it.name
                         this.groupId = it.group!!
                         this.version = it.version!!
                         this.isTipOfTree =
@@ -279,7 +279,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             filter { it.group.isAndroidXDependency() }
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
-                        this.artifactId = it.name.toString()
+                        this.artifactId = it.name
                         this.groupId = it.group
                         this.version = it.version!!
                         this.isTipOfTree = it is DefaultProjectDependencyConstraint

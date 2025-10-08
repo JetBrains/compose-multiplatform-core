@@ -17,12 +17,12 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.GltfEntity
-import androidx.xr.scenecore.internal.GltfFeature
-import androidx.xr.scenecore.internal.MaterialResource
+import androidx.xr.scenecore.runtime.GltfEntity
+import androidx.xr.scenecore.runtime.GltfFeature
+import androidx.xr.scenecore.runtime.MaterialResource
 import java.util.concurrent.Executor
 
-/** Test-only implementation of [GltfEntity] */
+/** Test-only implementation of [androidx.xr.scenecore.runtime.GltfEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeGltfEntity(
     private val feature: GltfFeature? = null,

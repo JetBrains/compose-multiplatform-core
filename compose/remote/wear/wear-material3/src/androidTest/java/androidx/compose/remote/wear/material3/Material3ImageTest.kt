@@ -19,11 +19,11 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import androidx.compose.remote.frontend.modifier.RemoteModifier
-import androidx.compose.remote.frontend.modifier.size
-import androidx.compose.remote.frontend.state.rememberRemoteBitmapValue
-import androidx.compose.remote.frontend.state.rememberRemoteColor
-import androidx.compose.remote.frontend.state.rememberRemoteString
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.rememberRemoteBitmapValue
+import androidx.compose.remote.creation.compose.state.rememberRemoteColor
+import androidx.compose.remote.creation.compose.state.rememberRemoteString
 import androidx.compose.remote.test.screenshot.TargetPlayer
 import androidx.compose.remote.test.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.ui.geometry.Size

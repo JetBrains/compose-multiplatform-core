@@ -27,9 +27,9 @@ import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjection;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
-import androidx.xr.scenecore.internal.CameraViewActivityPose;
-import androidx.xr.scenecore.internal.HitTestResult;
-import androidx.xr.scenecore.internal.PixelDimensions;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.HitTestResult;
+import androidx.xr.scenecore.runtime.PixelDimensions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 

@@ -63,8 +63,8 @@ dependencies {
     testImplementation(libs.truth)
 
     testImplementation("androidx.compose.material3:material3:1.3.1")
-    testImplementation("androidx.compose.ui:ui-test:1.7.5")
-    testImplementation("androidx.compose.ui:ui-test-junit4:1.7.5")
+    testImplementation(project(":compose:ui:ui-test"))
+    testImplementation(project(":compose:ui:ui-test-junit4"))
     testImplementation(project(":xr:compose:compose-testing"))
     testImplementation("com.google.ar:impress:0.0.5")
 

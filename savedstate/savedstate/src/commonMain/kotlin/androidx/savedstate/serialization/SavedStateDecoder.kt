@@ -150,6 +150,7 @@ internal class SavedStateDecoder(
     internal val savedState: SavedState,
     private val configuration: SavedStateConfiguration,
 ) : AbstractDecoder() {
+
     internal var key: String = ""
         private set
 
@@ -157,6 +158,22 @@ internal class SavedStateDecoder(
 
     override val serializersModule
         get() = configuration.serializersModule
+
+    override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
+        // We flatten single structured object at root to prevent encoding to a
+        // SavedState containing only one SavedState inside. For example, a
+        // `Pair(3, 5)` would become `{"first" = 3, "second" = 5}` instead of
+        // `{{"first" = 3, "second" = 5}}`, which is more consistent but less
+        // efficient.
+        return if (key == "") {
+            this
+        } else {
+            SavedStateDecoder(
+                savedState = savedState.read { getSavedState(key) },
+                configuration = configuration,
+            )
+        }
+    }
 
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         // Get iteration boundary. For collections, it's the saved size.
@@ -211,16 +228,6 @@ internal class SavedStateDecoder(
     override fun decodeString(): String = savedState.read { getString(key) }
 
     override fun decodeEnum(enumDescriptor: SerialDescriptor): Int = savedState.read { getInt(key) }
-
-    override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder =
-        if (key == "") {
-            this
-        } else {
-            SavedStateDecoder(
-                savedState = savedState.read { getSavedState(key) },
-                configuration = configuration,
-            )
-        }
 
     // We don't encode NotNullMark so this will actually read either a `null` from
     // `encodeNull()` or a value from other encode functions.

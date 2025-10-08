@@ -29,19 +29,19 @@ import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
-import androidx.xr.scenecore.internal.AnchorPlacement as RtAnchorPlacement
-import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.MovableComponent as RtMovableComponent
-import androidx.xr.scenecore.internal.MoveEvent as RtMoveEvent
-import androidx.xr.scenecore.internal.MoveEventListener as RtMoveEventListener
-import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
-import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
-import androidx.xr.scenecore.internal.PlaneSemantic as RtPlaneSemantic
-import androidx.xr.scenecore.internal.PlaneType as RtPlaneType
-import androidx.xr.scenecore.internal.SceneRuntime
-import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
+import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
+import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.MovableComponent as RtMovableComponent
+import androidx.xr.scenecore.runtime.MoveEvent as RtMoveEvent
+import androidx.xr.scenecore.runtime.MoveEventListener as RtMoveEventListener
+import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.runtime.PlaneSemantic as RtPlaneSemantic
+import androidx.xr.scenecore.runtime.PlaneType as RtPlaneType
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import kotlin.test.assertFailsWith

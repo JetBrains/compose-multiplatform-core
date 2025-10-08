@@ -24,12 +24,12 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
-import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
-import androidx.xr.scenecore.internal.SceneRuntime
-import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.scenecore.testing.FakeSpatialPointerComponent
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before

@@ -18,9 +18,9 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.util.Log;
 
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.InputEventListener;
-import androidx.xr.scenecore.internal.InteractableComponent;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.InputEventListener;
+import androidx.xr.scenecore.runtime.InteractableComponent;
 
 import org.jspecify.annotations.NonNull;
 
@@ -45,6 +45,8 @@ class InteractableComponentImpl implements InteractableComponent {
         mEntity = entity;
         if (entity instanceof GltfEntityImpl) {
             ((GltfEntityImpl) entity).setColliderEnabled(true);
+        } else if (entity instanceof SurfaceEntityImpl) {
+            ((SurfaceEntityImpl) entity).setColliderEnabled(true);
         }
         // InputEvent type translation happens here.
         entity.addInputEventListener(mExecutor, mConsumer);
@@ -55,6 +57,8 @@ class InteractableComponentImpl implements InteractableComponent {
     public void onDetach(@NonNull Entity entity) {
         if (entity instanceof GltfEntityImpl) {
             ((GltfEntityImpl) entity).setColliderEnabled(false);
+        } else if (entity instanceof SurfaceEntityImpl) {
+            ((SurfaceEntityImpl) entity).setColliderEnabled(false);
         }
         entity.removeInputEventListener(mConsumer);
         mEntity = null;

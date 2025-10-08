@@ -25,6 +25,7 @@ import androidx.room3.PrimaryKey
 import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SmallTest
 import org.junit.After
@@ -43,10 +44,8 @@ class NullableCollectionQueryParamTest {
     @Before
     fun setup() {
         db =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    TestDatabase::class.java,
-                )
+            Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
         dao = db.getDao()
 

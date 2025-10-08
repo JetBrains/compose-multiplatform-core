@@ -17,7 +17,7 @@
 package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.ArDevice as RuntimeArDevice
+import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.math.Pose
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)

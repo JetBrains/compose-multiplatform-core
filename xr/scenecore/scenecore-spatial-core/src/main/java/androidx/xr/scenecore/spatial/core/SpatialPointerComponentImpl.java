@@ -18,10 +18,10 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.util.Log;
 
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.SpatialPointerComponent;
-import androidx.xr.scenecore.internal.SpatialPointerIcon;
-import androidx.xr.scenecore.internal.SpatialPointerIconType;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.SpatialPointerComponent;
+import androidx.xr.scenecore.runtime.SpatialPointerIcon;
+import androidx.xr.scenecore.runtime.SpatialPointerIconType;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeTransaction;

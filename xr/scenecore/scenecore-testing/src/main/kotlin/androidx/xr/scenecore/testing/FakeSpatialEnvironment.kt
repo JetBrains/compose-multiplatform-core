@@ -17,10 +17,10 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.SpatialEnvironment
-import androidx.xr.scenecore.internal.SpatialEnvironment.Companion.NO_PASSTHROUGH_OPACITY_PREFERENCE
-import androidx.xr.scenecore.internal.SpatialEnvironmentExt
-import androidx.xr.scenecore.internal.SpatialEnvironmentFeature
+import androidx.xr.scenecore.runtime.SpatialEnvironment
+import androidx.xr.scenecore.runtime.SpatialEnvironment.Companion.NO_PASSTHROUGH_OPACITY_PREFERENCE
+import androidx.xr.scenecore.runtime.SpatialEnvironmentExt
+import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 

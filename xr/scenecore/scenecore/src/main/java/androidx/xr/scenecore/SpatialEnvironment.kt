@@ -20,10 +20,10 @@ package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.scenecore.SpatialEnvironment.Companion.NO_PASSTHROUGH_OPACITY_PREFERENCE
-import androidx.xr.scenecore.internal.MaterialResource as RtMaterial
-import androidx.xr.scenecore.internal.SceneRuntime
-import androidx.xr.scenecore.internal.SpatialEnvironment as RtSpatialEnvironment
-import androidx.xr.scenecore.internal.SpatialEnvironment.SpatialEnvironmentPreference as RtSpatialEnvironmentPreference
+import androidx.xr.scenecore.runtime.MaterialResource as RtMaterial
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialEnvironment as RtSpatialEnvironment
+import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference as RtSpatialEnvironmentPreference
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -149,9 +149,13 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      * The value should be between 0.0f (passthrough disabled) and 1.0f (passthrough fully obscures
      * the spatial environment). Values within 0.01f of 0.0 or 1.0 are snapped to those values.
      * Values outside [0.0f, 1.0f] are clamped. Other values result in semi-transparent passthrough
-     * that is alpha blended with the spatial environment. Setting this property to
-     * NO_PASSTHROUGH_OPACITY_PREFERENCE clears the application's preference, allowing the system to
-     * manage passthrough opacity.
+     * that is alpha blended with the preferred application spatial environment. Passthrough is
+     * disabled for semi-transparent passthrough values when there is no
+     * [preferredSpatialEnvironment] and there is no active system passthrough. This prevents
+     * semi-transparent passthrough values from affecting the default system environment.
+     *
+     * Setting this property to NO_PASSTHROUGH_OPACITY_PREFERENCE clears the application's
+     * preference, allowing the system to manage passthrough opacity.
      *
      * The actual value visible to the user can be observed by calling [currentPassthroughOpacity]
      * or by registering a listener with [addOnPassthroughOpacityChangedListener].

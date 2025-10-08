@@ -30,14 +30,14 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
-import androidx.xr.scenecore.internal.CameraViewActivityPose;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.PerceivedResolutionResult;
-import androidx.xr.scenecore.internal.PixelDimensions;
-import androidx.xr.scenecore.internal.Space;
-import androidx.xr.scenecore.internal.SurfaceEntity;
-import androidx.xr.scenecore.internal.SurfaceEntity.Shape;
-import androidx.xr.scenecore.internal.SurfaceFeature;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
+import androidx.xr.scenecore.runtime.SurfaceEntity.Shape;
+import androidx.xr.scenecore.runtime.SurfaceFeature;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 import androidx.xr.scenecore.testing.FakeSurfaceFeature;
 
@@ -63,13 +63,13 @@ import java.util.function.Supplier;
 
 @RunWith(RobolectricTestRunner.class)
 public final class SurfaceEntityImplTest {
-    private SurfaceEntity mSurfaceEntity;
+    private SurfaceEntityImpl mSurfaceEntity;
     private EntityManager mEntityManager;
 
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);
     private final Activity mActivity = mActivityController.create().start().get();
-    private SurfaceFeature mFakeSurfaceFeature;
+    private FakeSurfaceFeature mFakeSurfaceFeature;
     private final SurfaceFeature mMockSurfaceFeature = Mockito.mock(SurfaceFeature.class);
 
     @Before
@@ -85,14 +85,16 @@ public final class SurfaceEntityImplTest {
         }
     }
 
-    private SurfaceEntity createDefaultSurfaceEntity(Shape shape) {
+    private SurfaceEntityImpl createDefaultSurfaceEntity(Shape shape) {
         XrExtensions xrExtensions = XrExtensionsProvider.getXrExtensions();
 
         Assert.assertNotNull(xrExtensions);
 
         NodeHolder<?> nodeHolder = new NodeHolder<>(xrExtensions.createNode(), Node.class);
         mFakeSurfaceFeature =
-                FakeSurfaceFeature.Companion.createWithMockFeature(mMockSurfaceFeature, nodeHolder);
+                (FakeSurfaceFeature)
+                        FakeSurfaceFeature.Companion.createWithMockFeature(
+                                mMockSurfaceFeature, nodeHolder);
 
         mEntityManager = new EntityManager();
         FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
@@ -144,8 +146,7 @@ public final class SurfaceEntityImplTest {
     @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setShape_setsShape() {
-        SurfaceEntity.Shape expectedShape =
-                new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f));
+        SurfaceEntity.Shape expectedShape = new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f));
         mSurfaceEntity.setShape(expectedShape);
 
         verify(mMockSurfaceFeature).setShape(expectedShape);
@@ -214,7 +215,7 @@ public final class SurfaceEntityImplTest {
         // Note that we don't test that dispose prevents manipulating other properties because that
         // is enforced at the API level, rather than the implementation level.
         mSurfaceEntity.dispose();
-        mSurfaceEntity.dispose();  // shouldn't crash
+        mSurfaceEntity.dispose(); // shouldn't crash
     }
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface
@@ -233,6 +234,17 @@ public final class SurfaceEntityImplTest {
         SurfaceEntity.EdgeFeather returnedFeather = mSurfaceEntity.getEdgeFeather();
 
         assertThat(returnedFeather).isEqualTo(expectedFeather);
+    }
+
+    @Test
+    public void setColliderEnabled_forwardsToFeature() {
+        mSurfaceEntity.setColliderEnabled(true);
+        verify(mMockSurfaceFeature).setColliderEnabled(true);
+        assertThat(mFakeSurfaceFeature.getColliderEnabled()).isTrue();
+
+        mSurfaceEntity.setColliderEnabled(false);
+        verify(mMockSurfaceFeature).setColliderEnabled(false);
+        assertThat(mFakeSurfaceFeature.getColliderEnabled()).isFalse();
     }
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface

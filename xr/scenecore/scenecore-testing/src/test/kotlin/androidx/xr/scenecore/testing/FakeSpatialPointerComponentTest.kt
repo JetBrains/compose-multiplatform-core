@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.testing
 
-import androidx.xr.scenecore.internal.SpatialPointerIcon
+import androidx.xr.scenecore.runtime.SpatialPointerIcon
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test

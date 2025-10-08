@@ -16,8 +16,8 @@
 
 package androidx.xr.scenecore.testing
 
-import androidx.xr.scenecore.internal.CameraViewActivityPose.CameraType
-import androidx.xr.scenecore.internal.PixelDimensions
+import androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType
+import androidx.xr.scenecore.runtime.PixelDimensions
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 

@@ -35,10 +35,13 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -133,6 +136,38 @@ class AutoClosingDatabaseTest {
         db.close()
     }
 
+    /**
+     * A stress test to validate that an auto-closed database does not deadlock when re-opening the
+     * database and re-configuring the connection with the InvalidationTracker at the same time a
+     * reactive query (Flow) is also syncing triggers and grabbing InvalidationTracker locks.
+     * b/446643789
+     */
+    @Test
+    fun flowReadAndInsertConcurrentlyStressTest() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        repeat(1000) {
+            context.deleteDatabase("testDb")
+            // Ideally we would use one nanosecond which is basically 'zero' but that has the side
+            // effect of closing the database in-between our two concurrent operations, not
+            // reproducing the issue. Therefore we still use a small timeout (1ms) and await
+            // for 2ms to guarantee the database is indeed closed and both read and writers are
+            // executed concurrently.
+            val db =
+                Room.databaseBuilder<TestDatabase>(context, "testDb")
+                    .setAutoCloseTimeout(1, TimeUnit.MILLISECONDS)
+                    .build()
+            db.getUserDao().insert(TestUser(1L, "1"))
+            withContext(Dispatchers.IO) { delay(2) }
+
+            val readJob =
+                launch(Dispatchers.IO) { db.getUserDao().getFlow(2L).first { it != null } }
+            val writeJob = launch(Dispatchers.IO) { db.getUserDao().insert(TestUser(2L, "2")) }
+            listOf(readJob, writeJob).joinAll()
+            db.close()
+        }
+    }
+
     @Database(entities = [TestUser::class], version = 1, exportSchema = false)
     abstract class TestDatabase : RoomDatabase() {
         abstract fun getUserDao(): TestUserDao
@@ -145,6 +180,8 @@ class AutoClosingDatabaseTest {
         @Query("SELECT * FROM user") fun getAll(): List<TestUser>
 
         @Query("SELECT * FROM user WHERE id = :id") fun get(id: Long): TestUser
+
+        @Query("SELECT * FROM user WHERE id = :id") fun getFlow(id: Long): Flow<TestUser?>
     }
 
     @Entity(tableName = "user") data class TestUser(@PrimaryKey val id: Long, val data: String)

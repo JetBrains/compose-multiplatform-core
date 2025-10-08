@@ -18,17 +18,17 @@
 package androidx.compose.remote.foundation
 
 import androidx.annotation.RestrictTo
+import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
+import androidx.compose.remote.creation.compose.capture.RecordingCanvas
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.semantics
+import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
+import androidx.compose.remote.creation.compose.state.RemoteBitmap
+import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rememberRemoteFloatValue
 import androidx.compose.remote.foundation.image.toRemoteCompose
-import androidx.compose.remote.frontend.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.frontend.capture.RecordingCanvas
-import androidx.compose.remote.frontend.layout.RemoteComposable
-import androidx.compose.remote.frontend.modifier.RemoteModifier
-import androidx.compose.remote.frontend.modifier.semantics
-import androidx.compose.remote.frontend.modifier.toComposeUiLayout
-import androidx.compose.remote.frontend.state.RemoteBitmap
-import androidx.compose.remote.frontend.state.RemoteFloat
-import androidx.compose.remote.frontend.state.RemoteString
-import androidx.compose.remote.frontend.state.rememberRemoteFloatValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.DefaultAlpha

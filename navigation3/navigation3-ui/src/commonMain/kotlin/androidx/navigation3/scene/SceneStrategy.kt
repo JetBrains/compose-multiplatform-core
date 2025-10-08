@@ -37,10 +37,9 @@ public fun interface SceneStrategy<T : Any> {
      * @param entries The entries on the back stack that should be considered valid to render via a
      *   returned Scene.
      * @param onBack a callback that should be connected to any internal handling of system back
-     *   done by the returned [Scene]. The passed [Int] should be the number of entries were popped.
+     *   done by the returned [Scene].
      */
-    @Composable
-    public fun calculateScene(entries: List<NavEntry<T>>, onBack: (count: Int) -> Unit): Scene<T>?
+    @Composable public fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>?
 
     /**
      * Chains this [SceneStrategy] with another [sceneStrategy] to return a combined

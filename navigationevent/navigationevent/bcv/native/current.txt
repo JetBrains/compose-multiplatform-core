@@ -183,8 +183,6 @@ sealed class androidx.navigationevent/NavigationEventTransitionState { // androi
     }
 
     final object Idle : androidx.navigationevent/NavigationEventTransitionState { // androidx.navigationevent/NavigationEventTransitionState.Idle|null[0]
-        final fun equals(kotlin/Any?): kotlin/Boolean // androidx.navigationevent/NavigationEventTransitionState.Idle.equals|equals(kotlin.Any?){}[0]
-        final fun hashCode(): kotlin/Int // androidx.navigationevent/NavigationEventTransitionState.Idle.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // androidx.navigationevent/NavigationEventTransitionState.Idle.toString|toString(){}[0]
     }
 }

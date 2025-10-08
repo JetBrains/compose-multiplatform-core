@@ -321,6 +321,12 @@ public final class Flags {
     public static final String FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER =
             FLAG_PREFIX + "enable_reusable_decompression_buffer";
 
+    /**
+     * Whether to enable sharded storage for embedding index.
+     */
+    public static final String FLAG_ENABLE_SHARDED_EMBEDDING_STORAGE =
+            FLAG_PREFIX + "enable_sharded_embedding_storage";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -705,6 +711,14 @@ public final class Flags {
      */
     public static boolean enableReusableDecompressionBuffer() {
         // TODO(b/435754056): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable sharded storage for embedding index.
+     */
+    public static boolean enableShardedEmbeddingStorage() {
+        // TODO(b/436237337): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
     }
 }

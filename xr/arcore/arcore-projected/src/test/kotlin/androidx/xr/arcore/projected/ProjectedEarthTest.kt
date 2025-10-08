@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.projected
 
-import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
+import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose

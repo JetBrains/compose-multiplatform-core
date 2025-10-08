@@ -18,9 +18,9 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.media.MediaPlayer;
 
-import androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper;
-import androidx.xr.scenecore.internal.PointSourceParams;
-import androidx.xr.scenecore.internal.SoundFieldAttributes;
+import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper;
+import androidx.xr.scenecore.runtime.PointSourceParams;
+import androidx.xr.scenecore.runtime.SoundFieldAttributes;
 
 import com.android.extensions.xr.media.MediaPlayerExtensions;
 

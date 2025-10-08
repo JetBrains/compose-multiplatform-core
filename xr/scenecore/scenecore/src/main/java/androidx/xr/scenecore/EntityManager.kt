@@ -18,7 +18,7 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.scenecore.internal.Entity as RtEntity
+import androidx.xr.scenecore.runtime.Entity as RtEntity
 import java.util.concurrent.ConcurrentHashMap
 
 /** Manages the mapping between [RuntimeEntity] and [Entity] for a given SceneCore [Session]. */
@@ -26,19 +26,22 @@ internal class EntityManager {
     private val rtEntityEntityMap = ConcurrentHashMap<RtEntity, Entity>()
 
     /**
-     * Returns the [Entity] associated with the given [RtEntity].
+     * Returns the [Entity] associated with the given [androidx.xr.scenecore.runtime.Entity].
      *
-     * @param rtEntity the [RtEntity] to get the associated [Entity] for.
-     * @return [java.util.Optional] containing the [Entity] associated with the given [RtEntity], or
-     *   empty if no such [Entity] exists.
+     * @param rtEntity the [androidx.xr.scenecore.runtime.Entity] to get the associated [Entity]
+     *   for.
+     * @return [java.util.Optional] containing the [Entity] associated with the given
+     *   [androidx.xr.scenecore.runtime.Entity], or empty if no such [Entity] exists.
      */
     internal fun getEntityForRtEntity(rtEntity: RtEntity): Entity? = rtEntityEntityMap[rtEntity]
 
     /**
-     * Sets the [Entity] associated with the given [RtEntity].
+     * Sets the [Entity] associated with the given [androidx.xr.scenecore.runtime.Entity].
      *
-     * @param rtEntity the [RtEntity] to set the associated [Entity] for.
-     * @param entity the [Entity] to associate with the given [RtEntity].
+     * @param rtEntity the [androidx.xr.scenecore.runtime.Entity] to set the associated [Entity]
+     *   for.
+     * @param entity the [Entity] to associate with the given
+     *   [androidx.xr.scenecore.runtime.Entity].
      */
     internal fun setEntityForRtEntity(rtEntity: RtEntity, entity: Entity) {
         rtEntityEntityMap[rtEntity] = entity
@@ -82,9 +85,9 @@ internal class EntityManager {
     }
 
     /**
-     * Removes the given [RtEntity] from the map.
+     * Removes the given [androidx.xr.scenecore.runtime.Entity] from the map.
      *
-     * @param entity the [RtEntity] to remove from the map.
+     * @param entity the [androidx.xr.scenecore.runtime.Entity] to remove from the map.
      */
     internal fun removeEntity(entity: RtEntity) {
         rtEntityEntityMap.remove(entity)

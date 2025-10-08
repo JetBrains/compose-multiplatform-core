@@ -23,12 +23,14 @@ import kotlin.reflect.KClass
 @DslMarker public annotation class EntryDsl
 
 /**
- * Creates an entryProvider builder that provides a [EntryProviderScope] to build NavEntries.
+ * Provides a [EntryProviderScope] to build an entryProvider that provides NavEntries.
  *
  * @param [T] the type of the [NavEntry] key
  * @param fallback the fallback [NavEntry] when the provider cannot find an entry associated with a
  *   given key on the backStack
- * @param builder the [EntryProviderScope] DSL extension that builds NavEntries for the provider
+ * @param builder the DSL extension that provides a [EntryProviderScope] to build an entryProvider
+ *   that provides NavEntries.
+ * @return an entryProvider that provides the NavEntry associated with a given key
  */
 public inline fun <T : Any> entryProvider(
     noinline fallback: (unknownScreen: T) -> NavEntry<T> = {

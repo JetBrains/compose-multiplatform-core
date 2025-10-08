@@ -558,8 +558,12 @@ public class WebViewFeature {
      * {@link WebSettingsCompat#setRequestedWithHeaderOriginAllowList(WebSettings, Set)},
      * {@link ServiceWorkerWebSettingsCompat#getRequestedWithHeaderOriginAllowList()},
      * {@link ServiceWorkerWebSettingsCompat#setRequestedWithHeaderOriginAllowList(Set)}
+     *
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API no longer does anything.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated
     public static final String REQUESTED_WITH_HEADER_ALLOW_LIST =
             "REQUESTED_WITH_HEADER_ALLOW_LIST";
 
@@ -576,7 +580,6 @@ public class WebViewFeature {
      * This feature covers
      * {@link UserAgentMetadata.Builder#setFormFactors(List)}, and
      * {@link UserAgentMetadata#getFormFactors()}.
-     *
      */
     public static final String USER_AGENT_METADATA_FORM_FACTORS =
             "USER_AGENT_METADATA_FORM_FACTORS";
@@ -756,7 +759,8 @@ public class WebViewFeature {
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
      * {@link WebResourceResponseCompat#setCookies(List)}, as well as
-     * {@link WebSettingsCompat#setCookiesIncludedInShouldInterceptRequest(WebSettings, boolean)} and
+     * {@link WebSettingsCompat#setCookiesIncludedInShouldInterceptRequest(WebSettings, boolean)}
+     * and
      * {@link ServiceWorkerWebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(boolean)}.
      */
     public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";

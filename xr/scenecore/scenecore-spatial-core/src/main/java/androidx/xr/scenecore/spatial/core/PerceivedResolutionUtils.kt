@@ -20,10 +20,10 @@ package androidx.xr.scenecore.spatial.core
 
 import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.CameraViewActivityPose
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.PerceivedResolutionResult
-import androidx.xr.scenecore.internal.PixelDimensions
+import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult
+import androidx.xr.scenecore.runtime.PixelDimensions
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.tan
@@ -32,14 +32,15 @@ import kotlin.math.tan
 @VisibleForTesting internal const val PERCEIVED_RESOLUTION_EPSILON = 0.001f
 
 /**
- * Retrieves the [CameraViewActivityPose] used for all Perceived Resolution calculations.
+ * Retrieves the [androidx.xr.scenecore.runtime.CameraViewActivityPose] used for all Perceived
+ * Resolution calculations.
  *
  * It is currently set to specifically look for the left eye camera.
  *
  * @param entityManager The [EntityManager] instance that holds the system space activity poses,
  *   including camera views.
- * @return The [CameraViewActivityPose] for the left eye if found; otherwise, `null` if no such
- *   camera view is registered or available in the [EntityManager].
+ * @return The [androidx.xr.scenecore.runtime.CameraViewActivityPose] for the left eye if found;
+ *   otherwise, `null` if no such camera view is registered or available in the [EntityManager].
  */
 internal fun getPerceivedResolutionCameraView(
     entityManager: EntityManager
@@ -70,10 +71,11 @@ internal fun getPerceivedResolutionCameraView(
  *   activity's coordinate space.
  * @param boxPositionInActivitySpace The position of the center of the 3D box in the activity's
  *   coordinate space.
- * @return If Success, the calculated [PixelDimensions] (width and height in pixels) that the
- *   largest face of the 3D box would occupy on the display, assuming it's oriented towards the
- *   camera. Returns [PerceivedResolutionResult.EntityTooClose] if the box's largest face is
- *   determined to be behind or too close to the camera.
+ * @return If Success, the calculated [androidx.xr.scenecore.runtime.PixelDimensions] (width and
+ *   height in pixels) that the largest face of the 3D box would occupy on the display, assuming
+ *   it's oriented towards the camera. Returns
+ *   [androidx.xr.scenecore.runtime.PerceivedResolutionResult.EntityTooClose] if the box's largest
+ *   face is determined to be behind or too close to the camera.
  * @see getDimensionsAndDistanceOfLargest3dBoxSurface
  * @see getPerceivedResolutionOfPanel
  */
@@ -111,7 +113,7 @@ internal fun getPerceivedResolutionOf3DBox(
  *   activity's coordinate space.
  * @param boxPositionInActivitySpace The position of the center of the 3D box in the activity's
  *   coordinate space.
- * @return A [Dimensions] where:
+ * @return A [androidx.xr.scenecore.runtime.Dimensions] where:
  *     - `width`: The largest dimension of the box, considered the width of its largest surface.
  *     - `height`: The second largest dimension of the box, considered the height of its largest
  *       surface.
@@ -157,8 +159,9 @@ internal fun getDimensionsAndDistanceOfLargest3dBoxSurface(
  * proportion into pixel dimensions based on the screen's total resolution.
  *
  * If the panel is determined to be too close to the camera (closer than
- * [PERCEIVED_RESOLUTION_EPSILON]), it returns [PerceivedResolutionResult.EntityTooClose] to avoid
- * issues like division by zero or infinitely large sizes.
+ * [PERCEIVED_RESOLUTION_EPSILON]), it returns
+ * [androidx.xr.scenecore.runtime.PerceivedResolutionResult.EntityTooClose] to avoid issues like
+ * division by zero or infinitely large sizes.
  *
  * @param cameraView The pose and FOV information of the camera in the activity's coordinate space.
  * @param panelWidthInActivitySpace The physical width of the 2D panel in the units of the
@@ -167,9 +170,10 @@ internal fun getDimensionsAndDistanceOfLargest3dBoxSurface(
  *   activity's coordinate space (e.g., meters).
  * @param panelDistanceInActivitySpace The perpendicular distance from the camera to the plane of
  *   the 2D panel, in the activity's coordinate space.
- * @return If Success, The calculated [PixelDimensions] (width and height in pixels) that the panel
- *   would occupy on the display. Returns [PerceivedResolutionResult.EntityTooClose] if the panel is
- *   too close to the camera.
+ * @return If Success, The calculated [androidx.xr.scenecore.runtime.PixelDimensions] (width and
+ *   height in pixels) that the panel would occupy on the display. Returns
+ *   [androidx.xr.scenecore.runtime.PerceivedResolutionResult.EntityTooClose] if the panel is too
+ *   close to the camera.
  */
 internal fun getPerceivedResolutionOfPanel(
     cameraView: CameraViewActivityPose,

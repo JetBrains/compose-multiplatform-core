@@ -21,7 +21,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.arcore.HandJointType
+import androidx.xr.arcore.runtime.HandJointType
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Quaternion
@@ -96,7 +96,7 @@ class OpenXrHandTest {
                         jointTypeIndex + 0.4f,
                     )
                 )
-            assertThat(underTest.handJoints[jointType]!!.translation)
+            assertThat((underTest.handJoints[jointType])!!.translation)
                 .isEqualTo(
                     Vector3(jointTypeIndex + 0.5f, jointTypeIndex + 0.6f, jointTypeIndex + 0.7f)
                 )

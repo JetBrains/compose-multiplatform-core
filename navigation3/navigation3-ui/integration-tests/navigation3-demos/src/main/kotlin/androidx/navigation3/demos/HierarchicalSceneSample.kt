@@ -47,7 +47,6 @@ import androidx.navigation3.runtime.navEntryDecorator
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
-import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.compose.serialization.serializers.SnapshotStateListSerializer
@@ -116,11 +115,10 @@ fun HierarchicalSceneSample() {
             CompositionLocalProvider(LocalNavSharedTransitionScope provides this) {
                 NavDisplay(
                     backStack = backStack,
-                    onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                    onBack = { backStack.removeAt(backStack.lastIndex) },
                     entryDecorators =
                         listOf(
                             sharedEntryInSceneNavEntryDecorator,
-                            rememberSceneSetupNavEntryDecorator(),
                             rememberSavedStateNavEntryDecorator(),
                         ),
                     sceneStrategy = sceneStrategy,
@@ -198,10 +196,7 @@ private class HierarchicalScene<T : Any>(
 
 private class HierarchicalSceneStrategy<T : Any>(private val columns: Int) : SceneStrategy<T> {
     @Composable
-    override fun calculateScene(
-        entries: List<NavEntry<T>>,
-        onBack: (count: Int) -> Unit,
-    ): Scene<T> {
+    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T> {
         val includedEntries = entries.takeLast(columns)
         return remember(columns, includedEntries) {
             HierarchicalScene(

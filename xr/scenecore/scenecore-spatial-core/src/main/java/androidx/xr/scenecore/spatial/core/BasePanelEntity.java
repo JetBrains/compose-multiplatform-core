@@ -24,12 +24,12 @@ import android.util.TypedValue;
 
 import androidx.core.util.TypedValueCompat;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.internal.CameraViewActivityPose;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.PanelEntity;
-import androidx.xr.scenecore.internal.PerceivedResolutionResult;
-import androidx.xr.scenecore.internal.PixelDimensions;
-import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.PanelEntity;
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.Space;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

@@ -52,4 +52,15 @@ public object Dependencies {
             null
         }
     }
+
+    /**
+     * Returns the AggregatedAppFunctionInventory if available else the SchemaAppFunctionInventory.
+     *
+     * If both are not available, returns null.
+     */
+    internal val appFunctionInventory: AppFunctionInventory? by lazy {
+        if (aggregatedAppFunctionInventory != null) return@lazy aggregatedAppFunctionInventory
+
+        return@lazy schemaAppFunctionInventory
+    }
 }

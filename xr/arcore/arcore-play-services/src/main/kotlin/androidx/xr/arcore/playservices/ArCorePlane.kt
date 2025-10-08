@@ -17,10 +17,10 @@
 package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
-import androidx.xr.arcore.internal.AnchorNotTrackingException
-import androidx.xr.arcore.internal.Plane
-import androidx.xr.arcore.internal.Trackable
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
+import androidx.xr.arcore.runtime.Plane
+import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
@@ -30,7 +30,7 @@ import com.google.ar.core.Trackable as ArCoreTrackable
 import com.google.ar.core.exceptions.NotTrackingException
 
 /**
- * Wraps the [ARCorePlane] with an implementation of the [androidx.xr.arcore.internal.Plane]
+ * Wraps the [ARCorePlane] with an implementation of the [androidx.xr.arcore.runtime.internal.Plane]
  * interface.
  *
  * @property arCorePlane The underlying [ARCorePlane] instance.
@@ -115,7 +115,7 @@ internal constructor(internal val _arCorePlane: ARCorePlane, private val resourc
      * The type of the plane.
      *
      * This property gets the type from the underlying [ARCorePlane] instance, and converts it to a
-     * [androidx.xr.arcore.internal.Plane.Type].
+     * [androidx.xr.arcore.runtime.internal.Plane.Type].
      *
      * @return The type of the plane.
      */

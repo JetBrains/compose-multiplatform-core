@@ -18,17 +18,16 @@ package androidx.xr.arcore.playservices
 
 import android.view.Surface
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
-import androidx.xr.arcore.internal.AnchorNotTrackingException
-import androidx.xr.arcore.internal.ArDevice
-import androidx.xr.arcore.internal.DepthMap
-import androidx.xr.arcore.internal.Eye
-import androidx.xr.arcore.internal.Face
-import androidx.xr.arcore.internal.Hand
-import androidx.xr.arcore.internal.HitResult
-import androidx.xr.arcore.internal.PerceptionManager
-import androidx.xr.arcore.internal.RenderViewpoint
-import androidx.xr.arcore.internal.Trackable
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
+import androidx.xr.arcore.runtime.DepthMap
+import androidx.xr.arcore.runtime.Eye
+import androidx.xr.arcore.runtime.Face
+import androidx.xr.arcore.runtime.Hand
+import androidx.xr.arcore.runtime.HitResult
+import androidx.xr.arcore.runtime.PerceptionManager
+import androidx.xr.arcore.runtime.RenderViewpoint
+import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.runtime.VpsAvailabilityAvailable
 import androidx.xr.runtime.VpsAvailabilityErrorInternal
 import androidx.xr.runtime.VpsAvailabilityNetworkError
@@ -237,12 +236,12 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val earth: ArCoreEarth = xrResources.earth
 
-    /** Returns the [ArDevice] instance. */
+    /** Returns the [androidx.xr.arcore.runtime.internal.ArDevice] instance. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val arDevice: ArCoreDevice = xrResources.arDevice
 
     /**
-     * Returns the left [RenderViewpoint] object.
+     * Returns the left [androidx.xr.arcore.runtime.internal.RenderViewpoint] object.
      *
      * This is not available in ARCore.
      */
@@ -250,7 +249,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val leftRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the right [RenderViewpoint] object.
+     * Returns the right [androidx.xr.arcore.runtime.internal.RenderViewpoint] object.
      *
      * This is not available in ARCore.
      */
@@ -258,7 +257,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val rightRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the mono[RenderViewpoint] object.
+     * Returns the mono[androidx.xr.arcore.runtime.internal.RenderViewpoint] object.
      *
      * This is not currently implemented in ARCore.
      */
@@ -266,21 +265,21 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val monoRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the left [DepthMap] object.
+     * Returns the left [androidx.xr.arcore.runtime.internal.DepthMap] object.
      *
      * This is not available in ARCore.
      */
     override val leftDepthMap: DepthMap? = null
 
     /**
-     * Returns the right [DepthMap] object.
+     * Returns the right [androidx.xr.arcore.runtime.internal.DepthMap] object.
      *
      * This is not available in ARCore.
      */
     override val rightDepthMap: DepthMap? = null
 
     /**
-     * Returns the mono [DepthMap] object.
+     * Returns the mono [androidx.xr.arcore.runtime.internal.DepthMap] object.
      *
      * This is not available in ARCore.
      */

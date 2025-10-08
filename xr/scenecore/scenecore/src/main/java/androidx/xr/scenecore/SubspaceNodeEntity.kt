@@ -20,7 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.math.FloatSize3d
-import androidx.xr.scenecore.internal.SubspaceNodeEntity as RtSubspaceNodeEntity
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity as RtSubspaceNodeEntity
 
 /**
  * Represents an entity that manages a subspace node.

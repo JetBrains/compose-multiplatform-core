@@ -242,15 +242,21 @@ package androidx.xr.compose.subspace {
 
   public final class ResizePolicy {
     ctor public ResizePolicy();
-    ctor public ResizePolicy(optional boolean isEnabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean shouldMaintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange);
+    ctor public ResizePolicy(optional boolean isEnabled, optional androidx.xr.compose.unit.DpVolumeSize minimumSize, optional androidx.xr.compose.unit.DpVolumeSize maximumSize, optional boolean shouldMaintainAspectRatio, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeStart, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeUpdate, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeEnd, optional kotlin.jvm.functions.Function1<? super androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange);
     method @InaccessibleFromKotlin public androidx.xr.compose.unit.DpVolumeSize getMaximumSize();
     method @InaccessibleFromKotlin public androidx.xr.compose.unit.DpVolumeSize getMinimumSize();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeEnd();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeStart();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? getOnResizeUpdate();
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? getOnSizeChange();
     method @InaccessibleFromKotlin public boolean isEnabled();
     method @InaccessibleFromKotlin public boolean shouldMaintainAspectRatio();
     property public boolean isEnabled;
     property public androidx.xr.compose.unit.DpVolumeSize maximumSize;
     property public androidx.xr.compose.unit.DpVolumeSize minimumSize;
+    property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeEnd;
+    property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeStart;
+    property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,kotlin.Unit>? onResizeUpdate;
     property public kotlin.jvm.functions.Function1<androidx.xr.compose.unit.IntVolumeSize,java.lang.Boolean>? onSizeChange;
     property public boolean shouldMaintainAspectRatio;
   }

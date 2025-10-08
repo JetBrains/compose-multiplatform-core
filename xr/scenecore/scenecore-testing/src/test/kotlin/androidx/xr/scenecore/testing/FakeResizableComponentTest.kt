@@ -16,9 +16,9 @@
 
 package androidx.xr.scenecore.testing
 
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.ResizeEvent
-import androidx.xr.scenecore.internal.ResizeEventListener
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.ResizeEvent
+import androidx.xr.scenecore.runtime.ResizeEventListener
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.iterator

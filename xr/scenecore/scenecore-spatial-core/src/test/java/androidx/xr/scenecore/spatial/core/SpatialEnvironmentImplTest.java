@@ -16,12 +16,13 @@
 
 package androidx.xr.scenecore.spatial.core;
 
-import static androidx.xr.scenecore.internal.SpatialEnvironment.NO_PASSTHROUGH_OPACITY_PREFERENCE;
+import static androidx.xr.scenecore.runtime.SpatialEnvironment.NO_PASSTHROUGH_OPACITY_PREFERENCE;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,9 +30,10 @@ import static org.mockito.Mockito.verify;
 import android.app.Activity;
 
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
-import androidx.xr.scenecore.internal.ExrImageResource;
-import androidx.xr.scenecore.internal.GltfModelResource;
-import androidx.xr.scenecore.internal.SpatialEnvironment.SpatialEnvironmentPreference;
+import androidx.xr.scenecore.runtime.ExrImageResource;
+import androidx.xr.scenecore.runtime.GltfModelResource;
+import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference;
+import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;
@@ -44,6 +46,7 @@ import com.android.extensions.xr.node.NodeRepository;
 import com.android.extensions.xr.space.ShadowSpatialState;
 import com.android.extensions.xr.space.SpatialState;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,6 +68,8 @@ public final class SpatialEnvironmentImplTest {
     private XrExtensions mXrExtensions = null;
     private SpatialEnvironmentImpl mEnvironment = null;
     private final NodeRepository mNodeRepository = NodeRepository.getInstance();
+    private final SpatialEnvironmentFeature
+            mMockSpatialEnvironmentFeature = mock(SpatialEnvironmentFeature.class);
 
     @Before
     public void setUp() {
@@ -84,6 +89,15 @@ public final class SpatialEnvironmentImplTest {
 
     private SpatialState getSpatialState() {
         return mXrExtensions.getSpatialState(mActivity);
+    }
+
+    private void onRenderingFeatureReady() {
+        mEnvironment.onRenderingFeatureReady(mMockSpatialEnvironmentFeature);
+    }
+
+    @After
+    public void tearDown() {
+        mActivityController.destroy();
     }
 
     @Test
@@ -157,8 +171,7 @@ public final class SpatialEnvironmentImplTest {
     }
 
     @Test
-    public void
-            setPreferredSpatialEnv_throwsWhenRenderingFeatureNotReady() {
+    public void setPreferredSpatialEnv_throwsWhenRenderingFeatureNotReady() {
 
         assertThrows(
                 UnsupportedOperationException.class,
@@ -167,6 +180,19 @@ public final class SpatialEnvironmentImplTest {
                                 new SpatialEnvironmentPreference(
                                         new ExrImageResource() {},
                                         new GltfModelResource() {})));
+    }
+
+    @Test
+    public void setPreferredSpatialEnv_featureReady_featureIsCalled() {
+        onRenderingFeatureReady();
+
+        mEnvironment.setPreferredSpatialEnvironment(
+                new SpatialEnvironmentPreference(
+                        new ExrImageResource() {},
+                        new GltfModelResource() {}));
+
+        verify(mMockSpatialEnvironmentFeature).setPreferredSpatialEnvironment(
+                any(SpatialEnvironmentPreference.class));
     }
 
     @Test
@@ -243,6 +269,7 @@ public final class SpatialEnvironmentImplTest {
 
     @Test
     public void dispose_clearsResources() {
+        onRenderingFeatureReady();
         SpatialState spatialState = ShadowSpatialState.create();
         ShadowSpatialState.extract(spatialState)
                 .setEnvironmentVisibilityState(
@@ -264,6 +291,7 @@ public final class SpatialEnvironmentImplTest {
 
         mEnvironment.dispose();
 
+        verify(mMockSpatialEnvironmentFeature).dispose();
         assertThat(ShadowXrExtensions.extract(mXrExtensions).getEnvironmentNode(mActivity))
                 .isNull();
         assertThat(mEnvironment.isPreferredSpatialEnvironmentActive()).isFalse();

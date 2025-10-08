@@ -335,4 +335,10 @@ public class FlagsTest {
         assertThat(Flags.FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER)
                 .isEqualTo("com.android.appsearch.flags.enable_reusable_decompression_buffer");
     }
+
+    @Test
+    public void testFlagValue_enableShardedEmbeddingStorage() {
+        assertThat(Flags.FLAG_ENABLE_SHARDED_EMBEDDING_STORAGE)
+                .isEqualTo("com.android.appsearch.flags.enable_sharded_embedding_storage");
+    }
 }

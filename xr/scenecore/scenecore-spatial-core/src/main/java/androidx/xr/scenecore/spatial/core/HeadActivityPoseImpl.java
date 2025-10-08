@@ -20,8 +20,8 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.internal.HeadActivityPose;
-import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.runtime.HeadActivityPose;
+import androidx.xr.scenecore.runtime.HitTestResult;
 
 import com.google.common.util.concurrent.ListenableFuture;
 

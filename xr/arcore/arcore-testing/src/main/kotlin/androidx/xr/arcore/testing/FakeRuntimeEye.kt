@@ -17,8 +17,8 @@
 package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.EyeStatus
-import androidx.xr.arcore.internal.Eye
+import androidx.xr.arcore.runtime.Eye
+import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.math.Pose
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)

@@ -16,18 +16,18 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.xr.arcore.internal.Plane
+import androidx.xr.arcore.runtime.Plane
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
 /**
- * Represents the current state of a [androidx.xr.arcore.internal.Plane] instance's mutable fields.
+ * Represents the current state of a [androidx.xr.arcore.runtime.Plane] instance's mutable fields.
  *
  * @property trackingState the [androidx.xr.runtime.TrackingState] value describing if the plane is
  *   being updated.
- * @property label the [androidx.xr.arcore.internal.Plane.Label] associated with the plane.
+ * @property label the [androidx.xr.arcore.runtime.Plane.Label] associated with the plane.
  * @property centerPose the pose of the center of the detected plane. The pose's transformed +Y axis
  *   will be point normal out of the plane, with the +X and +Z axes orienting the extents of the
  *   bounding rectangle.

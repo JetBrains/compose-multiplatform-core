@@ -19,17 +19,17 @@ package androidx.xr.scenecore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.ActivityPose
-import androidx.xr.scenecore.internal.ActivitySpace
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.HitTestResult
+import androidx.xr.scenecore.runtime.ActivityPose
+import androidx.xr.scenecore.runtime.ActivitySpace
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.HitTestResult
 import com.google.common.util.concurrent.Futures.immediateFuture
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A test double for [androidx.xr.scenecore.internal.ActivitySpace], designed for use in unit or
+ * A test double for [androidx.xr.scenecore.runtime.ActivitySpace], designed for use in unit or
  * integration tests.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -93,7 +93,7 @@ public class FakeActivitySpace() : FakeSystemSpaceEntity(), ActivitySpace {
     }
 
     /**
-     * The [androidx.xr.scenecore.internal.HitTestResult] that will be returned by
+     * The [androidx.xr.scenecore.runtime.HitTestResult] that will be returned by
      * [hitTestRelativeToActivityPose]. This can be modified in tests to simulate different hit test
      * outcomes.
      */

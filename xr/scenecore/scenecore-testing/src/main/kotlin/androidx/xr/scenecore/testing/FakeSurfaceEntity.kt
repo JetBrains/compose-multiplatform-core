@@ -21,15 +21,15 @@ import android.media.ImageReader
 import android.view.Surface
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.PerceivedResolutionResult
-import androidx.xr.scenecore.internal.SurfaceEntity
-import androidx.xr.scenecore.internal.SurfaceEntity.Shape
-import androidx.xr.scenecore.internal.SurfaceFeature
-import androidx.xr.scenecore.internal.TextureResource
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult
+import androidx.xr.scenecore.runtime.SurfaceEntity
+import androidx.xr.scenecore.runtime.SurfaceEntity.Shape
+import androidx.xr.scenecore.runtime.SurfaceFeature
+import androidx.xr.scenecore.runtime.TextureResource
 
 /**
- * Test-only implementation of [androidx.xr.scenecore.internal.SurfaceEntity].
+ * Test-only implementation of [androidx.xr.scenecore.runtime.SurfaceEntity].
  *
  * Interface for a spatialized Entity which manages an Android Surface. Applications can render to
  * this Surface in various ways, such as via MediaPlayer, ExoPlayer, or custom rendering. The
@@ -78,7 +78,7 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
      * Retrieves the dimensions of the "spatial canvas" which the surface is mapped to. These values
      * are not impacted by scale.
      *
-     * @return The canvas [androidx.xr.scenecore.internal.Dimensions].
+     * @return The canvas [androidx.xr.scenecore.runtime.Dimensions].
      */
     override val dimensions: Dimensions
         get() {
@@ -149,7 +149,7 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
     /**
      * For test purposes only.
      *
-     * The [androidx.xr.scenecore.internal.PerceivedResolutionResult] that will be returned by
+     * The [androidx.xr.scenecore.runtime.PerceivedResolutionResult] that will be returned by
      * [getPerceivedResolution]. This can be modified in tests to simulate different perceived
      * resolution.
      */
@@ -160,14 +160,14 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
      * Gets the perceived resolution of the entity in the camera view.
      *
      * This API is only intended for use in Full Space Mode and will return
-     * [androidx.xr.scenecore.internal.PerceivedResolutionResult.InvalidCameraView] in Home Space
+     * [androidx.xr.scenecore.runtime.PerceivedResolutionResult.InvalidCameraView] in Home Space
      * Mode.
      *
      * The entity's own rotation and the camera's viewing direction are disregarded; this value
      * represents the dimensions of the entity on the camera view if its largest surface was facing
      * the camera without changing the distance of the entity to the camera.
      *
-     * @return A [androidx.xr.scenecore.internal.PerceivedResolutionResult] which encapsulates the
+     * @return A [androidx.xr.scenecore.runtime.PerceivedResolutionResult] which encapsulates the
      *   outcome:
      *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
      *       is successful.
@@ -175,7 +175,7 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
      *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
      *       the calculation is invalid or unavailable.
      *
-     * @see androidx.xr.scenecore.internal.PerceivedResolutionResult
+     * @see androidx.xr.scenecore.runtime.PerceivedResolutionResult
      */
     override fun getPerceivedResolution(): PerceivedResolutionResult {
         return perceivedResolutionResult
@@ -201,7 +201,7 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
 
     /**
      * The active color space of the media asset drawn on the surface. Use constants from
-     * [androidx.xr.scenecore.internal.SurfaceEntity.ColorSpace]. This value is used if
+     * [androidx.xr.scenecore.runtime.SurfaceEntity.ColorSpace]. This value is used if
      * [contentColorMetadataSet] is `true`.
      */
     override val colorSpace: Int
@@ -211,7 +211,7 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
 
     /**
      * The active color transfer function of the media asset drawn on the surface. Use constants
-     * from [androidx.xr.scenecore.internal.SurfaceEntity.ColorTransfer]. This value is used if
+     * from [androidx.xr.scenecore.runtime.SurfaceEntity.ColorTransfer]. This value is used if
      * [contentColorMetadataSet] is `true`.
      */
     override val colorTransfer: Int
@@ -221,7 +221,7 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
 
     /**
      * The active color range of the media asset drawn on the surface. Use constants from
-     * [androidx.xr.scenecore.internal.SurfaceEntity.ColorRange]. This value is used if
+     * [androidx.xr.scenecore.runtime.SurfaceEntity.ColorRange]. This value is used if
      * [contentColorMetadataSet] is `true`.
      */
     override val colorRange: Int
@@ -241,11 +241,11 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
      * [contentColorMetadataSet] to `true`.
      *
      * @param colorSpace The runtime color space value (e.g.,
-     *   [androidx.xr.scenecore.internal.SurfaceEntity.ColorSpace.Companion.BT709]).
+     *   [androidx.xr.scenecore.runtime.SurfaceEntity.ColorSpace.Companion.BT709]).
      * @param colorTransfer The runtime color transfer value (e.g.,
-     *   [androidx.xr.scenecore.internal.SurfaceEntity.ColorTransfer.Companion.SRGB]).
+     *   [androidx.xr.scenecore.runtime.SurfaceEntity.ColorTransfer.Companion.SRGB]).
      * @param colorRange The runtime color range value (e.g.,
-     *   [androidx.xr.scenecore.internal.SurfaceEntity.ColorRange.Companion.FULL]).
+     *   [androidx.xr.scenecore.runtime.SurfaceEntity.ColorRange.Companion.FULL]).
      * @param maxContentLightLevel The maximum content light level in nits.
      */
     override fun setContentColorMetadata(

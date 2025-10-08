@@ -19,10 +19,10 @@ package androidx.xr.scenecore.spatial.core
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.CameraViewActivityPose
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.PerceivedResolutionResult
-import androidx.xr.scenecore.internal.PixelDimensions
+import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult
+import androidx.xr.scenecore.runtime.PixelDimensions
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.atan
 import kotlin.math.roundToInt

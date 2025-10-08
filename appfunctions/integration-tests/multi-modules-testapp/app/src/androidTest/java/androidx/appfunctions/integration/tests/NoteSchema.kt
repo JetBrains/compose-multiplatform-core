@@ -32,11 +32,13 @@ public interface CreateNoteAppFunction {
      *
      * @param appFunctionContext The AppFunction execution context.
      * @param parameters The parameters for creating a note.
+     * @param tag Optional tag.
      * @return The response including the created note.
      */
     public suspend fun createNote(
         appFunctionContext: AppFunctionContext,
         parameters: Parameters,
+        tag: String? = null,
     ): Response
 
     /** The parameters for creating a note. */
@@ -80,7 +82,9 @@ public interface CreateNoteAppFunction {
     @AppFunctionSerializable
     public data class Response(
         /** The created note. */
-        public val createdNote: AppFunctionNote
+        public val createdNote: AppFunctionNote,
+        /** Optional tag. */
+        public val tag: String? = null,
     )
 }
 

@@ -18,10 +18,7 @@ package androidx.appfunctions.testing.internal
 
 import android.content.Context
 import android.os.Build
-import android.os.OutcomeReceiver
 import androidx.annotation.RequiresApi
-import androidx.appfunctions.AppFunctionAppUnknownException
-import androidx.appfunctions.AppFunctionException
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
@@ -31,11 +28,8 @@ import androidx.appfunctions.internal.NullTranslatorSelector
 import androidx.appfunctions.internal.findImpl
 import androidx.appfunctions.service.AppFunctionServiceDelegate
 import androidx.appfunctions.service.internal.AggregatedAppFunctionInvoker
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal class FakeAppFunctionManagerApi(
@@ -45,35 +39,15 @@ internal class FakeAppFunctionManagerApi(
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun executeAppFunction(
         request: ExecuteAppFunctionRequest
-    ): ExecuteAppFunctionResponse = suspendCancellableCoroutine { continuation ->
+    ): ExecuteAppFunctionResponse =
         AppFunctionServiceDelegate(
                 context,
-                Dispatchers.Default,
                 Dispatchers.Default,
                 AggregatedAppFunctionInventory::class.java.findImpl(prefix = "$", suffix = "_Impl"),
                 AggregatedAppFunctionInvoker::class.java.findImpl(prefix = "$", suffix = "_Impl"),
                 NullTranslatorSelector(),
             )
-            .onExecuteFunction(
-                request,
-                context.packageName,
-                object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
-                    override fun onResult(response: ExecuteAppFunctionResponse?) {
-                        if (response != null) {
-                            continuation.resume(response)
-                        } else {
-                            continuation.resumeWithException(
-                                AppFunctionAppUnknownException("Failed to execute appfunction.")
-                            )
-                        }
-                    }
-
-                    override fun onError(error: AppFunctionException) {
-                        continuation.resumeWithException(error)
-                    }
-                },
-            )
-    }
+            .executeFunction(request)
 
     override suspend fun isAppFunctionEnabled(packageName: String, functionId: String): Boolean =
         appFunctionReader.getAppFunctionMetadata(functionId, packageName)?.isEnabled

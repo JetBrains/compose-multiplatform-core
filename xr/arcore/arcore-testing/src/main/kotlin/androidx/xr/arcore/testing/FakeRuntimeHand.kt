@@ -16,12 +16,12 @@
 
 package androidx.xr.arcore.testing
 
-import androidx.xr.arcore.internal.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.Hand as RuntimeHand
 import androidx.xr.runtime.TrackingState
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 
-/** Test-only implementation of [androidx.xr.arcore.internal.Hand]. */
+/** Test-only implementation of [androidx.xr.arcore.runtime.internal.Hand]. */
 public class FakeRuntimeHand(
     override var trackingState: TrackingState = TrackingState.PAUSED,
     override var handJointsBuffer: FloatBuffer = ByteBuffer.allocate(0).asFloatBuffer(),

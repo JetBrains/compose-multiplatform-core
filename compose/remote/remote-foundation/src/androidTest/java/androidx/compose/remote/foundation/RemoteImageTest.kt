@@ -15,19 +15,24 @@
  */
 package androidx.compose.remote.foundation
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import androidx.compose.remote.frontend.modifier.RemoteModifier
-import androidx.compose.remote.frontend.modifier.size
-import androidx.compose.remote.frontend.state.rememberRemoteBitmapValue
-import androidx.compose.remote.frontend.state.rememberRemoteFloatValue
-import androidx.compose.remote.frontend.state.rememberRemoteString
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.rememberRemoteBitmap
+import androidx.compose.remote.creation.compose.state.rememberRemoteBitmapValue
+import androidx.compose.remote.creation.compose.state.rememberRemoteFloatValue
+import androidx.compose.remote.creation.compose.state.rememberRemoteString
+import androidx.compose.remote.foundation.test.R
+import androidx.compose.remote.player.core.platform.BitmapLoader
 import androidx.compose.remote.test.screenshot.TargetPlayer
 import androidx.compose.remote.test.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import org.junit.Rule
@@ -42,9 +47,15 @@ class RemoteImageTest {
     @get:Rule
     val remoteComposeTestRule =
         RemoteComposeScreenshotTestRule(
-            moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
-            targetPlayer = TargetPlayer.View,
-        )
+                moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
+                targetPlayer = TargetPlayer.View,
+            )
+            .apply {
+                bitmapLoader = BitmapLoader {
+                    val resources = ApplicationProvider.getApplicationContext<Context>().resources
+                    resources.openRawResource(R.drawable.clear)
+                }
+            }
 
     @Test
     fun remoteImage() {
@@ -81,6 +92,24 @@ class RemoteImageTest {
                 alpha = rememberRemoteFloatValue { 0.6f },
                 contentDescription = rememberRemoteString { "background" },
                 modifier = RemoteModifier.size(size),
+            )
+        }
+    }
+
+    @Test
+    fun remoteImageWithDefaultUrl() {
+        val size = 48.dp
+        remoteComposeTestRule.runScreenshotTest(size = Size(size.value, size.value)) {
+            // Without PlayerState API, will be blank
+            val dummyImage =
+                rememberRemoteBitmap(
+                    name = "dummy",
+                    url = "android.resource://androidx.compose.remote.foundation/drawable/dummy",
+                )
+            RemoteImage(
+                dummyImage,
+                contentDescription = rememberRemoteString { "background" },
+                RemoteModifier.size(size),
             )
         }
     }

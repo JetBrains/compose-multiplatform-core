@@ -35,7 +35,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.snapFlingBehavior
-import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -103,6 +102,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -112,6 +112,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.ScrollAxisRange
@@ -1961,39 +1962,19 @@ internal fun Month(
                             text = (dayNumber + 1).toLocalString(locale = locale),
                             modifier =
                                 Modifier.dayOnKeyEvent(
-                                        isFirstDay =
-                                            cellIndex == month.daysFromStartOfWeekToFirstOfMonth,
-                                        isLastDay =
-                                            cellIndex ==
-                                                (month.daysFromStartOfWeekToFirstOfMonth +
-                                                    month.numberOfDays) - 1,
-                                        isFirstColumn = ((cellIndex) % 7) == 0,
-                                        isLastColumn = ((cellIndex + 1) % 7) == 0,
-                                        state = lazyListState,
-                                        coroutineScope = coroutineScope,
-                                        focusManager = focusManager,
-                                        onReturnFocus = onReturnFocus,
-                                    )
-                                    .then(
-                                        // A disabled date is focusable for correct keyboard
-                                        // navigation.
-                                        if (!enabled) {
-                                            val interactionSource = remember {
-                                                MutableInteractionSource()
-                                            }
-                                            Modifier.indication(
-                                                    interactionSource,
-                                                    ripple(
-                                                        radius =
-                                                            DatePickerModalTokens
-                                                                .DateContainerWidth / 2
-                                                    ),
-                                                )
-                                                .focusable(interactionSource = interactionSource)
-                                        } else {
-                                            Modifier
-                                        }
-                                    ),
+                                    isFirstDay =
+                                        cellIndex == month.daysFromStartOfWeekToFirstOfMonth,
+                                    isLastDay =
+                                        cellIndex ==
+                                            (month.daysFromStartOfWeekToFirstOfMonth +
+                                                month.numberOfDays) - 1,
+                                    isFirstColumn = ((cellIndex) % 7) == 0,
+                                    isLastColumn = ((cellIndex + 1) % 7) == 0,
+                                    state = lazyListState,
+                                    coroutineScope = coroutineScope,
+                                    focusManager = focusManager,
+                                    onReturnFocus = onReturnFocus,
+                                ),
                             selected = startDateSelected || endDateSelected,
                             onClick = { onDateSelectionChange(dateInMillis) },
                             // Only animate on the first selected day. This is important to
@@ -2172,6 +2153,8 @@ private fun Day(
     description: String,
     colors: DatePickerColors,
 ) {
+    val focusable = LocalInputModeManager.current.inputMode != InputMode.Touch
+    val interactionSource = remember { MutableInteractionSource() }
     Surface(
         selected = selected,
         onClick = onClick,
@@ -2183,7 +2166,15 @@ private fun Day(
                 .semantics(mergeDescendants = true) {
                     this.text = AnnotatedString(description)
                     this.role = Role.Button
-                },
+                }
+                .then(
+                    // A disabled day is focusable for correct keyboard // navigation.
+                    if (!enabled && focusable) {
+                        Modifier.focusable(interactionSource = interactionSource)
+                    } else {
+                        Modifier
+                    }
+                ),
         enabled = enabled,
         shape = DatePickerModalTokens.DateContainerShape.value,
         color =
@@ -2199,6 +2190,7 @@ private fun Day(
             } else {
                 null
             },
+        interactionSource = interactionSource,
     ) {
         Box(
             modifier =

@@ -18,13 +18,14 @@ package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.xr.arcore.internal.PerceptionRuntime
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.ConfigMode
 import kotlin.time.ComparableTimeMark
 
 /**
- * Implementation of the [androidx.xr.arcore.internal.PerceptionRuntime] interface using Projected.
+ * Implementation of the [androidx.xr.arcore.runtime.internal.PerceptionRuntime] interface using
+ * Projected.
  *
  * @property lifecycleManager that manages the lifecycle of the Projected session.
  * @property perceptionManager that manages the perception capabilities of a runtime using

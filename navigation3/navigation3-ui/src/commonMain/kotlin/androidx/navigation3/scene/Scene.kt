@@ -88,4 +88,12 @@ public interface Scene<T : Any> {
      * specific to the [Scene].
      */
     public val content: @Composable () -> Unit
+
+    /**
+     * Provide [Scene]-specific information to [androidx.navigation3.ui.NavDisplay].
+     *
+     * By default includes the metadata of the last [NavEntry] in [entries].
+     */
+    public val metadata: Map<String, Any>
+        get() = entries.lastOrNull()?.metadata ?: emptyMap()
 }

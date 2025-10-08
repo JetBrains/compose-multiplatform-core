@@ -20,9 +20,9 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.math.assertPose
-import androidx.xr.scenecore.internal.InputEvent
-import androidx.xr.scenecore.internal.InputEventListener
-import androidx.xr.scenecore.internal.Space
+import androidx.xr.scenecore.runtime.InputEvent
+import androidx.xr.scenecore.runtime.InputEventListener
+import androidx.xr.scenecore.runtime.Space
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
 import org.junit.Before

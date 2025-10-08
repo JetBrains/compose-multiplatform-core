@@ -17,7 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.internal.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.runtime.PointSourceParams as RtPointSourceParams
 
 /**
  * Configures a sound source to be spatialized at a 3D location.

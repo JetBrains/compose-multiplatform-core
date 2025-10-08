@@ -18,8 +18,8 @@ package androidx.compose.remote.integration.demos.preview
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.remote.frontend.capture.RememberRemoteDocumentInline
-import androidx.compose.remote.frontend.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.capture.RememberRemoteDocumentInline
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
 import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.runtime.Composable

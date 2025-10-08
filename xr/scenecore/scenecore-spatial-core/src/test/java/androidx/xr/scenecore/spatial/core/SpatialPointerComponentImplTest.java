@@ -34,10 +34,10 @@ import android.view.ViewGroup.LayoutParams;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.PixelDimensions;
-import androidx.xr.scenecore.internal.SceneRuntime;
-import androidx.xr.scenecore.internal.SpatialPointerIcon;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.SceneRuntime;
+import androidx.xr.scenecore.runtime.SpatialPointerIcon;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -83,8 +83,8 @@ public final class SpatialPointerComponentImplTest {
 
     @After
     public void tearDown() {
-        // Dispose the runtime between test cases to clean up lingering references.
-        mRuntime.dispose();
+        // Destroy the runtime between test cases to clean up lingering references.
+        mRuntime.destroy();
     }
 
     private PanelEntityImpl createTestPanelEntity() {

@@ -34,11 +34,11 @@ import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
-import androidx.xr.scenecore.internal.CameraViewActivityPose;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.PixelDimensions;
-import androidx.xr.scenecore.internal.SurfaceEntity;
-import androidx.xr.scenecore.internal.SurfaceEntity.Shape;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
+import androidx.xr.scenecore.runtime.SurfaceEntity.Shape;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
@@ -65,8 +65,7 @@ public final class SurfaceFeatureImplTest {
     private ImpressApi mImpressApi;
     private FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
     private XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
-    SplitEngineSubspaceManager mSplitEngineSubspaceManager =
-            mock(SplitEngineSubspaceManager.class);
+    SplitEngineSubspaceManager mSplitEngineSubspaceManager = mock(SplitEngineSubspaceManager.class);
 
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);
@@ -84,7 +83,7 @@ public final class SurfaceFeatureImplTest {
         when(mSplitEngineSubspaceManager.createSubspace(anyString(), anyInt()))
                 .thenReturn(expectedSubspaceNode);
 
-        createDefaultSurfaceEntity(new SurfaceEntity.Shape.Quad(new FloatSize2d(1f, 1f)));
+        createDefaultSurfaceFeature(new SurfaceEntity.Shape.Quad(new FloatSize2d(1f, 1f)));
     }
 
     @After
@@ -94,7 +93,7 @@ public final class SurfaceFeatureImplTest {
         }
     }
 
-    private SurfaceFeatureImpl createDefaultSurfaceEntity(Shape shape) {
+    private SurfaceFeatureImpl createDefaultSurfaceFeature(Shape shape) {
         int stereoMode = SurfaceEntity.StereoMode.MONO;
         int surfaceProtection = 0;
         int useSuperSampling = 0;
@@ -128,7 +127,7 @@ public final class SurfaceFeatureImplTest {
         return cameraView;
     }
 
-    //@Ignore // b/428211243 this test currently leaks android.view.Surface
+    // @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setShape_setsShape() {
         SurfaceEntity.Shape expectedShape = new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f));
@@ -137,8 +136,9 @@ public final class SurfaceFeatureImplTest {
 
         assertThat(shape.getClass()).isEqualTo(expectedShape.getClass());
         assertThat(shape.getDimensions()).isEqualTo(expectedShape.getDimensions());
-        verify(mImpressApi).setStereoSurfaceEntityCanvasShapeQuad(
-                mSurfaceFeature.getEntityImpressNode(), 12f, 12f);
+        verify(mImpressApi)
+                .setStereoSurfaceEntityCanvasShapeQuad(
+                        mSurfaceFeature.getEntityImpressNode(), 12f, 12f);
 
         expectedShape = new SurfaceEntity.Shape.Sphere(11f);
         mSurfaceFeature.setShape(expectedShape);
@@ -146,8 +146,9 @@ public final class SurfaceFeatureImplTest {
 
         assertThat(shape.getClass()).isEqualTo(expectedShape.getClass());
         assertThat(shape.getDimensions()).isEqualTo(expectedShape.getDimensions());
-        verify(mImpressApi).setStereoSurfaceEntityCanvasShapeSphere(
-                mSurfaceFeature.getEntityImpressNode(), 11f);
+        verify(mImpressApi)
+                .setStereoSurfaceEntityCanvasShapeSphere(
+                        mSurfaceFeature.getEntityImpressNode(), 11f);
 
         expectedShape = new SurfaceEntity.Shape.Hemisphere(10f);
         mSurfaceFeature.setShape(expectedShape);
@@ -155,11 +156,12 @@ public final class SurfaceFeatureImplTest {
 
         assertThat(shape.getClass()).isEqualTo(expectedShape.getClass());
         assertThat(shape.getDimensions()).isEqualTo(expectedShape.getDimensions());
-        verify(mImpressApi).setStereoSurfaceEntityCanvasShapeHemisphere(
-                mSurfaceFeature.getEntityImpressNode(), 10f);
+        verify(mImpressApi)
+                .setStereoSurfaceEntityCanvasShapeHemisphere(
+                        mSurfaceFeature.getEntityImpressNode(), 10f);
     }
 
-    //@Ignore // b/428211243 this test currently leaks android.view.Surface
+    // @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setStereoMode_setsStereoMode() {
         int expectedStereoMode = SurfaceEntity.StereoMode.MONO;
@@ -167,23 +169,25 @@ public final class SurfaceFeatureImplTest {
         int stereoMode = mSurfaceFeature.getStereoMode();
 
         assertThat(stereoMode).isEqualTo(expectedStereoMode);
-        verify(mImpressApi).setStereoModeForStereoSurface(
-                mSurfaceFeature.getEntityImpressNode(), expectedStereoMode);
+        verify(mImpressApi)
+                .setStereoModeForStereoSurface(
+                        mSurfaceFeature.getEntityImpressNode(), expectedStereoMode);
 
         expectedStereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM;
         mSurfaceFeature.setStereoMode(expectedStereoMode);
         stereoMode = mSurfaceFeature.getStereoMode();
 
         assertThat(stereoMode).isEqualTo(expectedStereoMode);
-        verify(mImpressApi).setStereoModeForStereoSurface(
-                mSurfaceFeature.getEntityImpressNode(), expectedStereoMode);
+        verify(mImpressApi)
+                .setStereoModeForStereoSurface(
+                        mSurfaceFeature.getEntityImpressNode(), expectedStereoMode);
     }
 
-    //@Ignore // b/428211243 this test currently leaks android.view.Surface
+    // @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void dispose_supports_reentry() {
         Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(1.0f, 1.0f)); // 1m x 1m local
-        mSurfaceFeature = createDefaultSurfaceEntity(quadShape);
+        mSurfaceFeature = createDefaultSurfaceFeature(quadShape);
 
         // Note that we don't test that dispose prevents manipulating other properties because that
         // is enforced at the API level, rather than the implementation level.
@@ -191,7 +195,23 @@ public final class SurfaceFeatureImplTest {
         mSurfaceFeature.dispose(); // shouldn't crash
     }
 
-    //@Ignore // b/428211243 this test currently leaks android.view.Surface
+    @Test
+    public void setColliderEnabled_forwardsToImpress() {
+        mSurfaceFeature.setColliderEnabled(true);
+
+        verify(mImpressApi)
+                .setStereoSurfaceEntityColliderEnabled(
+                        mSurfaceFeature.getEntityImpressNode(), true);
+
+        // Set back to false
+        mSurfaceFeature.setColliderEnabled(false);
+
+        verify(mImpressApi)
+                .setStereoSurfaceEntityColliderEnabled(
+                        mSurfaceFeature.getEntityImpressNode(), false);
+    }
+
+    // @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setEdgeFeather_forwardsToImpress() {
         float kFeatherRadiusX = 0.14f;
@@ -202,8 +222,9 @@ public final class SurfaceFeatureImplTest {
         SurfaceEntity.EdgeFeather returnedFeather = mSurfaceFeature.getEdgeFeather();
 
         assertThat(returnedFeather).isEqualTo(expectedFeather);
-        verify(mImpressApi).setFeatherRadiusForStereoSurface(
-                mSurfaceFeature.getEntityImpressNode(), kFeatherRadiusX, kFeatherRadiusY);
+        verify(mImpressApi)
+                .setFeatherRadiusForStereoSurface(
+                        mSurfaceFeature.getEntityImpressNode(), kFeatherRadiusX, kFeatherRadiusY);
 
         // Set back to NoFeathering to simulate turning feathering off
         expectedFeather = new SurfaceEntity.EdgeFeather.NoFeathering();
@@ -211,8 +232,8 @@ public final class SurfaceFeatureImplTest {
         returnedFeather = mSurfaceFeature.getEdgeFeather();
 
         assertThat(returnedFeather).isEqualTo(expectedFeather);
-        verify(mImpressApi).setFeatherRadiusForStereoSurface(
-                mSurfaceFeature.getEntityImpressNode(), 0f, 0f);
+        verify(mImpressApi)
+                .setFeatherRadiusForStereoSurface(mSurfaceFeature.getEntityImpressNode(), 0f, 0f);
     }
 
     @Test
@@ -320,5 +341,4 @@ public final class SurfaceFeatureImplTest {
         assertThat(surface).isNotNull();
         assertThat(surface).isEqualTo(quadData.getSurface());
     }
-
 }

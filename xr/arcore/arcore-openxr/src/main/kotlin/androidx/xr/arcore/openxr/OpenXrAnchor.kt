@@ -19,8 +19,8 @@ package androidx.xr.arcore.openxr
 import android.os.IBinder
 import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
-import androidx.xr.arcore.internal.ExportableAnchor
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.ExportableAnchor
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import java.nio.ByteBuffer
@@ -28,7 +28,7 @@ import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-/** Wraps the native [XrSpace] with the [androidx.xr.arcore.internal.Anchor] interface. */
+/** Wraps the native [XrSpace] with the [androidx.xr.arcore.runtime.internal.Anchor] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrAnchor
 internal constructor(

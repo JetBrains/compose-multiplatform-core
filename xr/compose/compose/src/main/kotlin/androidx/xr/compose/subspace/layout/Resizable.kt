@@ -48,6 +48,9 @@ import kotlinx.coroutines.asExecutor
  * @param maximumSize the largest allowed dimensions for this composable.
  * @param maintainAspectRatio true if the new size should maintain the same aspect ratio as the
  *   existing size.
+ * @param onResizeStart will be called when a resize event has started with the original size
+ * @param onResizeUpdate will be called when the resize amount has changed during a resize event
+ * @param onResizeEnd will be called when a resize event has finished with the new size
  * @param onSizeChange a callback to process the size change in pixels during resizing. This will
  *   only be called if [enabled] is true. If the callback returns false or isn't specified, the
  *   default behavior of resizing this composable will be executed. If it returns true, it is the
@@ -60,10 +63,22 @@ internal fun SubspaceModifier.resizable(
     minimumSize: DpVolumeSize = DpVolumeSize.Zero,
     maximumSize: DpVolumeSize = DpVolumeSize(Dp.Infinity, Dp.Infinity, Dp.Infinity),
     maintainAspectRatio: Boolean = false,
+    onResizeStart: ((IntVolumeSize) -> Unit)? = null,
+    onResizeUpdate: ((IntVolumeSize) -> Unit)? = null,
+    onResizeEnd: ((IntVolumeSize) -> Unit)? = null,
     onSizeChange: ((IntVolumeSize) -> Boolean)? = null,
 ): SubspaceModifier =
     this.then(
-        ResizableElement(enabled, minimumSize, maximumSize, maintainAspectRatio, onSizeChange)
+        ResizableElement(
+            enabled,
+            minimumSize,
+            maximumSize,
+            maintainAspectRatio,
+            onResizeStart,
+            onResizeUpdate,
+            onResizeEnd,
+            onSizeChange,
+        )
     )
 
 private class ResizableElement(
@@ -71,6 +86,9 @@ private class ResizableElement(
     private val minimumSize: DpVolumeSize,
     private val maximumSize: DpVolumeSize,
     private val maintainAspectRatio: Boolean,
+    private val onResizeStart: ((IntVolumeSize) -> Unit)? = null,
+    private val onResizeUpdate: ((IntVolumeSize) -> Unit)? = null,
+    private val onResizeEnd: ((IntVolumeSize) -> Unit)? = null,
     private val onSizeChange: ((IntVolumeSize) -> Boolean)?,
 ) : SubspaceModifierNodeElement<ResizableNode>() {
 
@@ -85,34 +103,56 @@ private class ResizableElement(
     }
 
     override fun create(): ResizableNode =
-        ResizableNode(enabled, minimumSize, maximumSize, maintainAspectRatio, onSizeChange)
+        ResizableNode(
+            enabled,
+            minimumSize,
+            maximumSize,
+            maintainAspectRatio,
+            onResizeStart,
+            onResizeUpdate,
+            onResizeEnd,
+            onSizeChange,
+        )
 
     override fun update(node: ResizableNode) {
         node.enabled = enabled
         node.minimumSize = minimumSize
         node.maximumSize = maximumSize
         node.maintainAspectRatio = maintainAspectRatio
+        node.onResizeStart = onResizeStart
+        node.onResizeUpdate = onResizeUpdate
+        node.onResizeEnd = onResizeEnd
         node.onSizeChange = onSizeChange
     }
 
     override fun hashCode(): Int {
         var result = enabled.hashCode()
+        result = 31 * result + maintainAspectRatio.hashCode()
         result = 31 * result + minimumSize.hashCode()
         result = 31 * result + maximumSize.hashCode()
-        result = 31 * result + maintainAspectRatio.hashCode()
-        result = 31 * result + onSizeChange.hashCode()
+        result = 31 * result + (onResizeStart?.hashCode() ?: 0)
+        result = 31 * result + (onResizeUpdate?.hashCode() ?: 0)
+        result = 31 * result + (onResizeEnd?.hashCode() ?: 0)
+        result = 31 * result + (onSizeChange?.hashCode() ?: 0)
         return result
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        val otherElement = other as? ResizableNode ?: return false
+        if (javaClass != other?.javaClass) return false
 
-        return enabled == otherElement.enabled &&
-            minimumSize == otherElement.minimumSize &&
-            maximumSize == otherElement.maximumSize &&
-            maintainAspectRatio == otherElement.maintainAspectRatio &&
-            onSizeChange === otherElement.onSizeChange
+        other as ResizableElement
+
+        if (enabled != other.enabled) return false
+        if (maintainAspectRatio != other.maintainAspectRatio) return false
+        if (minimumSize != other.minimumSize) return false
+        if (maximumSize != other.maximumSize) return false
+        if (onResizeStart !== other.onResizeStart) return false
+        if (onResizeUpdate !== other.onResizeUpdate) return false
+        if (onResizeEnd !== other.onResizeEnd) return false
+        if (onSizeChange !== other.onSizeChange) return false
+
+        return true
     }
 }
 
@@ -121,6 +161,9 @@ internal class ResizableNode(
     internal var minimumSize: DpVolumeSize,
     internal var maximumSize: DpVolumeSize,
     internal var maintainAspectRatio: Boolean,
+    internal var onResizeStart: ((IntVolumeSize) -> Unit)? = null,
+    internal var onResizeUpdate: ((IntVolumeSize) -> Unit)? = null,
+    internal var onResizeEnd: ((IntVolumeSize) -> Unit)? = null,
     internal var onSizeChange: ((IntVolumeSize) -> Boolean)?,
 ) :
     SubspaceModifier.Node(),
@@ -206,25 +249,24 @@ internal class ResizableNode(
      * need to respond to every event, e.g., RESIZE_STATE_ONGOING, like we do for Movable.
      */
     fun handleResizeEvent(resizeEvent: ResizeEvent) {
-        if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_START) {
-            component.isFixedAspectRatioEnabled = maintainAspectRatio
-        } else if (resizeEvent.resizeState == ResizeEvent.ResizeState.RESIZE_STATE_END) {
-            resizeListener(resizeEvent.newSize)
+        when (resizeEvent.resizeState) {
+            ResizeEvent.ResizeState.RESIZE_STATE_START -> {
+                component.isFixedAspectRatioEnabled = maintainAspectRatio
+                onResizeStart?.invoke(resizeEvent.newSize.toIntVolumeSize(density))
+            }
+            ResizeEvent.ResizeState.RESIZE_STATE_ONGOING ->
+                onResizeUpdate?.invoke(resizeEvent.newSize.toIntVolumeSize(density))
+            ResizeEvent.ResizeState.RESIZE_STATE_END -> {
+                val nextSize = resizeEvent.newSize.toIntVolumeSize(density)
+                onResizeEnd?.invoke(nextSize)
+                if (onSizeChange?.invoke(nextSize) == true) {
+                    // We're done, the user app will handle the event.
+                    return
+                }
+                userSize = nextSize
+                requestRelayout()
+            }
         }
-    }
-
-    /**
-     * Called every time there is an onResizeEnd event in SceneCore, if this CoreEntity is
-     * resizable.
-     */
-    private fun resizeListener(newSize: FloatSize3d) {
-        val size = newSize.toIntVolumeSize(density)
-        if (onSizeChange?.invoke(size) == true) {
-            // We're done, the user app will handle the event.
-            return
-        }
-        userSize = size
-        requestRelayout()
     }
 
     override fun CoreEntityScope.modifyCoreEntity() {}

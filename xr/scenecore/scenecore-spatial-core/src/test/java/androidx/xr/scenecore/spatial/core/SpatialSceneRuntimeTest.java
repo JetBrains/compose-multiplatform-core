@@ -60,39 +60,39 @@ import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjection;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
 import androidx.xr.scenecore.impl.perception.exceptions.FailedToInitializeException;
-import androidx.xr.scenecore.internal.ActivitySpace;
-import androidx.xr.scenecore.internal.AnchorEntity;
-import androidx.xr.scenecore.internal.AnchorPlacement;
-import androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper;
-import androidx.xr.scenecore.internal.CameraViewActivityPose;
-import androidx.xr.scenecore.internal.Component;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.GltfEntity;
-import androidx.xr.scenecore.internal.GltfFeature;
-import androidx.xr.scenecore.internal.HeadActivityPose;
-import androidx.xr.scenecore.internal.InputEvent;
-import androidx.xr.scenecore.internal.InputEventListener;
-import androidx.xr.scenecore.internal.InteractableComponent;
-import androidx.xr.scenecore.internal.LoggingEntity;
-import androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper;
-import androidx.xr.scenecore.internal.MovableComponent;
-import androidx.xr.scenecore.internal.PanelEntity;
-import androidx.xr.scenecore.internal.PixelDimensions;
-import androidx.xr.scenecore.internal.PlaneSemantic;
-import androidx.xr.scenecore.internal.PlaneType;
-import androidx.xr.scenecore.internal.PointerCaptureComponent;
-import androidx.xr.scenecore.internal.ResizableComponent;
-import androidx.xr.scenecore.internal.SoundPoolExtensionsWrapper;
-import androidx.xr.scenecore.internal.Space;
-import androidx.xr.scenecore.internal.SpatialCapabilities;
-import androidx.xr.scenecore.internal.SpatialEnvironment;
-import androidx.xr.scenecore.internal.SpatialModeChangeListener;
-import androidx.xr.scenecore.internal.SpatialPointerComponent;
-import androidx.xr.scenecore.internal.SpatialVisibility;
-import androidx.xr.scenecore.internal.SubspaceNodeEntity;
-import androidx.xr.scenecore.internal.SubspaceNodeFeature;
-import androidx.xr.scenecore.internal.SurfaceEntity;
+import androidx.xr.scenecore.runtime.ActivitySpace;
+import androidx.xr.scenecore.runtime.AnchorEntity;
+import androidx.xr.scenecore.runtime.AnchorPlacement;
+import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.Component;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.GltfEntity;
+import androidx.xr.scenecore.runtime.GltfFeature;
+import androidx.xr.scenecore.runtime.HeadActivityPose;
+import androidx.xr.scenecore.runtime.InputEvent;
+import androidx.xr.scenecore.runtime.InputEventListener;
+import androidx.xr.scenecore.runtime.InteractableComponent;
+import androidx.xr.scenecore.runtime.LoggingEntity;
+import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper;
+import androidx.xr.scenecore.runtime.MovableComponent;
+import androidx.xr.scenecore.runtime.PanelEntity;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.PlaneSemantic;
+import androidx.xr.scenecore.runtime.PlaneType;
+import androidx.xr.scenecore.runtime.PointerCaptureComponent;
+import androidx.xr.scenecore.runtime.ResizableComponent;
+import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.SpatialCapabilities;
+import androidx.xr.scenecore.runtime.SpatialEnvironment;
+import androidx.xr.scenecore.runtime.SpatialModeChangeListener;
+import androidx.xr.scenecore.runtime.SpatialPointerComponent;
+import androidx.xr.scenecore.runtime.SpatialVisibility;
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
+import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.testing.FakeComponent;
 import androidx.xr.scenecore.testing.FakeGltfFeature;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
@@ -181,13 +181,8 @@ public class SpatialSceneRuntimeTest {
 
     @After
     public void tearDown() {
-        // Dispose the runtime between test cases to clean up lingering references.
-        try {
-            mRuntime.dispose();
-        } catch (NullPointerException e) {
-            // Tests which already call dispose will cause a NPE here due to Activity being null
-            // when detaching from the scene.
-        }
+        // Destroy the runtime between test cases to clean up lingering references.
+        mRuntime.destroy();
         mRuntime = null;
     }
 
@@ -911,7 +906,7 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void dispose_closesSpatialVisibilityAndPerceivedResolutionSubscription() {
+    public void destroy_closesSpatialVisibilityAndPerceivedResolutionSubscription() {
         @SuppressWarnings(value = "unchecked")
         Consumer<SpatialVisibility> mockSpatialVisListener =
                 (Consumer<SpatialVisibility>) mock(Consumer.class);
@@ -931,8 +926,8 @@ public class SpatialSceneRuntimeTest {
         verify(mockSpatialVisListener).accept(any());
         verify(mockPerceivedResListener).accept(any());
 
-        // Ensure dispose() clears the listener that the callbacks are not called a second time.
-        mRuntime.dispose();
+        // Ensure destroy() clears the listener that the callbacks are not called a second time.
+        mRuntime.destroy();
 
         assertThat(mRuntime.mIsExtensionVisibilityStateCallbackRegistered).isFalse();
 
@@ -2496,12 +2491,27 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void dispose_clearsResources() {
+    public void destroy_clearsResources() {
         AndroidXrEntity entity = (AndroidXrEntity) createGroupEntity();
         assertThat(entity.getNode()).isNotNull();
         assertThat(mNodeRepository.getParent(entity.getNode())).isNotNull();
 
-        mRuntime.dispose();
+        mRuntime.destroy();
+
+        assertThat(mNodeRepository.getParent(entity.getNode())).isNull();
+        assertThat(ShadowXrExtensions.extract(mXrExtensions).getSpatialStateCallback(mActivity))
+                .isNull();
+        assertThat(ShadowXrExtensions.extract(mXrExtensions).getMainWindowNode(mActivity)).isNull();
+        assertThat(ShadowXrExtensions.extract(mXrExtensions).getTaskNode(mActivity)).isNull();
+    }
+
+    @Test
+    public void destroy_disposeInvoked() {
+        AndroidXrEntity entity = (AndroidXrEntity) createGroupEntity();
+        assertThat(entity.getNode()).isNotNull();
+        assertThat(mNodeRepository.getParent(entity.getNode())).isNotNull();
+
+        mRuntime.destroy();
 
         assertThat(mNodeRepository.getParent(entity.getNode())).isNull();
         assertThat(ShadowXrExtensions.extract(mXrExtensions).getSpatialStateCallback(mActivity))

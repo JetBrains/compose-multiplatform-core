@@ -22,8 +22,8 @@ import android.view.Surface;
 
 import androidx.annotation.RestrictTo;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
-import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec;
-import androidx.xr.scenecore.internal.TextureSampler;
+import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec;
+import androidx.xr.scenecore.runtime.TextureSampler;
 
 import com.google.ar.imp.view.View;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -366,7 +366,6 @@ public final class ImpressApiImpl implements ImpressApi {
                 nInstanceGltfModel(getViewNativeHandle(mView), gltfToken, enableCollider));
     }
 
-    // TODO(b/376740308): Add support for toggling the collider on StereoSurface.
     @Override
     public void setGltfModelColliderEnabled(
             @NonNull ImpressNode impressNode, boolean enableCollider) {
@@ -530,6 +529,13 @@ public final class ImpressApiImpl implements ImpressApi {
             @NonNull ImpressNode impressNode, float radius) {
         nSetStereoSurfaceEntityCanvasShapeHemisphere(
                 getViewNativeHandle(mView), impressNode.getHandle(), radius);
+    }
+
+    @Override
+    public void setStereoSurfaceEntityColliderEnabled(
+            @NonNull ImpressNode impressNode, boolean enableCollider) {
+        nSetStereoSurfaceEntityColliderEnabled(
+                getViewNativeHandle(mView), impressNode.getHandle(), enableCollider);
     }
 
     @Override
@@ -1398,6 +1404,9 @@ public final class ImpressApiImpl implements ImpressApi {
 
     private static native void nSetStereoSurfaceEntityCanvasShapeHemisphere(
             long view, int impressNode, float radius);
+
+    private static native void nSetStereoSurfaceEntityColliderEnabled(
+            long view, int impressNode, boolean enableCollider);
 
     private static native Surface nGetSurfaceFromStereoSurfaceEntity(
             long view, int panelImpressNode);

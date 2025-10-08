@@ -64,8 +64,8 @@ internal class SubspaceLayoutModifierNodeCoordinator(
      */
     override val poseInRoot: Pose
         get() =
-            coordinatesInRoot?.poseInRoot?.let {
-                pose.translate(it.translation).rotate(it.rotation)
+            coordinatesInRoot?.poseInRoot?.let { parentPoseInRoot ->
+                parentPoseInRoot.compose(pose)
             } ?: pose
 
     /**
@@ -73,8 +73,8 @@ internal class SubspaceLayoutModifierNodeCoordinator(
      */
     override val poseInParentEntity: Pose
         get() =
-            coordinatesInParentEntity?.poseInParentEntity?.let {
-                pose.translate(it.translation).rotate(it.rotation)
+            coordinatesInParentEntity?.poseInParentEntity?.let { parentEntityPose ->
+                parentEntityPose.compose(pose)
             } ?: pose
 
     /**

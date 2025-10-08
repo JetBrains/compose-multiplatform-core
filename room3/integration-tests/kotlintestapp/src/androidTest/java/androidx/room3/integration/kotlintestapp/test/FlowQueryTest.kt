@@ -506,7 +506,7 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         }
 
     /**
-     * A repeated test that validates async cancellations of flows (due to flatMapLatest) due not
+     * A repeated test that validates async cancellations of flows (due to flatMapLatest) do not
      * race during triggers sync (adding / removing) such that a notification on established flows
      * are not missed. b/432365736 and b/439232923
      */

@@ -42,19 +42,17 @@ public abstract class GlanceWearWidgetService() : LifecycleService() {
     /** Instance of [GlanceWearWidget] associated with this provider. */
     public abstract val widget: GlanceWearWidget
 
+    private val providerName: ComponentName by
+        lazy(LazyThreadSafetyMode.PUBLICATION) { ComponentName(this, this.javaClass) }
+
     private val provider: IWearWidgetProvider.Stub by
         lazy(LazyThreadSafetyMode.PUBLICATION) {
-            WearWidgetProviderImpl(this, lifecycleScope, widget)
+            WearWidgetProviderImpl(this, providerName, lifecycleScope, widget)
         }
 
     private val legacyProvider: TileProvider.Stub by
         lazy(LazyThreadSafetyMode.PUBLICATION) {
-            LegacyTileProviderImpl(
-                this,
-                ComponentName(this, this.javaClass),
-                lifecycleScope,
-                widget,
-            )
+            LegacyTileProviderImpl(this, providerName, lifecycleScope, widget)
         }
 
     final override fun onBind(intent: Intent): IBinder? {

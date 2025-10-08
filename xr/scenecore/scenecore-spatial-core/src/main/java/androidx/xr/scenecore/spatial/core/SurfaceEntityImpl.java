@@ -20,14 +20,14 @@ import android.content.Context;
 import android.view.Surface;
 
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.internal.CameraViewActivityPose;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.PerceivedResolutionResult;
-import androidx.xr.scenecore.internal.Space;
-import androidx.xr.scenecore.internal.SurfaceEntity;
-import androidx.xr.scenecore.internal.SurfaceFeature;
-import androidx.xr.scenecore.internal.TextureResource;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
+import androidx.xr.scenecore.runtime.SurfaceFeature;
+import androidx.xr.scenecore.runtime.TextureResource;
 
 import com.android.extensions.xr.XrExtensions;
 
@@ -99,6 +99,10 @@ final class SurfaceEntityImpl extends BaseRenderingEntity implements SurfaceEnti
     @StereoMode
     public int getStereoMode() {
         return mSurfaceFeature.getStereoMode();
+    }
+
+    public void setColliderEnabled(boolean enableCollider) {
+        mSurfaceFeature.setColliderEnabled(enableCollider);
     }
 
     @Override

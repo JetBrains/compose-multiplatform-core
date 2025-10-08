@@ -23,12 +23,12 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.Operations
 import androidx.compose.remote.core.Platform
 import androidx.compose.remote.creation.RemoteComposeWriter
+import androidx.compose.remote.creation.compose.capture.Connection
+import androidx.compose.remote.creation.compose.capture.PendingIntentAwareWriter
+import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
+import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices
 import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.frontend.capture.Connection
-import androidx.compose.remote.frontend.capture.PendingIntentAwareWriter
-import androidx.compose.remote.frontend.capture.RemoteComposeCapture
-import androidx.compose.remote.frontend.layout.RemoteComposable
 import androidx.compose.runtime.Composable
 import kotlin.coroutines.resume
 import kotlinx.coroutines.ExperimentalCoroutinesApi

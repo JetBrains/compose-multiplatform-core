@@ -19,7 +19,8 @@ package androidx.xr.arcore
 import android.content.ContentResolver
 import android.provider.Settings.System
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.HandJointType as RuntimeHandJoint
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
@@ -124,11 +125,15 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
         ) : Map<HandJointType, Pose> {
             override val entries: Set<Map.Entry<HandJointType, Pose>>
                 get() =
-                    if (trackingState == TrackingState.TRACKING) {
-                        RuntimeHand.parseHandJoint(trackingState, handJointsBuffer).entries.toSet()
+                    (if (trackingState == TrackingState.TRACKING) {
+                        convertRuntimeHandJointToHandJoint(
+                                RuntimeHand.parseHandJoint(trackingState, handJointsBuffer)
+                            )
+                            .entries
+                            .toSet()
                     } else {
                         emptySet()
-                    }
+                    })
 
             override val keys: Set<HandJointType>
                 get() =
@@ -169,6 +174,15 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
                 val py = buffer.get()
                 val pz = buffer.get()
                 return Pose(Vector3(px, py, pz), Quaternion(qx, qy, qz, qw))
+            }
+
+            private fun convertRuntimeHandJointToHandJoint(
+                handJointTypeMap: Map<RuntimeHandJoint, Pose>
+            ): Map<HandJointType, Pose> {
+                return handJointTypeMap.mapKeys { entry ->
+                    val runtimeKey: RuntimeHandJoint = entry.key
+                    HandJointType.valueOf(runtimeKey.name)
+                }
             }
         }
 

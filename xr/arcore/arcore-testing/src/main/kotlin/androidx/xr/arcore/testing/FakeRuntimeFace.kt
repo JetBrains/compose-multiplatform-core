@@ -16,11 +16,11 @@
 
 package androidx.xr.arcore.testing
 
-import androidx.xr.arcore.internal.Face as RuntimeFace
+import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.runtime.TrackingState
 
 /**
- * Fake implementation of [androidx.xr.arcore.internal.Face] for testing purposes.
+ * Fake implementation of [androidx.xr.arcore.runtime.internal.Face] for testing purposes.
  *
  * @property trackingState The current tracking state of the face.
  * @property isValid Indicates whether the face is valid.

@@ -17,15 +17,15 @@
 package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
-import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
-import androidx.xr.arcore.internal.Plane
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.Plane
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
-/** Wraps the native [XrTrackableANDROID] with the [androidx.xr.arcore.internal.Plane] interface. */
+/** Wraps the native [XrTrackableANDROID] with the [androidx.xr.arcore.runtime.Plane] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrPlane
 internal constructor(
@@ -96,7 +96,7 @@ internal constructor(
 }
 
 /**
- * Create a [androidx.xr.arcore.internal.Plane.Type] from an integer value corresponding to an
+ * Create a [androidx.xr.arcore.runtime.Plane.Type] from an integer value corresponding to an
  * [XrPlaneTypeANDROID].
  */
 internal fun Plane.Type.Companion.fromOpenXrType(type: Int): Plane.Type =
@@ -112,7 +112,7 @@ internal fun Plane.Type.Companion.fromOpenXrType(type: Int): Plane.Type =
     }
 
 /**
- * Create a [androidx.xr.arcore.internal.Plane.Label] from an integer value corresponding to an
+ * Create a [androidx.xr.arcore.runtime.Plane.Label] from an integer value corresponding to an
  * [XrPlaneLabelANDROID].
  */
 internal fun Plane.Label.Companion.fromOpenXrLabel(label: Int): Plane.Label =

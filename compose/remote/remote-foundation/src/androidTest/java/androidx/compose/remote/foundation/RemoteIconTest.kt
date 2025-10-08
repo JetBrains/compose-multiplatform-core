@@ -16,10 +16,10 @@
 package androidx.compose.remote.foundation
 
 import androidx.compose.remote.creation.RemotePath
+import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.size
+import androidx.compose.remote.creation.compose.state.rememberRemoteColor
 import androidx.compose.remote.foundation.icons.RemoteImageVector
-import androidx.compose.remote.frontend.modifier.RemoteModifier
-import androidx.compose.remote.frontend.modifier.size
-import androidx.compose.remote.frontend.state.rememberRemoteColor
 import androidx.compose.remote.test.screenshot.TargetPlayer
 import androidx.compose.remote.test.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.CompositionLocalProvider

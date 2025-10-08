@@ -32,6 +32,7 @@ import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +40,9 @@ import org.junit.runner.RunWith
 /** Tests for [SubspaceLayoutNode]. */
 @RunWith(AndroidJUnit4::class)
 class SubspaceLayoutNodeTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    @get:Rule
+    val composeTestRule =
+        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
 
     @Test
     fun subspaceLayoutNode_shouldParentNodesProperly() {

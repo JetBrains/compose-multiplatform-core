@@ -24,10 +24,10 @@ import static org.mockito.Mockito.when;
 import android.media.AudioTrack;
 
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
-import androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper;
-import androidx.xr.scenecore.internal.PointSourceParams;
-import androidx.xr.scenecore.internal.SoundFieldAttributes;
-import androidx.xr.scenecore.internal.SpatializerConstants;
+import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
+import androidx.xr.scenecore.runtime.PointSourceParams;
+import androidx.xr.scenecore.runtime.SoundFieldAttributes;
+import androidx.xr.scenecore.runtime.SpatializerConstants;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.media.AudioTrackExtensions;

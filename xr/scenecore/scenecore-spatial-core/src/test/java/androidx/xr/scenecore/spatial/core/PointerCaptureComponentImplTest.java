@@ -28,11 +28,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.InputEvent;
-import androidx.xr.scenecore.internal.InputEventListener;
-import androidx.xr.scenecore.internal.PointerCaptureComponent;
-import androidx.xr.scenecore.internal.PointerCaptureComponent.StateListener;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.InputEvent;
+import androidx.xr.scenecore.runtime.InputEventListener;
+import androidx.xr.scenecore.runtime.PointerCaptureComponent;
+import androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;

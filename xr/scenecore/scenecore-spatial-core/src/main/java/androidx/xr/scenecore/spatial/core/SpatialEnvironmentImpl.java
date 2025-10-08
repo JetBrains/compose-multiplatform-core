@@ -19,9 +19,9 @@ package androidx.xr.scenecore.spatial.core;
 import android.app.Activity;
 
 import androidx.annotation.VisibleForTesting;
-import androidx.xr.scenecore.internal.SpatialEnvironment;
-import androidx.xr.scenecore.internal.SpatialEnvironmentExt;
-import androidx.xr.scenecore.internal.SpatialEnvironmentFeature;
+import androidx.xr.scenecore.runtime.SpatialEnvironment;
+import androidx.xr.scenecore.runtime.SpatialEnvironmentExt;
+import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;
@@ -50,7 +50,6 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnviron
     public static final String PASSTHROUGH_NODE_NAME = "EnvironmentPassthroughNode";
     @VisibleForTesting final Node mPassthroughNode;
     private final XrExtensions mXrExtensions;
-    private @Nullable Activity mActivity;
     private boolean mIsPreferredSpatialEnvironmentActive = false;
     private final AtomicReference<SpatialEnvironmentPreference> mSpatialEnvironmentPreference =
             new AtomicReference<>(null);
@@ -78,7 +77,6 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnviron
             @NonNull XrExtensions xrExtensions,
             @NonNull Node rootSceneNode,
             @NonNull Supplier<SpatialState> spatialStateProvider) {
-        mActivity = activity;
         mXrExtensions = xrExtensions;
         mPassthroughNode = xrExtensions.createNode();
         mSpatialStateProvider = spatialStateProvider;
@@ -311,14 +309,15 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnviron
      * <p>This should be called when the environment is no longer needed.
      */
     public void dispose() {
+        if (mSpatialEnvironmentFeature != null) {
+            mSpatialEnvironmentFeature.dispose();
+            mSpatialEnvironmentFeature = null;
+        }
         mActivePassthroughOpacity = NO_PASSTHROUGH_OPACITY_PREFERENCE;
         mPassthroughOpacityPreference = NO_PASSTHROUGH_OPACITY_PREFERENCE;
         mSpatialEnvironmentPreference.set(null);
         mIsPreferredSpatialEnvironmentActive = false;
         mOnPassthroughOpacityChangedListeners.clear();
         mOnSpatialEnvironmentChangedListeners.clear();
-        // TODO: b/376934871 - Check async results.
-        mXrExtensions.detachSpatialEnvironment(mActivity, Runnable::run, (result) -> {});
-        mActivity = null;
     }
 }

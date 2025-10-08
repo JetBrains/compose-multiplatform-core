@@ -23,22 +23,22 @@ import android.content.Context;
 import android.os.SystemClock;
 
 import androidx.annotation.IntDef;
-import androidx.xr.arcore.internal.ExportableAnchor;
+import androidx.xr.arcore.runtime.ExportableAnchor;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.Anchor;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Plane.PlaneData;
-import androidx.xr.scenecore.internal.ActivitySpace;
-import androidx.xr.scenecore.internal.AnchorEntity;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose;
-import androidx.xr.scenecore.internal.PlaneSemantic;
-import androidx.xr.scenecore.internal.PlaneType;
-import androidx.xr.scenecore.internal.Space;
-import androidx.xr.scenecore.internal.SpaceValue;
+import androidx.xr.scenecore.runtime.ActivitySpace;
+import androidx.xr.scenecore.runtime.AnchorEntity;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.runtime.PlaneSemantic;
+import androidx.xr.scenecore.runtime.PlaneType;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.SpaceValue;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
@@ -98,7 +98,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         private @interface AnchorCreationType {}
 
         // Anchor that is already created via Runtime API.
-        androidx.xr.arcore.internal.Anchor mRuntimeAnchor;
+        androidx.xr.arcore.runtime.Anchor mRuntimeAnchor;
 
         // Anchor search deadline for semantic and persisted anchors.
         Long mAnchorSearchDeadline;
@@ -207,7 +207,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     static AnchorEntityImpl createAnchorFromRuntimeAnchor(
             Context context,
             Node node,
-            androidx.xr.arcore.internal.Anchor anchor,
+            androidx.xr.arcore.runtime.Anchor anchor,
             ActivitySpace activitySpace,
             Entity activitySpaceRoot,
             XrExtensions extensions,
@@ -301,7 +301,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     // Converts a perception anchor to JXRCore runtime anchor.
-    private void tryConvertAnchor(androidx.xr.arcore.internal.Anchor runtimeAnchor) {
+    private void tryConvertAnchor(androidx.xr.arcore.runtime.Anchor runtimeAnchor) {
         ExportableAnchor exportableAnchor = (ExportableAnchor) runtimeAnchor;
         mAnchor =
                 new Anchor(exportableAnchor.getNativePointer(), exportableAnchor.getAnchorToken());

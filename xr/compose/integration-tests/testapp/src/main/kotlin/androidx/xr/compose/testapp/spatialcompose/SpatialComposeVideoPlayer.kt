@@ -110,7 +110,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.SpatialMediaPlayer
 import androidx.xr.scenecore.SurfaceEntity
-import androidx.xr.scenecore.internal.Dimensions
+import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.scene
 import java.io.File
 import kotlin.math.roundToInt

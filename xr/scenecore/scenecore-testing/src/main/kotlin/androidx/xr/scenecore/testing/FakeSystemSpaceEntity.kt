@@ -17,11 +17,11 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.SystemSpaceEntity
+import androidx.xr.scenecore.runtime.SystemSpaceEntity
 import java.util.concurrent.Executor
 
 /**
- * A test double for [androidx.xr.scenecore.internal.SystemSpaceEntity], designed for use in unit or
+ * A test double for [androidx.xr.scenecore.runtime.SystemSpaceEntity], designed for use in unit or
  * integration tests.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)

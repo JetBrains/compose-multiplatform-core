@@ -33,23 +33,23 @@ import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial;
 import androidx.xr.scenecore.impl.impress.Material;
 import androidx.xr.scenecore.impl.impress.Texture;
 import androidx.xr.scenecore.impl.impress.WaterMaterial;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.ExrImageResource;
-import androidx.xr.scenecore.internal.GltfEntity;
-import androidx.xr.scenecore.internal.GltfFeature;
-import androidx.xr.scenecore.internal.GltfModelResource;
-import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec;
-import androidx.xr.scenecore.internal.MaterialResource;
-import androidx.xr.scenecore.internal.RenderingEntityFactory;
-import androidx.xr.scenecore.internal.RenderingRuntime;
-import androidx.xr.scenecore.internal.SceneRuntime;
-import androidx.xr.scenecore.internal.SpatialEnvironmentExt;
-import androidx.xr.scenecore.internal.SubspaceNodeEntity;
-import androidx.xr.scenecore.internal.SubspaceNodeFeature;
-import androidx.xr.scenecore.internal.SurfaceEntity;
-import androidx.xr.scenecore.internal.TextureResource;
-import androidx.xr.scenecore.internal.TextureSampler;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.ExrImageResource;
+import androidx.xr.scenecore.runtime.GltfEntity;
+import androidx.xr.scenecore.runtime.GltfFeature;
+import androidx.xr.scenecore.runtime.GltfModelResource;
+import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec;
+import androidx.xr.scenecore.runtime.MaterialResource;
+import androidx.xr.scenecore.runtime.RenderingEntityFactory;
+import androidx.xr.scenecore.runtime.RenderingRuntime;
+import androidx.xr.scenecore.runtime.SceneRuntime;
+import androidx.xr.scenecore.runtime.SpatialEnvironmentExt;
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
+import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
+import androidx.xr.scenecore.runtime.TextureResource;
+import androidx.xr.scenecore.runtime.TextureSampler;
 
 import com.android.extensions.xr.XrExtensions;
 
@@ -84,7 +84,7 @@ class SpatialRenderingRuntime implements RenderingRuntime {
     private final ImpressApi mImpressApi;
     private SplitEngineSubspaceManager mSplitEngineSubspaceManager;
     private ImpSplitEngineRenderer mSplitEngineRenderer;
-    private boolean mIsDisposed = false;
+    private boolean mIsDestroyed = false;
     private boolean mFrameLoopStarted;
 
     private SpatialRenderingRuntime(
@@ -107,8 +107,6 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         mSpatialEnvironmentFeature =
                 new SpatialEnvironmentFeatureImpl(
                         mActivity, mImpressApi, mSplitEngineSubspaceManager, mExtensions);
-
-        startRenderer();
 
         ((SpatialEnvironmentExt) sceneRuntime.getSpatialEnvironment())
                 .onRenderingFeatureReady(mSpatialEnvironmentFeature);
@@ -1056,8 +1054,10 @@ class SpatialRenderingRuntime implements RenderingRuntime {
         return entity;
     }
 
+    // JxrRuntime lifecycle
     @Override
-    public void startRenderer() {
+    public void resume() {
+        // Start renderer
         if (mSplitEngineRenderer == null || mFrameLoopStarted) {
             return;
         }
@@ -1066,7 +1066,8 @@ class SpatialRenderingRuntime implements RenderingRuntime {
     }
 
     @Override
-    public void stopRenderer() {
+    public void pause() {
+        // Stop renderer
         if (mSplitEngineRenderer == null || !mFrameLoopStarted) {
             return;
         }
@@ -1075,22 +1076,32 @@ class SpatialRenderingRuntime implements RenderingRuntime {
     }
 
     @Override
-    public void dispose() {
-        if (mIsDisposed) {
+    public void destroy() {
+        if (mIsDestroyed) {
             return;
         }
 
         mActivity = null;
         if (mSplitEngineRenderer != null && mSplitEngineSubspaceManager != null) {
-            stopRenderer();
-            mSpatialEnvironmentFeature.dispose();
+            if (mFrameLoopStarted) {
+                mFrameLoopStarted = false;
+                mSplitEngineRenderer.stopFrameLoop();
+            }
+
+            // mSpatialEnvironmentFeature.dispose() will be invoked once in SceneRuntime.dispose()
+            // to make the XrExtensions operations happen before the SceneRuntime detaching the
+            // scene. Do the destroy here again to clean our own resource formally.
+            if (mSpatialEnvironmentFeature != null) {
+                mSpatialEnvironmentFeature.dispose();
+                mSpatialEnvironmentFeature = null;
+            }
             mImpressApi.disposeAllResources();
             mSplitEngineSubspaceManager.destroy();
             mSplitEngineRenderer.destroy();
             mSplitEngineSubspaceManager = null;
             mSplitEngineRenderer = null;
         }
-        mIsDisposed = true;
+        mIsDestroyed = true;
     }
 
     @VisibleForTesting

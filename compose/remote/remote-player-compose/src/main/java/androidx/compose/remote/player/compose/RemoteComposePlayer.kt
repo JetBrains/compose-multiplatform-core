@@ -25,6 +25,7 @@ import androidx.compose.remote.player.compose.context.ComposeRemoteContext
 import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.remote.player.core.action.NamedActionHandler
 import androidx.compose.remote.player.core.action.StateUpdaterActionCallback
+import androidx.compose.remote.player.core.platform.BitmapLoader
 import androidx.compose.remote.player.core.platform.SettingsRetriever
 import androidx.compose.remote.player.core.state.StateUpdater
 import androidx.compose.remote.player.core.state.StateUpdaterImpl
@@ -36,7 +37,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
@@ -61,6 +61,7 @@ internal fun RemoteComposePlayer(
     debugMode: Int = 0,
     clock: Clock = SystemClock(),
     onNamedAction: (name: String, value: Any?, stateUpdater: StateUpdater) -> Unit = { _, _, _ -> },
+    bitmapLoader: BitmapLoader? = null,
 ) {
     var start by remember(document) { mutableLongStateOf(System.nanoTime()) }
     var lastAnimationTime by remember(document) { mutableFloatStateOf(0.1f) }
@@ -76,6 +77,9 @@ internal fun RemoteComposePlayer(
             composeRemoteContext.theme = theme
             composeRemoteContext.setHaptic(haptic)
             composeRemoteContext.loadFloat(RemoteContext.ID_TOUCH_EVENT_TIME, -Float.MAX_VALUE)
+            if (bitmapLoader != null) {
+                composeRemoteContext.setBitmapLoader(bitmapLoader)
+            }
             mutableStateOf<RemoteContext>(composeRemoteContext)
         }
 

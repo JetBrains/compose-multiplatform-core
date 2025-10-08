@@ -17,7 +17,7 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.InteractableComponent
+import androidx.xr.scenecore.runtime.InteractableComponent
 
 /** Test-only implementation of [FakeInteractableComponent] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)

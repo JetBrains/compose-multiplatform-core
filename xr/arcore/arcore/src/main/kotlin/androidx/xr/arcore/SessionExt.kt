@@ -19,7 +19,7 @@ package androidx.xr.arcore
 import android.app.Activity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import androidx.xr.arcore.internal.PerceptionRuntime
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Session
 import java.util.Collections
 import java.util.WeakHashMap

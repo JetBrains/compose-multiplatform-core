@@ -21,13 +21,13 @@ import androidx.activity.ComponentActivity
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.SpatializerConstants.Companion.AMBISONICS_ORDER_FIRST_ORDER
-import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.PointSourceParams as RtPointSourceParams
-import androidx.xr.scenecore.internal.SceneRuntime
-import androidx.xr.scenecore.internal.SoundPoolExtensionsWrapper as RtSoundPoolExtensionsWrapper
-import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.scenecore.internal.SpatializerConstants as RtSpatializerConstants
+import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.PointSourceParams as RtPointSourceParams
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper as RtSoundPoolExtensionsWrapper
+import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.runtime.SpatializerConstants as RtSpatializerConstants
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test

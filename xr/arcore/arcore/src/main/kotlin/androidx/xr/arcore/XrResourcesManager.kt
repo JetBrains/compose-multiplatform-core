@@ -17,16 +17,16 @@
 package androidx.xr.arcore
 
 import android.annotation.SuppressLint
-import androidx.xr.arcore.internal.ArDevice as RuntimeArDevice
-import androidx.xr.arcore.internal.AugmentedObject as RuntimeObject
-import androidx.xr.arcore.internal.DepthMap as RuntimeDepthMap
-import androidx.xr.arcore.internal.Earth as RuntimeEarth
-import androidx.xr.arcore.internal.Eye as RuntimeEye
-import androidx.xr.arcore.internal.Face as RuntimeFace
-import androidx.xr.arcore.internal.Hand as RuntimeHand
-import androidx.xr.arcore.internal.Plane as RuntimePlane
-import androidx.xr.arcore.internal.RenderViewpoint as RuntimeRenderViewpoint
-import androidx.xr.arcore.internal.Trackable as RuntimeTrackable
+import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
+import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
+import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
+import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.runtime.Eye as RuntimeEye
+import androidx.xr.arcore.runtime.Face as RuntimeFace
+import androidx.xr.arcore.runtime.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.Plane as RuntimePlane
+import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
+import androidx.xr.arcore.runtime.Trackable as RuntimeTrackable
 import androidx.xr.runtime.internal.LifecycleManager
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue

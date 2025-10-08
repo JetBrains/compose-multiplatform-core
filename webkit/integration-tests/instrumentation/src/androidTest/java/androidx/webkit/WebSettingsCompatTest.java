@@ -44,8 +44,6 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,14 +51,9 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import okhttp3.HttpUrl;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class WebSettingsCompatTest {
-    public static final String TEST_APK_NAME = "androidx.webkit.instrumentation.test";
     WebViewOnUiThread mWebViewOnUiThread;
 
     @Before
@@ -152,33 +145,6 @@ public class WebSettingsCompatTest {
                 mWebViewOnUiThread.getSettings(), true);
         assertTrue(WebSettingsCompat.getEnterpriseAuthenticationAppLinkPolicyEnabled(
                 mWebViewOnUiThread.getSettings()));
-    }
-
-    @Test
-    public void testSetAppPackageNameXRequestedWithHeaderAllowList() throws Throwable {
-        WebkitUtils.checkFeature(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST);
-
-        WebSettings settings = mWebViewOnUiThread.getSettings();
-        Assert.assertTrue("The default should be an empty allow-list.",
-                WebSettingsCompat.getRequestedWithHeaderOriginAllowList(settings).isEmpty());
-        Set<String> allowList = new HashSet<>(
-                Arrays.asList("https://*.google.com", "https://*.example" + ".com:8443"));
-        WebSettingsCompat.setRequestedWithHeaderOriginAllowList(settings, allowList);
-        assertEquals("After setting an allow-list, it should be returned", allowList,
-                WebSettingsCompat.getRequestedWithHeaderOriginAllowList(settings));
-
-        // Check that the allow-list is respected, and the URL will get the expected header set.
-        try (MockWebServer mockWebServer = new MockWebServer()) {
-            HttpUrl url = mockWebServer.url("/");
-            String requestUrl = url.toString();
-            String requestOrigin = url.scheme() + "://" + url.host() + ":" + url.port();
-            WebSettingsCompat.setRequestedWithHeaderOriginAllowList(settings,
-                    Collections.singleton(requestOrigin));
-            mWebViewOnUiThread.loadUrl(requestUrl);
-            RecordedRequest recordedRequest = mockWebServer.takeRequest();
-            String headerValue = recordedRequest.getHeader("X-Requested-With");
-            Assert.assertEquals(TEST_APK_NAME, headerValue);
-        }
     }
 
     @Test

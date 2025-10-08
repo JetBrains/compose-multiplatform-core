@@ -18,13 +18,13 @@ package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.xr.arcore.internal.PerceptionRuntime
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.ConfigMode
 import kotlin.time.ComparableTimeMark
 
 /**
- * Implementation of the [androidx.xr.arcore.internal.PerceptionRuntime] interface using OpenXR.
+ * Implementation of the [androidx.xr.arcore.runtime.PerceptionRuntime] interface using OpenXR.
  *
  * @property lifecycleManager that manages the lifecycle of the OpenXR session.
  * @property perceptionManager that manages the perception capabilities of a runtime using OpenXR.

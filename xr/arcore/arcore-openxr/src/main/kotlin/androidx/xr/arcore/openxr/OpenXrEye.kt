@@ -17,8 +17,8 @@
 package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.EyeStatus
-import androidx.xr.arcore.internal.Eye as Eye
+import androidx.xr.arcore.runtime.Eye as Eye
+import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.math.Pose
 
 /** Wraps the OpenXR eye tracking data with the [Eye] interface. */

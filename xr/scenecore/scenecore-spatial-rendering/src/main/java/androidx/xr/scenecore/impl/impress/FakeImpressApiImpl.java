@@ -24,8 +24,8 @@ import android.view.Surface;
 
 import androidx.annotation.RestrictTo;
 import androidx.concurrent.futures.ResolvableFuture;
-import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec;
-import androidx.xr.scenecore.internal.TextureSampler;
+import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec;
+import androidx.xr.scenecore.runtime.TextureSampler;
 
 import com.google.ar.imp.view.View;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -77,6 +77,8 @@ public class FakeImpressApiImpl implements ImpressApi {
         float mFeatherRadiusX;
         float mFeatherRadiusY;
 
+        boolean mColliderEnabled;
+
         @Nullable
         public Surface getSurface() {
             return mSurface;
@@ -110,6 +112,10 @@ public class FakeImpressApiImpl implements ImpressApi {
         @Nullable
         public CanvasShape getCanvasShape() {
             return mCanvasShape;
+        }
+
+        public boolean getColliderEnabled() {
+            return mColliderEnabled;
         }
     }
 
@@ -499,6 +505,15 @@ public class FakeImpressApiImpl implements ImpressApi {
         StereoSurfaceEntityData data = mStereoSurfaceEntities.get(impressNode);
         data.mCanvasShape = StereoSurfaceEntityData.CanvasShape.VR_180_HEMISPHERE;
         data.mRadius = radius;
+    }
+
+    @Override
+    public void setStereoSurfaceEntityColliderEnabled(
+            @NonNull ImpressNode impressNode, boolean enableCollider) {
+        StereoSurfaceEntityData data = mStereoSurfaceEntities.get(impressNode);
+        if (data != null) {
+            data.mColliderEnabled = enableCollider;
+        }
     }
 
     @Override

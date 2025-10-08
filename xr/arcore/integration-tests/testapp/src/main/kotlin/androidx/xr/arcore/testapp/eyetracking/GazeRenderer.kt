@@ -20,7 +20,7 @@ import android.widget.TextView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Eye
-import androidx.xr.arcore.EyeStatus
+import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d

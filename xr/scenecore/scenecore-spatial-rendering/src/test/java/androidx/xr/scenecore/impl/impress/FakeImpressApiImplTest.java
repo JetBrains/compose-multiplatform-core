@@ -391,6 +391,25 @@ public final class FakeImpressApiImplTest {
     }
 
     @Test
+    public void setStereoSurfaceEntityColliderEnabled_setsColliderEnabled() {
+        int stereoMode = StereoMode.MONO;
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+
+        // Enable collider
+        mFakeImpressApi.setStereoSurfaceEntityColliderEnabled(stereoSurfaceNode, true);
+
+        Map<ImpressNode, StereoSurfaceEntityData> stereoSurfaces =
+                mFakeImpressApi.getStereoSurfaceEntities();
+        StereoSurfaceEntityData stereoSurfaceData = stereoSurfaces.get(stereoSurfaceNode);
+        assertNotNull(stereoSurfaceData);
+        assertThat(stereoSurfaceData.getColliderEnabled()).isTrue();
+
+        // Disable collider
+        mFakeImpressApi.setStereoSurfaceEntityColliderEnabled(stereoSurfaceNode, false);
+        assertThat(stereoSurfaceData.getColliderEnabled()).isFalse();
+    }
+
+    @Test
     public void loadTexture_loadsTexture() throws ExecutionException, InterruptedException {
         ListenableFuture<Texture> textureFuture = mFakeImpressApi.loadTexture("FakeAsset.exr");
         assertThat(textureFuture).isNotNull();

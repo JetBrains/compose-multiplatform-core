@@ -27,48 +27,48 @@ import android.util.Pair;
 import android.view.View;
 
 import androidx.annotation.VisibleForTesting;
-import androidx.xr.arcore.internal.Anchor;
+import androidx.xr.arcore.runtime.Anchor;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
-import androidx.xr.scenecore.internal.ActivityPanelEntity;
-import androidx.xr.scenecore.internal.ActivitySpace;
-import androidx.xr.scenecore.internal.AnchorEntity;
-import androidx.xr.scenecore.internal.AnchorPlacement;
-import androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper;
-import androidx.xr.scenecore.internal.CameraViewActivityPose;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.GltfEntity;
-import androidx.xr.scenecore.internal.GltfFeature;
-import androidx.xr.scenecore.internal.HeadActivityPose;
-import androidx.xr.scenecore.internal.InputEventListener;
-import androidx.xr.scenecore.internal.InteractableComponent;
-import androidx.xr.scenecore.internal.LoggingEntity;
-import androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper;
-import androidx.xr.scenecore.internal.MovableComponent;
-import androidx.xr.scenecore.internal.PanelEntity;
-import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose;
-import androidx.xr.scenecore.internal.PixelDimensions;
-import androidx.xr.scenecore.internal.PlaneSemantic;
-import androidx.xr.scenecore.internal.PlaneType;
-import androidx.xr.scenecore.internal.PointerCaptureComponent;
-import androidx.xr.scenecore.internal.RenderingEntityFactory;
-import androidx.xr.scenecore.internal.ResizableComponent;
-import androidx.xr.scenecore.internal.SceneRuntime;
-import androidx.xr.scenecore.internal.SoundPoolExtensionsWrapper;
-import androidx.xr.scenecore.internal.Space;
-import androidx.xr.scenecore.internal.SpatialCapabilities;
-import androidx.xr.scenecore.internal.SpatialEnvironment;
-import androidx.xr.scenecore.internal.SpatialModeChangeListener;
-import androidx.xr.scenecore.internal.SpatialPointerComponent;
-import androidx.xr.scenecore.internal.SpatialVisibility;
-import androidx.xr.scenecore.internal.SubspaceNodeEntity;
-import androidx.xr.scenecore.internal.SubspaceNodeFeature;
-import androidx.xr.scenecore.internal.SurfaceEntity;
-import androidx.xr.scenecore.internal.SurfaceFeature;
+import androidx.xr.scenecore.runtime.ActivityPanelEntity;
+import androidx.xr.scenecore.runtime.ActivitySpace;
+import androidx.xr.scenecore.runtime.AnchorEntity;
+import androidx.xr.scenecore.runtime.AnchorPlacement;
+import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.GltfEntity;
+import androidx.xr.scenecore.runtime.GltfFeature;
+import androidx.xr.scenecore.runtime.HeadActivityPose;
+import androidx.xr.scenecore.runtime.InputEventListener;
+import androidx.xr.scenecore.runtime.InteractableComponent;
+import androidx.xr.scenecore.runtime.LoggingEntity;
+import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper;
+import androidx.xr.scenecore.runtime.MovableComponent;
+import androidx.xr.scenecore.runtime.PanelEntity;
+import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.PlaneSemantic;
+import androidx.xr.scenecore.runtime.PlaneType;
+import androidx.xr.scenecore.runtime.PointerCaptureComponent;
+import androidx.xr.scenecore.runtime.RenderingEntityFactory;
+import androidx.xr.scenecore.runtime.ResizableComponent;
+import androidx.xr.scenecore.runtime.SceneRuntime;
+import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.SpatialCapabilities;
+import androidx.xr.scenecore.runtime.SpatialEnvironment;
+import androidx.xr.scenecore.runtime.SpatialModeChangeListener;
+import androidx.xr.scenecore.runtime.SpatialPointerComponent;
+import androidx.xr.scenecore.runtime.SpatialVisibility;
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
+import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
+import androidx.xr.scenecore.runtime.SurfaceFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
@@ -110,7 +110,7 @@ class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory {
     private final Node mSceneRootNode;
     private final Node mTaskWindowLeashNode;
     private final int mOpenXrReferenceSpaceType;
-    private boolean mIsDisposed;
+    private boolean mIsDestroyed;
     private final EntityManager mEntityManager;
     private final PerceptionLibrary mPerceptionLibrary;
     private final SpatialEnvironmentImpl mEnvironment;
@@ -296,8 +296,8 @@ class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory {
     }
 
     @Override
-    public void dispose() {
-        if (mIsDisposed) {
+    public void destroy() {
+        if (mIsDestroyed) {
             return;
         }
         mEnvironment.dispose();
@@ -314,7 +314,7 @@ class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory {
         mActivity = null;
         mEntityManager.getAllEntities().forEach(Entity::dispose);
         mEntityManager.clear();
-        mIsDisposed = true;
+        mIsDestroyed = true;
     }
 
     @VisibleForTesting

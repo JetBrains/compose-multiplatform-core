@@ -17,9 +17,9 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
-import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
-import androidx.xr.arcore.internal.AugmentedObject as RuntimeObject
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
 import androidx.xr.runtime.AugmentedObjectCategory as Category
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
@@ -138,7 +138,8 @@ internal constructor(
     }
 
     /**
-     * Creates an [Anchor] that is attached to this trackable, using the given initial [pose].
+     * Creates an [androidx.xr.arcore.runtime.Anchor] that is attached to this trackable, using the
+     * given initial [pose].
      *
      * @throws [IllegalStateException] if [Session.config.augmentedObjectCategories] is empty.
      */

@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.spatial.rendering;
 
-import androidx.xr.scenecore.internal.ExrImageResource;
+import androidx.xr.scenecore.runtime.ExrImageResource;
 
 /**
  * Implementation of a SceneCore ExrImageResource for the Split Engine.

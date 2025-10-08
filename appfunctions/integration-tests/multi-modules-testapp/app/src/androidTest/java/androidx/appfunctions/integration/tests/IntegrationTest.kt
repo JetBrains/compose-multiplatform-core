@@ -45,6 +45,7 @@ import com.google.common.truth.Truth.assertThat
 import java.time.LocalDateTime
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import org.junit.After
 import org.junit.Assert.assertThrows
@@ -1360,6 +1361,38 @@ class IntegrationTest {
         targetContext.assertWriteAccessible(filesData.writeOnlyUri.uri)
         targetContext.assertReadAccessible(filesData.readWriteUri.uri)
         targetContext.assertWriteAccessible(filesData.readWriteUri.uri)
+    }
+
+    @Test
+    fun executeAppFunction_requestCancellation_isIsolated() = doBlocking {
+        val requestA =
+            ExecuteAppFunctionRequest(
+                targetPackageName = context.packageName,
+                functionIdentifier = TestFunctionsIds.LONG_RUNNING_FUNCTION_ID,
+                functionParameters = AppFunctionData.EMPTY,
+            )
+        val requestB =
+            ExecuteAppFunctionRequest(
+                targetPackageName = context.packageName,
+                functionIdentifier = TestFunctionsIds.LONG_RUNNING_FUNCTION_ID,
+                functionParameters = AppFunctionData.EMPTY,
+            )
+        // Execute two functions simultaneously
+        val responseADeferred = async { appFunctionManager.executeAppFunction(requestA) }
+        val responseBDeferred = async { appFunctionManager.executeAppFunction(requestB) }
+
+        // Cancel responseA execution
+        responseADeferred.cancel()
+
+        // Assert responseB is completed successfully
+        val successResponse =
+            assertIs<ExecuteAppFunctionResponse.Success>(responseBDeferred.await())
+        assertThat(
+                successResponse.returnValue.getString(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
+                )
+            )
+            .isEqualTo("Completed")
     }
 
     @Test

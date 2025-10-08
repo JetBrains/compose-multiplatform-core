@@ -120,6 +120,9 @@ internal class AnnotationEditOperationsHandler(
     /** Redoes the last undone annotation edit operation. */
     fun redo() = replayOperation(operation = editsHistoryManager.redo())
 
+    /** Clears the annotation edit history. */
+    fun clear() = editsHistoryManager.clear()
+
     private fun replayOperation(operation: AnnotationEditOperation?) {
         if (operation != null) {
             when (operation.op) {

@@ -18,8 +18,8 @@ package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.internal.RenderingRuntime
-import androidx.xr.scenecore.internal.TextureResource as RtTextureResource
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.TextureResource as RtTextureResource
 import java.io.File
 import java.nio.file.Path
 

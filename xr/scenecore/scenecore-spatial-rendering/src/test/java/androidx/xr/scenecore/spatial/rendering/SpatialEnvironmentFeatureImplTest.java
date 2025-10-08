@@ -28,8 +28,8 @@ import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.MaterialData;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
-import androidx.xr.scenecore.internal.MaterialResource;
-import androidx.xr.scenecore.internal.SpatialEnvironment.SpatialEnvironmentPreference;
+import androidx.xr.scenecore.runtime.MaterialResource;
+import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;

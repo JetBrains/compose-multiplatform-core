@@ -15,8 +15,10 @@
  */
 package androidx.glance.wear.parcel;
 
-import androidx.glance.wear.parcel.WearWidgetRequestParcel;
+import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel;
+import androidx.glance.wear.parcel.IExecutionCallback;
 import androidx.glance.wear.parcel.IWearWidgetCallback;
+import androidx.glance.wear.parcel.WearWidgetRequestParcel;
 
 /**
   * Interface to be implemented by a service which provides Widgets on a Wear
@@ -43,5 +45,17 @@ interface IWearWidgetProvider {
       */
     oneway void onWidgetRequest(in WearWidgetRequestParcel requestParcel, IWearWidgetCallback callback) = 1;
 
-    // TODO: Add a method to report interaction events.
+    /**
+     * Called when the widget becomes active in the Host.
+     *
+     * @since version 1
+     */
+    oneway void onActivated(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 2;
+
+    /**
+     * Called when the widget becomes de-activated in the Host.
+     *
+     * @since version 1
+     */
+    oneway void onDeactivated(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 3;
 }

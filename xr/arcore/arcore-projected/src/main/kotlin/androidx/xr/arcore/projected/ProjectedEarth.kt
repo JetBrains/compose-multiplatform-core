@@ -17,16 +17,19 @@
 package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
-import androidx.xr.arcore.internal.Earth
-import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.Earth
+import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 
-/** Currently unimplemented implementation of [androidx.xr.arcore.internal.Earth] on Projected. */
+/**
+ * Currently unimplemented implementation of [androidx.xr.arcore.runtime.internal.Earth] on
+ * Projected.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedEarth internal constructor(private val xrResources: XrResources) : Earth {
     public override var state: Earth.State = Earth.State.STOPPED

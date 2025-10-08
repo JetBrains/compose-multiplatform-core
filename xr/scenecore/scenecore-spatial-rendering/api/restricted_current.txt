@@ -24,7 +24,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void clearMaterialOverride(androidx.xr.scenecore.impl.impress.ImpressNode, String, int);
     method public void clearPreferredEnvironmentIblAsset();
     method public androidx.xr.scenecore.impl.impress.ImpressNode createImpressNode();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.KhronosPbrMaterial!> createKhronosPbrMaterial(androidx.xr.scenecore.internal.KhronosPbrMaterialSpec);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.KhronosPbrMaterial!> createKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int, @androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel int);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int, @androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel int, boolean);
@@ -60,24 +60,24 @@ package androidx.xr.scenecore.impl.impress {
     method public void releaseImageBasedLightingAsset(long);
     method public void resetContentColorMetadataForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode);
     method public void setAlphaCutoffOnKhronosPbrMaterial(long, float);
-    method public void setAlphaMapOnWaterMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setAlphaMapOnWaterMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setAlphaStepMultiplierOnWaterMaterial(long, float);
     method public void setAlphaStepUOnWaterMaterial(long, float, float, float, float);
     method public void setAlphaStepVOnWaterMaterial(long, float, float, float, float);
     method public void setAmbientOcclusionFactorOnKhronosPbrMaterial(long, float);
-    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setAuxiliaryAlphaMaskForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, long);
     method public void setBaseColorFactorsOnKhronosPbrMaterial(long, float, float, float, float);
-    method public void setBaseColorTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setBaseColorTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setBaseColorUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setClearcoatFactorsOnKhronosPbrMaterial(long, float, float, float);
-    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
-    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
-    method public void setClearcoatTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
+    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
+    method public void setClearcoatTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setContentColorMetadataForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorSpace int, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorTransfer int, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorRange int, int);
     method public void setEmissiveFactorsOnKhronosPbrMaterial(long, float, float, float);
-    method public void setEmissiveTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setEmissiveTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setEmissiveUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setFeatherRadiusForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, float, float);
     method public void setGltfModelColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode, boolean);
@@ -85,30 +85,31 @@ package androidx.xr.scenecore.impl.impress {
     method public void setIndexOfRefractionOnKhronosPbrMaterial(long, float);
     method public void setMaterialOverride(androidx.xr.scenecore.impl.impress.ImpressNode, long, String, int);
     method public void setMetallicFactorOnKhronosPbrMaterial(long, float);
-    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setNormalBoundaryOnWaterMaterial(long, float);
     method public void setNormalFactorOnKhronosPbrMaterial(long, float);
-    method public void setNormalMapOnWaterMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setNormalMapOnWaterMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setNormalSpeedOnWaterMaterial(long, float);
-    method public void setNormalTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setNormalTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setNormalTilingOnWaterMaterial(long, float);
     method public void setNormalUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setNormalZOnWaterMaterial(long, float);
     method public void setPreferredEnvironmentLight(long);
     method public void setPrimaryAlphaMaskForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, long);
-    method public void setReflectionMapOnWaterMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setReflectionMapOnWaterMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setRoughnessFactorOnKhronosPbrMaterial(long, float);
     method public void setSheenColorFactorsOnKhronosPbrMaterial(long, float, float, float);
-    method public void setSheenColorTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setSheenColorTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setSheenRoughnessFactorOnKhronosPbrMaterial(long, float);
-    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setStereoModeForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, @androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int);
     method public void setStereoSurfaceEntityCanvasShapeHemisphere(androidx.xr.scenecore.impl.impress.ImpressNode, float);
     method public void setStereoSurfaceEntityCanvasShapeQuad(androidx.xr.scenecore.impl.impress.ImpressNode, float, float);
     method public void setStereoSurfaceEntityCanvasShapeSphere(androidx.xr.scenecore.impl.impress.ImpressNode, float);
+    method public void setStereoSurfaceEntityColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode, boolean);
     method public void setTransmissionFactorOnKhronosPbrMaterial(long, float);
-    method public void setTransmissionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setTransmissionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setTransmissionUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setup(com.google.ar.imp.view.View);
     method public void stopGltfModelAnimation(androidx.xr.scenecore.impl.impress.ImpressNode);
@@ -139,6 +140,7 @@ package androidx.xr.scenecore.impl.impress {
   public static class FakeImpressApiImpl.StereoSurfaceEntityData {
     ctor public FakeImpressApiImpl.StereoSurfaceEntityData();
     method public androidx.xr.scenecore.impl.impress.FakeImpressApiImpl.StereoSurfaceEntityData.CanvasShape? getCanvasShape();
+    method public boolean getColliderEnabled();
     method public float getFeatherRadiusX();
     method public float getFeatherRadiusY();
     method public float getHeight();
@@ -164,7 +166,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void clearMaterialOverride(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, String nodeName, int primitiveIndex);
     method public void clearPreferredEnvironmentIblAsset();
     method public androidx.xr.scenecore.impl.impress.ImpressNode createImpressNode();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.KhronosPbrMaterial> createKhronosPbrMaterial(androidx.xr.scenecore.internal.KhronosPbrMaterialSpec spec);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.KhronosPbrMaterial> createKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int stereoMode);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int stereoMode, @androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel int contentSecurityLevel);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int stereoMode, @androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel int contentSecurityLevel, boolean useSuperSampling);
@@ -188,24 +190,24 @@ package androidx.xr.scenecore.impl.impress {
     method public void releaseImageBasedLightingAsset(long iblToken);
     method public void resetContentColorMetadataForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode stereoSurfaceNode);
     method public void setAlphaCutoffOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float alphaCutoff);
-    method public void setAlphaMapOnWaterMaterial(long nativeWaterMaterial, long alphaMap, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setAlphaMapOnWaterMaterial(long nativeWaterMaterial, long alphaMap, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setAlphaStepMultiplierOnWaterMaterial(long nativeWaterMaterial, float alphaStepMultiplier);
     method public void setAlphaStepUOnWaterMaterial(long nativeWaterMaterial, float x, float y, float z, float w);
     method public void setAlphaStepVOnWaterMaterial(long nativeWaterMaterial, float x, float y, float z, float w);
     method public void setAmbientOcclusionFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor);
-    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long ambientOcclusionTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long ambientOcclusionTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float ux, float uy, float uz, float vx, float vy, float vz, float wx, float wy, float wz);
     method public void setAuxiliaryAlphaMaskForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode panelImpressNode, long alphaMask);
     method public void setBaseColorFactorsOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float x, float y, float z, float w);
-    method public void setBaseColorTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long baseColorTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setBaseColorTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long baseColorTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setBaseColorUvTransformOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float ux, float uy, float uz, float vx, float vy, float vz, float wx, float wy, float wz);
     method public void setClearcoatFactorsOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float intensity, float roughness, float normal);
-    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long clearcoatNormalTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
-    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long clearcoatRoughnessTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
-    method public void setClearcoatTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long clearcoatTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long clearcoatNormalTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
+    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long clearcoatRoughnessTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
+    method public void setClearcoatTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long clearcoatTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setContentColorMetadataForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode stereoSurfaceNode, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorSpace int colorSpace, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorTransfer int colorTransfer, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorRange int colorRange, int maxLuminance);
     method public void setEmissiveFactorsOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float x, float y, float z);
-    method public void setEmissiveTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long emissiveTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setEmissiveTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long emissiveTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setEmissiveUvTransformOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float ux, float uy, float uz, float vx, float vy, float vz, float wx, float wy, float wz);
     method public void setFeatherRadiusForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode panelImpressNode, float radiusX, float radiusY);
     method public void setGltfModelColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, boolean enableCollider);
@@ -213,30 +215,31 @@ package androidx.xr.scenecore.impl.impress {
     method public void setIndexOfRefractionOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float indexOfRefraction);
     method public void setMaterialOverride(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, long nativeMaterial, String nodeName, int primitiveIndex);
     method public void setMetallicFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor);
-    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long metallicRoughnessTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long metallicRoughnessTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float ux, float uy, float uz, float vx, float vy, float vz, float wx, float wy, float wz);
     method public void setNormalBoundaryOnWaterMaterial(long nativeWaterMaterial, float boundary);
     method public void setNormalFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor);
-    method public void setNormalMapOnWaterMaterial(long nativeWaterMaterial, long normalMap, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setNormalMapOnWaterMaterial(long nativeWaterMaterial, long normalMap, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setNormalSpeedOnWaterMaterial(long nativeWaterMaterial, float normalSpeed);
-    method public void setNormalTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long normalTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setNormalTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long normalTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setNormalTilingOnWaterMaterial(long nativeWaterMaterial, float normalTiling);
     method public void setNormalUvTransformOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float ux, float uy, float uz, float vx, float vy, float vz, float wx, float wy, float wz);
     method public void setNormalZOnWaterMaterial(long nativeWaterMaterial, float normalZ);
     method public void setPreferredEnvironmentLight(long iblToken);
     method public void setPrimaryAlphaMaskForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode panelImpressNode, long alphaMask);
-    method public void setReflectionMapOnWaterMaterial(long nativeWaterMaterial, long reflectionMap, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setReflectionMapOnWaterMaterial(long nativeWaterMaterial, long reflectionMap, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setRoughnessFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor);
     method public void setSheenColorFactorsOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float x, float y, float z);
-    method public void setSheenColorTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long sheenColorTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setSheenColorTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long sheenColorTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setSheenRoughnessFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor);
-    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long sheenRoughnessTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long sheenRoughnessTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setStereoModeForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode panelImpressNode, @androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int stereoMode);
     method public void setStereoSurfaceEntityCanvasShapeHemisphere(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, float radius);
     method public void setStereoSurfaceEntityCanvasShapeQuad(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, float width, float height);
     method public void setStereoSurfaceEntityCanvasShapeSphere(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, float radius);
+    method public void setStereoSurfaceEntityColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, boolean enableCollider);
     method public void setTransmissionFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor);
-    method public void setTransmissionTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long transmissionTexture, androidx.xr.scenecore.internal.TextureSampler sampler);
+    method public void setTransmissionTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long transmissionTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setTransmissionUvTransformOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float ux, float uy, float uz, float vx, float vy, float vz, float wx, float wy, float wz);
     method public void setup(com.google.ar.imp.view.View view);
     method public void stopGltfModelAnimation(androidx.xr.scenecore.impl.impress.ImpressNode impressNode);
@@ -357,7 +360,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void clearMaterialOverride(androidx.xr.scenecore.impl.impress.ImpressNode, String, int);
     method public void clearPreferredEnvironmentIblAsset();
     method public androidx.xr.scenecore.impl.impress.ImpressNode createImpressNode();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.KhronosPbrMaterial!> createKhronosPbrMaterial(androidx.xr.scenecore.internal.KhronosPbrMaterialSpec);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.KhronosPbrMaterial!> createKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int, @androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel int);
     method public androidx.xr.scenecore.impl.impress.ImpressNode createStereoSurface(@androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int, @androidx.xr.scenecore.impl.impress.ImpressApi.ContentSecurityLevel int, boolean);
@@ -381,24 +384,24 @@ package androidx.xr.scenecore.impl.impress {
     method public void releaseImageBasedLightingAsset(long);
     method public void resetContentColorMetadataForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode);
     method public void setAlphaCutoffOnKhronosPbrMaterial(long, float);
-    method public void setAlphaMapOnWaterMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setAlphaMapOnWaterMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setAlphaStepMultiplierOnWaterMaterial(long, float);
     method public void setAlphaStepUOnWaterMaterial(long, float, float, float, float);
     method public void setAlphaStepVOnWaterMaterial(long, float, float, float, float);
     method public void setAmbientOcclusionFactorOnKhronosPbrMaterial(long, float);
-    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setAuxiliaryAlphaMaskForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, long);
     method public void setBaseColorFactorsOnKhronosPbrMaterial(long, float, float, float, float);
-    method public void setBaseColorTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setBaseColorTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setBaseColorUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setClearcoatFactorsOnKhronosPbrMaterial(long, float, float, float);
-    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
-    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
-    method public void setClearcoatTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
+    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
+    method public void setClearcoatTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setContentColorMetadataForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorSpace int, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorTransfer int, @androidx.xr.scenecore.impl.impress.ImpressApi.ColorRange int, int);
     method public void setEmissiveFactorsOnKhronosPbrMaterial(long, float, float, float);
-    method public void setEmissiveTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setEmissiveTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setEmissiveUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setFeatherRadiusForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, float, float);
     method public void setGltfModelColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode, boolean);
@@ -406,30 +409,31 @@ package androidx.xr.scenecore.impl.impress {
     method public void setIndexOfRefractionOnKhronosPbrMaterial(long, float);
     method public void setMaterialOverride(androidx.xr.scenecore.impl.impress.ImpressNode, long, String, int);
     method public void setMetallicFactorOnKhronosPbrMaterial(long, float);
-    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setNormalBoundaryOnWaterMaterial(long, float);
     method public void setNormalFactorOnKhronosPbrMaterial(long, float);
-    method public void setNormalMapOnWaterMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setNormalMapOnWaterMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setNormalSpeedOnWaterMaterial(long, float);
-    method public void setNormalTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setNormalTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setNormalTilingOnWaterMaterial(long, float);
     method public void setNormalUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setNormalZOnWaterMaterial(long, float);
     method public void setPreferredEnvironmentLight(long);
     method public void setPrimaryAlphaMaskForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, long);
-    method public void setReflectionMapOnWaterMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setReflectionMapOnWaterMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setRoughnessFactorOnKhronosPbrMaterial(long, float);
     method public void setSheenColorFactorsOnKhronosPbrMaterial(long, float, float, float);
-    method public void setSheenColorTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setSheenColorTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setSheenRoughnessFactorOnKhronosPbrMaterial(long, float);
-    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setStereoModeForStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode, @androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode int);
     method public void setStereoSurfaceEntityCanvasShapeHemisphere(androidx.xr.scenecore.impl.impress.ImpressNode, float);
     method public void setStereoSurfaceEntityCanvasShapeQuad(androidx.xr.scenecore.impl.impress.ImpressNode, float, float);
     method public void setStereoSurfaceEntityCanvasShapeSphere(androidx.xr.scenecore.impl.impress.ImpressNode, float);
+    method public void setStereoSurfaceEntityColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode, boolean);
     method public void setTransmissionFactorOnKhronosPbrMaterial(long, float);
-    method public void setTransmissionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setTransmissionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setTransmissionUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
     method public void setup(com.google.ar.imp.view.View);
     method public void stopGltfModelAnimation(androidx.xr.scenecore.impl.impress.ImpressNode);
@@ -443,32 +447,32 @@ package androidx.xr.scenecore.impl.impress {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class KhronosPbrMaterial extends androidx.xr.scenecore.impl.impress.Material {
     method public void setAlphaCutoff(float);
     method public void setAmbientOcclusionFactor(float);
-    method public void setAmbientOcclusionTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setAmbientOcclusionTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setAmbientOcclusionUvTransform(float, float, float, float, float, float, float, float, float);
     method public void setBaseColorFactors(float, float, float, float);
-    method public void setBaseColorTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setBaseColorTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setBaseColorUvTransform(float, float, float, float, float, float, float, float, float);
     method public void setClearcoatFactors(float, float, float);
-    method public void setClearcoatNormalTexture(long, androidx.xr.scenecore.internal.TextureSampler);
-    method public void setClearcoatRoughnessTexture(long, androidx.xr.scenecore.internal.TextureSampler);
-    method public void setClearcoatTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setClearcoatNormalTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
+    method public void setClearcoatRoughnessTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
+    method public void setClearcoatTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setEmissiveFactors(float, float, float);
-    method public void setEmissiveTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setEmissiveTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setEmissiveUvTransform(float, float, float, float, float, float, float, float, float);
     method public void setIndexOfRefraction(float);
     method public void setMetallicFactor(float);
-    method public void setMetallicRoughnessTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setMetallicRoughnessTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setMetallicRoughnessUvTransform(float, float, float, float, float, float, float, float, float);
     method public void setNormalFactor(float);
-    method public void setNormalTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setNormalTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setNormalUvTransform(float, float, float, float, float, float, float, float, float);
     method public void setRoughnessFactor(float);
     method public void setSheenColorFactors(float, float, float);
-    method public void setSheenColorTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setSheenColorTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setSheenRoughnessFactor(float);
-    method public void setSheenRoughnessTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setSheenRoughnessTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setTransmissionFactor(float);
-    method public void setTransmissionTexture(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setTransmissionTexture(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setTransmissionUvTransform(float, float, float, float, float, float, float, float, float);
   }
 
@@ -479,12 +483,12 @@ package androidx.xr.scenecore.impl.impress {
     method public androidx.xr.scenecore.impl.impress.KhronosPbrMaterial.Builder setNativeMaterial(long);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class Material extends androidx.xr.scenecore.impl.impress.BindingsResource implements androidx.xr.scenecore.internal.MaterialResource {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class Material extends androidx.xr.scenecore.impl.impress.BindingsResource implements androidx.xr.scenecore.runtime.MaterialResource {
     ctor protected Material(androidx.xr.scenecore.impl.impress.ImpressApi, long);
     method protected void releaseBindingsResource(long);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Texture extends androidx.xr.scenecore.impl.impress.BindingsResource implements androidx.xr.scenecore.internal.TextureResource {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Texture extends androidx.xr.scenecore.impl.impress.BindingsResource implements androidx.xr.scenecore.runtime.TextureResource {
     method protected void releaseBindingsResource(long);
   }
 
@@ -496,14 +500,14 @@ package androidx.xr.scenecore.impl.impress {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class WaterMaterial extends androidx.xr.scenecore.impl.impress.Material {
-    method public void setAlphaMap(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setAlphaMap(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setAlphaStepMultiplier(float);
     method public void setNormalBoundary(float);
-    method public void setNormalMap(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setNormalMap(long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setNormalSpeed(float);
     method public void setNormalTiling(float);
     method public void setNormalZ(float);
-    method public void setReflectionMap(long, androidx.xr.scenecore.internal.TextureSampler);
+    method public void setReflectionMap(long, androidx.xr.scenecore.runtime.TextureSampler);
   }
 
   public static class WaterMaterial.Builder {

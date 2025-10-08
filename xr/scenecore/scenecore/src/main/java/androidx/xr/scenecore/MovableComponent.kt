@@ -22,8 +22,8 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.scenecore.MovableComponent.Companion.createAnchorable
 import androidx.xr.scenecore.MovableComponent.Companion.createSystemMovable
-import androidx.xr.scenecore.internal.MoveEventListener as RtMoveEventListener
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.MoveEventListener as RtMoveEventListener
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 

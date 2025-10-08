@@ -23,6 +23,9 @@ import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 
 /**
  * [VerticalStack] is a lazy scrollable layout that displays its children in a form of a stack where
@@ -61,11 +64,46 @@ public fun VerticalStack(
 
     VerticalPager(
         state = state.pagerState,
-        modifier = modifier,
+        modifier =
+            modifier.layout { measurable, constraints ->
+                val heightTakenByRevealArea = RevealAreaSize.roundToPx()
+
+                // Shrink the height constraints, to account for the reveal area
+                val pagerMinHeightConstraints =
+                    (constraints.minHeight - heightTakenByRevealArea).coerceAtLeast(0)
+                val pagerMaxHeightConstraints =
+                    if (constraints.hasBoundedHeight) {
+                        (constraints.maxHeight - heightTakenByRevealArea).coerceAtLeast(0)
+                    } else {
+                        constraints.maxHeight
+                    }
+                val pagerConstraints =
+                    constraints.copy(
+                        minHeight = pagerMinHeightConstraints,
+                        maxHeight = pagerMaxHeightConstraints,
+                    )
+
+                val pagerPlaceable = measurable.measure(pagerConstraints)
+
+                val layoutWidth = pagerPlaceable.width
+                val layoutHeight = pagerPlaceable.height + heightTakenByRevealArea
+
+                val layoutInfo = state.layoutInfoInternal
+                layoutInfo.viewportSizeState.value =
+                    IntSize(width = layoutWidth, height = layoutHeight)
+                layout(layoutWidth, layoutHeight) { pagerPlaceable.place(x = 0, y = 0) }
+            },
         key = { page -> stackItemHolderState.value.getKey(page) },
+        beyondViewportPageCount = MaxNextVisibleItemCount,
     ) { page ->
         stackItemHolderState.value.withInterval(page) { localIndex, itemInterval ->
             itemInterval.item(StackItemScopeImpl(), localIndex)
         }
     }
 }
+
+/** The size of the area where the items beneath the top of the stack item are revealed. */
+internal val RevealAreaSize = 18.dp
+
+/** The maximum number of items that can be visible at the same time in addition to the top item. */
+internal const val MaxNextVisibleItemCount = 2

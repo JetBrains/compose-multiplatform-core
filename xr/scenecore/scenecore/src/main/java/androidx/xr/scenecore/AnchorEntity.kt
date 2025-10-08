@@ -25,8 +25,8 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.Executor
@@ -250,7 +250,10 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         }
     }
 
-    /** Extension function that converts [RtAnchorEntity.State] to [AnchorEntity.State]. */
+    /**
+     * Extension function that converts [androidx.xr.scenecore.runtime.AnchorEntity.State] to
+     * [AnchorEntity.State].
+     */
     private fun Int.fromRtState() =
         when (this) {
             RtAnchorEntity.State.UNANCHORED -> State.UNANCHORED

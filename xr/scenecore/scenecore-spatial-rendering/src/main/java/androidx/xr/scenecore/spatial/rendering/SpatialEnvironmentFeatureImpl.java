@@ -22,11 +22,11 @@ import android.os.Looper;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.impl.impress.Material;
-import androidx.xr.scenecore.internal.ExrImageResource;
-import androidx.xr.scenecore.internal.GltfModelResource;
-import androidx.xr.scenecore.internal.MaterialResource;
-import androidx.xr.scenecore.internal.SpatialEnvironment.SpatialEnvironmentPreference;
-import androidx.xr.scenecore.internal.SpatialEnvironmentFeature;
+import androidx.xr.scenecore.runtime.ExrImageResource;
+import androidx.xr.scenecore.runtime.GltfModelResource;
+import androidx.xr.scenecore.runtime.MaterialResource;
+import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference;
+import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
@@ -56,6 +56,7 @@ class SpatialEnvironmentFeatureImpl extends BaseRenderingFeature
     private String mOverriddenNodeName;
     private @Nullable Consumer<Node> mOnBeforeNodeAttachedListener = null;
     private final @NonNull Activity mActivity;
+    private boolean mIsDisposed = false;
 
     SpatialEnvironmentFeatureImpl(
             @NonNull Activity activity,
@@ -264,6 +265,9 @@ class SpatialEnvironmentFeatureImpl extends BaseRenderingFeature
 
     @Override
     public void dispose() {
+        if (mIsDisposed) return;
+        mIsDisposed = true;
+
         super.dispose();
         if (mGeometrySubspaceSplitEngine != null) {
             if (mMaterialOverride != null) {
@@ -277,7 +281,7 @@ class SpatialEnvironmentFeatureImpl extends BaseRenderingFeature
             mGeometrySubspaceSplitEngine = null;
             mImpressApi.clearPreferredEnvironmentIblAsset();
         }
-        mRootEnvironmentNode = null;
+
         mGeometrySubspaceSplitEngine = null;
         mGeometrySubspaceImpressNode = null;
         mRootEnvironmentNode = null;

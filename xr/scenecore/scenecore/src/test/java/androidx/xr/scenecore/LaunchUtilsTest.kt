@@ -20,8 +20,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.runtime.SceneRuntime
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

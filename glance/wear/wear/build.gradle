@@ -42,7 +42,7 @@ dependencies {
 
     implementation("androidx.compose.runtime:runtime:$composeVersion")
     implementation(project(":compose:remote:remote-creation"))
-    implementation(project(":compose:remote:remote-frontend"))
+    implementation(project(":compose:remote:remote-creation-compose"))
 
     testImplementation("androidx.core:core-ktx:1.17.0")
     testImplementation(libs.kotlinCoroutinesTest)

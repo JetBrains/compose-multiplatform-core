@@ -22,8 +22,8 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import androidx.xr.scenecore.internal.MaterialResource as RtMaterial
-import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.runtime.MaterialResource as RtMaterial
+import androidx.xr.scenecore.runtime.RenderingRuntime
 
 /**
  * Represents a lit PBR (Physically-Based Rendering) material, which defines the visual appearance

@@ -31,9 +31,9 @@ import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.impl.impress.Material;
 import androidx.xr.scenecore.impl.impress.WaterMaterial;
-import androidx.xr.scenecore.internal.GltfEntity;
-import androidx.xr.scenecore.internal.GltfFeature;
-import androidx.xr.scenecore.internal.MaterialResource;
+import androidx.xr.scenecore.runtime.GltfEntity;
+import androidx.xr.scenecore.runtime.GltfFeature;
+import androidx.xr.scenecore.runtime.MaterialResource;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;

@@ -18,10 +18,10 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.media.AudioTrack;
 
-import androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.PointSourceParams;
-import androidx.xr.scenecore.internal.SoundFieldAttributes;
+import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.PointSourceParams;
+import androidx.xr.scenecore.runtime.SoundFieldAttributes;
 
 import com.android.extensions.xr.media.AudioTrackExtensions;
 

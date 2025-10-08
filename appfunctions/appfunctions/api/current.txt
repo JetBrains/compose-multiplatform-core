@@ -12,6 +12,12 @@ package androidx.appfunctions {
     ctor public AppFunctionCancelledException(optional String? errorMessage);
   }
 
+  @RequiresApi(android.os.Build.VERSION_CODES.BAKLAVA) public abstract class AppFunctionCompatService extends android.app.appfunctions.AppFunctionService {
+    ctor public AppFunctionCompatService();
+    method @MainThread public abstract suspend Object? executeFunction(androidx.appfunctions.ExecuteAppFunctionRequest request, kotlin.coroutines.Continuation<? super androidx.appfunctions.ExecuteAppFunctionResponse>);
+    method public final void onExecuteFunction(android.app.appfunctions.ExecuteAppFunctionRequest request, String callingPackage, android.content.pm.SigningInfo signingInfo, android.os.CancellationSignal cancellationSignal, android.os.OutcomeReceiver<android.app.appfunctions.ExecuteAppFunctionResponse,android.app.appfunctions.AppFunctionException> callback);
+  }
+
   public interface AppFunctionContext {
     method @InaccessibleFromKotlin public android.content.Context getContext();
     property public abstract android.content.Context context;
@@ -244,6 +250,15 @@ package androidx.appfunctions {
 
   public static final class ExecuteAppFunctionResponse.Success.Companion {
     property public static String PROPERTY_RETURN_VALUE;
+  }
+
+  @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public abstract class ExtensionsAppFunctionCompatService extends android.app.Service {
+    ctor public ExtensionsAppFunctionCompatService();
+    method public abstract suspend Object? executeFunction(androidx.appfunctions.ExecuteAppFunctionRequest request, kotlin.coroutines.Continuation<? super androidx.appfunctions.ExecuteAppFunctionResponse>);
+    method public final android.os.IBinder onBind(android.content.Intent?);
+    method public final void onExecuteFunction(com.android.extensions.appfunctions.ExecuteAppFunctionRequest request, String callingPackage, android.os.CancellationSignal cancellationSignal, android.os.OutcomeReceiver<com.android.extensions.appfunctions.ExecuteAppFunctionResponse,com.android.extensions.appfunctions.AppFunctionException> callback);
+    field public static final String BIND_APP_FUNCTION_SERVICE = "android.permission.BIND_APP_FUNCTION_SERVICE";
+    field public static final String SERVICE_INTERFACE = "android.app.appfunctions.AppFunctionService";
   }
 
 }

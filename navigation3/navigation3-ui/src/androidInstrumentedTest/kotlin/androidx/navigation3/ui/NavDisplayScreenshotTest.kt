@@ -23,17 +23,23 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
@@ -41,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -49,12 +56,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.scene.Scene
+import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigationevent.NavigationEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlin.collections.plus
 import kotlin.test.Test
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -90,28 +100,8 @@ class NavDisplayScreenshotTest {
                 modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
-                    first ->
-                        NavEntry(first) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_RED)
-                                    .border(width = 10.dp, color = Color.Red),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(first)
-                            }
-                        }
-                    second ->
-                        NavEntry(second) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_BLUE)
-                                    .border(width = 10.dp, color = Color.Blue),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(second, Modifier.size(50.dp))
-                            }
-                        }
+                    first -> NavEntry(first) { RedBox(first) }
+                    second -> NavEntry(second) { BlueBox(second) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -176,7 +166,6 @@ class NavDisplayScreenshotTest {
                                 Text(second, Modifier.size(50.dp))
                             }
                         }
-
                     else -> error("Invalid key passed")
                 }
             }
@@ -244,7 +233,6 @@ class NavDisplayScreenshotTest {
                                 Text(second, Modifier.size(50.dp))
                             }
                         }
-
                     else -> error("Invalid key passed")
                 }
             }
@@ -349,39 +337,9 @@ class NavDisplayScreenshotTest {
                 },
             ) {
                 when (it) {
-                    first ->
-                        NavEntry(first) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_BLUE)
-                                    .border(10.dp, Color.Blue),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(first, Modifier.size(50.dp))
-                            }
-                        }
-                    second ->
-                        NavEntry(second) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_RED)
-                                    .border(10.dp, Color.Red),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(second, Modifier.size(50.dp))
-                            }
-                        }
-                    third ->
-                        NavEntry(third) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_GREEN)
-                                    .border(10.dp, Color.Green),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(third, Modifier.size(50.dp))
-                            }
-                        }
+                    first -> NavEntry(first) { BlueBox(first) }
+                    second -> NavEntry(second) { RedBox(second) }
+                    third -> NavEntry(third) { GreenBox(third) }
 
                     else -> error("Invalid key passed")
                 }
@@ -438,39 +396,9 @@ class NavDisplayScreenshotTest {
                 },
             ) {
                 when (it) {
-                    first ->
-                        NavEntry(first) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_BLUE)
-                                    .border(10.dp, Color.Blue),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(first, Modifier.size(50.dp))
-                            }
-                        }
-                    second ->
-                        NavEntry(second) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_RED)
-                                    .border(10.dp, Color.Red),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(second, Modifier.size(50.dp))
-                            }
-                        }
-                    third ->
-                        NavEntry(third) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_GREEN)
-                                    .border(10.dp, Color.Green),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(third, Modifier.size(50.dp))
-                            }
-                        }
+                    first -> NavEntry(first) { BlueBox(first) }
+                    second -> NavEntry(second) { RedBox(second) }
+                    third -> NavEntry(third) { GreenBox(third) }
 
                     else -> error("Invalid key passed")
                 }
@@ -522,17 +450,7 @@ class NavDisplayScreenshotTest {
             backStack = remember { mutableStateListOf(first, second) }
             NavDisplay(backStack, modifier = Modifier.testTag(navHostTag)) { key ->
                 when (key) {
-                    first ->
-                        NavEntry(first) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_BLUE)
-                                    .border(10.dp, Color.Blue),
-                                contentAlignment = Alignment.TopEnd,
-                            ) {
-                                BasicText(first, Modifier.size(50.dp))
-                            }
-                        }
+                    first -> NavEntry(first) { BlueBox(first) }
                     second ->
                         NavEntry(
                             second,
@@ -543,14 +461,7 @@ class NavDisplayScreenshotTest {
                                         slideOutHorizontally(tween(duration)) { -it / 2 }
                                 },
                         ) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_RED)
-                                    .border(10.dp, Color.Red),
-                                contentAlignment = Alignment.TopEnd,
-                            ) {
-                                BasicText(second, Modifier.size(50.dp))
-                            }
+                            RedBox(second)
                         }
                     else -> error("Invalid key passed")
                 }
@@ -589,39 +500,9 @@ class NavDisplayScreenshotTest {
                 modifier = Modifier.testTag(navHostTag),
             ) { key ->
                 when (key) {
-                    first ->
-                        NavEntry(first) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_BLUE)
-                                    .border(10.dp, Color.Blue),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(first, Modifier.size(50.dp))
-                            }
-                        }
-                    second ->
-                        NavEntry(second) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_RED)
-                                    .border(10.dp, Color.Red),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(second, Modifier.size(50.dp))
-                            }
-                        }
-                    third ->
-                        NavEntry(third) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_GREEN)
-                                    .border(10.dp, Color.Green),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(third, Modifier.size(50.dp))
-                            }
-                        }
+                    first -> NavEntry(first) { BlueBox(first) }
+                    second -> NavEntry(second) { RedBox(second) }
+                    third -> NavEntry(third) { GreenBox(third) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -675,28 +556,8 @@ class NavDisplayScreenshotTest {
                 when (it) {
                     first -> NavEntry(first) {}
                     second -> NavEntry(second) {}
-                    third ->
-                        NavEntry(third) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_RED)
-                                    .border(10.dp, Color.Red),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(third, Modifier.size(50.dp))
-                            }
-                        }
-                    forth ->
-                        NavEntry(forth) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_BLUE)
-                                    .border(10.dp, Color.Blue),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(forth, Modifier.size(50.dp))
-                            }
-                        }
+                    third -> NavEntry(third) { RedBox(third) }
+                    forth -> NavEntry(forth) { BlueBox(forth) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -871,17 +732,7 @@ class NavDisplayScreenshotTest {
                 modifier = Modifier.testTag(navHostTag),
             ) { key ->
                 when (key) {
-                    first ->
-                        NavEntry(first) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_BLUE)
-                                    .border(10.dp, Color.Blue),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(first, Modifier.size(50.dp))
-                            }
-                        }
+                    first -> NavEntry(first) { BlueBox(first) }
                     second ->
                         NavEntry(
                             second,
@@ -892,24 +743,9 @@ class NavDisplayScreenshotTest {
                                         slideOutHorizontally(tween(duration)) { -it / 2 }
                                 },
                         ) {
-                            Box(
-                                Modifier.fillMaxSize()
-                                    .background(BACKGROUND_RED)
-                                    .border(10.dp, Color.Red),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(second, Modifier.size(50.dp))
-                            }
+                            RedBox(second)
                         }
-                    third ->
-                        NavEntry(third) {
-                            Box(
-                                Modifier.fillMaxSize().background(Color.Green),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BasicText(third, Modifier.size(50.dp))
-                            }
-                        }
+                    third -> NavEntry(third) { GreenBox(third) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -944,6 +780,195 @@ class NavDisplayScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testPopDuplicateZIndex")
     }
+
+    @Test
+    fun testSceneAnimations() {
+        lateinit var backStack: MutableList<Any>
+        // use custom duration that is much shorter than default duration
+        val duration = 200
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second) }
+            NavDisplay(
+                backStack,
+                sceneStrategy = TestAnimatedTwoPaneSceneStrategy(duration),
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first) { BlueBox(first) }
+                    second -> NavEntry(second) { RedBox(second) }
+                    third -> NavEntry(third) { GreenBox(third) }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.mainClock.autoAdvance = true
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
+        composeTestRule.onNodeWithText(second).assertIsDisplayed()
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.runOnIdle { backStack.add(third) }
+
+        // advance half way between animations
+        composeTestRule.mainClock.advanceTimeBy(duration.toLong() / 2)
+
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testNavigateSceneAnimations1")
+
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testNavigateSceneAnimations2")
+    }
+
+    @Test
+    fun testSceneOverridesEntryAnimations() {
+        lateinit var backStack: MutableList<Any>
+        // use custom duration that is much shorter than default duration
+        val duration = 200
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second) }
+            NavDisplay(
+                backStack,
+                sceneStrategy =
+                    TestAnimatedTwoPaneSceneStrategy(duration, overrideEntryAnimations = true),
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first) { BlueBox(first) }
+                    second -> NavEntry(second) { RedBox(second) }
+                    third ->
+                        NavEntry(
+                            third,
+                            metadata =
+                                NavDisplay.transitionSpec {
+                                    slideInVertically(animationSpec = tween(duration)) togetherWith
+                                        ExitTransition.KeepUntilTransitionsFinished
+                                },
+                        ) {
+                            GreenBox(third)
+                        }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.mainClock.autoAdvance = true
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
+        composeTestRule.onNodeWithText(second).assertIsDisplayed()
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.runOnIdle { backStack.add(third) }
+
+        // advance half way between animations
+        composeTestRule.mainClock.advanceTimeBy(duration.toLong() / 2)
+
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testSceneOverridesEntryAnimations")
+    }
+
+    @Test
+    fun testSceneDoesNotOverridesEntryAnimations() {
+        lateinit var backStack: MutableList<Any>
+        // use custom duration that is much shorter than default duration
+        val duration = 200
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second) }
+            NavDisplay(
+                backStack,
+                sceneStrategy =
+                    TestAnimatedTwoPaneSceneStrategy(duration, overrideEntryAnimations = false),
+                modifier = Modifier.testTag(navHostTag),
+            ) {
+                when (it) {
+                    first -> NavEntry(first) { BlueBox(first) }
+                    second -> NavEntry(second) { RedBox(second) }
+                    third ->
+                        NavEntry(
+                            third,
+                            metadata =
+                                NavDisplay.transitionSpec {
+                                    slideInVertically(animationSpec = tween(duration)) togetherWith
+                                        ExitTransition.KeepUntilTransitionsFinished
+                                },
+                        ) {
+                            GreenBox(third)
+                        }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.mainClock.autoAdvance = true
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
+        composeTestRule.onNodeWithText(second).assertIsDisplayed()
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.runOnIdle { backStack.add(third) }
+
+        // advance half way between animations
+        composeTestRule.mainClock.advanceTimeBy(duration.toLong() / 2)
+
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithTag(navHostTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "testSceneDoesNotOverridesEntryAnimations")
+    }
+}
+
+@Composable
+fun BlueBox(text: String) {
+    Box(
+        Modifier.fillMaxSize().background(Color(0.2f, 0.2f, 1.0f, 1.0f)).border(10.dp, Color.Blue),
+        contentAlignment = Alignment.Center,
+    ) {
+        BasicText(text, Modifier.size(50.dp))
+    }
+}
+
+@Composable
+fun RedBox(text: String) {
+    Box(
+        Modifier.fillMaxSize().background(Color(1.0f, 0.3f, 0.3f, 1.0f)).border(10.dp, Color.Red),
+        contentAlignment = Alignment.Center,
+    ) {
+        BasicText(text, Modifier.size(50.dp))
+    }
+}
+
+@Composable
+fun GreenBox(text: String) {
+    Box(
+        Modifier.fillMaxSize().background(Color(0.2f, 0.9f, 0.7f, 1.0f)).border(10.dp, Color.Green),
+        contentAlignment = Alignment.Center,
+    ) {
+        BasicText(text, Modifier.size(50.dp))
+    }
 }
 
 private const val first = "first"
@@ -951,7 +976,53 @@ private const val second = "second"
 private const val third = "third"
 private const val forth = "forth"
 
-private val BACKGROUND_RED = Color(1.0f, 0.3f, 0.3f, 1.0f)
-private val BACKGROUND_BLUE = Color(0.2f, 0.2f, 1.0f, 1.0f)
+private class TestAnimatedTwoPaneSceneStrategy<T : Any>(
+    val durationMillis: Int,
+    val overrideEntryAnimations: Boolean = false,
+) : SceneStrategy<T> {
+    @Composable
+    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
+        if (entries.size < 2) return null
+        val lastTwoEntries = entries.takeLast(2)
+        return TestAnimatedTwoPaneScene(
+            durationMillis = durationMillis,
+            overrideEntryAnimations = overrideEntryAnimations,
+            key = lastTwoEntries.first().contentKey,
+            entries = entries.takeLast(2),
+            previousEntries = listOf(),
+        )
+    }
+}
 
-private val BACKGROUND_GREEN = Color(0.2f, 0.9f, 0.7f, 1.0f)
+private class TestAnimatedTwoPaneScene<T : Any>(
+    val durationMillis: Int,
+    val overrideEntryAnimations: Boolean,
+    override val key: Any,
+    override val entries: List<NavEntry<T>>,
+    override val previousEntries: List<NavEntry<T>>,
+) : Scene<T> {
+    override val content: @Composable (() -> Unit) = {
+        val left = entries.first()
+        val right = entries.last()
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f)) { left.Content() }
+            Column(Modifier.weight(1f)) { right.Content() }
+        }
+    }
+
+    override val metadata: Map<String, Any>
+        get() {
+            // define scene metadata transitions
+            val sceneTransition =
+                slideInHorizontally(tween(durationMillis)) { it / 2 } togetherWith
+                    slideOutHorizontally { -it / 2 }
+            // build scene metadata map
+            val newMetadata =
+                NavDisplay.transitionSpec({ sceneTransition }) +
+                    popTransitionSpec({ sceneTransition })
+            // override NavEntry transitions if necessary
+            return if (overrideEntryAnimations) {
+                entries.last().metadata + newMetadata
+            } else newMetadata + entries.last().metadata
+        }
+}

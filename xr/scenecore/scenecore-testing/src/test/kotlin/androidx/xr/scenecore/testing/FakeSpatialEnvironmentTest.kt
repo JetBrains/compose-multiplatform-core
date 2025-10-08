@@ -19,7 +19,7 @@ package androidx.xr.scenecore.testing
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.test.filters.SdkSuppress
-import androidx.xr.scenecore.internal.SpatialEnvironment
+import androidx.xr.scenecore.runtime.SpatialEnvironment
 import com.google.common.truth.Truth.assertThat
 import java.util.function.Consumer
 import org.junit.Before

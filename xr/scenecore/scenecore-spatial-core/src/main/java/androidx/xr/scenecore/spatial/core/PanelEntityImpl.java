@@ -31,9 +31,9 @@ import android.window.OnBackInvokedDispatcher;
 
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewTreeLifecycleOwner;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.PanelEntity;
-import androidx.xr.scenecore.internal.PixelDimensions;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.PanelEntity;
+import androidx.xr.scenecore.runtime.PixelDimensions;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

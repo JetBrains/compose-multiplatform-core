@@ -19,9 +19,9 @@ package androidx.xr.scenecore
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.internal.InputEventListener as RtInputEventListener
-import androidx.xr.scenecore.internal.PointerCaptureComponent as RtPointerCaptureComponent
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.InputEventListener as RtInputEventListener
+import androidx.xr.scenecore.runtime.PointerCaptureComponent as RtPointerCaptureComponent
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 

@@ -21,10 +21,10 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.internal.RenderingRuntimeFactory
-import androidx.xr.scenecore.internal.RenderingRuntime
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.SceneRuntime
 
-/** Factory for creating test-only instances of [RenderingRuntime]. */
+/** Factory for creating test-only instances of [androidx.xr.scenecore.runtime.RenderingRuntime]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRenderingRuntimeFactory() : RenderingRuntimeFactory {
     override val requirements: Set<Feature> = emptySet()

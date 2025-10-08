@@ -58,17 +58,17 @@ import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Plane.PlaneData;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.internal.AnchorEntity;
-import androidx.xr.scenecore.internal.AnchorPlacement;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.MovableComponent;
-import androidx.xr.scenecore.internal.MoveEvent;
-import androidx.xr.scenecore.internal.MoveEventListener;
-import androidx.xr.scenecore.internal.PanelEntity;
-import androidx.xr.scenecore.internal.PixelDimensions;
-import androidx.xr.scenecore.internal.PlaneSemantic;
-import androidx.xr.scenecore.internal.PlaneType;
+import androidx.xr.scenecore.runtime.AnchorEntity;
+import androidx.xr.scenecore.runtime.AnchorPlacement;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.MovableComponent;
+import androidx.xr.scenecore.runtime.MoveEvent;
+import androidx.xr.scenecore.runtime.MoveEventListener;
+import androidx.xr.scenecore.runtime.PanelEntity;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.PlaneSemantic;
+import androidx.xr.scenecore.runtime.PlaneType;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -149,8 +149,8 @@ public class MovableComponentImplTest {
 
     @After
     public void tearDown() {
-        // Dispose the runtime between test cases to clean up lingering references.
-        mFakeRuntime.dispose();
+        // Destroy the runtime between test cases to clean up lingering references.
+        mFakeRuntime.destroy();
     }
 
     private Entity createTestEntity() {

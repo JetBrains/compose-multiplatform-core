@@ -26,12 +26,12 @@ internal class GoToLinkSelectionMenuProvider(private val context: Context) :
 
     override suspend fun getMenuItems(selection: GoToLinkSelection): List<ContextMenuComponent> {
         val menuItems: MutableList<ContextMenuComponent> = mutableListOf()
-        menuItems += getGoToMenuItem(selection)
-        menuItems += LinkSelectionMenuProvider.getDefaultMenuItems(context)
+        menuItems += getGoToMenuItem()
+        menuItems += DefaultSelectionMenuProvider.getMenuItems(context)
         return menuItems
     }
 
-    private fun getGoToMenuItem(selection: GoToLinkSelection): ContextMenuComponent {
+    private fun getGoToMenuItem(): ContextMenuComponent {
         return DefaultSelectionMenuComponent(
             key = PdfSelectionMenuKeys.SmartActionKey,
             label = context.getString(R.string.label_jump_to),

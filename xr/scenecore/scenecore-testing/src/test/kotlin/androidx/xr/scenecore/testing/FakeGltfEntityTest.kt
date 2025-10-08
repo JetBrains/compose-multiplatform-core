@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.testing
 
-import androidx.xr.scenecore.internal.GltfEntity
+import androidx.xr.scenecore.runtime.GltfEntity
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import org.junit.Before

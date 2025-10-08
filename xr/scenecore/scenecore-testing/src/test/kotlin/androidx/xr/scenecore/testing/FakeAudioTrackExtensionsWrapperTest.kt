@@ -17,9 +17,9 @@
 package androidx.xr.scenecore.testing
 
 import android.media.AudioTrack
-import androidx.xr.scenecore.internal.PointSourceParams
-import androidx.xr.scenecore.internal.SoundFieldAttributes
-import androidx.xr.scenecore.internal.SpatializerConstants
+import androidx.xr.scenecore.runtime.PointSourceParams
+import androidx.xr.scenecore.runtime.SoundFieldAttributes
+import androidx.xr.scenecore.runtime.SpatializerConstants
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith

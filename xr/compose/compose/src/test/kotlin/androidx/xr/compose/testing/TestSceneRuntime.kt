@@ -22,16 +22,16 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.ActivityPose
-import androidx.xr.scenecore.internal.ActivitySpace
-import androidx.xr.scenecore.internal.CameraViewActivityPose
-import androidx.xr.scenecore.internal.CameraViewActivityPose.Fov
-import androidx.xr.scenecore.internal.HeadActivityPose
-import androidx.xr.scenecore.internal.HitTestResult
-import androidx.xr.scenecore.internal.PanelEntity
-import androidx.xr.scenecore.internal.PixelDimensions
-import androidx.xr.scenecore.internal.RenderingEntityFactory
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.ActivityPose
+import androidx.xr.scenecore.runtime.ActivitySpace
+import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov
+import androidx.xr.scenecore.runtime.HeadActivityPose
+import androidx.xr.scenecore.runtime.HitTestResult
+import androidx.xr.scenecore.runtime.PanelEntity
+import androidx.xr.scenecore.runtime.PixelDimensions
+import androidx.xr.scenecore.runtime.RenderingEntityFactory
+import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakeRenderingRuntime
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
 import com.google.common.util.concurrent.ListenableFuture
@@ -43,10 +43,10 @@ import java.util.concurrent.ScheduledExecutorService
  * Create a fake [Session] for testing.
  *
  * A convenience method that creates a fake [Session] for testing. If runtime is not provided, a
- * fake [SceneRuntime] will be created by default.
+ * fake [androidx.xr.scenecore.runtime.SceneRuntime] will be created by default.
  *
  * @param activity The [Activity] to use for the [Session].
- * @param sceneRuntime The [SceneRuntime] to use for the [Session].
+ * @param sceneRuntime The [androidx.xr.scenecore.runtime.SceneRuntime] to use for the [Session].
  */
 fun createFakeSession(
     activity: Activity,
@@ -65,11 +65,12 @@ fun createFakeSession(
     )
 
 /**
- * Create a fake [SceneRuntime] for testing.
+ * Create a fake [androidx.xr.scenecore.runtime.SceneRuntime] for testing.
  *
- * A convenience method that creates a fake [SceneRuntime] for testing.
+ * A convenience method that creates a fake [androidx.xr.scenecore.runtime.SceneRuntime] for
+ * testing.
  *
- * @param activity The [Activity] to use for the [SceneRuntime].
+ * @param activity The [Activity] to use for the [androidx.xr.scenecore.runtime.SceneRuntime].
  */
 fun createFakeRuntime(activity: Activity): SceneRuntime {
     // TODO (b/442359966): Use FakeSceneRuntime instead.
@@ -89,19 +90,22 @@ fun createFakeRuntime(activity: Activity): SceneRuntime {
 }
 
 /**
- * A test implementation of [SceneRuntime] that allows for setting custom values for the
- * ActivitySpace, HeadActivityPose, and CameraViewActivityPose.
+ * A test implementation of [androidx.xr.scenecore.runtime.SceneRuntime] that allows for setting
+ * custom values for the ActivitySpace, HeadActivityPose, and CameraViewActivityPose.
  *
- * [fakeSceneRuntimeBase] is the base [SceneRuntime] to use for the [SceneRuntime] implementation.
+ * [fakeSceneRuntimeBase] is the base [androidx.xr.scenecore.runtime.SceneRuntime] to use for the
+ * [androidx.xr.scenecore.runtime.SceneRuntime] implementation.
  *
- * @param activitySpace The [ActivitySpace] to use for the [SceneRuntime] implementation.
- * @param headActivityPose The [TestHeadActivityPose] to use for the [SceneRuntime] implementation.
- * @param leftCameraViewPose The [TestCameraViewActivityPose] to use for the [SceneRuntime]
- *   implementation for the left camera.
- * @param rightCameraViewPose The [TestCameraViewActivityPose] to use for the [SceneRuntime]
- *   implementation for the right camera.
- * @param unknownCameraViewPose The [TestCameraViewActivityPose] to use for the [SceneRuntime]
- *   implementation for the unknown camera.
+ * @param activitySpace The [androidx.xr.scenecore.runtime.ActivitySpace] to use for the
+ *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation.
+ * @param headActivityPose The [TestHeadActivityPose] to use for the
+ *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation.
+ * @param leftCameraViewPose The [TestCameraViewActivityPose] to use for the
+ *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation for the left camera.
+ * @param rightCameraViewPose The [TestCameraViewActivityPose] to use for the
+ *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation for the right camera.
+ * @param unknownCameraViewPose The [TestCameraViewActivityPose] to use for the
+ *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation for the unknown camera.
  */
 class TestSceneRuntime
 private constructor(
@@ -140,8 +144,8 @@ private constructor(
     /**
      * Creates a [TestSceneRuntime] with the provided [fakeSceneRuntimeBase].
      *
-     * @param fakeSceneRuntimeBase The base [SceneRuntime] to use for the [SceneRuntime]
-     *   implementation.
+     * @param fakeSceneRuntimeBase The base [androidx.xr.scenecore.runtime.SceneRuntime] to use for
+     *   the [androidx.xr.scenecore.runtime.SceneRuntime] implementation.
      * @return The [TestSceneRuntime] with the provided [fakeSceneRuntimeBase].
      */
     companion object {
@@ -154,8 +158,8 @@ private constructor(
 }
 
 /**
- * A test implementation of [HeadActivityPose] that allows for setting custom values for the
- * activity space pose and scales.
+ * A test implementation of [androidx.xr.scenecore.runtime.HeadActivityPose] that allows for setting
+ * custom values for the activity space pose and scales.
  *
  * @param activitySpacePose The pose of the head in ActivitySpace.
  * @param worldSpaceScale The scale of the head in WorldSpace.
@@ -181,8 +185,8 @@ class TestHeadActivityPose(
 }
 
 /**
- * A test implementation of [CameraViewActivityPose] that allows for setting custom values for the
- * cameraType, field of view, ActivitySpace pose, and scales.
+ * A test implementation of [androidx.xr.scenecore.runtime.CameraViewActivityPose] that allows for
+ * setting custom values for the cameraType, field of view, ActivitySpace pose, and scales.
  *
  * @param cameraType The type of camera.
  * @param fov The field of view of the camera.
@@ -215,14 +219,15 @@ class TestCameraViewActivityPose(
 }
 
 /**
- * A test implementation of a SceneCore [ActivitySpace] that allows for setting custom values.
+ * A test implementation of a SceneCore [androidx.xr.scenecore.runtime.ActivitySpace] that allows
+ * for setting custom values.
  *
  * This class delegates non-overridden functionality to a base ActivitySpace instance but provides
  * direct control over key properties like [activitySpacePose] and [activitySpaceScale] (via the
  * overridden [getScale] method).
  *
- * @param fakeRuntimeActivitySpaceBase The base [ActivitySpace] to use for the [ActivitySpace]
- *   implementation.
+ * @param fakeRuntimeActivitySpaceBase The base [androidx.xr.scenecore.runtime.ActivitySpace] to use
+ *   for the [androidx.xr.scenecore.runtime.ActivitySpace] implementation.
  * @param activitySpacePose The pose of the ActivitySpace. Defaults to [Pose.Identity].
  * @param activitySpaceScale The scale of the ActivitySpace. Defaults to one.
  */

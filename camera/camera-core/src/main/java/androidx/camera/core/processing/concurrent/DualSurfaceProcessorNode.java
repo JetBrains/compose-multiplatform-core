@@ -18,14 +18,17 @@ package androidx.camera.core.processing.concurrent;
 
 import static androidx.camera.core.impl.ImageOutputConfig.ROTATION_NOT_SPECIFIED;
 import static androidx.camera.core.impl.utils.Threads.runOnMain;
+import static androidx.camera.core.impl.utils.TransformUtils.getRectToRect;
 import static androidx.camera.core.impl.utils.TransformUtils.getRotatedSize;
 import static androidx.camera.core.impl.utils.TransformUtils.isAspectRatioMatchingWithRoundingError;
 import static androidx.camera.core.impl.utils.TransformUtils.sizeToRect;
+import static androidx.camera.core.impl.utils.TransformUtils.sizeToRectF;
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor;
 import static androidx.camera.core.processing.TargetUtils.getHumanReadableName;
 import static androidx.core.util.Preconditions.checkArgument;
 
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.Size;
 
 import androidx.annotation.MainThread;
@@ -64,7 +67,6 @@ import java.util.concurrent.CancellationException;
 @SuppressWarnings("UnusedVariable")
 public class DualSurfaceProcessorNode implements
         Node<DualSurfaceProcessorNode.In, DualSurfaceProcessorNode.Out> {
-
     private static final String TAG = "DualSurfaceProcessorNode";
 
     final @NonNull SurfaceProcessorInternal mSurfaceProcessor;
@@ -97,6 +99,12 @@ public class DualSurfaceProcessorNode implements
     @MainThread
     public @NonNull Out transform(@NonNull In in) {
         Threads.checkMainThread();
+        Logger.d(TAG, "DualSurfaceProcessorNode Transform Processor = " + mSurfaceProcessor
+                + "\n   primary input = " + in.getPrimarySurfaceEdge()
+                + "\n   secondary input = " + in.getSecondarySurfaceEdge());
+        for (DualOutConfig outConfig : in.getOutConfigs()) {
+            Logger.d("SurfaceProcessorNode", "   outputConfig = " + outConfig);
+        }
         mInput = in;
         mOutput = new Out();
 
@@ -125,7 +133,11 @@ public class DualSurfaceProcessorNode implements
 
         // Calculate sensorToBufferTransform
         android.graphics.Matrix sensorToBufferTransform =
-                new android.graphics.Matrix();
+                new android.graphics.Matrix(input.getSensorToBufferTransform());
+        android.graphics.Matrix newTransform = getRectToRect(
+                new RectF(cropRect),
+                sizeToRectF(outConfig.getSize()), rotationDegrees, mirroring);
+        sensorToBufferTransform.postConcat(newTransform);
 
         // The aspect ratio of the output must match the aspect ratio of the crop rect. Otherwise
         // the output will be stretched.
@@ -204,6 +216,7 @@ public class DualSurfaceProcessorNode implements
             @NonNull SurfaceEdge secondarySurfaceEdge,
             Map.Entry<DualOutConfig, SurfaceEdge> output) {
         SurfaceEdge outputEdge = output.getValue();
+        Logger.d(TAG, "     -> outputEdge = " + outputEdge);
         SurfaceOutput.CameraInputInfo primaryCameraInputInfo = SurfaceOutput.CameraInputInfo.of(
                 primarySurfaceEdge.getStreamSpec().getResolution(),
                 output.getKey().getPrimaryOutConfig().getCropRect(),

@@ -77,7 +77,7 @@ class DecoratedNavEntriesTest {
         state.value = 2 // go into else branch
 
         composeTestRule.waitForIdle()
-        assertThat(previousEntries).isNotEqualTo(entries)
+        assertThat(previousEntries).isNotSameInstanceAs(entries)
     }
 
     @Test
@@ -468,8 +468,8 @@ class DecoratedNavEntriesTest {
         state.value = 2 // go into else branch
 
         composeTestRule.waitForIdle()
-        assertThat(previousInitialEntries).isNotEqualTo(initialEntries)
-        assertThat(previousRedecoratedEntries).isNotEqualTo(redecoratedEntries)
+        assertThat(previousInitialEntries).isNotSameInstanceAs(initialEntries)
+        assertThat(previousRedecoratedEntries).isNotSameInstanceAs(redecoratedEntries)
     }
 
     @Test

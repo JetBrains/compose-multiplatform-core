@@ -26,6 +26,8 @@ internal interface VerticalTextLayoutImpl {
     @get:Px val width: Float
 
     fun draw(canvas: Canvas, @Px x: Float, @Px y: Float)
+
+    fun isVerticalTextSupported(): Boolean
 }
 
 @RequiresApi(Build.VERSION_CODES.BAKLAVA)
@@ -46,33 +48,21 @@ internal class VerticalTextLayoutApi36Impl(
     override fun draw(canvas: Canvas, @Px x: Float, @Px y: Float) {
         result.draw(canvas, x, y, paint)
     }
-}
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-internal class VerticalTextLayoutApi34Impl : VerticalTextLayoutImpl {
-    override val width: Float
-        get() = 0f
-
-    override fun draw(canvas: Canvas, @Px x: Float, @Px y: Float) {
-        // no-op, reserved
+    override fun isVerticalTextSupported(): Boolean {
+        return true
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
-internal class VerticalTextLayoutApi31Impl : VerticalTextLayoutImpl {
-    override val width: Float
-        get() = 0f
-
-    override fun draw(canvas: Canvas, @Px x: Float, @Px y: Float) {
-        // no-op, reserved
-    }
-}
-
-internal class VerticalTextLayoutBaseImpl : VerticalTextLayoutImpl {
+internal class VerticalTextLayoutNoOpImpl : VerticalTextLayoutImpl {
     override val width: Float
         get() = 0f
 
     override fun draw(canvas: Canvas, @Px x: Float, @Px y: Float) {
         // no-op, fallback
+    }
+
+    override fun isVerticalTextSupported(): Boolean {
+        return false
     }
 }

@@ -17,22 +17,22 @@
 package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor as RuntimeAnchor
-import androidx.xr.arcore.internal.Plane as RuntimePlane
+import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
+import androidx.xr.arcore.runtime.Plane as RuntimePlane
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
 /**
- * Test-only implementation of [androidx.xr.arcore.internal.Plane]
+ * Test-only implementation of [androidx.xr.arcore.runtime.internal.Plane]
  *
  * The properties of the [FakeRuntimePlane] can be set manually in order to simulate a runtime plane
  * in the environment.
  *
  * For example, for a [FakeRuntimePlane] with
- * [androidx.xr.arcore.internal.Plane.Label.Companion.WALL],
- * [androidx.xr.arcore.internal.Plane.Type.Companion.VERTICAL] and
+ * [androidx.xr.arcore.runtime.internal.Plane.Label.Companion.WALL],
+ * [androidx.xr.arcore.runtime.internal.Plane.Type.Companion.VERTICAL] and
  * [androidx.xr.runtime.TrackingState.Companion.PAUSED]:
  * ```
  * val plane = FakeRuntimePlane(type = RuntimePlane.Type.VERTICAL,

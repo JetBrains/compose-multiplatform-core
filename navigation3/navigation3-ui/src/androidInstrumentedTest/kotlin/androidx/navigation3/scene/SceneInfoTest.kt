@@ -118,10 +118,10 @@ private data class TestScene<T : Any>(
 ) : Scene<T>
 
 private class TestSceneStrategy<T : Any>(
-    private val calculateScene: (NavEntry<T>?, List<NavEntry<T>>, (Int) -> Unit) -> Scene<T>
+    private val calculateScene: (NavEntry<T>?, List<NavEntry<T>>, () -> Unit) -> Scene<T>
 ) : SceneStrategy<T> {
 
     @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: (Int) -> Unit): Scene<T>? =
+    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? =
         calculateScene(entries.lastOrNull(), entries, onBack)
 }

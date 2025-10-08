@@ -48,6 +48,26 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testNoAppFunctionDefined_generatesEmptyXmlFiles() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = emptyList(),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions.xml",
+            goldenFileName = "emptyXml_app_function.xml",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "emptyXml_app_function.xml",
+        )
+    }
+
+    @Test
     fun testSimpleFunction_genAppFunctionIds_success() {
         val report = compilationTestHelper.compileAll(sourceFileNames = listOf("SimpleFunction.KT"))
 

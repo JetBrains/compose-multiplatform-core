@@ -17,7 +17,7 @@
 package androidx.xr.arcore.testing
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.EyeStatus
+import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.math.Pose
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test

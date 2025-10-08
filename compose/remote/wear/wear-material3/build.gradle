@@ -41,7 +41,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":compose:remote:remote-frontend"))
+    implementation(project(":compose:remote:remote-creation-compose"))
     implementation(project(":compose:remote:remote-foundation"))
     implementation(project(":compose:remote:remote-creation"))
     implementation("androidx.graphics:graphics-path:1.0.1")

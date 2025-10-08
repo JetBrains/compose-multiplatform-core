@@ -28,8 +28,6 @@ import org.chromium.support_lib_boundary.WebViewBackForwardCacheSettingsBoundary
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.jspecify.annotations.NonNull;
 
-import java.util.Set;
-
 /**
  * Adapter between WebSettingsCompat and
  * {@link org.chromium.support_lib_boundary.WebSettingsBoundaryInterface} (the
@@ -140,23 +138,6 @@ public class WebSettingsAdapter {
      */
     public boolean getEnterpriseAuthenticationAppLinkPolicyEnabled() {
         return mBoundaryInterface.getEnterpriseAuthenticationAppLinkPolicyEnabled();
-    }
-
-    /**
-     * Adapter method for
-     * {@link androidx.webkit.WebSettingsCompat#getRequestedWithHeaderOriginAllowList(WebSettings)}.
-     */
-    public @NonNull Set<String> getRequestedWithHeaderOriginAllowList() {
-        return mBoundaryInterface.getRequestedWithHeaderOriginAllowList();
-    }
-
-    /**
-     * Adapter method for
-     * {@link androidx.webkit.WebSettingsCompat#setRequestedWithHeaderOriginAllowList(
-     *WebSettings, Set)}.
-     */
-    public void setRequestedWithHeaderOriginAllowList(@NonNull Set<String> allowList) {
-        mBoundaryInterface.setRequestedWithHeaderOriginAllowList(allowList);
     }
 
     /**

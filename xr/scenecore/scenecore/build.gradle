@@ -38,6 +38,7 @@ dependencies {
     api(project(":xr:arcore:arcore"))
     api(project(":xr:arcore:arcore-openxr"))
     api(project(":xr:runtime:runtime"))
+    api(project(":xr:scenecore:scenecore-runtime"))
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation(libs.androidx.core)

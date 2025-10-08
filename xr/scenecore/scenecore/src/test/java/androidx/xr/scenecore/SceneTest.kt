@@ -28,16 +28,16 @@ import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.ActivityPanelEntity as RtActivityPanelEntity
-import androidx.xr.scenecore.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.scenecore.internal.AnchorEntity as RtAnchorEntity
-import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.PanelEntity as RtPanelEntity
-import androidx.xr.scenecore.internal.PixelDimensions as RtPixelDimensions
-import androidx.xr.scenecore.internal.SceneRuntime
-import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.scenecore.internal.SpatialModeChangeListener as RtSpatialModeChangeListener
-import androidx.xr.scenecore.internal.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.scenecore.runtime.ActivityPanelEntity as RtActivityPanelEntity
+import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
+import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.runtime.SpatialModeChangeListener as RtSpatialModeChangeListener
+import androidx.xr.scenecore.runtime.SpatialVisibility as RtSpatialVisibility
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
@@ -89,6 +89,13 @@ class SceneTest {
     @Test
     fun getSceneBeforeSessionDestroyed_returnsScene() {
         assertThat(session.scene).isInstanceOf(Scene::class.java)
+    }
+
+    @Test
+    fun getSceneAfterSessionDestroyed_throwsIllegalStateException() {
+        activityController.destroy()
+
+        assertFailsWith<IllegalStateException> { session.scene }
     }
 
     @Test

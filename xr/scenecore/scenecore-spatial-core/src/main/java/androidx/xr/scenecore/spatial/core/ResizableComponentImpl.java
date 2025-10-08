@@ -16,11 +16,11 @@
 
 package androidx.xr.scenecore.spatial.core;
 
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.ResizableComponent;
-import androidx.xr.scenecore.internal.ResizeEvent;
-import androidx.xr.scenecore.internal.ResizeEventListener;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.ResizableComponent;
+import androidx.xr.scenecore.runtime.ResizeEvent;
+import androidx.xr.scenecore.runtime.ResizeEventListener;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;

@@ -20,7 +20,7 @@ import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
-import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.TrackingState

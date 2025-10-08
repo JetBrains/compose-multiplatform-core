@@ -17,7 +17,7 @@
       app:layout_constraintTop_toTopOf="parent"
       app:navigationIcon="@drawable/arrow_back"
       app:navigationIconTint="@color/white"
-      app:title="Gltf Model Test"
+      app:title="GLTF Model Test"
       app:titleCentered="true" />
 
   <com.google.android.material.card.MaterialCardView
@@ -217,7 +217,7 @@
           android:layout_marginLeft="10dp"
           android:layout_marginRight="10dp"
           android:background="@drawable/test_button"
-          android:text="Create Gltf Model Entity"
+          android:text="Create GLTF Model Entity"
           android:textFontWeight="400"
           android:textSize="18sp"
           app:layout_constraintEnd_toStartOf="@id/gltf_model_button4_2"
@@ -233,7 +233,7 @@
           android:layout_marginLeft="10dp"
           android:layout_marginRight="10dp"
           android:background="@drawable/test_button"
-          android:text="Dispose Gltf Model Entity"
+          android:text="Dispose GLTF Model Entity"
           android:textFontWeight="400"
           android:textSize="18sp"
           app:layout_constraintEnd_toStartOf="@+id/gltf_model_button4_3"

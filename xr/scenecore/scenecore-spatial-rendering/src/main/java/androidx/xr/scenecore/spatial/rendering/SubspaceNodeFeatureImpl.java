@@ -20,8 +20,8 @@ import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.SubspaceNodeFeature;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

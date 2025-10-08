@@ -22,7 +22,7 @@ import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
 
 /**
- * Factory for creating test-only instances of [androidx.xr.scenecore.internal.JxrPlatformAdapter].
+ * Factory for creating test-only instances of [androidx.xr.scenecore.runtime.JxrPlatformAdapter].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeJxrPlatformAdapterFactory() : JxrPlatformAdapterFactory {

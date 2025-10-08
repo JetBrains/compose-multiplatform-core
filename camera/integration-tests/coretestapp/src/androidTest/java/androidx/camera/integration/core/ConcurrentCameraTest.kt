@@ -38,6 +38,7 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.processing.DefaultSurfaceProcessor
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.media3.effect.Media3Effect
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
@@ -49,6 +50,8 @@ import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.core.util.Consumer
+import androidx.media3.effect.RgbFilter
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -210,40 +213,78 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
     }
 
     @Test
-    fun testConcurrentCameraV1_previewVideoCaptureWithEffect_canWork() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+    fun testConcurrentCameraV1_previewVideoCapture_withOneForEachTargetEffect_canWork() =
+        runBlocking {
+            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
 
-        // Arrange.
-        val primary =
-            SingleCameraParameter(
-                cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA,
-                enableVideoCapture = true,
-                enableEffect = true,
-            )
-        val secondary =
-            SingleCameraParameter(
-                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-                enableVideoCapture = true,
-                enableEffect = true,
-            )
-
-        // Act.
-        val concurrentCamera =
-            withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(
-                    listOf(primary.getSingleCameraConfig(), secondary.getSingleCameraConfig())
+            // Arrange.
+            val primary =
+                SingleCameraParameter(
+                    cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA,
+                    enableVideoCapture = true,
+                    effect = createOneForEachTargetEffect(),
                 )
-            }
+            val secondary =
+                SingleCameraParameter(
+                    cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+                    enableVideoCapture = true,
+                    effect = createOneForEachTargetEffect(),
+                )
 
-        // Assert.
-        assertThat(concurrentCamera).isNotNull()
-        assertThat(concurrentCamera.cameras.size).isEqualTo(2)
-        primary.assertPreviewFramesReceived()
-        secondary.assertPreviewFramesReceived()
-        primary.assertCanRecordVideos()
-        secondary.assertCanRecordVideos()
-    }
+            // Act.
+            val concurrentCamera =
+                withContext(Dispatchers.Main) {
+                    cameraProvider.bindToLifecycle(
+                        listOf(primary.getSingleCameraConfig(), secondary.getSingleCameraConfig())
+                    )
+                }
+
+            // Assert.
+            assertThat(concurrentCamera).isNotNull()
+            assertThat(concurrentCamera.cameras.size).isEqualTo(2)
+            primary.assertPreviewFramesReceived()
+            secondary.assertPreviewFramesReceived()
+            primary.assertCanRecordVideos()
+            secondary.assertCanRecordVideos()
+        }
+
+    @Test
+    fun testConcurrentCameraV1_previewVideoCapture_withOneForAllTargetsEffect_canWork() =
+        runBlocking {
+            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+
+            // Arrange.
+            val primary =
+                SingleCameraParameter(
+                    cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA,
+                    enableVideoCapture = true,
+                    effect = createOneForAllTargetsEffect(),
+                )
+            val secondary =
+                SingleCameraParameter(
+                    cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+                    enableVideoCapture = true,
+                    effect = createOneForAllTargetsEffect(),
+                )
+
+            // Act.
+            val concurrentCamera =
+                withContext(Dispatchers.Main) {
+                    cameraProvider.bindToLifecycle(
+                        listOf(primary.getSingleCameraConfig(), secondary.getSingleCameraConfig())
+                    )
+                }
+
+            // Assert.
+            assertThat(concurrentCamera).isNotNull()
+            assertThat(concurrentCamera.cameras.size).isEqualTo(2)
+            primary.assertPreviewFramesReceived()
+            secondary.assertPreviewFramesReceived()
+            primary.assertCanRecordVideos()
+            secondary.assertCanRecordVideos()
+        }
 
     @Test
     fun testConcurrentCameraV1_previewVideoCaptureImageCapture_canWork() = runBlocking {
@@ -357,6 +398,96 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
         primary.assertCanRecordVideos()
     }
 
+    @Test
+    fun testConcurrentCameraV2_previewVideoCapture_withOneForEachTargetEffect_canWork() =
+        runBlocking {
+            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+
+            // Arrange.
+            val primary =
+                SingleCameraParameter(
+                    cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+                    enableVideoCapture = true,
+                    effect = createOneForEachTargetEffect(),
+                    compositionSettings =
+                        CompositionSettings.Builder()
+                            .setOffset(0.0f, 0.0f)
+                            .setScale(1.0f, 1.0f)
+                            .build(),
+                )
+
+            val secondary =
+                SingleCameraParameter(
+                    cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA,
+                    useCaseGroup = primary.useCaseGroup,
+                    compositionSettings =
+                        CompositionSettings.Builder()
+                            .setOffset(-0.3f, -0.4f)
+                            .setScale(0.3f, 0.3f)
+                            .build(),
+                )
+
+            // Act.
+            val concurrentCamera =
+                withContext(Dispatchers.Main) {
+                    cameraProvider.bindToLifecycle(
+                        listOf(primary.getSingleCameraConfig(), secondary.getSingleCameraConfig())
+                    )
+                }
+
+            // Assert.
+            assertThat(concurrentCamera).isNotNull()
+            assertThat(concurrentCamera.cameras.size).isEqualTo(1)
+            primary.assertPreviewFramesReceived()
+            primary.assertCanRecordVideos()
+        }
+
+    @Test
+    fun testConcurrentCameraV2_previewVideoCapture_withOneForAllTargetsEffect_canWork() =
+        runBlocking {
+            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
+            assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+
+            // Arrange.
+            val primary =
+                SingleCameraParameter(
+                    cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+                    enableVideoCapture = true,
+                    effect = createOneForAllTargetsEffect(),
+                    compositionSettings =
+                        CompositionSettings.Builder()
+                            .setOffset(0.0f, 0.0f)
+                            .setScale(1.0f, 1.0f)
+                            .build(),
+                )
+
+            val secondary =
+                SingleCameraParameter(
+                    cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA,
+                    useCaseGroup = primary.useCaseGroup,
+                    compositionSettings =
+                        CompositionSettings.Builder()
+                            .setOffset(-0.3f, -0.4f)
+                            .setScale(0.3f, 0.3f)
+                            .build(),
+                )
+
+            // Act.
+            val concurrentCamera =
+                withContext(Dispatchers.Main) {
+                    cameraProvider.bindToLifecycle(
+                        listOf(primary.getSingleCameraConfig(), secondary.getSingleCameraConfig())
+                    )
+                }
+
+            // Assert.
+            assertThat(concurrentCamera).isNotNull()
+            assertThat(concurrentCamera.cameras.size).isEqualTo(1)
+            primary.assertPreviewFramesReceived()
+            primary.assertCanRecordVideos()
+        }
+
     @Test(expected = IllegalArgumentException::class)
     fun testConcurrentCameraV2_moreThanTwoCamerasRecording_throwException(): Unit = runBlocking {
         assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT))
@@ -424,12 +555,26 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
     private class DefaultEffect(targets: Int) :
         CameraEffect(
             targets,
+            OUTPUT_OPTION_ONE_FOR_EACH_TARGET,
+            TRANSFORMATION_ARBITRARY,
             CameraXExecutors.mainThreadExecutor(),
             DefaultSurfaceProcessor.Factory.newInstance(DynamicRange.SDR),
             {},
-        ) {
-        fun release() {
-            (surfaceProcessor as DefaultSurfaceProcessor).release()
+        ) {}
+
+    private fun createOneForEachTargetEffect(): DefaultEffect {
+        return DefaultEffect(CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE)
+    }
+
+    private suspend fun createOneForAllTargetsEffect(): Media3Effect {
+        return withContext(Dispatchers.Main) {
+            Media3Effect(
+                    context,
+                    CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE,
+                    CameraXExecutors.mainThreadExecutor(),
+                    Consumer {},
+                )
+                .also { it.setEffects(listOf(RgbFilter.createGrayscaleFilter())) }
         }
     }
 
@@ -437,7 +582,7 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
         val cameraSelector: CameraSelector,
         val enableImageCapture: Boolean = false,
         val enableVideoCapture: Boolean = false,
-        val enableEffect: Boolean = false,
+        val effect: CameraEffect? = null,
         var useCaseGroup: UseCaseGroup? = null,
         val compositionSettings: CompositionSettings? = null,
     ) {
@@ -445,7 +590,6 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
         val preview: Preview
         val imageCapture: ImageCapture?
         val videoCapture: VideoCapture<Recorder>?
-        var effect: DefaultEffect? = null
 
         init {
             if (useCaseGroup == null) {
@@ -465,10 +609,7 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
                     videoCapture = null
                 }
 
-                if (enableEffect) {
-                    effect = DefaultEffect(CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE)
-                    useCaseGroupBuilder.addEffect(effect!!)
-                }
+                effect?.let { useCaseGroupBuilder.addEffect(it) }
                 useCaseGroup = useCaseGroupBuilder.build()
             } else {
                 preview = useCaseGroup!!.useCases.first { it is Preview } as Preview

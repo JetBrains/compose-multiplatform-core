@@ -17,10 +17,10 @@
 package androidx.xr.arcore.testing
 
 import androidx.kruth.assertThat
-import androidx.xr.arcore.internal.Anchor
-import androidx.xr.arcore.internal.AnchorInvalidUuidException
-import androidx.xr.arcore.internal.HitResult
-import androidx.xr.arcore.internal.Trackable
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorInvalidUuidException
+import androidx.xr.arcore.runtime.HitResult
+import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray

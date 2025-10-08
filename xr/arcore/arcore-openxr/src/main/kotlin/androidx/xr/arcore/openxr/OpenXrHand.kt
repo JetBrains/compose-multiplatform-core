@@ -17,14 +17,14 @@
 package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Hand
+import androidx.xr.arcore.runtime.Hand
 import androidx.xr.runtime.TrackingState
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 /**
- * Wraps the native [XrHandJointLocationsEXT] with the [androidx.xr.arcore.internal.Hand] interface.
+ * Wraps the native [XrHandJointLocationsEXT] with the [androidx.xr.arcore.runtime.Hand] interface.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrHand internal constructor(private val isLeftHand: Boolean) : Hand, Updatable {

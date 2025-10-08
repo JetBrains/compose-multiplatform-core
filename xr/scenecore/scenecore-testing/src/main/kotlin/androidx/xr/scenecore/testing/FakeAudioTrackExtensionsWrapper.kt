@@ -18,19 +18,19 @@ package androidx.xr.scenecore.testing
 
 import android.media.AudioTrack
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper
-import androidx.xr.scenecore.internal.PointSourceParams
-import androidx.xr.scenecore.internal.SoundFieldAttributes
-import androidx.xr.scenecore.internal.SpatializerConstants
+import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper
+import androidx.xr.scenecore.runtime.PointSourceParams
+import androidx.xr.scenecore.runtime.SoundFieldAttributes
+import androidx.xr.scenecore.runtime.SpatializerConstants
 
-/** Test-only implementation of [androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper] */
+/** Test-only implementation of [androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeAudioTrackExtensionsWrapper : AudioTrackExtensionsWrapper {
 
     private var pointSourceParamsMap: MutableMap<AudioTrack, PointSourceParams?> = mutableMapOf()
 
     /**
-     * Returns the [androidx.xr.scenecore.internal.PointSourceParams] of the AudioTrack.
+     * Returns the [androidx.xr.scenecore.runtime.PointSourceParams] of the AudioTrack.
      *
      * @param track The AudioTrack to get the PointSourceParams from.
      * @return The PointSourceParams of the AudioTrack.
@@ -42,7 +42,7 @@ public class FakeAudioTrackExtensionsWrapper : AudioTrackExtensionsWrapper {
     /**
      * For test purposes only.
      *
-     * This map allows tests to control the [androidx.xr.scenecore.internal.SoundFieldAttributes]
+     * This map allows tests to control the [androidx.xr.scenecore.runtime.SoundFieldAttributes]
      * returned by [getSoundFieldAttributes] for specific [AudioTrack] instances. By pre-configuring
      * entries in this map, tests can simulate various sound field configurations for different
      * audio tracks.
@@ -74,16 +74,16 @@ public class FakeAudioTrackExtensionsWrapper : AudioTrackExtensionsWrapper {
      *
      * Populate this map with [AudioTrack] instances as keys and their desired spatial source type
      * (an `Int` constant) as values. Valid source types include:
-     * - [androidx.xr.scenecore.internal.SpatializerConstants.Companion.SOURCE_TYPE_BYPASS]
-     * - [androidx.xr.scenecore.internal.SpatializerConstants.Companion.SOURCE_TYPE_POINT_SOURCE]
-     * - [androidx.xr.scenecore.internal.SpatializerConstants.Companion.SOURCE_TYPE_SOUND_FIELD]
+     * - [androidx.xr.scenecore.runtime.SpatializerConstants.Companion.SOURCE_TYPE_BYPASS]
+     * - [androidx.xr.scenecore.runtime.SpatializerConstants.Companion.SOURCE_TYPE_POINT_SOURCE]
+     * - [androidx.xr.scenecore.runtime.SpatializerConstants.Companion.SOURCE_TYPE_SOUND_FIELD]
      *
      * The custom setter for this property validates that all values in an assigned map are one of
      * the valid source types. If the validation fails, the assignment is ignored, and the map
      * remains unchanged.
      *
      * If an [AudioTrack] is not found as a key in this map, [getSpatialSourceType] will default to
-     * returning [androidx.xr.scenecore.internal.SpatializerConstants.Companion.SOURCE_TYPE_BYPASS].
+     * returning [androidx.xr.scenecore.runtime.SpatializerConstants.Companion.SOURCE_TYPE_BYPASS].
      */
     public var spatialSourceTypeMap: MutableMap<AudioTrack, Int>
         get() = _spatialSourceTypeMap
@@ -117,11 +117,11 @@ public class FakeAudioTrackExtensionsWrapper : AudioTrackExtensionsWrapper {
      * Sets the PointSourceParams of the AudioTrack.
      *
      * The new PointSourceParams will be applied if the
-     * [androidx.xr.scenecore.internal.SpatializerConstants.SourceType] of the AudioTrack was either
-     * [androidx.xr.scenecore.internal.SpatializerConstants.Companion.SOURCE_TYPE_BYPASS] or
-     * [androidx.xr.scenecore.internal.SpatializerConstants.Companion.SOURCE_TYPE_POINT_SOURCE]. If
-     * the [androidx.xr.scenecore.internal.SpatializerConstants.SourceType] was
-     * [androidx.xr.scenecore.internal.SpatializerConstants.Companion.SOURCE_TYPE_SOUND_FIELD], then
+     * [androidx.xr.scenecore.runtime.SpatializerConstants.SourceType] of the AudioTrack was either
+     * [androidx.xr.scenecore.runtime.SpatializerConstants.Companion.SOURCE_TYPE_BYPASS] or
+     * [androidx.xr.scenecore.runtime.SpatializerConstants.Companion.SOURCE_TYPE_POINT_SOURCE]. If
+     * the [androidx.xr.scenecore.runtime.SpatializerConstants.SourceType] was
+     * [androidx.xr.scenecore.runtime.SpatializerConstants.Companion.SOURCE_TYPE_SOUND_FIELD], then
      * this method will have no effect.
      *
      * @param track The AudioTrack to set the PointSourceParams on.

@@ -27,8 +27,8 @@ import android.app.Activity;
 import androidx.xr.runtime.NodeHolder;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.SubspaceNodeFeature;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 import androidx.xr.scenecore.testing.FakeSubspaceNodeFeature;
 

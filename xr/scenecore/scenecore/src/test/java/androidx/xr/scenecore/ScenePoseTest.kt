@@ -21,9 +21,9 @@ import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ScenePose.HitTestFilter
-import androidx.xr.scenecore.internal.CameraViewActivityPose as RtCameraViewActivityPose
-import androidx.xr.scenecore.internal.HitTestResult as RtHitTestResult
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.CameraViewActivityPose as RtCameraViewActivityPose
+import androidx.xr.scenecore.runtime.HitTestResult as RtHitTestResult
+import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakeCameraViewActivityPose
 import androidx.xr.scenecore.testing.FakeHeadActivityPose
 import androidx.xr.scenecore.testing.FakePerceptionSpaceActivityPose

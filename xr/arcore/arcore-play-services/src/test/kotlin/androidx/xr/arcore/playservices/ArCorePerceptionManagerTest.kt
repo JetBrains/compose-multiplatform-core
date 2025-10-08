@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.playservices
 
-import androidx.xr.arcore.internal.AnchorNotTrackingException
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.runtime.VpsAvailabilityAvailable
 import androidx.xr.runtime.VpsAvailabilityErrorInternal
 import androidx.xr.runtime.VpsAvailabilityNetworkError

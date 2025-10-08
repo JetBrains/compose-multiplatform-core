@@ -45,6 +45,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -661,18 +662,16 @@ public class WebSettingsCompat {
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return The configured set of allow-listed origins.
      * @see #setRequestedWithHeaderOriginAllowList(WebSettings, Set)
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API now just returns an empty set.
      */
     @RequiresFeature(name = WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     public static @NonNull Set<String> getRequestedWithHeaderOriginAllowList(
             @NonNull WebSettings settings) {
-        final ApiFeature.NoFramework feature =
-                WebViewFeatureInternal.REQUESTED_WITH_HEADER_ALLOW_LIST;
-        if (feature.isSupportedByWebView()) {
-            return getAdapter(settings).getRequestedWithHeaderOriginAllowList();
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
+        return Collections.emptySet();
     }
 
     /**
@@ -694,18 +693,15 @@ public class WebSettingsCompat {
      * @param settings  Settings retrieved from {@link WebView#getSettings()}.
      * @param allowList Set of origins to allow-list.
      * @throws IllegalArgumentException if the allow-list contains a malformed origin.
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API no longer does anything.
      */
     @RequiresFeature(name = WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     public static void setRequestedWithHeaderOriginAllowList(@NonNull WebSettings settings,
             @NonNull Set<String> allowList) {
-        final ApiFeature.NoFramework feature =
-                WebViewFeatureInternal.REQUESTED_WITH_HEADER_ALLOW_LIST;
-        if (feature.isSupportedByWebView()) {
-            getAdapter(settings).setRequestedWithHeaderOriginAllowList(allowList);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
     }
 
     /**

@@ -36,5 +36,7 @@ package androidx.glance.wear.parcel;
 interface IWearWidgetProvider {
   int getApiVersion() = 0;
   oneway void onWidgetRequest(in androidx.glance.wear.parcel.WearWidgetRequestParcel requestParcel, androidx.glance.wear.parcel.IWearWidgetCallback callback) = 1;
+  oneway void onActivated(in androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel handleParcel, androidx.glance.wear.parcel.IExecutionCallback callback) = 2;
+  oneway void onDeactivated(in androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel handleParcel, androidx.glance.wear.parcel.IExecutionCallback callback) = 3;
   const int API_VERSION = 1;
 }

@@ -18,11 +18,11 @@ package androidx.xr.scenecore.testing
 
 import android.media.MediaPlayer
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper
-import androidx.xr.scenecore.internal.PointSourceParams
-import androidx.xr.scenecore.internal.SoundFieldAttributes
+import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper
+import androidx.xr.scenecore.runtime.PointSourceParams
+import androidx.xr.scenecore.runtime.SoundFieldAttributes
 
-/** Test-only implementation of [androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper] */
+/** Test-only implementation of [androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeMediaPlayerExtensionsWrapper : MediaPlayerExtensionsWrapper {
     private var _pointSourceParams: MutableMap<MediaPlayer, PointSourceParams> = mutableMapOf()
@@ -30,7 +30,7 @@ public class FakeMediaPlayerExtensionsWrapper : MediaPlayerExtensionsWrapper {
     /**
      * For test purposes only.
      *
-     * This read-only map stores the [androidx.xr.scenecore.internal.PointSourceParams] that were
+     * This read-only map stores the [androidx.xr.scenecore.runtime.PointSourceParams] that were
      * last set for each [MediaPlayer] instance via the [setPointSourceParams] method.
      *
      * Tests can inspect this map to verify that the code under test correctly applies the intended
@@ -55,7 +55,7 @@ public class FakeMediaPlayerExtensionsWrapper : MediaPlayerExtensionsWrapper {
     /**
      * For test purposes only.
      *
-     * This read-only map stores the [androidx.xr.scenecore.internal.SoundFieldAttributes] that were
+     * This read-only map stores the [androidx.xr.scenecore.runtime.SoundFieldAttributes] that were
      * last set for each [MediaPlayer] instance via the [setSoundFieldAttributes] method.
      *
      * Tests can inspect this map to verify that the code under test correctly applies the intended

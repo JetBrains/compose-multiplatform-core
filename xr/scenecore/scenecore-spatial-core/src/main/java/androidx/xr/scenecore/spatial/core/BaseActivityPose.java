@@ -18,8 +18,8 @@ package androidx.xr.scenecore.spatial.core;
 
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.internal.ActivityPose;
-import androidx.xr.scenecore.internal.HitTestResult;
+import androidx.xr.scenecore.runtime.ActivityPose;
+import androidx.xr.scenecore.runtime.HitTestResult;
 
 import com.google.common.util.concurrent.ListenableFuture;
 

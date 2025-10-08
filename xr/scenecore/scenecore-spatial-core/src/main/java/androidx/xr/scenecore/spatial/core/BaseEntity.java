@@ -24,10 +24,10 @@ import android.widget.FrameLayout;
 
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.internal.Component;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.Space;
-import androidx.xr.scenecore.internal.SpaceValue;
+import androidx.xr.scenecore.runtime.Component;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.SpaceValue;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;

@@ -49,6 +49,23 @@ public open class NavEntry<T : Any>(
     public open fun Content() {
         this.content(key)
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as NavEntry<*>
+
+        return key == other.key && contentKey == other.contentKey && metadata == other.metadata
+    }
+
+    override fun hashCode(): Int {
+        return key.hashCode() * 31 + contentKey.hashCode() * 31 + metadata.hashCode() * 31
+    }
+
+    override fun toString(): String {
+        return "NavEntry(key=$key, contentKey=$contentKey, metadata=$metadata)"
+    }
 }
 
 @PublishedApi internal fun defaultContentKey(key: Any): Any = key.toString()

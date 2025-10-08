@@ -38,6 +38,7 @@ import androidx.room3.integration.kotlintestapp.vo.PetUser
 import androidx.room3.integration.kotlintestapp.vo.PetWithUser
 import androidx.room3.integration.kotlintestapp.vo.Robot
 import androidx.room3.integration.kotlintestapp.vo.Toy
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -55,9 +56,10 @@ class ProvidedTypeConverterTest {
     fun testProvidedTypeConverter() {
         val context: Context = ApplicationProvider.getApplicationContext()
         val db =
-            Room.inMemoryDatabaseBuilder(context, TestDatabaseWithConverterOne::class.java)
+            Room.inMemoryDatabaseBuilder<TestDatabaseWithConverterOne>(context)
                 .addTypeConverter(UUIDConverter())
                 .addTypeConverter(TimeStampConverter())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
         val pet: Pet = TestUtil.createPet(3)
         pet.mName = "pet"
@@ -72,9 +74,10 @@ class ProvidedTypeConverterTest {
     fun testSharedProvidedTypeConverter() {
         val context: Context = ApplicationProvider.getApplicationContext()
         val db =
-            Room.inMemoryDatabaseBuilder(context, TestDatabaseWithConverterTwo::class.java)
+            Room.inMemoryDatabaseBuilder<TestDatabaseWithConverterTwo>(context)
                 .addTypeConverter(UUIDConverter())
                 .addTypeConverter(TimeStampConverter())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
         val pet: Pet = TestUtil.createPet(3)
         db.petRobotDao().putPet(pet)
@@ -89,7 +92,8 @@ class ProvidedTypeConverterTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         try {
             val db =
-                Room.inMemoryDatabaseBuilder(context, TestDatabaseWithConverterOne::class.java)
+                Room.inMemoryDatabaseBuilder<TestDatabaseWithConverterOne>(context)
+                    .setDriver(AndroidSQLiteDriver())
                     .build()
             val pet: Pet = TestUtil.createPet(3)
             pet.mName = "pet"
@@ -105,8 +109,9 @@ class ProvidedTypeConverterTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         try {
             val db: TestDatabase =
-                Room.inMemoryDatabaseBuilder(context, TestDatabase::class.java)
+                Room.inMemoryDatabaseBuilder<TestDatabase>(context)
                     .addTypeConverter(TimeStampConverter())
+                    .setDriver(AndroidSQLiteDriver())
                     .build()
             val pet: Pet = TestUtil.createPet(3)
             pet.mName = "pet"
@@ -121,12 +126,14 @@ class ProvidedTypeConverterTest {
     fun differentSerializerForTheSameClassInDifferentDatabases() {
         val context: Context = ApplicationProvider.getApplicationContext()
         val db1 =
-            Room.inMemoryDatabaseBuilder(context, ProvidedTypeConverterNameLastNameDb::class.java)
+            Room.inMemoryDatabaseBuilder<ProvidedTypeConverterNameLastNameDb>(context)
                 .addTypeConverter(NameLastNameSerializer())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
         val db2 =
-            Room.inMemoryDatabaseBuilder(context, ProvidedTypeConverterLastNameNameDb::class.java)
+            Room.inMemoryDatabaseBuilder<ProvidedTypeConverterLastNameNameDb>(context)
                 .addTypeConverter(LastNameNameSerializer())
+                .setDriver(AndroidSQLiteDriver())
                 .build()
         val entity1 = ProvidedTypeConverterEntity(1, Username("foo1", "bar1"))
         val entity2 = ProvidedTypeConverterEntity(2, Username("foo2", "bar2"))

@@ -37,9 +37,9 @@ import androidx.xr.arcore.AnchorCreateUnsupportedLocation;
 import androidx.xr.arcore.Earth;
 import androidx.xr.arcore.SessionExtKt;
 import androidx.xr.arcore.XrResourcesManager;
-import androidx.xr.arcore.internal.AnchorNotAuthorizedException;
-import androidx.xr.arcore.internal.AnchorResourcesExhaustedException;
-import androidx.xr.arcore.internal.AnchorUnsupportedLocationException;
+import androidx.xr.arcore.runtime.AnchorNotAuthorizedException;
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException;
+import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException;
 import androidx.xr.arcore.testing.FakePerceptionManager;
 import androidx.xr.arcore.testing.FakeRuntimeEarth;
 import androidx.xr.runtime.Config;
@@ -72,7 +72,7 @@ public class EarthGuavaTest {
     @Before
     public void setUp() {
         mXrResourcesManager = new XrResourcesManager();
-        mRuntimeEarth = new FakeRuntimeEarth(androidx.xr.arcore.internal.Earth.State.STOPPED);
+        mRuntimeEarth = new FakeRuntimeEarth(androidx.xr.arcore.runtime.Earth.State.STOPPED);
     }
 
     @Test
@@ -81,7 +81,7 @@ public class EarthGuavaTest {
                 () -> {
                     Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
                     FakePerceptionManager fakePerceptionManager = getFakePerceptionManager();
-                    androidx.xr.arcore.internal.Anchor fakeAnchor =
+                    androidx.xr.arcore.runtime.Anchor fakeAnchor =
                             fakePerceptionManager.createAnchor(Pose.Identity);
                     mRuntimeEarth.setNextAnchor(fakeAnchor);
 

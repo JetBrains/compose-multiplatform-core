@@ -472,6 +472,7 @@ public value class TimePickerSelection internal constructor(internal val value: 
             Minute -> "Minute"
             Second -> "Second"
             Period -> "Period"
+            ConfirmButton -> "ConfirmButton"
             None -> "None"
             else -> "Unknown"
         }

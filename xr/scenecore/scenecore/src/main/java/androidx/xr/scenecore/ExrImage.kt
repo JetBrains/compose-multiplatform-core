@@ -21,8 +21,8 @@ import android.net.Uri
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.scenecore.internal.ExrImageResource as RtExrImage
-import androidx.xr.scenecore.internal.RenderingRuntime
+import androidx.xr.scenecore.runtime.ExrImageResource as RtExrImage
+import androidx.xr.scenecore.runtime.RenderingRuntime
 import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path
 

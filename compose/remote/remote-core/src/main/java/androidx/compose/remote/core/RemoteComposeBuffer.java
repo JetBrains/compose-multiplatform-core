@@ -162,6 +162,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -2047,6 +2048,19 @@ public class RemoteComposeBuffer {
                 BitmapData.ENCODING_INLINE,
                 (short) imageHeight,
                 data); // todo: potential npe
+        return imageId;
+    }
+
+    /**
+     * Store an image url in the buffer
+     *
+     * @param imageId the image id
+     * @param url the image url
+     * @return the image id
+     */
+    public int storeBitmapUrl(int imageId, @NonNull String url) {
+        BitmapData.apply(mBuffer, imageId, BitmapData.TYPE_PNG, (short) 1, BitmapData.ENCODING_URL,
+                (short) 1, url.getBytes(StandardCharsets.UTF_8));
         return imageId;
     }
 

@@ -19,7 +19,7 @@ package androidx.xr.scenecore.spatial.rendering;
 import androidx.xr.runtime.NodeHolder;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
-import androidx.xr.scenecore.internal.RenderingFeature;
+import androidx.xr.scenecore.runtime.RenderingFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

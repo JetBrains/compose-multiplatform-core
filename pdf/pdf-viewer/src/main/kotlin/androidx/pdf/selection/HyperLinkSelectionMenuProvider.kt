@@ -25,12 +25,15 @@ internal class HyperLinkSelectionMenuProvider(private val context: Context) :
 
     override suspend fun getMenuItems(selection: HyperLinkSelection): List<ContextMenuComponent> {
         val menuItems: MutableList<ContextMenuComponent> = mutableListOf()
-        menuItems += getHyperLinkMenuItem(selection)
-        menuItems += LinkSelectionMenuProvider.getDefaultMenuItems(context)
+        // Avoid copy link context menu option for mail link as it is not intuitive.
+        if (!selection.link.toString().contains(MAIL_TO)) {
+            menuItems += getCopyLinkMenuItem()
+        }
+        menuItems += DefaultSelectionMenuProvider.getMenuItems(context)
         return menuItems
     }
 
-    private fun getHyperLinkMenuItem(selection: HyperLinkSelection): ContextMenuComponent {
+    private fun getCopyLinkMenuItem(): ContextMenuComponent {
         return DefaultSelectionMenuComponent(
             key = PdfSelectionMenuKeys.SmartActionKey,
             label = context.getString(R.string.label_copy_link),
@@ -42,6 +45,20 @@ internal class HyperLinkSelectionMenuProvider(private val context: Context) :
             }
             close()
             pdfView.clearSelection()
+        }
+    }
+
+    companion object {
+        private const val MAIL_TO = "mailto:"
+
+        // Filter link helps in providing better context menu options depending on the type of link
+        // As copy link is not intuitive option for a mail link rather prefer an email menu.
+        fun filterLink(link: String): String {
+            return if (link.contains(MAIL_TO)) {
+                link.substringAfter(MAIL_TO)
+            } else {
+                link
+            }
         }
     }
 }

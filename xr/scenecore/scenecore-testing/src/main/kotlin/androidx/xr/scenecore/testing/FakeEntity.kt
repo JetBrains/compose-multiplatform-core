@@ -19,23 +19,23 @@ package androidx.xr.scenecore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.Component
-import androidx.xr.scenecore.internal.Entity
-import androidx.xr.scenecore.internal.InputEventListener
-import androidx.xr.scenecore.internal.SpaceValue
+import androidx.xr.scenecore.runtime.Component
+import androidx.xr.scenecore.runtime.Entity
+import androidx.xr.scenecore.runtime.InputEventListener
+import androidx.xr.scenecore.runtime.SpaceValue
 import java.util.Collections
 import java.util.concurrent.Executor
 
 /**
- * A test double for [androidx.xr.scenecore.internal.Entity], designed for use in unit or
- * integration tests.
+ * A test double for [androidx.xr.scenecore.runtime.Entity], designed for use in unit or integration
+ * tests.
  *
  * This test double offers greater control compared to the real
- * [androidx.xr.scenecore.internal.Entity] by allowing:
+ * [androidx.xr.scenecore.runtime.Entity] by allowing:
  * * Direct modification of most properties to simulate specific scenarios or states.
  * * Mocking of hit test results for predictable and verifiable interaction testing.
  *
- * @see androidx.xr.scenecore.internal.Entity
+ * @see androidx.xr.scenecore.runtime.Entity
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeEntity() : FakeActivityPose(), Entity {

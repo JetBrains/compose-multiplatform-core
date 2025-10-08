@@ -17,7 +17,7 @@
 package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.ArDevice
+import androidx.xr.arcore.runtime.ArDevice
 import androidx.xr.runtime.math.Pose
 
 /** Wraps the device tracking data. */

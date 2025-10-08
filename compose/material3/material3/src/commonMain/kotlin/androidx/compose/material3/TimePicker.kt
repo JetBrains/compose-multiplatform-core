@@ -126,6 +126,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -158,6 +159,7 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.InspectorValueInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.semantics.Role
@@ -1774,6 +1776,7 @@ private fun ClockText(
             )
         }
     }
+    val focusable = LocalInputModeManager.current.inputMode != InputMode.Touch
 
     // TODO Load the motionScheme tokens from the component tokens file
     Box(
@@ -1817,7 +1820,7 @@ private fun ClockText(
                     false
                 }
                 .indication(interactionSource, ripple(radius = MinimumInteractiveSize / 2))
-                .focusable(interactionSource = interactionSource)
+                .focusable(focusable, interactionSource)
                 .semantics(mergeDescendants = true) {
                     onClick {
                         onClockTextClick()

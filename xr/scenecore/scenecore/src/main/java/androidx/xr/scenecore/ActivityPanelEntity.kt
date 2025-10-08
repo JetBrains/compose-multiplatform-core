@@ -22,8 +22,8 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.internal.ActivityPanelEntity as RtActivityPanelEntity
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.ActivityPanelEntity as RtActivityPanelEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
 
 /**
  * ActivityPanelEntity creates a spatial panel for embedding an [Activity] in Android XR. Users can

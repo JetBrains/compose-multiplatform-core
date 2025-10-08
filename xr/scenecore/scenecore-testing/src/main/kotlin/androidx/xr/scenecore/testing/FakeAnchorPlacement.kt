@@ -17,12 +17,12 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.AnchorPlacement
-import androidx.xr.scenecore.internal.PlaneSemantic
-import androidx.xr.scenecore.internal.PlaneType
+import androidx.xr.scenecore.runtime.AnchorPlacement
+import androidx.xr.scenecore.runtime.PlaneSemantic
+import androidx.xr.scenecore.runtime.PlaneType
 
 /**
- * A test implementation of the [androidx.xr.scenecore.internal.AnchorPlacement] interface, used to
+ * A test implementation of the [androidx.xr.scenecore.runtime.AnchorPlacement] interface, used to
  * define and inspect anchor placement rules in tests.
  *
  * This class specifies the conditions under which an entity can be anchored to a real-world plane.

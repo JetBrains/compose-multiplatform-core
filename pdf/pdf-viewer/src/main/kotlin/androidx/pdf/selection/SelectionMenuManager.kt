@@ -66,11 +66,12 @@ internal class SelectionMenuManager(private val context: Context) {
             }
             is HyperLinkSelection -> {
                 val newMenuItems: MutableList<ContextMenuComponent> = mutableListOf()
+                // Filter link to provide better context menu options depending upon link type.
+                val link = HyperLinkSelectionMenuProvider.filterLink(selection.link.toString())
                 // We use the TextSelectionMenuProvider here because it's already designed to
                 // generate smart action items using the TextClassifier API, which is ideal for
                 // creating relevant menu options for a hyperlink's URL.
-                newMenuItems +=
-                    textSelectionMenuProvider.getSmartMenuItems(selection.link.toString())
+                newMenuItems += textSelectionMenuProvider.getSmartMenuItems(link)
                 newMenuItems += hyperLinkSelectionMenuProvider.getMenuItems(selection)
                 cachedSelection = SelectionCache(selection, newMenuItems)
                 newMenuItems

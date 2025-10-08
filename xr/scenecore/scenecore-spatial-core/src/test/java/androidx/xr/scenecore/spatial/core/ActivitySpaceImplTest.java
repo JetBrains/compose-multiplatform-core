@@ -39,13 +39,13 @@ import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.internal.ActivityPose.HitTestFilter;
-import androidx.xr.scenecore.internal.ActivityPose.HitTestFilterValue;
-import androidx.xr.scenecore.internal.ActivitySpace;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.HitTestResult;
-import androidx.xr.scenecore.internal.SceneRuntime;
-import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilter;
+import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilterValue;
+import androidx.xr.scenecore.runtime.ActivitySpace;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.HitTestResult;
+import androidx.xr.scenecore.runtime.SceneRuntime;
+import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 import androidx.xr.scenecore.testing.FakeSpatialModeChangeListener;
 
@@ -117,8 +117,8 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
 
     @After
     public void tearDown() {
-        // Dispose the runtime between test cases to clean up lingering references.
-        mTestRuntime.dispose();
+        // Destroy the runtime between test cases to clean up lingering references.
+        mTestRuntime.destroy();
     }
 
     @Override

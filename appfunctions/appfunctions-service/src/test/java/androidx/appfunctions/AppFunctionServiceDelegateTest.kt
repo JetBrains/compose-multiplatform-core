@@ -17,7 +17,6 @@
 package androidx.appfunctions
 
 import android.content.Context
-import android.os.OutcomeReceiver
 import androidx.appfunctions.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.internal.AppFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
@@ -35,11 +34,8 @@ import androidx.appfunctions.testing.FakeTranslator
 import androidx.appfunctions.testing.FakeTranslatorSelector
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -71,7 +67,6 @@ class AppFunctionServiceDelegateTest {
             AppFunctionServiceDelegate(
                 context,
                 testDispatcher,
-                testDispatcher,
                 fakeAggregatedInventory,
                 fakeAggregatedInvoker,
                 fakeTranslatorSelector,
@@ -88,7 +83,7 @@ class AppFunctionServiceDelegateTest {
             )
 
         assertThrows(AppFunctionFunctionNotFoundException::class.java) {
-            runBlocking { executeFunctionBlocking(request) }
+            runBlocking { delegate.executeFunction(request) }
         }
     }
 
@@ -122,7 +117,7 @@ class AppFunctionServiceDelegateTest {
             )
 
         assertThrows(AppFunctionInvalidArgumentException::class.java) {
-            runBlocking { executeFunctionBlocking(request) }
+            runBlocking { delegate.executeFunction(request) }
         }
     }
 
@@ -150,7 +145,7 @@ class AppFunctionServiceDelegateTest {
             )
 
         assertThrows(AppFunctionAppUnknownException::class.java) {
-            runBlocking { executeFunctionBlocking(request) }
+            runBlocking { delegate.executeFunction(request) }
         }
     }
 
@@ -176,7 +171,7 @@ class AppFunctionServiceDelegateTest {
                 functionParameters = AppFunctionData.EMPTY,
             )
 
-        val response = runBlocking { executeFunctionBlocking(request) }
+        val response = runBlocking { delegate.executeFunction(request) }
 
         assertThat(response).isInstanceOf(ExecuteAppFunctionResponse.Success::class.java)
         assertThat(
@@ -216,7 +211,7 @@ class AppFunctionServiceDelegateTest {
                 functionParameters = AppFunctionData.Builder("").setLong("testArg", 100L).build(),
             )
 
-        val response = runBlocking { executeFunctionBlocking(request) }
+        val response = runBlocking { delegate.executeFunction(request) }
 
         assertThat(response).isInstanceOf(ExecuteAppFunctionResponse.Success::class.java)
         assertThat(
@@ -241,7 +236,7 @@ class AppFunctionServiceDelegateTest {
                 useJetpackSchema = false,
             )
 
-        val response = runBlocking { executeFunctionBlocking(request) }
+        val response = runBlocking { delegate.executeFunction(request) }
 
         assertThat(response).isInstanceOf(ExecuteAppFunctionResponse.Success::class.java)
         assertThat(fakeTranslator.upgradeRequestCalled).isTrue()
@@ -264,31 +259,13 @@ class AppFunctionServiceDelegateTest {
                 useJetpackSchema = true,
             )
 
-        val response = runBlocking { executeFunctionBlocking(request) }
+        val response = runBlocking { delegate.executeFunction(request) }
 
         assertThat(response).isInstanceOf(ExecuteAppFunctionResponse.Success::class.java)
         assertThat(fakeTranslator.upgradeRequestCalled).isFalse()
         assertThat(fakeTranslator.upgradeResponseCalled).isFalse()
         assertThat(fakeTranslator.downgradeRequestCalled).isFalse()
         assertThat(fakeTranslator.downgradeResponseCalled).isFalse()
-    }
-
-    private suspend fun executeFunctionBlocking(
-        request: ExecuteAppFunctionRequest
-    ): ExecuteAppFunctionResponse = suspendCancellableCoroutine { cont ->
-        delegate.onExecuteFunction(
-            request,
-            context.packageName,
-            object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
-                override fun onResult(result: ExecuteAppFunctionResponse) {
-                    cont.resume(result)
-                }
-
-                override fun onError(e: AppFunctionException) {
-                    cont.resumeWithException(e)
-                }
-            },
-        )
     }
 
     private companion object {

@@ -118,7 +118,7 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
 }
 
 /**
- * Create a 3D area that the app can render spatial content into with optional [VolumeConstraints].
+ * Create a 3D area that the app can render spatial content into.
  *
  * [ApplicationSubspace] should be used to create the topmost [Subspace] in your application's
  * spatial UI hierarchy. This composable will throw an [IllegalStateException] if it is used to
@@ -214,7 +214,7 @@ private fun ApplicationSubspace(
         ) {
             it.dispose()
             subspaceRoot.dispose()
-            if (!context.requireActivity().isDestroyed) {
+            if (!context.requireActivity().isFinishing) {
                 session.scene.mainPanelEntity.setEnabled(true)
             }
         }

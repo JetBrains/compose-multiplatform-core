@@ -22,6 +22,7 @@ import android.graphics.Bitmap;
 import androidx.annotation.RestrictTo;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Methods to update the state of a {@link androidx.compose.remote.core.RemoteContext}. */
 @RestrictTo(LIBRARY_GROUP)
@@ -33,7 +34,16 @@ public interface StateUpdater {
      * @param name the name of the float to override
      * @param value Override the default float
      */
-    void setNamedLong(@NonNull String name, long value);
+    void setNamedLong(@NonNull String name, @Nullable Long value);
+
+    /**
+     * Calls {@link androidx.compose.remote.core.RemoteContext#setNamedFloatOverride(String, float)}
+     * adding {@link RemoteDomains#USER} as a prefix to the floatName.
+     *
+     * @param floatName the original name of the float parameter.
+     * @param value       the float value to set.
+     */
+    void setUserLocalFloat(@NonNull String floatName, @Nullable Float value);
 
     /**
      * Calls {@link androidx.compose.remote.core.RemoteContext#setNamedIntegerOverride(String, int)}
@@ -42,7 +52,7 @@ public interface StateUpdater {
      * @param integerName the original name of the integer parameter.
      * @param value the integer value to set.
      */
-    void setUserLocalInt(@NonNull String integerName, int value);
+    void setUserLocalInt(@NonNull String integerName, @Nullable Integer value);
 
     /**
      * Calls {@link androidx.compose.remote.core.RemoteContext#setNamedColorOverride(String, int)}
@@ -51,7 +61,7 @@ public interface StateUpdater {
      * @param name the original name of the color parameter.
      * @param value the color value to set (as an int).
      */
-    void setUserLocalColor(@NonNull String name, int value);
+    void setUserLocalColor(@NonNull String name, @Nullable Integer value);
 
     /**
      * Calls {@link androidx.compose.remote.core.RemoteContext#setNamedDataOverride(String, Object)}
@@ -60,7 +70,7 @@ public interface StateUpdater {
      * @param name the original name of the data parameter.
      * @param content the {@link Bitmap} content to set.
      */
-    void setUserLocalBitmap(@NonNull String name, @NonNull Bitmap content);
+    void setUserLocalBitmap(@NonNull String name, @Nullable Bitmap content);
 
     /**
      * Calls {@link androidx.compose.remote.core.RemoteContext#setNamedStringOverride(String,
@@ -69,7 +79,7 @@ public interface StateUpdater {
      * @param stringName the original name of the string parameter.
      * @param value the string value to set.
      */
-    void setUserLocalString(@NonNull String stringName, @NonNull String value);
+    void setUserLocalString(@NonNull String stringName, @Nullable String value);
 
     /**
      * Returns the user domain string for the given parameter name.

@@ -20,16 +20,16 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.PerceptionRuntime
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.SessionConnector
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.SceneRuntime
-import androidx.xr.scenecore.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.scenecore.internal.SpatialModeChangeListener as RtSpatialModeChangeListener
-import androidx.xr.scenecore.internal.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.runtime.SpatialModeChangeListener as RtSpatialModeChangeListener
+import androidx.xr.scenecore.runtime.SpatialVisibility as RtSpatialVisibility
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executor

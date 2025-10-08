@@ -19,8 +19,8 @@ package androidx.xr.scenecore.impl.impress
 import android.view.Surface
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.KhronosPbrMaterialSpec
-import androidx.xr.scenecore.internal.TextureSampler
+import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
+import androidx.xr.scenecore.runtime.TextureSampler
 import com.google.ar.imp.view.View
 import com.google.common.util.concurrent.ListenableFuture
 
@@ -331,6 +331,26 @@ public interface ImpressApi {
      * @param radius The radius in local spatial units of the hemisphere.
      */
     public fun setStereoSurfaceEntityCanvasShapeHemisphere(impressNode: ImpressNode, radius: Float)
+
+    /**
+     * Dynamically enables or disables the collider for the StereoSurfaceEntity.
+     *
+     * The shape of the collider is determined by the canvas shape:
+     * - Quad -> BoxCollider
+     * - Sphere -> SphereCollider
+     * - Hemisphere -> MeshCollider
+     *
+     * Enabling the collider will cause the cursor to be visible when the User hovers over the
+     * Entity and will allow for the Entity to receive input events. It will also block input for
+     * objects behind it.
+     *
+     * @param impressNode The Impress node which hosts the StereoSurfaceEntity to be updated.
+     * @param enableCollider True to enable the collider, false to disable it.
+     */
+    public fun setStereoSurfaceEntityColliderEnabled(
+        impressNode: ImpressNode,
+        enableCollider: Boolean,
+    )
 
     /**
      * Updates the StereoMode for an impress node hosting a StereoSurface.

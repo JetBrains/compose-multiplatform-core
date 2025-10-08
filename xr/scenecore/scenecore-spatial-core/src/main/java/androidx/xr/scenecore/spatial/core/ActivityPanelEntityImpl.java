@@ -22,8 +22,8 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
 
-import androidx.xr.scenecore.internal.ActivityPanelEntity;
-import androidx.xr.scenecore.internal.PixelDimensions;
+import androidx.xr.scenecore.runtime.ActivityPanelEntity;
+import androidx.xr.scenecore.runtime.PixelDimensions;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

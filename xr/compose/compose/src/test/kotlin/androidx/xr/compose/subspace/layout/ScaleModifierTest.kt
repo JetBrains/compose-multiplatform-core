@@ -31,6 +31,7 @@ import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,7 +39,9 @@ import org.junit.runner.RunWith
 /** Tests for scale modifiere. */
 @RunWith(AndroidJUnit4::class)
 class ScaleModifierTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    @get:Rule
+    val composeTestRule =
+        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
 
     @Test
     fun scale_modifierAppliedToEntity() {

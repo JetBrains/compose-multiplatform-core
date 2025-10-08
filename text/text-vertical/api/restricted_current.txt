@@ -100,6 +100,7 @@ package androidx.text.vertical {
     ctor public VerticalTextLayout(optional CharSequence text, optional int start, optional int end, optional android.text.TextPaint paint, optional @Px float height, optional int orientation);
     method public void draw(android.graphics.Canvas canvas, @Px float x, @Px float y);
     method @InaccessibleFromKotlin @Px public float getWidth();
+    method public boolean isVerticalTextSupported();
     property @Px public float width;
   }
 

@@ -159,7 +159,7 @@ class AppFunctionMetadataCreatorHelper(
             add(
                 AppFunctionParameterMetadata(
                     name = checkNotNull(parameter.name).asString(),
-                    isRequired = !parameter.hasDefault,
+                    isRequired = !parameter.isEffectivelyOptional(),
                     dataType = dataTypeMetadata,
                     description = parameterDescriptionMap[parameter.name?.asString()].orEmpty(),
                 )

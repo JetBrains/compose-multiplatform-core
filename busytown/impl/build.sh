@@ -13,16 +13,21 @@ if [ "$OUT_DIR" == "" ]; then
 fi
 mkdir -p "$OUT_DIR"
 export OUT_DIR="$(cd $OUT_DIR && pwd)"
-if [ "$DIST_DIR" == "" ]; then
-  DIST_DIR="$OUT_DIR/dist"
+
+# Save the original DIST_DIR so we can copy to it later
+# We update DIST_DIR below to a subdirectory of OUT_DIR to preserve Gradle config cache.
+if [ -n "${DIST_DIR:-}" ]; then
+  export ORIGINAL_DIST_DIR="$DIST_DIR"
+  mkdir -p "$ORIGINAL_DIST_DIR"
 fi
+export DIST_DIR="$OUT_DIR/dist"
 mkdir -p "$DIST_DIR"
-export DIST_DIR="$DIST_DIR"
+
 if [ "$CHANGE_INFO" != "" ]; then
-  cp "$CHANGE_INFO" "$DIST_DIR/"
-  if [ "$MANIFEST" == "" ] && [ -f "$DIST_DIR/manifest_${BUILD_NUMBER}.xml" ]; then
-    mv "$DIST_DIR/manifest_${BUILD_NUMBER}.xml" "$DIST_DIR/manifest.xml"
-    export MANIFEST="$DIST_DIR/manifest.xml"
+  cp "$CHANGE_INFO" "$ORIGINAL_DIST_DIR/"
+  if [ "$MANIFEST" == "" ] && [ -f "$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml" ]; then
+    cp "$ORIGINAL_DIST_DIR/manifest_${BUILD_NUMBER}.xml" "$OUT_DIR/manifest.xml"
+    export MANIFEST="$OUT_DIR/manifest.xml"
   fi
 fi
 
@@ -141,5 +146,12 @@ fi
 
 # stop Gradle daemon to clean up after ourselves
 ./gradlew --stop
+
+# Move DIST_DIR back to its original location
+if [ -n "${ORIGINAL_DIST_DIR:-}" ] && [ "$ORIGINAL_DIST_DIR" != "$DIST_DIR" ]; then
+  mkdir -p "$ORIGINAL_DIST_DIR"
+  cp -a "$DIST_DIR"/. "$ORIGINAL_DIST_DIR"/
+  rm -rf "$DIST_DIR"
+fi
 
 exit "$BUILD_STATUS"

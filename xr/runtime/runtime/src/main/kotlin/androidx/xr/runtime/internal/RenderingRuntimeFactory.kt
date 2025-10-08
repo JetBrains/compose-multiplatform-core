@@ -26,7 +26,7 @@ public interface RenderingRuntimeFactory : Service {
      * Creates a [RenderingRuntime].
      *
      * @param sceneRuntime The [SceneRuntime] for the session. This instance must also implement the
-     *   [androidx.xr.scenecore.internal.RenderingEntityFactory] interface.
+     *   [androidx.xr.scenecore.runtime.RenderingEntityFactory] interface.
      * @param activity The host [Activity] for the session.
      */
     public fun create(runtimes: List<JxrRuntime>, activity: Activity): JxrRuntime

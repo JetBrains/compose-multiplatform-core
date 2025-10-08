@@ -39,7 +39,7 @@ class VerticalTextLayoutTest {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
     fun verticalTextLayout_Create_Api36() {
-        val layout = VerticalTextLayout(JP_TEXT, 0, JP_TEXT.length, PAINT, 100f)
+        val layout = createVerticalTextLayout()
         assertThat(layout.width).isGreaterThan(0f)
         assertThat(layout.impl).isInstanceOf(VerticalTextLayoutApi36Impl::class.java)
         (layout.impl as VerticalTextLayoutApi36Impl).run {
@@ -53,32 +53,23 @@ class VerticalTextLayoutTest {
     }
 
     @Test
-    @SdkSuppress(
-        minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-        maxSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM,
-    )
-    fun verticalTextLayout_CreateDefaultParams_Api34_35() {
-        val layout = VerticalTextLayout(JP_TEXT, 0, JP_TEXT.length, PAINT, 100f)
-        assertThat(layout.width).isEqualTo(0f) // fallback to default params
-        assertThat(layout.impl).isInstanceOf(VerticalTextLayoutApi34Impl::class.java)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
+    fun verticalTextLayout_isVerticalTextSupported_Api36() {
+        assertThat(createVerticalTextLayout().isVerticalTextSupported()).isTrue()
     }
 
-    @Test
-    @SdkSuppress(
-        minSdkVersion = Build.VERSION_CODES.S,
-        maxSdkVersion = Build.VERSION_CODES.TIRAMISU,
-    )
-    fun verticalTextLayout_CreateDefaultParams_Api31_33() {
-        val layout = VerticalTextLayout(JP_TEXT, 0, JP_TEXT.length, PAINT, 100f)
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun verticalTextLayout_CreateDefaultParams_UnderApi36() {
+        val layout = createVerticalTextLayout()
         assertThat(layout.width).isEqualTo(0f) // fallback to default params
-        assertThat(layout.impl).isInstanceOf(VerticalTextLayoutApi31Impl::class.java)
+        assertThat(layout.impl).isInstanceOf(VerticalTextLayoutNoOpImpl::class.java)
     }
 
-    @Test
-    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.R)
-    fun verticalTextLayout_CreateDefaultParams_UnderApi30() {
-        val layout = VerticalTextLayout(JP_TEXT, 0, JP_TEXT.length, PAINT, 100f)
-        assertThat(layout.width).isEqualTo(0f) // fallback to default params
-        assertThat(layout.impl).isInstanceOf(VerticalTextLayoutBaseImpl::class.java)
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun verticalTextLayout_isVerticalTextSupported_UnderApi36() {
+        assertThat(createVerticalTextLayout().isVerticalTextSupported()).isFalse()
     }
+
+    private fun createVerticalTextLayout() =
+        VerticalTextLayout(JP_TEXT, 0, JP_TEXT.length, PAINT, 100f)
 }

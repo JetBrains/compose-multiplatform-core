@@ -17,7 +17,8 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Eye as RuntimeEye
+import androidx.xr.arcore.runtime.Eye as RuntimeEye
+import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * An [Eye] instance provides the state of the eye (shut or gazing), as well as a [Pose] indicating
  * where the user is currently looking.
  */
+// TODO(b/446971597): Add a new EyeStatus enum for the top-level namespace.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Eye internal constructor(internal val runtimeEye: RuntimeEye) : Updatable {
 

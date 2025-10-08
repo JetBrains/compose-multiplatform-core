@@ -17,7 +17,7 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Face as RuntimeFace
+import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.runtime.Config.FaceTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState

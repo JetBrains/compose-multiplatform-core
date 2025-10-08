@@ -17,7 +17,7 @@
 package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.RenderViewpoint as RuntimeRenderViewpoint
+import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.Pose
 

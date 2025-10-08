@@ -66,12 +66,12 @@ public class AnchorGuavaTest {
         createTestSessionAndRunTest(
                 () -> {
                     FakePerceptionManager fakePerceptionManager = getFakePerceptionManager();
-                    androidx.xr.arcore.internal.Anchor runtimeAnchor =
+                    androidx.xr.arcore.runtime.Anchor runtimeAnchor =
                             fakePerceptionManager.createAnchor(new Pose());
                     Anchor underTest = new Anchor(runtimeAnchor, mXrResourcesManager);
                     checkState(
                             runtimeAnchor.getPersistenceState()
-                                    == androidx.xr.arcore.internal.Anchor.PersistenceState
+                                    == androidx.xr.arcore.runtime.Anchor.PersistenceState
                                             .NOT_PERSISTED,
                             "Expected anchor to be NOT_PERSISTED initially");
 
@@ -84,7 +84,7 @@ public class AnchorGuavaTest {
                         assertThat(uuid).isNotNull();
                         assertThat(runtimeAnchor.getPersistenceState())
                                 .isEqualTo(
-                                        androidx.xr.arcore.internal.Anchor.PersistenceState
+                                        androidx.xr.arcore.runtime.Anchor.PersistenceState
                                                 .PERSISTED);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
@@ -97,7 +97,7 @@ public class AnchorGuavaTest {
         createTestSessionAndRunTest(
                 () -> {
                     FakePerceptionManager fakePerceptionManager = getFakePerceptionManager();
-                    androidx.xr.arcore.internal.Anchor runtimeAnchor =
+                    androidx.xr.arcore.runtime.Anchor runtimeAnchor =
                             fakePerceptionManager.createAnchor(new Pose());
                     Anchor underTest = new Anchor(runtimeAnchor, mXrResourcesManager);
                     mSession.configure(

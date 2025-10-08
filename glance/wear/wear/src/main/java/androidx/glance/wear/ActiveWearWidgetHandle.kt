@@ -17,6 +17,8 @@
 package androidx.glance.wear
 
 import android.content.ComponentName
+import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel
+import androidx.glance.wear.proto.ActiveWearWidgetHandleProto
 import java.util.Objects
 
 /**
@@ -44,4 +46,29 @@ public class ActiveWearWidgetHandle(
         }
 
     override fun hashCode(): Int = Objects.hash(provider, instanceId, containerType)
+
+    internal fun toParcel(): ActiveWearWidgetHandleParcel {
+        val containerTypeProto = containerType.toProto()
+        val handleProto =
+            ActiveWearWidgetHandleProto(
+                instance_id = instanceId,
+                container_type = containerTypeProto,
+            )
+        return ActiveWearWidgetHandleParcel().apply { payload = handleProto.encode() }
+    }
+
+    internal companion object {
+        internal fun fromParcel(
+            handleParcel: ActiveWearWidgetHandleParcel,
+            provider: ComponentName,
+        ): ActiveWearWidgetHandle {
+            val handleProto = ActiveWearWidgetHandleProto.ADAPTER.decode(handleParcel.payload)
+            val containerType = ContainerType.fromProto(handleProto.container_type)
+            return ActiveWearWidgetHandle(
+                provider = provider,
+                instanceId = handleProto.instance_id,
+                containerType = containerType,
+            )
+        }
+    }
 }

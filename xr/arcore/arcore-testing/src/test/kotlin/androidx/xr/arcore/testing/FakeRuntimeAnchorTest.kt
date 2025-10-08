@@ -17,7 +17,7 @@
 package androidx.xr.arcore.testing
 
 import androidx.kruth.assertThat
-import androidx.xr.arcore.internal.Anchor
+import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.runtime.math.Pose
 import org.junit.Test
 import org.junit.runner.RunWith

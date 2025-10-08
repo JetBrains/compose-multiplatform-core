@@ -434,7 +434,8 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
                 .setQualitySelector(QualitySelector.from(Quality.FHD))
                 .build();
         return  new VideoCapture.Builder<>(recorder)
-                .setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
+                .setMirrorMode(mVideoMirrorButton.isChecked()
+                        ? MirrorMode.MIRROR_MODE_ON_FRONT_ONLY : MirrorMode.MIRROR_MODE_OFF)
                 .build();
     }
 

@@ -17,10 +17,10 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.HeadActivityPose
+import androidx.xr.scenecore.runtime.HeadActivityPose
 
 /**
- * A test double for [androidx.xr.scenecore.internal.HeadActivityPose], designed for use in unit or
+ * A test double for [androidx.xr.scenecore.runtime.HeadActivityPose], designed for use in unit or
  * integration tests.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)

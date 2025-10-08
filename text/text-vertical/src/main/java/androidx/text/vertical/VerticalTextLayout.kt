@@ -20,8 +20,6 @@ import android.graphics.Canvas
 import android.os.Build
 import android.text.TextPaint
 import androidx.annotation.Px
-import kotlin.compareTo
-import kotlin.text.compareTo
 
 /**
  * Represents the result of laying out text vertically.
@@ -30,7 +28,7 @@ import kotlin.text.compareTo
  * properties and provides methods to draw the layout on a [Canvas].
  *
  * NOTE: Currently, this API leverages a platform feature added in API 36 (Android 16). For older
- * API levels, it provides a graceful fallback.
+ * API levels, it provides a graceful fallback. We will provide a backport to API 31 in the future.
  */
 public class VerticalTextLayout
 /**
@@ -57,6 +55,20 @@ constructor(
 
     internal val impl: VerticalTextLayoutImpl
 
+    init {
+        require(start <= end && end <= text.length && height >= 0)
+
+        impl =
+            when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA -> {
+                    VerticalTextLayoutApi36Impl(text, start, end, paint, height, orientation)
+                }
+                else -> {
+                    VerticalTextLayoutNoOpImpl()
+                }
+            }
+    }
+
     /**
      * Draws this text layout onto the specified [Canvas].
      *
@@ -68,23 +80,11 @@ constructor(
         impl.draw(canvas, x, y)
     }
 
-    init {
-        require(start <= end && end <= text.length && height >= 0)
-
-        impl =
-            when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA -> {
-                    VerticalTextLayoutApi36Impl(text, start, end, paint, height, orientation)
-                }
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
-                    VerticalTextLayoutApi34Impl()
-                }
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                    VerticalTextLayoutApi31Impl()
-                }
-                else -> {
-                    VerticalTextLayoutBaseImpl()
-                }
-            }
+    /**
+     * Capability query to determine whether or not [VerticalTextLayout] supports vertical text
+     * painting. If it is false, calling methods will have no effect.
+     */
+    public fun isVerticalTextSupported(): Boolean {
+        return impl.isVerticalTextSupported()
     }
 }

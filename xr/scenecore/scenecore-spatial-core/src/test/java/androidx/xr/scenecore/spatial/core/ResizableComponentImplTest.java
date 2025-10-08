@@ -47,12 +47,12 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.MoveEventListener;
-import androidx.xr.scenecore.internal.PanelEntity;
-import androidx.xr.scenecore.internal.ResizeEvent;
-import androidx.xr.scenecore.internal.ResizeEventListener;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.MoveEventListener;
+import androidx.xr.scenecore.runtime.PanelEntity;
+import androidx.xr.scenecore.runtime.ResizeEvent;
+import androidx.xr.scenecore.runtime.ResizeEventListener;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -125,8 +125,8 @@ public class ResizableComponentImplTest {
 
     @After
     public void tearDown() {
-        // Dispose the runtime between test cases to clean up lingering references.
-        mFakeRuntime.dispose();
+        // Destroy the runtime between test cases to clean up lingering references.
+        mFakeRuntime.destroy();
     }
 
     private Entity createTestEntity() {

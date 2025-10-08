@@ -106,9 +106,19 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
             val cameraX = CameraX(context, cameraXConfigProvider)
             configImplType = cameraX.configImplType
 
-            val initFuture =
+            val initFuture: ListenableFuture<Void> =
                 FutureChain.from(cameraXShutdownFuture)
                     .transformAsync({ cameraX.initializeFuture }, CameraXExecutors.directExecutor())
+                    .transform(
+                        { void: Void? ->
+                            this@LifecycleCameraProviderImpl.initInternal(
+                                cameraX,
+                                ContextUtil.getApplicationContext(context),
+                            )
+                            void
+                        },
+                        CameraXExecutors.directExecutor(),
+                    )
 
             cameraXInitializeFuture = initFuture
 
@@ -116,10 +126,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
                 initFuture,
                 object : FutureCallback<Void?> {
                     override fun onSuccess(void: Void?) {
-                        this@LifecycleCameraProviderImpl.initInternal(
-                            cameraX,
-                            ContextUtil.getApplicationContext(context),
-                        )
+                        // No-op. Success is now handled by the .transform() block.
                     }
 
                     override fun onFailure(t: Throwable) {

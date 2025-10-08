@@ -20,11 +20,11 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.SubspaceNodeFeature
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.SubspaceNodeFeature
 
 /**
- * Test-only implementation of [SubspaceNodeFeature].
+ * Test-only implementation of [androidx.xr.scenecore.runtime.SubspaceNodeFeature].
  *
  * @param _nodeHolder hold the node from XrExtensions. Could be the SubspaceNode's node.
  * @param size set the size of the node.

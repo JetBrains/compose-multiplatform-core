@@ -47,7 +47,6 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
-import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
@@ -75,7 +74,7 @@ class NavDisplayTest {
             val backStack = remember { mutableStateListOf(first) }
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 NavEntry(first) { Text(first) }
             }
@@ -91,7 +90,7 @@ class NavDisplayTest {
             backStack = remember { mutableStateListOf(first) }
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 when (it) {
                     first -> NavEntry(first) { Text(first) }
@@ -116,7 +115,7 @@ class NavDisplayTest {
             backStack = remember { mutableStateListOf(first) }
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
                 sceneStrategy = DialogSceneStrategy(),
             ) {
                 when (it) {
@@ -151,7 +150,7 @@ class NavDisplayTest {
             backStack = remember { mutableStateListOf(first) }
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 when (it) {
                     first -> NavEntry(first) { Text(first) }
@@ -180,7 +179,7 @@ class NavDisplayTest {
             backStack = rememberNavBackStack(First)
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 when (it) {
                     First ->
@@ -218,7 +217,7 @@ class NavDisplayTest {
             backStack = rememberNavBackStack(First)
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 when (it) {
                     First ->
@@ -294,7 +293,7 @@ class NavDisplayTest {
             backStack = remember { mutableStateListOf(first) }
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
                 entryDecorators = listOf(rememberSavedStateNavEntryDecorator()),
             ) {
                 when (it) {
@@ -349,7 +348,7 @@ class NavDisplayTest {
                         2 -> backStack2
                         else -> backStack3
                     },
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
                 entryProvider =
                     entryProvider {
                         entry(first) { Text(first) }
@@ -388,16 +387,8 @@ class NavDisplayTest {
         composeTestRule.setContent {
             val backStack1 = rememberNavBackStack(First)
             val backStack2 = rememberNavBackStack(Second)
-            val decorator1 =
-                listOf(
-                    rememberSceneSetupNavEntryDecorator<NavKey>(),
-                    rememberSavedStateNavEntryDecorator(),
-                )
-            val decorator2 =
-                listOf(
-                    rememberSceneSetupNavEntryDecorator<NavKey>(),
-                    rememberSavedStateNavEntryDecorator(),
-                )
+            val decorator1 = listOf(rememberSavedStateNavEntryDecorator<NavKey>())
+            val decorator2 = listOf(rememberSavedStateNavEntryDecorator<NavKey>())
             backStackState = remember { mutableStateOf(1) }
             decoratorState = remember { mutableStateOf(1) }
 
@@ -414,7 +405,7 @@ class NavDisplayTest {
             NavDisplay(
                 backStack = backStack,
                 entryDecorators = decorators,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
                 entryProvider =
                     entryProvider {
                         entry(First, First.toString()) {
@@ -476,7 +467,7 @@ class NavDisplayTest {
                     backStack = remember { mutableStateListOf() }
                     NavDisplay(
                         backStack = backStack,
-                        onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                        onBack = { backStack.removeAt(backStack.lastIndex) },
                     ) {
                         NavEntry(first) {}
                     }
@@ -492,7 +483,7 @@ class NavDisplayTest {
             backStack = remember { mutableStateListOf(first) }
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 when (it) {
                     first -> NavEntry(first) { Text(first) }
@@ -519,7 +510,7 @@ class NavDisplayTest {
             backStack = remember { mutableStateListOf(first) }
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 when (it) {
                     first -> NavEntry(first) { Text(first) }
@@ -553,7 +544,7 @@ class NavDisplayTest {
             backStack = remember { mutableStateListOf(first, third, forth) }
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 when (it) {
                     first -> NavEntry(first) { Text(first) }
@@ -585,7 +576,7 @@ class NavDisplayTest {
             backStack = rememberNavBackStack(First)
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) {
                 when (it) {
                     First ->
@@ -630,7 +621,7 @@ class NavDisplayTest {
             nestedBackStack = rememberNavBackStack(First)
             NavDisplay(
                 backStack = backStack,
-                onBack = { repeat(it) { backStack.removeAt(backStack.lastIndex) } },
+                onBack = { backStack.removeAt(backStack.lastIndex) },
             ) { outerKey ->
                 when (outerKey) {
                     First ->
@@ -640,11 +631,7 @@ class NavDisplayTest {
                                 Text("numberOnScreen1: ${numberOnScreen1.value}")
                                 NavDisplay(
                                     backStack = nestedBackStack,
-                                    onBack = {
-                                        repeat(it) {
-                                            nestedBackStack.removeAt(nestedBackStack.lastIndex)
-                                        }
-                                    },
+                                    onBack = { nestedBackStack.removeLastOrNull() },
                                 ) { innerKey ->
                                     when (innerKey) {
                                         First ->
@@ -797,7 +784,7 @@ class TestTwoPaneScene<T : Any>(
 
 class TestTwoPaneSceneStrategy<T : Any> : SceneStrategy<T> {
     @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: (Int) -> Unit): Scene<T>? {
+    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
         if (entries.size < 2) return null
         val lastTwoEntries = entries.takeLast(2)
         return TestTwoPaneScene(

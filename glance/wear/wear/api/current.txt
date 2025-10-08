@@ -12,6 +12,17 @@ package androidx.glance.wear {
     property public android.content.ComponentName provider;
   }
 
+  public final class ContainerInfo {
+    method @InaccessibleFromKotlin public String? getDescription();
+    method @InaccessibleFromKotlin public String? getLabel();
+    method @InaccessibleFromKotlin public int getPreviewImage();
+    method @BytecodeOnly public int getType-fdHHBOo();
+    property public String? description;
+    property public String? label;
+    property public int previewImage;
+    property public androidx.glance.wear.ContainerType type;
+  }
+
   @kotlin.jvm.JvmInline public final value class ContainerType {
     method @BytecodeOnly public static androidx.glance.wear.ContainerType! box-impl(int);
     method @BytecodeOnly public int unbox-impl();
@@ -20,7 +31,11 @@ package androidx.glance.wear {
 
   public static final class ContainerType.Companion {
     method @BytecodeOnly public int getFullscreen-fdHHBOo();
+    method @BytecodeOnly public int getLarge-fdHHBOo();
+    method @BytecodeOnly public int getSmall-fdHHBOo();
     property public androidx.glance.wear.ContainerType Fullscreen;
+    property public androidx.glance.wear.ContainerType Large;
+    property public androidx.glance.wear.ContainerType Small;
   }
 
   public abstract class GlanceWearWidget {
@@ -44,8 +59,41 @@ package androidx.glance.wear {
     property public static String ACTION_BIND_WIDGET_PROVIDER;
   }
 
+  public final class SchemaVersion {
+    ctor public SchemaVersion(int major, int minor);
+    method @InaccessibleFromKotlin public int getMajor();
+    method @InaccessibleFromKotlin public int getMinor();
+    property public int major;
+    property public int minor;
+  }
+
   public final class WearWidgetContent {
     ctor public WearWidgetContent(byte[] content);
+  }
+
+  public final class WearWidgetProviderInfo {
+    method @InaccessibleFromKotlin public String? getConfigIntentAction();
+    method @InaccessibleFromKotlin public java.util.List<androidx.glance.wear.ContainerInfo> getContainers();
+    method @InaccessibleFromKotlin public String getDescription();
+    method @InaccessibleFromKotlin public String getGroup();
+    method @InaccessibleFromKotlin public int getIcon();
+    method @InaccessibleFromKotlin public String getLabel();
+    method @InaccessibleFromKotlin public androidx.glance.wear.SchemaVersion? getMaxSchemaVersion();
+    method @InaccessibleFromKotlin public androidx.glance.wear.SchemaVersion? getMinSchemaVersion();
+    method @BytecodeOnly public int getPreferredType-fdHHBOo();
+    method @InaccessibleFromKotlin public android.content.ComponentName getProviderService();
+    method @InaccessibleFromKotlin public boolean isMultiInstanceSupported();
+    property public String? configIntentAction;
+    property public java.util.List<androidx.glance.wear.ContainerInfo> containers;
+    property public String description;
+    property public String group;
+    property public int icon;
+    property public boolean isMultiInstanceSupported;
+    property public String label;
+    property public androidx.glance.wear.SchemaVersion? maxSchemaVersion;
+    property public androidx.glance.wear.SchemaVersion? minSchemaVersion;
+    property public androidx.glance.wear.ContainerType preferredType;
+    property public android.content.ComponentName providerService;
   }
 
   public final class WearWidgetRequest {

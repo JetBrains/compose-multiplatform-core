@@ -65,8 +65,8 @@ class SelectionMenuManagerTest {
     @Test
     fun getSelectionMenuItems_withGoToLinkSelection_returnsJumptoMenu() = runTest {
         val destination = GoToLinkSelection.Destination(1, 0f, 0f, 1.0f)
-        val hyperLinkSelection = GoToLinkSelection(destination, "Page 2", emptyList())
-        val menuItems = selectionMenuManager.getSelectionMenuItems(hyperLinkSelection)
+        val goToLinkSelection = GoToLinkSelection(destination, "Page 2", emptyList())
+        val menuItems = selectionMenuManager.getSelectionMenuItems(goToLinkSelection)
         assertThat(menuItems).isNotNull()
         assertThat(menuItems.size).isEqualTo(3) // Jump to, Copy, Select All.
         val goToMenuItem = menuItems[0] as DefaultSelectionMenuComponent
@@ -78,5 +78,35 @@ class SelectionMenuManagerTest {
         val selectAllMenuItem = menuItems[2] as DefaultSelectionMenuComponent
         assertThat(selectAllMenuItem).isNotNull()
         assertThat(selectAllMenuItem.label).isEqualTo("Select all")
+    }
+
+    @Test
+    fun getMenuItems_withEmailLink_doesNotReturnCopyLinkMenu() = runTest {
+        val emailLink = Uri.parse("https://mailto:android-pdf@google.com")
+        val email = "android-pdf@google.com"
+        val emailLinkSelection = HyperLinkSelection(emailLink, email, emptyList())
+        val menuItems = selectionMenuManager.getSelectionMenuItems(emailLinkSelection)
+        assertThat(menuItems).isNotNull()
+        assertThat(menuItems.size).isGreaterThan(2) // Email, Copy, Select All.
+        val lastThirdMenuItem = menuItems[menuItems.size - 3] as SmartSelectionMenuComponent
+        assertThat(lastThirdMenuItem).isNotNull()
+        assertThat(lastThirdMenuItem.label).isNotEqualTo("Copy link")
+    }
+
+    @Test
+    fun filterLink_withEmailLink_returnsJustEmail() = runTest {
+        val emailLinkString = "https://mailto:android-pdf@google.com"
+        val emailString = "android-pdf@google.com"
+        val filteredLinkString = HyperLinkSelectionMenuProvider.filterLink(emailLinkString)
+        assertThat(filteredLinkString).isNotNull()
+        assertThat(filteredLinkString).isEqualTo(emailString)
+    }
+
+    @Test
+    fun filterLink_withNonEmailLink_returnsLinkUnchanged() = runTest {
+        val linkString = "https://www.google.com"
+        val filteredLinkString = HyperLinkSelectionMenuProvider.filterLink(linkString)
+        assertThat(filteredLinkString).isNotNull()
+        assertThat(filteredLinkString).isEqualTo(linkString)
     }
 }

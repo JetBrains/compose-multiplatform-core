@@ -17,7 +17,7 @@
 package androidx.xr.scenecore.impl.impress;
 
 import androidx.annotation.RestrictTo;
-import androidx.xr.scenecore.internal.TextureSampler;
+import androidx.xr.scenecore.runtime.TextureSampler;
 
 import org.jspecify.annotations.NonNull;
 

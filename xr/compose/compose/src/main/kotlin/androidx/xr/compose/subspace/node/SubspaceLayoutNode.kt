@@ -382,14 +382,14 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         /** The position of this node relative to the root of this Compose hierarchy, in pixels. */
         override val poseInRoot: Pose
             get() =
-                coordinatesInRoot?.poseInRoot?.let {
-                    pose.translate(it.translation).rotate(it.rotation)
+                coordinatesInRoot?.poseInRoot?.let { parentPoseInRoot ->
+                    parentPoseInRoot.compose(pose)
                 } ?: pose
 
         override val poseInParentEntity: Pose
             get() =
-                coordinatesInParentEntity?.poseInParentEntity?.let {
-                    pose.translate(it.translation).rotate(it.rotation)
+                coordinatesInParentEntity?.poseInParentEntity?.let { parentEntityPose ->
+                    parentEntityPose.compose(pose)
                 } ?: pose
 
         override val semanticsChildren: MutableList<SubspaceSemanticsInfo>

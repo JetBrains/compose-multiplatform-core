@@ -17,12 +17,13 @@
 package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.PerceptionRuntime
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
 import kotlin.time.ComparableTimeMark
 
 /**
- * Implementation of the [androidx.xr.arcore.internal.PerceptionRuntime] interface using ARCore.
+ * Implementation of the [androidx.xr.arcore.runtime.internal.PerceptionRuntime] interface using
+ * ARCore.
  *
  * @property lifecycleManager that manages the lifecycle of the ARCore session.
  * @property perceptionManager that manages the perception capabilities of a runtime using ARCore.

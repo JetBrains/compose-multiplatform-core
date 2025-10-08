@@ -16,9 +16,9 @@
 
 package androidx.xr.scenecore.spatial.core;
 
-import androidx.xr.scenecore.internal.Entity;
-import androidx.xr.scenecore.internal.InputEventListener;
-import androidx.xr.scenecore.internal.PointerCaptureComponent;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.InputEventListener;
+import androidx.xr.scenecore.runtime.PointerCaptureComponent;
 
 import org.jspecify.annotations.NonNull;
 

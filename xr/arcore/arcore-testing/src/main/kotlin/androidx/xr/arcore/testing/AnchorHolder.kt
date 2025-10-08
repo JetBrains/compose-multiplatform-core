@@ -17,22 +17,22 @@
 package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
+import androidx.xr.arcore.runtime.Anchor
 
-/** Object that holds [androidx.xr.arcore.internal.Anchor] instances. */
+/** Object that holds [androidx.xr.arcore.runtime.Anchor] instances. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface AnchorHolder {
 
     /**
-     * Notifies the [AnchorHolder] that the given [androidx.xr.arcore.internal.Anchor] has been
+     * Notifies the [AnchorHolder] that the given [androidx.xr.arcore.runtime.Anchor] has been
      * persisted.
      */
     public fun onAnchorPersisted(anchor: Anchor)
 
     /**
-     * Detaches the given [androidx.xr.arcore.internal.Anchor] from this trackable. Single
-     * [androidx.xr.arcore.internal.Anchor] instances rely on this function to remove themselves
-     * from the [AnchorHolder].
+     * Detaches the given [androidx.xr.arcore.runtime.Anchor] from this trackable. Single
+     * [androidx.xr.arcore.runtime.Anchor] instances rely on this function to remove themselves from
+     * the [AnchorHolder].
      */
     public fun detachAnchor(anchor: Anchor)
 }

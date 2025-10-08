@@ -21,9 +21,9 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.arcore.HandJointType
-import androidx.xr.arcore.internal.AnchorInvalidUuidException
-import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.AnchorInvalidUuidException
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.HandJointType
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.TrackingState
@@ -175,7 +175,9 @@ class OpenXrPerceptionManagerTest {
         assertThat(leftHandJoints).hasSize(HandJointType.values().size)
         for (jointType in HandJointType.values()) {
             val jointTypeIndex = jointType.ordinal.toFloat()
-            assertThat(leftHandJoints[jointType]!!.rotation)
+            assertThat(
+                    leftHandJoints[jointType as androidx.xr.arcore.runtime.HandJointType]!!.rotation
+                )
                 .isEqualTo(
                     Quaternion(
                         jointTypeIndex + 0.1f,
@@ -195,7 +197,10 @@ class OpenXrPerceptionManagerTest {
         assertThat(rightHandJoints).hasSize(HandJointType.values().size)
         for (jointType in HandJointType.values()) {
             val jointTypeIndex = jointType.ordinal.toFloat()
-            assertThat(rightHandJoints[jointType]!!.rotation)
+            assertThat(
+                    rightHandJoints[jointType as androidx.xr.arcore.runtime.HandJointType]!!
+                        .rotation
+                )
                 .isEqualTo(
                     Quaternion(
                         jointTypeIndex + 0.1f,
@@ -204,7 +209,10 @@ class OpenXrPerceptionManagerTest {
                         jointTypeIndex + 0.4f,
                     )
                 )
-            assertThat(rightHandJoints[jointType]!!.translation)
+            assertThat(
+                    rightHandJoints[jointType as androidx.xr.arcore.runtime.HandJointType]!!
+                        .translation
+                )
                 .isEqualTo(
                     Vector3(jointTypeIndex + 0.5f, jointTypeIndex + 0.6f, jointTypeIndex + 0.7f)
                 )

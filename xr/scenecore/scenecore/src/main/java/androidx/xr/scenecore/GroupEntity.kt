@@ -18,8 +18,8 @@ package androidx.xr.scenecore
 
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.internal.Entity as RtEntity
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
 
 /**
  * An [Entity] that contains no content, but can have an arbitrary number of children. GroupEntity

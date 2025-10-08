@@ -37,10 +37,10 @@ import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjection;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
-import androidx.xr.scenecore.internal.CameraViewActivityPose;
-import androidx.xr.scenecore.internal.CameraViewActivityPose.CameraType;
-import androidx.xr.scenecore.internal.CameraViewActivityPose.Fov;
-import androidx.xr.scenecore.internal.PixelDimensions;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov;
+import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;

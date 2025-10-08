@@ -27,7 +27,6 @@ import androidx.webkit.WebViewMediaIntegrityApiStatusConfig;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
-import java.util.Set;
 
 /**
  * No-op adapter for WebSettingsCompat.
@@ -154,24 +153,6 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
     @Override
     public boolean getEnterpriseAuthenticationAppLinkPolicyEnabled() {
         return false;
-    }
-
-    /**
-     * Adapter method for
-     * {@link androidx.webkit.WebSettingsCompat#getRequestedWithHeaderOriginAllowList(WebSettings)}.
-     */
-    @Override
-    public @NonNull Set<String> getRequestedWithHeaderOriginAllowList() {
-        return Collections.emptySet();
-    }
-
-    /**
-     * Adapter method for
-     * {@link androidx.webkit.WebSettingsCompat#setRequestedWithHeaderOriginAllowList(
-     *WebSettings, Set)}.
-     */
-    @Override
-    public void setRequestedWithHeaderOriginAllowList(@NonNull Set<String> allowList) {
     }
 
     /**

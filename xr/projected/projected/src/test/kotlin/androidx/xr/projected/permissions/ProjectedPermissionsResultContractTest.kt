@@ -36,6 +36,7 @@ import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.projected.R
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +58,7 @@ class ProjectedPermissionsResultContractTest {
     private val virtualDeviceManager = appContext.getSystemService(VirtualDeviceManager::class.java)
     private lateinit var virtualDevice: VirtualDevice
 
-    @get:Rule val composeTestRule = createEmptyComposeRule()
+    @get:Rule val composeTestRule = createEmptyComposeRule(StandardTestDispatcher())
 
     private val deviceScopedContext: Context by lazy {
         appContext.createDeviceContext(virtualDevice.deviceId)

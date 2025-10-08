@@ -18,7 +18,7 @@ package androidx.xr.arcore.testapp.eyetracking
 
 import android.graphics.Color
 import androidx.xr.arcore.Eye
-import androidx.xr.arcore.EyeStatus
+import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 

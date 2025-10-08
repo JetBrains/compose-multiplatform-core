@@ -19,21 +19,15 @@ package androidx.glance.wear
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import android.os.Looper
 import androidx.glance.wear.parcel.IWearWidgetCallback
 import androidx.glance.wear.parcel.IWearWidgetProvider
-import androidx.glance.wear.parcel.WearWidgetRequestParcel
 import androidx.glance.wear.parcel.legacy.TileProvider
-import androidx.glance.wear.proto.WearWidgetRequestProto
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 class GlanceWearWidgetServiceTest {
@@ -93,38 +87,6 @@ class GlanceWearWidgetServiceTest {
         val binder: IBinder? = service.onBind(Intent())
 
         assertThat(binder).isNull()
-    }
-
-    @Test
-    fun onWidgetRequest_callsWidgetOnUpdate() {
-        val service: TestService = Robolectric.setupService(TestService::class.java)
-        val binder: IBinder? =
-            service.onBind(Intent(GlanceWearWidgetService.ACTION_BIND_WIDGET_PROVIDER))
-        val stub = IWearWidgetProvider.Stub.asInterface(binder)
-        val requestProto = WearWidgetRequestProto(instance_id = 17)
-        val requestParcel = WearWidgetRequestParcel()
-        requestParcel.payload = WearWidgetRequestProto.ADAPTER.encode(requestProto)
-
-        stub.onWidgetRequest(requestParcel, mockWidgetCallback)
-        shadowOf(Looper.getMainLooper()).idle()
-
-        assertThat(service.widget.instanceId).isEqualTo(requestProto.instance_id)
-    }
-
-    @Test
-    fun onWidgetRequest_callbackIsCalled() {
-        val service: TestService = Robolectric.setupService(TestService::class.java)
-        val binder: IBinder? =
-            service.onBind(Intent(GlanceWearWidgetService.ACTION_BIND_WIDGET_PROVIDER))
-        val stub = IWearWidgetProvider.Stub.asInterface(binder)
-        val requestProto = WearWidgetRequestProto(instance_id = 17)
-        val requestParcel = WearWidgetRequestParcel()
-        requestParcel.payload = WearWidgetRequestProto.ADAPTER.encode(requestProto)
-
-        stub.onWidgetRequest(requestParcel, mockWidgetCallback)
-        shadowOf(Looper.getMainLooper()).idle()
-
-        verify(mockWidgetCallback).updateWidgetContent(any())
     }
 
     class TestWidget : GlanceWearWidget() {

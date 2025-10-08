@@ -27,8 +27,9 @@ import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.scenecore.GroupEntity
-import androidx.xr.scenecore.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.runtime.JxrPlatformAdapter
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -38,7 +39,9 @@ import org.mockito.kotlin.mock
 @RunWith(AndroidJUnit4::class)
 class SpatialComposeElementTest {
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    @get:Rule
+    val composeTestRule =
+        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
 
     lateinit var mockJxrPlatformAdapter: JxrPlatformAdapter
 

@@ -38,8 +38,6 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +53,9 @@ public class AndroidRemoteContext extends RemoteContext {
 
     private boolean mA11yAnimationEnabled = true;
 
+    @NonNull
+    private BitmapLoader mBitmapLoader = BitmapLoader.UNSUPPORTED;
+
     /** Default constructor, uses a {@link SystemClock} as the clock. */
     public AndroidRemoteContext() {
         this(new SystemClock());
@@ -67,6 +68,18 @@ public class AndroidRemoteContext extends RemoteContext {
      */
     public AndroidRemoteContext(@NonNull Clock clock) {
         super(clock);
+        setBitmapLoader(new AndroidBitmapLoader());
+    }
+
+    /**
+     * Sets the BitmapLoader to be used by the RemoteContext for loading bitmaps from URLs. This is
+     * useful when you want to provide a custom way of loading bitmaps, for example, from a network
+     * cache or a local file system.
+     *
+     * @param bitmapLoader The BitmapLoader to be used.
+     */
+    public void setBitmapLoader(@NonNull BitmapLoader bitmapLoader) {
+        mBitmapLoader = bitmapLoader;
     }
 
     /**
@@ -341,9 +354,8 @@ public class AndroidRemoteContext extends RemoteContext {
                     break;
                 case BitmapData.ENCODING_URL:
                     try {
-                        image = BitmapFactory.decodeStream(new URL(new String(data)).openStream());
-                    } catch (MalformedURLException e) {
-                        throw new RuntimeException(e);
+                        image = BitmapFactory.decodeStream(
+                                mBitmapLoader.loadBitmap(new String(data)));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

@@ -17,9 +17,9 @@
 package androidx.xr.arcore.testing
 
 import androidx.kruth.assertThat
-import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
-import androidx.xr.arcore.internal.Earth as RuntimeEarth
-import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion

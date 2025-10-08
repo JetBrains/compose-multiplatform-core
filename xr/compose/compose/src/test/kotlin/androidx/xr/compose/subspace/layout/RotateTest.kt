@@ -27,6 +27,7 @@ import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertRotationInRootIsEqualTo
+import androidx.xr.compose.testing.assertRotationIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.runtime.math.Quaternion
@@ -147,46 +148,78 @@ class RotateTest {
     }
 
     @Test
-    fun rotate_chainedRotations_areComposed() {
-        val rot1 = Quaternion.fromEulerAngles(pitch = 45f, yaw = 0f, roll = 0f)
-        val rot2 = Quaternion.fromEulerAngles(pitch = 0f, yaw = 30f, roll = 0f)
-        // The final rotation should be the dot product of the two.
-        // Outer modifiers are applied after inner ones, so the order is rot1 * rot2.
-        val expectedRotation = rot1 * rot2
+    fun rotate_chainedRotations_composedInCorrectOrder() {
+        val innerRotation = Quaternion.fromEulerAngles(pitch = 45f, yaw = 0f, roll = 0f)
+        val outerRotation = Quaternion.fromEulerAngles(pitch = 0f, yaw = 30f, roll = 0f)
 
         composeTestRule.setContentWithCompatibilityForXr {
             ApplicationSubspace {
-                SpatialPanel(SubspaceModifier.testTag("panel").rotate(rot2).rotate(rot1)) {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").rotate(innerRotation).rotate(outerRotation)
+                ) {
                     Text(text = "Panel")
                 }
             }
         }
 
+        // The final rotation should be the product of the two rotations.
+        // Outer modifiers are applied after inner ones.
+        val expectedRotation = innerRotation * outerRotation
+
         composeTestRule
             .onSubspaceNodeWithTag("panel")
+            .assertRotationIsEqualTo(outerRotation)
             .assertRotationInRootIsEqualTo(expectedRotation)
     }
 
     @Test
-    fun rotate_childRotation_isCombinedWithParentRotation() {
-        val parentRot = Quaternion.fromEulerAngles(pitch = 30f, yaw = 0f, roll = 30f)
-        val childRot = Quaternion.fromEulerAngles(pitch = 0f, yaw = 45f, roll = 0f)
+    fun rotate_nestedAndChained_composedInCorrectOrder() {
+        val parentRotation = Quaternion.fromEulerAngles(pitch = 30f, yaw = 0f, roll = 30f)
+        val childRotation = Quaternion.fromEulerAngles(pitch = 0f, yaw = 45f, roll = 0f)
 
         composeTestRule.setContentWithCompatibilityForXr {
             ApplicationSubspace {
-                SpatialBox(SubspaceModifier.rotate(parentRot)) {
-                    SpatialPanel(SubspaceModifier.rotate(childRot).testTag("child")) {
+                SpatialBox(SubspaceModifier.rotate(parentRotation)) {
+                    SpatialPanel(SubspaceModifier.rotate(childRotation).testTag("Panel")) {
                         Text(text = "Panel")
                     }
                 }
             }
         }
 
-        // The rotate modifier combines rotations in `local * parent` order.
-        val expectedRotation = childRot * parentRot
+        // The rotate modifier combines rotations in `Parent * Local` order.
+        val expectedRotation = parentRotation * childRotation
 
         composeTestRule
-            .onSubspaceNodeWithTag("child")
+            .onSubspaceNodeWithTag("Panel")
+            .assertRotationIsEqualTo(childRotation)
+            .assertRotationInRootIsEqualTo(expectedRotation)
+    }
+
+    @Test
+    fun rotate_nestedAndNested_composedInCorrectOrder() {
+        val grandParentRotation = Quaternion.fromEulerAngles(pitch = 30f, yaw = 0f, roll = 30f)
+        val parentRotation = Quaternion.fromEulerAngles(pitch = 30f, yaw = 0f, roll = 30f)
+        val childRotation = Quaternion.fromEulerAngles(pitch = 0f, yaw = 45f, roll = 0f)
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialBox(SubspaceModifier.rotate(grandParentRotation)) {
+                    SpatialBox(SubspaceModifier.rotate(parentRotation)) {
+                        SpatialPanel(SubspaceModifier.rotate(childRotation).testTag("Panel")) {
+                            Text(text = "Panel")
+                        }
+                    }
+                }
+            }
+        }
+
+        // The rotate modifier combines rotations in `Parent * Local` order.
+        val expectedRotation = grandParentRotation * parentRotation * childRotation
+
+        composeTestRule
+            .onSubspaceNodeWithTag("Panel")
+            .assertRotationIsEqualTo(childRotation)
             .assertRotationInRootIsEqualTo(expectedRotation)
     }
 }

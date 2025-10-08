@@ -17,8 +17,8 @@
 package androidx.xr.scenecore.testing
 
 import androidx.kruth.assertThat
-import androidx.xr.scenecore.internal.PointerCaptureComponent.PointerCaptureState
-import androidx.xr.scenecore.internal.PointerCaptureComponent.StateListener
+import androidx.xr.scenecore.runtime.PointerCaptureComponent.PointerCaptureState
+import androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener
 import java.util.concurrent.Executor
 import org.junit.Test
 import org.junit.runner.RunWith

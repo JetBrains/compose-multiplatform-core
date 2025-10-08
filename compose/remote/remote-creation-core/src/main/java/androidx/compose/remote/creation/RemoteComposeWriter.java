@@ -1684,6 +1684,17 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * @param name The String representing the name of the url.
+     * @param url the initial url
+     * @return the id of the RemoteBitmap
+     */
+    public int addNamedBitmapUrl(@NonNull String name, @NonNull String url) {
+        int id = addBitmapUrl(url);
+        mBuffer.setNamedVariable(id, name, NamedVariable.IMAGE_TYPE);
+        return id;
+    }
+
+    /**
      * Set the name of the long associated with the id
      *
      * @param name the name of the long
@@ -3202,6 +3213,21 @@ public class RemoteComposeWriter {
             } else {
                 mBuffer.storeBitmap(imageId, imageWidth, imageHeight, data);
             }
+        }
+        return imageId;
+    }
+
+    /**
+     * Ensures the bitmap is stored.
+     *
+     * @param url the bitbap to store
+     * @return the id of the bitmap
+     */
+    public int addBitmapUrl(@NonNull String url) {
+        int imageId = mState.dataGetId(url);
+        if (imageId == -1) {
+            imageId = mState.cacheData(url);
+            mBuffer.storeBitmapUrl(imageId, url);
         }
         return imageId;
     }

@@ -16,6 +16,7 @@
 
 package androidx.appfunctions
 
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -31,8 +32,7 @@ public sealed interface ExecuteAppFunctionResponse {
          */
         public val returnValue: AppFunctionData
     ) : ExecuteAppFunctionResponse {
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun toPlatformExtensionClass():
+        internal fun toPlatformExtensionClass():
             com.android.extensions.appfunctions.ExecuteAppFunctionResponse {
             return com.android.extensions.appfunctions.ExecuteAppFunctionResponse(
                 returnValue.genericDocument,
@@ -41,12 +41,23 @@ public sealed interface ExecuteAppFunctionResponse {
         }
 
         @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun toPlatformClass(): android.app.appfunctions.ExecuteAppFunctionResponse {
+        internal fun toPlatformClass(): android.app.appfunctions.ExecuteAppFunctionResponse {
             return android.app.appfunctions.ExecuteAppFunctionResponse(
                 returnValue.genericDocument,
                 returnValue.extras,
             )
+        }
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        internal fun grantUriAccess(context: Context, callingPackageName: String) {
+            returnValue.visitAppFunctionUriGrants { uriGrant ->
+                context.grantUriPermission(
+                    callingPackageName,
+                    uriGrant.uri,
+                    @Suppress("WrongConstant") // modeFlags is a subset of Intent flags
+                    uriGrant.modeFlags,
+                )
+            }
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -63,16 +74,14 @@ public sealed interface ExecuteAppFunctionResponse {
                 android.app.appfunctions.ExecuteAppFunctionResponse.PROPERTY_RETURN_VALUE
 
             @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-            public fun fromPlatformExtensionClass(
+            internal fun fromPlatformExtensionClass(
                 response: com.android.extensions.appfunctions.ExecuteAppFunctionResponse
             ): Success {
                 return Success(AppFunctionData(response.resultDocument, response.extras))
             }
 
             @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-            public fun fromPlatformClass(
+            internal fun fromPlatformClass(
                 response: android.app.appfunctions.ExecuteAppFunctionResponse
             ): Success {
                 return Success(AppFunctionData(response.resultDocument, response.extras))

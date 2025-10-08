@@ -19,16 +19,16 @@ package androidx.xr.scenecore.testing
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion.Companion.fromEulerAngles
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.ActivityPose
-import androidx.xr.scenecore.internal.HitTestResult
-import androidx.xr.scenecore.internal.HitTestResult.HitTestSurfaceType
+import androidx.xr.scenecore.runtime.ActivityPose
+import androidx.xr.scenecore.runtime.HitTestResult
+import androidx.xr.scenecore.runtime.HitTestResult.HitTestSurfaceType
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-/** This test should cover all the methods in [androidx.xr.scenecore.internal.ActivityPose]. */
+/** This test should cover all the methods in [androidx.xr.scenecore.runtime.ActivityPose]. */
 @RunWith(JUnit4::class)
 class FakeActivityPoseTest {
     private lateinit var underTest: FakeActivityPose

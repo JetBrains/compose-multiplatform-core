@@ -37,9 +37,9 @@ import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.PerceptionLibraryConstants;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.internal.ActivityPose.HitTestFilter;
-import androidx.xr.scenecore.internal.HitTestResult;
-import androidx.xr.scenecore.internal.Space;
+import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilter;
+import androidx.xr.scenecore.runtime.HitTestResult;
+import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -115,7 +115,7 @@ public final class EntityTest {
 
     @After
     public void tearDown() {
-        mSpatialSceneRuntime.dispose();
+        mSpatialSceneRuntime.destroy();
         mSpatialSceneRuntime = null;
         mXrExtensions = null;
     }

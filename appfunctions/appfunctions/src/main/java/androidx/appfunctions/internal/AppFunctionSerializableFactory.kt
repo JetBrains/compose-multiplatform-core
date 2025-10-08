@@ -21,6 +21,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionData
+import androidx.appfunctions.internal.Dependencies.appFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 
@@ -47,21 +48,8 @@ public interface AppFunctionSerializableFactory<T : Any> {
     public fun toAppFunctionData(appFunctionSerializable: T): AppFunctionData
 
     // TODO: b/442726462 - Consider decoupling Serializable metadata generation from inventories.
-    private fun getAppFunctionComponentsMetadata(): AppFunctionComponentsMetadata? {
-        val aggregatedInventory = Dependencies.aggregatedAppFunctionInventory
-        if (aggregatedInventory != null) {
-            val componentsMetadata = aggregatedInventory.componentsMetadata
-            return componentsMetadata
-        }
-
-        val schemaAppFunctionInventory = Dependencies.schemaAppFunctionInventory
-
-        if (schemaAppFunctionInventory != null) {
-            return schemaAppFunctionInventory.componentsMetadata
-        }
-
-        return null
-    }
+    private fun getAppFunctionComponentsMetadata(): AppFunctionComponentsMetadata? =
+        appFunctionInventory?.componentsMetadata
 
     /**
      * Returns an [AppFunctionData.Builder] instance with validation for the serializable specified

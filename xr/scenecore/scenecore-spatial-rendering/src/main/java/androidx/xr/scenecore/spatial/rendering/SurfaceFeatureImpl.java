@@ -21,16 +21,16 @@ import android.view.Surface;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.impl.impress.Texture;
-import androidx.xr.scenecore.internal.Dimensions;
-import androidx.xr.scenecore.internal.SurfaceEntity;
-import androidx.xr.scenecore.internal.SurfaceEntity.ColorRange;
-import androidx.xr.scenecore.internal.SurfaceEntity.ColorSpace;
-import androidx.xr.scenecore.internal.SurfaceEntity.ColorTransfer;
-import androidx.xr.scenecore.internal.SurfaceEntity.StereoMode;
-import androidx.xr.scenecore.internal.SurfaceEntity.SuperSampling;
-import androidx.xr.scenecore.internal.SurfaceEntity.SurfaceProtection;
-import androidx.xr.scenecore.internal.SurfaceFeature;
-import androidx.xr.scenecore.internal.TextureResource;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
+import androidx.xr.scenecore.runtime.SurfaceEntity.ColorRange;
+import androidx.xr.scenecore.runtime.SurfaceEntity.ColorSpace;
+import androidx.xr.scenecore.runtime.SurfaceEntity.ColorTransfer;
+import androidx.xr.scenecore.runtime.SurfaceEntity.StereoMode;
+import androidx.xr.scenecore.runtime.SurfaceEntity.SuperSampling;
+import androidx.xr.scenecore.runtime.SurfaceEntity.SurfaceProtection;
+import androidx.xr.scenecore.runtime.SurfaceFeature;
+import androidx.xr.scenecore.runtime.TextureResource;
 
 import com.android.extensions.xr.XrExtensions;
 
@@ -50,29 +50,22 @@ final class SurfaceFeatureImpl extends BaseRenderingFeature implements SurfaceFe
     // TODO: b/362520810 - Wrap impress nodes w/ Java class.
     private final ImpressNode mEntityImpressNode;
 
-    @StereoMode
-    private int mStereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE;
+    @StereoMode private int mStereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE;
 
-    @SurfaceProtection
-    private int mSurfaceProtection = SurfaceEntity.SurfaceProtection.NONE;
+    @SurfaceProtection private int mSurfaceProtection = SurfaceEntity.SurfaceProtection.NONE;
 
-    @SuperSampling
-    private int mSuperSampling = SurfaceEntity.SuperSampling.DEFAULT;
+    @SuperSampling private int mSuperSampling = SurfaceEntity.SuperSampling.DEFAULT;
 
     private SurfaceEntity.Shape mShape;
     private SurfaceEntity.EdgeFeather mEdgeFeather;
     private boolean mContentColorMetadataSet = false;
-    @ColorSpace
-    private int mColorSpace = SurfaceEntity.ColorSpace.BT709;
-    @ColorTransfer
-    private int mColorTransfer = SurfaceEntity.ColorTransfer.SRGB;
-    @ColorRange
-    private int mColorRange = SurfaceEntity.ColorRange.FULL;
+    @ColorSpace private int mColorSpace = SurfaceEntity.ColorSpace.BT709;
+    @ColorTransfer private int mColorTransfer = SurfaceEntity.ColorTransfer.SRGB;
+    @ColorRange private int mColorRange = SurfaceEntity.ColorRange.FULL;
     private int mMaxContentLightLevel = 0;
 
     // Converts SurfaceEntity's SurfaceProtection to an Impress ContentSecurityLevel.
-    private static int toImpressContentSecurityLevel(
-            @SurfaceProtection int contentSecurityLevel) {
+    private static int toImpressContentSecurityLevel(@SurfaceProtection int contentSecurityLevel) {
         switch (contentSecurityLevel) {
             case SurfaceEntity.SurfaceProtection.NONE:
                 return ImpressApi.ContentSecurityLevel.NONE;
@@ -84,8 +77,7 @@ final class SurfaceFeatureImpl extends BaseRenderingFeature implements SurfaceFe
     }
 
     // Converts SurfaceEntity's SuperSampling to a boolean for Impress.
-    private static boolean toImpressSuperSampling(
-            @SuperSampling int superSampling) {
+    private static boolean toImpressSuperSampling(@SuperSampling int superSampling) {
         switch (superSampling) {
             case SurfaceEntity.SuperSampling.NONE:
                 return false;
@@ -143,8 +135,7 @@ final class SurfaceFeatureImpl extends BaseRenderingFeature implements SurfaceFe
                 throw new IllegalStateException(e);
             }
         } else if (mShape instanceof SurfaceEntity.Shape.Sphere) {
-            SurfaceEntity.Shape.Sphere s =
-                    (SurfaceEntity.Shape.Sphere) mShape;
+            SurfaceEntity.Shape.Sphere s = (SurfaceEntity.Shape.Sphere) mShape;
             try {
                 mImpressApi.setStereoSurfaceEntityCanvasShapeSphere(
                         mEntityImpressNode, s.getRadius());
@@ -152,8 +143,7 @@ final class SurfaceFeatureImpl extends BaseRenderingFeature implements SurfaceFe
                 throw new IllegalStateException(e);
             }
         } else if (mShape instanceof SurfaceEntity.Shape.Hemisphere) {
-            SurfaceEntity.Shape.Hemisphere h =
-                    (SurfaceEntity.Shape.Hemisphere) mShape;
+            SurfaceEntity.Shape.Hemisphere h = (SurfaceEntity.Shape.Hemisphere) mShape;
             try {
                 mImpressApi.setStereoSurfaceEntityCanvasShapeHemisphere(
                         mEntityImpressNode, h.getRadius());
@@ -163,6 +153,11 @@ final class SurfaceFeatureImpl extends BaseRenderingFeature implements SurfaceFe
         } else {
             throw new IllegalArgumentException("Unsupported canvas shape: " + mShape);
         }
+    }
+
+    @Override
+    public void setColliderEnabled(boolean enableCollider) {
+        mImpressApi.setStereoSurfaceEntityColliderEnabled(mEntityImpressNode, enableCollider);
     }
 
     @Override

@@ -17,7 +17,7 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.DepthMap as RuntimeDepthMap
+import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
 import androidx.xr.runtime.Session
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer

@@ -30,14 +30,13 @@ import kotlin.collections.plusAssign
  *
  * @param entries all of the entries that are associated with this state
  * @param sceneStrategy the [SceneStrategy] to determine which scene to render a list of entries.
- * @param onBack a callback for handling system back press. The passed [Int] refers to the number of
- *   entries to pop from the end of the backstack, as calculated by the [sceneStrategy].
+ * @param onBack a callback for handling system back press.
  */
 @Composable
 public fun <T : Any> rememberSceneState(
     entries: List<NavEntry<T>>,
     sceneStrategy: SceneStrategy<T>,
-    onBack: (Int) -> Unit,
+    onBack: () -> Unit,
 ): SceneState<T> {
     // re-wrap the entries with the SceneSetupNavEntryDecorator to ensure all the ensures are
     // inside of a moveable content.
@@ -114,4 +113,27 @@ internal constructor(
     public val overlayScenes: List<OverlayScene<T>>,
     public val currentScene: Scene<T>,
     public val previousScenes: List<Scene<T>>,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as SceneState<*>
+
+        return entries == other.entries &&
+            overlayScenes == other.overlayScenes &&
+            currentScene == other.currentScene &&
+            previousScenes == other.previousScenes
+    }
+
+    override fun hashCode(): Int {
+        return entries.hashCode() * 31 +
+            overlayScenes.hashCode() * 31 +
+            currentScene.hashCode() * 31 +
+            previousScenes.hashCode() * 31
+    }
+
+    override fun toString(): String {
+        return "SceneState(entries=$entries, overlayScenes=$overlayScenes, currentScene=$currentScene, previousScenes=$previousScenes)"
+    }
+}

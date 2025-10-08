@@ -18,9 +18,9 @@ package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.NodeHolder
-import androidx.xr.scenecore.internal.RenderingFeature
+import androidx.xr.scenecore.runtime.RenderingFeature
 
-/** Test-only implementation of [RenderingFeature] */
+/** Test-only implementation of [androidx.xr.scenecore.runtime.RenderingFeature] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeBaseRenderingFeature(private val _nodeHolder: NodeHolder<*>) :
     RenderingFeature {

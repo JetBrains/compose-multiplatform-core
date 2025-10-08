@@ -17,16 +17,16 @@
 package androidx.xr.arcore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
-import androidx.xr.arcore.internal.AnchorInvalidUuidException
-import androidx.xr.arcore.internal.DepthMap
-import androidx.xr.arcore.internal.Earth
-import androidx.xr.arcore.internal.Eye
-import androidx.xr.arcore.internal.Face
-import androidx.xr.arcore.internal.Hand
-import androidx.xr.arcore.internal.HitResult
-import androidx.xr.arcore.internal.PerceptionManager
-import androidx.xr.arcore.internal.Trackable
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorInvalidUuidException
+import androidx.xr.arcore.runtime.DepthMap
+import androidx.xr.arcore.runtime.Earth
+import androidx.xr.arcore.runtime.Eye
+import androidx.xr.arcore.runtime.Face
+import androidx.xr.arcore.runtime.Hand
+import androidx.xr.arcore.runtime.HitResult
+import androidx.xr.arcore.runtime.PerceptionManager
+import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.runtime.VpsAvailabilityAvailable
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.Pose
@@ -36,8 +36,8 @@ import androidx.xr.runtime.math.Vector3
 import java.util.UUID
 
 /**
- * Test-only implementation of [androidx.xr.arcore.internal.PerceptionManager] used to validate
- * state transitions.
+ * Test-only implementation of [androidx.xr.arcore.runtime.internal.PerceptionManager] used to
+ * validate state transitions.
  */
 @SuppressWarnings("HiddenSuperclass")
 public class FakePerceptionManager : PerceptionManager, AnchorHolder {
@@ -136,27 +136,33 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     }
 
     /**
-     * Adds a [androidx.xr.arcore.internal.HitResult] to the list that is returned when calling
-     * [hitTest] with any pose.
+     * Adds a [androidx.xr.arcore.runtime.internal.HitResult] to the list that is returned when
+     * calling [hitTest] with any pose.
      */
     public fun addHitResult(hitResult: HitResult) {
         hitResults.add(hitResult)
     }
 
-    /** Removes all [androidx.xr.arcore.internal.HitResult] instances passed to [addHitResult]. */
+    /**
+     * Removes all [androidx.xr.arcore.runtime.internal.HitResult] instances passed to
+     * [addHitResult].
+     */
     public fun clearHitResults() {
         hitResults.clear()
     }
 
     /**
-     * Adds a [androidx.xr.arcore.internal.Trackable] to the list that is returned when calling
-     * [trackables].
+     * Adds a [androidx.xr.arcore.runtime.internal.Trackable] to the list that is returned when
+     * calling [trackables].
      */
     public fun addTrackable(trackable: Trackable) {
         trackables.add(trackable)
     }
 
-    /** Removes all [androidx.xr.arcore.internal.Trackable] instances passed to [addTrackable]. */
+    /**
+     * Removes all [androidx.xr.arcore.runtime.internal.Trackable] instances passed to
+     * [addTrackable].
+     */
     public fun clearTrackables() {
         trackables.clear()
     }

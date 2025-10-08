@@ -17,9 +17,9 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.PointerCaptureComponent
-import androidx.xr.scenecore.internal.PointerCaptureComponent.PointerCaptureState
-import androidx.xr.scenecore.internal.PointerCaptureComponent.StateListener
+import androidx.xr.scenecore.runtime.PointerCaptureComponent
+import androidx.xr.scenecore.runtime.PointerCaptureComponent.PointerCaptureState
+import androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener
 import java.util.concurrent.Executor
 
 /** Test-only implementation of [FakePointerCaptureComponent] */
@@ -27,7 +27,7 @@ import java.util.concurrent.Executor
 public class FakePointerCaptureComponent(
     /**
      * The executor on which to invoke the
-     * [androidx.xr.scenecore.internal.PointerCaptureComponent.StateListener] callbacks.
+     * [androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener] callbacks.
      *
      * If this is non-null, listener callbacks will be dispatched via this executor. If it is null,
      * callbacks will be invoked synchronously on the thread that calls [onStateChanged]. This can
@@ -35,7 +35,7 @@ public class FakePointerCaptureComponent(
      */
     internal val executor: Executor? = null,
     /**
-     * The [androidx.xr.scenecore.internal.PointerCaptureComponent.StateListener] that receives
+     * The [androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener] that receives
      * callbacks upon a simulated pointer capture state change.
      *
      * Tests can provide a listener at construction to verify that state changes, triggered via the
@@ -53,8 +53,8 @@ public class FakePointerCaptureComponent(
      * synchronously otherwise.
      *
      * @param newState The new
-     *   [androidx.xr.scenecore.internal.PointerCaptureComponent.PointerCaptureState] to propagate
-     *   to the listener.
+     *   [androidx.xr.scenecore.runtime.PointerCaptureComponent.PointerCaptureState] to propagate to
+     *   the listener.
      */
     internal fun onStateChanged(@PointerCaptureState newState: Int) {
         if (stateListener != null) {

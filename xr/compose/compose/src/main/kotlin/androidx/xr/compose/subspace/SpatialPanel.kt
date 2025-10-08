@@ -239,39 +239,62 @@ public class MovePolicy(
  * @property shouldMaintainAspectRatio If `true`, the object's aspect ratio (proportions) will be
  *   preserved during resizing. If `false`, individual dimensions can be changed independently.
  *   Defaults to `false`.
- * @property onSizeChange A callback function invoked when the object's size changes. It receives an
- *   [IntVolumeSize] representing the new size and should return `true` to accept the size change,
- *   or `false` to reject it. Defaults to `null`.
+ * @property onResizeStart A callback to be called when the resize event starts.
+ * @property onResizeUpdate A callback to be called when the size changes during a resize event.
+ * @property onResizeEnd A callback to be called with the new size when the resize event ends.
+ * @property onSizeChange A callback to be called when the object's size changes, after a resize
+ *   event has ended. It receives an [IntVolumeSize] representing the new size. Returning `true`
+ *   from this callback indicates that the developer intends to handle the size change, and the API
+ *   should not resize the object. Returning `false` indicates that the developer will not handle
+ *   the size change, and the API should proceed with changing the size of the object itself. If the
+ *   callback is `null` (the default), the API will change the size of the object.
  */
 public class ResizePolicy(
     public val isEnabled: Boolean = true,
     public val minimumSize: DpVolumeSize = DpVolumeSize.Zero,
     public val maximumSize: DpVolumeSize = DpVolumeSize(Dp.Infinity, Dp.Infinity, Dp.Infinity),
     @get:JvmName("shouldMaintainAspectRatio") public val shouldMaintainAspectRatio: Boolean = false,
+    public val onResizeStart: ((IntVolumeSize) -> Unit)? = null,
+    public val onResizeUpdate: ((IntVolumeSize) -> Unit)? = null,
+    public val onResizeEnd: ((IntVolumeSize) -> Unit)? = null,
     public val onSizeChange: ((IntVolumeSize) -> Boolean)? = null,
 ) {
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is ResizePolicy) return false
+        if (javaClass != other?.javaClass) return false
+
+        other as ResizePolicy
+
         if (isEnabled != other.isEnabled) return false
+        if (shouldMaintainAspectRatio != other.shouldMaintainAspectRatio) return false
         if (minimumSize != other.minimumSize) return false
         if (maximumSize != other.maximumSize) return false
-        if (shouldMaintainAspectRatio != other.shouldMaintainAspectRatio) return false
+        if (onResizeStart !== other.onResizeStart) return false
+        if (onResizeUpdate !== other.onResizeUpdate) return false
+        if (onResizeEnd !== other.onResizeEnd) return false
+        if (onSizeChange !== other.onSizeChange) return false
+
         return true
     }
 
     override fun hashCode(): Int {
-        var result = minimumSize.hashCode()
-        result = 31 * result + isEnabled.hashCode()
-        result = 31 * result + maximumSize.hashCode()
+        var result = isEnabled.hashCode()
         result = 31 * result + shouldMaintainAspectRatio.hashCode()
-        result = 31 * result + onSizeChange.hashCode()
+        result = 31 * result + minimumSize.hashCode()
+        result = 31 * result + maximumSize.hashCode()
+        result = 31 * result + (onResizeStart?.hashCode() ?: 0)
+        result = 31 * result + (onResizeUpdate?.hashCode() ?: 0)
+        result = 31 * result + (onResizeEnd?.hashCode() ?: 0)
+        result = 31 * result + (onSizeChange?.hashCode() ?: 0)
         return result
     }
 
     override fun toString(): String {
-        return "ResizePolicy(enabled=$isEnabled, minimumSize=$minimumSize, maximumSize=$maximumSize, " +
-            "maintainAspectRatio=$shouldMaintainAspectRatio, onSizeChange=$onSizeChange)"
+        return "ResizePolicy(isEnabled=$isEnabled, minimumSize=$minimumSize, " +
+            "maximumSize=$maximumSize, shouldMaintainAspectRatio=$shouldMaintainAspectRatio, " +
+            "onResizeStart=$onResizeStart, onResizeUpdate=$onResizeUpdate, " +
+            "onResizeEnd=$onResizeEnd, onSizeChange=$onSizeChange)"
     }
 }
 
@@ -528,6 +551,7 @@ public fun SpatialPanel(
  * ### Manifest Configuration
  * This panel requires the following specific configuration in the `AndroidManifest.xml` on the
  * *base* activity for proper sizing and resizing behavior. Without it, resizing the main panel will
+ *
  * cause a crash.
  *
  * ```xml
@@ -752,6 +776,9 @@ internal fun buildSpatialPanelModifier(
                 minimumSize = resizePolicy.minimumSize,
                 maximumSize = resizePolicy.maximumSize,
                 maintainAspectRatio = resizePolicy.shouldMaintainAspectRatio,
+                onResizeStart = resizePolicy.onResizeStart,
+                onResizeUpdate = resizePolicy.onResizeUpdate,
+                onResizeEnd = resizePolicy.onResizeEnd,
                 onSizeChange = resizePolicy.onSizeChange,
             )
     }

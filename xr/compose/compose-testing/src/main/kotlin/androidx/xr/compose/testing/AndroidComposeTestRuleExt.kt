@@ -45,7 +45,7 @@ import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_PA
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_SPATIAL_AUDIO
 import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_UI
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
-import androidx.xr.scenecore.internal.SceneRuntime
+import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testing.FakeRenderingRuntime
 import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
@@ -222,11 +222,11 @@ private fun createTestSession(activity: Activity): Session =
     }
 
 /**
- * Create a fake [SceneRuntime] for testing.
+ * Create a fake [androidx.xr.scenecore.runtime.SceneRuntime] for testing.
  *
  * A convenience method that creates a fake SpatialSceneRuntime for testing.
  *
- * @param activity The [Activity] to use for the [SceneRuntime].
+ * @param activity The [Activity] to use for the [androidx.xr.scenecore.runtime.SceneRuntime].
  */
 private fun createTestRuntime(activity: Activity): SceneRuntime {
     if (shouldUseRealRuntime(activity)) {

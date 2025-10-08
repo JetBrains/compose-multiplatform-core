@@ -180,6 +180,7 @@ public class ProfileImpl implements Profile {
 
     @Override
     @ExperimentalOriginMatchedHeader
+    @SuppressWarnings("deprecation")
     public void setOriginMatchedHeader(@NonNull String headerName,
             @NonNull String headerValue, @NonNull Set<String> originRules) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
@@ -203,6 +204,7 @@ public class ProfileImpl implements Profile {
 
     @Override
     @ExperimentalOriginMatchedHeader
+    @SuppressWarnings("deprecation")
     public void clearOriginMatchedHeader(@NonNull String headerName) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
         if (feature.isSupportedByWebView()) {

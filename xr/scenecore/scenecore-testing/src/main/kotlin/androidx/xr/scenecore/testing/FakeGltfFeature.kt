@@ -18,11 +18,11 @@ package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.NodeHolder
-import androidx.xr.scenecore.internal.GltfFeature
-import androidx.xr.scenecore.internal.MaterialResource
+import androidx.xr.scenecore.runtime.GltfFeature
+import androidx.xr.scenecore.runtime.MaterialResource
 import java.util.concurrent.Executor
 
-/** Test-only implementation of [GltfFeature] */
+/** Test-only implementation of [androidx.xr.scenecore.runtime.GltfFeature] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeGltfFeature(nodeHolder: NodeHolder<*>) :
     FakeBaseRenderingFeature(nodeHolder), GltfFeature {

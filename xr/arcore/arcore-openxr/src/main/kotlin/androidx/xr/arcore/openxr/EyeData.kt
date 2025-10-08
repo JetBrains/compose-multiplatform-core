@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.xr.arcore.EyeStatus
+import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.math.Pose
 
 internal data class EyeData(val state: EyeStatus, val pose: Pose) {}

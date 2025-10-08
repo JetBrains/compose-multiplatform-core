@@ -22,9 +22,7 @@ import android.os.Build
 import android.os.LocaleList
 import android.view.textclassifier.TextClassificationManager
 import android.view.textclassifier.TextClassifier
-import androidx.pdf.R
 import androidx.pdf.selection.model.TextSelection
-import androidx.pdf.util.ClipboardUtils
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 
@@ -43,47 +41,8 @@ internal class TextSelectionMenuProvider(private val context: Context) :
     override suspend fun getMenuItems(selection: TextSelection): List<ContextMenuComponent> {
         val menuItems: MutableList<ContextMenuComponent> = mutableListOf()
         menuItems += getSmartMenuItems(selection.text)
-        menuItems += getDefaultMenuItems()
+        menuItems += DefaultSelectionMenuProvider.getMenuItems(context)
         return menuItems
-    }
-
-    private fun getDefaultMenuItems(): List<ContextMenuComponent> {
-        val defaultMenuItems =
-            listOf<ContextMenuComponent>(
-                DefaultSelectionMenuComponent(
-                    key = PdfSelectionMenuKeys.CopyKey,
-                    label = context.getString(android.R.string.copy),
-                    contentDescription = context.getString(R.string.desc_copy),
-                ) { pdfView ->
-                    val localCurrentSelection = pdfView.currentSelection
-                    if (localCurrentSelection is TextSelection) {
-                        ClipboardUtils.copyToClipboard(
-                            context,
-                            localCurrentSelection.text.toString(),
-                        )
-                    }
-                    // close the context menu upon copy action
-                    close()
-                    // After completion of action the selection should be cleared.
-                    pdfView.clearSelection()
-                },
-                DefaultSelectionMenuComponent(
-                    key = PdfSelectionMenuKeys.SelectAllKey,
-                    label = context.getString(android.R.string.selectAll),
-                    contentDescription = context.getString(R.string.desc_select_all),
-                ) { pdfView ->
-                    val page = pdfView.currentSelection?.bounds?.first()?.pageNum
-                    // We can't select all if we don't know what page the selection is on, or if
-                    // we don't know the size of that page
-                    if (page != null) {
-                        // Action mode for old selection should be closed which will be triggered
-                        // after select all is completed with current selection.
-                        close()
-                        pdfView.selectAllTextOnPage(page)
-                    }
-                },
-            )
-        return defaultMenuItems
     }
 
     internal suspend fun getSmartMenuItems(text: CharSequence): List<ContextMenuComponent> =

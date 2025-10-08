@@ -201,6 +201,8 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
         val document = editablePdfDocument ?: return
 
         document.clearUncommittedEdits()
+        editsHistoryManager?.clear()
+
         _annotationDisplayStateFlow.update { displayState ->
             displayState.copy(edits = document.getAllEdits())
         }

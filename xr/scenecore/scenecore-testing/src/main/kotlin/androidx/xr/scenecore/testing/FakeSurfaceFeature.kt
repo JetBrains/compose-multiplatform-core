@@ -22,12 +22,12 @@ import android.view.Surface
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.NodeHolder
 import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.SurfaceEntity
-import androidx.xr.scenecore.internal.SurfaceFeature
-import androidx.xr.scenecore.internal.TextureResource
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.SurfaceEntity
+import androidx.xr.scenecore.runtime.SurfaceFeature
+import androidx.xr.scenecore.runtime.TextureResource
 
-/** Test-only implementation of [SurfaceFeature] */
+/** Test-only implementation of [androidx.xr.scenecore.runtime.SurfaceFeature] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
     FakeBaseRenderingFeature(nodeHolder), SurfaceFeature {
@@ -67,7 +67,7 @@ public class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
      * Retrieves the dimensions of the "spatial canvas" which the surface is mapped to. These values
      * are not impacted by scale.
      *
-     * @return The canvas [Dimensions].
+     * @return The canvas [androidx.xr.scenecore.runtime.Dimensions].
      */
     override val dimensions: Dimensions
         get() = shape.dimensions
@@ -99,6 +99,23 @@ public class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
     /** For test purposes only. Represents the result of [setPrimaryAlphaMaskTexture]. */
     public var primaryAlphaMask: TextureResource? = null
         private set
+
+    private var _colliderEnabled: Boolean = false
+
+    /**
+     * Sets whether the collider is enabled.
+     *
+     * @param enableCollider Whether the collider is enabled.
+     */
+    override fun setColliderEnabled(enableCollider: Boolean) {
+        mockSurfaceFeature!!.setColliderEnabled(enableCollider)
+        _colliderEnabled = enableCollider
+    }
+
+    /** For test purposes only. Represents the result of [setColliderEnabled]. */
+    public fun getColliderEnabled(): Boolean {
+        return _colliderEnabled
+    }
 
     /**
      * The texture to be composited into the alpha channel of the surface. If null, the alpha mask
@@ -145,7 +162,8 @@ public class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
 
     /**
      * The active color space of the media asset drawn on the surface. Use constants from
-     * [SurfaceEntity.ColorSpace]. This value is used if [contentColorMetadataSet] is `true`.
+     * [androidx.xr.scenecore.runtime.SurfaceEntity.ColorSpace]. This value is used if
+     * [contentColorMetadataSet] is `true`.
      */
     override val colorSpace: Int
         get() = mockSurfaceFeature?.colorSpace ?: _colorSpace
@@ -154,8 +172,8 @@ public class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
 
     /**
      * The active color transfer function of the media asset drawn on the surface. Use constants
-     * from [SurfaceEntity.ColorTransfer]. This value is used if [contentColorMetadataSet] is
-     * `true`.
+     * from [androidx.xr.scenecore.runtime.SurfaceEntity.ColorTransfer]. This value is used if
+     * [contentColorMetadataSet] is `true`.
      */
     override val colorTransfer: Int
         get() = mockSurfaceFeature?.colorTransfer ?: _colorTransfer
@@ -164,7 +182,8 @@ public class FakeSurfaceFeature(nodeHolder: NodeHolder<*>) :
 
     /**
      * The active color range of the media asset drawn on the surface. Use constants from
-     * [SurfaceEntity.ColorRange]. This value is used if [contentColorMetadataSet] is `true`.
+     * [androidx.xr.scenecore.runtime.SurfaceEntity.ColorRange]. This value is used if
+     * [contentColorMetadataSet] is `true`.
      */
     override val colorRange: Int
         get() = mockSurfaceFeature?.colorRange ?: _colorRange

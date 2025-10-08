@@ -18,10 +18,10 @@ package androidx.xr.scenecore.testing
 
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.internal.ActivityPose
-import androidx.xr.scenecore.internal.ActivitySpace
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.HitTestResult
+import androidx.xr.scenecore.runtime.ActivityPose
+import androidx.xr.scenecore.runtime.ActivitySpace
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.HitTestResult
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test

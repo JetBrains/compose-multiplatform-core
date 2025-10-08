@@ -23,48 +23,48 @@ import android.os.Bundle
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.internal.Anchor
+import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.internal.ActivityPanelEntity
-import androidx.xr.scenecore.internal.ActivitySpace
-import androidx.xr.scenecore.internal.AnchorEntity
-import androidx.xr.scenecore.internal.AnchorPlacement
-import androidx.xr.scenecore.internal.AudioTrackExtensionsWrapper
-import androidx.xr.scenecore.internal.CameraViewActivityPose
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.Entity
-import androidx.xr.scenecore.internal.GltfEntity
-import androidx.xr.scenecore.internal.GltfFeature
-import androidx.xr.scenecore.internal.HeadActivityPose
-import androidx.xr.scenecore.internal.InputEventListener
-import androidx.xr.scenecore.internal.InteractableComponent
-import androidx.xr.scenecore.internal.LoggingEntity
-import androidx.xr.scenecore.internal.MediaPlayerExtensionsWrapper
-import androidx.xr.scenecore.internal.PanelEntity
-import androidx.xr.scenecore.internal.PerceptionSpaceActivityPose
-import androidx.xr.scenecore.internal.PixelDimensions
-import androidx.xr.scenecore.internal.PlaneSemantic
-import androidx.xr.scenecore.internal.PlaneType
-import androidx.xr.scenecore.internal.PointerCaptureComponent
-import androidx.xr.scenecore.internal.RenderingEntityFactory
-import androidx.xr.scenecore.internal.SceneRuntime
-import androidx.xr.scenecore.internal.SoundPoolExtensionsWrapper
-import androidx.xr.scenecore.internal.SpatialCapabilities
-import androidx.xr.scenecore.internal.SpatialEnvironment
-import androidx.xr.scenecore.internal.SpatialModeChangeListener
-import androidx.xr.scenecore.internal.SpatialPointerComponent
-import androidx.xr.scenecore.internal.SpatialVisibility
-import androidx.xr.scenecore.internal.SubspaceNodeEntity
-import androidx.xr.scenecore.internal.SubspaceNodeFeature
-import androidx.xr.scenecore.internal.SurfaceEntity
-import androidx.xr.scenecore.internal.SurfaceFeature
+import androidx.xr.scenecore.runtime.ActivityPanelEntity
+import androidx.xr.scenecore.runtime.ActivitySpace
+import androidx.xr.scenecore.runtime.AnchorEntity
+import androidx.xr.scenecore.runtime.AnchorPlacement
+import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper
+import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.Entity
+import androidx.xr.scenecore.runtime.GltfEntity
+import androidx.xr.scenecore.runtime.GltfFeature
+import androidx.xr.scenecore.runtime.HeadActivityPose
+import androidx.xr.scenecore.runtime.InputEventListener
+import androidx.xr.scenecore.runtime.InteractableComponent
+import androidx.xr.scenecore.runtime.LoggingEntity
+import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper
+import androidx.xr.scenecore.runtime.PanelEntity
+import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose
+import androidx.xr.scenecore.runtime.PixelDimensions
+import androidx.xr.scenecore.runtime.PlaneSemantic
+import androidx.xr.scenecore.runtime.PlaneType
+import androidx.xr.scenecore.runtime.PointerCaptureComponent
+import androidx.xr.scenecore.runtime.RenderingEntityFactory
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper
+import androidx.xr.scenecore.runtime.SpatialCapabilities
+import androidx.xr.scenecore.runtime.SpatialEnvironment
+import androidx.xr.scenecore.runtime.SpatialModeChangeListener
+import androidx.xr.scenecore.runtime.SpatialPointerComponent
+import androidx.xr.scenecore.runtime.SpatialVisibility
+import androidx.xr.scenecore.runtime.SubspaceNodeEntity
+import androidx.xr.scenecore.runtime.SubspaceNodeFeature
+import androidx.xr.scenecore.runtime.SurfaceEntity
+import androidx.xr.scenecore.runtime.SurfaceFeature
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
 /**
- * Test-only implementation of [SceneRuntime].
+ * Test-only implementation of [androidx.xr.scenecore.runtime.SceneRuntime].
  *
  * @param executor This used to input [executor] for tests.
  */
@@ -405,6 +405,4 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
 
     override fun createSpatialPointerComponent(): SpatialPointerComponent =
         FakeSpatialPointerComponent()
-
-    override fun dispose() {}
 }

@@ -17,10 +17,10 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.CameraViewActivityPose
-import androidx.xr.scenecore.internal.CameraViewActivityPose.CameraType
-import androidx.xr.scenecore.internal.CameraViewActivityPose.Fov
-import androidx.xr.scenecore.internal.PixelDimensions
+import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType
+import androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov
+import androidx.xr.scenecore.runtime.PixelDimensions
 
 /**
  * A fake ActivityPose representing a user's camera. This can be used to determine the location and

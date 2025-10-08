@@ -17,12 +17,12 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.MovableComponent
-import androidx.xr.scenecore.internal.MoveEventListener
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.MovableComponent
+import androidx.xr.scenecore.runtime.MoveEventListener
 import java.util.concurrent.Executor
 
-/** Test-only implementation of [androidx.xr.scenecore.internal.MovableComponent] */
+/** Test-only implementation of [androidx.xr.scenecore.runtime.MovableComponent] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeMovableComponent : FakeComponent(), MovableComponent {
 

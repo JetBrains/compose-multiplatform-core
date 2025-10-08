@@ -14,7 +14,7 @@
   limitations under the License.
   -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
     <application android:label="Projected perception runtime App">
         <activity
@@ -26,7 +26,8 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
+        <meta-data android:name="com.google.android.ar.API_KEY" android:value="AIzaSyAMIem9luEMnV2-bkzZuL0n9pZf1E7FuP8"
+          tools:ignore="MetadataTagInsideApplicationTag" />
     </application>
-
 </manifest>
 

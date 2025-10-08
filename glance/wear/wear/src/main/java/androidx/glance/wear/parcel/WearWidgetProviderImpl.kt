@@ -16,7 +16,10 @@
 
 package androidx.glance.wear.parcel
 
+import android.content.ComponentName
 import android.content.Context
+import android.util.Log
+import androidx.glance.wear.ActiveWearWidgetHandle
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.WearWidgetRequest
 import kotlinx.coroutines.CoroutineScope
@@ -26,11 +29,13 @@ import kotlinx.coroutines.launch
  * Implementation of the [IWearWidgetProvider] Stub.
  *
  * @property context The Context of the service that communicates using this Stub
+ * @property providerName The [ComponentName] of the provider service.
  * @property mainScope A main-thread scope
  * @property widget The widget used to receive the calls to this stub
  */
 internal class WearWidgetProviderImpl(
     private val context: Context,
+    private val providerName: ComponentName,
     private val mainScope: CoroutineScope,
     private val widget: GlanceWearWidget,
 ) : IWearWidgetProvider.Stub() {
@@ -51,5 +56,59 @@ internal class WearWidgetProviderImpl(
                 callback.updateWidgetContent(rawContent.toParcel())
             }
         }
+    }
+
+    override fun onActivated(
+        handleParcel: ActiveWearWidgetHandleParcel?,
+        callback: IExecutionCallback?,
+    ) {
+        requireNotNull(handleParcel) { "Invalid widget handle parcel." }
+        mainScope.launch {
+            val handle =
+                try {
+                    ActiveWearWidgetHandle.fromParcel(handleParcel, providerName)
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "Error deserializing ActiveWearWidgetHandleParcel", e)
+                    callback?.onError()
+                    return@launch
+                }
+
+            try {
+                widget.onActivated(context, handle)
+            } catch (e: Exception) {
+                callback?.onError()
+                throw e
+            }
+            callback?.onSuccess()
+        }
+    }
+
+    override fun onDeactivated(
+        handleParcel: ActiveWearWidgetHandleParcel?,
+        callback: IExecutionCallback?,
+    ) {
+        requireNotNull(handleParcel) { "Invalid widget handle parcel." }
+        mainScope.launch {
+            val handle =
+                try {
+                    ActiveWearWidgetHandle.fromParcel(handleParcel, providerName)
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "Error deserializing ActiveWearWidgetHandleParcel", e)
+                    callback?.onError()
+                    return@launch
+                }
+
+            try {
+                widget.onDeactivated(context, handle)
+            } catch (e: Exception) {
+                callback?.onError()
+                throw e
+            }
+            callback?.onSuccess()
+        }
+    }
+
+    private companion object {
+        private const val TAG = "WearWidgetProviderImpl"
     }
 }

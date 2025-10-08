@@ -25,7 +25,7 @@ import io.reactivex.schedulers.Schedulers
 import org.junit.Test
 
 @SmallTest
-class RxJava2QueryTest : TestDatabaseTest() {
+class RxJava2QueryTest : TestDatabaseTest(UseDriver.ANDROID) {
 
     @Test
     fun observeBooksByIdFlowable() {

@@ -17,13 +17,13 @@
 
 package androidx.xr.arcore.openxr
 
-import androidx.xr.arcore.internal.Trackable
+import androidx.xr.arcore.runtime.Trackable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 /** Object that holds resources that are used in the XR session. */
 internal class XrResources {
-    /** Map of native trackable pointer to [androidx.xr.arcore.internal.Trackable]. */
+    /** Map of native trackable pointer to [androidx.xr.arcore.runtime.internal.Trackable]. */
     private val _trackablesMap = ConcurrentHashMap<Long, Trackable>()
     val trackablesMap: Map<Long, Trackable> = _trackablesMap
 

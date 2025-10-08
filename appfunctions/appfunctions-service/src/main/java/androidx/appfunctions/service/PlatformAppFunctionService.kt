@@ -16,15 +16,11 @@
 
 package androidx.appfunctions.service
 
-import android.app.appfunctions.AppFunctionException as PlatformAppFunctionException
 import android.app.appfunctions.AppFunctionService
-import android.app.appfunctions.ExecuteAppFunctionRequest as PlatformExecuteAppFunctionRequest
-import android.app.appfunctions.ExecuteAppFunctionResponse as PlatformExecuteAppFunctionResponse
-import android.content.pm.SigningInfo
-import android.os.CancellationSignal
-import android.os.OutcomeReceiver
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.appfunctions.AppFunctionAppUnknownException
+import androidx.appfunctions.AppFunctionCompatService
 import androidx.appfunctions.AppFunctionException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
@@ -35,7 +31,7 @@ import androidx.appfunctions.service.internal.ServiceDependencies
 /** The implementation of [AppFunctionService] from the platform. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(36)
-public class PlatformAppFunctionService : AppFunctionService() {
+public class PlatformAppFunctionService : AppFunctionCompatService() {
 
     private lateinit var delegate: AppFunctionServiceDelegate
 
@@ -44,7 +40,6 @@ public class PlatformAppFunctionService : AppFunctionService() {
         delegate =
             AppFunctionServiceDelegate(
                 this@PlatformAppFunctionService,
-                Dispatchers.Worker,
                 Dispatchers.Main,
                 checkNotNull(Dependencies.aggregatedAppFunctionInventory),
                 ServiceDependencies.aggregatedAppFunctionInvoker,
@@ -52,39 +47,14 @@ public class PlatformAppFunctionService : AppFunctionService() {
             )
     }
 
-    override fun onExecuteFunction(
-        request: PlatformExecuteAppFunctionRequest,
-        callingPackage: String,
-        signingInfo: SigningInfo,
-        cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiver<PlatformExecuteAppFunctionResponse, PlatformAppFunctionException>,
-    ) {
-        val executionJob =
-            delegate.onExecuteFunction(
-                ExecuteAppFunctionRequest.fromPlatformClass(request),
-                callingPackage,
-                object : OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException> {
-                    override fun onResult(result: ExecuteAppFunctionResponse) {
-                        when (result) {
-                            is ExecuteAppFunctionResponse.Success -> {
-                                callback.onResult(result.toPlatformClass())
-                            }
-                            is ExecuteAppFunctionResponse.Error -> {
-                                callback.onError(result.error.toPlatformClass())
-                            }
-                        }
-                    }
-
-                    override fun onError(error: AppFunctionException) {
-                        callback.onError(error.toPlatformClass())
-                    }
-                },
-            )
-        cancellationSignal.setOnCancelListener { executionJob.cancel() }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        delegate.onDestroy()
-    }
+    override suspend fun executeFunction(
+        request: ExecuteAppFunctionRequest
+    ): ExecuteAppFunctionResponse =
+        try {
+            delegate.executeFunction(request)
+        } catch (e: AppFunctionException) {
+            ExecuteAppFunctionResponse.Error(e)
+        } catch (e: Exception) {
+            ExecuteAppFunctionResponse.Error(AppFunctionAppUnknownException(e.message))
+        }
 }

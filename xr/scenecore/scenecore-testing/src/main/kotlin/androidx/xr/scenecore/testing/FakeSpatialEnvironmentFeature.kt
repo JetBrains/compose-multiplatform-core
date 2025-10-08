@@ -18,10 +18,10 @@ package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.NodeHolder
-import androidx.xr.scenecore.internal.SpatialEnvironment.SpatialEnvironmentPreference
-import androidx.xr.scenecore.internal.SpatialEnvironmentFeature
+import androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference
+import androidx.xr.scenecore.runtime.SpatialEnvironmentFeature
 
-/** Test-only implementation of [SpatialEnvironmentFeature]. */
+/** Test-only implementation of [androidx.xr.scenecore.runtime.SpatialEnvironmentFeature]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSpatialEnvironmentFeature :
     FakeBaseRenderingFeature(NodeHolder<FakeNode>(object : FakeNode {}, FakeNode::class.java)),

@@ -19,11 +19,11 @@ package androidx.xr.arcore
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.Earth.State.Companion.ERROR_APP_PREEMPTED
 import androidx.xr.arcore.Earth.State.Companion.RUNNING
-import androidx.xr.arcore.internal.AnchorNotAuthorizedException
-import androidx.xr.arcore.internal.AnchorResourcesExhaustedException
-import androidx.xr.arcore.internal.AnchorUnsupportedLocationException
-import androidx.xr.arcore.internal.Earth as RuntimeEarth
-import androidx.xr.arcore.internal.GeospatialPoseNotTrackingException
+import androidx.xr.arcore.runtime.AnchorNotAuthorizedException
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException
+import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.VpsAvailabilityResult

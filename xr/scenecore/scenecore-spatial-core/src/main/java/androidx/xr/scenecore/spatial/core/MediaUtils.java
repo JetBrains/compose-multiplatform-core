@@ -16,9 +16,9 @@
 
 package androidx.xr.scenecore.spatial.core;
 
-import androidx.xr.scenecore.internal.PointSourceParams;
-import androidx.xr.scenecore.internal.SoundFieldAttributes;
-import androidx.xr.scenecore.internal.SpatializerConstants;
+import androidx.xr.scenecore.runtime.PointSourceParams;
+import androidx.xr.scenecore.runtime.SoundFieldAttributes;
+import androidx.xr.scenecore.runtime.SpatializerConstants;
 
 import com.android.extensions.xr.media.SpatializerExtensions;
 import com.android.extensions.xr.node.Node;

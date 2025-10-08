@@ -18,8 +18,8 @@ package androidx.xr.scenecore.spatial.core;
 
 import static java.util.stream.Collectors.toCollection;
 
-import androidx.xr.scenecore.internal.ActivityPose;
-import androidx.xr.scenecore.internal.Entity;
+import androidx.xr.scenecore.runtime.ActivityPose;
+import androidx.xr.scenecore.runtime.Entity;
 
 import com.android.extensions.xr.node.Node;
 

@@ -17,12 +17,12 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
-import androidx.xr.scenecore.internal.Dimensions
-import androidx.xr.scenecore.internal.ResizableComponent
-import androidx.xr.scenecore.internal.ResizeEventListener
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.ResizableComponent
+import androidx.xr.scenecore.runtime.ResizeEventListener
 import java.util.concurrent.Executor
 
-/** Fake implementation of [androidx.xr.scenecore.internal.ResizableComponent] for testing. */
+/** Fake implementation of [androidx.xr.scenecore.runtime.ResizableComponent] for testing. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeResizableComponent(
     override var size: Dimensions = Dimensions(2.0f, 2.0f, 2.0f),

@@ -94,9 +94,10 @@ package androidx.navigation3.runtime {
   }
 
   public final class RememberNavBackStackKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable public static inline <reified T extends androidx.navigation3.runtime.NavKey> androidx.navigation3.runtime.NavBackStack<androidx.navigation3.runtime.NavKey> rememberNavBackStack(androidx.savedstate.serialization.SavedStateConfiguration configuration, T... elements);
-    method @KotlinOnly @androidx.compose.runtime.Composable public static <T extends androidx.navigation3.runtime.NavKey> androidx.navigation3.runtime.NavBackStack<androidx.navigation3.runtime.NavKey> rememberNavBackStack(T... elements);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T extends androidx.navigation3.runtime.NavKey> androidx.navigation3.runtime.NavBackStack<androidx.navigation3.runtime.NavKey!> rememberNavBackStack(T![], androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.navigation3.runtime.NavBackStack<androidx.navigation3.runtime.NavKey> rememberNavBackStack(androidx.navigation3.runtime.NavKey... elements);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.navigation3.runtime.NavBackStack<androidx.navigation3.runtime.NavKey!> rememberNavBackStack(androidx.navigation3.runtime.NavKey![], androidx.compose.runtime.Composer?, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.navigation3.runtime.NavBackStack<androidx.navigation3.runtime.NavKey> rememberNavBackStack(androidx.savedstate.serialization.SavedStateConfiguration configuration, androidx.navigation3.runtime.NavKey... elements);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.navigation3.runtime.NavBackStack<androidx.navigation3.runtime.NavKey!> rememberNavBackStack(androidx.savedstate.serialization.SavedStateConfiguration, androidx.navigation3.runtime.NavKey![], androidx.compose.runtime.Composer?, int);
   }
 
   public final class SavedStateNavEntryDecoratorKt {

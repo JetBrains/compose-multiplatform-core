@@ -112,4 +112,9 @@ public class SurfaceProcessorWithExecutor implements SurfaceProcessorInternal {
     public void release() {
         // No-op. External SurfaceProcessor should not be released by CameraX.
     }
+
+    @Override
+    public @NonNull String toString() {
+        return "SurfaceProcessorWithExecutor(" + mSurfaceProcessor + ")";
+    }
 }

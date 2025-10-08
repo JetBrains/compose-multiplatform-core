@@ -16,6 +16,7 @@
 
 package androidx.room3
 
+import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
 import androidx.room3.ObservedTableStates.ObserveOp
 import androidx.room3.Transactor.SQLiteTransactionType
@@ -492,16 +493,25 @@ internal class TriggerBasedInvalidationTracker(
  */
 internal class ObservedTableStates(size: Int) {
 
+    // General lock to protect state.
     private val lock = ReentrantLock()
 
     // The number of observers per table
-    private val tableObserversCount = LongArray(size)
+    @GuardedBy("lock") private val tableObserversCount = LongArray(size)
 
     // The observation state of each table, i.e. true or false if table at ith index should be
     // observed. These states are only valid if `needsSync` is false.
-    private val tableObservedState = BooleanArray(size)
+    @GuardedBy("lock") private val tableObservedState = BooleanArray(size)
 
-    @Volatile private var needsSync = false
+    // Flag indicating that [tableObservedState] needs to be updated based on [tableObserversCount].
+    @Volatile @GuardedBy("lock") private var needsSync = false
+
+    // Lock to serialize [onSync] calls. Should never be acquired within a [lock] region, the order
+    // must always be `[onSyncLock]? -> [lock]` to avoid deadlocks.
+    private val onSyncLock = ReentrantLock()
+
+    // Flag indicating that an [onSync] is in progress and [onSyncLock] is being held.
+    @Volatile @GuardedBy("onSyncLock") private var inProgressSync = false
 
     /**
      * Indicates that a sync of the tables states will be performed, i.e. start or stop tracking.
@@ -512,30 +522,38 @@ internal class ObservedTableStates(size: Int) {
      * or REMOVE. If the internal state indicates that a sync is not required or that no operations
      * are to be performed, then the [action] will not be invoked.
      */
-    internal inline fun onSync(action: (Array<ObserveOp>) -> Unit) {
-        lock.withLock {
-            if (!needsSync) {
-                // Sync was already done, no need to do action.
-                return
-            }
-            needsSync = false
-            var addOrRemove = false
+    internal inline fun onSync(action: (Array<ObserveOp>) -> Unit): Unit =
+        onSyncLock.withLock {
+            inProgressSync = true
             val ops =
-                Array(tableObserversCount.size) { i ->
-                    val newState = tableObserversCount[i] > 0
-                    if (newState != tableObservedState[i]) {
-                        addOrRemove = true
-                        tableObservedState[i] = newState
-                        if (newState) ObserveOp.ADD else ObserveOp.REMOVE
-                    } else {
-                        ObserveOp.NO_OP
+                lock.withLock {
+                    if (!needsSync) {
+                        // Sync was already done, no need to do action.
+                        return@withLock null
                     }
+                    needsSync = false
+                    var addOrRemove = false
+                    val ops =
+                        Array(tableObserversCount.size) { i ->
+                            val newState = tableObserversCount[i] > 0
+                            if (newState != tableObservedState[i]) {
+                                addOrRemove = true
+                                tableObservedState[i] = newState
+                                if (newState) ObserveOp.ADD else ObserveOp.REMOVE
+                            } else {
+                                ObserveOp.NO_OP
+                            }
+                        }
+                    return@withLock if (addOrRemove) ops else null
                 }
-            if (addOrRemove) {
-                action.invoke(ops)
+            try {
+                if (!ops.isNullOrEmpty()) {
+                    action.invoke(ops)
+                }
+            } finally {
+                inProgressSync = false
             }
         }
-    }
 
     /**
      * Notifies that an observer was added and return true if the state of some table has a pending
@@ -552,7 +570,7 @@ internal class ObservedTableStates(size: Int) {
                     shouldSync = true
                 }
             }
-            return shouldSync || needsSync
+            return shouldSync || needsSync || inProgressSync
         }
 
     /**
@@ -570,7 +588,7 @@ internal class ObservedTableStates(size: Int) {
                     shouldSync = true
                 }
             }
-            return shouldSync || needsSync
+            return shouldSync || needsSync || inProgressSync
         }
 
     internal fun resetTriggerState() =

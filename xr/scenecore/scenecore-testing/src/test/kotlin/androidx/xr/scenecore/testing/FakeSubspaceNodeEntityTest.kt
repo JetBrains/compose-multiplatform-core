@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.testing
 
-import androidx.xr.scenecore.internal.Dimensions
+import androidx.xr.scenecore.runtime.Dimensions
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
