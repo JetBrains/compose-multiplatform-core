@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeApi
@@ -40,10 +41,8 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.composeButton
 import androidx.compose.ui.input.pointer.composeButtons
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.DefaultInputModeManager
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalInternalNavigationEventDispatcherOwner
-import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -61,21 +60,14 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.LocalInteropContainer
-import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropViewGroup
+import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
+import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.navigationevent.NavigationEventDispatcher
-import androidx.navigationevent.NavigationEventDispatcherOwner
 import kotlin.coroutines.coroutineContext
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
@@ -192,7 +184,7 @@ internal class ComposeWindow(
     private val configuration: ComposeViewportConfiguration,
     content: @Composable () -> Unit,
     private val state: ComposeWindowState
-) : LifecycleOwner, ViewModelStoreOwner, NavigationEventDispatcherOwner {
+) {
     private var isDisposed = false
 
     private val density: Density = Density(
@@ -203,6 +195,8 @@ internal class ComposeWindow(
     private val _windowInfo = WindowInfoImpl().apply {
         isWindowFocused = true
     }
+    @VisibleForTesting
+    internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
     private val canvasEvents = EventTargetListener(canvas)
 
@@ -213,7 +207,7 @@ internal class ComposeWindow(
 
     private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty {
         override val windowInfo get() = _windowInfo
-
+        override val architectureComponentsOwner get() = archComponentsOwner
         override val inputModeManager: InputModeManager = DefaultInputModeManager()
 
         override val dragAndDropManager: PlatformDragAndDropManager = object : WebDragAndDropManager(canvasEvents, state.globalEvents, density) {
@@ -323,10 +317,6 @@ internal class ComposeWindow(
 
     private val systemThemeObserver = getSystemThemeObserver()
 
-    override val lifecycle = LifecycleRegistry(this)
-    override val viewModelStore = ViewModelStore()
-    override val navigationEventDispatcher = NavigationEventDispatcher()
-
     private fun <T : Event> addTypedEvent(
         type: String,
         handler: (event: T) -> Unit
@@ -399,15 +389,15 @@ internal class ComposeWindow(
         }
 
         state.globalEvents.addDisposableEvent("focus") {
-            lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+            archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         }
 
         state.globalEvents.addDisposableEvent("blur") {
-            lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+            archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         }
 
         state.globalEvents.addDisposableEvent("visibilitychange") { event ->
-            lifecycle.handleLifecycleEvent(
+            archComponentsOwner.lifecycle.handleLifecycleEvent(
                 if (documentIsVisible()) Lifecycle.Event.ON_START
                 else Lifecycle.Event.ON_STOP
             )
@@ -428,9 +418,6 @@ internal class ComposeWindow(
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
-                LocalLifecycleOwner provides this,
-                LocalInternalViewModelStoreOwner provides this,
-                LocalInternalNavigationEventDispatcherOwner provides this,
                 LocalInteropContainer provides interopContainer,
                 LocalActiveClipEventsTarget provides {
                     (platformContext.textInputService as WebTextInputService).getBackingInput() ?: canvas
@@ -449,7 +436,7 @@ internal class ComposeWindow(
             )
         }
 
-        lifecycle.handleLifecycleEvent(
+        archComponentsOwner.lifecycle.handleLifecycleEvent(
             if (document.hasFocus()) Lifecycle.Event.ON_RESUME
             else Lifecycle.Event.ON_START
         )
@@ -481,8 +468,8 @@ internal class ComposeWindow(
     // TODO: need to call .dispose() on window close.
     fun dispose() {
         check(!isDisposed)
-        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-        viewModelStore.clear()
+        archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        archComponentsOwner.viewModelStore.clear()
 
         scene.close()
         skiaLayer.detach()
@@ -502,9 +489,7 @@ internal class ComposeWindow(
         // iOS Safari doesn't request focus when the page is shown,
         // and the lifecycle doesn't trigger ON_RESUME.
         // so, we decided to handle every touch
-        if (lifecycle.currentState != Lifecycle.State.RESUMED) {
-            lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-        }
+        archComponentsOwner.lifecycle.currentState = Lifecycle.State.RESUMED
 
         val inputModeManager = platformContext.inputModeManager
         if (inputModeManager.inputMode != InputMode.Touch) {
@@ -738,6 +723,7 @@ fun ComposeViewport(
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
     canvas.setAttribute("role", "generic")
+    canvas.style.outline = "none" // Fixes https://youtrack.jetbrains.com/issue/CMP-9040
 
     // Create a common container (parent html element) for canvas and the interop container
     // to position at the same place - the interop container is position at 0,0 relative to <canvas>.
