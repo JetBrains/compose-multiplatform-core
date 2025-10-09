@@ -86,33 +86,32 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
+        nonAndroidMain {
             dependsOn(commonMain)
         }
 
-        skikoTest {
+        nonAndroidTest {
             dependsOn(commonTest)
         }
 
         desktopMain {
             dependsOn(jvmMain)
-            dependsOn(skikoMain)
+            dependsOn(nonAndroidMain)
         }
 
         desktopTest {
             dependsOn(jvmTest)
-            dependsOn(skikoTest)
+            dependsOn(nonAndroidTest)
         }
 
         nonJvmMain {
             dependsOn(commonMain)
-            dependsOn(skikoMain)
+            dependsOn(nonAndroidMain)
         }
 
         nonJvmTest {
             dependsOn(commonTest)
-            dependsOn(skikoTest)
+            dependsOn(nonAndroidTest)
         }
 
         nativeMain {
