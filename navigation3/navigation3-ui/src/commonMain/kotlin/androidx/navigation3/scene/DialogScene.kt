@@ -70,8 +70,10 @@ internal class DialogScene<T : Any>(
  * This strategy should always be added before any non-overlay scene strategies.
  */
 public class DialogSceneStrategy<T : Any>() : SceneStrategy<T> {
-    @Composable
-    public override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
+
+    public override fun SceneStrategyScope<T>.calculateScene(
+        entries: List<NavEntry<T>>
+    ): Scene<T>? {
         val lastEntry = entries.lastOrNull()
         val dialogProperties = lastEntry?.metadata?.get(DIALOG_KEY) as? DialogProperties
         return dialogProperties?.let { properties ->

@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
+import androidx.navigation3.scene.SceneStrategyScope
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import kotlin.collections.plus
 
@@ -48,8 +49,7 @@ class TestTwoPaneScene<T : Any>(
 }
 
 class TestTwoPaneSceneStrategy<T : Any> : SceneStrategy<T> {
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
+    override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (entries.size < 2) return null
         val lastTwoEntries = entries.takeLast(2)
         return TestTwoPaneScene(
@@ -65,8 +65,7 @@ class TestAnimatedTwoPaneSceneStrategy<T : Any>(
     val durationMillis: Int,
     val overrideEntryAnimations: Boolean = false,
 ) : SceneStrategy<T> {
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
+    override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (entries.size < 2) return null
         val lastTwoEntries = entries.takeLast(2)
         return TestAnimatedTwoPaneScene(

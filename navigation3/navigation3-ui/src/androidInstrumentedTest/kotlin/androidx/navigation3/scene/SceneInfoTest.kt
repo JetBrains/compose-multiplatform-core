@@ -50,7 +50,7 @@ internal class NavDisplayInfoTest {
         val backStack = mutableListOf(KEY_1, KEY_2, KEY_3, KEY_4, KEY_5)
 
         // This scene strategy simulates a pop of 2 entries.
-        val sceneStrategy = TestSceneStrategy { current, entries, _ ->
+        val sceneStrategy = TestSceneStrategy { current, entries ->
             TestScene(current!!.contentKey, entries, entries.dropLast(2))
         }
 
@@ -118,10 +118,10 @@ private data class TestScene<T : Any>(
 ) : Scene<T>
 
 private class TestSceneStrategy<T : Any>(
-    private val calculateScene: (NavEntry<T>?, List<NavEntry<T>>, () -> Unit) -> Scene<T>
+    private val calculateScene: (NavEntry<T>?, entries: List<NavEntry<T>>) -> Scene<T>
 ) : SceneStrategy<T> {
 
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? =
-        calculateScene(entries.lastOrNull(), entries, onBack)
+    override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
+        return calculateScene(entries.lastOrNull(), entries)
+    }
 }

@@ -57,8 +57,7 @@ public class AutoClosingRoomOpenHelperTest {
     public CountingTaskExecutorRule mExecutorRule = new CountingTaskExecutorRule();
     private UserDao mUserDao;
     private TestDatabase mDb;
-    private final DatabaseCallbackTest.TestDatabaseCallback mCallback =
-            new DatabaseCallbackTest.TestDatabaseCallback();
+    private final TestDatabaseCallback mCallback = new TestDatabaseCallback();
 
     @Before
     public void createDb() throws TimeoutException, InterruptedException {
@@ -350,6 +349,28 @@ public class AutoClosingRoomOpenHelperTest {
         @Override
         public void onInvalidated(@NonNull Set<String> tables) {
             mInvalidationCallback.run();
+        }
+    }
+
+    public static class TestDatabaseCallback extends RoomDatabase.Callback {
+
+        boolean mCreated;
+        boolean mOpened;
+        boolean mDestructivelyMigrated;
+
+        @Override
+        public void onCreate(@NonNull SupportSQLiteDatabase db) {
+            mCreated = true;
+        }
+
+        @Override
+        public void onOpen(@NonNull SupportSQLiteDatabase db) {
+            mOpened = true;
+        }
+
+        @Override
+        public void onDestructiveMigration(@NonNull SupportSQLiteDatabase db) {
+            mDestructivelyMigrated = true;
         }
     }
 }

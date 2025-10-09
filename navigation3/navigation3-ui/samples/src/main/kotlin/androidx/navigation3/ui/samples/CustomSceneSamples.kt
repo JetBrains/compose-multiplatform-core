@@ -49,6 +49,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
+import androidx.navigation3.scene.SceneStrategyScope
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.NavDisplay.popTransitionSpec
 import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
@@ -83,8 +84,7 @@ fun SceneDefaultTransitionsSample() {
 }
 
 private class DefaultSceneTransitionsSceneStrategy<T : Any>() : SceneStrategy<T> {
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
+    override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (entries.isEmpty()) return null
         return DefaultSceneTransitionsScene(entries.last(), entries.dropLast(1))
     }
@@ -128,8 +128,7 @@ fun SceneOverrideEntryTransitionsSample() {
 }
 
 private class SceneOverrideEntryTransitionsSceneStrategy<T : Any>() : SceneStrategy<T> {
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
+    override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (entries.isEmpty()) return null
         return SceneOverrideEntryTransitionsScene(entries.last(), entries.dropLast(1))
     }

@@ -3,8 +3,7 @@ package androidx.navigation3.scene {
 
   public final class DialogSceneStrategy<T> implements androidx.navigation3.scene.SceneStrategy<T> {
     ctor public DialogSceneStrategy();
-    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.navigation3.scene.Scene<T>? calculateScene(java.util.List<androidx.navigation3.runtime.NavEntry<T>> entries, kotlin.jvm.functions.Function0<kotlin.Unit> onBack);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.navigation3.scene.Scene<T!>? calculateScene(java.util.List<androidx.navigation3.runtime.NavEntry<T!>!>, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method public androidx.navigation3.scene.Scene<T>? calculateScene(androidx.navigation3.scene.SceneStrategyScope<T>, java.util.List<androidx.navigation3.runtime.NavEntry<T>> entries);
     field public static final androidx.navigation3.scene.DialogSceneStrategy.Companion Companion;
   }
 
@@ -53,15 +52,20 @@ package androidx.navigation3.scene {
   }
 
   public fun interface SceneStrategy<T> {
-    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.navigation3.scene.Scene<T>? calculateScene(java.util.List<androidx.navigation3.runtime.NavEntry<T>> entries, kotlin.jvm.functions.Function0<kotlin.Unit> onBack);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.navigation3.scene.Scene<T!>? calculateScene(java.util.List<androidx.navigation3.runtime.NavEntry<T!>!>, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method public androidx.navigation3.scene.Scene<T>? calculateScene(androidx.navigation3.scene.SceneStrategyScope<T>, java.util.List<androidx.navigation3.runtime.NavEntry<T>> entries);
     method public default infix androidx.navigation3.scene.SceneStrategy<T> then(androidx.navigation3.scene.SceneStrategy<T> sceneStrategy);
+  }
+
+  public final class SceneStrategyScope<T> {
+    ctor public SceneStrategyScope();
+    ctor public SceneStrategyScope(optional kotlin.jvm.functions.Function0<kotlin.Unit> onBack);
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<kotlin.Unit> getOnBack();
+    property public kotlin.jvm.functions.Function0<kotlin.Unit> onBack;
   }
 
   public final class SinglePaneSceneStrategy<T> implements androidx.navigation3.scene.SceneStrategy<T> {
     ctor public SinglePaneSceneStrategy();
-    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.navigation3.scene.Scene<T> calculateScene(java.util.List<androidx.navigation3.runtime.NavEntry<T>> entries, kotlin.jvm.functions.Function0<kotlin.Unit> onBack);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.navigation3.scene.Scene<T!> calculateScene(java.util.List<androidx.navigation3.runtime.NavEntry<T!>!>, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
+    method public androidx.navigation3.scene.Scene<T> calculateScene(androidx.navigation3.scene.SceneStrategyScope<T>, java.util.List<androidx.navigation3.runtime.NavEntry<T>> entries);
   }
 
 }

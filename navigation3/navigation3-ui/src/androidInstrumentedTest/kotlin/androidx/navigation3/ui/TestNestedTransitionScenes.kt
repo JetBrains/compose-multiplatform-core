@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
+import androidx.navigation3.scene.SceneStrategyScope
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
@@ -51,8 +52,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
  * scene but *not* animate the transition.
  */
 class CardStackSceneStrategy<T : Any>(val duration: Int = 300) : SceneStrategy<T> {
-    @Composable
-    override fun calculateScene(entries: List<NavEntry<T>>, onBack: () -> Unit): Scene<T>? {
+    override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         val cardEntries = entries.takeLastWhile { entry -> entry.metadata.contains(CARD_KEY) }
         return if (cardEntries.isNotEmpty()) {
             CardStackScene(
