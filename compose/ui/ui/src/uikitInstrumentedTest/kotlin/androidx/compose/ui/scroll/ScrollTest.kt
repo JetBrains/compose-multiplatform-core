@@ -859,12 +859,12 @@ internal class ScrollTest {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(modifier = Modifier.testTag("Row 1").horizontalScroll(state1)) {
                     repeat(20) {
-                        Box(modifier = Modifier.size(200.dp).background(if (it % 2 == 0) Color.Red else Color.Blue))
+                        Box(modifier = Modifier.size(200.dp))
                     }
                 }
                 Row(modifier = Modifier.testTag("Row 2").horizontalScroll(state2)) {
                     repeat(20) {
-                        Box(modifier = Modifier.size(200.dp).background(if (it % 2 == 0) Color.Red else Color.Blue))
+                        Box(modifier = Modifier.size(200.dp))
                     }
                 }
             }
@@ -872,6 +872,8 @@ internal class ScrollTest {
 
         val tap1 = findNodeWithTag("Row 1").touchDown()
         val tap2 = findNodeWithTag("Row 2").touchDown()
+
+        waitForIdle()
 
         // Simulate simultaneous drag of two fingers
         repeat(2) {
