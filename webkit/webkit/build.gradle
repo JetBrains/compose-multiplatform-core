@@ -34,6 +34,10 @@ dependencies {
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.16.0")
     api("androidx.annotation:annotation-experimental:1.4.1")
+
+    // Technically, there's no tests in WebKit but we need it as we run as sanity check to
+    // make sure that if anyone added any tests we would still run them while running :webkit:webkit:connectedAndroidTest.
+    androidTestImplementation(libs.testRunner)
 }
 
 ext {
@@ -57,9 +61,9 @@ android {
 }
 
 androidx {
-    name = "WebKit"
+    name = "Webkit"
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
-    description = "The WebKit Support Library is a static library you can add to your Android application in order to use android.webkit APIs that are not available for older platform versions."
+    description = "The Jetpack Webkit Library is a static library you can add to your Android application in order to use android.webkit APIs that are not available for older platform versions."
     additionalDeviceTestApkKeys.add("chrome")
 }

@@ -36,7 +36,4 @@
         </response>
         <functionId>com.testdata.ParcelablePrimitiveFunctions#pendingIntentOutput</functionId>
     </appfunction>
-    <AppFunctionComponentMetadataDocument>
-        <id>unused</id>
-    </AppFunctionComponentMetadataDocument>
 </appfunctions>

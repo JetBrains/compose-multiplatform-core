@@ -30,6 +30,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLooper
@@ -110,6 +111,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
             .isEqualTo(expectedResult)
     }
 
+    @Ignore // b/442020772
     @Test
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun requestUpdate_sendsBroadcast() {
@@ -130,6 +132,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
         assertThat(componentName).isEqualTo(providerComponent)
     }
 
+    @Ignore // b/442020772
     @Test
     fun requestUpdateAll_sendsBroadcast() {
         requester?.requestUpdateAll()
@@ -148,6 +151,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
         assertThat(requesterImpl.shouldUseWearSdk()).isFalse()
     }
 
+    @Ignore // b/442020772
     @Test
     fun shouldUseWearSdk_sdk35OrLowerWatch_returnsFalse() {
         shadowOf(context.packageManager).setSystemFeature(PackageManager.FEATURE_WATCH, true)

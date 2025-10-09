@@ -37,6 +37,8 @@ import androidx.xr.scenecore.testapp.fsmhsmtransition.FsmHsmTransitionActivity
 import androidx.xr.scenecore.testapp.headlockedui.HeadLockedUiActivity
 import androidx.xr.scenecore.testapp.hittest.HitTestActivity
 import androidx.xr.scenecore.testapp.inputmoveresize.InputMoveResizeTestActivity
+import androidx.xr.scenecore.testapp.memoryleak.MemoryLeakActivity
+import androidx.xr.scenecore.testapp.model.GltfModelActivity
 import androidx.xr.scenecore.testapp.movable.MovableActivity
 import androidx.xr.scenecore.testapp.panelroundedcorner.PanelRoundedCornerActivity
 import androidx.xr.scenecore.testapp.sceneviewer.SceneViewerActivity
@@ -44,6 +46,7 @@ import androidx.xr.scenecore.testapp.spatialaudio.SpatialAudioActivity
 import androidx.xr.scenecore.testapp.spatialcapabilities.SpatialCapabilitiesActivity
 import androidx.xr.scenecore.testapp.spatialuser.SpatialUserActivity
 import androidx.xr.scenecore.testapp.standalone.StandaloneActivity
+import androidx.xr.scenecore.testapp.surfaceinteraction.SurfaceEntityInteractionActivity
 import androidx.xr.scenecore.testapp.transformation.TransformationActivity
 import androidx.xr.scenecore.testapp.ui.BuildInfoRecyclerViewAdapter
 import androidx.xr.scenecore.testapp.ui.TestCasesRecyclerViewAdapter
@@ -111,6 +114,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.cuj_input_move_resize_test),
                 getString(R.string.cuj_movable_component_test),
                 getString(R.string.cuj_resizeable_component_test),
+                getString(R.string.cuj_gltf_model_test),
                 getString(R.string.cuj_movable_test),
                 getString(R.string.cuj_spatial_user_test),
                 getString(R.string.cuj_visibility_test),
@@ -121,6 +125,8 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.cuj_panel_rounded_corner),
                 getString(R.string.cuj_hit_test),
                 getString(R.string.cuj_accessibility_test),
+                getString(R.string.dev_memory_leak_test),
+                getString(R.string.cuj_surface_entity_interaction_test),
             )
         val customAdapter = TestCasesRecyclerViewAdapter(dataset)
         val recyclerView: RecyclerView = findViewById(R.id.cuj_buttons_recycler)
@@ -166,6 +172,8 @@ class MainActivity : AppCompatActivity() {
             Tests.SCENE_VIEWER_TEST.test -> startActivity(createIntent<SceneViewerActivity>())
 
             Tests.HEAD_LOCKED_UI_TEST.test -> startActivity(createIntent<HeadLockedUiActivity>())
+
+            Tests.GLTF_MODEL_TEST.test -> startActivity(createIntent<GltfModelActivity>())
 
             Tests.MOVABLE_PANEL_TEST.test -> startActivity(createIntent<MovableActivity>())
 
@@ -222,6 +230,11 @@ class MainActivity : AppCompatActivity() {
             Tests.ACCESSIBILITY_TEST.test ->
                 startActivity(createIntent<AccessibilityTestActivity>())
 
+            Tests.MEMORY_LEAK_TEST.test -> startActivity(createIntent<MemoryLeakActivity>())
+
+            Tests.SURFACE_INTERACTION_TEST.test ->
+                startActivity(createIntent<SurfaceEntityInteractionActivity>())
+
             else -> {
                 Log.i(ACTIVITY_NAME, "DO_NOTHING")
             }
@@ -247,15 +260,18 @@ class MainActivity : AppCompatActivity() {
         INPUT_MOVE_RESIZE_1_TEST(9),
         INPUT_MOVE_RESIZE_2_TEST(10),
         INPUT_MOVE_RESIZE_3_TEST(11),
-        MOVABLE_PANEL_TEST(12),
-        SPATIAL_USER_TEST(13),
-        VISIBILITY_TEST(14),
-        SPATIAL_CAPABILITIES_TEST(15),
-        SPATIAL_AUDIO_1_TEST(16),
-        SPATIAL_AUDIO_2_TEST(17),
-        SPATIAL_AUDIO_3_TEST(18),
-        PANEL_ROUNDED_CORNER_TEST(19),
-        DIGITAL_HIT_TEST(20),
-        ACCESSIBILITY_TEST(21),
+        GLTF_MODEL_TEST(12),
+        MOVABLE_PANEL_TEST(13),
+        SPATIAL_USER_TEST(14),
+        VISIBILITY_TEST(15),
+        SPATIAL_CAPABILITIES_TEST(16),
+        SPATIAL_AUDIO_1_TEST(17),
+        SPATIAL_AUDIO_2_TEST(18),
+        SPATIAL_AUDIO_3_TEST(19),
+        PANEL_ROUNDED_CORNER_TEST(20),
+        DIGITAL_HIT_TEST(21),
+        ACCESSIBILITY_TEST(22),
+        MEMORY_LEAK_TEST(23),
+        SURFACE_INTERACTION_TEST(24),
     }
 }

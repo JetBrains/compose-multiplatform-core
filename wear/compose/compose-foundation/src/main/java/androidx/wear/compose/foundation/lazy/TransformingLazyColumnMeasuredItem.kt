@@ -56,6 +56,7 @@ internal data class TransformingLazyColumnMeasuredItem(
     val horizontalAlignment: Alignment.Horizontal,
     /** The [LayoutDirection] of the `Layout`. */
     private val layoutDirection: LayoutDirection,
+    private val reverseLayout: Boolean,
     val animationProvider: () -> LazyLayoutItemAnimation? = { null },
     override val key: Any,
     override val contentType: Any?,
@@ -183,26 +184,33 @@ internal data class TransformingLazyColumnMeasuredItem(
     fun place(scope: Placeable.PlacementScope) =
         with(scope) {
             placeable?.let { placeable ->
-                var intOffset =
-                    IntOffset(
-                        x =
-                            leftPadding +
-                                horizontalAlignment.align(
-                                    space =
-                                        containerConstraints.maxWidth - rightPadding - leftPadding,
-                                    size = placeable.width,
-                                    layoutDirection = layoutDirection,
-                                ),
-                        y = offset,
-                    )
+                val xOffset =
+                    leftPadding +
+                        horizontalAlignment.align(
+                            space = containerConstraints.maxWidth - rightPadding - leftPadding,
+                            size = placeable.width,
+                            layoutDirection = layoutDirection,
+                        )
+
                 val currentAnimation = animationProvider()
+                val animationDelta = currentAnimation?.placementDelta ?: IntOffset.Zero
+                val animatedLogicalY = offset + animationDelta.y
+
+                val finalVisualY =
+                    if (reverseLayout) {
+                        containerConstraints.maxHeight - animatedLogicalY - transformedHeight
+                    } else {
+                        animatedLogicalY
+                    }
+                val finalOffset = IntOffset(x = xOffset, y = finalVisualY)
+
                 if (currentAnimation == null) {
-                    placeable.placeWithLayer(intOffset)
+                    placeable.placeWithLayer(finalOffset)
                 } else {
-                    intOffset += currentAnimation.placementDelta
-                    currentAnimation.layer?.let { placeable.placeWithLayer(intOffset, it) }
-                        ?: placeable.placeWithLayer(intOffset)
-                    currentAnimation.finalOffset = intOffset
+                    currentAnimation.layer?.let { placeable.placeWithLayer(finalOffset, it) }
+                        ?: placeable.placeWithLayer(finalOffset)
+                    currentAnimation.finalOffset = finalOffset
+                    currentAnimation.logicalOffset = IntOffset(x = xOffset, y = animatedLogicalY)
                 }
             }
         }

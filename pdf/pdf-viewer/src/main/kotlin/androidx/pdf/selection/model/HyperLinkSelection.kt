@@ -19,7 +19,6 @@ package androidx.pdf.selection.model
 import android.net.Uri
 import android.os.Parcel
 import android.text.TextUtils
-import androidx.annotation.RestrictTo
 import androidx.pdf.PdfRect
 import androidx.pdf.selection.LinkSelection
 import androidx.pdf.view.pdfRectFromParcel
@@ -35,14 +34,11 @@ import androidx.pdf.view.writeToParcel
  * @property linkText The text that is displayed as a hyperlink.
  * @property bounds The list of bounding boxes for the text.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class HyperLinkSelection(
     public val link: Uri,
     override val linkText: CharSequence,
     override val bounds: List<PdfRect>,
 ) : LinkSelection {
-    /** Returns [linkText] as a [String] */
-    public fun textAsString(): String = linkText.toString()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -62,7 +62,9 @@ class AndroidFragmentTest {
     @Test
     fun ensureArguments() {
         val name = "Molly"
-        val bundle = bundleOf("name" to name)
+        val bundle =
+            @Suppress("DEPRECATION") // bundleOf is deprecated
+            bundleOf("name" to name)
         testRule.setContent { AndroidFragment<FragmentForCompose>(arguments = bundle) }
 
         testRule.waitForIdle()
@@ -73,7 +75,9 @@ class AndroidFragmentTest {
     @Test
     fun restoreState() {
         val name = "Molly"
-        val bundle = bundleOf("name" to name)
+        val bundle =
+            @Suppress("DEPRECATION") // bundleOf is deprecated
+            bundleOf("name" to name)
         var stateChanger by mutableStateOf(0)
         testRule.setContent {
             if (stateChanger % 2 == 0) {
@@ -189,7 +193,9 @@ class AndroidFragmentTest {
             clazz = remember { mutableStateOf(FragmentForCompose::class.java) }
             AndroidFragment(
                 clazz = clazz.value,
-                arguments = bundleOf("name" to clazz.value.simpleName),
+                arguments =
+                    @Suppress("DEPRECATION") // bundleOf is deprecated
+                    bundleOf("name" to clazz.value.simpleName),
             )
         }
 

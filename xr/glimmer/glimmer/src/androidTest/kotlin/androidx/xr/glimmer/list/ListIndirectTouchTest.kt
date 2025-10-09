@@ -19,7 +19,6 @@ package androidx.xr.glimmer.list
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.height
-import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
@@ -31,13 +30,13 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
+import androidx.xr.glimmer.performIndirectSwipe
 import androidx.xr.glimmer.setGlimmerThemeContent
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalIndirectTouchTypeApi::class)
 class ListIndirectTouchTest : BaseListTestWithOrientation(Orientation.Vertical) {
 
     @Test
@@ -55,7 +54,7 @@ class ListIndirectTouchTest : BaseListTestWithOrientation(Orientation.Vertical) 
         rule.onNodeWithText("Item-2").isNotDisplayed()
 
         val swipeDistance = with(rule.density) { 105.dp.toPx() }
-        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(-swipeDistance)
+        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(rule, -swipeDistance)
 
         rule.onNodeWithText("Item-0").isNotDisplayed()
         rule.onNodeWithText("Item-1").isDisplayed()
@@ -78,7 +77,7 @@ class ListIndirectTouchTest : BaseListTestWithOrientation(Orientation.Vertical) 
         rule.onNodeWithText("Item-2").isDisplayed()
 
         val swipeDistance = with(rule.density) { 105.dp.toPx() }
-        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(swipeDistance)
+        rule.onNodeWithTag(LIST_TEST_TAG).performIndirectSwipe(rule, swipeDistance)
 
         rule.onNodeWithText("Item-0").isDisplayed()
         rule.onNodeWithText("Item-1").isDisplayed()

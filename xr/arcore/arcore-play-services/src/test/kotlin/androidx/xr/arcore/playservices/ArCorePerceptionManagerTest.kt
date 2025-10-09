@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore.playservices
 
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.runtime.VpsAvailabilityAvailable
 import androidx.xr.runtime.VpsAvailabilityErrorInternal
 import androidx.xr.runtime.VpsAvailabilityNetworkError
@@ -23,7 +24,6 @@ import androidx.xr.runtime.VpsAvailabilityNotAuthorized
 import androidx.xr.runtime.VpsAvailabilityResourceExhausted
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.VpsAvailabilityUnavailable
-import androidx.xr.runtime.internal.AnchorNotTrackingException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
@@ -182,11 +182,6 @@ class ArCorePerceptionManagerTest {
         val uuid = UUID.randomUUID()
 
         assertFailsWith<NotImplementedError> { underTest.loadAnchor(uuid) }
-    }
-
-    @Test
-    fun loadAnchorFromNativePointer_throwsNotImplementedError() {
-        assertFailsWith<NotImplementedError> { underTest.loadAnchorFromNativePointer(0L) }
     }
 
     @Test

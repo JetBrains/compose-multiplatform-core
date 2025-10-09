@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.benchmark.traceprocessor
 
 import androidx.annotation.CheckResult
@@ -437,16 +439,12 @@ internal constructor(
 
     private fun startServerImpl(): TraceProcessor =
         tracer.trace("TraceProcessor#startServer") {
-            println("startserver")
             traceProcessorHttpServer.startServer()
             return@trace this
         }
 
     private fun stopServer() =
-        tracer.trace("TraceProcessor#stopServer") {
-            println("stopserver")
-            traceProcessorHttpServer.stopServer()
-        }
+        tracer.trace("TraceProcessor#stopServer") { traceProcessorHttpServer.stopServer() }
 
     /**
      * Loads a trace in the current instance of the trace processor, clearing any previous loaded

@@ -16,12 +16,10 @@
 
 package androidx.xr.runtime
 
-import androidx.annotation.RestrictTo
-
 /** Contextual label describing the type of detected object. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class AugmentedObjectCategory private constructor(private val value: Int) {
     public companion object {
+        /** Category value indicating the tracked object is of unknown type. */
         @JvmField public val UNKNOWN: AugmentedObjectCategory = AugmentedObjectCategory(0)
         /** Category value indicating the tracked object is believed to be a keyboard. */
         @JvmField public val KEYBOARD: AugmentedObjectCategory = AugmentedObjectCategory(1)

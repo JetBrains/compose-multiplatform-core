@@ -24,9 +24,11 @@ import androidx.appfunctions.AppFunctionAppUnknownException
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
@@ -46,13 +48,16 @@ import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
  *   [AppFunctionResponseMetadata].
  */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-internal fun AppFunctionResponseMetadata.unsafeBuildReturnValue(result: Any?): AppFunctionData =
+internal fun AppFunctionResponseMetadata.unsafeBuildReturnValue(
+    result: Any?,
+    componentsMetadata: AppFunctionComponentsMetadata,
+): AppFunctionData =
     try {
         if (result == null) {
             check(valueType.isNullable) { "Unexpected null for non-null return type" }
             AppFunctionData.EMPTY
         } else {
-            valueType.unsafeBuildReturnValue(result)
+            valueType.unsafeBuildReturnValue(result, this, componentsMetadata)
         }
     } catch (e: Exception) {
         Log.d(APP_FUNCTIONS_TAG, "Something went wrong when building the return value", e)
@@ -60,9 +65,16 @@ internal fun AppFunctionResponseMetadata.unsafeBuildReturnValue(result: Any?): A
     }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(result: Any): AppFunctionData {
-    val builder = AppFunctionData.Builder("")
+private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(
+    result: Any,
+    responseMetadata: AppFunctionResponseMetadata,
+    componentsMetadata: AppFunctionComponentsMetadata,
+): AppFunctionData {
+    val builder = AppFunctionData.Builder(responseMetadata, componentsMetadata)
     return when (this) {
+        is AppFunctionUnitTypeMetadata -> {
+            AppFunctionData.EMPTY
+        }
         is AppFunctionLongTypeMetadata -> {
             builder
                 .setLong(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE, result as Long)
@@ -113,11 +125,15 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(result: Any): App
                 )
                 .build()
         }
-        is AppFunctionUnitTypeMetadata -> {
-            // no-op
-            builder.build()
-        }
         is AppFunctionObjectTypeMetadata -> {
+            builder
+                .setAppFunctionData(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    AppFunctionData.serialize(result, checkNotNull(this.qualifiedName)),
+                )
+                .build()
+        }
+        is AppFunctionAllOfTypeMetadata -> {
             builder
                 .setAppFunctionData(
                     ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
@@ -134,7 +150,7 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(result: Any): App
                 .build()
         }
         is AppFunctionArrayTypeMetadata -> {
-            this.unsafeBuildReturnValue(result)
+            this.unsafeBuildReturnValue(builder, result)
         }
         else -> {
             throw IllegalStateException("Unknown DataTypeMetadata: ${this::class.java}")
@@ -143,8 +159,10 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(result: Any): App
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(result: Any): AppFunctionData {
-    val builder = AppFunctionData.Builder("")
+private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(
+    builder: AppFunctionData.Builder,
+    result: Any,
+): AppFunctionData {
     return when (val castItemType = itemType) {
         is AppFunctionLongTypeMetadata -> {
             builder
@@ -213,6 +231,17 @@ private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(result: Any): Ap
                 .build()
         }
         is AppFunctionObjectTypeMetadata -> {
+            @Suppress("UNCHECKED_CAST")
+            builder
+                .setAppFunctionDataList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    (result as List<Any>).map {
+                        AppFunctionData.serialize(it, checkNotNull(castItemType.qualifiedName))
+                    },
+                )
+                .build()
+        }
+        is AppFunctionAllOfTypeMetadata -> {
             @Suppress("UNCHECKED_CAST")
             builder
                 .setAppFunctionDataList(

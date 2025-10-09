@@ -34,6 +34,7 @@ import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextLinearView
 import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.common.managers.GltfManager
+import androidx.xr.scenecore.testapp.common.managers.PanelEntityManager
 import androidx.xr.scenecore.testapp.common.managers.SpatialEnvironmentManager
 import androidx.xr.scenecore.testapp.common.managers.SurfaceEntityManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -92,15 +93,6 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
 
         createHeadLockedPanel()
         setupMainPanel()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        session!!.scene.clearSpatialVisibilityChangedListener()
-        session!!
-            .scene
-            .mainPanelEntity
-            .removePerceivedResolutionChangedListener(mPerceivedResolutionListener)
     }
 
     private fun createHeadLockedPanel() {

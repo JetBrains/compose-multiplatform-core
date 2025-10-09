@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.integration.sdkproviderutils
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -34,7 +33,6 @@ import androidx.privacysandbox.ui.provider.toCoreLibInfo
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executor
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class NativeAdGenerator(
     private val sdkContext: Context,

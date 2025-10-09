@@ -138,6 +138,7 @@ class PdfViewerFragmentV2TestSuite {
 
         Espresso.onIdle()
         scenario.onFragment {
+            it.setThumbnailToggleButtonVisibility(false)
             Preconditions.checkArgument(
                 it.documentLoaded,
                 "Unable to load document due to ${it.documentError?.message}",

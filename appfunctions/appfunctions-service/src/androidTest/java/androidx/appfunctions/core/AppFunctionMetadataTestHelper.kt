@@ -25,7 +25,6 @@ import androidx.appfunctions.metadata.AppFunctionAppMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
-import androidx.appfunctions.metadata.AppFunctionMetadataDocument
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
@@ -105,7 +104,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                         "packageName:\"${context.packageName}\"",
                         SearchSpec.Builder()
                             .addFilterNamespaces("app_functions")
-                            .addFilterDocumentClasses(AppFunctionMetadataDocument::class.java)
+                            .addFilterSchemas("AppFunctionStaticMetadata")
                             .addFilterPackageNames("android")
                             .setVerbatimSearchEnabled(true)
                             .setNumericSearchEnabled(true)
@@ -310,7 +309,10 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                     AppFunctionResponseMetadata(
                         AppFunctionReferenceTypeMetadata("test", isNullable = false)
                     ),
-                components = AppFunctionComponentsMetadata(emptyMap()),
+                // TODO: b/444163595 - Remove once components are added to package metadata.
+                // Components are now aggregated hence they are appearing for this as well from
+                // Schema Inventory.
+                components = sharedComponents,
             )
     }
 

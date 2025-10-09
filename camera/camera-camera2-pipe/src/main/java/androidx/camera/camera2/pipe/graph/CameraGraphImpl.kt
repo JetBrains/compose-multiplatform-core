@@ -54,6 +54,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.StateFlow
@@ -294,6 +295,7 @@ constructor(
             frameCaptureQueue.close()
             surfaceGraph.close()
             audioRestrictionController.removeCameraGraph(this)
+            graphScope.cancel()
             Debug.traceStop()
         }
     }

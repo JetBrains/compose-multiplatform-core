@@ -18,17 +18,17 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.content.Context;
 
-import androidx.xr.runtime.internal.ActivitySpace;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.InputEventListener;
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose;
-import androidx.xr.runtime.internal.PointerCaptureComponent;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.runtime.ActivitySpace;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.HitTestResult;
+import androidx.xr.scenecore.runtime.InputEventListener;
+import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.runtime.PointerCaptureComponent;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.SpaceValue;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;
@@ -42,6 +42,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jspecify.annotations.NonNull;
 
+import java.lang.ref.WeakReference;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -205,8 +206,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     @Override
     public void setParent(Entity parent) {
         if ((parent != null) && !(parent instanceof AndroidXrEntity)) {
-            throw new IllegalArgumentException(
-                    "Cannot set non-AndroidXrEntity as a parent of a AndroidXrEntity");
+            return;
         }
         super.setParent(parent);
 
@@ -327,19 +327,18 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
         mPointerCaptureInputEventListener.ifPresent(
                 (listener) -> {
                     Executor executor = mPointerCaptureExecutor.orElse(mExecutor);
-                    androidx.xr.runtime.internal.InputEvent event =
-                            RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager);
-                    executor.execute(() -> listener.onInputEvent(event));
+                    executor.execute(() -> listener.onInputEvent(
+                            RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager)
+                    ));
                 });
     }
 
     /** Dispatches an event to all standard input listeners. */
     private void dispatchStandardEvent(InputEvent xrInputEvent) {
-        // Convert the event once before dispatching to multiple listeners.
-        androidx.xr.runtime.internal.InputEvent event =
-                RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager);
         mInputEventListenerMap.forEach(
-                (listener, executor) -> executor.execute(() -> listener.onInputEvent(event)));
+                (listener, executor) -> executor.execute(
+                        () -> listener.onInputEvent(
+                                RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager))));
     }
 
     @Override
@@ -369,6 +368,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
         mReformEventConsumerMap.clear();
         try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
             NodeTransaction unused = transaction.disableReform(mNode);
+            transaction.apply();
         }
 
         // SystemSpaceEntityImpls (Anchors, ActivitySpace, etc) should have null parents.
@@ -380,42 +380,51 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     }
 
     /**
+     * Handles the logic for a reform event. This is in a separate method to be called from a weak
+     * reference to avoid memory leaks.
+     */
+    private void handleReformEvent(ReformEvent reformEvent) {
+        if ((mReformOptions.getEnabledReform() & ReformOptions.ALLOW_MOVE) != 0
+                && (mReformOptions.getFlags() & ReformOptions.FLAG_ALLOW_SYSTEM_MOVEMENT) != 0) {
+            // Update the cached pose of the entity.
+            super.setPose(
+                    new Pose(
+                            new Vector3(
+                                    reformEvent.getProposedPosition().x,
+                                    reformEvent.getProposedPosition().y,
+                                    reformEvent.getProposedPosition().z),
+                            new Quaternion(
+                                    reformEvent.getProposedOrientation().x,
+                                    reformEvent.getProposedOrientation().y,
+                                    reformEvent.getProposedOrientation().z,
+                                    reformEvent.getProposedOrientation().w)),
+                    Space.PARENT);
+            // Update the cached scale of the entity.
+            super.setScaleInternal(
+                    new Vector3(
+                            reformEvent.getProposedScale().x,
+                            reformEvent.getProposedScale().y,
+                            reformEvent.getProposedScale().z));
+        }
+        mReformEventConsumerMap.forEach(
+                (eventConsumer, consumerExecutor) ->
+                        consumerExecutor.execute(() -> eventConsumer.accept(reformEvent)));
+    }
+
+    /**
      * Gets the reform options for this entity.
      *
      * @return The reform options for this entity.
      */
     public ReformOptions getReformOptions() {
         if (mReformOptions == null) {
+            final WeakReference<AndroidXrEntity> weakThis = new WeakReference<>(this);
             Consumer<ReformEvent> reformEventConsumer =
                     reformEvent -> {
-                        if ((mReformOptions.getEnabledReform() & ReformOptions.ALLOW_MOVE) != 0
-                                && (mReformOptions.getFlags()
-                                                & ReformOptions.FLAG_ALLOW_SYSTEM_MOVEMENT)
-                                        != 0) {
-                            // Update the cached pose of the entity.
-                            super.setPose(
-                                    new Pose(
-                                            new Vector3(
-                                                    reformEvent.getProposedPosition().x,
-                                                    reformEvent.getProposedPosition().y,
-                                                    reformEvent.getProposedPosition().z),
-                                            new Quaternion(
-                                                    reformEvent.getProposedOrientation().x,
-                                                    reformEvent.getProposedOrientation().y,
-                                                    reformEvent.getProposedOrientation().z,
-                                                    reformEvent.getProposedOrientation().w)),
-                                    Space.PARENT);
-                            // Update the cached scale of the entity.
-                            super.setScaleInternal(
-                                    new Vector3(
-                                            reformEvent.getProposedScale().x,
-                                            reformEvent.getProposedScale().y,
-                                            reformEvent.getProposedScale().z));
+                        AndroidXrEntity entity = weakThis.get();
+                        if (entity != null) {
+                            entity.handleReformEvent(reformEvent);
                         }
-                        mReformEventConsumerMap.forEach(
-                                (eventConsumer, consumerExecutor) ->
-                                        consumerExecutor.execute(
-                                                () -> eventConsumer.accept(reformEvent)));
                     };
             mReformOptions = mExtensions.createReformOptions(mExecutor, reformEventConsumer);
         }

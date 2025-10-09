@@ -27,6 +27,7 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.xr.arcore.Anchor;
 import androidx.xr.arcore.AnchorCreateSuccess;
+import androidx.xr.arcore.SessionExtKt;
 import androidx.xr.arcore.XrResourcesManager;
 import androidx.xr.runtime.Session;
 import androidx.xr.runtime.SessionCreateSuccess;
@@ -56,38 +57,41 @@ public class AnchorTest {
 
     @Test
     public void anchor_stateAsFlowable_returnsAnchorState() {
-        createTestSessionAndRunTest(() -> {
-            Pose anchorPose = new Pose(Vector3.One, Quaternion.Identity);
-            AnchorCreateSuccess anchorResult = (AnchorCreateSuccess) Anchor.create(mSession,
-                    anchorPose);
-            Anchor underTest = anchorResult.getAnchor();
-            TestSubscriber<Anchor.State> testSubscriber = new TestSubscriber<>();
+        createTestSessionAndRunTest(
+                () -> {
+                    Pose anchorPose = new Pose(Vector3.One, Quaternion.Identity);
+                    AnchorCreateSuccess anchorResult =
+                            (AnchorCreateSuccess) Anchor.create(mSession, anchorPose);
+                    Anchor underTest = anchorResult.getAnchor();
+                    TestSubscriber<Anchor.State> testSubscriber = new TestSubscriber<>();
 
-            getStateAsFlowable(underTest).subscribe(testSubscriber);
+                    getStateAsFlowable(underTest).subscribe(testSubscriber);
 
-            assertThat(testSubscriber.values().get(0).getTrackingState()).isEqualTo(
-                    TrackingState.TRACKING);
-            assertThat(testSubscriber.values().get(0).getPose()).isEqualTo(
-                    anchorPose);
-        });
+                    assertThat(testSubscriber.values().get(0).getTrackingState())
+                            .isEqualTo(TrackingState.TRACKING);
+                    assertThat(testSubscriber.values().get(0).getPose()).isEqualTo(anchorPose);
+                });
     }
 
     private void createTestSessionAndRunTest(Runnable testBody) {
-        try (ActivityScenario<ComponentActivity> scenario = ActivityScenario.launch(
-                ComponentActivity.class)) {
-            scenario.onActivity(activity -> {
-                mTestDispatcher = StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
-                mSession = ((SessionCreateSuccess) Session.create(activity,
-                        mTestDispatcher)).getSession();
-                mXrResourcesManager.setLifecycleManager$arcore_release(
-                        mSession.getRuntime().getLifecycleManager());
+        try (ActivityScenario<ComponentActivity> scenario =
+                ActivityScenario.launch(ComponentActivity.class)) {
+            scenario.onActivity(
+                    activity -> {
+                        mTestDispatcher =
+                                StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
+                        mSession =
+                                ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
+                                        .getSession();
+                        mXrResourcesManager.setLifecycleManager$arcore_release(
+                                SessionExtKt.getPerceptionRuntime(mSession).getLifecycleManager());
 
-                try {
-                    testBody.run();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+                        try {
+                            testBody.run();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
         } catch (Exception e) {
             throw new RuntimeException("Error during ActivityScenario setup or teardown", e);
         }

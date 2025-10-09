@@ -60,15 +60,11 @@ constructor(
     constructor(
         backEvent: BackEvent
     ) : this(
-        Api34Impl.touchX(backEvent),
-        Api34Impl.touchY(backEvent),
-        Api34Impl.progress(backEvent),
-        Api34Impl.swipeEdge(backEvent),
-        if (Build.VERSION.SDK_INT >= 36) {
-            Api36Impl.frameTimeMillis(backEvent)
-        } else {
-            0
-        },
+        touchX = backEvent.touchX,
+        touchY = backEvent.touchY,
+        progress = backEvent.progress,
+        swipeEdge = backEvent.swipeEdge,
+        frameTimeMillis = if (Build.VERSION.SDK_INT >= 36) backEvent.frameTimeMillis else 0,
     )
 
     /**
@@ -82,11 +78,11 @@ constructor(
     constructor(
         navigationEvent: NavigationEvent
     ) : this(
-        navigationEvent.touchX,
-        navigationEvent.touchY,
-        navigationEvent.progress,
-        navigationEvent.swipeEdge,
-        navigationEvent.frameTimeMillis,
+        touchX = navigationEvent.touchX,
+        touchY = navigationEvent.touchY,
+        progress = navigationEvent.progress,
+        swipeEdge = navigationEvent.swipeEdge,
+        frameTimeMillis = navigationEvent.frameTimeMillis,
     )
 
     /**  */
@@ -105,9 +101,9 @@ constructor(
     @RequiresApi(34)
     fun toBackEvent(): BackEvent {
         return if (Build.VERSION.SDK_INT >= 36) {
-            Api36Impl.createOnBackEvent(touchX, touchY, progress, swipeEdge, frameTimeMillis)
+            BackEvent(touchX, touchY, progress, swipeEdge, frameTimeMillis)
         } else {
-            Api34Impl.createOnBackEvent(touchX, touchY, progress, swipeEdge)
+            BackEvent(touchX, touchY, progress, swipeEdge)
         }
     }
 
@@ -117,12 +113,18 @@ constructor(
      * @return A new [NavigationEvent] object populated with this [BackEventCompat] data.
      */
     fun toNavigationEvent(): NavigationEvent {
-        return NavigationEvent(touchX, touchY, progress, swipeEdge, frameTimeMillis)
+        return NavigationEvent(
+            touchX = touchX,
+            touchY = touchY,
+            progress = progress,
+            swipeEdge = swipeEdge,
+            frameTimeMillis = frameTimeMillis,
+        )
     }
 
     override fun toString(): String {
-        return "BackEventCompat{touchX=$touchX, touchY=$touchY, progress=$progress, " +
-            "swipeEdge=$swipeEdge, frameTimeMillis=$frameTimeMillis}"
+        return "BackEventCompat(touchX=$touchX, touchY=$touchY, progress=$progress, " +
+            "swipeEdge=$swipeEdge, frameTimeMillis=$frameTimeMillis)"
     }
 
     companion object {
@@ -139,31 +141,4 @@ constructor(
          */
         const val EDGE_NONE = 2
     }
-}
-
-@RequiresApi(34)
-internal object Api34Impl {
-    fun createOnBackEvent(touchX: Float, touchY: Float, progress: Float, swipeEdge: Int) =
-        BackEvent(touchX, touchY, progress, swipeEdge)
-
-    fun progress(backEvent: BackEvent) = backEvent.progress
-
-    fun touchX(backEvent: BackEvent) = backEvent.touchX
-
-    fun touchY(backEvent: BackEvent) = backEvent.touchY
-
-    fun swipeEdge(backEvent: BackEvent) = backEvent.swipeEdge
-}
-
-@RequiresApi(36)
-internal object Api36Impl {
-    fun createOnBackEvent(
-        touchX: Float,
-        touchY: Float,
-        progress: Float,
-        swipeEdge: Int,
-        frameTimeMillis: Long,
-    ) = BackEvent(touchX, touchY, progress, swipeEdge, frameTimeMillis)
-
-    fun frameTimeMillis(backEvent: BackEvent) = backEvent.frameTimeMillis
 }

@@ -35,6 +35,7 @@ import androidx.pdf.util.ExternalLinks
 import androidx.pdf.util.FormWidgetContentDescriptionFactory
 import androidx.pdf.util.buildPageIndicatorLabel
 import androidx.pdf.view.fastscroll.FastScroller
+import androidx.pdf.view.layout.PageMetadataLoader
 import kotlin.math.roundToInt
 
 /**

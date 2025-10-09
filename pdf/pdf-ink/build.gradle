@@ -34,6 +34,8 @@ android {
     defaultConfig {
         minSdk = 31
         compileSdk = 36
+        compileSdkExtension = 19
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 }
@@ -47,12 +49,13 @@ dependencies {
     implementation("androidx.core:core:1.13.0")
     implementation("androidx.core:core-ktx:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.8.1")
-    implementation("androidx.ink:ink-authoring:${ink_version}")
-    implementation("androidx.ink:ink-brush:${ink_version}")
-    implementation("androidx.ink:ink-geometry:${ink_version}")
-    implementation("androidx.ink:ink-nativeloader:${ink_version}")
-    implementation("androidx.ink:ink-rendering:${ink_version}")
-    implementation("androidx.ink:ink-strokes:${ink_version}")
+    // Use Ink from head during pre-beta-release API changes
+    implementation(project(":ink:ink-authoring"))
+    implementation(project(":ink:ink-brush"))
+    implementation(project(":ink:ink-geometry"))
+    implementation(project(":ink:ink-nativeloader"))
+    implementation(project(":ink:ink-rendering"))
+    implementation(project(":ink:ink-strokes"))
     implementation("androidx.input:input-motionprediction:1.0.0-beta05")
     implementation("com.google.android.material:material:1.11.0")
 
@@ -71,6 +74,8 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(project(":test:screenshot:screenshot"))
 }
 
 androidx {
@@ -78,4 +83,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Provide annotations support for PDF document using ink library"
+    addGoldenImageAssets()
 }

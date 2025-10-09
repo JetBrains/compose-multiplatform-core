@@ -112,8 +112,10 @@ constructor(
     private val cameraGraphConfig: CameraGraph.Config,
     graphListener3A: Listener3A,
     @ForCameraGraph graphListeners: List<@JvmSuppressWildcards Request.Listener>,
+    camera2Quirks: Camera2Quirks,
 ) : GraphProcessor, GraphListener {
     private val graphLoop: GraphLoop
+    private val externalStateGraphListeners = cameraGraphConfig.graphStateListeners
 
     init {
         val defaultParameters = cameraGraphConfig.defaultParameters
@@ -130,7 +132,7 @@ constructor(
         }
 
         val requestsUntilActive =
-            Camera2Quirks.getRepeatingRequestFrameCountForCapture(cameraGraphConfig.flags)
+            camera2Quirks.getRepeatingRequestFrameCountForCapture(cameraGraphConfig.flags)
 
         val captureLimiter =
             if (requestsUntilActive != 0) {
@@ -166,23 +168,36 @@ constructor(
     override fun onGraphStarting() {
         debug { "$this onGraphStarting" }
         _graphState.value = GraphStateStarting
+        for (listener in externalStateGraphListeners) {
+            listener.onGraphStarting()
+        }
     }
 
     override fun onGraphStarted(requestProcessor: GraphRequestProcessor) {
         debug { "$this onGraphStarted" }
         _graphState.value = GraphStateStarted
         graphLoop.requestProcessor = requestProcessor
+        for (listener in externalStateGraphListeners) {
+            listener.onGraphStarted()
+        }
     }
 
     override fun onGraphStopping() {
         debug { "$this onGraphStopping" }
         _graphState.value = GraphStateStopping
+        graphLoop.requestProcessor = null
+        for (listener in externalStateGraphListeners) {
+            listener.onGraphStopping()
+        }
     }
 
     override fun onGraphStopped(requestProcessor: GraphRequestProcessor?) {
         debug { "$this onGraphStopped" }
         _graphState.value = GraphStateStopped
         graphLoop.requestProcessor = null
+        for (listener in externalStateGraphListeners) {
+            listener.onGraphStopped()
+        }
     }
 
     override fun onGraphModified(requestProcessor: GraphRequestProcessor) {
@@ -198,6 +213,9 @@ constructor(
             } else {
                 graphStateError
             }
+        }
+        for (listener in externalStateGraphListeners) {
+            listener.onGraphError(graphStateError)
         }
     }
 

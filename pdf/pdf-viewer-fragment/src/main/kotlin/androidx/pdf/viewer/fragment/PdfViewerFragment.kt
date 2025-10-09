@@ -34,6 +34,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
+import android.widget.FrameLayout
 import android.widget.LinearLayout.GONE
 import android.widget.LinearLayout.VISIBLE
 import android.widget.ProgressBar
@@ -71,6 +72,7 @@ import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.DocumentError
 import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.DocumentLoaded
 import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.Loading
 import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.PasswordRequested
+import androidx.pdf.viewer.fragment.model.PdfFragmentUiState.SavingEdits
 import androidx.pdf.viewer.fragment.model.SearchViewUiState
 import androidx.pdf.viewer.fragment.search.PdfSearchViewManager
 import androidx.pdf.viewer.fragment.toolbox.ToolboxGestureEventProcessor
@@ -263,7 +265,8 @@ public open class PdfViewerFragment constructor() : Fragment() {
      */
     @ExperimentalPdfApi public open fun onPdfViewCreated(pdfView: PdfView) {}
 
-    private val documentViewModel: PdfDocumentViewModel by viewModels {
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    protected open val documentViewModel: PdfDocumentViewModel by viewModels {
         PdfDocumentViewModel.Factory
     }
 
@@ -293,6 +296,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
     private lateinit var _pdfContainer: PdfContentLayout
     private lateinit var errorView: TextView
     private lateinit var loadingView: ProgressBar
+    private lateinit var savingOverlay: FrameLayout
     private lateinit var pdfViewManager: PdfViewManager
     private lateinit var pdfSearchViewManager: PdfSearchViewManager
 
@@ -383,6 +387,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
         with(view) {
             errorView = findViewById(R.id.errorTextView)
             loadingView = findViewById(R.id.pdfLoadingProgressBar)
+            savingOverlay = findViewById(R.id.savingProgressOverlay)
             _pdfContainer = findViewById(R.id.pdfContentLayout)
             _pdfSearchView = findViewById(R.id.pdfSearchView)
             _toolboxView = findViewById(R.id.toolBoxView)
@@ -728,6 +733,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
                         is PasswordRequested -> handlePasswordRequested(uiState)
                         is DocumentLoaded -> handleDocumentLoaded(uiState)
                         is DocumentError -> handleDocumentError(uiState)
+                        is SavingEdits -> handleSavingEdits()
                     }
                 }
             }
@@ -735,7 +741,12 @@ public open class PdfViewerFragment constructor() : Fragment() {
     }
 
     private fun handleLoading() {
-        setViewVisibility(pdfView = GONE, loadingView = VISIBLE, errorView = GONE)
+        setViewVisibility(
+            pdfView = GONE,
+            loadingView = VISIBLE,
+            errorView = GONE,
+            savingOverlay = GONE,
+        )
         // Cancel view state collection upon new document load.
         // These state should only be relevant if document is loaded successfully.
         cancelViewStateCollection()
@@ -743,7 +754,12 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
     private fun handlePasswordRequested(uiState: PasswordRequested) {
         requestPassword(uiState.passwordFailed)
-        setViewVisibility(pdfView = GONE, loadingView = GONE, errorView = GONE)
+        setViewVisibility(
+            pdfView = GONE,
+            loadingView = GONE,
+            errorView = GONE,
+            savingOverlay = GONE,
+        )
         onPasswordRequestedState()
         // Utilize retry param to show incorrect password on PasswordDialog
     }
@@ -755,9 +771,23 @@ public open class PdfViewerFragment constructor() : Fragment() {
         _pdfView.pdfDocument = uiState.pdfDocument
         _toolboxView.setPdfDocument(uiState.pdfDocument)
         setAnnotationIntentResolvability(uiState.pdfDocument.uri)
-        setViewVisibility(pdfView = VISIBLE, loadingView = GONE, errorView = GONE)
+        setViewVisibility(
+            pdfView = VISIBLE,
+            loadingView = GONE,
+            errorView = GONE,
+            savingOverlay = GONE,
+        )
         // Start collection of view states like search, toolbox, etc. once document is loaded.
         collectViewStates()
+    }
+
+    private fun handleSavingEdits() {
+        setViewVisibility(
+            pdfView = VISIBLE,
+            loadingView = GONE,
+            errorView = GONE,
+            savingOverlay = VISIBLE,
+        )
     }
 
     private fun setAnnotationIntentResolvability(uri: Uri) {
@@ -782,13 +812,24 @@ public open class PdfViewerFragment constructor() : Fragment() {
             )
         }
 
-        setViewVisibility(pdfView = GONE, loadingView = GONE, errorView = VISIBLE)
+        setViewVisibility(
+            pdfView = GONE,
+            loadingView = GONE,
+            errorView = VISIBLE,
+            savingOverlay = GONE,
+        )
     }
 
-    private fun setViewVisibility(pdfView: Int, loadingView: Int, errorView: Int) {
+    private fun setViewVisibility(
+        pdfView: Int,
+        loadingView: Int,
+        errorView: Int,
+        savingOverlay: Int,
+    ) {
         this._pdfView.visibility = pdfView
         this.loadingView.visibility = loadingView
         this.errorView.visibility = errorView
+        this.savingOverlay.visibility = savingOverlay
     }
 
     private fun collectFlowOnLifecycleScope(block: suspend () -> Unit): Job {

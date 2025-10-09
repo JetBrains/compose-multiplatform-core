@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public object SpatialSoundPool {
         @IntRange(from = -1) loop: Int = 0,
         @FloatRange(from = 0.5, to = 2.0) rate: Float = 1f,
     ): Int {
-        return session.platformAdapter.soundPoolExtensionsWrapper.play(
+        return session.sceneRuntime.soundPoolExtensionsWrapper.play(
             soundPool,
             soundID,
             params.rtPointSourceParams,
@@ -89,7 +89,7 @@ public object SpatialSoundPool {
         @IntRange(from = -1) loop: Int = 0,
         @FloatRange(from = 0.5, to = 2.0) rate: Float = 1f,
     ): Int {
-        return session.platformAdapter.soundPoolExtensionsWrapper.play(
+        return session.sceneRuntime.soundPoolExtensionsWrapper.play(
             soundPool,
             soundID,
             attributes.rtSoundFieldAttributes,
@@ -110,7 +110,7 @@ public object SpatialSoundPool {
     @JvmStatic
     @SpatializerConstants.SourceType
     public fun getSpatialSourceType(session: Session, soundPool: SoundPool, streamId: Int): Int {
-        return session.platformAdapter.soundPoolExtensionsWrapper
+        return session.sceneRuntime.soundPoolExtensionsWrapper
             .getSpatialSourceType(soundPool, streamId)
             .sourceTypeToJxr()
     }

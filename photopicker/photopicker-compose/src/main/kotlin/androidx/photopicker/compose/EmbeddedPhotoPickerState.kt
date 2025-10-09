@@ -20,6 +20,7 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import android.os.ext.SdkExtensions
 import android.widget.photopicker.EmbeddedPhotoPickerClient
 import android.widget.photopicker.EmbeddedPhotoPickerFeatureInfo
 import android.widget.photopicker.EmbeddedPhotoPickerProvider
@@ -325,6 +326,14 @@ public abstract class AbstractEmbeddedPhotoPickerState(
                     setMimeTypes(featureInfo.getMimeTypes())
                     setOrderedSelection(featureInfo.isOrderedSelection())
                     setThemeNightMode(featureInfo.getThemeNightMode())
+                    // Check for U Extension version 19 before calling highlight setters
+                    if (
+                        SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >=
+                            19
+                    ) {
+                        setHighlightSearchMediaTextQuery(featureInfo.highlightSearchMediaTextQuery)
+                        setHighlightAlbumId(featureInfo.highlightAlbumId)
+                    }
 
                     // Restore any already selectedMedia that are being held in this state object,
                     // plus

@@ -36,6 +36,7 @@ import androidx.credentials.providerevents.exception.GetCredentialTransferCapabi
 import androidx.credentials.providerevents.exception.ImportCredentialsException
 import androidx.credentials.providerevents.exception.ImportCredentialsSystemErrorException
 import androidx.credentials.providerevents.exception.ImportCredentialsUnknownErrorException
+import androidx.credentials.providerevents.internal.UriUtils.Companion.writeToUri
 import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToJetpackRequest
 import androidx.credentials.providerevents.service.DeviceSetupService
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilities
@@ -259,7 +260,7 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
                         > {
                         override fun onResult(result: ImportCredentialsResponse) {
                             try {
-                                UriUtils.writeToUri(request.uri, result.responseJson, context)
+                                writeToUri(request.uri, result.responseJson, context)
                                 callback.onSuccess(
                                     ImportCredentialsForDeviceSetupResponse(
                                         ImportCredentialsResponse.toBundle(result)

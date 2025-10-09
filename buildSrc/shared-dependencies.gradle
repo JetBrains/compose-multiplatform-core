@@ -46,7 +46,10 @@ dependencies {
     implementation(libs.binaryCompatibilityValidator)
 
     // For Room Gradle Plugin
-    implementation(libs.kspGradlePlugin)
+    implementation(libs.kspGradlePlugin) {
+        // ensure that AGP dependency doesn't override KSP version we use
+        version { strictly(libs.versions.ksp.get()) }
+    }
 
     // Force jsoup upgrade on spdx (b/309773103)
     implementation(libs.jsoup)

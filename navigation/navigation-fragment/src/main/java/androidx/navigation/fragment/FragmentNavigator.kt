@@ -528,6 +528,7 @@ public open class FragmentNavigator(
         if (savedIds.isEmpty()) {
             return null
         }
+        @Suppress("DEPRECATION") // bundleOf is deprecated
         return bundleOf(KEY_SAVED_IDS to ArrayList(savedIds))
     }
 

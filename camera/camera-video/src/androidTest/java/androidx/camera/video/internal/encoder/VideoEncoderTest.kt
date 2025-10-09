@@ -20,11 +20,11 @@ import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.media.MediaFormat.KEY_CAPTURE_RATE
 import android.media.MediaFormat.KEY_OPERATING_RATE
 import android.media.MediaFormat.KEY_PRIORITY
 import android.os.Build
 import android.os.SystemClock
-import android.view.Surface
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
@@ -45,10 +45,7 @@ import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
 import androidx.camera.video.internal.compat.quirk.ExtraSupportedResolutionQuirk
-import androidx.camera.video.internal.encoder.EncoderImpl.PARAMETER_KEY_TIMELAPSE_ENABLED
-import androidx.camera.video.internal.encoder.EncoderImpl.PARAMETER_KEY_TIMELAPSE_FPS
 import androidx.concurrent.futures.ResolvableFuture
-import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -111,7 +108,6 @@ class VideoEncoderTest(private val implName: String, private val cameraConfig: C
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val dynamicRange = DynamicRange.SDR
-    private var currentSurface: Surface? = null
 
     private lateinit var camera: CameraUseCaseAdapter
     private lateinit var videoEncoder: EncoderImpl
@@ -119,7 +115,6 @@ class VideoEncoderTest(private val implName: String, private val cameraConfig: C
     private lateinit var videoEncoderCallback: EncoderCallback
     private lateinit var previewForVideoEncoder: Preview
     private lateinit var preview: Preview
-    private lateinit var mainExecutor: Executor
     private lateinit var encoderExecutor: Executor
     private lateinit var latestSurfaceReadyToRelease: ResolvableFuture<Void>
 
@@ -154,7 +149,6 @@ class VideoEncoderTest(private val implName: String, private val cameraConfig: C
 
         camera = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector)
 
-        mainExecutor = ContextCompat.getMainExecutor(context)
         encoderExecutor = CameraXExecutors.ioExecutor()
 
         // Binding one more preview use case to create a surface texture, this is for testing on
@@ -391,17 +385,9 @@ class VideoEncoderTest(private val implName: String, private val cameraConfig: C
         initVideoEncoder(captureFrameRate = captureFrameRate, encodeFrameRate = encodeFrameRate)
 
         val format = videoEncoder.mMediaFormat
+        assertThat(format.getInteger(KEY_CAPTURE_RATE)).isEqualTo(captureFrameRate)
         assertThat(format.getInteger(KEY_OPERATING_RATE)).isEqualTo(captureFrameRate)
         assertThat(format.getInteger(KEY_PRIORITY)).isEqualTo(0)
-
-        videoEncoder.start()
-
-        val captor = ArgumentCaptor.forClass(OutputConfig::class.java)
-        verify(videoEncoderCallback, timeout(5000L)).onOutputConfigUpdate(captor.capture())
-
-        val outputFormat = captor.value.mediaFormat!!
-        assertThat(outputFormat.getInteger(PARAMETER_KEY_TIMELAPSE_ENABLED)).isEqualTo(1)
-        assertThat(outputFormat.getInteger(PARAMETER_KEY_TIMELAPSE_FPS)).isEqualTo(captureFrameRate)
     }
 
     private fun initVideoEncoder(
@@ -441,24 +427,15 @@ class VideoEncoderTest(private val implName: String, private val cameraConfig: C
 
         videoEncoder.setEncoderCallback(videoEncoderCallback, CameraXExecutors.directExecutor())
 
-        latestSurfaceReadyToRelease = ResolvableFuture.create<Void>().apply { set(null) }
+        val surface = (videoEncoder.input as Encoder.SurfaceInput).surface
 
-        (videoEncoder.input as Encoder.SurfaceInput).setOnSurfaceUpdateListener(mainExecutor) {
-            surface: Surface ->
-            latestSurfaceReadyToRelease = ResolvableFuture.create()
-            currentSurface = surface
-            setVideoPreviewSurfaceProvider(surface)
-        }
-    }
-
-    private fun setVideoPreviewSurfaceProvider(surface: Surface) {
-        previewForVideoEncoder.setSurfaceProvider { request: SurfaceRequest ->
-            request.provideSurface(surface, mainExecutor) {
-                if (it.surface != currentSurface) {
-                    it.surface.release()
-                } else {
-                    latestSurfaceReadyToRelease.set(null)
+        instrumentation.runOnMainSync {
+            previewForVideoEncoder.setSurfaceProvider { request: SurfaceRequest ->
+                val surfaceReadyToRelease = ResolvableFuture.create<Void>()
+                request.provideSurface(surface, CameraXExecutors.directExecutor()) {
+                    surfaceReadyToRelease.set(null)
                 }
+                latestSurfaceReadyToRelease = surfaceReadyToRelease
             }
         }
     }

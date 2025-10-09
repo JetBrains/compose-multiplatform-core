@@ -44,12 +44,20 @@ public class ImmutableVec(override val x: Float, override val y: Float) : Vec() 
     override fun toString(): String = "Immutable${string(this)}"
 
     public companion object {
+        /**
+         * Returns an [ImmutableVec] with the given magnitude and direction in degrees rotated from
+         * the positive x-axis in the direction of positive y-axis.
+         */
         @JvmStatic
-        public fun fromDirectionAndMagnitude(
-            @AngleRadiansFloat direction: Float,
+        public fun fromDirectionInDegreesAndMagnitude(
+            @AngleDegreesFloat directionDegrees: Float,
             magnitude: Float,
         ): ImmutableVec {
-            return ImmutableVec(magnitude * cos(direction), magnitude * sin(direction))
+            val directionRadians = Angle.degreesToRadians(directionDegrees)
+            return ImmutableVec(
+                magnitude * cos(directionRadians),
+                magnitude * sin(directionRadians),
+            )
         }
     }
 }

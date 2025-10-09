@@ -41,7 +41,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(project(":ink:ink-geometry"))
                 implementation("androidx.compose.ui:ui-geometry:1.0.0")

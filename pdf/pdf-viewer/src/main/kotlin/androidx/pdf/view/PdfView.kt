@@ -32,12 +32,16 @@ import android.os.Parcelable
 import android.util.AttributeSet
 import android.util.Range
 import android.util.SparseArray
+import android.util.TypedValue
 import android.view.ActionMode
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
+import android.view.inputmethod.InputMethodManager
+import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
@@ -56,6 +60,7 @@ import androidx.pdf.content.ExternalLink
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
 import androidx.pdf.exceptions.RequestFailedException
+import androidx.pdf.formfilling.FormFillingEditTextState
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.selection.ContextMenuComponent
 import androidx.pdf.selection.Selection
@@ -67,11 +72,15 @@ import androidx.pdf.selection.SelectionUiSignal
 import androidx.pdf.util.Accessibility
 import androidx.pdf.util.MathUtils
 import androidx.pdf.util.ZoomUtils
+import androidx.pdf.view.PdfView.Companion.GESTURE_STATE_IDLE
+import androidx.pdf.view.PdfView.Companion.GESTURE_STATE_INTERACTING
+import androidx.pdf.view.PdfView.Companion.GESTURE_STATE_SETTLING
 import androidx.pdf.view.fastscroll.FastScrollCalculator
 import androidx.pdf.view.fastscroll.FastScrollDrawer
 import androidx.pdf.view.fastscroll.FastScrollGestureDetector
 import androidx.pdf.view.fastscroll.FastScroller
 import androidx.pdf.view.fastscroll.getDimensions
+import androidx.pdf.view.layout.PageMetadataLoader
 import com.google.android.material.snackbar.Snackbar
 import java.util.LinkedList
 import java.util.Queue
@@ -100,11 +109,18 @@ import kotlinx.coroutines.withContext
  * bounds. Zoom can be changed using the [zoom] property, which is notably distinct from
  * [View.getScaleX] / [View.getScaleY]. Scroll position is based on the [View.getScrollX] /
  * [View.getScrollY] properties.
+ *
+ * This inherits [ViewGroup] but does not support adding arbitrary children via [addView] or in a
+ * layout.
  */
 public open class PdfView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
-    View(context, attrs, defStyle) {
+    ViewGroup(context, attrs, defStyle) {
+
+    init {
+        setWillNotDraw(false)
+    }
 
     public var fastScrollVerticalThumbDrawable: Drawable =
         requireNotNull(context.getDrawable(R.drawable.fast_scroll_thumb_drawable))
@@ -138,6 +154,51 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             invalidate()
         }
 
+    /**
+     * The number of pages displayed side-by-side in a single row.
+     *
+     * This property controls the layout mode:
+     * - [SINGLE_PAGE]: Displays one page per row (standard display).
+     * - [TWO_PAGE]: Displays two pages per row (like an open book).
+     */
+    @PagesPerRow
+    internal var pagesPerRow: Int = SINGLE_PAGE
+        set(value) {
+            if (value != SINGLE_PAGE && value != TWO_PAGE) {
+                throw IllegalArgumentException("Invalid pages per row")
+            }
+            if (field == value) return
+            field = value
+        }
+
+    /**
+     * The spacing between two horizontally adjacent pages in dp.
+     *
+     * Note: This value is only relevant when [pagesPerRow] is set to [TWO_PAGE].
+     */
+    internal var horizontalPageSpacing: Float =
+        context.getDimensions(R.dimen.horizontal_page_spacing)
+
+    /** The spacing between vertically adjacent pages in dp. */
+    internal var verticalPageSpacing: Float = context.getDimensions(R.dimen.vertical_page_spacing)
+
+    /**
+     * Controls the vertical alignment of a page within the [PdfView].
+     *
+     * This attribute aligns a page within the view when the page's height is smaller than the
+     * view's height. In this state, scrolling and panning are disabled as the entire page is
+     * visible. However, zooming in will re-enable scrolling and panning, aligning page to the top.
+     *
+     * @see VerticalAlignment
+     */
+    @VerticalAlignment
+    public var verticalAlignment: Int = VERTICAL_ALIGNMENT_CENTER
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
+
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var isFormFillingEnabled: Boolean = false
@@ -149,8 +210,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 formWidgetMetadataLoader?.let { loader ->
                     pageManager?.maybeLoadFormWidgetMetadata(loader)
                 }
+            } else {
+                // remove any existing edit text
+                formFillingEditText = null
             }
+            invalidate()
         }
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    /**
+     * Used to determine whether a promotional tooltip for form-filling will be displayed or not
+     * when the user opens a PDF which is a form and form-filling is enabled.
+     */
+    public var isFormFillingTooltipEnabled: Boolean = false
 
     /** The maximum scaling factor that can be applied to this View using the [zoom] property */
     public var maxZoom: Float = DEFAULT_MAX_ZOOM
@@ -191,6 +264,15 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     fastScrollVerticalThumbMarginEnd,
                 )
         }
+        if (typedArray.hasValue(R.styleable.PdfView_horizontalPageSpacing)) {
+            horizontalPageSpacing =
+                typedArray
+                    .getDimensionPixelSize(
+                        R.styleable.PdfView_horizontalPageSpacing,
+                        horizontalPageSpacing.toInt(),
+                    )
+                    .toFloat()
+        }
         if (typedArray.hasValue(R.styleable.PdfView_isFormFillingEnabled)) {
             isFormFillingEnabled =
                 typedArray.getBoolean(R.styleable.PdfView_isFormFillingEnabled, false)
@@ -200,6 +282,22 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
         if (typedArray.hasValue(R.styleable.PdfView_maxZoom)) {
             maxZoom = typedArray.getFloat(R.styleable.PdfView_maxZoom, maxZoom)
+        }
+        if (typedArray.hasValue(R.styleable.PdfView_pagesPerRow)) {
+            pagesPerRow = typedArray.getInt(R.styleable.PdfView_pagesPerRow, SINGLE_PAGE)
+        }
+        if (typedArray.hasValue(R.styleable.PdfView_verticalAlignment)) {
+            verticalAlignment =
+                typedArray.getInt(R.styleable.PdfView_verticalAlignment, VERTICAL_ALIGNMENT_CENTER)
+        }
+        if (typedArray.hasValue(R.styleable.PdfView_verticalPageSpacing)) {
+            verticalPageSpacing =
+                typedArray
+                    .getDimensionPixelSize(
+                        R.styleable.PdfView_verticalPageSpacing,
+                        verticalPageSpacing.toInt(),
+                    )
+                    .toFloat()
         }
         typedArray.recycle()
     }
@@ -426,6 +524,18 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      */
     private var deferViewportUpdate: Boolean = false
 
+    private var formFillingEditText: FormFillingEditText? = null
+        set(value) {
+            checkMainThread()
+            if (field == value) return
+            removeView(field?.editText)
+            field = value
+            addFormFillingEditText()
+        }
+
+    private val formFillingEditTextBoundaryWidth: Int =
+        resources.getDimensionPixelSize(R.dimen.form_widget_edit_text_boundary_width)
+
     /**
      * Used to determine whether the form edit state restoration is in progress. If true, we block
      * the interaction with the form widgets to prevent any further edits till the restoration is
@@ -456,6 +566,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             if (value == FastScrollVisibility.ALWAYS_SHOW) fastScroller?.show { postInvalidate() }
             else if (value == FastScrollVisibility.ALWAYS_HIDE) fastScroller?.hide()
         }
+
+    /**
+     * Controls whether the fast scroller renders by default. If `false`, [drawFastScroller] must be
+     * called explicitly to render it.
+     */
+    internal var enableDefaultFastScrollerRendering: Boolean = true
 
     // Stores width set from onSizeChanged or while restoring state
     private var oldWidth: Int? = null
@@ -776,13 +892,31 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * laid out yet.
      */
     public fun pdfToViewPoint(pdfPoint: PdfPoint): PointF? {
+        return pdfToViewPoint(pdfPoint, accountForScroll = true)
+    }
+
+    /**
+     * Returns the View coordinate location of [pdfPoint], or null if that PDF content has not been
+     * laid out yet.
+     *
+     * @param accountForScroll true to offset the final position by ([scrollX], [scrollY])
+     */
+    private fun pdfToViewPoint(pdfPoint: PdfPoint, accountForScroll: Boolean): PointF? {
         val pageLocation =
             pageMetadataLoader?.getPageLocation(pdfPoint.pageNum, getVisibleAreaInContentCoords())
                 ?: return null
         val ret =
             PointF(
-                toViewCoord(pageLocation.left + pdfPoint.x, zoom, scroll = scrollX),
-                toViewCoord(pageLocation.top + pdfPoint.y, zoom, scroll = scrollY),
+                toViewCoord(
+                    pageLocation.left + pdfPoint.x,
+                    zoom,
+                    scroll = if (accountForScroll) scrollX else 0,
+                ),
+                toViewCoord(
+                    pageLocation.top + pdfPoint.y,
+                    zoom,
+                    scroll = if (accountForScroll) scrollY else 0,
+                ),
             )
         return ret
     }
@@ -846,11 +980,22 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         // Fast scroller is non-content and shouldn't be affected by zoom. It's drawn after
         // restoring the Canvas to its unscaled state
+        if (!enableDefaultFastScrollerRendering) {
+            canvas.save()
+            // Adjust the canvas based on current scroll position to draw fast scroller in view
+            // coordinates.
+            canvas.translate(scrollX.toFloat(), scrollY.toFloat())
+            drawFastScroller(canvas)
+            canvas.restore()
+        }
+    }
+
+    /** Draws the fast scroller UI in view coordinates. */
+    internal fun drawFastScroller(canvas: Canvas) {
         val documentPageCount = pdfDocument?.pageCount ?: 0
         if (documentPageCount > 1) {
             fastScroller?.drawScroller(
                 canvas = canvas,
-                scrollX = scrollX,
                 scrollY = scrollY,
                 viewWidth = width,
                 viewHeight = height,
@@ -886,6 +1031,26 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         return handled || super.onTouchEvent(event)
+    }
+
+    override fun addView(child: View?) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
+    override fun addView(child: View?, index: Int) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
+    override fun addView(child: View?, width: Int, height: Int) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
+    override fun addView(child: View?, params: LayoutParams?) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
+    }
+
+    override fun addView(child: View?, index: Int, params: LayoutParams?) {
+        throw UnsupportedOperationException("PdfView does not accept children.")
     }
 
     private fun isContentAtHorizontalEdges(): Boolean {
@@ -1006,7 +1171,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
         if (pendingZoomRecalculation) {
             this.zoom = getDefaultZoom()
             pendingZoomRecalculation = false
@@ -1017,6 +1181,35 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         awaitingFirstLayout = false
         // As view dimensions are finalized we need to update the action mode visibility if needed.
         updateSelectionActionModeVisibility()
+        layoutFormFillingEditTextIfPresent()
+    }
+
+    private fun layoutFormFillingEditTextIfPresent() {
+        formFillingEditText?.let {
+            val widgetRect = it.formWidget.widgetRect
+            val topLeftCorner =
+                pdfToViewPoint(
+                    PdfPoint(it.pageNum, widgetRect.left.toFloat(), widgetRect.top.toFloat()),
+                    accountForScroll = false,
+                )
+            val bottomRightCorner =
+                pdfToViewPoint(
+                    PdfPoint(it.pageNum, widgetRect.right.toFloat(), widgetRect.bottom.toFloat()),
+                    accountForScroll = false,
+                )
+            if (topLeftCorner == null || bottomRightCorner == null) {
+                removeView(it.editText)
+                formFillingEditText = null
+                return
+            }
+            it.editText.setTextSize(TypedValue.COMPLEX_UNIT_PX, it.fontSize * zoom)
+            it.editText.layout(
+                topLeftCorner.x.roundToInt() - formFillingEditTextBoundaryWidth,
+                topLeftCorner.y.roundToInt() - formFillingEditTextBoundaryWidth,
+                bottomRightCorner.x.roundToInt() + formFillingEditTextBoundaryWidth,
+                bottomRightCorner.y.roundToInt() + formFillingEditTextBoundaryWidth,
+            )
+        }
     }
 
     private fun maybeAdjustZoomAndScroll() {
@@ -1056,6 +1249,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         oldWidth = null
+    }
+
+    private fun getFormFillingEditTextState(): FormFillingEditTextState? {
+        return formFillingEditText?.let {
+            FormFillingEditTextState(it.editText.text.toString(), it.pageNum, it.formWidget)
+        }
     }
 
     override fun onAttachedToWindow() {
@@ -1100,11 +1299,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             state.contentCenterY = 0F
         }
         state.isFormFillingEnabled = isFormFillingEnabled
+        state.isFormFillingTooltipEnabled = isFormFillingTooltipEnabled
         state.documentUri = pdfDocument?.uri
         state.paginationModel = pageMetadataLoader?.paginationModel
         state.pdfFormFillingState = pageMetadataLoader?.pdfFormFillingState
         state.pdfFormEditRecords = pdfDocument?.formEditRecords
         state.selectionModel = selectionStateManager?.selectionModel?.value
+        state.pdfFormFillingEditTextState = getFormFillingEditTextState()
         return state
     }
 
@@ -1160,11 +1361,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
             // to compute the maximum scroll position. Scroll position is absolute, not relative
             val contentHeightPx = toViewCoord(contentHeight.toFloat(), zoom, scroll = 0)
-            return if (contentHeightPx < height) {
+            return if (verticalAlignment == VERTICAL_ALIGNMENT_TOP || contentHeightPx > height) {
+                0
+            } else {
                 // Center vertically
                 -(height - contentHeightPx).roundToInt() / 2
-            } else {
-                0
             }
         }
 
@@ -1172,7 +1373,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
         // to compute the maximum scroll position. Scroll position is absolute, not relative
         val contentHeightPx = toViewCoord(contentHeight.toFloat(), zoom, scroll = 0)
-        return if (contentHeightPx < height) {
+        return if (contentHeightPx < height && verticalAlignment == VERTICAL_ALIGNMENT_TOP) {
+            0
+        } else if (contentHeightPx < height) {
             // Center vertically
             -(height - contentHeightPx).roundToInt() / 2
         } else {
@@ -1210,7 +1413,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     localPdfDocument,
                     backgroundScope,
                     topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                    pageSpacingPx = context.getDimensions(R.dimen.page_spacing),
+                    pageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
                     paginationModel = requireNotNull(localStateToRestore.paginationModel),
                     pdfFormFillingState = requireNotNull(localStateToRestore.pdfFormFillingState),
                     errorFlow = errorFlow,
@@ -1225,6 +1428,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     resources.getDimensionPixelSize(R.dimen.text_select_handle_touch_size),
                 errorFlow = errorFlow,
                 pageMetadataLoader = pageMetadataLoader,
+                pageManager = pageManager,
                 initialSelection = localStateToRestore.selectionModel,
             )
 
@@ -1240,9 +1444,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         isFormFillingEnabled = localStateToRestore.isFormFillingEnabled
+        isFormFillingTooltipEnabled = localStateToRestore.isFormFillingTooltipEnabled
         setAccessibility()
 
         restoreFormFillingState()
+        restoreFormFillingEditText()
 
         stateToRestore = null
         return true
@@ -1257,6 +1463,18 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         pdfFormFillingStateManager?.restoreFormFillingState(localStateToRestore.pdfFormEditRecords)
+    }
+
+    private fun restoreFormFillingEditText() {
+        val localStateToRestore = stateToRestore ?: return
+        val formFillingEditTextState = localStateToRestore.pdfFormFillingEditTextState
+        if (formFillingEditTextState != null) {
+            formWidgetInteractionHandler?.handleInteractionWithTextWidget(
+                formFillingEditTextState.pageNumber,
+                formFillingEditTextState.formWidgetInfo!!,
+                formFillingEditTextState.currentText,
+            )
+        }
     }
 
     private fun scrollToRestoredPosition(position: PointF, zoom: Float) {
@@ -1327,6 +1545,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     launch {
                         handler.invalidatedAreas.collect {
                             val localPageLayoutManager = pageMetadataLoader ?: return@collect
+                            if (localPageLayoutManager.visiblePageAreas[it.first] == null)
+                                return@collect
                             pageManager?.maybeInvalidateAreas(
                                 pageNum = it.first,
                                 visibleArea = localPageLayoutManager.visiblePageAreas[it.first],
@@ -1443,7 +1663,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             )
 
         formWidgetInteractionHandler =
-            FormWidgetInteractionHandler(context, localPdfDocument, backgroundScope, errorFlow)
+            FormWidgetInteractionHandler(context, localPdfDocument, backgroundScope, errorFlow) {
+                formFillingEditText ->
+                this.formFillingEditText = formFillingEditText
+            }
 
         pdfFormFillingStateManager =
             PdfFormFillingStateManager(
@@ -1506,7 +1729,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         localPdfDocument,
                         backgroundScope,
                         topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                        pageSpacingPx = context.getDimensions(R.dimen.page_spacing),
+                        pageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
                         errorFlow = errorFlow,
                         isFormFillingEnabled = isFormFillingEnabled,
                     )
@@ -1519,6 +1742,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         resources.getDimensionPixelSize(R.dimen.text_select_handle_touch_size),
                     errorFlow = errorFlow,
                     pageMetadataLoader = pageMetadataLoader,
+                    pageManager = pageManager,
                 )
             setAccessibility()
         }
@@ -1559,6 +1783,41 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             maybeUpdatePageVisibility()
         }
         pdfViewAccessibilityManager?.invalidateRoot()
+        formFillingEditText?.editText?.let { requestLayout() }
+    }
+
+    private fun addFormFillingEditText() {
+        formFillingEditText?.let {
+            addViewInLayout(it.editText, 0, it.editText.layoutParams)
+            requestLayout()
+            it.editText.requestFocus()
+            it.editText.post {
+                val imm: InputMethodManager =
+                    context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(formFillingEditText?.editText, 0)
+            }
+            adjustScroll(it.pageNum, it.formWidget)
+        }
+    }
+
+    /**
+     * Adjusts the scroll to bring the top left of the edit text which overlays the [formWidget] to
+     * the center of the view.
+     */
+    private fun adjustScroll(pageNum: Int, formWidget: FormWidgetInfo) {
+        val widgetTopLeftViewCoordinates =
+            pdfToViewPoint(
+                PdfPoint(
+                    pageNum,
+                    formWidget.widgetRect.left.toFloat(),
+                    formWidget.widgetRect.top.toFloat(),
+                )
+            )
+        if (widgetTopLeftViewCoordinates == null) return
+
+        val xScrollOffset = (widgetTopLeftViewCoordinates.x - (width / 2)).roundToInt()
+        val yScrollOffset = (widgetTopLeftViewCoordinates.y - (height / 2)).roundToInt()
+        scrollBy(xScrollOffset, yScrollOffset)
     }
 
     private fun dispatchViewportChanged() {
@@ -1648,14 +1907,18 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private fun reset() {
         // Stop any in progress fling when we open a new document
         scroller.forceFinished(true)
-        scrollTo(0, 0)
         pageManager?.cleanup()
-        zoom = DEFAULT_INIT_ZOOM
         pageManager = null
         pageMetadataLoader = null
+        formFillingEditText = null
         startedFetchingAllDimensions = false
         backgroundScope.coroutineContext.cancelChildren()
         stopCollectingData()
+
+        // Reset zoom and scroll after clearing pageMetadata loader, otherwise they can trigger
+        // onViewportChanged callback with outdated information.
+        scrollTo(0, 0)
+        zoom = DEFAULT_INIT_ZOOM
     }
 
     private fun maybeUpdatePageVisibility() {
@@ -1795,6 +2058,33 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         ViewCompat.setAccessibilityDelegate(this, pdfViewAccessibilityManager)
     }
 
+    private fun commitFormFillingEditText() {
+        formFillingEditText?.let { formWidgetInteractionHandler?.commitEditTextValue(it) }
+    }
+
+    private val shouldShowFormFillingTooltip: Boolean
+        get() = isFormFillingTooltipEnabled && isFormFillingEnabled && isPdfValidForm
+
+    private val isPdfValidForm: Boolean
+        get() = pdfDocument?.formType != PdfDocument.PDF_FORM_TYPE_NONE
+
+    private fun getFirstVisibleAndEditableFormWidget(): Pair<Int, FormWidgetInfo>? {
+        val localPageMetadataLoader = pageMetadataLoader ?: return null
+        val visiblePageAreas = localPageMetadataLoader.visiblePageAreas
+
+        visiblePageAreas.keyIterator().forEach { pageNum ->
+            val editableFormWidgetsInPage =
+                pageManager?.pages[pageNum]?.formWidgetInfos?.filter { !it.readOnly }
+
+            editableFormWidgetsInPage?.forEach { widget ->
+                if (visiblePageAreas.get(pageNum).contains(widget.widgetRect.toRectF())) {
+                    return Pair(pageNum, widget)
+                }
+            }
+        }
+        return null
+    }
+
     /** The height of the viewport, minus padding */
     internal val viewportHeight: Int
         get() = bottom - top - paddingBottom - paddingTop
@@ -1851,6 +2141,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         )
         return this
     }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(VERTICAL_ALIGNMENT_TOP, VERTICAL_ALIGNMENT_CENTER)
+    public annotation class VerticalAlignment
+
+    /** Defines the allowed values for the number of pages displayed per row in the [PdfView]. */
+    @IntDef(SINGLE_PAGE, TWO_PAGE) internal annotation class PagesPerRow
 
     /** Adjusts the position of [PdfView] in response to gestures detected by [GestureTracker] */
     private inner class ZoomScrollGestureHandler : GestureTracker.GestureHandler() {
@@ -2000,7 +2298,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     getVisibleAreaInContentCoords(),
                 ) ?: return super.onLongPress(e)
 
-            selectionStateManager?.maybeSelectWordAtPoint(touchPoint)
+            selectionStateManager?.maybeSelectContentAtPoint(touchPoint)
         }
 
         override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -2066,6 +2364,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            commitFormFillingEditText()
             selectionStateManager?.clearSelection()
             val pageLayoutManager = pageMetadataLoader ?: return super.onSingleTapConfirmed(e)
             val touchPoint =
@@ -2075,7 +2374,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     getVisibleAreaInContentCoords(),
                 ) ?: return super.onSingleTapConfirmed(e)
 
-            pageManager?.getLinkAtTapPoint(touchPoint)?.let { links ->
+            pageManager?.getPageLinks(touchPoint.pageNum)?.let { links ->
                 val touchPointOnPage = PointF(touchPoint.x, touchPoint.y)
                 if (handleGotoLinks(links, touchPointOnPage)) return true
                 if (handleExternalLinks(links, touchPointOnPage)) return true
@@ -2168,6 +2467,34 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * e.g. settling on a final position following a fling gesture.
          */
         public const val GESTURE_STATE_SETTLING: Int = 2
+
+        /** Represents the configuration for displaying a single page per row (standard display). */
+        internal const val SINGLE_PAGE: Int = 1
+
+        /** Represents the configuration for displaying two pages per row (like an open book). */
+        internal const val TWO_PAGE: Int = 2
+
+        /**
+         * Vertically aligns the page to the top of the PdfView.
+         *
+         * This alignment is used when the page is scaled to fit the view's width, and the resulting
+         * page height is less than the view's height. The top of the page will be positioned at the
+         * top of the [PdfView]. If the scaled page height is greater than the height of [PdfView],
+         * the top of the first page is always at the top of the view by default, and this alignment
+         * will have no effect.
+         */
+        public const val VERTICAL_ALIGNMENT_TOP: Int = 0
+
+        /**
+         * Vertically aligns the page to the center of the PdfView.
+         *
+         * This alignment is used when the page is scaled to fit the view's width, and the resulting
+         * page height is less than the view's height. The top of the page will be positioned at the
+         * center of the [PdfView]. If the scaled page height is greater than the height of
+         * [PdfView], the top of the first page is always at the top of the view by default, and
+         * this alignment will have no effect.
+         */
+        public const val VERTICAL_ALIGNMENT_CENTER: Int = 1
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_INIT_ZOOM: Float = 1.0f
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_MAX_ZOOM: Float = 25.0f

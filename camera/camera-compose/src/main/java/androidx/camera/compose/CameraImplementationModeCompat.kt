@@ -16,9 +16,9 @@
 
 package androidx.camera.compose
 
-import android.os.Build
 import androidx.camera.core.CameraInfo
 import androidx.camera.viewfinder.core.ImplementationMode
+import androidx.camera.viewfinder.core.ViewfinderDefaults
 
 /**
  * Utility class for determining the appropriate [ImplementationMode] for [CameraXViewfinder].
@@ -54,95 +54,8 @@ internal class CameraImplementationModeCompat {
                 ImplementationMode.EMBEDDED
             } else {
                 // Fall back to the duplicated device-specific compatibility logic.
-                return chooseDeviceCompatibleMode()
+                return ViewfinderDefaults.implementationMode
             }
         }
-
-        // TODO(b/438015704): This logic is duplicated from viewfinder-core.
-        //  Remove this and switch to the public API in viewfinder-core once it is
-        //  available.
-        private fun chooseDeviceCompatibleMode(): ImplementationMode {
-            // TextureView is more compatible on older API levels.
-            if (Build.VERSION.SDK_INT <= 24) {
-                return ImplementationMode.EMBEDDED
-            }
-
-            // Some devices have quirks that require TextureView.
-            if (
-                SurfaceViewNotCroppedByParentQuirk.isCurrentDeviceAffected() ||
-                    SurfaceViewStretchedQuirk.isCurrentDeviceAffected()
-            ) {
-                return ImplementationMode.EMBEDDED
-            }
-
-            // Default to SurfaceView for best performance on modern, non-quirk devices.
-            return ImplementationMode.EXTERNAL
-        }
     }
-}
-
-/**
- * A quirk where a scaled up SurfaceView is not cropped by the parent View.
- *
- * QuirkSummary Bug Id: 211370840 Description: On certain Xiaomi devices, when the scale type is
- * FILL_* and the preview is scaled up to be larger than its parent, the SurfaceView is not cropped
- * by its parent. As the result, the preview incorrectly covers the neighboring UI elements.
- * Device(s): XIAOMI M2101K7AG
- */
-// TODO(b/438015704): This logic is duplicated from viewfinder-core.
-//  Remove this and switch to the public API in viewfinder-core once it is
-//  available.
-internal object SurfaceViewNotCroppedByParentQuirk {
-    private const val XIAOMI = "XIAOMI"
-    private const val RED_MI_NOTE_10_MODEL = "M2101K7AG"
-
-    @JvmStatic
-    fun isCurrentDeviceAffected(): Boolean {
-        return XIAOMI.equals(Build.MANUFACTURER, ignoreCase = true) &&
-            RED_MI_NOTE_10_MODEL.equals(Build.MODEL, ignoreCase = true)
-    }
-}
-
-/**
- * A quirk where SurfaceView is stretched.
- *
- * QuirkSummary Bug Id: 129403806 Description: On certain Samsung devices, transform APIs (e.g.
- * View#setScaleX) do not work as intended. Device(s): Samsung Fold2 F2Q, Samsung Fold3 Q2Q, Oppo
- * Find N OP4E75L1, Lenovo P12 Pro
- */
-// TODO(b/438015704): This logic is duplicated from viewfinder-core.
-//  Remove this and switch to the public API in viewfinder-core once it is
-//  available.
-internal object SurfaceViewStretchedQuirk {
-    // Samsung Galaxy Z Fold2 b/129403806
-    private const val SAMSUNG = "SAMSUNG"
-    private const val GALAXY_Z_FOLD_2 = "F2Q"
-    private const val GALAXY_Z_FOLD_3 = "Q2Q"
-    private const val OPPO = "OPPO"
-    private const val OPPO_FIND_N = "OP4E75L1"
-    private const val LENOVO = "LENOVO"
-    private const val LENOVO_TAB_P12_PRO = "Q706F"
-
-    @JvmStatic
-    fun isCurrentDeviceAffected(): Boolean {
-        // The surface view issue is fixed in Android T.
-        return Build.VERSION.SDK_INT < 33 &&
-            (isSamsungFold2OrFold3 || isOppoFoldable || isLenovoTablet)
-    }
-
-    private val isSamsungFold2OrFold3: Boolean
-        get() =
-            SAMSUNG.equals(Build.MANUFACTURER, ignoreCase = true) &&
-                (GALAXY_Z_FOLD_2.equals(Build.DEVICE, ignoreCase = true) ||
-                    GALAXY_Z_FOLD_3.equals(Build.DEVICE, ignoreCase = true))
-
-    private val isOppoFoldable: Boolean
-        get() =
-            OPPO.equals(Build.MANUFACTURER, ignoreCase = true) &&
-                OPPO_FIND_N.equals(Build.DEVICE, ignoreCase = true)
-
-    private val isLenovoTablet: Boolean
-        get() =
-            LENOVO.equals(Build.MANUFACTURER, ignoreCase = true) &&
-                LENOVO_TAB_P12_PRO.equals(Build.DEVICE, ignoreCase = true)
 }

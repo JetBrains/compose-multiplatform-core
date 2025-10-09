@@ -38,10 +38,16 @@ import androidx.pdf.PdfLoadingStatus
 import androidx.pdf.adapter.PdfDocumentRenderer
 import androidx.pdf.adapter.PdfDocumentRendererFactory
 import androidx.pdf.adapter.PdfDocumentRendererFactoryImpl
+import androidx.pdf.annotation.PageAnnotationsProviderImpl
 import androidx.pdf.annotation.converters.PdfAnnotationConvertersFactory
+import androidx.pdf.annotation.models.AddEditResult
 import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.ModifyEditResult
+import androidx.pdf.annotation.models.PaginatedAnnotations
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
+import androidx.pdf.annotation.processor.PageAnnotationsPaginator
 import androidx.pdf.annotation.processor.PdfRendererAnnotationsProcessor
 import androidx.pdf.models.Dimensions
 import androidx.pdf.utils.readAnnotationsFromPfd
@@ -53,6 +59,7 @@ internal class PdfDocumentRemoteImpl(
 
     private lateinit var rendererAdapter: PdfDocumentRenderer
     private lateinit var annotationsProcessor: PdfRendererAnnotationsProcessor
+    private var pageAnnotationsPaginator: PageAnnotationsPaginator? = null
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun openPdfDocument(pfd: ParcelFileDescriptor, password: String?): Int {
@@ -185,10 +192,16 @@ internal class PdfDocumentRemoteImpl(
             val pdfAnnotations = mutableListOf<PdfAnnotation>()
             for (aospAnnotation in aospAnnotations) {
                 val unused = aospAnnotation.first // <-- AOSP ID
-                val converter =
-                    PdfAnnotationConvertersFactory.create<AospPdfAnnotation>(aospAnnotation.second)
-                converter.convert(aospAnnotation.second, pageNum).let { pfdAnnotation ->
-                    pdfAnnotations.add(pfdAnnotation)
+                try {
+                    val converter =
+                        PdfAnnotationConvertersFactory.create<AospPdfAnnotation>(
+                            aospAnnotation.second
+                        )
+                    converter.convert(aospAnnotation.second, pageNum).let { pfdAnnotation ->
+                        pdfAnnotations.add(pfdAnnotation)
+                    }
+                } catch (e: UnsupportedOperationException) {
+                    // TODO: b/440966572 - Handle Unsupported Annotation like FreeTextAnnotation
                 }
             }
             pdfAnnotations
@@ -198,6 +211,49 @@ internal class PdfDocumentRemoteImpl(
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
     override fun applyEdits(annots: List<PdfAnnotationData>): AnnotationResult =
         annotationsProcessor.process(annots)
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun addEdit(annots: List<PdfAnnotationData>): AddEditResult {
+        return annotationsProcessor.processAddEdits(annots)
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun updateEdit(annots: List<PdfAnnotationData>): ModifyEditResult {
+        return annotationsProcessor.processUpdateEdits(annots)
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun removeEdit(editIds: List<EditId>): ModifyEditResult {
+        return annotationsProcessor.processRemoveEdits(editIds)
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun getAllPageAnnotations(pageNum: Int): PaginatedAnnotations? {
+        if (pageAnnotationsPaginator == null || pageAnnotationsPaginator!!.pageNum != pageNum) {
+            pageAnnotationsPaginator =
+                PageAnnotationsPaginator(
+                    pageNum,
+                    annotationsProvider =
+                        PageAnnotationsProviderImpl(documentRenderer = rendererAdapter),
+                )
+        }
+
+        return pageAnnotationsPaginator!!.getPageAnnotations()
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
+    override fun getBatchedPageAnnotations(pageNum: Int, batchIndex: Int): PaginatedAnnotations? {
+        if (pageAnnotationsPaginator == null || pageAnnotationsPaginator!!.pageNum != pageNum) {
+            pageAnnotationsPaginator =
+                PageAnnotationsPaginator(
+                    pageNum,
+                    annotationsProvider =
+                        PageAnnotationsProviderImpl(documentRenderer = rendererAdapter),
+                )
+        }
+
+        return pageAnnotationsPaginator!!.getPageAnnotations(batchIndex)
+    }
 
     override fun isPdfLinearized(): Boolean {
         return rendererAdapter.isLinearized

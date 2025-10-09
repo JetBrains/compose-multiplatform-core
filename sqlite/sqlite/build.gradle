@@ -60,7 +60,7 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonMain)
         }
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)

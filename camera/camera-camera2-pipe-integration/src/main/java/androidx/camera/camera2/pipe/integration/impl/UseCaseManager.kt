@@ -48,8 +48,8 @@ import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.compat.CameraPipeKeys
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
+import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination
 import androidx.camera.camera2.pipe.integration.adapter.ZslControl
@@ -74,6 +74,8 @@ import androidx.camera.camera2.pipe.integration.internal.DynamicRangeConversions
 import androidx.camera.camera2.pipe.integration.internal.DynamicRangeResolver
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraControl
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
+import androidx.camera.camera2.pipe.integration.interop.configureWithUnchecked
+import androidx.camera.camera2.pipe.integration.interop.getCamera2CaptureRequestConfigurator
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
@@ -234,10 +236,10 @@ constructor(
     public fun attach(useCases: List<UseCase>): Unit =
         synchronized(lock) {
             if (useCases.isEmpty()) {
-                Log.warn { "Attach [] from $this (Ignored)" }
+                Camera2Logger.warn { "Attach [] from $this (Ignored)" }
                 return
             }
-            Log.debug { "Attaching $useCases from $this" }
+            Camera2Logger.debug { "Attaching $useCases from $this" }
 
             val unattachedUseCases =
                 useCases.filter { useCase -> !attachedUseCases.contains(useCase) }
@@ -273,10 +275,10 @@ constructor(
     public fun detach(useCases: List<UseCase>): Unit =
         synchronized(lock) {
             if (useCases.isEmpty()) {
-                Log.warn { "Detaching [] from $this (Ignored)" }
+                Camera2Logger.warn { "Detaching [] from $this (Ignored)" }
                 return
             }
-            Log.debug { "Detaching $useCases from $this" }
+            Camera2Logger.debug { "Detaching $useCases from $this" }
 
             // When use cases are detached, they should be considered inactive as well. Also note
             // that
@@ -402,7 +404,7 @@ constructor(
             .getValidSessionConfigOrNull()
             ?.let { requestControl.setSessionConfigAsync(it) }
             ?: run {
-                Log.debug { "Unable to reset the session due to invalid config" }
+                Camera2Logger.debug { "Unable to reset the session due to invalid config" }
                 requestControl.setSessionConfigAsync(
                     SessionConfig.Builder().apply { setTemplateType(defaultTemplate) }.build()
                 )
@@ -420,7 +422,7 @@ constructor(
                 setOf(
                     CameraCallbackMap.createFor(
                         sessionConfig.repeatingCameraCaptureCallbacks,
-                        useCaseThreads.get().backgroundExecutor,
+                        useCaseThreads.get().sequentialExecutor,
                     )
                 ),
             template = RequestTemplate(sessionConfig.repeatingCaptureConfig.templateType),
@@ -456,12 +458,13 @@ constructor(
             }
         }
 
+        val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter)
         val useCamera2Extension =
             sessionProcessor?.implementationType?.first == SessionProcessor.TYPE_CAMERA2_EXTENSION
 
         // Enables extensions with the Camera2 Extensions approach if extension mode is requested.
         if (useCamera2Extension) {
-            Log.debug { "Setting up UseCaseManager with OperatingMode.EXTENSION" }
+            Camera2Logger.debug { "Setting up UseCaseManager with OperatingMode.EXTENSION" }
             val sessionConfigAdapter = SessionConfigAdapter(useCases, isPrimary = isPrimary)
             val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
             val graphConfig =
@@ -476,27 +479,46 @@ constructor(
                     zslControl,
                     templateParamsOverride,
                     cameraMetadata,
+                    graphStateToCameraStateAdapter,
                     camera2ExtensionMode = sessionProcessor?.implementationType?.second,
                     isExtensions = true,
                     enableStreamUseCase = false,
                     surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
                     surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
+                    cameraXConfig = cameraXConfig,
                 )
 
             sessionProcessor!!.initSession(cameraInfoInternal.get(), null)
 
             val useCaseManagerConfig =
-                UseCaseManagerConfig(useCases, sessionConfigAdapter, graphConfig, streamConfigMap)
-            this.tryResumeUseCaseManager(useCaseManagerConfig)
+                UseCaseManagerConfig(
+                    useCases,
+                    sessionConfigAdapter,
+                    graphConfig,
+                    streamConfigMap,
+                    graphStateToCameraStateAdapter,
+                )
+            tryResumeUseCaseManager(useCaseManagerConfig)
             return
         } else {
             val sessionConfigAdapter = SessionConfigAdapter(useCases, isPrimary = isPrimary)
             val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
-            val graphConfig = createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            val graphConfig =
+                createCameraGraphConfig(
+                    sessionConfigAdapter,
+                    streamConfigMap,
+                    graphStateToCameraStateAdapter,
+                )
 
             val useCaseManagerConfig =
-                UseCaseManagerConfig(useCases, sessionConfigAdapter, graphConfig, streamConfigMap)
-            this.tryResumeUseCaseManager(useCaseManagerConfig)
+                UseCaseManagerConfig(
+                    useCases,
+                    sessionConfigAdapter,
+                    graphConfig,
+                    streamConfigMap,
+                    graphStateToCameraStateAdapter,
+                )
+            tryResumeUseCaseManager(useCaseManagerConfig)
         }
     }
 
@@ -505,6 +527,7 @@ constructor(
         // Close prior camera graph
         camera.let { useCaseCamera ->
             _activeComponent = null
+            cameraCoordinator.removePendingCameraInfo(cameraInfoInternal.get())
             useCaseCamera?.close()?.let { closingJob ->
                 closingCameraJobs.add(closingJob)
                 closingJob.invokeOnCompletion {
@@ -523,6 +546,7 @@ constructor(
     internal fun tryResumeUseCaseManager(useCaseManagerConfig: UseCaseManagerConfig) {
         if (!shouldCreateCameraGraphImmediately) {
             deferredUseCaseManagerConfig = useCaseManagerConfig
+            cameraCoordinator.addPendingCameraInfo(cameraInfoInternal.get())
             return
         }
         val cameraGraph = cameraPipe.createCameraGraph(useCaseManagerConfig.cameraGraphConfig)
@@ -540,6 +564,8 @@ constructor(
         cameraGraph: CameraGraph,
     ) {
         with(useCaseManagerConfig) {
+            graphStateToCameraStateAdapter.cameraGraph = cameraGraph
+            cameraStateAdapter.onGraphUpdated(cameraGraph)
             // Create and configure the new camera component.
             _activeComponent =
                 builder
@@ -547,12 +573,12 @@ constructor(
                         UseCaseCameraConfig(
                             useCases,
                             sessionConfigAdapter,
-                            cameraStateAdapter,
                             cameraGraph,
                             streamConfigMap,
                         )
                     )
                     .build()
+                    .also { it.getUseCaseCamera().start() }
 
             for (control in allControls) {
                 control.requestControl = camera?.requestControl
@@ -565,7 +591,9 @@ constructor(
             refreshRunningUseCases()
         }
 
-        Log.debug { "Notifying $pendingUseCasesToNotifyCameraControlReady camera control ready" }
+        Camera2Logger.debug {
+            "Notifying $pendingUseCasesToNotifyCameraControlReady camera control ready"
+        }
         for (useCase in pendingUseCasesToNotifyCameraControlReady) {
             useCase.onCameraControlReady()
         }
@@ -647,18 +675,40 @@ constructor(
     }
 
     @GuardedBy("lock")
-    private fun shouldAddRepeatingUseCase(runningUseCases: Set<UseCase>): Boolean {
-        val isRepeatingStreamForced = cameraXConfig.isRepeatingStreamForced
-        val meteringRepeatingEnabled = attachedUseCases.contains(meteringRepeating)
-        if (!meteringRepeatingEnabled && isRepeatingStreamForced) {
-            val activeSurfaces = runningUseCases.withoutMetering().surfaceCount()
-            return activeSurfaces > 0 &&
-                with(attachedUseCases.withoutMetering()) {
-                    (onlyVideoCapture() || requireMeteringRepeating()) &&
-                        isMeteringCombinationSupported()
-                }
+    private fun isMeteringRepeatingRequired(runningUseCases: Set<UseCase>): Boolean {
+        if (!cameraXConfig.isRepeatingStreamForced) {
+            return false
         }
-        return false
+
+        val hasActiveSurfaces =
+            runningUseCases.any {
+                it != meteringRepeating && it.sessionConfig.surfaces.isNotEmpty()
+            }
+        if (!hasActiveSurfaces) {
+            return false
+        }
+
+        val attachedWithoutMetering = attachedUseCases.filter { it != meteringRepeating }
+
+        if (attachedWithoutMetering.isEmpty()) {
+            return false
+        }
+
+        return with(attachedWithoutMetering) {
+            (onlyVideoCapture() || requireMeteringRepeating()) && isMeteringCombinationSupported()
+        }
+    }
+
+    @GuardedBy("lock")
+    private fun shouldAddRepeatingUseCase(runningUseCases: Set<UseCase>): Boolean {
+        val isMeteringEnabled = attachedUseCases.contains(meteringRepeating)
+        return !isMeteringEnabled && isMeteringRepeatingRequired(runningUseCases)
+    }
+
+    @GuardedBy("lock")
+    private fun shouldRemoveRepeatingUseCase(runningUseCases: Set<UseCase>): Boolean {
+        val isMeteringEnabled = runningUseCases.contains(meteringRepeating)
+        return isMeteringEnabled && !isMeteringRepeatingRequired(runningUseCases)
     }
 
     @GuardedBy("lock")
@@ -667,20 +717,6 @@ constructor(
         meteringRepeating.setupSession()
         attach(listOf(meteringRepeating))
         activate(meteringRepeating)
-    }
-
-    @GuardedBy("lock")
-    private fun shouldRemoveRepeatingUseCase(runningUseCases: Set<UseCase>): Boolean {
-        val meteringRepeatingEnabled = runningUseCases.contains(meteringRepeating)
-        if (meteringRepeatingEnabled) {
-            val activeSurfaces = runningUseCases.withoutMetering().surfaceCount()
-            return activeSurfaces == 0 ||
-                with(attachedUseCases.withoutMetering()) {
-                    !(onlyVideoCapture() || requireMeteringRepeating()) ||
-                        !isMeteringCombinationSupported()
-                }
-        }
-        return false
     }
 
     @GuardedBy("lock")
@@ -693,6 +729,7 @@ constructor(
     internal fun createCameraGraphConfig(
         sessionConfigAdapter: SessionConfigAdapter,
         streamConfigMap: MutableMap<CameraStream.Config, DeferrableSurface>,
+        graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
         isExtensions: Boolean = false,
     ): CameraGraph.Config {
         return createCameraGraphConfig(
@@ -712,10 +749,12 @@ constructor(
             zslControl,
             templateParamsOverride,
             cameraMetadata,
+            graphStateToCameraStateAdapter,
             camera2ExtensionMode = null,
             isExtensions = isExtensions,
             surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
             surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
+            cameraXConfig = cameraXConfig,
         )
     }
 
@@ -755,7 +794,7 @@ constructor(
                 },
             )
             .also {
-                Log.debug {
+                Camera2Logger.debug {
                     "Combination of $sessionSurfacesConfigs + $meteringRepeating is supported: $it"
                 }
             }
@@ -801,7 +840,7 @@ constructor(
                 // When collecting the info, the UseCases might be unbound to make these info
                 // become null.
                 if (surfaceResolution == null || streamSpec == null) {
-                    Log.warn { "Invalid surface resolution or stream spec is found." }
+                    Camera2Logger.warn { "Invalid surface resolution or stream spec is found." }
                     clear()
                     return@apply
                 }
@@ -824,6 +863,7 @@ constructor(
                         streamSpec.sessionType,
                         streamSpec.expectedFrameRateRange,
                         useCase.currentConfig.isStrictFrameRateRequired,
+                        useCase.currentConfig.getCustomMaxFrameRate(surfaceResolution),
                     )
                 )
             }
@@ -867,16 +907,6 @@ constructor(
             meteringRepeating.attachedSurfaceResolution!!,
             meteringRepeating.currentConfig.streamUseCase,
         )
-
-    private fun Collection<UseCase>.surfaceCount(): Int =
-        ValidatingBuilder().let { validatingBuilder ->
-            forEach { useCase -> validatingBuilder.add(useCase.sessionConfig) }
-            return validatingBuilder.build().surfaces.size
-        }
-
-    private fun Collection<UseCase>.withoutMetering(): Collection<UseCase> = filterNot {
-        it is MeteringRepeating
-    }
 
     private fun Collection<UseCase>.requireMeteringRepeating(): Boolean {
         return isNotEmpty() &&
@@ -946,6 +976,7 @@ constructor(
             val sessionConfigAdapter: SessionConfigAdapter,
             val cameraGraphConfig: CameraGraph.Config,
             val streamConfigMap: MutableMap<CameraStream.Config, DeferrableSurface>,
+            val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
         )
 
         public fun SessionConfig.toCamera2ImplConfig(): Camera2ImplConfig {
@@ -982,12 +1013,14 @@ constructor(
             zslControl: ZslControl,
             templateParamsOverride: TemplateParamsOverride,
             cameraMetadata: CameraMetadata?,
+            graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter? = null,
             camera2ExtensionMode: Int? = null,
             isExtensions: Boolean = false,
             enableStreamUseCase: Boolean = true,
             setOutputType: Boolean = false,
             surfaceToStreamUseCaseMap: Map<DeferrableSurface, Long> = emptyMap(),
             surfaceToStreamUseHintMap: Map<DeferrableSurface, Long> = emptyMap(),
+            cameraXConfig: CameraXConfig? = null,
         ): CameraGraph.Config {
             var containsVideo = false
             val streamGroupMap = mutableMapOf<Int, MutableList<CameraStream.Config>>()
@@ -1165,6 +1198,10 @@ constructor(
                     }
                 }
 
+            cameraXConfig
+                ?.getCamera2CaptureRequestConfigurator()
+                ?.configureWithUnchecked(sessionParameters)
+
             // TODO: b/327517884 - Add a quirk to not abort captures on stop for certain OEMs during
             //   extension sessions.
 
@@ -1181,6 +1218,7 @@ constructor(
                 defaultListeners = listOf(callbackMap, requestListener),
                 defaultParameters = defaultParameters,
                 flags = combinedFlags,
+                graphStateListeners = listOfNotNull(graphStateToCameraStateAdapter),
             )
         }
 
@@ -1231,7 +1269,7 @@ constructor(
             ) {
                 expectedStreamUseCase
             } else {
-                Log.warn {
+                Camera2Logger.warn {
                     "Expected stream use case for $deferrableSurface, " +
                         "$expectedStreamUseCase cannot be set!"
                 }
@@ -1252,7 +1290,9 @@ constructor(
             isExtensions: Boolean,
         ): CameraGraph.Flags {
             if (cameraQuirks.quirks.contains(CaptureSessionStuckQuirk::class.java)) {
-                Log.debug { "CameraPipe should be enabling CaptureSessionStuckQuirk by default" }
+                Camera2Logger.debug {
+                    "CameraPipe should be enabling CaptureSessionStuckQuirk by default"
+                }
             }
             // TODO(b/276354253): Set quirkWaitForRepeatingRequestOnDisconnect flag for overrides.
 
@@ -1338,7 +1378,7 @@ constructor(
                     if (firstSupportedProfile != null) {
                         dynamicRangeProfile = DynamicRangeProfile(firstSupportedProfile)
                     } else {
-                        Log.error {
+                        Camera2Logger.error {
                             "Requested dynamic range is not supported. Defaulting to STANDARD" +
                                 " dynamic range profile.\nRequested dynamic range:\n $this"
                         }

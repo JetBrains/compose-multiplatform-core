@@ -72,7 +72,7 @@ androidXMultiplatform {
 	    }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             // JVM tests use java.util.Base64 API which is only available on
             // Android API 26+, so just run those tests in the JVM environment.
             // dependsOn(jvmAndroidTest)

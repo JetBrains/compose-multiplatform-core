@@ -27,14 +27,14 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Rect;
 
-import androidx.xr.runtime.internal.ActivityPanelEntity;
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.PixelDimensions;
-import androidx.xr.runtime.internal.SceneRuntime;
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.runtime.ActivityPanelEntity;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.SceneRuntime;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -81,8 +81,8 @@ public class ActivityPanelEntityImplTest {
 
     @After
     public void tearDown() {
-        // Dispose the runtime between test cases to clean up lingering references.
-        mFakeRuntime.dispose();
+        // Destroy the runtime between test cases to clean up lingering references.
+        mFakeRuntime.destroy();
     }
 
     private ActivityPanelEntity createActivityPanelEntity() {
@@ -145,7 +145,7 @@ public class ActivityPanelEntityImplTest {
     }
 
     @Test
-    public void activityPanelEntityLaunchActivity_callsActivityPanel() {
+    public void activityPanelEntityStartActivity_callsActivityPanel() {
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
         Intent launchIntent = mActivityController.getIntent();
         activityPanelEntity.launchActivity(launchIntent, null);
@@ -172,6 +172,7 @@ public class ActivityPanelEntityImplTest {
                                 .getActivityPanelForHost(mHostActivity));
 
         assertThat(panel.getActivity()).isEqualTo(mHostActivity);
+
         assertThat(panel.getBounds())
                 .isEqualTo(new Rect(0, 0, mWindowBoundsPx.width, mWindowBoundsPx.height));
     }

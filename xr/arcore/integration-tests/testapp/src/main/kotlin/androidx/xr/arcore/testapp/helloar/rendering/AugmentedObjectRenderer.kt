@@ -17,24 +17,20 @@
 package androidx.xr.arcore.testapp.helloar.rendering
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.res.Resources
-import android.graphics.Color
-import android.widget.TextView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.AugmentedObject
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
-import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
-import kotlin.enums.enumEntries
+import java.nio.file.Paths
+import java.util.Collections
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -45,6 +41,7 @@ import kotlinx.coroutines.launch
 
 internal class AugmentedObjectRenderer(val session: Session, val coroutineScope: CoroutineScope) :
     DefaultLifecycleObserver {
+    private val _cubeModelMap = Collections.synchronizedMap(HashMap<String, GltfModel?>())
     private val _renderedObjects: MutableStateFlow<List<AugmentedObjectModel>> =
         MutableStateFlow(mutableListOf<AugmentedObjectModel>())
 
@@ -67,7 +64,7 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
         _renderedObjects.value = emptyList<AugmentedObjectModel>()
     }
 
-    private fun updateObjectModels(objects: Collection<AugmentedObject>) {
+    private suspend fun updateObjectModels(objects: Collection<AugmentedObject>) {
         val objectsToRender = _renderedObjects.value.toMutableList()
         // create renderers for new objects
         for (obj in objects) {
@@ -87,11 +84,20 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
         _renderedObjects.value = objectsToRender
     }
 
-    private fun addObjectModel(
+    private suspend fun addObjectModel(
         obj: AugmentedObject,
         objectsToRender: MutableList<AugmentedObjectModel>,
     ) {
-        val entity = CubeEntity(session, obj.state.value.centerPose, obj.state.value.extents)
+        val category = obj.state.value.category.toString()
+        val asset =
+            if (SUPPORTED_OBJECT_MODELS.containsKey(category)) {
+                SUPPORTED_OBJECT_MODELS[category]
+            } else {
+                DEFAULT_OBJECT_MODEL
+            }
+        _cubeModelMap.putIfAbsent(category, GltfModel.create(session, Paths.get("models", asset)))
+        val gltfCubeModelEntity: GltfModelEntity? =
+            GltfModelEntity.create(session, _cubeModelMap[category]!!)
         // The counter starts at max to trigger the resize on the first update loop since emulators
         // only
         // update their static planes once.
@@ -103,29 +109,30 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
                     when (state.trackingState) {
                         TrackingState.TRACKING -> {
                             if (state.category == AugmentedObjectCategory.UNKNOWN) {
-                                entity.setEnabled(false)
+                                gltfCubeModelEntity!!.setEnabled(false)
                             } else {
-                                entity.setEnabled(true)
-                                entity.setAlpha(
+                                gltfCubeModelEntity!!.setEnabled(true)
+                                gltfCubeModelEntity!!.setAlpha(
                                     TRACKED_ALPHA_VALUES[state.category.toString()]
                                         ?: TRACKED_ALPHA_DEFAULT
                                 )
                                 counter++
+
                                 val newPose =
                                     session.scene.perceptionSpace.transformPoseTo(
                                         state.centerPose,
                                         session.scene.activitySpace,
                                     )
-                                entity.update(newPose, state)
+                                gltfCubeModelEntity!!.setPose(newPose)
 
                                 if (counter > PANEL_RESIZE_UPDATE_COUNT) {
-                                    entity.resize(state.extents)
+                                    gltfCubeModelEntity!!.setScale(scaledExtents(state.extents))
                                     counter = 0
                                 }
                             }
                         }
-                        TrackingState.PAUSED -> entity.setAlpha(PAUSED_ALPHA)
-                        TrackingState.STOPPED -> entity.setEnabled(false)
+                        TrackingState.PAUSED -> gltfCubeModelEntity!!.setAlpha(PAUSED_ALPHA)
+                        TrackingState.STOPPED -> gltfCubeModelEntity!!.setEnabled(false)
                     }
                 }
             }
@@ -135,7 +142,7 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
                 obj.hashCode(),
                 obj.state.value.category,
                 obj.state,
-                entity,
+                gltfCubeModelEntity!!,
                 renderJob,
             )
         )
@@ -146,8 +153,16 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
         objsToRender: MutableList<AugmentedObjectModel>,
     ) {
         objectModel.renderJob?.cancel()
-        objectModel.cubeEntity.dispose()
+        objectModel.modelEntity.dispose()
         objsToRender.remove(objectModel)
+    }
+
+    private fun scaledExtents(extents: FloatSize3d): Vector3 {
+        return Vector3(
+            extents.width * MODEL_SCALING_FACTOR,
+            extents.height * MODEL_SCALING_FACTOR,
+            extents.depth * MODEL_SCALING_FACTOR,
+        )
     }
 
     private companion object {
@@ -157,176 +172,16 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
         @SuppressLint("PrimitiveInCollection")
         private val TRACKED_ALPHA_VALUES =
             mapOf("Keyboard" to .05f, "Mouse" to .25f, "Laptop" to .1f)
+        private val SUPPORTED_OBJECT_MODELS =
+            mapOf(
+                "Keyboard" to "BoundingBoxKeyboard.glb",
+                "Mouse" to "BoundingBoxMouse.glb",
+                "Laptop" to "BoundingBoxLaptop.glb",
+            )
+        private val DEFAULT_OBJECT_MODEL = "BoundingBoxKeyboard.glb"
         private const val TRACKED_ALPHA_DEFAULT = .5f
         private const val PAUSED_ALPHA = 0.25f
 
-        // TODO: b/428037016 - remove this scaling factor once this bug is fixed
-        private const val PANEL_SCALING_FACTOR = 1f / 1.7f
-    }
-
-    internal class CubeEntity(
-        private val session: Session,
-        public var centerPose: Pose,
-        public var extents: FloatSize3d,
-    ) {
-        enum class Face {
-            PosX,
-            PosY,
-            PosZ,
-            NegX,
-            NegY,
-            NegZ;
-
-            override fun toString(): String {
-                return when (this) {
-                    PosX -> "+X"
-                    PosY -> "+Y"
-                    PosZ -> "+Z"
-                    NegX -> "-X"
-                    NegY -> "-Y"
-                    NegZ -> "-Z"
-                }
-            }
-        }
-
-        private val _views: Array<TextView> =
-            Array(6) { createFaceView(enumEntries<Face>()[it], session.activity) }
-
-        private val _faces: Array<PanelEntity> =
-            Array(6) { createFacePanel(enumEntries<Face>()[it]) }
-
-        public fun dispose() {
-            for (face in enumEntries<Face>()) {
-                _faces[face.ordinal].dispose()
-            }
-        }
-
-        public fun resize(newExtents: FloatSize3d) {
-            extents = newExtents
-            for (face in enumEntries<Face>()) {
-                _faces[face.ordinal].size = dimensionsForFace(face)
-            }
-        }
-
-        public fun setAlpha(alpha: Float) {
-            for (face in enumEntries<Face>()) {
-                _faces[face.ordinal].setAlpha(alpha)
-            }
-        }
-
-        public fun setEnabled(enabled: Boolean) {
-            for (face in enumEntries<Face>()) {
-                _faces[face.ordinal].setEnabled(enabled)
-            }
-        }
-
-        public fun update(newPose: Pose, state: AugmentedObject.State) {
-            centerPose = newPose
-            for (face in enumEntries<Face>()) {
-                _views[face.ordinal].setBackgroundColor(
-                    convertObjectCategoryToColor(state.category)
-                )
-                _faces[face.ordinal].setPose(poseForFace(face))
-            }
-        }
-
-        private fun convertObjectCategoryToColor(category: AugmentedObjectCategory): Int =
-            when (category) {
-                AugmentedObjectCategory.KEYBOARD -> Color.GREEN
-                AugmentedObjectCategory.MOUSE -> Color.BLUE
-                AugmentedObjectCategory.LAPTOP -> Color.YELLOW
-                // Planes with Unknown Label are currently not rendered.
-                else -> Color.RED
-            }
-
-        private fun convertMetersToPixels(input: Vector3): Vector3 = input * PX_PER_METER
-
-        private fun createFaceView(face: Face, activity: Activity): TextView {
-            val view = TextView(activity.applicationContext)
-            view.text = "$face"
-            view.setAutoSizeTextTypeWithDefaults(TextView.AUTO_SIZE_TEXT_TYPE_UNIFORM)
-            view.setBackgroundColor(Color.WHITE)
-            return view
-        }
-
-        private fun createFacePanel(face: Face): PanelEntity {
-            val view = createFaceView(face, session.activity)
-            return PanelEntity.create(
-                session,
-                _views[face.ordinal],
-                dimensionsForFace(face),
-                "$face",
-                poseForFace(face),
-            )
-        }
-
-        private fun dimensionsForFace(face: Face): FloatSize2d {
-            val scaledExtents = extents * PANEL_SCALING_FACTOR
-            return when (face) {
-                Face.PosX,
-                Face.NegX -> {
-                    FloatSize2d(scaledExtents.depth, scaledExtents.height)
-                }
-                Face.PosY,
-                Face.NegY -> {
-                    FloatSize2d(scaledExtents.width, scaledExtents.depth)
-                }
-                Face.PosZ,
-                Face.NegZ -> {
-                    FloatSize2d(scaledExtents.width, scaledExtents.height)
-                }
-            }
-        }
-
-        private fun poseForFace(face: Face): Pose {
-            val scaledExtents = (extents * PANEL_SCALING_FACTOR) / 2f
-            return when (face) {
-                Face.PosX -> {
-                    centerPose.compose(
-                        Pose(
-                            Vector3(scaledExtents.width, 0f, 0f),
-                            Quaternion.fromEulerAngles(0f, 90f, 0f),
-                        )
-                    )
-                }
-                Face.PosY -> {
-                    centerPose.compose(
-                        Pose(
-                            Vector3(0f, scaledExtents.height, 0f),
-                            Quaternion.fromEulerAngles(-90f, 0f, 0f),
-                        )
-                    )
-                }
-                Face.PosZ -> {
-                    centerPose.compose(
-                        Pose(Vector3(0f, 0f, scaledExtents.depth), Quaternion.Identity)
-                    )
-                }
-                Face.NegX -> {
-                    centerPose.compose(
-                        Pose(
-                            Vector3(-scaledExtents.width, 0f, 0f),
-                            Quaternion.fromEulerAngles(0f, -90f, 0f),
-                        )
-                    )
-                }
-                Face.NegY -> {
-                    centerPose.compose(
-                        Pose(
-                            Vector3(0f, -scaledExtents.height, 0f),
-                            Quaternion.fromEulerAngles(90f, 0f, 0f),
-                        )
-                    )
-                }
-                Face.NegZ -> {
-                    centerPose.compose(
-                        Pose(
-                            Vector3(0f, 0f, -scaledExtents.depth),
-                            Quaternion.fromEulerAngles(0f, 180f, 0f),
-                        )
-                    )
-                }
-            }
-        }
+        private const val MODEL_SCALING_FACTOR = 1f / 1.7f / 2f
     }
 }

@@ -23,13 +23,13 @@ import android.content.res.Resources;
 import android.util.TypedValue;
 
 import androidx.core.util.TypedValueCompat;
-import androidx.xr.runtime.internal.CameraViewActivityPose;
-import androidx.xr.runtime.internal.Dimensions;
-import androidx.xr.runtime.internal.PanelEntity;
-import androidx.xr.runtime.internal.PerceivedResolutionResult;
-import androidx.xr.runtime.internal.PixelDimensions;
-import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.PanelEntity;
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.Space;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;

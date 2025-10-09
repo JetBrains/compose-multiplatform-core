@@ -95,6 +95,7 @@ internal class Camera2ColorSpaceProfiles(private val colorSpaceProfiles: ColorSp
     override fun <T : Any> unwrapAs(type: KClass<T>): T? {
         return when (type) {
             ColorSpaceProfiles::class -> colorSpaceProfiles as T
+            Camera2ColorSpaceProfiles::class -> this as T
             else -> null
         }
     }

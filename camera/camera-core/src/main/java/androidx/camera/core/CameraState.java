@@ -20,6 +20,7 @@ import android.content.ComponentName;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.RestrictTo;
+import androidx.lifecycle.LiveData;
 
 import com.google.auto.value.AutoValue;
 
@@ -369,7 +370,9 @@ public abstract class CameraState {
          *
          * <p>Developers can rely on this state to be aware of when the camera device is actually
          * in the process of closing. this allows them to communicate it to their users through
-         * the UI.
+         * the UI. Please note that this state is optional. If the camera is closed quickly after
+         * the closing state, it's possible that the CLOSING state is skipped when you observe the
+         * {@link CameraState}'s {@link LiveData}.
          */
         CLOSING,
 

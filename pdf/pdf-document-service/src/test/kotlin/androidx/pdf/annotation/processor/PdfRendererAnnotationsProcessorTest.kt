@@ -22,6 +22,7 @@ import androidx.pdf.adapter.FakePdfDocumentRenderer
 import androidx.pdf.adapter.FakePdfPage
 import androidx.pdf.adapter.PdfDocumentRenderer
 import androidx.pdf.annotation.createPdfAnnotationDataList
+import androidx.pdf.annotation.models.PdfAnnotationData
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -45,7 +46,15 @@ class PdfRendererAnnotationsProcessorTest {
 
     @Test
     fun process_emptyList_returnsEmptyResult() {
-        val result = processor.process(emptyList())
+        listOf(processor::process, processor::processAddEdits, processor::processUpdateEdits)
+            .forEach { method ->
+                val result = method(emptyList())
+                assertTrue(result.success.isEmpty())
+                assertTrue(result.failures.isEmpty())
+            }
+
+        // processRemoveEdits has a different input parameter
+        val result = processor.processRemoveEdits(emptyList())
         assertTrue(result.success.isEmpty())
         assertTrue(result.failures.isEmpty())
     }
@@ -118,5 +127,56 @@ class PdfRendererAnnotationsProcessorTest {
         assertTrue(result.success.size == 5)
         assertTrue(result.failures.isNotEmpty())
         assertTrue(result.failures.size == 5)
+    }
+
+    @Test
+    fun processAddEdit_multipleAnnotations_partialSuccess_returnsSuccessAndFailures() {
+        val expectedNumAnnots = 10
+        val annotations =
+            createPdfAnnotationDataList(
+                numAnnots = expectedNumAnnots,
+                pathLength = 1,
+                invalidRatio = 0.5f,
+            )
+
+        val result = processor.processAddEdits(annotations)
+
+        assertTrue(result.success.isNotEmpty())
+        assertTrue(result.success.size == 5)
+        assertTrue(result.failures.isNotEmpty())
+        assertTrue(result.failures.size == 5)
+    }
+
+    @Test
+    fun processUpdateEdit_multipleAnnotations_partialSuccess_returnsSuccessAndFailures() {
+        val annotations =
+            createPdfAnnotationDataList(numAnnots = 4, pathLength = 1, invalidRatio = 0.5f)
+
+        val newAnnotationsForUpdate =
+            createPdfAnnotationDataList(numAnnots = 2, pathLength = 1, invalidRatio = 1f)
+
+        val addResult = processor.processAddEdits(annotations)
+        val pdfAnnotations =
+            addResult.success.zip(newAnnotationsForUpdate).map {
+                (jetpackAospIdPair, newPdfAnnotationData) ->
+                PdfAnnotationData(jetpackAospIdPair.aospId, newPdfAnnotationData.annotation)
+            }
+
+        val result = processor.processUpdateEdits(pdfAnnotations)
+        assertTrue(result.success.isNotEmpty())
+        assertTrue(result.success.size == 2)
+    }
+
+    @Test
+    fun processRemoveEdit_multipleAnnotations_partialSuccess_returnsSuccessAndFailures() {
+
+        val annotations =
+            createPdfAnnotationDataList(numAnnots = 4, pathLength = 1, invalidRatio = 0.5f)
+
+        val addResult = processor.processAddEdits(annotations)
+        val result = processor.processRemoveEdits(addResult.success.map { it.aospId })
+
+        assertTrue(result.success.isNotEmpty())
+        assertTrue(result.success.size == 2)
     }
 }

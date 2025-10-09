@@ -108,7 +108,7 @@ fun ScalingLazyColumnMixedTypes() {
                 secondaryLabel = "Defaults",
                 colors = ChipDefaults.secondaryChipColors(),
             ) {
-                DemoImage(resourceId = R.drawable.ic_maps_icon)
+                DemoImage(resourceId = R.drawable.icon_maps_icon)
             }
         }
         item {
@@ -117,7 +117,7 @@ fun ScalingLazyColumnMixedTypes() {
                 appName = { Text("AppName") },
                 appImage = {
                     DemoImage(
-                        resourceId = R.drawable.ic_maps_icon,
+                        resourceId = R.drawable.icon_maps_icon,
                         size = CardDefaults.AppImageSize,
                     )
                 },
@@ -137,7 +137,7 @@ fun ScalingLazyColumnMixedTypes() {
                 secondaryLabel = "Defaults",
                 colors = ChipDefaults.secondaryChipColors(),
             ) {
-                DemoImage(resourceId = R.drawable.ic_maps_icon)
+                DemoImage(resourceId = R.drawable.icon_maps_icon)
             }
         }
         item { ListHeader { Text("Activity") } }
@@ -147,7 +147,7 @@ fun ScalingLazyColumnMixedTypes() {
                 appName = { Text("AppName") },
                 appImage = {
                     DemoImage(
-                        resourceId = R.drawable.ic_maps_icon,
+                        resourceId = R.drawable.icon_maps_icon,
                         size = CardDefaults.AppImageSize,
                     )
                 },
@@ -172,7 +172,7 @@ fun ScalingLazyColumnMixedTypes() {
                 appName = { Text("AppName") },
                 appImage = {
                     DemoImage(
-                        resourceId = R.drawable.ic_maps_icon,
+                        resourceId = R.drawable.icon_maps_icon,
                         size = CardDefaults.AppImageSize,
                     )
                 },

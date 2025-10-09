@@ -57,5 +57,5 @@ public object SpatialWindow {
         session: Session,
         activity: Activity,
         preferredRatio: Float,
-    ): Unit = session.platformAdapter.setPreferredAspectRatio(activity, preferredRatio)
+    ): Unit = session.sceneRuntime.setPreferredAspectRatio(activity, preferredRatio)
 }

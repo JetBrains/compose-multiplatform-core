@@ -35,6 +35,7 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 35
         namespace = "androidx.lifecycle.viewmodel.compose"
+        lint.disable += "ComposeTestRuleDispatcher"
     }
     jvmStubs()
     linuxX64Stubs()
@@ -74,7 +75,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))

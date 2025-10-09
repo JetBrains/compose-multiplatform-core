@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,20 @@ package androidx.xr.arcore
 
 import android.app.Activity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.runtime.Trackable as RuntimeTrackable
+import androidx.xr.arcore.testing.FakePerceptionRuntime
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeRuntimeArDevice
+import androidx.xr.arcore.testing.FakeRuntimeDepthMap
+import androidx.xr.arcore.testing.FakeRuntimeFace
+import androidx.xr.arcore.testing.FakeRuntimeHand
+import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.HandJointType
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Trackable as RuntimeTrackable
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakeRuntime
-import androidx.xr.runtime.testing.FakeRuntimeArDevice
-import androidx.xr.runtime.testing.FakeRuntimeDepthMap
-import androidx.xr.runtime.testing.FakeRuntimeFace
-import androidx.xr.runtime.testing.FakeRuntimeFactory
-import androidx.xr.runtime.testing.FakeRuntimeHand
-import androidx.xr.runtime.testing.FakeRuntimePlane
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -51,14 +50,14 @@ class PerceptionStateExtenderTest {
 
     private val handJointBufferSize: Int = 728
     private val tolerance = 1e-4f
-    private lateinit var fakeRuntime: FakeRuntime
+    private lateinit var fakePerceptionRuntime: FakePerceptionRuntime
     private lateinit var timeSource: TestTimeSource
     private lateinit var underTest: PerceptionStateExtender
 
     @Before
     fun setUp() {
-        fakeRuntime = FakeRuntimeFactory().createRuntime(Activity())
-        timeSource = fakeRuntime.lifecycleManager.timeSource
+        fakePerceptionRuntime = FakePerceptionRuntimeFactory().createRuntime(Activity())
+        timeSource = fakePerceptionRuntime.lifecycleManager.timeSource
         underTest = PerceptionStateExtender()
     }
 
@@ -77,12 +76,12 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withOneState_addsAllTrackablesToTheCollection(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
 
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
         val runtimeTrackable: RuntimeTrackable = FakeRuntimePlane()
-        fakeRuntime.perceptionManager.addTrackable(runtimeTrackable)
+        fakePerceptionRuntime.perceptionManager.addTrackable(runtimeTrackable)
 
         // act
         underTest.extend(coreState)
@@ -96,15 +95,15 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withTwoStates_updatesAllTrackablesInTheirCollection(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
-        fakeRuntime.perceptionManager.addTrackable(FakeRuntimePlane())
+        underTest.initialize(listOf(fakePerceptionRuntime))
+        fakePerceptionRuntime.perceptionManager.addTrackable(FakeRuntimePlane())
         underTest.extend(CoreState(timeSource.markNow()))
 
         timeSource += 10.milliseconds
         val timeMark = timeSource.markNow()
-        fakeRuntime.perceptionManager.trackables.clear()
+        fakePerceptionRuntime.perceptionManager.trackables.clear()
         val runtimeTrackable = FakeRuntimePlane()
-        fakeRuntime.perceptionManager.addTrackable(runtimeTrackable)
+        fakePerceptionRuntime.perceptionManager.addTrackable(runtimeTrackable)
         val coreState = CoreState(timeMark)
 
         // act
@@ -119,9 +118,9 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withTwoStates_trackableStatusUpdated(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val runtimeTrackable = FakeRuntimePlane()
-        fakeRuntime.perceptionManager.addTrackable(runtimeTrackable)
+        fakePerceptionRuntime.perceptionManager.addTrackable(runtimeTrackable)
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
         check(
@@ -143,7 +142,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withTwoStates_handStatesUpdated(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
         check(coreState.perceptionState!!.leftHand != null)
@@ -171,8 +170,9 @@ class PerceptionStateExtenderTest {
                     )
             }
 
-        val leftRuntimeHand = fakeRuntime.perceptionManager.leftHand!! as FakeRuntimeHand
-        val rightRuntimeHand = fakeRuntime.perceptionManager.rightHand!! as FakeRuntimeHand
+        val leftRuntimeHand = fakePerceptionRuntime.perceptionManager.leftHand!! as FakeRuntimeHand
+        val rightRuntimeHand =
+            fakePerceptionRuntime.perceptionManager.rightHand!! as FakeRuntimeHand
         leftRuntimeHand.trackingState = TrackingState.TRACKING
         leftRuntimeHand.handJointsBuffer = generateTestBuffer(handJoints)
         rightRuntimeHand.trackingState = TrackingState.TRACKING
@@ -206,7 +206,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withTwoStates_arDeviceStateUpdated(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
         check(coreState.perceptionState!!.arDevice.state.value.devicePose == Pose())
@@ -215,7 +215,8 @@ class PerceptionStateExtenderTest {
         timeSource += 10.milliseconds
         val expectedDevicePose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
 
-        val runtimeArDevice = fakeRuntime.perceptionManager.arDevice!! as FakeRuntimeArDevice
+        val runtimeArDevice =
+            fakePerceptionRuntime.perceptionManager.arDevice!! as FakeRuntimeArDevice
         runtimeArDevice.devicePose = expectedDevicePose
         val coreState2 = CoreState(timeSource.markNow())
         underTest.extend(coreState2)
@@ -228,7 +229,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withTwoStates_leftRenderViewpointStateUpdated(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
         check(coreState.perceptionState!!.leftRenderViewpoint != null)
@@ -247,7 +248,7 @@ class PerceptionStateExtenderTest {
         val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
         val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
 
-        val runtimeViewpoint = fakeRuntime.perceptionManager.leftRenderViewpoint!!
+        val runtimeViewpoint = fakePerceptionRuntime.perceptionManager.leftRenderViewpoint!!
         runtimeViewpoint.pose = expectedPose
         runtimeViewpoint.fieldOfView = expectedFov
         val coreState2 = CoreState(timeSource.markNow())
@@ -264,7 +265,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withTwoStates_rightRenderViewpointStateUpdated(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
         check(coreState.perceptionState!!.rightRenderViewpoint != null)
@@ -283,7 +284,7 @@ class PerceptionStateExtenderTest {
         val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
         val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
 
-        val runtimeViewpoint = fakeRuntime.perceptionManager.rightRenderViewpoint!!
+        val runtimeViewpoint = fakePerceptionRuntime.perceptionManager.rightRenderViewpoint!!
         runtimeViewpoint.pose = expectedPose
         runtimeViewpoint.fieldOfView = expectedFov
         val coreState2 = CoreState(timeSource.markNow())
@@ -300,7 +301,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withTwoStates_monoRenderViewpointStateUpdated(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
         check(coreState.perceptionState!!.monoRenderViewpoint != null)
@@ -319,7 +320,7 @@ class PerceptionStateExtenderTest {
         val expectedPose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
         val expectedFov = FieldOfView(1f, 2f, 3f, 4f)
 
-        val runtimeViewpoint = fakeRuntime.perceptionManager.monoRenderViewpoint!!
+        val runtimeViewpoint = fakePerceptionRuntime.perceptionManager.monoRenderViewpoint!!
         runtimeViewpoint.pose = expectedPose
         runtimeViewpoint.fieldOfView = expectedFov
         val coreState2 = CoreState(timeSource.markNow())
@@ -336,7 +337,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_withTwoStates_faceStatesUpdated(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
         check(coreState.perceptionState!!.userFace != null)
@@ -349,7 +350,7 @@ class PerceptionStateExtenderTest {
 
         // act
         timeSource += 10.milliseconds
-        val runtimeFace = fakeRuntime.perceptionManager.userFace!! as FakeRuntimeFace
+        val runtimeFace = fakePerceptionRuntime.perceptionManager.userFace!! as FakeRuntimeFace
         runtimeFace.trackingState = TrackingState.TRACKING
         val expectedBlendShapeValues = floatArrayOf(0.1f, 0.2f, 0.3f)
         val expectedConfidenceValues = floatArrayOf(0.4f, 0.5f, 0.6f)
@@ -370,7 +371,7 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_perceptionStateMapSizeExceedsMax(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
 
@@ -391,20 +392,21 @@ class PerceptionStateExtenderTest {
     @Test
     fun extend_depthMapsStateUpdated(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val coreState = CoreState(timeSource.markNow())
         underTest.extend(coreState)
-        check(coreState.perceptionState!!.depthMaps.isNotEmpty())
-        check(coreState.perceptionState!!.depthMaps[0].state.value.width == 0)
-        check(coreState.perceptionState!!.depthMaps[0].state.value.height == 0)
-        check(coreState.perceptionState!!.depthMaps[0].state.value.rawDepthMap == null)
-        check(coreState.perceptionState!!.depthMaps[0].state.value.rawConfidenceMap == null)
-        check(coreState.perceptionState!!.depthMaps[0].state.value.smoothDepthMap == null)
-        check(coreState.perceptionState!!.depthMaps[0].state.value.smoothConfidenceMap == null)
+        check(coreState.perceptionState!!.leftDepthMap != null)
+        check(coreState.perceptionState!!.leftDepthMap!!.state.value.width == 0)
+        check(coreState.perceptionState!!.leftDepthMap!!.state.value.height == 0)
+        check(coreState.perceptionState!!.leftDepthMap!!.state.value.rawDepthMap == null)
+        check(coreState.perceptionState!!.leftDepthMap!!.state.value.rawConfidenceMap == null)
+        check(coreState.perceptionState!!.leftDepthMap!!.state.value.smoothDepthMap == null)
+        check(coreState.perceptionState!!.leftDepthMap!!.state.value.smoothConfidenceMap == null)
 
         // act
         timeSource += 10.milliseconds
-        val runtimeDepthMap = fakeRuntime.perceptionManager.depthMaps[0] as FakeRuntimeDepthMap
+        val runtimeDepthMap =
+            fakePerceptionRuntime.perceptionManager.leftDepthMap as FakeRuntimeDepthMap
         val expectedWidth = 80
         val expectedHeight = 80
         val expectedRawDepthMap = FloatBuffer.wrap(FloatArray(6400) { 8.0f })
@@ -421,22 +423,22 @@ class PerceptionStateExtenderTest {
 
         // assert
         val perceptionState = coreState.perceptionState!!
-        assertThat(perceptionState.depthMaps[0].state.value.width).isEqualTo(expectedWidth)
-        assertThat(perceptionState.depthMaps[0].state.value.height).isEqualTo(expectedHeight)
-        assertThat(perceptionState.depthMaps[0].state.value.rawDepthMap)
+        assertThat(perceptionState.leftDepthMap!!.state.value.width).isEqualTo(expectedWidth)
+        assertThat(perceptionState.leftDepthMap!!.state.value.height).isEqualTo(expectedHeight)
+        assertThat(perceptionState.leftDepthMap!!.state.value.rawDepthMap)
             .isEqualTo(expectedRawDepthMap)
-        assertThat(perceptionState.depthMaps[0].state.value.rawConfidenceMap)
+        assertThat(perceptionState.leftDepthMap!!.state.value.rawConfidenceMap)
             .isEqualTo(expectedRawConfidenceMap)
-        assertThat(perceptionState.depthMaps[0].state.value.smoothDepthMap)
+        assertThat(perceptionState.leftDepthMap!!.state.value.smoothDepthMap)
             .isEqualTo(expectedSmoothDepthMap)
-        assertThat(perceptionState.depthMaps[0].state.value.smoothConfidenceMap)
+        assertThat(perceptionState.leftDepthMap!!.state.value.smoothConfidenceMap)
             .isEqualTo(expectedSmoothConfidenceMap)
     }
 
     @Test
     fun close_cleanUpData(): Unit = runBlocking {
         // arrange
-        underTest.initialize(fakeRuntime)
+        underTest.initialize(listOf(fakePerceptionRuntime))
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
         underTest.extend(coreState)

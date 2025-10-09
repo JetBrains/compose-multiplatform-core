@@ -2312,15 +2312,15 @@ public final class LayoutElementBuilders {
             /**
              * Creates an instance of {@link Builder}.
              *
-             * <p>It is highly recommended to use {@link #Builder(ProtoLayoutScope)} constructor
-             * which supports automatic resource registration, paired with {@link
-             * #setImageResource}.
-             *
              * <p>Note that, when using this constructor, it should be paired with {@link
              * #setResourceId}, and resource used for it needs to be manually registered in {@code
              * TileService#onTileResourcesRequest} for Tiles. This constructor can't be mixed with
              * {@link #setImageResource}, otherwise an exception will be thrown.
+             *
+             * @deprecated Use {@link #Builder(ProtoLayoutScope)} constructor which supports
+             *     automatic resource registration, paired with {@link #setImageResource}.
              */
+            @Deprecated
             public Builder() {}
 
             /**
@@ -2394,7 +2394,10 @@ public final class LayoutElementBuilders {
              * @throws IllegalStateException if this method is called with {@link
              *     #Builder(ProtoLayoutScope)} or after {@link #setImageResource(ImageResource)} was
              *     already called.
+             * @deprecated Use {@link #setImageResource} paired with {@link
+             *     #Builder(ProtoLayoutScope)} for automatic resource registration.
              */
+            @Deprecated
             @RequiresSchemaVersion(major = 1, minor = 0)
             public @NonNull Builder setResourceId(@NonNull String resourceId) {
                 return setResourceId(new StringProp.Builder(resourceId).build());
@@ -2409,7 +2412,10 @@ public final class LayoutElementBuilders {
              * @throws IllegalStateException if this method is called with {@link
              *     #Builder(ProtoLayoutScope)} or after {@link #setImageResource(ImageResource)} was
              *     already called.
+             * @deprecated Use {@link #setImageResource} paired with {@link
+             *     #Builder(ProtoLayoutScope)} for automatic resource registration.
              */
+            @Deprecated
             @RequiresSchemaVersion(major = 1, minor = 0)
             public @NonNull Builder setResourceId(@NonNull StringProp resourceId) {
                 if (mScope != null || mIsImageResourceApiUsed) {

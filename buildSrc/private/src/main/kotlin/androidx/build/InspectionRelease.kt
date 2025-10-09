@@ -56,7 +56,7 @@ internal fun Project.publishInspectionConfiguration(
             it.sourceFile.set(project.files(configuration).singleFile)
             val extension = project.extensions.getByType(InspectionExtension::class.java)
             val fileName = extension.name ?: "${project.name}.jar"
-            it.destinationFile.set(getDistributionDirectoryProperty().file("$dirName/$fileName"))
+            it.destinationFile.set(getDistributionDirectory().file("$dirName/$fileName"))
         }
     addToBuildOnServer(sync)
 }

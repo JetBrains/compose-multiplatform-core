@@ -24,6 +24,7 @@ import static org.junit.Assert.assertThrows;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSchema.BooleanPropertyConfig;
 import androidx.appsearch.app.AppSearchSchema.DoublePropertyConfig;
+import androidx.appsearch.app.AppSearchSchema.EmbeddingPropertyConfig;
 import androidx.appsearch.app.AppSearchSchema.LongPropertyConfig;
 import androidx.appsearch.app.AppSearchSchema.PropertyConfig;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
@@ -969,20 +970,20 @@ public class AppSearchSchemaCtsTest {
                                         .setShouldIndexNestedProperties(true)
                                         .build())
                         .addProperty(
-                                new AppSearchSchema.EmbeddingPropertyConfig.Builder("embedding")
+                                new EmbeddingPropertyConfig.Builder("embedding")
                                         .setCardinality(
                                                 AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
                                         .setIndexingType(
-                                                AppSearchSchema.EmbeddingPropertyConfig
+                                                EmbeddingPropertyConfig
                                                         .INDEXING_TYPE_NONE)
                                         .build())
                         .addProperty(
-                                new AppSearchSchema.EmbeddingPropertyConfig.Builder(
+                                new EmbeddingPropertyConfig.Builder(
                                         "indexableEmbedding")
                                         .setCardinality(
                                                 AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
                                         .setIndexingType(
-                                                AppSearchSchema.EmbeddingPropertyConfig
+                                                EmbeddingPropertyConfig
                                                         .INDEXING_TYPE_SIMILARITY)
                                         .build())
                         .build();
@@ -1018,23 +1019,23 @@ public class AppSearchSchemaCtsTest {
         assertThat(properties.get(3).getName()).isEqualTo("embedding");
         assertThat(properties.get(3).getCardinality())
                 .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
-        assertThat(((AppSearchSchema.EmbeddingPropertyConfig) properties.get(3)).getIndexingType())
-                .isEqualTo(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_NONE);
+        assertThat(((EmbeddingPropertyConfig) properties.get(3)).getIndexingType())
+                .isEqualTo(EmbeddingPropertyConfig.INDEXING_TYPE_NONE);
 
         assertThat(properties.get(4).getName()).isEqualTo("indexableEmbedding");
         assertThat(properties.get(4).getCardinality())
                 .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
-        assertThat(((AppSearchSchema.EmbeddingPropertyConfig) properties.get(4)).getIndexingType())
-                .isEqualTo(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY);
+        assertThat(((EmbeddingPropertyConfig) properties.get(4)).getIndexingType())
+                .isEqualTo(EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY);
     }
 
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingPropertyConfig_defaultValues() {
-        AppSearchSchema.EmbeddingPropertyConfig builder =
-                new AppSearchSchema.EmbeddingPropertyConfig.Builder("test").build();
+        EmbeddingPropertyConfig builder =
+                new EmbeddingPropertyConfig.Builder("test").build();
         assertThat(builder.getIndexingType()).isEqualTo(
-                AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_NONE);
+                EmbeddingPropertyConfig.INDEXING_TYPE_NONE);
         assertThat(builder.getCardinality()).isEqualTo(
                 AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
     }
@@ -1043,13 +1044,13 @@ public class AppSearchSchemaCtsTest {
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG)
     public void testEmbeddingPropertyConfig_setIndexingType() {
         assertThrows(IllegalArgumentException.class, () ->
-                new AppSearchSchema.EmbeddingPropertyConfig.Builder("titleEmbedding")
+                new EmbeddingPropertyConfig.Builder("titleEmbedding")
                         .setIndexingType(5).build());
         assertThrows(IllegalArgumentException.class, () ->
-                new AppSearchSchema.EmbeddingPropertyConfig.Builder("titleEmbedding")
+                new EmbeddingPropertyConfig.Builder("titleEmbedding")
                         .setIndexingType(2).build());
         assertThrows(IllegalArgumentException.class, () ->
-                new AppSearchSchema.EmbeddingPropertyConfig.Builder("titleEmbedding")
+                new EmbeddingPropertyConfig.Builder("titleEmbedding")
                         .setIndexingType(-1).build());
     }
 
@@ -1060,27 +1061,27 @@ public class AppSearchSchemaCtsTest {
         AppSearchSchema schema =
                 new AppSearchSchema.Builder("Test")
                         .addProperty(
-                                new AppSearchSchema.EmbeddingPropertyConfig.Builder(
+                                new EmbeddingPropertyConfig.Builder(
                                         "quantizationOff")
                                         .setCardinality(
                                                 AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
                                         .setIndexingType(
-                                                AppSearchSchema.EmbeddingPropertyConfig
+                                                EmbeddingPropertyConfig
                                                         .INDEXING_TYPE_SIMILARITY)
                                         .setQuantizationType(
-                                                AppSearchSchema.EmbeddingPropertyConfig
+                                                EmbeddingPropertyConfig
                                                         .QUANTIZATION_TYPE_NONE)
                                         .build())
                         .addProperty(
-                                new AppSearchSchema.EmbeddingPropertyConfig.Builder(
+                                new EmbeddingPropertyConfig.Builder(
                                         "quantization8Bit")
                                         .setCardinality(
                                                 AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
                                         .setIndexingType(
-                                                AppSearchSchema.EmbeddingPropertyConfig
+                                                EmbeddingPropertyConfig
                                                         .INDEXING_TYPE_SIMILARITY)
                                         .setQuantizationType(
-                                                AppSearchSchema.EmbeddingPropertyConfig
+                                                EmbeddingPropertyConfig
                                                         .QUANTIZATION_TYPE_8_BIT)
                                         .build())
                         .build();
@@ -1092,30 +1093,30 @@ public class AppSearchSchemaCtsTest {
         assertThat(properties.get(0).getName()).isEqualTo("quantizationOff");
         assertThat(properties.get(0).getCardinality())
                 .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
-        assertThat(((AppSearchSchema.EmbeddingPropertyConfig) properties.get(0)).getIndexingType())
-                .isEqualTo(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY);
-        assertThat(((AppSearchSchema.EmbeddingPropertyConfig) properties.get(0))
+        assertThat(((EmbeddingPropertyConfig) properties.get(0)).getIndexingType())
+                .isEqualTo(EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY);
+        assertThat(((EmbeddingPropertyConfig) properties.get(0))
                 .getQuantizationType())
-                .isEqualTo(AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE);
+                .isEqualTo(EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE);
 
         assertThat(properties.get(1).getName()).isEqualTo("quantization8Bit");
         assertThat(properties.get(1).getCardinality())
                 .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
-        assertThat(((AppSearchSchema.EmbeddingPropertyConfig) properties.get(1)).getIndexingType())
-                .isEqualTo(AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY);
-        assertThat(((AppSearchSchema.EmbeddingPropertyConfig) properties.get(1))
+        assertThat(((EmbeddingPropertyConfig) properties.get(1)).getIndexingType())
+                .isEqualTo(EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY);
+        assertThat(((EmbeddingPropertyConfig) properties.get(1))
                 .getQuantizationType())
-                .isEqualTo(AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_8_BIT);
+                .isEqualTo(EmbeddingPropertyConfig.QUANTIZATION_TYPE_8_BIT);
     }
 
     @Test
     @RequiresFlagsEnabled({Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG,
             Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION})
     public void testEmbeddingPropertyConfig_defaultQuantizationValue() {
-        AppSearchSchema.EmbeddingPropertyConfig builder =
-                new AppSearchSchema.EmbeddingPropertyConfig.Builder("test").build();
+        EmbeddingPropertyConfig builder =
+                new EmbeddingPropertyConfig.Builder("test").build();
         assertThat(builder.getQuantizationType()).isEqualTo(
-                AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE);
+                EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE);
     }
 
     @Test
@@ -1123,13 +1124,13 @@ public class AppSearchSchemaCtsTest {
             Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION})
     public void testEmbeddingPropertyConfig_setQuantizationType() {
         assertThrows(IllegalArgumentException.class, () ->
-                new AppSearchSchema.EmbeddingPropertyConfig.Builder("titleEmbedding")
+                new EmbeddingPropertyConfig.Builder("titleEmbedding")
                         .setQuantizationType(5).build());
         assertThrows(IllegalArgumentException.class, () ->
-                new AppSearchSchema.EmbeddingPropertyConfig.Builder("titleEmbedding")
+                new EmbeddingPropertyConfig.Builder("titleEmbedding")
                         .setQuantizationType(3).build());
         assertThrows(IllegalArgumentException.class, () ->
-                new AppSearchSchema.EmbeddingPropertyConfig.Builder("titleEmbedding")
+                new EmbeddingPropertyConfig.Builder("titleEmbedding")
                         .setQuantizationType(-1).build());
     }
 
@@ -1215,5 +1216,59 @@ public class AppSearchSchemaCtsTest {
         assertThat(builder.getCardinality()).isEqualTo(
                 AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
         assertThat(builder.getDescription()).isEqualTo("");
+    }
+
+    @Test
+    @RequiresFlagsEnabled({
+            Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG, Flags.FLAG_ENABLE_SCHEMA_DESCRIPTION
+    })
+    public void testEmbeddingPropertyConfig_SetDescription() {
+        AppSearchSchema.Builder schemaBuilder =
+                new AppSearchSchema.Builder("Email")
+                        .setDescription("A type of electronic message")
+                        .addProperty(
+                                new EmbeddingPropertyConfig.Builder("subject")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)
+                                        .setDescription("An embedding of the subject of the email")
+                                        .build());
+        AppSearchSchema schema1 = schemaBuilder.build();
+
+        assertThat(schema1.getProperties().get(0).getDescription())
+                .isEqualTo("An embedding of the subject of the email");
+
+        // Create an identical schema
+        AppSearchSchema schema2 =
+                new AppSearchSchema.Builder("Email")
+                        .setDescription("A type of electronic message")
+                        .addProperty(
+                                new EmbeddingPropertyConfig.Builder("subject")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)
+                                        .setDescription("An embedding of the subject of the email")
+                                        .build())
+                        .build();
+
+        assertThat(schema1).isEqualTo(schema2);
+        assertThat(schema1.hashCode()).isEqualTo(schema2.hashCode());
+
+        // Create a schema that differs only in the description of the property
+        AppSearchSchema schema3 =
+                new AppSearchSchema.Builder("Email")
+                        .setDescription("A type of electronic message")
+                        .addProperty(
+                                new EmbeddingPropertyConfig.Builder("subject")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY)
+                                        .setDescription("A different description")  // <-- changed
+                                        .build())
+                        .build();
+        assertThat(schema1).isNotEqualTo(schema3);
+
+        assertThat(schema1.toString()).contains("An embedding of the subject of the email");
+        assertThat(schema3.toString()).contains("A different description");
     }
 }

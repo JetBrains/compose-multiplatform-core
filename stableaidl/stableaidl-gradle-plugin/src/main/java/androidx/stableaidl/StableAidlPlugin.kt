@@ -102,12 +102,15 @@ abstract class StableAidlPlugin : Plugin<Project> {
             // we'll need to use manually-defined stubs.
             val compileSdkProvider =
                 project.provider {
-                    project.extensions.findByType(CommonExtension::class.java)?.compileSdk
+                    project.extensions.findByType(CommonExtension::class.java)?.let { ext ->
+                        // Assume any preview SDK is at least 36.
+                        ext.compileSdk ?: ext.compileSdkPreview?.let { 36 }
+                    }
                         ?: project.extensions
                             .findByType(KotlinMultiplatformExtension::class.java)
                             ?.extensions
                             ?.findByType(KotlinMultiplatformAndroidLibraryTarget::class.java)
-                            ?.compileSdk
+                            ?.let { ext -> ext.compileSdk ?: ext.compileSdkPreview?.let { 36 } }
                         ?: throw RuntimeException("Failed to obtain compileSdk")
                 }
             val aidlFramework =

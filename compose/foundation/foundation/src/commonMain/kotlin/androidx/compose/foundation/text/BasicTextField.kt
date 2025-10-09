@@ -334,29 +334,31 @@ internal fun BasicTextField(
                         currentTextToolbar.showMenu(
                             rect = rect,
                             onCopyRequested =
-                                menuItem(canCopy(), TextToolbarState.None) {
+                                menuItem(canShowCopyMenuItem(), TextToolbarState.None) {
                                     coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                                         copy()
                                     }
                                 },
                             onPasteRequested =
-                                menuItem(canPaste(), TextToolbarState.None) {
+                                menuItem(canShowPasteMenuItem(), TextToolbarState.None) {
                                     coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                                         paste()
                                     }
                                 },
                             onCutRequested =
-                                menuItem(canCut(), TextToolbarState.None) {
+                                menuItem(canShowCutMenuItem(), TextToolbarState.None) {
                                     coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                                         cut()
                                     }
                                 },
                             onSelectAllRequested =
-                                menuItem(canSelectAll(), TextToolbarState.Selection) {
+                                menuItem(canShowSelectAllMenuItem(), TextToolbarState.Selection) {
                                     selectAll()
                                 },
                             onAutofillRequested =
-                                menuItem(canAutofill(), TextToolbarState.None) { autofill() },
+                                menuItem(canShowAutofillMenuItem(), TextToolbarState.None) {
+                                    autofill()
+                                },
                         )
                     }
 
@@ -367,6 +369,13 @@ internal fun BasicTextField(
                 }
             }
         }
+
+    rememberClipboardEventsHandler(
+        isEnabled = isFocused,
+        onPaste = { textFieldSelectionState.onPasteEvent(it) },
+        onCopy = { textFieldSelectionState.copyWithResult() },
+        onCut = { textFieldSelectionState.cutWithResult() },
+    )
 
     SideEffect {
         // These properties are not backed by snapshot state, so they can't be updated directly in

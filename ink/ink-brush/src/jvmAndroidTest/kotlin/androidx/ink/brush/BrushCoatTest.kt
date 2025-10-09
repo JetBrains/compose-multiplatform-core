@@ -52,8 +52,8 @@ class BrushCoatTest {
         // different values are not equal.
         assertThat(brushCoat).isNotEqualTo(null)
         assertThat(brushCoat).isNotEqualTo(Any())
-        assertThat(brushCoat).isNotEqualTo(brushCoat.copy(tip = differentTip))
-        assertThat(brushCoat).isNotEqualTo(brushCoat.copy(paint = differentPaint))
+        assertThat(brushCoat).isNotEqualTo(BrushCoat(differentTip, customPaint))
+        assertThat(brushCoat).isNotEqualTo(BrushCoat(customTip, differentPaint))
     }
 
     @Test
@@ -61,9 +61,10 @@ class BrushCoatTest {
         assertThat(BrushCoat().toString())
             .isEqualTo(
                 "BrushCoat(tip=BrushTip(scale=(1.0, 1.0), " +
-                    "cornerRounding=1.0, slant=0.0, pinch=0.0, rotation=0.0, opacityMultiplier=1.0, " +
-                    "particleGapDistanceScale=0.0, particleGapDurationMillis=0, behaviors=[]), " +
-                    "paint=BrushPaint(textureLayers=[]))"
+                    "cornerRounding=1.0, slantDegrees=0.0, pinch=0.0, rotationDegrees=0.0, " +
+                    "opacityMultiplier=1.0, particleGapDistanceScale=0.0, particleGapDurationMillis=0, " +
+                    "behaviors=[]), paintPreferences=[BrushPaint(textureLayers=[], colorFunctions=[], " +
+                    "selfOverlap=SelfOverlap.ANY)])"
             )
     }
 
@@ -84,13 +85,13 @@ class BrushCoatTest {
 
         assertThat(brushCoat.copy(tip = differentTip))
             .isEqualTo(BrushCoat(differentTip, customPaint))
-        assertThat(brushCoat.copy(paint = differentPaint))
+        assertThat(brushCoat.copy(paintPreferences = listOf(differentPaint)))
             .isEqualTo(BrushCoat(customTip, differentPaint))
     }
 
     @Test
     fun builder_createsExpectedBrushCoat() {
-        val coat = BrushCoat.Builder().setTip(customTip).setPaint(customPaint).build()
+        val coat = BrushCoat.Builder().setTip(customTip).addPaintPreference(customPaint).build()
         assertThat(coat).isEqualTo(BrushCoat(customTip, customPaint))
     }
 
@@ -130,9 +131,9 @@ class BrushCoatTest {
             scaleX = 0.1f,
             scaleY = 0.2f,
             cornerRounding = 0.3f,
-            slant = 0.4f,
+            slantDegrees = 0.4f,
             pinch = 0.5f,
-            rotation = 0.6f,
+            rotationDegrees = 0.6f,
             opacityMultiplier = 0.7f,
             particleGapDistanceScale = 0.8f,
             particleGapDurationMillis = 9L,
@@ -152,7 +153,7 @@ class BrushCoatTest {
                     sizeY = 678.90F,
                     offsetX = 0.123f,
                     offsetY = 0.678f,
-                    rotation = 0.1f,
+                    rotationDegrees = 0.1f,
                     opacity = 0.123f,
                     animationFrames = 6,
                     animationRows = 7,
@@ -168,7 +169,7 @@ class BrushCoatTest {
                     sizeY = 256F,
                     offsetX = 0.456f,
                     offsetY = 0.567f,
-                    rotation = 0.2f,
+                    rotationDegrees = 0.2f,
                     opacity = 0.987f,
                     animationFrames = 6,
                     animationRows = 7,
@@ -178,7 +179,8 @@ class BrushCoatTest {
                     BrushPaint.TextureOrigin.STROKE_SPACE_ORIGIN,
                     BrushPaint.TextureMapping.TILING,
                 ),
-            )
+            ),
+            selfOverlap = SelfOverlap.ACCUMULATE,
         )
 
     /** Brush Coat with every field different from default values. */

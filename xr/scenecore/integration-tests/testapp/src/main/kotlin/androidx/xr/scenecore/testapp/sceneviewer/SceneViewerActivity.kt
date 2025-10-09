@@ -64,6 +64,8 @@ class SceneViewerActivity : AppCompatActivity() {
 
                 Log.i("SCENE_VIEWER_INTENT", intentUri.toString())
                 sceneViewerIntent.setData(intentUri)
+                sceneViewerIntent.setClassName(SCENE_VIEWER_XR_PACKAGE, SCENE_VIEWER_XR_ACTIVITY)
+
                 try {
                     startActivity(sceneViewerIntent)
                 } catch (e: ActivityNotFoundException) {
@@ -85,6 +87,7 @@ class SceneViewerActivity : AppCompatActivity() {
         const val THREE_D_MODEL_URL =
             "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master" +
                 "/2.0/FlightHelmet/glTF/FlightHelmet.gltf"
-        const val MIME_TYPE = "model/gltf-binary"
+        const val SCENE_VIEWER_XR_PACKAGE = "com.google.vr.sceneviewerxr"
+        const val SCENE_VIEWER_XR_ACTIVITY = "com.google.vr.sceneviewerxr.SceneViewerXrActivity"
     }
 }

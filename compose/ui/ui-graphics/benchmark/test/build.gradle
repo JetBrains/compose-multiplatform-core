@@ -37,4 +37,7 @@ dependencies {
 android {
     compileSdk = 35
     namespace = "androidx.compose.ui.graphics.benchmark.test"
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }

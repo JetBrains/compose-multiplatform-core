@@ -66,6 +66,9 @@ dependencies {
 android {
     compileSdk = 35
     namespace = "androidx.fragment.compose"
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }
 
 androidx {

@@ -39,8 +39,8 @@ public interface TrustedWebActivityDisplayMode {
                 return new MinimalUiMode();
             case TabbedMode.ID:
                 return new TabbedMode();
-            case WindowControlsOverlay.ID:
-                return new WindowControlsOverlay();
+            case WindowControlsOverlayMode.ID:
+                return new WindowControlsOverlayMode();
             case DefaultMode.ID: // fallthrough
             default:
                 return new DefaultMode();
@@ -198,7 +198,7 @@ public interface TrustedWebActivityDisplayMode {
      * {@see https://github.com/WICG/window-controls-overlay/blob/main/explainer.md}
      * {@see https://wicg.github.io/window-controls-overlay/}
      */
-    final class WindowControlsOverlay implements TrustedWebActivityDisplayMode {
+    final class WindowControlsOverlayMode implements TrustedWebActivityDisplayMode {
 
         private static final int ID = 5;
 

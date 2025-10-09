@@ -24,6 +24,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.RequiresExtension
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.OperationCanceledException
 import androidx.pdf.testapp.R
 import androidx.pdf.viewer.fragment.PdfViewerFragmentV1
@@ -37,7 +38,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 @SuppressLint("RestrictedApiAndroidX")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 class HostFragment : PdfViewerFragmentV1() {
-    private var hostView: FrameLayout? = null
+    private var hostView: ConstraintLayout? = null
     private var search: FloatingActionButton? = null
 
     override fun onCreateView(
@@ -48,7 +49,7 @@ class HostFragment : PdfViewerFragmentV1() {
         val view = super.onCreateView(inflater, container, savedInstanceState) as FrameLayout
 
         // Inflate the custom layout for this fragment.
-        hostView = inflater.inflate(R.layout.fragment_host, container, false) as FrameLayout
+        hostView = inflater.inflate(R.layout.fragment_host, container, false) as ConstraintLayout
         search = hostView?.findViewById(R.id.host_Search)
 
         // Add the default PDF viewer to the custom layout

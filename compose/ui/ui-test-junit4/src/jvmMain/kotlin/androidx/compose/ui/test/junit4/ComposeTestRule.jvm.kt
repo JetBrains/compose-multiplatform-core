@@ -17,6 +17,7 @@
 package androidx.compose.ui.test.junit4
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.UiComposable
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.IdlingResource
 import androidx.compose.ui.test.MainTestClock
@@ -251,7 +252,7 @@ interface ComposeContentTestRule : ComposeTestRule {
      *
      * @throws IllegalStateException if called more than once per test.
      */
-    fun setContent(composable: @Composable () -> Unit)
+    fun setContent(composable: @Composable @UiComposable () -> Unit)
 }
 
 /**
@@ -287,7 +288,6 @@ expect fun createComposeRule(): ComposeContentTestRule
  *   context contains a [TestDispatcher] or [TestCoroutineScheduler] (in that order), it will be
  *   used for composition and the [MainTestClock].
  */
-@ExperimentalTestApi
 expect fun createComposeRule(
     effectContext: CoroutineContext = EmptyCoroutineContext
 ): ComposeContentTestRule

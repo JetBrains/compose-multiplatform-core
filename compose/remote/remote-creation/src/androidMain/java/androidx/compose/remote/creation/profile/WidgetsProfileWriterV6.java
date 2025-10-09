@@ -20,6 +20,7 @@ import static androidx.compose.remote.creation.Rc.FloatExpression.MUL;
 
 import android.graphics.Color;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.creation.Rc;
@@ -30,6 +31,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /** RemoteComposeWriter for Widgets in Baklava (Api level 6) */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WidgetsProfileWriterV6 extends RemoteComposeWriterAndroid {
 
     public WidgetsProfileWriterV6(
@@ -66,6 +68,20 @@ public class WidgetsProfileWriterV6 extends RemoteComposeWriterAndroid {
             throw new IllegalArgumentException("Invalid alpha in V6");
         }
         super.image(modifier, imageId, scaleType, alpha);
+    }
+
+    /**
+     * Intercepts invalid text operations.
+     */
+    @Override
+    public void startTextComponent(@NonNull RecordingModifier modifier, int textId, int color,
+            float fontSize, int fontStyle, float fontWeight, @Nullable String fontFamily,
+            int textAlign, int overflow, int maxLines) {
+        if (Float.isNaN(fontSize)) {
+            throw new IllegalArgumentException("Invalid fontSize in V6");
+        }
+        super.startTextComponent(modifier, textId, color, fontSize, fontStyle, fontWeight,
+                fontFamily, textAlign, overflow, maxLines);
     }
 
     /**

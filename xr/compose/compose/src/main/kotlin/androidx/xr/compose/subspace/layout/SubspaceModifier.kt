@@ -33,35 +33,27 @@ public interface SubspaceModifier {
      * Accumulates a value starting with [initial] and applying [operation] to the current value and
      * each [SubspaceModifierNodeElement] from outside in.
      */
-    public fun <R> foldIn(
-        initial: R,
-        operation: (R, SubspaceModifierNodeElement<SubspaceModifier.Node>) -> R,
-    ): R = initial
+    public fun <R> foldIn(initial: R, operation: (R, SubspaceModifierNodeElement<Node>) -> R): R =
+        initial
 
     /**
      * Accumulates a value starting with [initial] and applying [operation] to the current value and
      * each [SubspaceModifierNodeElement] from inside out.
      */
-    public fun <R> foldOut(
-        initial: R,
-        operation: (SubspaceModifierNodeElement<SubspaceModifier.Node>, R) -> R,
-    ): R = initial
+    public fun <R> foldOut(initial: R, operation: (SubspaceModifierNodeElement<Node>, R) -> R): R =
+        initial
 
     /**
      * Returns `true` if [predicate] returns true for any [SubspaceModifierNodeElement] in this
      * [SubspaceModifier].
      */
-    public fun any(
-        predicate: (SubspaceModifierNodeElement<SubspaceModifier.Node>) -> Boolean
-    ): Boolean = false
+    public fun any(predicate: (SubspaceModifierNodeElement<Node>) -> Boolean): Boolean = false
 
     /**
      * Returns `true` if [predicate] returns true for all [SubspaceModifierNodeElement]s in this
      * [SubspaceModifier] or if this [SubspaceModifier] contains no Elements.
      */
-    public fun all(
-        predicate: (SubspaceModifierNodeElement<SubspaceModifier.Node>) -> Boolean
-    ): Boolean = true
+    public fun all(predicate: (SubspaceModifierNodeElement<Node>) -> Boolean): Boolean = true
 
     /**
      * Concatenates this modifier with another.
@@ -75,17 +67,18 @@ public interface SubspaceModifier {
      * The longer-lived object that is created for each [SubspaceModifierNodeElement] applied to a
      * [SubspaceLayout]
      */
-    public abstract class Node {
+    public abstract class Node : DelegatableSubspaceNode {
+        override val node: Node = this
+
         internal var parent: Node? = null
         internal var child: Node? = null
         internal var layoutNode: SubspaceLayoutNode? = null
-        internal val coordinator: SubspaceLayoutModifierNodeCoordinator? = run {
+        internal val coordinator: SubspaceLayoutModifierNodeCoordinator? =
             if (this is SubspaceLayoutModifierNode) {
                 SubspaceLayoutModifierNodeCoordinator(this)
             } else {
                 null
             }
-        }
 
         /**
          * Indicates that the node is attached to a [SubspaceLayout] which is part of the UI tree.
@@ -124,9 +117,7 @@ public interface SubspaceModifier {
      */
     public companion object : SubspaceModifier {
 
-        public infix fun then(
-            other: SubspaceModifierNodeElement<SubspaceModifier.Node>
-        ): SubspaceModifier = other
+        public infix fun then(other: SubspaceModifierNodeElement<Node>): SubspaceModifier = other
 
         override fun toString(): String = "SubspaceModifier"
     }

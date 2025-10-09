@@ -18,16 +18,18 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.math.IntSize2d
+import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
-// TODO: b/428764847 - Replace platformAdapter property with rtEntity when PerceivedResolution
+// TODO: b/428764847 - Replace sceneRuntime property with rtEntity when PerceivedResolution
 // methods are moved to MainPanelEntityImpl
 /**
  * Represents the main spatialized panel in a [Scene].
@@ -38,12 +40,12 @@ import java.util.function.Consumer
 public class MainPanelEntity
 internal constructor(
     private val lifecycleManager: LifecycleManager,
-    private val platformAdapter: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
     entityManager: EntityManager,
 ) :
     PanelEntity(
         lifecycleManager,
-        platformAdapter.mainPanelEntity,
+        sceneRuntime.mainPanelEntity,
         entityManager,
         isMainPanelEntity = true,
     ) {
@@ -72,11 +74,16 @@ internal constructor(
      *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
      *   to the Consumer’s accept method is the new value for [IntSize2d] value for perceived
      *   resolution.
+     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     *   [Config.DeviceTrackingMode.LAST_KNOWN].
      */
     public fun addPerceivedResolutionChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<IntSize2d>,
     ): Unit {
+        check(lifecycleManager.config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN) {
+            "Config.DeviceTrackingMode is not set to LastKnown."
+        }
         val rtListener =
             Consumer<RtPixelDimensions> { rtDimensions: RtPixelDimensions ->
                 listener.accept(rtDimensions.toIntSize2d())
@@ -84,7 +91,7 @@ internal constructor(
         perceivedResolutionListeners.compute(
             listener,
             { _, _ ->
-                platformAdapter.addPerceivedResolutionChangedListener(callbackExecutor, rtListener)
+                sceneRuntime.addPerceivedResolutionChangedListener(callbackExecutor, rtListener)
                 rtListener
             },
         )
@@ -111,6 +118,8 @@ internal constructor(
      *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
      *   to the Consumer’s accept method is the new value for [IntSize2d] value for perceived
      *   resolution.
+     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     *   [Config.DeviceTrackingMode.LAST_KNOWN].
      */
     public fun addPerceivedResolutionChangedListener(listener: Consumer<IntSize2d>): Unit =
         addPerceivedResolutionChangedListener(HandlerExecutor.mainThreadExecutor, listener)
@@ -118,13 +127,16 @@ internal constructor(
     /**
      * Releases the listener previously added by [addPerceivedResolutionChangedListener].
      *
+     * All listeners are automatically removed when the MainPanelEntity is disposed even if this
+     * method is not explicitly called.
+     *
      * @param listener The [Consumer] to be removed. It will no longer receive change events.
      */
     public fun removePerceivedResolutionChangedListener(listener: Consumer<IntSize2d>): Unit {
         perceivedResolutionListeners.computeIfPresent(
             listener,
             { _, rtListener ->
-                platformAdapter.removePerceivedResolutionChangedListener(rtListener)
+                sceneRuntime.removePerceivedResolutionChangedListener(rtListener)
                 null
             },
         )
@@ -134,8 +146,13 @@ internal constructor(
         /** Returns the MainPanelEntity backed by the main window for the Activity. */
         internal fun create(
             lifecycleManager: LifecycleManager,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
-        ): MainPanelEntity = MainPanelEntity(lifecycleManager, adapter, entityManager)
+        ): MainPanelEntity = MainPanelEntity(lifecycleManager, sceneRuntime, entityManager)
+    }
+
+    override fun dispose() {
+        perceivedResolutionListeners.keys.forEach { removePerceivedResolutionChangedListener(it) }
+        super.dispose()
     }
 }

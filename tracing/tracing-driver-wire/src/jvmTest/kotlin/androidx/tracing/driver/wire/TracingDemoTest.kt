@@ -16,7 +16,7 @@
 
 package androidx.tracing.driver.wire
 
-import androidx.tracing.driver.ProcessTrack
+import androidx.tracing.driver.ThreadTrack
 import androidx.tracing.driver.TraceDriver
 import java.io.File
 import kotlin.random.Random
@@ -31,10 +31,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 class TracingDemoTest {
-
     internal val random = Random(42)
 
-    internal val forkSize = 20
+    internal val forkSize = 1
     internal val multiplier = 1000
     internal val inputSize = forkSize * multiplier
 
@@ -43,40 +42,75 @@ class TracingDemoTest {
     internal val driver =
         TraceDriver(sink = TraceSink(sequenceId = 1, directory = File("/tmp")), isEnabled = true)
 
+    // The Process Track
+    internal val track = driver.ProcessTrack(id = 1, name = "TracingTest")
+
+    private fun threadTrack(): ThreadTrack {
+        val thread = Thread.currentThread()
+        @Suppress("DEPRECATION")
+        return track.getOrCreateThreadTrack(id = thread.id.toInt(), name = thread.name)
+    }
+
     @Test
-    internal fun testTracingEndToEnd(): Unit = runBlocking {
+    internal fun testSimpleTracingTest() = runBlocking {
         driver.context.use {
             withContext(context = Dispatchers.Default) {
-                // Create a process track
-                val track = driver.ProcessTrack(id = 1, name = "TracingTest")
-                track.traceFlow(
-                    "begin",
-                    metadataBlock = { addMetadataEntry("context", "end to end tracing test") },
+                threadTrack().traceCoroutine(
+                    "trace",
+                    metadataBlock = {
+                        addMetadataEntry("context", "basic trace with 1 suspension point")
+                    },
                 ) {
-                    delay(20L)
+                    coroutineScope { delay(10L) }
                 }
-                track.traceFlow("histograms-end-to-end") { track.computeHistograms() }
-                track.traceFlow("end") { delay(20L) }
             }
         }
     }
 
-    internal suspend fun ProcessTrack.computeHistograms(): Map<Int, Int> {
+    @Test
+    internal fun testTracingEndToEnd(): Unit = runBlocking {
+        driver.context.use {
+            withContext(context = Dispatchers.Default) {
+                threadTrack().traceCoroutine(
+                    "begin",
+                    metadataBlock = { addMetadataEntry("context", "end to end tracing test") },
+                ) {
+                    coroutineScope {
+                        delay(20L)
+                        threadTrack().traceCoroutine("histograms-end-to-end") {
+                            computeHistograms()
+                        }
+                        threadTrack().traceCoroutine("end") { delay(20L) }
+                        delay(40L)
+                    }
+                }
+            }
+        }
+    }
+
+    internal suspend fun computeHistograms(): Map<Int, Int> {
         val input = List(inputSize) { random.nextInt(0, 100_000) }
         val batches = input.chunked(multiplier)
         return coroutineScope {
             val jobs = mutableListOf<Deferred<Map<Int, Int>>>()
             batches.forEachIndexed { index, batch ->
-                jobs += async { traceFlow("histograms-batch-$index") { computeHistogram(batch) } }
+                jobs += async {
+                    threadTrack().traceCoroutine("histograms-batch-$index") {
+                        computeHistogram(batch)
+                    }
+                }
             }
             val histograms = jobs.awaitAll()
-            val output = traceFlow("merge-histograms") { mergeHistograms(input, histograms) }
+            val output =
+                threadTrack().traceCoroutine("merge-histograms") {
+                    mergeHistograms(input, histograms)
+                }
             output
         }
     }
 
-    internal suspend fun ProcessTrack.computeHistogram(list: List<Int>): Map<Int, Int> {
-        val counter = getOrCreateCounterTrack("Batches Completed")
+    internal suspend fun computeHistogram(list: List<Int>): Map<Int, Int> {
+        val counter = track.getOrCreateCounterTrack("Batches Completed")
         val frequency = mutableMapOf<Int, Int>()
         for (element in list) {
             val count = frequency[element] ?: 0
@@ -88,7 +122,7 @@ class TracingDemoTest {
         return frequency
     }
 
-    internal suspend fun ProcessTrack.mergeHistograms(
+    internal suspend fun mergeHistograms(
         input: List<Int>,
         histograms: List<Map<Int, Int>>,
     ): Map<Int, Int> {

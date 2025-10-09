@@ -22,6 +22,8 @@ package androidx.core.content {
 
   public final class ContextKt {
     method @KotlinOnly public static inline <reified T> T? getSystemService(android.content.Context);
+    method public static suspend Object? receiveBroadcasts(android.content.Context, android.content.IntentFilter filter, int flags, optional String? broadcastPermission, optional android.os.Handler? scheduler, kotlin.jvm.functions.Function2<? super android.content.BroadcastReceiver,? super android.content.Intent?,kotlin.Unit> onReceive, kotlin.coroutines.Continuation<? extends java.lang.Object?>);
+    method public static suspend Object? receiveBroadcastsAsync(android.content.Context, android.content.IntentFilter filter, int flags, optional String? broadcastPermission, optional android.os.Handler? scheduler, kotlin.jvm.functions.Function3<? super android.content.BroadcastReceiver.PendingResult,? super android.content.Intent?,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> onReceive, kotlin.coroutines.Continuation<? extends java.lang.Object?>);
     method public static inline void withStyledAttributes(android.content.Context, optional android.util.AttributeSet? set, int[] attrs, optional @AttrRes int defStyleAttr, optional @StyleRes int defStyleRes, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,kotlin.Unit> block);
     method public static inline void withStyledAttributes(android.content.Context, @StyleRes int resourceId, int[] attrs, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,kotlin.Unit> block);
   }
@@ -123,19 +125,19 @@ package androidx.core.graphics {
     method @ColorLong @RequiresApi(26) public static inline infix long convertTo(@ColorInt int, android.graphics.ColorSpace.Named colorSpace);
     method @ColorLong @RequiresApi(26) public static inline infix long convertTo(@ColorLong long, android.graphics.ColorSpace colorSpace);
     method @ColorLong @RequiresApi(26) public static inline infix long convertTo(@ColorLong long, android.graphics.ColorSpace.Named colorSpace);
-    method public static inline int getAlpha(@ColorInt int);
-    method @RequiresApi(26) public static inline float getAlpha(@ColorLong long);
-    method public static inline int getBlue(@ColorInt int);
-    method @RequiresApi(26) public static inline float getBlue(@ColorLong long);
-    method @RequiresApi(26) public static inline android.graphics.ColorSpace getColorSpace(@ColorLong long);
-    method public static inline int getGreen(@ColorInt int);
-    method @RequiresApi(26) public static inline float getGreen(@ColorLong long);
-    method @RequiresApi(26) public static inline float getLuminance(@ColorInt int);
-    method @RequiresApi(26) public static inline float getLuminance(@ColorLong long);
-    method public static inline int getRed(@ColorInt int);
-    method @RequiresApi(26) public static inline float getRed(@ColorLong long);
-    method @RequiresApi(26) public static inline boolean isSrgb(@ColorLong long);
-    method @RequiresApi(26) public static inline boolean isWideGamut(@ColorLong long);
+    method @InaccessibleFromKotlin public static inline int getAlpha(@ColorInt int);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline float getAlpha(@ColorLong long);
+    method @InaccessibleFromKotlin public static inline int getBlue(@ColorInt int);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline float getBlue(@ColorLong long);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline android.graphics.ColorSpace getColorSpace(@ColorLong long);
+    method @InaccessibleFromKotlin public static inline int getGreen(@ColorInt int);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline float getGreen(@ColorLong long);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline float getLuminance(@ColorInt int);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline float getLuminance(@ColorLong long);
+    method @InaccessibleFromKotlin public static inline int getRed(@ColorInt int);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline float getRed(@ColorLong long);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline boolean isSrgb(@ColorLong long);
+    method @InaccessibleFromKotlin @RequiresApi(26) public static inline boolean isWideGamut(@ColorLong long);
     method @RequiresApi(26) public static operator android.graphics.Color plus(android.graphics.Color, android.graphics.Color c);
     method @RequiresApi(26) public static inline android.graphics.Color toColor(@ColorInt int);
     method @RequiresApi(26) public static inline android.graphics.Color toColor(@ColorLong long);
@@ -327,7 +329,7 @@ package androidx.core.os {
 
   public final class BundleKt {
     method public static android.os.Bundle bundleOf();
-    method public static android.os.Bundle bundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
+    method @Deprecated public static android.os.Bundle bundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
   }
 
   public final class HandlerKt {
@@ -345,7 +347,7 @@ package androidx.core.os {
 
   public final class PersistableBundleKt {
     method public static android.os.PersistableBundle persistableBundleOf();
-    method public static android.os.PersistableBundle persistableBundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
+    method @Deprecated public static android.os.PersistableBundle persistableBundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
     method public static android.os.PersistableBundle toPersistableBundle(java.util.Map<java.lang.String,? extends java.lang.Object?>);
   }
 
@@ -368,7 +370,7 @@ package androidx.core.text {
   }
 
   public final class LocaleKt {
-    method public static inline int getLayoutDirection(java.util.Locale);
+    method @InaccessibleFromKotlin public static inline int getLayoutDirection(java.util.Locale);
     property public static inline int java.util.Locale.layoutDirection;
   }
 
@@ -450,7 +452,7 @@ package androidx.core.util {
     method public static inline <T> void forEach(android.util.LongSparseArray<T>, kotlin.jvm.functions.Function2<? super java.lang.Long,? super T,kotlin.Unit> action);
     method public static inline <T> T getOrDefault(android.util.LongSparseArray<T>, long key, T defaultValue);
     method public static inline <T> T getOrElse(android.util.LongSparseArray<T>, long key, kotlin.jvm.functions.Function0<? extends T> defaultValue);
-    method public static inline <T> int getSize(android.util.LongSparseArray<T>);
+    method @InaccessibleFromKotlin public static inline <T> int getSize(android.util.LongSparseArray<T>);
     method public static inline <T> boolean isEmpty(android.util.LongSparseArray<T>);
     method public static inline <T> boolean isNotEmpty(android.util.LongSparseArray<T>);
     method public static <T> kotlin.collections.LongIterator keyIterator(android.util.LongSparseArray<T>);
@@ -506,7 +508,7 @@ package androidx.core.util {
     method public static inline <T> void forEach(android.util.SparseArray<T>, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,kotlin.Unit> action);
     method public static inline <T> T getOrDefault(android.util.SparseArray<T>, int key, T defaultValue);
     method public static inline <T> T getOrElse(android.util.SparseArray<T>, int key, kotlin.jvm.functions.Function0<? extends T> defaultValue);
-    method public static inline <T> int getSize(android.util.SparseArray<T>);
+    method @InaccessibleFromKotlin public static inline <T> int getSize(android.util.SparseArray<T>);
     method public static inline <T> boolean isEmpty(android.util.SparseArray<T>);
     method public static inline <T> boolean isNotEmpty(android.util.SparseArray<T>);
     method public static <T> kotlin.collections.IntIterator keyIterator(android.util.SparseArray<T>);
@@ -525,7 +527,7 @@ package androidx.core.util {
     method public static inline void forEach(android.util.SparseBooleanArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Boolean,kotlin.Unit> action);
     method public static inline boolean getOrDefault(android.util.SparseBooleanArray, int key, boolean defaultValue);
     method public static inline boolean getOrElse(android.util.SparseBooleanArray, int key, kotlin.jvm.functions.Function0<java.lang.Boolean> defaultValue);
-    method public static inline int getSize(android.util.SparseBooleanArray);
+    method @InaccessibleFromKotlin public static inline int getSize(android.util.SparseBooleanArray);
     method public static inline boolean isEmpty(android.util.SparseBooleanArray);
     method public static inline boolean isNotEmpty(android.util.SparseBooleanArray);
     method public static kotlin.collections.IntIterator keyIterator(android.util.SparseBooleanArray);
@@ -544,7 +546,7 @@ package androidx.core.util {
     method public static inline void forEach(android.util.SparseIntArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> action);
     method public static inline int getOrDefault(android.util.SparseIntArray, int key, int defaultValue);
     method public static inline int getOrElse(android.util.SparseIntArray, int key, kotlin.jvm.functions.Function0<java.lang.Integer> defaultValue);
-    method public static inline int getSize(android.util.SparseIntArray);
+    method @InaccessibleFromKotlin public static inline int getSize(android.util.SparseIntArray);
     method public static inline boolean isEmpty(android.util.SparseIntArray);
     method public static inline boolean isNotEmpty(android.util.SparseIntArray);
     method public static kotlin.collections.IntIterator keyIterator(android.util.SparseIntArray);
@@ -563,7 +565,7 @@ package androidx.core.util {
     method public static inline void forEach(android.util.SparseLongArray, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Long,kotlin.Unit> action);
     method public static inline long getOrDefault(android.util.SparseLongArray, int key, long defaultValue);
     method public static inline long getOrElse(android.util.SparseLongArray, int key, kotlin.jvm.functions.Function0<java.lang.Long> defaultValue);
-    method public static inline int getSize(android.util.SparseLongArray);
+    method @InaccessibleFromKotlin public static inline int getSize(android.util.SparseLongArray);
     method public static inline boolean isEmpty(android.util.SparseLongArray);
     method public static inline boolean isNotEmpty(android.util.SparseLongArray);
     method public static kotlin.collections.IntIterator keyIterator(android.util.SparseLongArray);
@@ -584,8 +586,8 @@ package androidx.core.view {
     method public static inline void forEach(android.view.Menu, kotlin.jvm.functions.Function1<? super android.view.MenuItem,kotlin.Unit> action);
     method public static inline void forEachIndexed(android.view.Menu, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super android.view.MenuItem,kotlin.Unit> action);
     method public static inline operator android.view.MenuItem get(android.view.Menu, int index);
-    method public static kotlin.sequences.Sequence<android.view.MenuItem> getChildren(android.view.Menu);
-    method public static inline int getSize(android.view.Menu);
+    method @InaccessibleFromKotlin public static kotlin.sequences.Sequence<android.view.MenuItem> getChildren(android.view.Menu);
+    method @InaccessibleFromKotlin public static inline int getSize(android.view.Menu);
     method public static inline boolean isEmpty(android.view.Menu);
     method public static inline boolean isNotEmpty(android.view.Menu);
     method public static operator java.util.Iterator<android.view.MenuItem> iterator(android.view.Menu);
@@ -600,10 +602,10 @@ package androidx.core.view {
     method public static inline void forEach(android.view.ViewGroup, kotlin.jvm.functions.Function1<? super android.view.View,kotlin.Unit> action);
     method public static inline void forEachIndexed(android.view.ViewGroup, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super android.view.View,kotlin.Unit> action);
     method public static operator android.view.View get(android.view.ViewGroup, int index);
-    method public static kotlin.sequences.Sequence<android.view.View> getChildren(android.view.ViewGroup);
-    method public static kotlin.sequences.Sequence<android.view.View> getDescendants(android.view.ViewGroup);
-    method public static inline kotlin.ranges.IntRange getIndices(android.view.ViewGroup);
-    method public static inline int getSize(android.view.ViewGroup);
+    method @InaccessibleFromKotlin public static kotlin.sequences.Sequence<android.view.View> getChildren(android.view.ViewGroup);
+    method @InaccessibleFromKotlin public static kotlin.sequences.Sequence<android.view.View> getDescendants(android.view.ViewGroup);
+    method @InaccessibleFromKotlin public static inline kotlin.ranges.IntRange getIndices(android.view.ViewGroup);
+    method @InaccessibleFromKotlin public static inline int getSize(android.view.ViewGroup);
     method public static inline boolean isEmpty(android.view.ViewGroup);
     method public static inline boolean isNotEmpty(android.view.ViewGroup);
     method public static operator java.util.Iterator<android.view.View> iterator(android.view.ViewGroup);
@@ -625,23 +627,23 @@ package androidx.core.view {
     method public static inline void doOnNextLayout(android.view.View, kotlin.jvm.functions.Function1<? super android.view.View,kotlin.Unit> action);
     method public static inline androidx.core.view.OneShotPreDrawListener doOnPreDraw(android.view.View, kotlin.jvm.functions.Function1<? super android.view.View,kotlin.Unit> action);
     method public static android.graphics.Bitmap drawToBitmap(android.view.View, optional android.graphics.Bitmap.Config config);
-    method public static kotlin.sequences.Sequence<android.view.View> getAllViews(android.view.View);
-    method public static kotlin.sequences.Sequence<android.view.ViewParent> getAncestors(android.view.View);
-    method public static inline int getMarginBottom(android.view.View);
-    method public static inline int getMarginEnd(android.view.View);
-    method public static inline int getMarginLeft(android.view.View);
-    method public static inline int getMarginRight(android.view.View);
-    method public static inline int getMarginStart(android.view.View);
-    method public static inline int getMarginTop(android.view.View);
-    method public static inline boolean isGone(android.view.View);
-    method public static inline boolean isInvisible(android.view.View);
-    method public static inline boolean isVisible(android.view.View);
+    method @InaccessibleFromKotlin public static kotlin.sequences.Sequence<android.view.View> getAllViews(android.view.View);
+    method @InaccessibleFromKotlin public static kotlin.sequences.Sequence<android.view.ViewParent> getAncestors(android.view.View);
+    method @InaccessibleFromKotlin public static inline int getMarginBottom(android.view.View);
+    method @InaccessibleFromKotlin public static inline int getMarginEnd(android.view.View);
+    method @InaccessibleFromKotlin public static inline int getMarginLeft(android.view.View);
+    method @InaccessibleFromKotlin public static inline int getMarginRight(android.view.View);
+    method @InaccessibleFromKotlin public static inline int getMarginStart(android.view.View);
+    method @InaccessibleFromKotlin public static inline int getMarginTop(android.view.View);
+    method @InaccessibleFromKotlin public static inline boolean isGone(android.view.View);
+    method @InaccessibleFromKotlin public static inline boolean isInvisible(android.view.View);
+    method @InaccessibleFromKotlin public static inline boolean isVisible(android.view.View);
     method public static inline Runnable postDelayed(android.view.View, long delayInMillis, kotlin.jvm.functions.Function0<kotlin.Unit> action);
     method public static Runnable postOnAnimationDelayed(android.view.View, long delayInMillis, kotlin.jvm.functions.Function0<kotlin.Unit> action);
-    method public static inline void setGone(android.view.View, boolean);
-    method public static inline void setInvisible(android.view.View, boolean);
+    method @InaccessibleFromKotlin public static inline void setGone(android.view.View, boolean);
+    method @InaccessibleFromKotlin public static inline void setInvisible(android.view.View, boolean);
     method public static inline void setPadding(android.view.View, @Px int size);
-    method public static inline void setVisible(android.view.View, boolean);
+    method @InaccessibleFromKotlin public static inline void setVisible(android.view.View, boolean);
     method public static inline void updateLayoutParams(android.view.View, kotlin.jvm.functions.Function1<? super android.view.ViewGroup.LayoutParams,kotlin.Unit> block);
     method @KotlinOnly public static inline <reified T extends android.view.ViewGroup.LayoutParams> void updateLayoutParams(android.view.View, kotlin.jvm.functions.Function1<T,kotlin.Unit> block);
     method public static inline void updatePadding(android.view.View, optional @Px int left, optional @Px int top, optional @Px int right, optional @Px int bottom);

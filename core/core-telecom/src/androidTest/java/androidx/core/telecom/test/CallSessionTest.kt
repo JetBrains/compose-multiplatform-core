@@ -164,7 +164,6 @@ class CallSessionTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testRemovalOfEarpieceEndpointIfWiredEndpointIsPresent() {
-        setUpV2Test()
         val res =
             EndpointUtils.maybeRemoveEarpieceIfWiredEndpointPresent(
                 mWiredAndEarpieceEndpoints.toMutableList()
@@ -178,7 +177,6 @@ class CallSessionTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testCompletableDeferredObjectsComplete() {
-        setUpV2Test()
         runBlocking {
             val callChannels = CallChannels()
             val callSession = initCallSession(coroutineContext, callChannels)
@@ -203,7 +201,6 @@ class CallSessionTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testCallEventsEchoEndpoints() {
-        setUpV2Test()
         runBlocking {
             val callChannels = CallChannels()
             val callSession = initCallSession(coroutineContext, callChannels)
@@ -229,7 +226,6 @@ class CallSessionTest : BaseTelecomTest() {
     @SmallTest
     @Test
     fun testPlatformEndpointsAreRemappedToExistingEndpoints() {
-        setUpV2Test()
         runBlocking {
             val callSession = initCallSession(coroutineContext, CallChannels())
 

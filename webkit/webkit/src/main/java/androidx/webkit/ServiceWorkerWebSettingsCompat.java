@@ -198,7 +198,12 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * @return The configured set of allow-listed origins.
      * @see #setRequestedWithHeaderOriginAllowList(Set)
      * @see WebSettingsCompat#getRequestedWithHeaderOriginAllowList(WebSettings)
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API now just returns an empty set.
      */
+
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     @RequiresFeature(name = WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public abstract @NonNull Set<String> getRequestedWithHeaderOriginAllowList();
@@ -222,7 +227,11 @@ public abstract class ServiceWorkerWebSettingsCompat {
      * @param allowList Set of origins to allow-list.
      * @throws IllegalArgumentException if the allow-list contains a malformed origin.
      * @see WebSettingsCompat#setRequestedWithHeaderOriginAllowList(WebSettings, Set)
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API no longer does anything.
      */
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     @RequiresFeature(name = WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public abstract void setRequestedWithHeaderOriginAllowList(@NonNull Set<String> allowList);

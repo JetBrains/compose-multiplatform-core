@@ -22,7 +22,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.annotation.RequiresExtension
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.OperationCanceledException
@@ -42,7 +41,7 @@ class StyledPdfViewerFragment : PdfViewerFragment {
 
     private constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
 
-    private var hostView: FrameLayout? = null
+    private var hostView: ConstraintLayout? = null
     private var searchButton: FloatingActionButton? = null
 
     override fun onCreateView(
@@ -54,7 +53,7 @@ class StyledPdfViewerFragment : PdfViewerFragment {
             super.onCreateView(inflater, container, savedInstanceState) as ConstraintLayout
 
         // Inflate the custom layout for this fragment.
-        hostView = inflater.inflate(R.layout.fragment_host, container, false) as FrameLayout
+        hostView = inflater.inflate(R.layout.fragment_host, container, false) as ConstraintLayout
         searchButton = hostView?.findViewById(R.id.host_Search)
 
         // Add the default PDF viewer to the custom layout

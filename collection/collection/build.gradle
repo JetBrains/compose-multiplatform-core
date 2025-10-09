@@ -171,6 +171,17 @@ androidXMultiplatform {
     }
 }
 
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with Compose Multiplatform 1.8.0, "collection-internal" published as empty
+        // artifact with dependency to this androidx module.
+        commonMainImplementation("org.jetbrains.compose.collection-internal:collection:1.8.0") {
+            because "prevents symbols duplication"
+        }
+    }
+}
+
 androidx {
     name = "collections"
     type = SoftwareType.PUBLISHED_LIBRARY

@@ -22,12 +22,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.xr.runtime.internal.Component;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.Space;
-import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.runtime.Component;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.SpaceValue;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;

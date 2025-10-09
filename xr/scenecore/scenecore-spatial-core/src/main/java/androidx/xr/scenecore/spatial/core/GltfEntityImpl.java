@@ -18,10 +18,10 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.content.Context;
 
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.GltfEntity;
-import androidx.xr.runtime.internal.GltfFeature;
-import androidx.xr.runtime.internal.MaterialResource;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.GltfEntity;
+import androidx.xr.scenecore.runtime.GltfFeature;
+import androidx.xr.scenecore.runtime.MaterialResource;
 
 import com.android.extensions.xr.XrExtensions;
 
@@ -67,8 +67,14 @@ class GltfEntityImpl extends BaseRenderingEntity implements GltfEntity {
     }
 
     @Override
-    public void setMaterialOverride(@NonNull MaterialResource material, @NonNull String meshName) {
-        mFeature.setMaterialOverride(material, meshName);
+    public void setMaterialOverride(
+            @NonNull MaterialResource material, @NonNull String nodeName, int primitiveIndex) {
+        mFeature.setMaterialOverride(material, nodeName, primitiveIndex);
+    }
+
+    @Override
+    public void clearMaterialOverride(@NonNull String nodeName, int primitiveIndex) {
+        mFeature.clearMaterialOverride(nodeName, primitiveIndex);
     }
 
     @SuppressWarnings("ObjectToString")

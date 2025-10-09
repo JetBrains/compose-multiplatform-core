@@ -75,6 +75,17 @@ artifacts {
     archives annotationsZip
 }
 
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with Compose Multiplatform 1.8.0, "annotation-internal" published as empty
+        // artifact with dependency to this androidx module.
+        commonMainImplementation("org.jetbrains.compose.annotation-internal:annotation:1.8.0") {
+            because "prevents symbols duplication"
+        }
+    }
+}
+
 androidx {
     name = "Annotation"
     type = SoftwareType.PUBLISHED_LIBRARY

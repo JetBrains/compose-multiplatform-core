@@ -35,6 +35,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -64,7 +65,10 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
 
     @Singleton
     @Provides
-    fun provideThreads(cameraPipeLifetime: CameraPipeLifetime): Threads {
+    fun provideThreads(
+        cameraPipeLifetime: CameraPipeLifetime,
+        @CameraPipeJob cameraPipeJob: Job,
+    ): Threads {
         val executorServices = mutableListOf<ExecutorService>()
 
         // TODO: b/391655975 - Figure out why cached thread pool creates kotlin default executors.
@@ -113,6 +117,7 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
                             CameraPipeLifetime.ShutdownType.THREAD
                         ) {
                             handlerThread.quit()
+                            handlerThread.join(1000)
                         }
 
                         Handler(handlerThread.looper)
@@ -146,9 +151,11 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
             cameraPipeDispatchScope = threadConfig.testOnlyScope
         } else {
             cameraPipeScope =
-                CoroutineScope(SupervisorJob() + lightweightDispatcher + CoroutineName("CXCP"))
+                CoroutineScope(
+                    SupervisorJob(cameraPipeJob) + lightweightDispatcher + CoroutineName("CXCP")
+                )
             cameraPipeDispatchScope =
-                CoroutineScope(SupervisorJob() + CoroutineName("CXCP-Dispatch"))
+                CoroutineScope(SupervisorJob(cameraPipeJob) + CoroutineName("CXCP-Dispatch"))
 
             cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
                 cameraPipeScope.cancel()

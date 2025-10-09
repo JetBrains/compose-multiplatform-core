@@ -21,9 +21,6 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     compileSdk = 35
     namespace = "androidx.camera.integration.macrobenchmark"
     targetProjectPath = ":camera:integration-tests:camera-macrobenchmark-target"

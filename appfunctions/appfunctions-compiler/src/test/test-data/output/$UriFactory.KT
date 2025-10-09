@@ -10,8 +10,9 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$UriFactory` : AppFunctionSerializableFactory<Uri> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): Uri {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "androidx.appfunctions.internal.serializableproxies.AppFunctionUri")
 
-    val uriString = checkNotNull(appFunctionData.getStringOrNull("uriString"))
+    val uriString = checkNotNull(appFunctionDataWithSpec.getStringOrNull("uriString"))
 
     val resultAppFunctionUri = AppFunctionUri(uriString)
     return resultAppFunctionUri.toUri()
@@ -20,7 +21,7 @@ public class `$UriFactory` : AppFunctionSerializableFactory<Uri> {
   override fun toAppFunctionData(appFunctionSerializable: Uri): AppFunctionData {
     val appFunctionUri_appFunctionSerializable = AppFunctionUri.fromUri(appFunctionSerializable)
 
-    val builder = AppFunctionData.Builder("androidx.appfunctions.internal.serializableproxies.AppFunctionUri")
+    val builder = getAppFunctionDataBuilder("androidx.appfunctions.internal.serializableproxies.AppFunctionUri")
     val uriString = appFunctionUri_appFunctionSerializable.uriString
     builder.setString("uriString", uriString)
 

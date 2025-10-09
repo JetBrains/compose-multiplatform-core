@@ -42,12 +42,16 @@ final class FeaturesImpl implements Features {
     @Override
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public boolean isFeatureSupported(@NonNull String feature) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             // AppSearch landed in platform in S, however it was not updatable via mainline until T.
-            // So all features here are not available below T.
+            // The features listed below are not available below S.
             return false;
         }
         switch (feature) {
+            // Android S Features
+            case Features.SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM:
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+
             // Android T Features
             case Features.ADD_PERMISSIONS_AND_GET_VISIBILITY:
                 // fall through
@@ -62,6 +66,8 @@ final class FeaturesImpl implements Features {
 
             // SDK extension U Base features
             case Features.JOIN_SPEC_AND_QUALIFIED_ID:
+                // fall through
+            case Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION:
                 return BuildCompat.T_EXTENSION_INT
                         >= AppSearchVersionUtil.TExtensionVersions.U_BASE;
 
@@ -69,8 +75,6 @@ final class FeaturesImpl implements Features {
             case Features.LIST_FILTER_QUERY_LANGUAGE:
                 // fall through
             case Features.NUMERIC_SEARCH:
-                // fall through
-            case Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION:
                 // fall through
             case Features.SEARCH_SPEC_PROPERTY_WEIGHTS:
                 // fall through
@@ -135,8 +139,16 @@ final class FeaturesImpl implements Features {
                 // fall through
             case Features.SEARCH_RESULT_PARENT_TYPES:
                 // fall through
+            case Features.SCHEMA_BLOB_HANDLE:
+                // fall through
             case Features.SCHEMA_EMBEDDING_QUANTIZATION:
                 return AppSearchVersionUtil.isAtLeastB();
+
+            // M-2025-05 Features
+            case Features.SCHEMA_SCORABLE_PROPERTY_CONFIG:
+                return AppSearchVersionUtil.isAtLeastB()
+                        || BuildCompat.T_EXTENSION_INT
+                        >= AppSearchVersionUtil.TExtensionVersions.B_BASE;
 
             // Pending Android B Features
             case Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS:
@@ -147,9 +159,6 @@ final class FeaturesImpl implements Features {
                 // fall through
             case Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION:
                 // TODO(b/377215223) : Update when feature is ready in service-appsearch.
-                // fall through
-            case Features.SCHEMA_SCORABLE_PROPERTY_CONFIG:
-                // TODO(b/357105837) : Update when feature is ready in service-appsearch.
                 // fall through
 
             // Beyond Android B Features

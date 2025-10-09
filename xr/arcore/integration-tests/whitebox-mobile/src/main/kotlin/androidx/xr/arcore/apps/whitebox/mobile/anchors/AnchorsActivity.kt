@@ -61,7 +61,7 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Shader
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.Texture
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.maybeThrowGLException
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.BackgroundRenderer
-import androidx.xr.arcore.playservices.ArCorePerceptionManager
+import androidx.xr.arcore.playservices.ArCoreRuntime
 import androidx.xr.arcore.playservices.cameraState
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
@@ -158,11 +158,8 @@ class AnchorsActivity :
     }
 
     override fun onSurfaceChanged(render: SampleRender, width: Int, height: Int) {
-        (session.runtime.perceptionManager as ArCorePerceptionManager).setDisplayRotation(
-            Surface.ROTATION_0,
-            width,
-            height,
-        )
+        (session.runtimes.filterIsInstance<ArCoreRuntime>().first().perceptionManager)
+            .setDisplayRotation(Surface.ROTATION_0, width, height)
         virtualSceneFramebuffer.resize(width, height)
     }
 

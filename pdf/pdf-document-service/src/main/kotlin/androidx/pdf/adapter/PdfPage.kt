@@ -17,6 +17,7 @@
 package androidx.pdf.adapter
 
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.pdf.RenderParams
 import android.graphics.pdf.component.PdfAnnotation
@@ -225,4 +226,13 @@ public interface PdfPage : AutoCloseable {
      * @throws IllegalStateException if this page is already closed.
      */
     public fun removePageAnnotation(annotationId: Int)
+
+    /**
+     * Returns the topmost [PdfPageObject] at the specified coordinates on the page.
+     *
+     * @param point The [PointF] coordinates on the page.
+     * @param types An array of [PdfPageObject] types to consider.
+     * @return A [Pair] containing the ID and the [PdfPageObject] if found, otherwise `null`.
+     */
+    public fun getTopPageObjectAtPosition(point: PointF, types: IntArray): Pair<Int, PdfPageObject>?
 }

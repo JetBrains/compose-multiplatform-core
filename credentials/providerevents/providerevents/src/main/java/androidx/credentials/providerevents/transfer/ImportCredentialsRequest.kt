@@ -16,6 +16,7 @@
 
 package androidx.credentials.providerevents.transfer
 
+import android.os.Bundle
 import androidx.credentials.providerevents.internal.RequestValidationHelper
 
 /**
@@ -30,5 +31,28 @@ public class ImportCredentialsRequest(public val requestJson: String) {
         require(RequestValidationHelper.isValidJSON(requestJson)) {
             "requestJson must not be empty, and must be a valid JSON"
         }
+    }
+
+    public companion object {
+        private const val REQUEST_JSON_KEY = "androidx.credentials.import.REQUEST_JSON"
+
+        /**
+         * Creates a [ImportCredentialsRequest] from a bundle.
+         *
+         * @throws IllegalArgumentException if the bundle does not contain the request parameters.
+         */
+        @JvmStatic
+        public fun createFrom(bundle: Bundle): ImportCredentialsRequest {
+            val requestJson = bundle.getString(REQUEST_JSON_KEY)
+            if (requestJson == null) {
+                throw IllegalArgumentException("The bundle does not contain requestJson")
+            }
+            return ImportCredentialsRequest(requestJson)
+        }
+
+        /** Wraps the request into a bundle. */
+        @JvmStatic
+        public fun toBundle(request: ImportCredentialsRequest): Bundle =
+            Bundle().apply { putString(REQUEST_JSON_KEY, request.requestJson) }
     }
 }

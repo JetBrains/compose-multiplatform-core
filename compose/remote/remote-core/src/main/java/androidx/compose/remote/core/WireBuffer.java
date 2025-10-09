@@ -15,12 +15,15 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Set;
 
 /** The base communication buffer capable of encoding and decoding various types */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WireBuffer {
     private static final int BUFFER_SIZE = 1024 * 1024;
     int mMaxSize;
@@ -287,7 +290,7 @@ public class WireBuffer {
 
     /**
      * Read a byte buffer limited to max size. bytes are encoded as 4 byte length followed by length
-     * bytes index is increased by 4 + number of bytes Throw an exception if the read excedes the
+     * bytes index is increased by 4 + number of bytes Throw an exception if the read exceeds the
      * max size. This is the preferred form of read buffer.
      *
      * @return byte array

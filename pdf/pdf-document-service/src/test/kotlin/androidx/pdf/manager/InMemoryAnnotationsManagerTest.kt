@@ -25,6 +25,10 @@ import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.annotation.models.StampAnnotation
 import androidx.pdf.util.createDummyUri
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -74,6 +78,45 @@ class InMemoryAnnotationsManagerTest {
 
         assertThat(annotations).hasSize(1)
         assertThat(fakeDocument.getAnnotationsForPageCallCount[1]).isEqualTo(1)
+    }
+
+    @Test
+    fun getAnnotationsForPage_concurrentCallsSamePage_fetchesOnlyOnce() = runTest {
+        val pageNum = 2
+        fakeDocument.addAnnotationToPage(pageNum, createStampAnnotationWithPath(pageNum, 1))
+
+        val manager = InMemoryAnnotationsManager { page ->
+            delay(100)
+            fakeDocument.getEditsForPage<PdfAnnotationData>(page).map { it.annotation }
+        }
+
+        val deferred1 = async { manager.getAnnotationsForPage(pageNum) }
+        val deferred2 = async { manager.getAnnotationsForPage(pageNum) }
+        awaitAll(deferred1, deferred2)
+
+        assertThat(fakeDocument.getAnnotationsForPageCallCount[pageNum]).isEqualTo(1)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun getAnnotationsForPage_concurrentCallsDifferentPages_notBlocked() = runTest {
+        val pageNum1 = 3
+        val pageNum2 = 4
+        fakeDocument.addAnnotationToPage(pageNum1, createStampAnnotationWithPath(pageNum1, 1))
+        fakeDocument.addAnnotationToPage(pageNum2, createStampAnnotationWithPath(pageNum2, 1))
+
+        val manager = InMemoryAnnotationsManager { page ->
+            delay(100)
+            fakeDocument.getEditsForPage<PdfAnnotationData>(page).map { it.annotation }
+        }
+
+        val deferred1 = async { manager.getAnnotationsForPage(pageNum1) }
+        val deferred2 = async { manager.getAnnotationsForPage(pageNum2) }
+        awaitAll(deferred1, deferred2)
+
+        assertThat(fakeDocument.getAnnotationsForPageCallCount[pageNum1]).isEqualTo(1)
+        assertThat(fakeDocument.getAnnotationsForPageCallCount[pageNum2]).isEqualTo(1)
+        assertThat(testScheduler.currentTime).isLessThan(200)
     }
 
     @Test
@@ -222,6 +265,112 @@ class InMemoryAnnotationsManagerTest {
         assertThrows(NoSuchElementException::class.java) {
             annotationsManager.updateAnnotation(editId1, annotation1)
         }
+    }
+
+    @Test
+    fun clearUncommittedEdits_withNoUncommittedEdits_doesNotChangeAnnotations() = runTest {
+        val existingAnnotation = createStampAnnotationWithPath(pageNum = 0, pathSize = 10)
+        fakeDocument.addAnnotationToPage(0, existingAnnotation)
+
+        // Fetch existing annotations to populate the cache and draft state.
+        val initialAnnotations = annotationsManager.getAnnotationsForPage(0)
+        assertThat(initialAnnotations).hasSize(1)
+
+        annotationsManager.clearUncommittedEdits()
+
+        val annotationsAfterClear = annotationsManager.getAnnotationsForPage(0)
+        assertThat(annotationsAfterClear).hasSize(1)
+        assertThat(annotationsAfterClear[0].annotation).isEqualTo(existingAnnotation)
+    }
+
+    @Test
+    fun clearUncommittedEdits_withAddedAnnotation_removesTheAddedAnnotation() = runTest {
+        val existingAnnotation = createStampAnnotationWithPath(pageNum = 0, pathSize = 10)
+        fakeDocument.addAnnotationToPage(0, existingAnnotation)
+
+        // Fetch existing annotations to populate the cache and draft state.
+        annotationsManager.getAnnotationsForPage(0)
+
+        val newAnnotation = createStampAnnotationWithPath(pageNum = 0, pathSize = 15)
+        annotationsManager.addAnnotation(newAnnotation)
+
+        var annotations = annotationsManager.getAnnotationsForPage(0)
+        assertThat(annotations).hasSize(2)
+
+        annotationsManager.clearUncommittedEdits()
+
+        annotations = annotationsManager.getAnnotationsForPage(0)
+        assertThat(annotations).hasSize(1)
+        assertThat(annotations[0].annotation).isEqualTo(existingAnnotation)
+        assertThat((annotations[0].annotation as StampAnnotation).pdfObjects.size).isEqualTo(10)
+    }
+
+    @Test
+    fun clearUncommittedEdits_withRemovedExistingAnnotation_restoresTheAnnotation() = runTest {
+        val existingAnnotation = createStampAnnotationWithPath(pageNum = 0, pathSize = 10)
+        fakeDocument.addAnnotationToPage(0, existingAnnotation)
+
+        // Fetch and cache
+        val initialAnnotations = annotationsManager.getAnnotationsForPage(0)
+        assertThat(initialAnnotations).hasSize(1)
+        val editIdToRemove = initialAnnotations[0].editId
+
+        // Remove the existing annotation (this is an uncommitted edit)
+        annotationsManager.removeAnnotation(editIdToRemove)
+        assertThat(annotationsManager.getAnnotationsForPage(0)).isEmpty()
+
+        annotationsManager.clearUncommittedEdits()
+
+        val annotationsAfterClear = annotationsManager.getAnnotationsForPage(0)
+        assertThat(annotationsAfterClear).hasSize(1)
+        assertThat(annotationsAfterClear[0].annotation).isEqualTo(existingAnnotation)
+    }
+
+    @Test
+    fun clearUncommittedEdits_withUpdatedExistingAnnotation_revertsTheUpdate() = runTest {
+        val originalAnnotation = createStampAnnotationWithPath(pageNum = 0, pathSize = 10)
+        fakeDocument.addAnnotationToPage(0, originalAnnotation)
+
+        // Fetch and cache
+        val initialAnnotations = annotationsManager.getAnnotationsForPage(0)
+        assertThat(initialAnnotations).hasSize(1)
+        val editIdToUpdate = initialAnnotations[0].editId
+
+        // Update the existing annotation (this is an uncommitted edit)
+        val updatedAnnotation = createStampAnnotationWithPath(pageNum = 0, pathSize = 20)
+        annotationsManager.updateAnnotation(editIdToUpdate, updatedAnnotation)
+
+        val annotationsAfterUpdate = annotationsManager.getAnnotationsForPage(0)
+        assertThat(annotationsAfterUpdate).hasSize(1)
+        assertThat(annotationsAfterUpdate[0].annotation).isEqualTo(updatedAnnotation)
+
+        annotationsManager.clearUncommittedEdits()
+
+        val annotationsAfterClear = annotationsManager.getAnnotationsForPage(0)
+        assertThat(annotationsAfterClear).hasSize(1)
+        assertThat(annotationsAfterClear[0].annotation).isEqualTo(originalAnnotation)
+    }
+
+    @Test
+    fun clearUncommittedEdits_withNoExistingAnnotations_clearsAllAddedAnnotations() = runTest {
+        val newAnnotationPage0 = createStampAnnotationWithPath(pageNum = 0, pathSize = 10)
+        annotationsManager.addAnnotation(newAnnotationPage0)
+
+        val newAnnotationPage1 = createStampAnnotationWithPath(pageNum = 1, pathSize = 5)
+        annotationsManager.addAnnotation(newAnnotationPage1)
+
+        // Initial fetch to populate caches and make document aware
+        var annotationsPage0 = annotationsManager.getAnnotationsForPage(0)
+        assertThat(annotationsPage0).hasSize(1)
+        var annotationsPage1 = annotationsManager.getAnnotationsForPage(1)
+        assertThat(annotationsPage1).hasSize(1)
+
+        annotationsManager.clearUncommittedEdits()
+
+        annotationsPage0 = annotationsManager.getAnnotationsForPage(0)
+        assertThat(annotationsPage0).isEmpty()
+        annotationsPage1 = annotationsManager.getAnnotationsForPage(1)
+        assertThat(annotationsPage1).isEmpty()
     }
 
     private suspend fun getEditsForPage(pageNum: Int): List<PdfAnnotation> =

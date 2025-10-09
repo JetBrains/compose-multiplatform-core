@@ -24,7 +24,6 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.DoNotDisturbException
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.CameraControlAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraInternalAdapter
@@ -36,6 +35,7 @@ import androidx.camera.camera2.pipe.integration.compat.CameraCompatModule
 import androidx.camera.camera2.pipe.integration.compat.EvCompCompat
 import androidx.camera.camera2.pipe.integration.compat.ZoomCompat
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.impl.ComboRequestListener
@@ -132,8 +132,10 @@ public abstract class CameraModule {
         ): CameraMetadata? {
             try {
                 return cameraPipe.cameras().awaitCameraMetadata(config.cameraId)
-            } catch (exception: DoNotDisturbException) {
-                Log.error { "Failed to inject camera metadata: Do Not Disturb mode is on." }
+            } catch (_: DoNotDisturbException) {
+                Camera2Logger.error {
+                    "Failed to inject camera metadata: Do Not Disturb mode is on."
+                }
             }
             return null
         }

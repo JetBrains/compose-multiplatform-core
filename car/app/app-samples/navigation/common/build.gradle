@@ -29,9 +29,6 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     namespace = "androidx.car.app.sample.navigation.common"
 }
 

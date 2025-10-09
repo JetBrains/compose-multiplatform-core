@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.MoveEventListener as RtMoveEventListener
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.scenecore.MovableComponent.Companion.createAnchorable
+import androidx.xr.scenecore.MovableComponent.Companion.createSystemMovable
+import androidx.xr.scenecore.runtime.MoveEventListener as RtMoveEventListener
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
@@ -47,7 +49,7 @@ import java.util.concurrent.Executor
  */
 public class MovableComponent
 private constructor(
-    private val platformAdapter: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
     private val entityManager: EntityManager,
     private val systemMovable: Boolean = true,
     private val scaleInZ: Boolean = true,
@@ -57,10 +59,10 @@ private constructor(
     private val initialListenerExecutor: Executor? = null,
 ) : Component {
     private val rtMovableComponent by lazy {
-        platformAdapter.createMovableComponent(
+        sceneRuntime.createMovableComponent(
             systemMovable,
             scaleInZ,
-            anchorPlacement.toRtAnchorPlacement(platformAdapter),
+            anchorPlacement.toRtAnchorPlacement(sceneRuntime),
             disposeParentOnReAnchor,
         )
     }
@@ -89,7 +91,7 @@ private constructor(
             return false
         }
         this.entity = entity
-        val attached = (entity as BaseEntity<*>).rtEntity.addComponent(rtMovableComponent)
+        val attached = (entity as BaseEntity<*>).rtEntity!!.addComponent(rtMovableComponent)
         if (attached && initialListener != null) {
             if (initialListenerExecutor != null) {
                 addMoveListener(initialListenerExecutor, initialListener)
@@ -101,7 +103,7 @@ private constructor(
     }
 
     override fun onDetach(entity: Entity) {
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtMovableComponent)
+        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtMovableComponent)
         this.entity = null
     }
 
@@ -192,7 +194,7 @@ private constructor(
 
         /** Factory function for creating a MovableComponent. */
         internal fun create(
-            platformAdapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             systemMovable: Boolean = true,
             scaleInZ: Boolean = true,
@@ -202,7 +204,7 @@ private constructor(
             initialListenerExecutor: Executor? = null,
         ): MovableComponent {
             return MovableComponent(
-                platformAdapter,
+                sceneRuntime,
                 entityManager,
                 systemMovable,
                 scaleInZ,
@@ -245,7 +247,7 @@ private constructor(
             entityMoveListener: EntityMoveListener,
         ): MovableComponent =
             MovableComponent.create(
-                platformAdapter = session.platformAdapter,
+                sceneRuntime = session.sceneRuntime,
                 entityManager = session.scene.entityManager,
                 systemMovable = false,
                 scaleInZ = scaleInZ,
@@ -279,7 +281,7 @@ private constructor(
             scaleInZ: Boolean = true,
         ): MovableComponent =
             MovableComponent.create(
-                platformAdapter = session.platformAdapter,
+                sceneRuntime = session.sceneRuntime,
                 entityManager = session.scene.entityManager,
                 systemMovable = true,
                 scaleInZ = scaleInZ,
@@ -321,7 +323,7 @@ private constructor(
                 "Cannot create a MovableComponent with createAnchorable and an empty set for anchorPlacement"
             }
             return MovableComponent.create(
-                platformAdapter = session.platformAdapter,
+                sceneRuntime = session.sceneRuntime,
                 entityManager = session.scene.entityManager,
                 systemMovable = true,
                 scaleInZ = false,

@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.layout.CoreGroupEntity
@@ -54,10 +55,11 @@ public annotation class ExperimentalSubspaceVolumeApi
 @ExperimentalSubspaceVolumeApi
 public fun Volume(modifier: SubspaceModifier = SubspaceModifier, onVolumeEntity: (Entity) -> Unit) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val entityName = "Volume-${currentCompositeKeyHashCode}"
 
     val coreGroupEntity = remember {
         CoreGroupEntity(
-            GroupEntity.create(session, name = entityName("Volume"), pose = Pose.Identity)
+            GroupEntity.create(session, name = entityName, pose = Pose.Identity)
                 .apply(onVolumeEntity)
         )
     }

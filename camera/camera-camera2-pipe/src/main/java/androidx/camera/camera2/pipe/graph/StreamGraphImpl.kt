@@ -38,6 +38,8 @@ import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.compat.Api24Compat
 import androidx.camera.camera2.pipe.config.CameraGraphScope
+import androidx.camera.camera2.pipe.internal.ImageSourceMap
+import androidx.camera.camera2.pipe.media.ImageSource
 import javax.inject.Inject
 import javax.inject.Provider
 import kotlinx.atomicfu.atomic
@@ -54,6 +56,7 @@ constructor(
     val cameraMetadata: CameraMetadata,
     val graphConfig: CameraGraph.Config,
     private val cameraControllerProvider: Provider<CameraController>,
+    private val imageSourceMapProvider: Provider<ImageSourceMap>,
 ) : StreamGraph {
     private val _streamMap: Map<CameraStream.Config, CameraStream>
 
@@ -92,6 +95,10 @@ constructor(
         val stallDuration =
             streamConfigurationMap?.getOutputStallDuration(output.format.value, output.size)
         return stallDuration?.let { StreamGraph.OutputLatency(it, 0) }
+    }
+
+    override fun getImageSource(streamId: StreamId): ImageSource? {
+        return imageSourceMapProvider.get().imageSources[streamId]
     }
 
     init {

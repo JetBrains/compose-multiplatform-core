@@ -63,7 +63,6 @@ internal fun Project.configureSamplesProject() {
 
     val samplesConfiguration =
         project.configurations.register("samples") {
-            it.isVisible = false
             it.isCanBeConsumed = false
             it.isCanBeResolved = true
             it.setResolveSources()

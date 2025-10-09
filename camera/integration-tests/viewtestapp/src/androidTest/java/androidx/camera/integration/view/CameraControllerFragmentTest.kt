@@ -34,6 +34,8 @@ import androidx.camera.core.impl.utils.Exif
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.futures.FutureCallback
 import androidx.camera.core.impl.utils.futures.Futures
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.integration.view.util.takePictureOnDisk
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
@@ -513,6 +515,41 @@ class CameraControllerFragmentTest(
 
         // Assert.
         fragment.assertCanRecordVideo()
+    }
+
+    // b/440374234
+    @Test
+    fun canForceReselectResolutionsWhenMaxResolutionIsSelectedForPreview() {
+        skipVideoRecordingTestIfNotSupportedByEmulator()
+        skipTestWithSurfaceProcessingOnCuttlefishApi30()
+
+        // Act.
+        invertAllUseCaseEnableStatusExceptPreview()
+        instrumentation.runOnMainSync {
+            // Sets ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY to Preview to make it select the
+            // MAXIMUM resolution when possible
+            fragment.setPreviewResolutionSelector(
+                ResolutionSelector.Builder()
+                    .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
+                    .build()
+            )
+        }
+        fragment.assertPreviewIsStreaming()
+
+        // Toggles to the opposite camera
+        instrumentation.runOnMainSync { fragment.toggleCamera() }
+
+        // Disables VideoCapture
+        onView(withId(R.id.video_enabled)).perform(click())
+
+        // Enables ImageCapture
+        onView(withId(R.id.capture_enabled)).perform(click())
+
+        // Assert.
+        // Both Preview and ImageCapture can work normally. Ensures that the ImageCapture can be
+        // bound successfully even the MAXIMUM resolution was originally selected for the Preview.
+        fragment.assertPreviewIsStreaming()
+        fragment.assertCanTakePicture()
     }
 
     private fun invertAllUseCaseEnableStatusExceptPreview() {

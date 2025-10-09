@@ -31,7 +31,7 @@ import android.util.Rational
 import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.internal.DisplayInfoManager
+import androidx.camera.camera2.impl.DisplayInfoManager
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
@@ -791,8 +791,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     private fun hasExtraCroppingQuirk(): Boolean {
         return (implName.contains(CameraPipeConfig::class.simpleName!!) &&
             DeviceQuirks[ExtraCroppingQuirk::class.java] != null) ||
-            androidx.camera.camera2.internal.compat.quirk.DeviceQuirks.get(
-                androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk::class.java
+            androidx.camera.camera2.compat.quirk.DeviceQuirks.get(
+                androidx.camera.camera2.compat.quirk.ExtraCroppingQuirk::class.java
             ) != null
     }
 
@@ -808,8 +808,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             )
         } else {
             quirks.contains(
-                androidx.camera.camera2.internal.compat.quirk.AspectRatioLegacyApi21Quirk::class
-                    .java
+                androidx.camera.camera2.compat.quirk.AspectRatioLegacyApi21Quirk::class.java
             )
         }
     }

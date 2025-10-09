@@ -57,6 +57,23 @@ interface HealthConnectFeatures {
         /** Feature constant for Activity Intensity APIs. */
         const val FEATURE_ACTIVITY_INTENSITY = 7
 
+        /**
+         * Feature constant for extended device types.
+         *
+         * When this feature is available, the following device types are supported:
+         * - `Device.TYPE_CONSUMER_MEDICAL_DEVICE`
+         * - `Device.TYPE_GLASSES`
+         * - `Device.TYPE_HEARABLE`
+         * - `Device.TYPE_FITNESS_MACHINE`
+         * - `Device.TYPE_FITNESS_EQUIPMENT`
+         * - `Device.TYPE_PORTABLE_COMPUTER`
+         * - `Device.TYPE_METER`
+         *
+         * If this feature is not available, these device types will be treated as
+         * `Device.TYPE_UNKNOWN`.
+         */
+        const val FEATURE_EXTENDED_DEVICE_TYPES = 8
+
         @OptIn(ExperimentalPersonalHealthRecordApi::class)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(
@@ -69,6 +86,7 @@ interface HealthConnectFeatures {
                     FEATURE_PERSONAL_HEALTH_RECORD,
                     FEATURE_MINDFULNESS_SESSION,
                     FEATURE_ACTIVITY_INTENSITY,
+                    FEATURE_EXTENDED_DEVICE_TYPES,
                 ]
         )
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -96,6 +114,8 @@ interface HealthConnectFeatures {
             HealthConnectPlatformVersion(buildVersionCode = 34, sdkExtensionVersion = 15)
         private val SDK_EXT_16_PLATFORM_VERSION: HealthConnectPlatformVersion =
             HealthConnectPlatformVersion(buildVersionCode = 34, sdkExtensionVersion = 16)
+        private val SDK_EXT_19_PLATFORM_VERSION: HealthConnectPlatformVersion =
+            HealthConnectPlatformVersion(buildVersionCode = 34, sdkExtensionVersion = 19)
 
         @OptIn(ExperimentalPersonalHealthRecordApi::class)
         internal val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
@@ -126,6 +146,8 @@ interface HealthConnectFeatures {
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
                 FEATURE_ACTIVITY_INTENSITY to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
+                FEATURE_EXTENDED_DEVICE_TYPES to
+                    HealthConnectVersionInfo(platformVersion = SDK_EXT_19_PLATFORM_VERSION),
             )
     }
 }

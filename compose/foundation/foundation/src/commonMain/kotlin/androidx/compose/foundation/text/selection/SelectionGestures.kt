@@ -34,6 +34,7 @@ import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.ViewConfiguration
@@ -130,7 +131,7 @@ internal suspend fun PointerInputScope.awaitSelectionGestures(
  * press instead of immediately looking for drags. If no long press is found, this does not trigger
  * any observer.
  */
-private suspend fun AwaitPointerEventScope.touchSelectionFirstPress(
+internal suspend fun AwaitPointerEventScope.touchSelectionFirstPress(
     observer: TextDragObserver,
     downEvent: PointerEvent,
 ) {
@@ -243,13 +244,13 @@ private suspend fun AwaitPointerEventScope.touchSelectionSubsequentPress(
 }
 
 /** Gesture handler for mouse selection. */
-private suspend fun AwaitPointerEventScope.mouseSelection(
+internal suspend fun AwaitPointerEventScope.mouseSelection(
     observer: MouseSelectionObserver,
     clicksCounter: ClicksCounter,
     down: PointerEvent,
 ) {
     val downChange = down.changes[0]
-    if (down.isShiftPressed) {
+    if (down.keyboardModifiers.isShiftPressed) {
         val started = observer.onExtend(downChange.position)
         if (started) {
             try {
@@ -299,7 +300,7 @@ private suspend fun AwaitPointerEventScope.mouseSelection(
     }
 }
 
-private class ClicksCounter(private val viewConfiguration: ViewConfiguration) {
+internal class ClicksCounter(private val viewConfiguration: ViewConfiguration) {
     var clicks = 0
     var prevClick: PointerInputChange? = null
 

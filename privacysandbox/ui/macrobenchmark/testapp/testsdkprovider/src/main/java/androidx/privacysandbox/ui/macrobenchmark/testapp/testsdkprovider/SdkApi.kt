@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.macrobenchmark.testapp.testsdkprovider
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.os.Handler
@@ -42,7 +41,6 @@ import androidx.tracing.trace
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class SdkApi(private val sdkContext: Context) : ISdkApi {
     private val testAdapters = TestAdapters(sdkContext)

@@ -19,6 +19,7 @@ package androidx.tracing.driver.wire
 import androidx.tracing.driver.AtomicInteger
 import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.DEFAULT_STRING
+import androidx.tracing.driver.LAST_INDEX_WHEN_EMPTY
 import androidx.tracing.driver.METADATA_ENTRIES_EXPECTED_SIZE
 import androidx.tracing.driver.METADATA_TYPE_BOOLEAN
 import androidx.tracing.driver.METADATA_TYPE_DOUBLE
@@ -71,9 +72,10 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
 
     private val scratchTrackEvent = MutableTrackEvent(track_uuid = DEFAULT_LONG)
 
-    fun writeTraceEvent(event: TraceEvent) {
+    fun writeTraceEvent(event: TraceEvent, reportDroppedTraceEvent: Boolean = false) {
         updateScratchPacketFromTraceEvent(
             event = event,
+            reportDroppedTraceEvent = reportDroppedTraceEvent,
             scratchTracePacket = scratchTracePacket,
             scratchTrackDescriptor = scratchTrackDescriptor,
             scratchTrackEvent = scratchTrackEvent,
@@ -118,6 +120,7 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
         @JvmStatic
         internal fun updateScratchPacketFromTraceEvent(
             event: TraceEvent,
+            reportDroppedTraceEvent: Boolean,
             scratchTracePacket: MutableTracePacket,
             scratchTrackDescriptor: MutableTrackDescriptor,
             scratchTrackEvent: MutableTrackEvent,
@@ -129,6 +132,7 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             // MutableTracePacket
             scratchTracePacket.track_event = null
             scratchTracePacket.track_descriptor = null
+            scratchTracePacket.previous_packet_dropped = reportDroppedTraceEvent
 
             if (event.trackDescriptor != null) {
                 // If the track_descriptor is needed, update and use the scratchTrackDescriptor to
@@ -171,13 +175,12 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                 scratchTrackEvent.name = event.name
                 scratchTrackEvent.counter_value = event.counterLongValue
                 scratchTrackEvent.double_counter_value = event.counterDoubleValue
-
-                // While it would be simpler to simply always set this.flow_ids, we avoid it in the
-                // common cases when it does need to be called, since it's already up to date, as
-                // Wire will deep copy the list with `immutableCopyOf(...)`. This is only necessary
-                // if either it was already non-empty, or if it's becoming non-empty
-                if (scratchTrackEvent.flow_ids.isNotEmpty() || event.flowIds.isNotEmpty()) {
-                    scratchTrackEvent.flow_ids = event.flowIds
+                scratchTrackEvent.flow_ids = event.flowIds
+                if (event.lastCategoryIndex > LAST_INDEX_WHEN_EMPTY) {
+                    // Categories should only be set when we actually have incoming categories
+                    scratchTrackEvent.categories = event.categories
+                } else {
+                    scratchTrackEvent.categories = emptyList()
                 }
                 // Debug annotations
                 var index = -1

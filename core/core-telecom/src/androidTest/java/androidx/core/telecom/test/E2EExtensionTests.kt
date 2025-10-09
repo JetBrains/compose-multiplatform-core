@@ -28,6 +28,7 @@ import android.os.Build.VERSION_CODES
 import android.util.Log
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlResult
+import androidx.core.telecom.CallsManager.Companion.CAPABILITY_BASELINE
 import androidx.core.telecom.InCallServiceCompat
 import androidx.core.telecom.extensions.CallExtensionScope
 import androidx.core.telecom.extensions.CallIconExtensionImpl
@@ -710,8 +711,15 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             )
         }
         when (parameters.serviceSource) {
-            SERVICE_SOURCE_V2 -> setUpV2Test()
-            SERVICE_SOURCE_CONNSRV -> setUpBackwardsCompatTest()
+            SERVICE_SOURCE_V2 -> {
+                Log.i(L_TAG, "setupParameterizedTest: [V2] APIs")
+                mCallsManager.registerAppWithTelecom(CAPABILITY_BASELINE)
+                logTelecomState()
+            }
+            SERVICE_SOURCE_CONNSRV -> {
+                Log.i(L_TAG, "setupParameterizedTest: [ConnectionService] APIs")
+                setUpBackwardsCompatTest()
+            }
         }
     }
 

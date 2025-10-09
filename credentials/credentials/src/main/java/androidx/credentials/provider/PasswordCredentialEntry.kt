@@ -734,9 +734,13 @@ internal constructor(
                 // TODO: b/356939416 - provide backward compatible timestamp API.
                 return if (Build.VERSION.SDK_INT >= 26) {
                     val lastUsedTime: Instant? =
-                        bundle.getSerializable(
-                            "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index"
-                        ) as Instant?
+                        try {
+                            bundle.getSerializable(
+                                "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index"
+                            ) as Instant?
+                        } catch (e: ClassCastException) {
+                            null
+                        }
                     PasswordCredentialEntry(
                         username = username,
                         displayName = displayName,

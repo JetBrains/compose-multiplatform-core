@@ -21,10 +21,10 @@ import android.content.SharedPreferences
 import androidx.annotation.GuardedBy
 import androidx.annotation.VisibleForTesting
 import androidx.preference.PreferenceManager
-import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ERROR_ADDING_KEYS
-import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ERROR_SYNCING_UPDATES_FROM_DATABRIDGE
-import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES
-import androidx.privacysandbox.databridge.client.SyncCallback.Companion.ErrorCode
+import androidx.privacysandbox.databridge.client.SyncFailureCallback.Companion.ERROR_ADDING_KEYS
+import androidx.privacysandbox.databridge.client.SyncFailureCallback.Companion.ERROR_SYNCING_UPDATES_FROM_DATABRIDGE
+import androidx.privacysandbox.databridge.client.SyncFailureCallback.Companion.ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES
+import androidx.privacysandbox.databridge.client.SyncFailureCallback.Companion.ErrorCode
 import androidx.privacysandbox.databridge.core.Key
 import androidx.privacysandbox.databridge.core.Type
 import java.lang.Exception
@@ -43,8 +43,8 @@ import kotlinx.coroutines.launch
  *
  * **Note:** The synchronization happens on a best-effort basis and it is possible for data to be
  * out of sync due to failures. Any sync failures will be reported using the
- * [SyncCallback.onSyncFailure] method which should be registered through the
- * [DataSynchronizationManager.addSyncCallback] API
+ * [SyncFailureCallback.onSyncFailure] method which should be registered through the
+ * [DataSynchronizationManager.addSyncFailureCallback] API
  */
 public abstract class DataSynchronizationManager private constructor() {
     public companion object {
@@ -109,17 +109,20 @@ public abstract class DataSynchronizationManager private constructor() {
      * Add a callback to receive notifications of data synchronization failures.
      *
      * @param executor: The executor from which the callback is executed.
-     * @param syncCallback: A callback to let the caller know about any failures during sync
+     * @param syncFailureCallback: A callback to let the caller know about any failures during sync
      *   process.
      */
-    public abstract fun addSyncCallback(executor: Executor, syncCallback: SyncCallback)
+    public abstract fun addSyncFailureCallback(
+        executor: Executor,
+        syncFailureCallback: SyncFailureCallback,
+    )
 
     /**
      * Remove a callback to stop receiving updates on data synchronization failures.
      *
-     * @param syncCallback: [SyncCallback] callback which is to be unregistered.
+     * @param syncFailureCallback: [SyncFailureCallback] callback which is to be unregistered.
      */
-    public abstract fun removeSyncCallback(syncCallback: SyncCallback)
+    public abstract fun removeSyncFailureCallback(syncFailureCallback: SyncFailureCallback)
 
     private class DataSynchronizationManagerImpl(context: Context, val scope: CoroutineScope) :
         DataSynchronizationManager() {
@@ -129,7 +132,8 @@ public abstract class DataSynchronizationManager private constructor() {
         private val sharedPreference: SharedPreferences =
             PreferenceManager.getDefaultSharedPreferences(context)
 
-        private val syncCallbackAndExecutorList = mutableSetOf<Pair<SyncCallback, Executor>>()
+        private val syncFailureCallbackAndExecutorList =
+            mutableSetOf<Pair<SyncFailureCallback, Executor>>()
 
         @GuardedBy("keySet") private val keySet = mutableSetOf<Key>()
 
@@ -158,12 +162,15 @@ public abstract class DataSynchronizationManager private constructor() {
             }
         }
 
-        override fun addSyncCallback(executor: Executor, syncCallback: SyncCallback) {
-            syncCallbackAndExecutorList.add(Pair(syncCallback, executor))
+        override fun addSyncFailureCallback(
+            executor: Executor,
+            syncFailureCallback: SyncFailureCallback,
+        ) {
+            syncFailureCallbackAndExecutorList.add(Pair(syncFailureCallback, executor))
         }
 
-        override fun removeSyncCallback(syncCallback: SyncCallback) {
-            syncCallbackAndExecutorList.removeAll { it -> it.first == syncCallback }
+        override fun removeSyncFailureCallback(syncFailureCallback: SyncFailureCallback) {
+            syncFailureCallbackAndExecutorList.removeAll { it -> it.first == syncFailureCallback }
         }
 
         @ErrorCode
@@ -235,9 +242,9 @@ public abstract class DataSynchronizationManager private constructor() {
             @ErrorCode errorCode: Int,
             errorMessage: String,
         ) {
-            syncCallbackAndExecutorList.forEach { (syncCallback, executor) ->
+            syncFailureCallbackAndExecutorList.forEach { (syncFailureCallback, executor) ->
                 executor.execute {
-                    syncCallback.onSyncFailure(keyValueMap, errorCode, errorMessage)
+                    syncFailureCallback.onSyncFailure(keyValueMap, errorCode, errorMessage)
                 }
             }
         }

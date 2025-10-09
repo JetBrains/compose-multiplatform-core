@@ -35,6 +35,9 @@ android {
             useSupportLibrary = true
         }
     }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }
 
 dependencies {
@@ -72,6 +75,8 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.espressoCore)
+    androidTestImplementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
+    androidTestImplementation('androidx.concurrent:concurrent-futures:1.1.0')
     implementation(libs.testRunner)
     implementation(libs.hiltAndroidTesting)
     implementation(libs.testCore)

@@ -29,12 +29,13 @@ import androidx.activity.ComponentActivity;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.xr.arcore.Plane;
+import androidx.xr.arcore.SessionExtKt;
 import androidx.xr.arcore.XrResourcesManager;
+import androidx.xr.arcore.testing.FakeRuntimePlane;
 import androidx.xr.runtime.Config;
 import androidx.xr.runtime.Session;
 import androidx.xr.runtime.SessionCreateSuccess;
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.runtime.testing.FakeRuntimePlane;
 
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
 
@@ -60,14 +61,16 @@ public class RxJava3PlaneTest {
 
     @Test
     public void plane_stateFlowable_returnsPlaneState() {
-        createTestSessionAndRunTest(() -> {
-            Plane underTest = new Plane(new FakeRuntimePlane(), mXrResourcesManager);
-            TestSubscriber<Plane.State> testSubscriber = new TestSubscriber<>();
+        createTestSessionAndRunTest(
+                () -> {
+                    Plane underTest = new Plane(new FakeRuntimePlane(), mXrResourcesManager);
+                    TestSubscriber<Plane.State> testSubscriber = new TestSubscriber<>();
 
-            getStateAsFlowable(underTest).subscribe(testSubscriber);
+                    getStateAsFlowable(underTest).subscribe(testSubscriber);
 
-            assertThat(testSubscriber.values().get(0).getCenterPose()).isEqualTo(Pose.Identity);
-        });
+                    assertThat(testSubscriber.values().get(0).getCenterPose())
+                            .isEqualTo(Pose.Identity);
+                });
     }
 
     @Test
@@ -103,21 +106,25 @@ public class RxJava3PlaneTest {
     }
 
     private void createTestSessionAndRunTest(Runnable testBody) {
-        try (ActivityScenario<ComponentActivity> scenario = ActivityScenario.launch(
-                ComponentActivity.class)) {
-            scenario.onActivity(activity -> {
-                mTestDispatcher = StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
-                mSession = ((SessionCreateSuccess) Session.create(activity,
-                        mTestDispatcher)).getSession();
-                mXrResourcesManager.setLifecycleManager$arcore_release(
-                        mSession.getRuntime().getLifecycleManager());
-
-                try {
-                    testBody.run();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+        try (ActivityScenario<ComponentActivity> scenario =
+                ActivityScenario.launch(ComponentActivity.class)) {
+            scenario.onActivity(
+                    activity -> {
+                        mTestDispatcher =
+                                StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
+                        mSession =
+                                ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
+                                        .getSession();
+                        mXrResourcesManager.setLifecycleManager$arcore_release(
+                                SessionExtKt.getPerceptionRuntime(mSession).getLifecycleManager());
+                        mSession.configure(
+                                new Config(Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL));
+                        try {
+                            testBody.run();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
         } catch (Exception e) {
             throw new RuntimeException("Error during ActivityScenario setup or teardown", e);
         }

@@ -243,9 +243,9 @@ package androidx.test.uiautomator {
   }
 
   public final class StableResult {
-    method public android.view.accessibility.AccessibilityNodeInfo getNode();
-    method public android.graphics.Bitmap? getScreenshot();
-    method public boolean isTimeout();
+    method @InaccessibleFromKotlin public android.view.accessibility.AccessibilityNodeInfo getNode();
+    method @InaccessibleFromKotlin public android.graphics.Bitmap? getScreenshot();
+    method @InaccessibleFromKotlin public boolean isTimeout();
     property public boolean isTimeout;
     property public android.view.accessibility.AccessibilityNodeInfo node;
     property public android.graphics.Bitmap? screenshot;
@@ -273,9 +273,9 @@ package androidx.test.uiautomator {
     ctor protected UiAutomatorTestScope();
     method public final android.view.accessibility.AccessibilityNodeInfo activeWindowRoot();
     method public final void clearAppData();
-    method public final androidx.test.uiautomator.UiDevice getDevice();
-    method public final android.app.Instrumentation getInstrumentation();
-    method public final android.app.UiAutomation getUiAutomation();
+    method @InaccessibleFromKotlin public final androidx.test.uiautomator.UiDevice getDevice();
+    method @InaccessibleFromKotlin public final android.app.Instrumentation getInstrumentation();
+    method @InaccessibleFromKotlin public final android.app.UiAutomation getUiAutomation();
     method public final androidx.test.uiautomator.UiObject2 onElement(kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method public final androidx.test.uiautomator.UiObject2 onElement(optional long timeoutMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
     method public final androidx.test.uiautomator.UiObject2 onElement(optional long timeoutMs, optional long pollIntervalMs, kotlin.jvm.functions.Function1<? super android.view.accessibility.AccessibilityNodeInfo,java.lang.Boolean> block);
@@ -291,14 +291,12 @@ package androidx.test.uiautomator {
     method public final boolean pressHome();
     method public final void startActivity(Class<? extends java.lang.Object?> clazz);
     method public final void startActivity(String packageName, String activityName);
-    method public final void startApp();
+    method public void startActivityIntent(android.content.Intent intent);
     method public final void startApp(String packageName);
-    method public final void startIntent(android.content.Intent intent);
     method public final void type(String text);
     method public final void unregisterWatchers();
-    method public final boolean waitForAppToBeVisible();
-    method public final boolean waitForAppToBeVisible(optional String appPackageName);
-    method public final boolean waitForAppToBeVisible(optional String appPackageName, optional long timeoutMs);
+    method public final boolean waitForAppToBeVisible(String appPackageName);
+    method public final boolean waitForAppToBeVisible(String appPackageName, optional long timeoutMs);
     method public final androidx.test.uiautomator.StableResult waitForStableInActiveWindow();
     method public final androidx.test.uiautomator.StableResult waitForStableInActiveWindow(optional long stableTimeoutMs);
     method public final androidx.test.uiautomator.StableResult waitForStableInActiveWindow(optional long stableTimeoutMs, optional long stableIntervalMs);

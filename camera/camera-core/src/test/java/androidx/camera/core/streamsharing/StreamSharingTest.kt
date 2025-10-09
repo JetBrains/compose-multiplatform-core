@@ -29,8 +29,8 @@ import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Size
 import android.view.Surface
+import androidx.camera.camera2.adapter.CameraUseCaseAdapter
 import androidx.camera.camera2.impl.Camera2ImplConfig
-import androidx.camera.camera2.internal.Camera2UseCaseConfigFactory
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
@@ -687,7 +687,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(previewBuilder.build()),
-                Camera2UseCaseConfigFactory(context),
+                CameraUseCaseAdapter(context),
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build(), null)

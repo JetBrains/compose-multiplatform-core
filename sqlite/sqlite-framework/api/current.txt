@@ -19,7 +19,7 @@ package androidx.sqlite.driver {
   public final class SupportSQLiteConnection implements androidx.sqlite.SQLiteConnection {
     ctor public SupportSQLiteConnection(androidx.sqlite.db.SupportSQLiteDatabase db);
     method public void close();
-    method public androidx.sqlite.db.SupportSQLiteDatabase getDb();
+    method @InaccessibleFromKotlin public androidx.sqlite.db.SupportSQLiteDatabase getDb();
     method public androidx.sqlite.SQLiteStatement prepare(String sql);
     property public androidx.sqlite.db.SupportSQLiteDatabase db;
   }

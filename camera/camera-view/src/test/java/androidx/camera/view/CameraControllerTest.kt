@@ -71,7 +71,6 @@ import java.util.concurrent.TimeUnit
 import org.junit.Assert
 import org.junit.Assume.assumeTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -529,6 +528,26 @@ class CameraControllerTest {
         assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_180)
         val videoConfig = controller.mVideoCapture.currentConfig as ImageOutputConfig
         assertThat(videoConfig.targetRotation).isEqualTo(Surface.ROTATION_180)
+    }
+
+    @Test
+    fun useCaseIsRecreated_rotationIsRetained() {
+        // Act: Manually trigger the rotation listener to set the internal state.
+        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_90)
+
+        // Assert: The existing ImageCapture instance has the correct rotation.
+        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_90)
+
+        // --- Test with ROTATION_270 ---
+
+        // Act: Manually trigger the listener with a different rotation.
+        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_270)
+
+        // Act: Recreate the ImageCapture use case by setting a different capture mode.
+        controller.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+
+        // Assert: The new ImageCapture instance has the updated rotation.
+        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_270)
     }
 
     @UiThreadTest
@@ -1003,7 +1022,6 @@ class CameraControllerTest {
             .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
     }
 
-    @Ignore // b/425365173
     @Test
     fun setTapToFocusAutoCancelDuration_stateNeverResetsToNotStarted_whenDurationIsZero() {
         completeCameraInitialization()

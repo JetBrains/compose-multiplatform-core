@@ -45,6 +45,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -661,18 +662,16 @@ public class WebSettingsCompat {
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
      * @return The configured set of allow-listed origins.
      * @see #setRequestedWithHeaderOriginAllowList(WebSettings, Set)
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API now just returns an empty set.
      */
     @RequiresFeature(name = WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     public static @NonNull Set<String> getRequestedWithHeaderOriginAllowList(
             @NonNull WebSettings settings) {
-        final ApiFeature.NoFramework feature =
-                WebViewFeatureInternal.REQUESTED_WITH_HEADER_ALLOW_LIST;
-        if (feature.isSupportedByWebView()) {
-            return getAdapter(settings).getRequestedWithHeaderOriginAllowList();
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
+        return Collections.emptySet();
     }
 
     /**
@@ -694,18 +693,15 @@ public class WebSettingsCompat {
      * @param settings  Settings retrieved from {@link WebView#getSettings()}.
      * @param allowList Set of origins to allow-list.
      * @throws IllegalArgumentException if the allow-list contains a malformed origin.
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API no longer does anything.
      */
     @RequiresFeature(name = WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     public static void setRequestedWithHeaderOriginAllowList(@NonNull WebSettings settings,
             @NonNull Set<String> allowList) {
-        final ApiFeature.NoFramework feature =
-                WebViewFeatureInternal.REQUESTED_WITH_HEADER_ALLOW_LIST;
-        if (feature.isSupportedByWebView()) {
-            getAdapter(settings).setRequestedWithHeaderOriginAllowList(allowList);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
     }
 
     /**
@@ -1145,6 +1141,70 @@ public class WebSettingsCompat {
     }
 
     /**
+     * Denotes that the SpeculativeLoading API surface is experimental.
+     * It may change without warning.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.FIELD, ElementType.TYPE})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    public @interface ExperimentalBackForwardCacheSettings {
+    }
+
+    /**
+     * Sets the {@link BackForwardCacheSettings} for this {@link WebSettings}.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS}.
+     *
+     * <p>
+     * Calling this API will enable the BackForwardCache feature, which is equivalent to calling
+     * {@link #setBackForwardCacheEnabled(WebSettings, boolean)} with {@code true}.
+     *
+     * @param settings                 Settings retrieved from {@link WebView#getSettings()}.
+     * @param backForwardCacheSettings The new settings for the BackForwardCache.
+     */
+    @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @ExperimentalBackForwardCacheSettings
+    public static void setBackForwardCacheSettings(@NonNull WebSettings settings,
+            @NonNull BackForwardCacheSettings backForwardCacheSettings) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.BACK_FORWARD_CACHE_SETTINGS;
+        if (feature.isSupportedByWebView()) {
+            getAdapter(settings).setBackForwardCacheSettings(backForwardCacheSettings);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Get the current {@link BackForwardCacheSettings} for this {@link WebSettings}.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#BACK_FORWARD_CACHE_SETTINGS}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @return The current settings for the BackForwardCache. If the BackForwardCache
+     * feature is disabled, a default instance is returned instead.
+     */
+    @RequiresFeature(name = WebViewFeature.BACK_FORWARD_CACHE_SETTINGS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
+    @ExperimentalBackForwardCacheSettings
+    public static BackForwardCacheSettings getBackForwardCacheSettings(
+            @NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.BACK_FORWARD_CACHE_SETTINGS;
+        if (feature.isSupportedByWebView()) {
+            return getAdapter(settings).getBackForwardCacheSettings();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
      * Enables <a href="https://w3c.github.io/payment-request/">PaymentRequest</a> for the given
      * {@link WebSettings}.
      *
@@ -1343,6 +1403,59 @@ public class WebSettingsCompat {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
         return getAdapter(settings).getCookieAccessForShouldInterceptRequestEnabled();
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @IntDef(
+            flag = true,
+            value = {
+                    HyperlinkContextMenuItems.DISABLED,
+                    HyperlinkContextMenuItems.COPY_LINK_ADDRESS,
+                    HyperlinkContextMenuItems.COPY_LINK_TEXT,
+                    HyperlinkContextMenuItems.OPEN_LINK
+            })
+    @Retention(RetentionPolicy.SOURCE)
+    @Target({ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD,
+            ElementType.LOCAL_VARIABLE})
+    public @interface HyperlinkContextMenuItems {
+        int DISABLED = 0;
+        int COPY_LINK_ADDRESS = 1; // 2^0
+        int COPY_LINK_TEXT = 1 << 1; // 2^1
+        int OPEN_LINK = 1 << 2; // 2^2
+    }
+
+    /**
+     * Sets which items appear in the context menu when a user long-presses a hyperlink.
+     * The default value is HyperlinkContextMenuItems.DISABLED which means no menu is shown.
+     *
+     * <p>The items are specified using bitwise flags. You can combine multiple items using
+     * the bitwise OR operator (`|`). For example:
+     *
+     * <pre>{@code
+     * // Show only "Copy link address" and "Open link".
+     * webSettings.setHyperlinkContextMenuItems(
+     *     WebSettingsCompat.HyperlinkContextMenuItems.COPY_LINK_ADDRESS |
+     *         WebSettingsCompat.HyperlinkContextMenuItems.OPEN_LINK);
+     * }</pre>
+     *
+     * @param settings           The {@link WebSettings} instance to apply the items to.
+     * @param hyperlinkMenuItems A bitwise combination of the following flags:
+     *                           <ul>
+     *                             <li>{@link HyperlinkContextMenuItems#COPY_LINK_ADDRESS}</li>
+     *                             <li>{@link HyperlinkContextMenuItems#COPY_LINK_TEXT}</li>
+     *                             <li>{@link HyperlinkContextMenuItems#OPEN_LINK}</li>
+     *                           </ul>
+     */
+    @RequiresFeature(name = WebViewFeature.HYPERLINK_CONTEXT_MENU_ITEMS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setHyperlinkContextMenuItems(@NonNull WebSettings settings,
+            @HyperlinkContextMenuItems int hyperlinkMenuItems) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.HYPERLINK_CONTEXT_MENU_ITEMS;
+        if (!feature.isSupportedByWebView()) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        getAdapter(settings).setHyperlinkContextMenuItems(hyperlinkMenuItems);
     }
 
     private static WebSettingsAdapter getAdapter(WebSettings settings) {

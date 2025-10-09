@@ -18,6 +18,7 @@
     "RedundantVisibilityModifier",
     "UNCHECKED_CAST",
     "KotlinRedundantDiagnosticSuppress",
+    "FacadeClassJvmName",
 )
 @file:OptIn(ExperimentalContracts::class)
 

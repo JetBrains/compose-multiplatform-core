@@ -60,33 +60,50 @@ public abstract class Track(
     // this would be private, but internal prevents getters from being created
     @JvmField // avoid getter generation
     @PublishedApi
-    internal var currentPacketArray: PooledTracePacketArray = pool.obtainTracePacketArray()
-    @JvmField // we cache this separately to avoid having to query it with a function each time
-    @PublishedApi
-    internal var currentPacketArraySize: Int = currentPacketArray.packets.size
+    internal var currentPacketArray: PooledTracePacketArray? = pool.obtainTracePacketArray()
 
     @PublishedApi
     internal fun flush() {
-        context.sink.enqueue(currentPacketArray)
-        currentPacketArray = pool.obtainTracePacketArray()
-        currentPacketArraySize = currentPacketArray.packets.size
+        val currentPacketArray = this.currentPacketArray
+        if (currentPacketArray != null) {
+            context.sink.enqueue(currentPacketArray)
+            // Try obtaining a new pooled trace packet.
+            this.currentPacketArray = pool.obtainTracePacketArray()
+        }
     }
 
-    /** Emit is internal, but it must be sure to only access */
+    /** Useful when we need to conditionally emit a trace event based on a predicate. */
     @PublishedApi
-    internal inline fun emitTraceEvent(
+    // All usages of the API are also marked and tracked as experimental.
+    @Suppress("BanInlineOptIn")
+    internal inline fun conditionalEmitTraceEvent(
         immediateDispatch: Boolean = false,
-        block: (TraceEvent) -> Unit,
+        block: (TraceEvent) -> Boolean,
     ) {
-        currentPacketArray.apply {
-            block(packets[fillCount])
-            fillCount++
-            if (fillCount == currentPacketArraySize || immediateDispatch) {
-                context.sink.enqueue(this)
-
-                // greedy reset / reallocate array
-                currentPacketArray = pool.obtainTracePacketArray()
-                currentPacketArraySize = currentPacketArray.packets.size
+        if (currentPacketArray == null) {
+            // Try obtaining another pooled trace packet array.
+            currentPacketArray = pool.obtainTracePacketArray()
+        }
+        // If we still cannot obtain a PooledTracePacketArray, then just mark the trace event
+        // as lost.
+        if (currentPacketArray == null) {
+            context.sink.onDroppedTraceEvent()
+        } else {
+            val currentPacketArraySize = currentPacketArray?.packets?.size ?: 0
+            currentPacketArray?.apply {
+                val shouldEmit = block(packets[fillCount])
+                if (shouldEmit) {
+                    fillCount++
+                    if (fillCount == currentPacketArraySize || immediateDispatch) {
+                        context.sink.enqueue(this)
+                        // greedy reset / reallocate array
+                        currentPacketArray = pool.obtainTracePacketArray()
+                    }
+                } else {
+                    // We effectively cancelled the emit. So we need to reset the trace packet
+                    // on the producer side.
+                    packets[fillCount].reset()
+                }
             }
         }
     }
@@ -94,14 +111,15 @@ public abstract class Track(
     /** Test API for benchmarking */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun enqueueSingleUnmodifiedEvent() {
-        emitTraceEvent(immediateDispatch = true) {
+        conditionalEmitTraceEvent(immediateDispatch = true) {
             // noop
+            true
         }
     }
 
     /** Test API for benchmarking */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun resetFillCount() {
-        currentPacketArray.fillCount = 0
+        currentPacketArray?.fillCount = 0
     }
 }

@@ -9,17 +9,18 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$NestedDerivedSerializableFactory` : AppFunctionSerializableFactory<NestedDerivedSerializable> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): NestedDerivedSerializable {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.NestedDerivedSerializable")
     val nestedBaseSerializableFactory = `$NestedBaseSerializableFactory`()
     val nestedDerivedSerializableFactory = `$NestedDerivedSerializableFactory`()
 
-    val stringBaseName = checkNotNull(appFunctionData.getStringOrNull("stringBaseName"))
-    val nestedBaseData = appFunctionData.getAppFunctionData("nestedBase")
+    val stringBaseName = checkNotNull(appFunctionDataWithSpec.getStringOrNull("stringBaseName"))
+    val nestedBaseData = appFunctionDataWithSpec.getAppFunctionData("nestedBase")
     var nestedBase: NestedBaseSerializable? = null
     if (nestedBaseData != null) {
       nestedBase = nestedBaseSerializableFactory.fromAppFunctionData(nestedBaseData)
     }
-    val longBaseValue = checkNotNull(appFunctionData.getLongOrNull("longBaseValue"))
-    val nestedDerivedData = appFunctionData.getAppFunctionData("nestedDerived")
+    val longBaseValue = checkNotNull(appFunctionDataWithSpec.getLongOrNull("longBaseValue"))
+    val nestedDerivedData = appFunctionDataWithSpec.getAppFunctionData("nestedDerived")
     var nestedDerived: NestedDerivedSerializable? = null
     if (nestedDerivedData != null) {
       nestedDerived = nestedDerivedSerializableFactory.fromAppFunctionData(nestedDerivedData)
@@ -34,7 +35,7 @@ public class `$NestedDerivedSerializableFactory` : AppFunctionSerializableFactor
     val nestedBaseSerializableFactory = `$NestedBaseSerializableFactory`()
     val nestedDerivedSerializableFactory = `$NestedDerivedSerializableFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.NestedDerivedSerializable")
+    val builder = getAppFunctionDataBuilder("com.testdata.NestedDerivedSerializable")
     val stringBaseName = nestedDerivedSerializable_appFunctionSerializable.stringBaseName
     builder.setString("stringBaseName", stringBaseName)
     val nestedBase = nestedDerivedSerializable_appFunctionSerializable.nestedBase

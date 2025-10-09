@@ -45,9 +45,6 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     sourceSets {
         androidTest.assets.srcDirs += new File(
                 androidx.build.AndroidXConfig.getPrebuiltsRoot(project),

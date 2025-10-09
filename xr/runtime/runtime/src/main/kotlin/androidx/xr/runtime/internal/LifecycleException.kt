@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,13 @@ package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
 
-/** Custom class for exceptions that may be thrown by a [LifecycleManager]. */
+/**
+ * Custom class for exceptions that may be thrown by a
+ * [androidx.xr.runtime.internal.LifecycleManager].
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class LifecycleException(message: String, cause: Throwable? = null) :
     Exception(message, cause)
-
-/** A [Feature] attempting to be enabled is not supported by the current runtime. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ConfigurationNotSupportedException(
-    message: String = "Failed to configure session, requested configuration is not supported.",
-    cause: Throwable? = null,
-) : LifecycleException(message, cause)
 
 /** The Google Play Services Location Library is not linked. */
 @Suppress("MentionsGoogle")

@@ -736,8 +736,13 @@ internal constructor(
                     // TODO: b/356939416 - provide backward compatible timestamp API.
                     if (Build.VERSION.SDK_INT >= 26) {
                         val lastUsedTime: Instant? =
-                            this.getSerializable("$EXTRA_CREATE_ENTRY_LAST_USED_TIME_PREFIX$index")
-                                as Instant?
+                            try {
+                                this.getSerializable(
+                                    "$EXTRA_CREATE_ENTRY_LAST_USED_TIME_PREFIX$index"
+                                ) as Instant?
+                            } catch (e: ClassCastException) {
+                                null
+                            }
                         entries.add(
                             CreateEntry(
                                 accountName = accountName,

@@ -18,10 +18,13 @@ package androidx.pdf.selection
 
 import android.graphics.Point
 import android.graphics.RectF
+import android.net.Uri
 import android.os.Build
 import android.view.ViewGroup
+import androidx.pdf.PdfDocument.PdfPageLinks
+import androidx.pdf.content.PdfPageGotoLinkContent
+import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
-import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.view.FakePdfDocument
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.PdfViewTestActivity
@@ -29,6 +32,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.action.ViewActions.doubleClick
 import androidx.test.espresso.action.ViewActions.longClick
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers
 import androidx.test.espresso.matcher.ViewMatchers
@@ -43,19 +47,38 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @LargeTest
 class SelectionContextualMenuTest {
 
     @Before
     fun setUp() {
-        PdfFeatureFlags.isSmartActionMenuComponentEnabled = true
-        val textContents =
-            FAKE_PAGE_TEXT.map { text ->
-                PdfPageTextContent(listOf(RectF(0f, 0f, 2000f, 4000f)), text)
-            }
+        val textContents = FAKE_PAGE_TEXT.map { text -> PdfPageTextContent(BOUNDS, text) }
+        val emailLinkContent =
+            PdfPageLinks(
+                gotoLinks = emptyList(),
+                externalLinks =
+                    listOf(PdfPageLinkContent(bounds = BOUNDS, uri = Uri.parse(EMAIL_LINK))),
+            )
+        val goToLinkContent =
+            PdfPageLinks(
+                gotoLinks =
+                    listOf(PdfPageGotoLinkContent(bounds = BOUNDS, destination = DESTINATION)),
+                externalLinks = emptyList(),
+            )
+        val hyperLinkContent =
+            PdfPageLinks(
+                gotoLinks = emptyList(),
+                externalLinks = listOf(PdfPageLinkContent(bounds = BOUNDS, uri = Uri.parse(LINK))),
+            )
+        val pageLinks: Map<Int, PdfPageLinks> =
+            mapOf(3 to goToLinkContent, 4 to hyperLinkContent, 5 to emailLinkContent)
         val fakePdfDocument =
-            FakePdfDocument(pages = List(3) { Point(2000, 4000) }, textContents = textContents)
+            FakePdfDocument(
+                pages = List(6) { Point(2000, 4000) },
+                pageLinks = pageLinks,
+                textContents = textContents,
+            )
 
         PdfViewTestActivity.onCreateCallback = { activity ->
             with(activity) {
@@ -78,7 +101,45 @@ class SelectionContextualMenuTest {
     @After
     fun tearDown() {
         PdfViewTestActivity.onCreateCallback = {}
-        PdfFeatureFlags.isSmartActionMenuComponentEnabled = false
+    }
+
+    @Test
+    fun testDoubleTapAfterSelection_stillshowsMenuOption() {
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                // Create a selection by long-pressing the center of the view.
+                .perform(longClick())
+            // Verify that the long press selected started action mode.
+            Espresso.onView(withText("Copy"))
+                .inRoot(RootMatchers.isPlatformPopup())
+                .check(matches(isDisplayed()))
+
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                // Double Tap to zoom in.
+                .perform(doubleClick())
+
+            // Verify that the contextual menu is still visible.
+            Espresso.onView(withText("Copy"))
+                .inRoot(RootMatchers.isPlatformPopup())
+                .check(matches(isDisplayed()))
+        }
+    }
+
+    @Test
+    fun testEmailLinkSelection_doesNotshowCopyLinkOption() {
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    pdfView.scrollToPage(5)
+                }
+                // Create a selection by long-pressing the center of the view.
+                .perform(longClick())
+            // Verify that the long press selected does not show copy link.
+            Espresso.onView(withText("Copy link"))
+                .inRoot(RootMatchers.isPlatformPopup())
+                .check(doesNotExist())
+        }
     }
 
     @Test
@@ -90,6 +151,40 @@ class SelectionContextualMenuTest {
             // Verify that the long press selected started action mode showing email add
             // options
             Espresso.onView(withText("Email"))
+                .inRoot(RootMatchers.isPlatformPopup())
+                .check(matches(isDisplayed()))
+        }
+    }
+
+    @Test
+    fun testGoToLinkSelection_showsJumptoOption() {
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    pdfView.scrollToPage(3)
+                }
+                // Create a selection by long-pressing the center of the view.
+                .perform(longClick())
+            // Verify that the long press selected started action mode showing Jump to option
+            Espresso.onView(withText("Jump to"))
+                .inRoot(RootMatchers.isPlatformPopup())
+                .check(matches(isDisplayed()))
+        }
+    }
+
+    @Test
+    fun testHyperLinkSelection_showsCopylinkOption() {
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
+                .check { view, _ ->
+                    val pdfView = view as PdfView
+                    pdfView.scrollToPage(4)
+                }
+                // Create a selection by long-pressing the center of the view.
+                .perform(longClick())
+            // Verify that the long press selected started action mode showing Copy link option
+            Espresso.onView(withText("Copy link"))
                 .inRoot(RootMatchers.isPlatformPopup())
                 .check(matches(isDisplayed()))
         }
@@ -129,34 +224,25 @@ class SelectionContextualMenuTest {
         }
     }
 
-    @Test
-    fun testDoubleTapAfterSelection_stillshowsMenuOption() {
-        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
-            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
-                // Create a selection by long-pressing the center of the view.
-                .perform(longClick())
-            // Verify that the long press selected started action mode.
-            Espresso.onView(withText("Copy"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
-
-            Espresso.onView(ViewMatchers.withId(PDF_VIEW_ID))
-                // Double Tap to zoom in.
-                .perform(doubleClick())
-
-            // Verify that the contextual menu is still visible.
-            Espresso.onView(withText("Copy"))
-                .inRoot(RootMatchers.isPlatformPopup())
-                .check(matches(isDisplayed()))
-        }
-    }
-
     private companion object {
+        const val BACKTOEMAIL = "Back to Email"
         const val EMAIL = "androidpdf@gmail.com"
+        const val EMAIL_LINK = "https://mailto:androidpdf@gmail.com"
+        const val GOOGLE = "Google"
         const val LINK = "https://www.google.com"
         const val PDF_VIEW_ID = 123456789
         const val PHONE_NUMBER = "8244812290"
 
-        val FAKE_PAGE_TEXT = listOf<String>(EMAIL, LINK, PHONE_NUMBER)
+        val BOUNDS = listOf(RectF(0f, 0f, 2000f, 4000f))
+
+        val DESTINATION =
+            PdfPageGotoLinkContent.Destination(
+                pageNumber = 0,
+                xCoordinate = 0.0f,
+                yCoordinate = 0.0f,
+                zoom = 1.0f,
+            )
+        val FAKE_PAGE_TEXT =
+            listOf<String>(EMAIL, LINK, PHONE_NUMBER, BACKTOEMAIL, GOOGLE, EMAIL_LINK)
     }
 }

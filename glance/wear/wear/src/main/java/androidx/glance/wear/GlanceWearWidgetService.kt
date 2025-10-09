@@ -16,29 +16,71 @@
 
 package androidx.glance.wear
 
+import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
-import androidx.glance.wear.data.IWearWidgetProvider
-import androidx.glance.wear.data.WearWidgetProviderImpl
+import androidx.annotation.RestrictTo
+import androidx.glance.wear.parcel.IWearWidgetProvider
+import androidx.glance.wear.parcel.LegacyTileProviderImpl
+import androidx.glance.wear.parcel.WearWidgetProviderImpl
+import androidx.glance.wear.parcel.legacy.TileProvider
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 
-/** Service used for communication between the Host and a Widget Provider. */
+/**
+ * Service used for communication between the Host and a Widget Provider.
+ *
+ * This should be typically used as:
+ * ```
+ * class MyGlanceWearWidgetService : GlanceWearWidgetService() {
+ *     override val widget: GlanceWearWidget = MyGlanceWearWidget()
+ * }
+ * ```
+ */
 public abstract class GlanceWearWidgetService() : LifecycleService() {
 
-    private val provider: IWearWidgetProvider.Stub = WearWidgetProviderImpl(this, lifecycleScope)
+    /** Instance of [GlanceWearWidget] associated with this provider. */
+    public abstract val widget: GlanceWearWidget
+
+    private val providerName: ComponentName by
+        lazy(LazyThreadSafetyMode.PUBLICATION) { ComponentName(this, this.javaClass) }
+
+    private val provider: IWearWidgetProvider.Stub by
+        lazy(LazyThreadSafetyMode.PUBLICATION) {
+            WearWidgetProviderImpl(this, providerName, lifecycleScope, widget)
+        }
+
+    private val legacyProvider: TileProvider.Stub by
+        lazy(LazyThreadSafetyMode.PUBLICATION) {
+            LegacyTileProviderImpl(this, providerName, lifecycleScope, widget)
+        }
 
     final override fun onBind(intent: Intent): IBinder? {
         super.onBind(intent)
-        if (intent.action == ACTION_BIND_WIDGET_PROVIDER) {
-            return provider
+        return when (intent.action) {
+            ACTION_BIND_WIDGET_PROVIDER -> provider
+            ACTION_BIND_TILE_PROVIDER ->
+                if (intent.extras?.getBoolean(EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED) == true) {
+                    // TODO: b/444391060 - Add an SDK check also to allow R8 optimization.
+                    provider
+                } else {
+                    legacyProvider
+                }
+            else -> null
         }
-        return null
     }
 
     public companion object {
         /** Intent action for binding to a Widget Service. */
         public const val ACTION_BIND_WIDGET_PROVIDER: String =
             "androidx.glance.wear.action.BIND_WIDGET_PROVIDER"
+
+        /** Extra boolean in the intent to signal support for [IWearWidgetProvider] interface. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public const val EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED: String =
+            "androidx.glance.wear.extra.WEAR_WIDGET_PROVIDER_SUPPORTED"
+
+        internal const val ACTION_BIND_TILE_PROVIDER: String =
+            "androidx.wear.tiles.action.BIND_TILE_PROVIDER"
     }
 }

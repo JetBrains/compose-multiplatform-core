@@ -22,8 +22,10 @@ import android.os.Parcelable
 import android.os.Parcelable.ClassLoaderCreator
 import androidx.core.os.ParcelCompat
 import androidx.customview.view.AbsSavedState
+import androidx.pdf.formfilling.FormFillingEditTextState
 import androidx.pdf.models.FormEditRecord
 import androidx.pdf.selection.SelectionModel
+import androidx.pdf.view.layout.PaginationModel
 
 /** [AbsSavedState] implementation for [PdfView] */
 internal class PdfViewSavedState : AbsSavedState {
@@ -31,10 +33,12 @@ internal class PdfViewSavedState : AbsSavedState {
     var contentCenterY: Float = 0F
     var zoom: Float = 1F
     var isFormFillingEnabled: Boolean = false
+    var isFormFillingTooltipEnabled: Boolean = false
     var documentUri: Uri? = null
     var paginationModel: PaginationModel? = null
     var pdfFormFillingState: PdfFormFillingState? = null
     var pdfFormEditRecords: List<FormEditRecord>? = null
+    var pdfFormFillingEditTextState: FormFillingEditTextState? = null
 
     /**
      * The width of the PdfView before the last layout change (e.g., before rotation). Used to
@@ -66,12 +70,15 @@ internal class PdfViewSavedState : AbsSavedState {
         zoom = parcel.readFloat()
         viewWidth = parcel.readInt()
         isFormFillingEnabled = parcel.readBoolean()
+        isFormFillingTooltipEnabled = parcel.readBoolean()
         documentUri = ParcelCompat.readParcelable(parcel, loader, Uri::class.java)
         paginationModel = ParcelCompat.readParcelable(parcel, loader, PaginationModel::class.java)
         pdfFormFillingState =
             ParcelCompat.readParcelable(parcel, loader, PdfFormFillingState::class.java)
         selectionModel = ParcelCompat.readParcelable(parcel, loader, SelectionModel::class.java)
         pdfFormEditRecords = parcel.createTypedArrayList(FormEditRecord.CREATOR)
+        pdfFormFillingEditTextState =
+            ParcelCompat.readParcelable(parcel, loader, FormFillingEditTextState::class.java)
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -81,11 +88,13 @@ internal class PdfViewSavedState : AbsSavedState {
         dest.writeFloat(zoom)
         dest.writeInt(viewWidth)
         dest.writeBoolean(isFormFillingEnabled)
+        dest.writeBoolean(isFormFillingTooltipEnabled)
         dest.writeParcelable(documentUri, flags)
         dest.writeParcelable(paginationModel, flags)
         dest.writeParcelable(pdfFormFillingState, flags)
         dest.writeParcelable(selectionModel, flags)
         dest.writeTypedList(pdfFormEditRecords)
+        dest.writeParcelable(pdfFormFillingEditTextState, flags)
     }
 
     companion object {

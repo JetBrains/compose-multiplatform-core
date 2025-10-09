@@ -36,16 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
-
-internal actual val PointerEvent.isShiftPressed: Boolean
-    get() = false
 
 // We use composed{} to read a local, but don't provide inspector info because the underlying
 // magnifier modifier provides more meaningful inspector info.
@@ -119,20 +115,20 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     ) {
         with(manager) {
             separator()
-            textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
-            textFieldSuspendItem(Copy, enabled = canCopy()) {
+            textFieldSuspendItem(Cut, enabled = canShowCutMenuItem()) { cut() }
+            textFieldSuspendItem(Copy, enabled = canShowCopyMenuItem()) {
                 copy(cancelSelection = textToolbarShown)
             }
-            textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
+            textFieldSuspendItem(Paste, enabled = canShowPasteMenuItem()) { paste() }
             textFieldItem(
                 SelectAll,
-                enabled = canSelectAll(),
+                enabled = canShowSelectAllMenuItem(),
                 closePredicate = { !textToolbarShown },
             ) {
                 selectAll()
             }
             if (Build.VERSION.SDK_INT >= 26) {
-                textFieldItem(Autofill, enabled = canAutofill()) { autofill() }
+                textFieldItem(Autofill, enabled = canShowAutofillMenuItem()) { autofill() }
             }
             separator()
         }

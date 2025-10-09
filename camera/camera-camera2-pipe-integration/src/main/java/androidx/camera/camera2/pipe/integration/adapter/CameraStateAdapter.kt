@@ -26,13 +26,17 @@ import androidx.camera.camera2.pipe.GraphState.GraphStateStarted
 import androidx.camera.camera2.pipe.GraphState.GraphStateStarting
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopping
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.config.CameraScope
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.core.CameraState
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.LiveDataObservable
+import androidx.core.util.Consumer
 import androidx.lifecycle.MutableLiveData
+import java.util.concurrent.Executor
 import javax.inject.Inject
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 @CameraScope
 public class CameraStateAdapter @Inject constructor() {
@@ -49,6 +53,9 @@ public class CameraStateAdapter @Inject constructor() {
 
     @GuardedBy("lock") private var isRemoved = false
 
+    @GuardedBy("lock")
+    private val cameraStateListeners = mutableMapOf<Consumer<CameraState>, Executor>()
+
     init {
         postCameraState(CameraInternal.State.CLOSED)
     }
@@ -64,7 +71,7 @@ public class CameraStateAdapter @Inject constructor() {
         synchronized(lock) {
             if (isRemoved) return
 
-            Log.debug { "Camera is removed, forcing state to CLOSED." }
+            Camera2Logger.debug { "Camera is removed, forcing state to CLOSED." }
             isRemoved = true
             currentCameraInternalState = CameraInternal.State.CLOSED
             currentCameraStateError = error
@@ -77,7 +84,7 @@ public class CameraStateAdapter @Inject constructor() {
 
     public fun onGraphUpdated(cameraGraph: CameraGraph): Unit =
         synchronized(lock) {
-            Log.debug { "Camera graph updated from $currentGraph to $cameraGraph" }
+            Camera2Logger.debug { "Camera graph updated from $currentGraph to $cameraGraph" }
             if (currentCameraInternalState != CameraInternal.State.CLOSED) {
                 postCameraState(CameraInternal.State.CLOSING)
                 postCameraState(CameraInternal.State.CLOSED)
@@ -90,11 +97,11 @@ public class CameraStateAdapter @Inject constructor() {
         synchronized(lock) {
             // Ignore any events if the camera has been marked as removed.
             if (isRemoved) {
-                Log.warn { "Ignoring graph state update $graphState on removed camera." }
+                Camera2Logger.warn { "Ignoring graph state update $graphState on removed camera." }
                 return
             }
 
-            Log.debug { "$cameraGraph state updated to $graphState" }
+            Camera2Logger.debug { "$cameraGraph state updated to $graphState" }
             handleStateTransition(cameraGraph, graphState)
         }
 
@@ -102,13 +109,13 @@ public class CameraStateAdapter @Inject constructor() {
     private fun handleStateTransition(cameraGraph: CameraGraph, graphState: GraphState) {
         // If the transition came from a different camera graph, consider it stale and ignore it.
         if (cameraGraph != currentGraph) {
-            Log.debug { "Ignored stale transition $graphState for $cameraGraph" }
+            Camera2Logger.debug { "Ignored stale transition $graphState for $cameraGraph" }
             return
         }
 
         val nextComboState = calculateNextState(currentCameraInternalState, graphState)
         if (nextComboState == null) {
-            Log.warn {
+            Camera2Logger.warn {
                 "Impermissible state transition: " +
                     "current camera internal state: $currentCameraInternalState, " +
                     "received graph state: $graphState"
@@ -119,7 +126,7 @@ public class CameraStateAdapter @Inject constructor() {
         currentCameraStateError = nextComboState.error
 
         // Now that the current graph state is updated, post the latest states.
-        Log.debug { "Updated current camera internal state to $currentCameraInternalState" }
+        Camera2Logger.debug { "Updated current camera internal state to $nextComboState" }
         postCameraState(currentCameraInternalState, currentCameraStateError)
     }
 
@@ -128,7 +135,15 @@ public class CameraStateAdapter @Inject constructor() {
         stateError: CameraState.StateError? = null,
     ) {
         cameraInternalState.postValue(internalState)
-        cameraState.setOrPostValue(CameraState.create(internalState.toCameraState(), stateError))
+
+        val publicState = CameraState.create(internalState.toCameraState(), stateError)
+
+        cameraState.setOrPostValue(publicState)
+
+        val listeners = synchronized(lock) { cameraStateListeners.entries.toList() }
+        listeners.forEach { (listener, executor) ->
+            executor.execute { listener.accept(publicState) }
+        }
     }
 
     /**
@@ -223,6 +238,14 @@ public class CameraStateAdapter @Inject constructor() {
             else -> null
         }
 
+    internal fun addCameraStateListener(executor: Executor, listener: Consumer<CameraState>) {
+        synchronized(lock) { cameraStateListeners[listener] = executor }
+    }
+
+    internal fun removeCameraStateListener(listener: Consumer<CameraState>) {
+        synchronized(lock) { cameraStateListeners.remove(listener) }
+    }
+
     internal data class CombinedCameraState(
         val state: CameraInternal.State,
         val error: CameraState.StateError? = null,
@@ -238,8 +261,7 @@ public class CameraStateAdapter @Inject constructor() {
                     CameraError.ERROR_CAMERA_DISABLED -> CameraState.ERROR_CAMERA_DISABLED
                     CameraError.ERROR_CAMERA_DEVICE -> CameraState.ERROR_OTHER_RECOVERABLE_ERROR
                     CameraError.ERROR_CAMERA_SERVICE -> CameraState.ERROR_CAMERA_FATAL_ERROR
-                    CameraError.ERROR_CAMERA_DISCONNECTED ->
-                        CameraState.ERROR_OTHER_RECOVERABLE_ERROR
+                    CameraError.ERROR_CAMERA_DISCONNECTED -> CameraState.ERROR_CAMERA_IN_USE
                     CameraError.ERROR_ILLEGAL_ARGUMENT_EXCEPTION ->
                         CameraState.ERROR_CAMERA_FATAL_ERROR
                     CameraError.ERROR_SECURITY_EXCEPTION -> CameraState.ERROR_CAMERA_FATAL_ERROR
@@ -247,6 +269,8 @@ public class CameraStateAdapter @Inject constructor() {
                     CameraError.ERROR_DO_NOT_DISTURB_ENABLED ->
                         CameraState.ERROR_DO_NOT_DISTURB_MODE_ENABLED
                     CameraError.ERROR_UNKNOWN_EXCEPTION -> CameraState.ERROR_CAMERA_FATAL_ERROR
+                    CameraError.ERROR_CAMERA_OPENER -> CameraState.ERROR_CAMERA_FATAL_ERROR
+                    CameraError.ERROR_CAMERA_OPEN_TIMEOUT -> CameraState.ERROR_CAMERA_FATAL_ERROR
                     else -> throw IllegalArgumentException("Unexpected CameraError: $this")
                 }
             )

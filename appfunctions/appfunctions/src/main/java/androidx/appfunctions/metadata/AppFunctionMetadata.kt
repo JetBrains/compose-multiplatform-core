@@ -106,8 +106,7 @@ constructor(
         append(")")
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun copy(
+    internal fun copy(
         id: String = this.id,
         packageName: String = this.packageName,
         isEnabled: Boolean = this.isEnabled,
@@ -136,6 +135,7 @@ constructor(
  * This class is used to generate AppFunctionInventory and an intermediate representation to persist
  * the metadata in AppSearch.
  */
+// TODO(b/438412432): Hide this API as internal.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public data class CompileTimeAppFunctionMetadata(
     /**
@@ -159,14 +159,14 @@ public data class CompileTimeAppFunctionMetadata(
     public val parameters: List<AppFunctionParameterMetadata>,
     /** The response of the AppFunction. */
     public val response: AppFunctionResponseMetadata,
+    // TODO: b/444163595 - Remove once components are moved to package metadata
     /** Reusable components that could be shared within the function specification. */
     public val components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
     /** A description of the AppFunction and its intended use. */
     public val description: String = "",
 ) {
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun copy(
+    internal fun copy(
         id: String? = null,
         isEnabledByDefault: Boolean? = null,
         schema: AppFunctionSchemaMetadata? = null,
@@ -191,8 +191,7 @@ public data class CompileTimeAppFunctionMetadata(
      *
      * This method is used to persist the [CompileTimeAppFunctionMetadata] in a database.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toAppFunctionMetadataDocument(): AppFunctionMetadataDocument {
+    internal fun toAppFunctionMetadataDocument(): AppFunctionMetadataDocument {
         return AppFunctionMetadataDocument(
             id = id,
             isEnabledByDefault = isEnabledByDefault,
@@ -208,30 +207,29 @@ public data class CompileTimeAppFunctionMetadata(
 
 /** Represents the persistent storage format of [AppFunctionMetadata]. */
 @Document(name = "AppFunctionStaticMetadata")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class AppFunctionMetadataDocument(
-    @Document.Namespace public val namespace: String = APP_FUNCTION_NAMESPACE,
+internal data class AppFunctionMetadataDocument(
+    @Document.Namespace val namespace: String = APP_FUNCTION_NAMESPACE,
     /** The id of the AppFunction. */
-    @Document.Id public val id: String = APP_FUNCTION_ID_EMPTY,
+    @Document.Id val id: String = APP_FUNCTION_ID_EMPTY,
     /**
      * Indicates whether the function is enabled by default.
      *
      * This represents the initial configuration and might not represent the current enabled state,
      * as it could be modified at runtime.
      */
-    @Document.BooleanProperty(name = "enabledByDefault") public val isEnabledByDefault: Boolean,
+    @Document.BooleanProperty(name = "enabledByDefault") val isEnabledByDefault: Boolean,
     /** The category of the schema, used to group related schemas. */
-    @Document.StringProperty public val schemaCategory: String?,
+    @Document.StringProperty val schemaCategory: String?,
     /** The unique name of the schema within its category. */
-    @Document.StringProperty public val schemaName: String?,
+    @Document.StringProperty val schemaName: String?,
     /** The version of the schema. This is used to track the changes to the schema over time. */
-    @Document.LongProperty public val schemaVersion: Long?,
+    @Document.LongProperty val schemaVersion: Long?,
     // Below properties are nullable as they won't be populated in the underlying GD created by
     // legacy AppSearch indexer.
     /** The parameters of the AppFunction. */
-    @Document.DocumentProperty public val parameters: List<AppFunctionParameterMetadataDocument>?,
+    @Document.DocumentProperty val parameters: List<AppFunctionParameterMetadataDocument>?,
     /** The response of the AppFunction. */
-    @Document.DocumentProperty public val response: AppFunctionResponseMetadataDocument?,
+    @Document.DocumentProperty val response: AppFunctionResponseMetadataDocument?,
     /** A description of the AppFunction and its intended use. */
-    @Document.StringProperty public val description: String? = null,
+    @Document.StringProperty val description: String? = null,
 )

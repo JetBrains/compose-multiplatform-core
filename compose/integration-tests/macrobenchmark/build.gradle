@@ -21,9 +21,6 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     namespace = "androidx.compose.integration.macrobenchmark"
     targetProjectPath = ":compose:integration-tests:macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true

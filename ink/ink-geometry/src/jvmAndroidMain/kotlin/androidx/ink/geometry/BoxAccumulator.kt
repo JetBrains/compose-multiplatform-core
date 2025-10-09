@@ -243,7 +243,7 @@ public class BoxAccumulator {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramAngleInRadian = parallelogram.rotation,
+            parallelogramAngleInRadian = parallelogram.rotationDegrees,
             parallelogramSkew = parallelogram.skew,
             output = this,
         )

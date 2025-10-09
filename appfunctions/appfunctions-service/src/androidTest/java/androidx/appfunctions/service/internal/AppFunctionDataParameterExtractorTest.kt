@@ -21,6 +21,7 @@ import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
@@ -39,7 +40,63 @@ import org.junit.runner.RunWith
 class AppFunctionDataParameterExtractorTest {
 
     private val testAppFunctionData =
-        AppFunctionData.Builder("")
+        AppFunctionData.Builder(
+                listOf(
+                    AppFunctionParameterMetadata(
+                        "long",
+                        true,
+                        AppFunctionLongTypeMetadata(isNullable = false),
+                    ),
+                    AppFunctionParameterMetadata(
+                        "double",
+                        true,
+                        AppFunctionDoubleTypeMetadata(isNullable = false),
+                    ),
+                    AppFunctionParameterMetadata(
+                        "boolean",
+                        true,
+                        AppFunctionBooleanTypeMetadata(isNullable = false),
+                    ),
+                    AppFunctionParameterMetadata(
+                        "string",
+                        true,
+                        AppFunctionStringTypeMetadata(isNullable = false),
+                    ),
+                    AppFunctionParameterMetadata(
+                        "longArray",
+                        true,
+                        AppFunctionArrayTypeMetadata(
+                            isNullable = false,
+                            itemType = AppFunctionLongTypeMetadata(isNullable = false),
+                        ),
+                    ),
+                    AppFunctionParameterMetadata(
+                        "doubleArray",
+                        true,
+                        AppFunctionArrayTypeMetadata(
+                            isNullable = false,
+                            itemType = AppFunctionDoubleTypeMetadata(isNullable = false),
+                        ),
+                    ),
+                    AppFunctionParameterMetadata(
+                        "booleanArray",
+                        true,
+                        AppFunctionArrayTypeMetadata(
+                            isNullable = false,
+                            itemType = AppFunctionBooleanTypeMetadata(isNullable = false),
+                        ),
+                    ),
+                    AppFunctionParameterMetadata(
+                        "stringList",
+                        true,
+                        AppFunctionArrayTypeMetadata(
+                            isNullable = false,
+                            itemType = AppFunctionStringTypeMetadata(isNullable = false),
+                        ),
+                    ),
+                ),
+                AppFunctionComponentsMetadata(),
+            )
             .setLong("long", 1L)
             .setDouble("double", 2.0)
             .setBoolean("boolean", true)
@@ -106,8 +163,11 @@ class AppFunctionDataParameterExtractorTest {
                 isRequired = false,
                 dataType = AppFunctionIntTypeMetadata(isNullable = true),
             )
+        val testData =
+            AppFunctionData.Builder(listOf(parameterMetadata), AppFunctionComponentsMetadata())
+                .build()
 
-        val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
+        val parameter = testData.unsafeGetParameterValue(parameterMetadata)
 
         assertThat(parameter).isNull()
     }
@@ -120,8 +180,11 @@ class AppFunctionDataParameterExtractorTest {
                 isRequired = false,
                 dataType = AppFunctionIntTypeMetadata(isNullable = false),
             )
+        val testData =
+            AppFunctionData.Builder(listOf(parameterMetadata), AppFunctionComponentsMetadata())
+                .build()
 
-        val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
+        val parameter = testData.unsafeGetParameterValue(parameterMetadata)
 
         assertThat(parameter).isEqualTo(0)
     }
@@ -217,8 +280,11 @@ class AppFunctionDataParameterExtractorTest {
                         itemType = AppFunctionStringTypeMetadata(isNullable = true),
                     ),
             )
+        val testData =
+            AppFunctionData.Builder(listOf(parameterMetadata), AppFunctionComponentsMetadata())
+                .build()
 
-        val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
+        val parameter = testData.unsafeGetParameterValue(parameterMetadata)
 
         assertThat(parameter).isNull()
     }
@@ -235,8 +301,11 @@ class AppFunctionDataParameterExtractorTest {
                         itemType = AppFunctionStringTypeMetadata(isNullable = false),
                     ),
             )
+        val testData =
+            AppFunctionData.Builder(listOf(parameterMetadata), AppFunctionComponentsMetadata())
+                .build()
 
-        val parameter = testAppFunctionData.unsafeGetParameterValue(parameterMetadata)
+        val parameter = testData.unsafeGetParameterValue(parameterMetadata)
 
         assertThat(parameter).isEqualTo(emptyList<String>())
     }

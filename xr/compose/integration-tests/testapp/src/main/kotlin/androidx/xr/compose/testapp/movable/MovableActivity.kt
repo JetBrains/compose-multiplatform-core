@@ -39,11 +39,11 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
-import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SpatialAlignment
+import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
@@ -111,7 +111,8 @@ class MovableActivity : ComponentActivity() {
                         SubspaceModifier.width(400.dp)
                             .fillMaxHeight()
                             .padding(horizontal = 20.dp)
-                            .testTag("LeftColumn")
+                            .testTag("LeftColumn"),
+                    verticalArrangement = SpatialArrangement.spacedBy(20.dp),
                 ) {
                     if (
                         transition.value >= 150f
@@ -122,22 +123,18 @@ class MovableActivity : ComponentActivity() {
                         ) {
                             PanelContent("[NOT MOVABLE] Delayed Panel")
                         }
-                        SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     }
                     SpatialPanel(
                         modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
                     ) {
                         PanelContent("[NOT MOVABLE]")
                     }
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialPanel(
                         modifier = SubspaceModifier.width(200.dp).height(200.dp),
                         dragPolicy = MovePolicy(),
                     ) {
                         PanelContent("[MOVABLE]")
                     }
-
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialPanel(
                         modifier = SubspaceModifier.width(200.dp).height(200.dp),
                         dragPolicy = MovePolicy(),
@@ -150,14 +147,14 @@ class MovableActivity : ComponentActivity() {
                         SubspaceModifier.width(600.dp)
                             .fillMaxHeight()
                             .padding(horizontal = 20.dp)
-                            .testTag("MiddleColumn")
+                            .testTag("MiddleColumn"),
+                    verticalArrangement = SpatialArrangement.spacedBy(20.dp),
                 ) {
                     SpatialPanel(
                         modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
                     ) {
                         PanelContent("[NOT MOVABLE]")
                     }
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialPanel(
                         modifier =
                             SubspaceModifier.offset(xValueMovable, yValueMovable, zValueMovable)
@@ -181,7 +178,6 @@ class MovableActivity : ComponentActivity() {
                     ) {
                         PanelContent("[MOVABLE WITH CUSTOM LISTENER]")
                     }
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
 
                     CommonTestPanel(
                         size = DpVolumeSize(640.dp, 480.dp, 0.dp),
@@ -198,14 +194,14 @@ class MovableActivity : ComponentActivity() {
                         SubspaceModifier.width(400.dp)
                             .fillMaxHeight()
                             .padding(horizontal = 20.dp)
-                            .testTag("RightColumn")
+                            .testTag("RightColumn"),
+                    verticalArrangement = SpatialArrangement.spacedBy(20.dp),
                 ) {
                     SpatialPanel(
                         modifier = SubspaceModifier.width(panelWidth).height(200.dp).fillMaxWidth()
                     ) {
                         PanelContent("[NOT MOVABLE]")
                     }
-                    SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
                     SpatialActivityPanel(
                         intent = Intent(this@MovableActivity, AnotherActivity::class.java),
                         modifier =

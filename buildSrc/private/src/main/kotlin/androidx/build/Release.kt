@@ -167,9 +167,7 @@ object Release {
             name = FULL_ARCHIVE_TASK_NAME,
             onConfigure = { task: GMavenZipTask ->
                 task.archiveFile.set(
-                    project
-                        .getDistributionDirectoryProperty()
-                        .file("${getZipName(GLOBAL_ZIP_PREFIX)}.zip")
+                    project.getDistributionDirectory().file("${getZipName(GLOBAL_ZIP_PREFIX)}.zip")
                 )
                 task.projectRepositoryDir.set(project.getRepositoryDirectory())
             },
@@ -186,7 +184,7 @@ object Release {
         val taskProvider =
             project.tasks.register(PROJECT_ARCHIVE_ZIP_TASK_NAME, GMavenZipTask::class.java) {
                 it.archiveFile.set(
-                    project.getDistributionDirectoryProperty().file(project.getProjectZipPath())
+                    project.getDistributionDirectory().file(project.getProjectZipPath())
                 )
                 it.projectRepositoryDir.set(project.getPerProjectRepositoryDirectory())
             }

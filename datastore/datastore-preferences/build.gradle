@@ -77,10 +77,10 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonJvmMain)
         }
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonJvmTest)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonJvmTest)
             dependencies {
                 implementation(libs.testRunner)

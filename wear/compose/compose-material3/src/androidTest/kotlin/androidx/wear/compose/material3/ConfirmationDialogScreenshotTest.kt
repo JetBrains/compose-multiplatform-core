@@ -167,6 +167,41 @@ class ConfirmationScreenshotTest {
         }
     }
 
+    @Test
+    fun failureConfirmation_variant_icon_text(@TestParameter screenSize: ScreenSize) {
+        rule.verifyConfirmationScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            screenSize = screenSize,
+        ) { modifier ->
+            val style = ConfirmationDialogDefaults.curvedTextStyle
+            FailureConfirmationDialog(
+                visible = true,
+                modifier = modifier,
+                onDismissRequest = {},
+                curvedText = { confirmationDialogCurvedText("Failure", style) },
+                content = { ConfirmationDialogDefaults.VariantFailureIcon() },
+            )
+        }
+    }
+
+    @Test
+    fun failureConfirmation_variant_icon_noText(@TestParameter screenSize: ScreenSize) {
+        rule.verifyConfirmationScreenshot(
+            testName = testName,
+            screenshotRule = screenshotRule,
+            screenSize = screenSize,
+        ) { modifier ->
+            FailureConfirmationDialog(
+                visible = true,
+                modifier = modifier,
+                onDismissRequest = {},
+                curvedText = null,
+                content = { ConfirmationDialogDefaults.VariantFailureIcon() },
+            )
+        }
+    }
+
     private fun ComposeContentTestRule.verifyConfirmationScreenshot(
         testName: TestName,
         screenshotRule: AndroidXScreenshotTestRule,

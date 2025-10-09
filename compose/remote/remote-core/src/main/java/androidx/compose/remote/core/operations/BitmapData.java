@@ -19,6 +19,7 @@ import static androidx.compose.remote.core.documentation.DocumentedOperation.INT
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT_ARRAY;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.SHORT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -38,6 +39,7 @@ import java.util.List;
  * Operation to deal with bitmap data On getting an Image during a draw call the bitmap is
  * compressed and saved in playback the image is decompressed
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class BitmapData extends Operation implements SerializableToString, Serializable {
     private static final int OP_CODE = Operations.DATA_BITMAP;
     private static final String CLASS_NAME = "BitmapData";
@@ -186,7 +188,7 @@ public class BitmapData extends Operation implements SerializableToString, Seria
     }
 
     /**
-     * Add the image to the document (using the ehanced encoding)
+     * Add the image to the document (using the enhanced encoding)
      *
      * @param buffer document to write to
      * @param imageId the id the image will be stored under

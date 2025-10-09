@@ -8,9 +8,6 @@ android {
     namespace = "androidx.privacysandbox.ui.macrobenchmark"
     compileSdk = 35
     compileSdkExtension = 14
-    defaultConfig {
-        minSdk = 23
-    }
 
     privacySandbox {
         enable = true

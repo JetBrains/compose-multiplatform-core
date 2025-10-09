@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ package androidx.xr.scenecore
 import android.app.Activity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Session
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -42,6 +45,8 @@ private val Activity.lifecycle: Lifecycle
 /**
  * Gets the [Scene] associated with this Session.
  *
+ * Accessing the scene in a destroyed activity can be dangerous.
+ *
  * The `Scene` is the primary interface for creating and managing spatial content. There is a single
  * `Scene` instance for each `Session`.
  *
@@ -50,7 +55,7 @@ private val Activity.lifecycle: Lifecycle
 public val Session.scene: Scene
     get() = checkAndGetScene(this)
 
-/** Checks whether the Session has been destroyed. */
+/** Gets the [Scene] associated with the given [Session], using a cache. */
 private fun checkAndGetScene(session: Session): Scene {
     check(session.activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
         "Session has been destroyed."
@@ -74,3 +79,12 @@ internal fun removeSceneFromCache(scene: Scene) {
         }
     }
 }
+
+internal val Session.sceneRuntime: SceneRuntime
+    get() = runtimes.filterIsInstance<SceneRuntime>().single()
+
+internal val Session.renderingRuntime: RenderingRuntime
+    get() = runtimes.filterIsInstance<RenderingRuntime>().single()
+
+internal val Session.perceptionRuntime: PerceptionRuntime
+    get() = runtimes.filterIsInstance<PerceptionRuntime>().single()

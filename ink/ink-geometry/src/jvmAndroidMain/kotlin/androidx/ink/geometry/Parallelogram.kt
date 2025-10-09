@@ -23,8 +23,8 @@ import androidx.ink.nativeloader.UsedByNative
 import kotlin.math.abs
 
 /**
- * This class represents a parallelogram defined by its [center], [width], [height], [rotation], and
- * [skew].
+ * This class represents a parallelogram defined by its [center], [width], [height],
+ * [rotationDegrees], and [skew].
  *
  * The shape of the parallelogram with [width] `w`, [height] `h`, and [skew] `s` is this before
  * rotation:
@@ -43,7 +43,7 @@ import kotlin.math.abs
  * ```
  *
  * The parallelogram is then translated so that its center is in the correct position and rotated by
- * rotation `θ`.
+ * rotation `θ` (in radians in the equations below).
  *
  * These parameters of a [Parallelogram] are used to define a pair of vector semi-axes:
  * ```
@@ -69,8 +69,8 @@ import kotlin.math.abs
  *
  * A [Parallelogram] may *not* have a negative width. If an operation on a parallelogram or the
  * construction of a parallelogram would result in a negative width, it is instead normalized, by
- * negating both the width and the height, adding π to the angle of rotation, and normalizing
- * rotation to the range [0, 2π).
+ * negating both the width and the height, adding 180 to the angle of rotation, and normalizing
+ * rotation to the range [0, 360).
  *
  * A [Parallelogram] may also be degenerate; that is, its [width] or [height], or both, may be zero.
  * Degenerate [Parallelogram]s may still have a non-zero [rotation] and/or [skew]. A [Parallelogram]
@@ -90,8 +90,8 @@ public abstract class Parallelogram internal constructor() {
     /**
      * The width of the [Parallelogram]. A [Parallelogram] may *not* have a negative width. If an
      * operation on a parallelogram would result in a negative width, it is instead normalized, by
-     * negating both the width and the height, adding π to the angle of rotation, and normalizing
-     * rotation to the range [0, 2π).
+     * negating both the width and the height, adding 180 to [rotationDegrees] and normalizing that
+     * to the range [0, 360).
      */
     @get:FloatRange(from = 0.0) public abstract val width: Float
 
@@ -101,7 +101,13 @@ public abstract class Parallelogram internal constructor() {
      */
     public abstract val height: Float
 
-    @get:AngleRadiansFloat public abstract val rotation: Float
+    /**
+     * The rotation of the [Parallelogram] in degrees from its original axis-aligned orientation in
+     * the direction from the positive x-axis towards the positive y-axis.
+     */
+    @get:FloatRange(from = 0.0, to = 360.0, toInclusive = false)
+    @get:AngleDegreesFloat
+    public abstract val rotationDegrees: Float
 
     /**
      * The horizontal displacement between the two horizontal edges of the [Parallelogram]
@@ -138,7 +144,7 @@ public abstract class Parallelogram internal constructor() {
             center.y,
             width,
             height,
-            rotation,
+            rotationDegrees,
             skew,
         )
     }
@@ -150,7 +156,7 @@ public abstract class Parallelogram internal constructor() {
             center.y,
             width,
             height,
-            rotation,
+            rotationDegrees,
             skew,
             outBox,
         )
@@ -177,7 +183,14 @@ public abstract class Parallelogram internal constructor() {
      * pre-allocated [MutableVec]s, so that instances can be reused across multiple calls.
      */
     public fun computeSemiAxes(): List<ImmutableVec> {
-        return ParallelogramNative.createSemiAxes(center.x, center.y, width, height, rotation, skew)
+        return ParallelogramNative.createSemiAxes(
+                center.x,
+                center.y,
+                width,
+                height,
+                rotationDegrees,
+                skew,
+            )
             .toList()
     }
 
@@ -191,7 +204,7 @@ public abstract class Parallelogram internal constructor() {
             center.y,
             width,
             height,
-            rotation,
+            rotationDegrees,
             skew,
             outAxis1,
             outAxis2,
@@ -212,7 +225,14 @@ public abstract class Parallelogram internal constructor() {
      * [MutableVec]s, so that instances can be reused across multiple calls.
      */
     public fun computeCorners(): List<ImmutableVec> {
-        return ParallelogramNative.createCorners(center.x, center.y, width, height, rotation, skew)
+        return ParallelogramNative.createCorners(
+                center.x,
+                center.y,
+                width,
+                height,
+                rotationDegrees,
+                skew,
+            )
             .toList()
     }
 
@@ -232,7 +252,7 @@ public abstract class Parallelogram internal constructor() {
             center.y,
             width,
             height,
-            rotation,
+            rotationDegrees,
             skew,
             outCorner1,
             outCorner2,
@@ -251,7 +271,7 @@ public abstract class Parallelogram internal constructor() {
             center.y,
             width,
             height,
-            rotation,
+            rotationDegrees,
             skew,
             point.x,
             point.y,
@@ -272,25 +292,29 @@ public abstract class Parallelogram internal constructor() {
                 abs(center.y - other.center.y) < tolerance &&
                 abs(width - other.width) < tolerance &&
                 abs(height - other.height) < tolerance &&
-                abs(rotation - other.rotation) < tolerance &&
+                abs(rotationDegrees - other.rotationDegrees) < tolerance &&
                 abs(skew - other.skew) < tolerance)
 
     public companion object {
         /**
-         * If the [width] is less than zero or if the [rotation] is not in the range
-         * [0, 2π), the [Parallelogram] will be normalized and the normalized values of width,
+         * If [width] is less than zero or if [rotationDegrees] is not in
+         * [0, 360), the [Parallelogram] will be normalized and the normalized values of width,
          * height, and rotation will be used to call [runBlock].
          */
-        internal inline fun <P : Parallelogram> normalizeAndRun(
+        internal inline fun <T> normalizeAndRun(
             width: Float,
             height: Float,
-            rotation: Float,
-            runBlock: (width: Float, height: Float, rotation: Float) -> P,
-        ): P {
+            @AngleDegreesFloat rotationDegrees: Float,
+            runBlock: (w: Float, h: Float, rDegrees: Float) -> T,
+        ): T {
             return if (width < 0) {
-                runBlock(-width, -height, Angle.normalized(rotation + Angle.HALF_TURN_RADIANS))
+                runBlock(
+                    -width,
+                    -height,
+                    Angle.normalizedDegrees(rotationDegrees + Angle.HALF_TURN_DEGREES),
+                )
             } else {
-                runBlock(width, height, Angle.normalized(rotation))
+                runBlock(width, height, Angle.normalizedDegrees(rotationDegrees))
             }
         }
 
@@ -302,7 +326,7 @@ public abstract class Parallelogram internal constructor() {
             Vec.areEquivalent(first.center, second.center) &&
                 first.width == second.width &&
                 first.height == second.height &&
-                first.rotation == second.rotation &&
+                first.rotationDegrees == second.rotationDegrees &&
                 first.skew == second.skew
 
         /** Returns a hash code for [parallelogram] using its [Parallelogram] properties. */
@@ -310,7 +334,7 @@ public abstract class Parallelogram internal constructor() {
             var result = parallelogram.center.hashCode()
             result = 31 * result + parallelogram.width.hashCode()
             result = 31 * result + parallelogram.height.hashCode()
-            result = 31 * result + parallelogram.rotation.hashCode()
+            result = 31 * result + parallelogram.rotationDegrees.hashCode()
             result = 31 * result + parallelogram.skew.hashCode()
             return result
         }
@@ -323,7 +347,7 @@ public abstract class Parallelogram internal constructor() {
                 "Parallelogram(center=$center, " +
                     "width=$width, " +
                     "height=$height, " +
-                    "rotation=$rotation, " +
+                    "rotationDegrees=$rotationDegrees, " +
                     "skew=$skew)"
             }
     }
@@ -343,7 +367,7 @@ internal object ParallelogramNative {
         centerY: Float,
         width: Float,
         height: Float,
-        rotation: Float,
+        rotationDegrees: Float,
         skew: Float,
     ): ImmutableBox
 
@@ -353,7 +377,7 @@ internal object ParallelogramNative {
         centerY: Float,
         width: Float,
         height: Float,
-        rotation: Float,
+        rotationDegrees: Float,
         skew: Float,
         outBox: MutableBox,
     )
@@ -364,7 +388,7 @@ internal object ParallelogramNative {
         centerY: Float,
         width: Float,
         height: Float,
-        rotation: Float,
+        rotationDegrees: Float,
         skew: Float,
     ): Array<ImmutableVec>
 
@@ -374,7 +398,7 @@ internal object ParallelogramNative {
         centerY: Float,
         width: Float,
         height: Float,
-        rotation: Float,
+        rotationDegrees: Float,
         skew: Float,
         outAxis1: MutableVec,
         outAxis2: MutableVec,
@@ -386,7 +410,7 @@ internal object ParallelogramNative {
         centerY: Float,
         width: Float,
         height: Float,
-        rotation: Float,
+        rotationDegrees: Float,
         skew: Float,
     ): Array<ImmutableVec>
 
@@ -396,7 +420,7 @@ internal object ParallelogramNative {
         centerY: Float,
         width: Float,
         height: Float,
-        rotation: Float,
+        rotationDegrees: Float,
         skew: Float,
         outCorner1: MutableVec,
         outCorner2: MutableVec,
@@ -410,7 +434,7 @@ internal object ParallelogramNative {
         centerY: Float,
         width: Float,
         height: Float,
-        rotation: Float,
+        rotationDegrees: Float,
         skew: Float,
         pointX: Float,
         pointY: Float,

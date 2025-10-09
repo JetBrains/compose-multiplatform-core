@@ -16,13 +16,13 @@
 
 package androidx.xr.scenecore.spatial.core
 
-import androidx.xr.runtime.internal.CameraViewActivityPose
-import androidx.xr.runtime.internal.Dimensions // runtime.internal.Dimensions
-import androidx.xr.runtime.internal.PerceivedResolutionResult
-import androidx.xr.runtime.internal.PixelDimensions // runtime.internal.PixelDimensions
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.Dimensions
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult
+import androidx.xr.scenecore.runtime.PixelDimensions
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.atan
 import kotlin.math.roundToInt

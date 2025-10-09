@@ -106,4 +106,12 @@ final class IsolateClosedState implements IsolateState {
         throw new IllegalStateException(
                 "Calling removeOnTerminatedCallback() when " + mDescription);
     }
+
+    @NonNull
+    @Override
+    public MessagePort provideMessagePort(@NonNull String name, @NonNull Executor executor,
+            @NonNull MessagePortClient client) {
+        throw new IllegalStateException(
+                "Calling provideMessagePort() when " + mDescription);
+    }
 }

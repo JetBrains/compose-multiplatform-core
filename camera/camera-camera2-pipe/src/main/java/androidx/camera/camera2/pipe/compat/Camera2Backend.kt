@@ -193,7 +193,7 @@ constructor(
             }
 
             Log.debug { "Camera2Backend#shutdownAsync: Closing all cameras (if any)" }
-            camera2DeviceManager.closeAll().await()
+            camera2DeviceManager.closeAll(forceCancelOpen = true).await()
         }
     }
 

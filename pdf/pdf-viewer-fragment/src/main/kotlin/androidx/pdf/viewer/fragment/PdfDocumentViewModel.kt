@@ -84,8 +84,8 @@ public open class PdfDocumentViewModel(
      */
     private var searchJob: Job = SupervisorJob(viewModelScope.coroutineContext[Job])
 
-    private val _fragmentUiScreenState =
-        MutableStateFlow<PdfFragmentUiState>(PdfFragmentUiState.Loading)
+    protected val _fragmentUiScreenState: MutableStateFlow<PdfFragmentUiState> =
+        MutableStateFlow(PdfFragmentUiState.Loading)
 
     /**
      * Represents the UI state of the fragment.
@@ -216,7 +216,7 @@ public open class PdfDocumentViewModel(
         }
     }
 
-    /** Resets UI and internal states. This is invoked when a new document is loaded. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     protected open fun resetState() {
         updateSearchState(isTextSearchActive = false)
         setImmersiveModeDesired(enterImmersive = true)

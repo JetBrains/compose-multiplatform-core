@@ -47,7 +47,7 @@ androidXMultiplatform {
                 api(libs.rxjava2)
             }
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":compose:test-utils"))

@@ -19,8 +19,10 @@ package androidx.text.vertical
 import android.icu.lang.UCharacter
 import android.icu.lang.UCharacter.VerticalOrientation
 import android.icu.lang.UProperty
+import android.os.Build
 import android.text.Spanned
 import androidx.annotation.IntDef
+import androidx.annotation.RequiresApi
 
 /**
  * Represents the orientation of text within a vertical writing mode.
@@ -171,6 +173,7 @@ private class RunMerger(val end: Int, val consumer: (Int, Int, ResolvedOrientati
  *     - The exclusive end index of the orientation run.
  *     - The orientation of the range.
  */
+@RequiresApi(Build.VERSION_CODES.N)
 internal fun forEachOrientation(
     text: CharSequence,
     start: Int,
@@ -209,6 +212,7 @@ internal fun forEachOrientation(
 }
 
 /** Iterates over characters and resolves the each character's orientation property. */
+@RequiresApi(Build.VERSION_CODES.N)
 private inline fun forOrientationNoSpans(
     text: CharSequence,
     start: Int,
@@ -239,6 +243,7 @@ private inline fun forOrientationNoSpans(
  * @param cp The code point of the character.
  * @return The resolved orientation of the character.
  */
+@RequiresApi(Build.VERSION_CODES.N)
 private fun resolveOrientation(@OrientationMode textOrientation: Int, cp: Int) =
     when (textOrientation) {
         TextOrientation.UPRIGHT -> ResolvedOrientation.Upright

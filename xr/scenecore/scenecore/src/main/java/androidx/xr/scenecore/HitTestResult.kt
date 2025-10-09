@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Vector3
 
 /**
@@ -68,7 +69,8 @@ public class HitTestResult(
     }
 
     /** The type of the source of this event. */
-    @IntDef(SurfaceType.UNKNOWN, SurfaceType.PLANE, SurfaceType.OBJECT)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)
-    internal annotation class SurfaceTypeValue
+    @IntDef(SurfaceType.UNKNOWN, SurfaceType.PLANE, SurfaceType.OBJECT)
+    public annotation class SurfaceTypeValue
 }

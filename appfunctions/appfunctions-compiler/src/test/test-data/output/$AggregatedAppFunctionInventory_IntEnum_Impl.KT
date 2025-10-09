@@ -1,4 +1,4 @@
-package androidx.appfunctions.service.`internal`
+package androidx.appfunctions.`internal`
 
 import com.testdata.`$IntEnumValueFunctions_AppFunctionInventory`
 import javax.`annotation`.processing.Generated

@@ -324,6 +324,8 @@ public abstract class CameraController {
     @VisibleForTesting
     final RotationProvider.@NonNull Listener mDeviceRotationListener;
 
+    private int mLastKnownRotation = ImageOutputConfig.INVALID_ROTATION;
+
     private boolean mPinchToZoomEnabled = true;
     private boolean mTapToFocusEnabled = true;
     private FocusMeteringResultCallback mFocusMeteringResultCallback;
@@ -381,6 +383,7 @@ public abstract class CameraController {
         // mode.
         mRotationProvider = new RotationProvider(mAppContext);
         mDeviceRotationListener = rotation -> {
+            mLastKnownRotation = rotation;
             mImageAnalysis.setTargetRotation(rotation);
             mImageCapture.setTargetRotation(rotation);
             mVideoCapture.setTargetRotation(rotation);
@@ -785,15 +788,15 @@ public abstract class CameraController {
      *
      * <p>If {@link ImageCapture#FLASH_MODE_SCREEN} is set, a valid {@link android.view.Window}
      * instance must be set to a {@link PreviewView} or {@link ScreenFlashView} which this
-     * controller is set to. Trying to use {@link ImageCapture#FLASH_MODE_SCREEN} with a
-     * non-front camera or without setting a non-null window will be no-op. While switching the
+     * controller is set to. Trying to use {@link ImageCapture#FLASH_MODE_SCREEN} with a non-front
+     * camera or without setting a non-null window will throw an exception. While switching the
      * camera, it is the application's responsibility to change flash mode to the desired one if
      * it leads to a no-op case (e.g. switching to rear camera while {@code FLASH_MODE_SCREEN} is
      * still set). Otherwise, {@code FLASH_MODE_OFF} will be set.
      *
      * @param flashMode the flash mode for {@link ImageCapture}.
      * @throws IllegalArgumentException If flash mode is invalid or
-     * {@link ImageCapture#FLASH_MODE_SCREEN} is used without a front camera.
+     * {@link ImageCapture#FLASH_MODE_SCREEN} is used without a front camera or a non-null window.
      * @see PreviewView#setScreenFlashWindow(Window)
      * @see ScreenFlashView#setScreenFlashWindow(Window)
      */
@@ -1121,6 +1124,7 @@ public abstract class CameraController {
         setImageCaptureFlashMode(flashMode);
     }
 
+    @SuppressLint("WrongConstant")
     private ImageCapture createImageCapture(Integer imageCaptureMode) {
         ImageCapture.Builder builder = new ImageCapture.Builder();
         if (imageCaptureMode != null) {
@@ -1129,6 +1133,9 @@ public abstract class CameraController {
         configureResolution(builder, mImageCaptureResolutionSelector, mImageCaptureTargetSize);
         if (mImageCaptureIoExecutor != null) {
             builder.setIoExecutor(mImageCaptureIoExecutor);
+        }
+        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
+            builder.setTargetRotation(mLastKnownRotation);
         }
 
         return builder.build();
@@ -1494,6 +1501,7 @@ public abstract class CameraController {
         }
     }
 
+    @SuppressLint("WrongConstant")
     private ImageAnalysis createImageAnalysis(Integer strategy, Integer imageQueueDepth,
             Integer outputFormat) {
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
@@ -1509,6 +1517,9 @@ public abstract class CameraController {
         configureResolution(builder, mImageAnalysisResolutionSelector, mImageAnalysisTargetSize);
         if (mAnalysisBackgroundExecutor != null) {
             builder.setBackgroundExecutor(mAnalysisBackgroundExecutor);
+        }
+        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
+            builder.setTargetRotation(mLastKnownRotation);
         }
 
         return builder.build();
@@ -1933,6 +1944,7 @@ public abstract class CameraController {
         mVideoCapture = createVideoCapture();
     }
 
+    @SuppressLint("WrongConstant")
     private VideoCapture<Recorder> createVideoCapture() {
         Recorder.Builder videoRecorderBuilder = new Recorder.Builder().setQualitySelector(
                 mVideoCaptureQualitySelector);
@@ -1944,11 +1956,15 @@ public abstract class CameraController {
             }
         }
 
-        return new VideoCapture.Builder<>(videoRecorderBuilder.build())
+        VideoCapture.Builder<Recorder> builder = new VideoCapture.Builder<>(
+                videoRecorderBuilder.build())
                 .setTargetFrameRate(mVideoCaptureTargetFrameRate)
                 .setMirrorMode(mVideoCaptureMirrorMode)
-                .setDynamicRange(mVideoCaptureDynamicRange)
-                .build();
+                .setDynamicRange(mVideoCaptureDynamicRange);
+        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
+            builder.setTargetRotation(mLastKnownRotation);
+        }
+        return builder.build();
     }
 
     private @Nullable AspectRatioStrategy getViewportAspectRatioStrategy(
@@ -2031,6 +2047,17 @@ public abstract class CameraController {
         // In the future, you could add other filters here if needed.
         description.append("}");
         return description.toString();
+    }
+
+    @MainThread
+    private void unbindAllUseCases() {
+        if (!isCameraInitialized()) {
+            return;
+        }
+
+        // Invokes the unbind() method to unbind all use cases created by the CameraController.
+        // This can avoid to unbind the UseCases bound with the other lifecycle owner unexpectedly.
+        mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
     }
 
     /**
@@ -2715,24 +2742,22 @@ public abstract class CameraController {
             return null;
         }
 
+        // Always unbinds all UseCases to allow the resolution selection logic to re-select a
+        // workable resolutions set for the new UseCases combination.
+        unbindAllUseCases();
+
         UseCaseGroup.Builder builder = new UseCaseGroup.Builder().addUseCase(mPreview);
 
         if (isImageCaptureEnabled()) {
             builder.addUseCase(mImageCapture);
-        } else {
-            mCameraProvider.unbind(mImageCapture);
         }
 
         if (isImageAnalysisEnabled()) {
             builder.addUseCase(mImageAnalysis);
-        } else {
-            mCameraProvider.unbind(mImageAnalysis);
         }
 
         if (isVideoCaptureEnabled()) {
             builder.addUseCase(mVideoCapture);
-        } else {
-            mCameraProvider.unbind(mVideoCapture);
         }
 
         builder.setViewPort(mViewPort);

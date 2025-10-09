@@ -17,10 +17,14 @@
 package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.Runtime
+import androidx.annotation.VisibleForTesting
+import androidx.xr.arcore.runtime.PerceptionRuntime
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.ConfigMode
+import kotlin.time.ComparableTimeMark
 
 /**
- * Implementation of the [Runtime] interface using Projected.
+ * Implementation of the [androidx.xr.arcore.runtime.PerceptionRuntime] interface using Projected.
  *
  * @property lifecycleManager that manages the lifecycle of the Projected session.
  * @property perceptionManager that manages the perception capabilities of a runtime using
@@ -31,4 +35,49 @@ public class ProjectedRuntime
 internal constructor(
     override val lifecycleManager: ProjectedManager,
     override val perceptionManager: ProjectedPerceptionManager,
-) : Runtime {}
+) : PerceptionRuntime {
+    override fun initialize() {
+        lifecycleManager.create()
+    }
+
+    override fun resume() {
+        lifecycleManager.resume()
+    }
+
+    override fun pause() {
+        lifecycleManager.pause()
+    }
+
+    override suspend fun update(): ComparableTimeMark? {
+        return lifecycleManager.update()
+    }
+
+    override fun configure(config: Config) {
+        lifecycleManager.configure(config)
+    }
+
+    override fun isSupported(configMode: ConfigMode): Boolean {
+        return SUPPORTED_CONFIG_MODES.contains(configMode)
+    }
+
+    override fun destroy() {
+        lifecycleManager.stop()
+    }
+
+    internal companion object {
+        @VisibleForTesting
+        internal val SUPPORTED_CONFIG_MODES: Set<ConfigMode> =
+            setOf(
+                Config.PlaneTrackingMode.DISABLED,
+                Config.HandTrackingMode.DISABLED,
+                Config.DeviceTrackingMode.DISABLED,
+                Config.HeadTrackingMode.DISABLED,
+                Config.DepthEstimationMode.DISABLED,
+                Config.AnchorPersistenceMode.DISABLED,
+                Config.FaceTrackingMode.DISABLED,
+                Config.GeospatialMode.DISABLED,
+                Config.GeospatialMode.EARTH,
+                Config.EyeTrackingMode.DISABLED,
+            )
+    }
+}

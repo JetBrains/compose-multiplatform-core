@@ -21,8 +21,18 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
+import android.ranging.RangingManager
+import android.ranging.uwb.UwbAddress.createRandomShortAddress
+import android.ranging.uwb.UwbComplexChannel.UWB_CHANNEL_5
+import android.ranging.uwb.UwbComplexChannel.UWB_CHANNEL_9
+import android.ranging.uwb.UwbComplexChannel.UWB_PREAMBLE_CODE_INDEX_10
+import android.ranging.uwb.UwbComplexChannel.UWB_PREAMBLE_CODE_INDEX_11
+import android.ranging.uwb.UwbComplexChannel.UWB_PREAMBLE_CODE_INDEX_12
+import android.ranging.uwb.UwbComplexChannel.UWB_PREAMBLE_CODE_INDEX_9
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.uwb.RangingCapabilities
 import androidx.core.uwb.RangingParameters.Companion.CONFIG_MULTICAST_DS_TWR
 import androidx.core.uwb.RangingParameters.Companion.CONFIG_PROVISIONED_MULTICAST_DS_TWR
@@ -46,12 +56,19 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.uwb.UwbClient
+import java.util.Collections
 import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 
 internal class UwbManagerImpl(private val context: Context) : UwbManager {
     companion object {
-        const val TAG = "UwbMangerImpl"
+        const val TAG = "UwbManagerImpl"
+        private const val INIT_TIMEOUT_MS = 5000L
         val PUBLIC_AVAILABLE_CONFIG_IDS =
             setOf(
                 CONFIG_UNICAST_DS_TWR,
@@ -59,9 +76,21 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
                 CONFIG_PROVISIONED_UNICAST_DS_TWR,
                 CONFIG_PROVISIONED_MULTICAST_DS_TWR,
             )
+        val UWB_PREAMBLE_INDEXES =
+            listOf(
+                UWB_PREAMBLE_CODE_INDEX_9,
+                UWB_PREAMBLE_CODE_INDEX_10,
+                UWB_PREAMBLE_CODE_INDEX_11,
+                UWB_PREAMBLE_CODE_INDEX_12,
+            )
         var iUwb: IUwb? = null
         var aospAvailabilityClient: IUwbClient? = null
         var gmsAvailabilityClient: UwbClient? = null
+        var mRangingManager: RangingManager? = null
+        var mExecutor: Executor? = null
+        var mTechnologyAvailability: MutableMap<Any?, Any?> =
+            Collections.synchronizedMap(mutableMapOf())
+        private val mRangingCapabilities = AtomicReference<android.ranging.RangingCapabilities?>()
     }
 
     init {
@@ -95,6 +124,10 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
     }
 
     override suspend fun isAvailable(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            initializeRangingManager()
+            return mRangingCapabilities.get()?.uwbCapabilities != null
+        }
         checkSystemFeature(context)
         return if (isGmsDevice()) Nearby.getUwbControllerClient(context).isAvailable.await()
         else {
@@ -117,8 +150,122 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
 
     private suspend fun createClientSessionScope(isController: Boolean): UwbClientSessionScope {
         checkSystemFeature(context)
-        return if (isGmsDevice()) createGmsClientSessionScope(isController)
-        else createAospClientSessionScope(isController)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            createRangingClientSessionScope(isController)
+        } else if (isGmsDevice()) {
+            createGmsClientSessionScope(isController)
+        } else createAospClientSessionScope(isController)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    fun getComplexChannel(supportedChannels: Set<Int>): UwbComplexChannel {
+        val channel: Int =
+            if (supportedChannels.contains(UWB_CHANNEL_9)) {
+                UWB_CHANNEL_9
+            } else if (supportedChannels.contains(UWB_CHANNEL_5)) {
+                UWB_CHANNEL_5
+            } else {
+                supportedChannels.first()
+            }
+
+        val preamble = UWB_PREAMBLE_INDEXES.random()
+        return UwbComplexChannel(channel, preamble)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private suspend fun initializeRangingManager() {
+        if (mExecutor == null) {
+            mExecutor = Executors.newSingleThreadExecutor()
+            mRangingManager = context.getSystemService(RangingManager::class.java)
+            val result =
+                withTimeoutOrNull(INIT_TIMEOUT_MS) {
+                    suspendCancellableCoroutine { continuation ->
+                        val callback =
+                            RangingManager.RangingCapabilitiesCallback { capabilities ->
+                                Log.d(TAG, " Ranging capabilities $capabilities")
+                                val availabilities: Map<out Any?, Any?> =
+                                    capabilities.technologyAvailability
+                                mTechnologyAvailability.putAll(availabilities)
+                                mRangingCapabilities.set(capabilities)
+                                val uwbStatus = availabilities[RangingManager.UWB]
+                                if (uwbStatus != android.ranging.RangingCapabilities.ENABLED) {
+                                    Log.v("Ranging", "UWB is not available. Status: $uwbStatus")
+                                }
+                                if (continuation.isActive) {
+                                    continuation.resume(Unit)
+                                }
+                            }
+                        mRangingManager?.registerCapabilitiesCallback(mExecutor!!, callback)
+                    }
+                }
+            if (result == null) {
+                throw UwbServiceNotAvailableException("Timeout waiting for ranging capabilities")
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private suspend fun createRangingClientSessionScope(
+        isController: Boolean
+    ): UwbClientSessionScope {
+        Log.i(TAG, "Creating Ranging Client session scope")
+
+        initializeRangingManager()
+        val uwbStatus = mTechnologyAvailability[RangingManager.UWB]
+
+        if (uwbStatus != android.ranging.RangingCapabilities.ENABLED) {
+            throw UwbServiceNotAvailableException(
+                "Cannot start a ranging session when UWB is " + "unavailable"
+            )
+        }
+
+        try {
+
+            val platformCapabilities =
+                mRangingCapabilities.get()?.uwbCapabilities
+                    ?: throw UwbServiceNotAvailableException(
+                        "Ranging capabilities are not available. The service may be initializing."
+                    )
+            val rangingCapabilities =
+                RangingCapabilities(
+                    isDistanceSupported = platformCapabilities.isDistanceMeasurementSupported,
+                    isAzimuthalAngleSupported = platformCapabilities.isAzimuthalAngleSupported,
+                    isElevationAngleSupported = platformCapabilities.isElevationAngleSupported,
+                    minRangingInterval = platformCapabilities.minimumRangingInterval.nano,
+                    supportedChannels = platformCapabilities.supportedChannels.toSet(),
+                    supportedNtfConfigs =
+                        platformCapabilities.supportedNotificationConfigurations.toSet(),
+                    supportedConfigIds = platformCapabilities.supportedConfigIds.toSet(),
+                    supportedSlotDurations = platformCapabilities.supportedSlotDurations.toSet(),
+                    supportedRangingUpdateRates =
+                        platformCapabilities.supportedRangingUpdateRates.toSet(),
+                    isRangingIntervalReconfigureSupported =
+                        platformCapabilities.isRangingIntervalReconfigurationSupported,
+                    isBackgroundRangingSupported = platformCapabilities.isBackgroundRangingSupported,
+                )
+
+            val localAddress = UwbAddress(createRandomShortAddress().addressBytes)
+            return if (isController) {
+                val complexChannel =
+                    getComplexChannel(platformCapabilities.supportedChannels.toSet())
+                UwbControllerSessionScopeRangingImpl(
+                    mRangingManager!!,
+                    rangingCapabilities,
+                    localAddress,
+                    complexChannel,
+                )
+            } else {
+                UwbControleeSessionScopeRangingImpl(
+                    mRangingManager!!,
+                    rangingCapabilities,
+                    localAddress,
+                )
+            }
+        } catch (e: Exception) {
+            throw IllegalStateException(
+                "Error creating ranging client session scope with exception: $e"
+            )
+        }
     }
 
     private suspend fun createGmsClientSessionScope(isController: Boolean): UwbClientSessionScope {

@@ -30,6 +30,7 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 dependencies {
@@ -42,6 +43,7 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(project(":kruth:kruth"))
     androidTestImplementation(project(":savedstate:savedstate"))
+    implementation(libs.kotlinSerializationCore) { because("@Serializable") }
 }
 
 android {

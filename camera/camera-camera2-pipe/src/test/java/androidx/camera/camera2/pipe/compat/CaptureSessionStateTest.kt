@@ -99,6 +99,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -124,6 +125,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -154,6 +156,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -190,6 +193,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -216,6 +220,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -242,6 +247,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -268,6 +274,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 CameraGraph.Flags(closeCaptureSessionOnDisconnect = true),
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )

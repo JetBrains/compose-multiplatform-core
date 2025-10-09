@@ -1,5 +1,6 @@
 package com.testdata
 
+import androidx.appfunctions.`internal`.AppFunctionInventory
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
@@ -9,7 +10,6 @@ import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
-import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
 import kotlin.String
 import kotlin.collections.List
@@ -24,6 +24,30 @@ public class `$FunctionWithEmptySerializable_AppFunctionInventory` : AppFunction
   override val functionIdToMetadataMap: Map<String, CompileTimeAppFunctionMetadata> = mapOf(
     "com.testdata.FunctionWithEmptySerializable#simpleFunctionWithEmptySerializable" to ComTestdataFunctionWithEmptySerializableSimpleFunctionWithEmptySerializableMetadataObject.APP_FUNCTION_METADATA,
   )
+
+  private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_PROPERTIES_MAP:
+      Map<String, AppFunctionDataTypeMetadata> = mapOf(
+  )
+
+  private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST: List<String> = listOf(
+  )
+
+  private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata =
+      AppFunctionObjectTypeMetadata(
+          properties = COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_PROPERTIES_MAP,
+          required = COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
+          qualifiedName = "com.testdata.Empty",
+          isNullable = true,
+          description = ""
+      )
+
+  private val componentsMetadataDataTypesMap: Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "com.testdata.Empty" to COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE,
+    )
+
+  override val componentsMetadata: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
+          dataTypes = componentsMetadataDataTypesMap
+      )
 
   private object ComTestdataFunctionWithEmptySerializableSimpleFunctionWithEmptySerializableMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
@@ -58,31 +82,6 @@ public class `$FunctionWithEmptySerializable_AppFunctionInventory` : AppFunction
             description = ""
         )
 
-    private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_PROPERTIES_MAP:
-        Map<String, AppFunctionDataTypeMetadata> = mapOf(
-    )
-
-    private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST: List<String> = listOf(
-    )
-
-    private val COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata =
-        AppFunctionObjectTypeMetadata(
-            properties = COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_PROPERTIES_MAP,
-            required = COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
-            qualifiedName = "com.testdata.Empty",
-            isNullable = true,
-            description = ""
-        )
-
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      "com.testdata.Empty" to COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE,
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.FunctionWithEmptySerializable#simpleFunctionWithEmptySerializable",
@@ -90,7 +89,6 @@ public class `$FunctionWithEmptySerializable_AppFunctionInventory` : AppFunction
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
         )
   }
 }

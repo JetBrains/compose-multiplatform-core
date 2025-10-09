@@ -55,6 +55,12 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.tracing.driver.DelicateTracingApi")
+    }
+}
+
 androidx {
     type = SoftwareType.BENCHMARK
 }

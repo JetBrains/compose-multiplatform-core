@@ -34,6 +34,7 @@ androidXMultiplatform {
     ios()
     watchos()
     tvos()
+    wasmJs()
 
     sourceSets {
         commonMain {
@@ -47,10 +48,14 @@ androidXMultiplatform {
                 api(libs.okio)
             }
         }
-        nativeMain {
+        nonWebCommonMain {
             dependsOn(commonMain)
         }
+        nativeMain {
+            dependsOn(nonWebCommonMain)
+        }
         jvmMain {
+            dependsOn(nonWebCommonMain)
             dependencies {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinTest)
@@ -62,8 +67,14 @@ androidXMultiplatform {
                 implementation(libs.kotlinTest)
             }
         }
-        jvmTest {
+        nonWebCommonTest {
             dependsOn(commonTest)
+        }
+        wasmJsTest {
+            dependsOn(commonTest)
+        }
+        jvmTest {
+            dependsOn(nonWebCommonTest)
             dependencies {
                 implementation(libs.kotlinTest)
             }

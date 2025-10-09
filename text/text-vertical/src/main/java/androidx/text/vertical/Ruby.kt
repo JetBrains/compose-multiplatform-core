@@ -17,8 +17,10 @@
 package androidx.text.vertical
 
 import android.graphics.Canvas
+import android.os.Build
 import android.text.Spanned
 import android.text.TextPaint
+import androidx.annotation.RequiresApi
 import kotlin.math.max
 
 /**
@@ -113,6 +115,7 @@ internal inline fun forEachRubySpanTransition(
  * @param paint The paint used for text rendering.
  * @param rubySpan The rubySpan attached to the range.
  */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal class RubyLayoutRun(
     text: CharSequence,
     start: Int,

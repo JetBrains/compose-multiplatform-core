@@ -216,6 +216,10 @@ public class MacrobenchmarkScope(
         }
     }
 
+    override fun startActivityIntent(intent: Intent) {
+        startActivityAndWait(intent)
+    }
+
     @SuppressLint("BanThreadSleep") // Cannot always detect activity launches.
     private fun amStartAndWait(uri: String, profilingArgs: String? = null) {
         val ignoredUniqueNames =
