@@ -21,6 +21,9 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.en() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Primary pane",
+    Strings.defaultPaneTitleSecondary to "Secondary pane",
+    Strings.defaultPaneTitleTertiary to "Tertiary pane",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Pane expansion drag handle",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Current pane split, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Change pane split to %s",
@@ -53,6 +56,9 @@ internal fun Translations.enAU() = mapOf(
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.enCA() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Primary pane",
+    Strings.defaultPaneTitleSecondary to "Secondary pane",
+    Strings.defaultPaneTitleTertiary to "Tertiary pane",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Pane expansion drag handle",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Current pane split, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Change pane split to %s",
