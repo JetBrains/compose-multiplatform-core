@@ -44,7 +44,7 @@ typedef struct {
 
 #pragma mark - ActiveTouchesHolder
 
-@interface ActiveTouchesHolder : NSObject
+@interface CMPActiveTouchesHolder : NSObject
 
 @property (strong, nonatomic) NSMutableArray<UITouch *> *touches;
 
@@ -52,10 +52,10 @@ typedef struct {
 
 @end
 
-@implementation ActiveTouchesHolder
+@implementation CMPActiveTouchesHolder
 
 + (instancetype)shared {
-    static ActiveTouchesHolder *sharedInstance = nil;
+    static CMPActiveTouchesHolder *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         sharedInstance = [[self alloc] init];
@@ -109,7 +109,7 @@ typedef struct {
 }
 
 + (void)endAllTouches {
-    [ActiveTouchesHolder.shared.touches removeAllObjects];
+    [CMPActiveTouchesHolder.shared.touches removeAllObjects];
 }
 
 - (id)initAtPoint:(CGPoint)point inWindow:(UIWindow *)window tapCount:(NSInteger)tapCount fromEdge:(BOOL)fromEdge {
@@ -135,7 +135,7 @@ typedef struct {
         [self _setHidEvent:event];
         CFRelease(event);
         
-        [ActiveTouchesHolder.shared.touches addObject:self];
+        [CMPActiveTouchesHolder.shared.touches addObject:self];
     }
     
 	return self;
@@ -154,13 +154,13 @@ typedef struct {
 }
 
 - (void)send {
-    if (![ActiveTouchesHolder.shared.touches containsObject:self]) {
-        [ActiveTouchesHolder.shared.touches addObject:self];
+    if (![CMPActiveTouchesHolder.shared.touches containsObject:self]) {
+        [CMPActiveTouchesHolder.shared.touches addObject:self];
     }
     
     UIEvent *event = [[UIApplication sharedApplication] _touchesEvent];
     [event _clearTouches];
-    IOHIDEventPtr hidEvent = HIDEventWithTouches(ActiveTouchesHolder.shared.touches);
+    IOHIDEventPtr hidEvent = HIDEventWithTouches(CMPActiveTouchesHolder.shared.touches);
     [event _setHIDEvent:hidEvent];
 
     [self updateTimestamp];
@@ -170,7 +170,7 @@ typedef struct {
 }
 
 - (void)endTouch {
-    [ActiveTouchesHolder.shared.touches removeObject:self];
+    [CMPActiveTouchesHolder.shared.touches removeObject:self];
 }
 
 @end
