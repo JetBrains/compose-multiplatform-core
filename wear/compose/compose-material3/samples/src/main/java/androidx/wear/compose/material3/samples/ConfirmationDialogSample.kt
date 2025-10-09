@@ -116,6 +116,29 @@ fun FailureConfirmationDialogSample() {
 
 @Sampled
 @Composable
+fun FailureConfirmationDialogWithVariantIconSample() {
+    var showConfirmation by remember { mutableStateOf(false) }
+
+    Box(Modifier.fillMaxSize()) {
+        FilledTonalButton(
+            modifier = Modifier.align(Alignment.Center),
+            onClick = { showConfirmation = true },
+            label = { Text("Show Confirmation") },
+        )
+    }
+
+    val text = "Failure"
+    val style = ConfirmationDialogDefaults.curvedTextStyle
+    FailureConfirmationDialog(
+        visible = showConfirmation,
+        onDismissRequest = { showConfirmation = false },
+        curvedText = { confirmationDialogCurvedText(text, style) },
+        content = { ConfirmationDialogDefaults.VariantFailureIcon() },
+    )
+}
+
+@Sampled
+@Composable
 fun SuccessConfirmationDialogSample() {
     var showConfirmation by remember { mutableStateOf(false) }
 

@@ -19,16 +19,22 @@ package androidx.tracing.driver.wire
 import androidx.tracing.driver.AtomicInteger
 import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.PooledTracePacketArray
+import androidx.tracing.driver.TRACE_PACKET_BUFFER_SIZE
+import androidx.tracing.driver.TRACE_PACKET_POOL_ARRAY_POOL_SIZE
 import androidx.tracing.driver.TraceContext
 import androidx.tracing.driver.TraceSink
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import okio.blackholeSink
+import okio.buffer
 import perfetto.protos.MutableTracePacket
 import perfetto.protos.MutableTrackDescriptor
 import perfetto.protos.MutableTrackEvent
@@ -50,6 +56,7 @@ class TestSink : TraceSink() {
                         // to bother with proto serialization,
                         WireTraceEventSerializer.updateScratchPacketFromTraceEvent(
                             event = it,
+                            reportDroppedTraceEvent = false,
                             scratchTracePacket = this,
                             // this is mostly dropped and not used, but we don't care about extra
                             // allocations during this test
@@ -64,6 +71,10 @@ class TestSink : TraceSink() {
                     }
             )
         }
+    }
+
+    override fun onDroppedTraceEvent() {
+        // Does nothing
     }
 
     override fun flush() {
@@ -89,7 +100,9 @@ class TracingTest {
         assertTrue(sink.packets.size == 4)
         assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name == "process" })
         assertNotNull(sink.packets.find { it.track_descriptor?.thread?.thread_name == "thread" })
-        sink.packets.assertTraceSection("section")
+        sink.firstStartStopWithName("section") { start, end ->
+            assertTrue { start.track_event!!.categories.isEmpty() }
+        }
     }
 
     @Test
@@ -111,8 +124,11 @@ class TracingTest {
         }
         assertTrue(sink.packets.size == 5)
         assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name == "process" })
-        sink.packets.assertTraceSection("section")
-        sink.packets.assertTraceSection("section2")
+        listOf("section", "section2").forEach { name ->
+            sink.firstStartStopWithName(name) { start, end ->
+                assertTrue { start.track_event!!.categories.isEmpty() }
+            }
+        }
     }
 
     @Test
@@ -121,25 +137,105 @@ class TracingTest {
             with(context) {
                 val process = getOrCreateProcessTrack(id = 1, name = "process")
                 with(process) {
-                    traceFlow("service") {
+                    traceCoroutine("service") {
                         coroutineScope {
-                            async { traceFlow(name = "method1") { delay(10) } }.await()
-                            async { traceFlow(name = "method2") { delay(40) } }.await()
+                            async { traceCoroutine(name = "method1") { delay(10) } }.await()
+                            async { traceCoroutine(name = "method2") { delay(40) } }.await()
                         }
                     }
                 }
             }
         }
         assertTrue { sink.packets.isNotEmpty() }
-        val serviceBegin = sink.packets.trackEventPacket(name = "service")
-        val method1Begin = sink.packets.trackEventPacket(name = "method1")
-        val method2Begin = sink.packets.trackEventPacket(name = "method2")
-        assertNotNull(serviceBegin) { "Cannot find packet with name service" }
-        val flowId = serviceBegin.track_event?.flow_ids?.first()
-        assertNotNull(flowId) { "Packet $serviceBegin does not include a flow_id" }
-        assertNotNull(method1Begin) { "Cannot find packet with name method1" }
-        assertNotNull(method2Begin) { "Cannot find packet with name method2" }
-        assertContains(method1Begin.track_event?.flow_ids ?: emptyList(), flowId)
-        assertContains(method2Begin.track_event?.flow_ids ?: emptyList(), flowId)
+        val (start, _) = sink.firstStartStopWithName("service")
+        val flowId = start.track_event?.flow_ids?.first()
+        assertNotNull(flowId) { "Packet $start does not include a flow_id" }
+        val (method1, _) = sink.firstStartStopWithName("method1")
+        val (method2, _) = sink.firstStartStopWithName("method2")
+        assertContains(method1.track_event?.flow_ids ?: emptyList(), flowId)
+        assertContains(method2.track_event?.flow_ids ?: emptyList(), flowId)
+    }
+
+    @Test
+    internal fun testSuspendAndResume() = runTest {
+        context.use {
+            with(context) {
+                val process = getOrCreateProcessTrack(id = 1, name = "process")
+                with(process) {
+                    traceCoroutine("service") {
+                        coroutineScope {
+                            async { traceCoroutine(name = "method1") { delay(10) } }.await()
+                        }
+                    }
+                }
+            }
+        }
+        assertTrue { sink.packets.isNotEmpty() }
+        // We should have a balanced number of begin and end events.
+        val starts =
+            sink.packets.filter { packet ->
+                packet.track_event?.type == MutableTrackEvent.Type.TYPE_SLICE_BEGIN
+            }
+        val ends =
+            sink.packets.filter { packet ->
+                packet.track_event?.type == MutableTrackEvent.Type.TYPE_SLICE_END
+            }
+        assertTrue { starts.size == ends.size }
+    }
+
+    @Test
+    internal fun testDroppedPackets() {
+        val dispatcher = StandardTestDispatcher()
+        // Use a real sink to test for dropped packets.
+        val sink =
+            TraceSinkDelegate(
+                sink =
+                    TraceSink(
+                        sequenceId = 1,
+                        bufferedSink = blackholeSink().buffer(),
+                        // Use a test dispatcher to control exactly when trace events are being
+                        // drained from the queue.
+                        coroutineContext = dispatcher,
+                    )
+            )
+        val context = TraceContext(sink = sink, isEnabled = true)
+        // Don't use context.use { ... } here given it will wait indefinitely because the
+        // queue won't be empty unless we advance the test dispatcher.
+        val process = context.getOrCreateProcessTrack(id = 1, name = "process")
+        repeat(TRACE_PACKET_POOL_ARRAY_POOL_SIZE) {
+            repeat(16) {
+                process.trace("section") {} // 2 events per loop.
+            }
+        }
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue { sink.reportDroppedTracePacket }
+        assertEquals(
+            TRACE_PACKET_POOL_ARRAY_POOL_SIZE * TRACE_PACKET_BUFFER_SIZE,
+            sink.packetCountOnDroppedTracePacket,
+        )
+    }
+
+    internal class TraceSinkDelegate(private val sink: TraceSink) : TraceSink() {
+        internal var reportDroppedTracePacket = false
+        internal var packetCount: Int = 0
+        internal var packetCountOnDroppedTracePacket = 0
+
+        override fun enqueue(pooledPacketArray: PooledTracePacketArray) {
+            sink.enqueue(pooledPacketArray)
+            packetCount += pooledPacketArray.packets.size
+        }
+
+        override fun onDroppedTraceEvent() {
+            reportDroppedTracePacket = true
+            packetCountOnDroppedTracePacket = packetCount
+        }
+
+        override fun flush() {
+            sink.flush()
+        }
+
+        override fun close() {
+            sink.close()
+        }
     }
 }

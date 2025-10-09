@@ -16,12 +16,24 @@
 
 package androidx.aab
 
+import androidx.aab.cli.outputContext
+
 /**
  * Information captured from .so files.
  *
  * Currently, this is just used to measure native code size.
  */
-data class SoInfo(val bundlePath: String, val abi: Abi?, val size: Long) {
+data class SoInfo(
+    val bundlePath: String,
+    val abi: Abi?,
+    val size: Long,
+    val soPatternsMatched: Set<String> =
+        outputContext.soMatchPatterns
+            .filter { soPattern ->
+                Regex(soPattern).containsMatchIn(bundlePath.substringAfterLast("/"))
+            }
+            .toSet(),
+) {
     init {
         require(size >= 0)
         require(bundlePath.endsWith(".so"))
@@ -46,11 +58,13 @@ data class SoInfo(val bundlePath: String, val abi: Abi?, val size: Long) {
     constructor(bundlePath: String, size: Long) : this(bundlePath, Abi.from(bundlePath), size)
 
     companion object {
-        val CSV_TITLES = listOf("so_totalSizeMb")
+        val CSV_TITLES =
+            listOf("so_totalSizeMb") + outputContext.soMatchPatterns.map { "so_hasMatchFor_$it" }
 
         fun List<SoInfo>.csvEntries(): List<String> {
             if (isEmpty()) {
-                return listOf("0")
+                // no SOs, so return empty result
+                return listOf("0") + outputContext.soMatchPatterns.map { false.toString() }
             }
 
             // create lst of sizes per ABI
@@ -60,7 +74,10 @@ data class SoInfo(val bundlePath: String, val abi: Abi?, val size: Long) {
                 }
 
             // return max of these sizes
-            return listOf((abiSizes.max() / (1024.0 * 1024)).toString())
+            return listOf((abiSizes.max() / (1024.0 * 1024)).toString()) +
+                outputContext.soMatchPatterns.map { soPattern ->
+                    any { soInfo -> soInfo.soPatternsMatched.contains(soPattern) }.toString()
+                }
         }
     }
 }

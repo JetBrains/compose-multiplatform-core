@@ -9,9 +9,10 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$SimpleMessage$SimpleAttachmentFactory` : AppFunctionSerializableFactory<SimpleMessage.SimpleAttachment> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): SimpleMessage.SimpleAttachment {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.SimpleMessage${'$'}SimpleAttachment")
 
-    val displayName = checkNotNull(appFunctionData.getStringOrNull("displayName"))
-    val mimeType = appFunctionData.getStringOrNull("mimeType")
+    val displayName = checkNotNull(appFunctionDataWithSpec.getStringOrNull("displayName"))
+    val mimeType = appFunctionDataWithSpec.getStringOrNull("mimeType")
 
     val resultSimpleAttachment = SimpleMessage.SimpleAttachment(displayName, mimeType)
     return resultSimpleAttachment
@@ -20,7 +21,7 @@ public class `$SimpleMessage$SimpleAttachmentFactory` : AppFunctionSerializableF
   override fun toAppFunctionData(appFunctionSerializable: SimpleMessage.SimpleAttachment): AppFunctionData {
     val simpleAttachment_appFunctionSerializable = appFunctionSerializable
 
-    val builder = AppFunctionData.Builder("com.testdata.SimpleMessage${'$'}SimpleAttachment")
+    val builder = getAppFunctionDataBuilder("com.testdata.SimpleMessage${'$'}SimpleAttachment")
     val displayName = simpleAttachment_appFunctionSerializable.displayName
     builder.setString("displayName", displayName)
     val mimeType = simpleAttachment_appFunctionSerializable.mimeType

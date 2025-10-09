@@ -16,13 +16,12 @@
 
 package androidx.tracing.driver
 
-/** Makes it possible to associate debug annotations to [TraceEvent]. */
-@JvmInline
+/** Makes it possible to associate debug annotations & categories to a [TraceEvent]. */
 // False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
 @Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
-public value class TraceEventScope
-@PublishedApi
-internal constructor(private val event: TraceEvent) {
+public class TraceEventScope @PublishedApi internal constructor() {
+    @PublishedApi internal lateinit var event: TraceEvent
+
     /** Adds an annotation where the type of the [value] is an [Boolean]. */
     public fun addMetadataEntry(name: String, value: Boolean) {
         val entry = nextMetadataEntry()
@@ -55,12 +54,28 @@ internal constructor(private val event: TraceEvent) {
         entry.stringValue = value
     }
 
+    /**
+     * Adds a category to the [TraceEvent].
+     *
+     * This is useful in the when an application is interested in a subset of [TraceEvent]s that
+     * belong to well known categories. These are typically small identifiers useful for namespacing
+     * [TraceEvent]s.
+     */
+    public fun addCategory(name: String) {
+        event.lastCategoryIndex += 1
+        if (event.lastCategoryIndex >= event.categories.size) {
+            // Resize if necessary.
+            event.categories += DEFAULT_STRING
+        }
+        event.categories[event.lastCategoryIndex] = name
+    }
+
     private inline fun nextMetadataEntry(): MetadataEntry {
-        event.metadataEntryIndex += 1
-        if (event.metadataEntryIndex >= event.metadataEntries.size) {
+        event.lastMetadataEntryIndex += 1
+        if (event.lastMetadataEntryIndex >= event.metadataEntries.size) {
             // Resize if necessary.
             event.metadataEntries += MetadataEntry()
         }
-        return event.metadataEntries[event.metadataEntryIndex]
+        return event.metadataEntries[event.lastMetadataEntryIndex]
     }
 }

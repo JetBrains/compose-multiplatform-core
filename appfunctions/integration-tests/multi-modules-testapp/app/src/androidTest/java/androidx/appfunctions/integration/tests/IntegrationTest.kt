@@ -16,6 +16,13 @@
 
 package androidx.appfunctions.integration.tests
 
+import android.Manifest
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageInstaller
 import android.net.Uri
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
@@ -42,9 +49,15 @@ import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.io.InputStream
 import java.time.LocalDateTime
+import kotlin.coroutines.resumeWithException
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Assume.assumeFalse
@@ -71,28 +84,38 @@ class IntegrationTest {
             // "androidx.appfunctions.integration.testapp",
             // while the app functions are defined under
             // "androidx.appfunctions.integration.testapp.test"
-            adoptShellPermissionIdentity("android.permission.EXECUTE_APP_FUNCTIONS")
+            adoptShellPermissionIdentity(
+                Manifest.permission.INSTALL_PACKAGES,
+                "android.permission.EXECUTE_APP_FUNCTIONS",
+            )
             executeShellCommand(
                 "device_config put appsearch max_allowed_app_function_doc_size_in_bytes $TEST_APP_FUNCTION_DOC_SIZE_LIMIT"
             )
         }
-        awaitAppFunctionsIndexed(FUNCTION_IDS)
+        context.awaitAppFunctionsIndexed(context.packageName, FUNCTION_IDS)
     }
 
     @After
     fun tearDown() {
+        uiAutomation.executeShellCommand("pm uninstall $ADDITIONAL_APP_PACKAGE")
         uiAutomation.dropShellPermissionIdentity()
     }
 
     @Test
     fun executeAppFunction_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata("androidx.appfunctions.integration.tests.TestFunctions#add")
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#add",
-                        AppFunctionData.Builder("").setLong("num1", 1).setLong("num2", 2).build(),
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
+                            .setLong("num1", 1)
+                            .setLong("num2", 2)
+                            .build(),
                     )
             )
 
@@ -115,7 +138,7 @@ class IntegrationTest {
                 it.appFunctions
             }
 
-        assertThat(appFunctions).hasSize(19)
+        assertThat(appFunctions).hasSize(20)
     }
 
     @Test
@@ -292,13 +315,18 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_voidReturnType_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#voidFunction"
+            )
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#voidFunction",
-                        AppFunctionData.Builder("").build(),
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components).build(),
                     )
             )
 
@@ -307,15 +335,19 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_setFactory_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFactory#isCreatedByFactory"
+            )
         // A factory is set to create the enclosing class of the function.
         // See [TestApplication.appFunctionConfiguration].
-        var response =
+        val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFactory#isCreatedByFactory",
-                        AppFunctionData.Builder("").build(),
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components).build(),
                     )
             )
 
@@ -332,13 +364,18 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_functionInLibraryModule_success() = doBlocking {
-        var response =
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#concat"
+            )
+
+        val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.testapp.library.TestFunctions2#concat",
-                        AppFunctionData.Builder("")
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setString("str1", "log")
                             .setString("str2", "cat")
                             .build(),
@@ -362,7 +399,7 @@ class IntegrationTest {
                     ExecuteAppFunctionRequest(
                         context.packageName,
                         "androidx.appfunctions.integration.tests.TestFunctions#notExist",
-                        AppFunctionData.Builder("").build(),
+                        AppFunctionData.EMPTY,
                     )
             )
 
@@ -373,13 +410,16 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_appThrows_fail() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata("androidx.appfunctions.integration.tests.TestFunctions#doThrow")
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#doThrow",
-                        AppFunctionData.Builder("").build(),
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components).build(),
                     )
             )
 
@@ -391,13 +431,21 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_createNote() = doBlocking {
+        val createNoteMetadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#createNote"
+            )
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#createNote",
-                        AppFunctionData.Builder("")
+                        createNoteMetadata.packageName,
+                        createNoteMetadata.id,
+                        AppFunctionData.Builder(
+                                createNoteMetadata.parameters,
+                                createNoteMetadata.components,
+                            )
                             .setAppFunctionData(
                                 "createNoteParams",
                                 AppFunctionData.serialize(
@@ -433,13 +481,18 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_createNote_withOpenableCapability_returnsNote() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote"
+            )
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote",
-                        AppFunctionData.Builder("")
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setAppFunctionData(
                                 "createNoteParams",
                                 AppFunctionData.serialize(
@@ -475,13 +528,18 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_createNote_withOpenableCapability_returnsOpenableNote() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote"
+            )
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote",
-                        AppFunctionData.Builder("")
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setAppFunctionData(
                                 "createNoteParams",
                                 AppFunctionData.serialize(
@@ -523,16 +581,20 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_serializableProxyParam_dateTime_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#logLocalDateTime"
+            )
         val localDateTimeClass = DateTime(LocalDateTime.now())
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        targetPackageName = context.packageName,
-                        functionIdentifier =
-                            "androidx.appfunctions.integration.tests.TestFunctions#logLocalDateTime",
+                        targetPackageName = metadata.packageName,
+                        functionIdentifier = metadata.id,
                         functionParameters =
-                            AppFunctionData.Builder("")
+                            AppFunctionData.Builder(metadata.parameters, metadata.components)
                                 .setAppFunctionData(
                                     "dateTime",
                                     AppFunctionData.serialize(
@@ -543,22 +605,25 @@ class IntegrationTest {
                                 .build(),
                     )
             )
-
         assertIs<ExecuteAppFunctionResponse.Success>(response)
     }
 
     @Test
     fun executeAppFunction_serializableProxyParam_androidUri_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#logUri"
+            )
+
         val androidUri = Uri.parse("https://www.google.com/")
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        targetPackageName = context.packageName,
-                        functionIdentifier =
-                            "androidx.appfunctions.integration.testapp.library.TestFunctions2#logUri",
+                        targetPackageName = metadata.packageName,
+                        functionIdentifier = metadata.id,
                         functionParameters =
-                            AppFunctionData.Builder("")
+                            AppFunctionData.Builder(metadata.parameters, metadata.components)
                                 .setAppFunctionData(
                                     "androidUri",
                                     AppFunctionData.serialize(androidUri, Uri::class.java),
@@ -572,14 +637,20 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_serializableProxyResponse_dateTime_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#getLocalDate"
+            )
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        targetPackageName = context.packageName,
-                        functionIdentifier =
-                            "androidx.appfunctions.integration.tests.TestFunctions#getLocalDate",
-                        functionParameters = AppFunctionData.Builder("").build(),
+                        targetPackageName = metadata.packageName,
+                        functionIdentifier = metadata.id,
+                        functionParameters =
+                            AppFunctionData.Builder(metadata.parameters, metadata.components)
+                                .build(),
                     )
             )
 
@@ -595,19 +666,24 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_serializableProxyResponse_androidUri_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.testapp.library.TestFunctions2#getUri"
+            )
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        targetPackageName = context.packageName,
-                        functionIdentifier =
-                            "androidx.appfunctions.integration.testapp.library.TestFunctions2#getUri",
-                        functionParameters = AppFunctionData.Builder("").build(),
+                        targetPackageName = metadata.packageName,
+                        functionIdentifier = metadata.id,
+                        functionParameters =
+                            AppFunctionData.Builder(metadata.parameters, metadata.components)
+                                .build(),
                     )
             )
 
         val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
-
         val androidUriResult =
             assertIs<Uri>(
                 successResponse.returnValue
@@ -619,15 +695,20 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_updateNote_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#updateNote"
+            )
         val attachment = Attachment(uri = "uri", nested = null)
         val dateTime = LocalDateTime.of(1, 1, 1, 1, 1)
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#updateNote",
-                        AppFunctionData.Builder("")
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setAppFunctionData(
                                 "updateNoteParams",
                                 AppFunctionData.serialize(
@@ -665,13 +746,18 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_updateNoteSetFieldNullContent_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#updateNote"
+            )
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#updateNote",
-                        AppFunctionData.Builder("")
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setAppFunctionData(
                                 "updateNoteParams",
                                 AppFunctionData.serialize(
@@ -706,13 +792,18 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_updateNoteNullSetFields_success() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#updateNote"
+            )
+
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#updateNote",
-                        AppFunctionData.Builder("")
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setAppFunctionData(
                                 "updateNoteParams",
                                 AppFunctionData.serialize(
@@ -738,6 +829,110 @@ class IntegrationTest {
                     ?.deserialize(Note::class.java)
             )
             .isEqualTo(expectedNote)
+    }
+
+    @Test
+    fun executeAppFunction_legacySchemaCreateNote_success() = doBlocking {
+        targetContext.installApk(ADDITIONAL_APK_FILE)
+        targetContext.awaitAppFunctionsIndexed(
+            ADDITIONAL_APP_PACKAGE,
+            setOf(ADDITIONAL_LEGACY_CREATE_NOTE),
+        )
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(packageNames = setOf(ADDITIONAL_APP_PACKAGE))
+                )
+                .first()
+                .flatMap { it.appFunctions }
+                .single()
+
+        val response =
+            appFunctionManager.executeAppFunction(
+                ExecuteAppFunctionRequest(
+                    functionIdentifier = createNoteMetadata.id,
+                    targetPackageName = createNoteMetadata.packageName,
+                    functionParameters =
+                        AppFunctionData.Builder(
+                                createNoteMetadata.parameters,
+                                createNoteMetadata.components,
+                            )
+                            .setAppFunctionData(
+                                "createNoteParams",
+                                AppFunctionData.Builder(
+                                        requireTargetObjectTypeMetadata(
+                                            "createNoteParams",
+                                            createNoteMetadata.parameters,
+                                            createNoteMetadata.components,
+                                        ),
+                                        createNoteMetadata.components,
+                                    )
+                                    .setString("title", "Test Title")
+                                    .setString("content", "Test Content")
+                                    .build(),
+                            )
+                            .build(),
+                )
+            )
+
+        assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val returnValue =
+            response.returnValue.getAppFunctionData(
+                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
+            )
+        assertThat(returnValue).isNotNull()
+        assertThat(checkNotNull(returnValue).getString("title")).isEqualTo("Test Title")
+        assertThat(returnValue.getString("content")).isEqualTo("Test Content")
+    }
+
+    @Test
+    fun executeAppFunction_legacySchemaCreateNoteSerialization_success() = doBlocking {
+        targetContext.installApk(ADDITIONAL_APK_FILE)
+        targetContext.awaitAppFunctionsIndexed(
+            ADDITIONAL_APP_PACKAGE,
+            setOf(ADDITIONAL_LEGACY_CREATE_NOTE),
+        )
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(packageNames = setOf(ADDITIONAL_APP_PACKAGE))
+                )
+                .first()
+                .flatMap { it.appFunctions }
+                .single()
+        val createNoteParams =
+            LegacyCreateNoteParams(title = "Test Title", content = "Test Content")
+
+        val response =
+            appFunctionManager.executeAppFunction(
+                ExecuteAppFunctionRequest(
+                    functionIdentifier = createNoteMetadata.id,
+                    targetPackageName = createNoteMetadata.packageName,
+                    functionParameters =
+                        AppFunctionData.Builder(
+                                createNoteMetadata.parameters,
+                                createNoteMetadata.components,
+                            )
+                            .setAppFunctionData(
+                                "createNoteParams",
+                                AppFunctionData.serialize(
+                                    createNoteParams,
+                                    LegacyCreateNoteParams::class.java,
+                                ),
+                            )
+                            .build(),
+                )
+            )
+
+        assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val returnValue =
+            response.returnValue.getAppFunctionData(
+                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
+            )
+        assertThat(returnValue).isNotNull()
+        val note = checkNotNull(returnValue).deserialize(LegacyNote::class.java)
+        assertThat(note.title).isEqualTo("Test Title")
+        assertThat(note.content).isEqualTo("Test Content")
     }
 
     @Test
@@ -775,7 +970,64 @@ class IntegrationTest {
                                     createNoteMetadata.components,
                                 )
                                 .setString("title", "Test Title")
+                                .setString("content", "Some valid content")
+                                .setAppFunctionDataList("attachments", emptyList())
+                                .setString("groupId", "testGroupId")
+                                .setString("externalUuid", "testExternalUuid")
                                 .build(),
+                        )
+                        .build(),
+            )
+
+        val response = appFunctionManager.executeAppFunction(request)
+
+        assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val resultNote =
+            response.returnValue
+                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                ?.getAppFunctionData("createdNote")
+        assertThat(resultNote?.getString("id")).isEqualTo("testId")
+        assertThat(resultNote?.getString("title")).isEqualTo("Test Title")
+    }
+
+    @Test
+    fun executeAppFunction_schemaCreateNoteSerialization_success() = doBlocking {
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(
+                        packageNames = setOf(context.packageName),
+                        schemaCategory = "myNotes",
+                        schemaName = "createNote",
+                        minSchemaVersion = 2,
+                    )
+                )
+                .first()
+                .flatMap { it.appFunctions }
+                .single()
+        val parameters =
+            CreateNoteAppFunction.Parameters(
+                title = "Test Title",
+                content = "Some valid content",
+                attachments = emptyList(),
+                groupId = "testGroupId",
+                externalUuid = "testExternalUuid",
+            )
+        val request =
+            ExecuteAppFunctionRequest(
+                functionIdentifier = createNoteMetadata.id,
+                targetPackageName = createNoteMetadata.packageName,
+                functionParameters =
+                    AppFunctionData.Builder(
+                            createNoteMetadata.parameters,
+                            createNoteMetadata.components,
+                        )
+                        .setAppFunctionData(
+                            "parameters",
+                            AppFunctionData.serialize(
+                                parameters,
+                                CreateNoteAppFunction.Parameters::class.java,
+                            ),
                         )
                         .build(),
             )
@@ -826,6 +1078,10 @@ class IntegrationTest {
                                     createNoteMetadata.components,
                                 )
                                 .setString("title", "Test Title")
+                                .setString("content", "Some valid content")
+                                .setAppFunctionDataList("attachments", emptyList())
+                                .setString("groupId", "testGroupId")
+                                .setString("externalUuid", "testExternalUuid")
                                 .build(),
                         )
                         .build(),
@@ -867,10 +1123,15 @@ class IntegrationTest {
                     createNoteMetadata.components,
                 )
                 .setString("title", "Test Title")
+                .setString("content", "Some valid content")
+                .setAppFunctionDataList("attachments", emptyList())
+                .setString("groupId", "testGroupId")
+                .setString("externalUuid", "testExternalUuid")
                 .build()
         assertThrows(IllegalArgumentException::class.java) {
             AppFunctionData.Builder(createNoteMetadata.parameters, createNoteMetadata.components)
                 .setAppFunctionData("wrongParameters", innerData)
+                .build()
         }
     }
 
@@ -906,6 +1167,10 @@ class IntegrationTest {
 
     @Test
     fun echoClassWithOptionalValues_allValuesProvided_shouldNotReturnDefault() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#echoClassWithOptionalValues"
+            )
         val classWithOptionalValues =
             ClassWithOptionalValues(
                 optionalNonNullInt = 1,
@@ -945,9 +1210,9 @@ class IntegrationTest {
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#echoClassWithOptionalValues",
-                        AppFunctionData.Builder("")
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setAppFunctionData(
                                 "classWithOptionalValues",
                                 AppFunctionData.serialize(
@@ -974,16 +1239,20 @@ class IntegrationTest {
     @Test
     fun echoClassWithOptionalValues_noValueProvided_shouldReturnAppFunctionDefinedDefault() =
         doBlocking {
+            val metadata =
+                findAppFunctionMetadata(
+                    "androidx.appfunctions.integration.tests.TestFunctions#echoClassWithOptionalValues"
+                )
             val response =
                 appFunctionManager.executeAppFunction(
                     request =
                         ExecuteAppFunctionRequest(
-                            context.packageName,
-                            "androidx.appfunctions.integration.tests.TestFunctions#echoClassWithOptionalValues",
-                            AppFunctionData.Builder("")
+                            metadata.packageName,
+                            metadata.id,
+                            AppFunctionData.Builder(metadata.parameters, metadata.components)
                                 .setAppFunctionData(
                                     "classWithOptionalValues",
-                                    AppFunctionData.Builder("").build(),
+                                    AppFunctionData.EMPTY,
                                 )
                                 .build(),
                         )
@@ -1037,13 +1306,17 @@ class IntegrationTest {
 
     @Test
     fun echoFunctionWithOptionalParameters_allValuesProvided_shouldNotReturnDefault() = doBlocking {
+        val metadata =
+            findAppFunctionMetadata(
+                "androidx.appfunctions.integration.tests.TestFunctions#echoFunctionWithOptionalParameters"
+            )
         val response =
             appFunctionManager.executeAppFunction(
                 request =
                     ExecuteAppFunctionRequest(
-                        context.packageName,
-                        "androidx.appfunctions.integration.tests.TestFunctions#echoFunctionWithOptionalParameters",
-                        AppFunctionData.Builder("")
+                        metadata.packageName,
+                        metadata.id,
+                        AppFunctionData.Builder(metadata.parameters, metadata.components)
                             .setInt("optionalNonNullInt", 1)
                             .setInt("optionalNullableInt", 2)
                             .setLong("optionalNonNullLong", 100L)
@@ -1175,13 +1448,18 @@ class IntegrationTest {
     @Test
     fun echoFunctionWithOptionalParameters_noValueProvided_shouldReturnAppFunctionDefinedDefault() =
         doBlocking {
+            val metadata =
+                findAppFunctionMetadata(
+                    "androidx.appfunctions.integration.tests.TestFunctions#echoFunctionWithOptionalParameters"
+                )
             val response =
                 appFunctionManager.executeAppFunction(
                     request =
                         ExecuteAppFunctionRequest(
-                            context.packageName,
-                            "androidx.appfunctions.integration.tests.TestFunctions#echoFunctionWithOptionalParameters",
-                            AppFunctionData.Builder("").build(),
+                            metadata.packageName,
+                            metadata.id,
+                            AppFunctionData.Builder(metadata.parameters, metadata.components)
+                                .build(),
                         )
                 )
 
@@ -1257,6 +1535,98 @@ class IntegrationTest {
         targetContext.assertWriteAccessible(filesData.readWriteUri.uri)
     }
 
+    @Test
+    fun executeAppFunction_requestCancellation_isIsolated() = doBlocking {
+        val requestA =
+            ExecuteAppFunctionRequest(
+                targetPackageName = context.packageName,
+                functionIdentifier = TestFunctionsIds.LONG_RUNNING_FUNCTION_ID,
+                functionParameters = AppFunctionData.EMPTY,
+            )
+        val requestB =
+            ExecuteAppFunctionRequest(
+                targetPackageName = context.packageName,
+                functionIdentifier = TestFunctionsIds.LONG_RUNNING_FUNCTION_ID,
+                functionParameters = AppFunctionData.EMPTY,
+            )
+        // Execute two functions simultaneously
+        val responseADeferred = async { appFunctionManager.executeAppFunction(requestA) }
+        val responseBDeferred = async { appFunctionManager.executeAppFunction(requestB) }
+
+        // Cancel responseA execution
+        responseADeferred.cancel()
+
+        // Assert responseB is completed successfully
+        val successResponse =
+            assertIs<ExecuteAppFunctionResponse.Success>(responseBDeferred.await())
+        assertThat(
+                successResponse.returnValue.getString(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
+                )
+            )
+            .isEqualTo("Completed")
+    }
+
+    @Test
+    fun serializeAppFunctionSerializable_failsForInvalidValues() {
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.serialize(
+                IntEnumSerializable(value = -1),
+                IntEnumSerializable::class.java,
+            )
+        }
+    }
+
+    @Test
+    fun serializeAppFunctionSerializable_success() {
+        val afd =
+            AppFunctionData.serialize(
+                IntEnumSerializable(value = 10),
+                IntEnumSerializable::class.java,
+            )
+
+        assertThat(afd.getInt("value")).isEqualTo(10)
+    }
+
+    @Test
+    fun deserializeAppFunctionSerializable_failsForInvalidValues() {
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder(
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "value",
+                            isRequired = false,
+                            dataType = AppFunctionIntTypeMetadata(isNullable = true),
+                        )
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
+                .setInt("value", -1)
+                .build()
+                .deserialize(IntEnumSerializable::class.java)
+        }
+    }
+
+    @Test
+    fun deserializeAppFunctionSerializable_success() {
+        val intEnumSerializable =
+            AppFunctionData.Builder(
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "value",
+                            isRequired = false,
+                            dataType = AppFunctionIntTypeMetadata(isNullable = true),
+                        )
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
+                .setInt("value", 10)
+                .build()
+                .deserialize(IntEnumSerializable::class.java)
+
+        assertThat(intEnumSerializable.value).isEqualTo(10)
+    }
+
     /**
      * Requires that [parameters] contains the [AppFunctionObjectTypeMetadata] under
      * [parameterName].
@@ -1294,14 +1664,100 @@ class IntegrationTest {
         }
     }
 
-    private suspend fun awaitAppFunctionsIndexed(expectedFunctionIds: Set<String>) {
+    private suspend fun findAppFunctionMetadata(id: String): AppFunctionMetadata {
+        return appFunctionManager
+            .observeAppFunctions(AppFunctionSearchSpec())
+            .first()
+            .flatMap { it.appFunctions }
+            .single { it.id == id }
+    }
+
+    private suspend fun Context.awaitAppFunctionsIndexed(
+        targetPackage: String,
+        expectedFunctionIds: Set<String>,
+    ) {
         retryAssert {
-            val functionIds = AppSearchMetadataHelper.collectSelfFunctionIds(context)
+            val functionIds =
+                AppSearchMetadataHelper.collectFunctionIds(
+                    this@awaitAppFunctionsIndexed,
+                    targetPackage,
+                )
             assertThat(functionIds).containsAtLeastElementsIn(expectedFunctionIds)
         }
     }
 
+    private suspend fun Context.installApk(apk: String) {
+        val installer = packageManager.packageInstaller
+        val sessionParams =
+            PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+
+        val sessionId = installer.createSession(sessionParams)
+
+        installer.openSession(sessionId).use { session ->
+            session.openWrite("apk_install", 0, -1).use { outputStream ->
+                getResourceAsStream(apk).transferTo(outputStream)
+            }
+            assertThat(session.commitSession(this@installApk)).isTrue()
+        }
+    }
+
+    fun getResourceAsStream(name: String): InputStream {
+        return checkNotNull(Thread.currentThread().contextClassLoader).getResourceAsStream(name)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun PackageInstaller.Session.commitSession(context: Context): Boolean {
+        val action = "com.example.COMMIT_COMPLETE.${System.currentTimeMillis()}"
+
+        return suspendCancellableCoroutine { continuation ->
+            val receiver =
+                object : BroadcastReceiver() {
+                    override fun onReceive(context: Context, intent: Intent) {
+                        context.unregisterReceiver(this)
+
+                        val status =
+                            intent.getIntExtra(
+                                PackageInstaller.EXTRA_STATUS,
+                                PackageInstaller.STATUS_FAILURE,
+                            )
+                        val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+
+                        if (status == PackageInstaller.STATUS_SUCCESS) {
+                            continuation.resume(true) { cause, _, _ -> }
+                        } else {
+                            continuation.resumeWithException(
+                                Exception("Installation failed: $message")
+                            )
+                        }
+                    }
+                }
+
+            val filter = IntentFilter(action)
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+
+            val intent = Intent(action).setPackage(context.packageName)
+            val sender =
+                PendingIntent.getBroadcast(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+                )
+
+            this.commit(sender.intentSender)
+
+            continuation.invokeOnCancellation {
+                // Unregister the receiver if the coroutine is cancelled
+                context.unregisterReceiver(receiver)
+            }
+        }
+    }
+
     private companion object {
+        const val ADDITIONAL_APK_FILE = "notes.apk"
+        const val ADDITIONAL_APP_PACKAGE = "com.google.android.app.notes"
+        const val ADDITIONAL_LEGACY_CREATE_NOTE =
+            "com.example.android.architecture.blueprints.todoapp#NoteFunctions_createNote"
         const val TEST_APP_FUNCTION_DOC_SIZE_LIMIT = 512 * 1024 // 512kb
 
         val FUNCTION_IDS =

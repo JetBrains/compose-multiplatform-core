@@ -18,6 +18,7 @@ package androidx.pdf.adapter
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.pdf.PdfRenderer
 import android.graphics.pdf.RenderParams
@@ -172,5 +173,14 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
     @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 18)
     override fun removePageAnnotation(annotationId: Int) {
         page.removePageAnnotation(annotationId)
+    }
+
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.VANILLA_ICE_CREAM, version = 19)
+    override fun getTopPageObjectAtPosition(
+        point: PointF,
+        types: IntArray,
+    ): Pair<Int, PdfPageObject>? {
+        return page.getTopPageObjectAtPosition(point, types)
     }
 }

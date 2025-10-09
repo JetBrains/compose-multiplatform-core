@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.HEAD_TRACKING" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.android.extensions.xr.INHERIT_FSM_ENV" />
     <application
         android:allowBackup="true"
@@ -40,6 +42,7 @@
             android:exported="false" />
         <activity
             android:name=".fsmhsmtransition.FsmHsmTransitionActivity"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
             android:exported="true" />
         <activity
             android:name=".visibility.VisibilityActivity"
@@ -72,6 +75,12 @@
             android:name=".headlockedui.HeadLockedUiActivity"
             android:exported="true" />
         <activity
+            android:name=".model.GltfModelActivity"
+            android:exported="true" />
+        <activity
+            android:name=".surfaceinteraction.SurfaceEntityInteractionActivity"
+            android:exported="true" />
+        <activity
             android:name=".movable.MovableActivity"
             android:exported="true" />
         <activity
@@ -85,6 +94,9 @@
             android:exported="true" />
         <activity
             android:name=".accessibilitytest.AccessibilityTestActivity"
+            android:exported="true" />
+        <activity
+            android:name=".memoryleak.MemoryLeakActivity"
             android:exported="true" />
         <property
             android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"

@@ -57,6 +57,8 @@ import javax.inject.Provider
 import javax.inject.Scope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 
 @Module(subcomponents = [Camera2ControllerComponent::class])
 internal abstract class Camera2Module {
@@ -164,9 +166,13 @@ internal abstract class Camera2ControllerModule {
     companion object {
         @Camera2ControllerScope
         @Provides
-        fun provideCoroutineScope(threads: Threads): CoroutineScope {
+        fun provideCoroutineScope(
+            threads: Threads,
+            @CameraPipeJob cameraPipeJob: Job,
+        ): CoroutineScope {
             return CoroutineScope(
-                threads.lightweightDispatcher.plus(CoroutineName("CXCP-Camera2Controller"))
+                SupervisorJob(cameraPipeJob) +
+                    threads.lightweightDispatcher.plus(CoroutineName("CXCP-Camera2Controller"))
             )
         }
 
@@ -176,8 +182,14 @@ internal abstract class Camera2ControllerModule {
             cameraManager: Provider<CameraManager>,
             threads: Threads,
             graphConfig: CameraGraph.Config,
+            @CameraPipeJob cameraPipeJob: Job,
         ): CameraStatusMonitor {
-            return Camera2CameraStatusMonitor(cameraManager, threads, graphConfig.camera)
+            return Camera2CameraStatusMonitor(
+                cameraManager,
+                threads,
+                graphConfig.camera,
+                cameraPipeJob,
+            )
         }
     }
 }

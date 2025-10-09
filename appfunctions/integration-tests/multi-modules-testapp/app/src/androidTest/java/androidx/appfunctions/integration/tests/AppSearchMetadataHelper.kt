@@ -23,8 +23,8 @@ import androidx.appsearch.platformstorage.PlatformStorage
 import androidx.concurrent.futures.await
 
 internal object AppSearchMetadataHelper {
-    /** Returns function IDs that belong to the given context's package. */
-    suspend fun collectSelfFunctionIds(context: Context): Set<String> {
+    /** Returns function IDs that belong to the given [targetPackage]. */
+    suspend fun collectFunctionIds(context: Context, targetPackage: String): Set<String> {
         val functionIds = mutableSetOf<String>()
         createSearchSession(context).use { session ->
             val searchResults =
@@ -40,7 +40,7 @@ internal object AppSearchMetadataHelper {
             while (nextPage.isNotEmpty()) {
                 for (result in nextPage) {
                     val packageName = result.genericDocument.getPropertyString("packageName")
-                    if (packageName != context.packageName) {
+                    if (packageName != targetPackage) {
                         continue
                     }
                     val functionId = result.genericDocument.getPropertyString("functionId")

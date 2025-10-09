@@ -2,9 +2,9 @@
 package androidx.glance.appwidget {
 
   public final class AndroidRemoteViewsKt {
-    method @androidx.compose.runtime.Composable public static void AndroidRemoteViews(android.widget.RemoteViews remoteViews, optional androidx.glance.GlanceModifier modifier);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void AndroidRemoteViews(android.widget.RemoteViews remoteViews, optional androidx.glance.GlanceModifier modifier);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void AndroidRemoteViews(android.widget.RemoteViews, androidx.glance.GlanceModifier?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void AndroidRemoteViews(android.widget.RemoteViews remoteViews, @IdRes int containerViewId, optional androidx.glance.GlanceModifier modifier, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void AndroidRemoteViews(android.widget.RemoteViews remoteViews, @IdRes int containerViewId, optional androidx.glance.GlanceModifier modifier, kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void AndroidRemoteViews(android.widget.RemoteViews, @IdRes int, androidx.glance.GlanceModifier?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -28,31 +28,31 @@ package androidx.glance.appwidget {
   }
 
   public final class CheckBoxKt {
-    method @androidx.compose.runtime.Composable public static void CheckBox(boolean checked, androidx.glance.action.Action? onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.CheckBoxColors colors, optional int maxLines);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void CheckBox(boolean checked, androidx.glance.action.Action? onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.CheckBoxColors colors, optional int maxLines);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void CheckBox(boolean, androidx.glance.action.Action?, androidx.glance.GlanceModifier?, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.CheckBoxColors?, int, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void CheckBox(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.CheckBoxColors colors, optional int maxLines);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void CheckBox(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.CheckBoxColors colors, optional int maxLines);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void CheckBox(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.CheckBoxColors?, int, androidx.compose.runtime.Composer?, int, int);
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void CheckBox(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.CheckBoxColors colors, optional int maxLines, optional String? key);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void CheckBox(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.CheckBoxColors colors, optional int maxLines, optional String? key);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") @androidx.glance.ExperimentalGlanceApi public static void CheckBox(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.CheckBoxColors?, int, String?, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class CheckboxDefaults {
-    method @androidx.compose.runtime.Composable public androidx.glance.appwidget.CheckBoxColors colors();
+    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.CheckBoxColors colors();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public androidx.glance.appwidget.CheckBoxColors colors(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.CheckBoxColors colors(androidx.compose.ui.graphics.Color checkedColor, androidx.compose.ui.graphics.Color uncheckedColor);
-    method @androidx.compose.runtime.Composable public androidx.glance.appwidget.CheckBoxColors colors(androidx.glance.unit.ColorProvider checkedColor, androidx.glance.unit.ColorProvider uncheckedColor);
+    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.CheckBoxColors colors(androidx.glance.unit.ColorProvider checkedColor, androidx.glance.unit.ColorProvider uncheckedColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.CheckBoxColors colors(androidx.glance.unit.ColorProvider, androidx.glance.unit.ColorProvider, androidx.compose.runtime.Composer?, int);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.CheckBoxColors colors-RFnl5yQ(long, long, androidx.compose.runtime.Composer?, int);
     field public static final androidx.glance.appwidget.CheckboxDefaults INSTANCE;
   }
 
   public final class CircularProgressIndicatorKt {
-    method @androidx.compose.runtime.Composable public static void CircularProgressIndicator(optional androidx.glance.GlanceModifier modifier, optional androidx.glance.unit.ColorProvider color);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void CircularProgressIndicator(optional androidx.glance.GlanceModifier modifier, optional androidx.glance.unit.ColorProvider color);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void CircularProgressIndicator(androidx.glance.GlanceModifier?, androidx.glance.unit.ColorProvider?, androidx.compose.runtime.Composer?, int, int);
   }
 
   public final class CompositionLocalsKt {
-    method public static androidx.compose.runtime.ProvidableCompositionLocal<android.os.Bundle> getLocalAppWidgetOptions();
+    method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<android.os.Bundle> getLocalAppWidgetOptions();
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.os.Bundle> LocalAppWidgetOptions;
   }
 
@@ -68,9 +68,9 @@ package androidx.glance.appwidget {
   public abstract class GlanceAppWidget {
     ctor public GlanceAppWidget();
     ctor public GlanceAppWidget(optional @LayoutRes int errorUiLayout);
-    method public androidx.glance.appwidget.PreviewSizeMode getPreviewSizeMode();
-    method public androidx.glance.appwidget.SizeMode getSizeMode();
-    method public androidx.glance.state.GlanceStateDefinition<? extends java.lang.Object?>? getStateDefinition();
+    method @InaccessibleFromKotlin public androidx.glance.appwidget.PreviewSizeMode getPreviewSizeMode();
+    method @InaccessibleFromKotlin public androidx.glance.appwidget.SizeMode getSizeMode();
+    method @InaccessibleFromKotlin public androidx.glance.state.GlanceStateDefinition<? extends java.lang.Object?>? getStateDefinition();
     method @kotlin.jvm.Throws(exceptionClasses=Throwable::class) public void onCompositionError(android.content.Context context, androidx.glance.GlanceId glanceId, int appWidgetId, Throwable throwable) throws java.lang.Throwable;
     method public suspend Object? onDelete(android.content.Context context, androidx.glance.GlanceId glanceId, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public abstract suspend Object? provideGlance(android.content.Context context, androidx.glance.GlanceId id, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -115,8 +115,8 @@ package androidx.glance.appwidget {
 
   public abstract class GlanceAppWidgetReceiver extends android.appwidget.AppWidgetProvider {
     ctor public GlanceAppWidgetReceiver();
-    method @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public kotlin.coroutines.CoroutineContext getCoroutineContext();
-    method public abstract androidx.glance.appwidget.GlanceAppWidget getGlanceAppWidget();
+    method @InaccessibleFromKotlin @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public kotlin.coroutines.CoroutineContext getCoroutineContext();
+    method @InaccessibleFromKotlin public abstract androidx.glance.appwidget.GlanceAppWidget getGlanceAppWidget();
     property @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public kotlin.coroutines.CoroutineContext coroutineContext;
     property public abstract androidx.glance.appwidget.GlanceAppWidget glanceAppWidget;
     field public static final String ACTION_DEBUG_UPDATE = "androidx.glance.appwidget.action.DEBUG_UPDATE";
@@ -143,9 +143,9 @@ package androidx.glance.appwidget {
   }
 
   public final class LinearProgressIndicatorKt {
-    method @androidx.compose.runtime.Composable public static void LinearProgressIndicator(optional androidx.glance.GlanceModifier modifier, optional androidx.glance.unit.ColorProvider color, optional androidx.glance.unit.ColorProvider backgroundColor);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void LinearProgressIndicator(optional androidx.glance.GlanceModifier modifier, optional androidx.glance.unit.ColorProvider color, optional androidx.glance.unit.ColorProvider backgroundColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void LinearProgressIndicator(androidx.glance.GlanceModifier?, androidx.glance.unit.ColorProvider?, androidx.glance.unit.ColorProvider?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void LinearProgressIndicator(float progress, optional androidx.glance.GlanceModifier modifier, optional androidx.glance.unit.ColorProvider color, optional androidx.glance.unit.ColorProvider backgroundColor);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void LinearProgressIndicator(float progress, optional androidx.glance.GlanceModifier modifier, optional androidx.glance.unit.ColorProvider color, optional androidx.glance.unit.ColorProvider backgroundColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void LinearProgressIndicator(float, androidx.glance.GlanceModifier?, androidx.glance.unit.ColorProvider?, androidx.glance.unit.ColorProvider?, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -158,8 +158,8 @@ package androidx.glance.appwidget {
   }
 
   public final class ProgressIndicatorDefaults {
-    method public androidx.glance.unit.ColorProvider getBackgroundColorProvider();
-    method public androidx.glance.unit.ColorProvider getIndicatorColorProvider();
+    method @InaccessibleFromKotlin public androidx.glance.unit.ColorProvider getBackgroundColorProvider();
+    method @InaccessibleFromKotlin public androidx.glance.unit.ColorProvider getIndicatorColorProvider();
     property public androidx.glance.unit.ColorProvider BackgroundColorProvider;
     property public androidx.glance.unit.ColorProvider IndicatorColorProvider;
     field public static final androidx.glance.appwidget.ProgressIndicatorDefaults INSTANCE;
@@ -169,7 +169,7 @@ package androidx.glance.appwidget {
   }
 
   public final class RadioButtonDefaults {
-    method @androidx.compose.runtime.Composable public androidx.glance.appwidget.RadioButtonColors colors();
+    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.RadioButtonColors colors();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public androidx.glance.appwidget.RadioButtonColors colors(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly public androidx.glance.appwidget.RadioButtonColors colors(androidx.compose.ui.graphics.Color checkedColor, androidx.compose.ui.graphics.Color uncheckedColor);
     method public androidx.glance.appwidget.RadioButtonColors colors(androidx.glance.unit.ColorProvider checkedColor, androidx.glance.unit.ColorProvider uncheckedColor);
@@ -178,18 +178,18 @@ package androidx.glance.appwidget {
   }
 
   public final class RadioButtonKt {
-    method @androidx.compose.runtime.Composable public static void RadioButton(boolean checked, androidx.glance.action.Action? onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.RadioButtonColors colors, optional int maxLines);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void RadioButton(boolean checked, androidx.glance.action.Action? onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.RadioButtonColors colors, optional int maxLines);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void RadioButton(boolean, androidx.glance.action.Action?, androidx.glance.GlanceModifier?, boolean, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.RadioButtonColors?, int, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void RadioButton(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.RadioButtonColors colors, optional int maxLines);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void RadioButton(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.RadioButtonColors colors, optional int maxLines);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void RadioButton(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, boolean, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.RadioButtonColors?, int, androidx.compose.runtime.Composer?, int, int);
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void RadioButton(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.RadioButtonColors colors, optional int maxLines, optional String? key);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void RadioButton(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.RadioButtonColors colors, optional int maxLines, optional String? key);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") @androidx.glance.ExperimentalGlanceApi public static void RadioButton(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, boolean, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.RadioButtonColors?, int, String?, androidx.compose.runtime.Composer?, int, int);
     method public static androidx.glance.GlanceModifier selectableGroup(androidx.glance.GlanceModifier);
   }
 
   @SuppressCompatibility @androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi public final class RemoteViewsCompositionResult {
     ctor public RemoteViewsCompositionResult(android.widget.RemoteViews remoteViews);
-    method public android.widget.RemoteViews getRemoteViews();
+    method @InaccessibleFromKotlin public android.widget.RemoteViews getRemoteViews();
     property public android.widget.RemoteViews remoteViews;
   }
 
@@ -202,7 +202,7 @@ package androidx.glance.appwidget {
 
   public static final class SizeMode.Responsive implements androidx.glance.appwidget.PreviewSizeMode androidx.glance.appwidget.SizeMode {
     ctor public SizeMode.Responsive(java.util.Set<androidx.compose.ui.unit.DpSize> sizes);
-    method public java.util.Set<androidx.compose.ui.unit.DpSize> getSizes();
+    method @InaccessibleFromKotlin public java.util.Set<androidx.compose.ui.unit.DpSize> getSizes();
     property public java.util.Set<androidx.compose.ui.unit.DpSize> sizes;
   }
 
@@ -214,19 +214,19 @@ package androidx.glance.appwidget {
   }
 
   public final class SwitchDefaults {
-    method @androidx.compose.runtime.Composable public androidx.glance.appwidget.SwitchColors colors();
+    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.SwitchColors colors();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public androidx.glance.appwidget.SwitchColors colors(androidx.compose.runtime.Composer?, int);
-    method @androidx.compose.runtime.Composable public androidx.glance.appwidget.SwitchColors colors(androidx.glance.unit.ColorProvider checkedThumbColor, androidx.glance.unit.ColorProvider uncheckedThumbColor, androidx.glance.unit.ColorProvider checkedTrackColor, androidx.glance.unit.ColorProvider uncheckedTrackColor);
+    method @KotlinOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.SwitchColors colors(androidx.glance.unit.ColorProvider checkedThumbColor, androidx.glance.unit.ColorProvider uncheckedThumbColor, androidx.glance.unit.ColorProvider checkedTrackColor, androidx.glance.unit.ColorProvider uncheckedTrackColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.glance.appwidget.SwitchColors colors(androidx.glance.unit.ColorProvider, androidx.glance.unit.ColorProvider, androidx.glance.unit.ColorProvider, androidx.glance.unit.ColorProvider, androidx.compose.runtime.Composer?, int);
     field public static final androidx.glance.appwidget.SwitchDefaults INSTANCE;
   }
 
   public final class SwitchKt {
-    method @androidx.compose.runtime.Composable public static void Switch(boolean checked, androidx.glance.action.Action? onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.SwitchColors colors, optional int maxLines);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Switch(boolean checked, androidx.glance.action.Action? onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.SwitchColors colors, optional int maxLines);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void Switch(boolean, androidx.glance.action.Action?, androidx.glance.GlanceModifier?, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.SwitchColors?, int, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void Switch(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.SwitchColors colors, optional int maxLines);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void Switch(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.SwitchColors colors, optional int maxLines);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void Switch(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.SwitchColors?, int, androidx.compose.runtime.Composer?, int, int);
-    method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void Switch(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.SwitchColors colors, optional int maxLines, optional String? key);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void Switch(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.SwitchColors colors, optional int maxLines, optional String? key);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") @androidx.glance.ExperimentalGlanceApi public static void Switch(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, String?, androidx.glance.text.TextStyle?, androidx.glance.appwidget.SwitchColors?, int, String?, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -282,7 +282,7 @@ package androidx.glance.appwidget.action {
   }
 
   public final class ToggleableKt {
-    method public static androidx.glance.action.ActionParameters.Key<java.lang.Boolean> getToggleableStateKey();
+    method @InaccessibleFromKotlin public static androidx.glance.action.ActionParameters.Key<java.lang.Boolean> getToggleableStateKey();
     property public static androidx.glance.action.ActionParameters.Key<java.lang.Boolean> ToggleableStateKey;
   }
 
@@ -291,21 +291,21 @@ package androidx.glance.appwidget.action {
 package androidx.glance.appwidget.components {
 
   public final class ButtonsKt {
-    method @androidx.compose.runtime.Composable public static void CircleIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider? backgroundColor, optional androidx.glance.unit.ColorProvider contentColor);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void CircleIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider? backgroundColor, optional androidx.glance.unit.ColorProvider contentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void CircleIconButton(androidx.glance.ImageProvider, String?, androidx.glance.action.Action, androidx.glance.GlanceModifier?, boolean, androidx.glance.unit.ColorProvider?, androidx.glance.unit.ColorProvider?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void CircleIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider? backgroundColor, optional androidx.glance.unit.ColorProvider contentColor, optional String? key);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void CircleIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider? backgroundColor, optional androidx.glance.unit.ColorProvider contentColor, optional String? key);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void CircleIconButton(androidx.glance.ImageProvider, String?, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, boolean, androidx.glance.unit.ColorProvider?, androidx.glance.unit.ColorProvider?, String?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void FilledButton(String text, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional androidx.glance.ButtonColors colors, optional int maxLines);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void FilledButton(String text, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional androidx.glance.ButtonColors colors, optional int maxLines);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void FilledButton(String, androidx.glance.action.Action, androidx.glance.GlanceModifier?, boolean, androidx.glance.ImageProvider?, androidx.glance.ButtonColors?, int, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void FilledButton(String text, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional androidx.glance.ButtonColors colors, optional int maxLines, optional String? key);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void FilledButton(String text, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional androidx.glance.ButtonColors colors, optional int maxLines, optional String? key);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void FilledButton(String, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, boolean, androidx.glance.ImageProvider?, androidx.glance.ButtonColors?, int, String?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void OutlineButton(String text, androidx.glance.unit.ColorProvider contentColor, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional int maxLines);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void OutlineButton(String text, androidx.glance.unit.ColorProvider contentColor, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional int maxLines);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void OutlineButton(String, androidx.glance.unit.ColorProvider, androidx.glance.action.Action, androidx.glance.GlanceModifier?, boolean, androidx.glance.ImageProvider?, int, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void OutlineButton(String text, androidx.glance.unit.ColorProvider contentColor, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional int maxLines, optional String? key);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void OutlineButton(String text, androidx.glance.unit.ColorProvider contentColor, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional int maxLines, optional String? key);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void OutlineButton(String, androidx.glance.unit.ColorProvider, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, boolean, androidx.glance.ImageProvider?, int, String?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void SquareIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider backgroundColor, optional androidx.glance.unit.ColorProvider contentColor);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void SquareIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider backgroundColor, optional androidx.glance.unit.ColorProvider contentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void SquareIconButton(androidx.glance.ImageProvider, String?, androidx.glance.action.Action, androidx.glance.GlanceModifier?, boolean, androidx.glance.unit.ColorProvider?, androidx.glance.unit.ColorProvider?, androidx.compose.runtime.Composer?, int, int);
-    method @androidx.compose.runtime.Composable public static void SquareIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider backgroundColor, optional androidx.glance.unit.ColorProvider contentColor, optional String? key);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void SquareIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider backgroundColor, optional androidx.glance.unit.ColorProvider contentColor, optional String? key);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.glance.GlanceComposable") public static void SquareIconButton(androidx.glance.ImageProvider, String?, kotlin.jvm.functions.Function0<kotlin.Unit!>, androidx.glance.GlanceModifier?, boolean, androidx.glance.unit.ColorProvider?, androidx.glance.unit.ColorProvider?, String?, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -315,7 +315,7 @@ package androidx.glance.appwidget.components {
   }
 
   public final class TitleBarKt {
-    method @androidx.compose.runtime.Composable public static void TitleBar(androidx.glance.ImageProvider startIcon, String title, optional androidx.glance.unit.ColorProvider? iconColor, optional androidx.glance.unit.ColorProvider textColor, optional androidx.glance.GlanceModifier modifier, optional androidx.glance.text.FontFamily? fontFamily, optional kotlin.jvm.functions.Function1<? super androidx.glance.layout.RowScope,kotlin.Unit> actions);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void TitleBar(androidx.glance.ImageProvider startIcon, String title, optional androidx.glance.unit.ColorProvider? iconColor, optional androidx.glance.unit.ColorProvider textColor, optional androidx.glance.GlanceModifier modifier, optional androidx.glance.text.FontFamily? fontFamily, optional kotlin.jvm.functions.Function1<androidx.glance.layout.RowScope,kotlin.Unit> actions);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static void TitleBar(androidx.glance.ImageProvider, String, androidx.glance.unit.ColorProvider?, androidx.glance.unit.ColorProvider?, androidx.glance.GlanceModifier?, androidx.glance.text.FontFamily?, kotlin.jvm.functions.Function3<? super androidx.glance.layout.RowScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.compose.runtime.Composer?, int, int);
   }
 
@@ -335,7 +335,7 @@ package androidx.glance.appwidget.lazy {
 
   public static final class GridCells.Fixed extends androidx.glance.appwidget.lazy.GridCells {
     ctor public GridCells.Fixed(int count);
-    method public int getCount();
+    method @InaccessibleFromKotlin public int getCount();
     property public int count;
   }
 

@@ -12,7 +12,7 @@ package androidx.photopicker {
     method public void setProvider(android.widget.photopicker.EmbeddedPhotoPickerProvider provider);
   }
 
-  public static interface EmbeddedPhotoPickerView.EmbeddedPhotoPickerStateChangeListener {
+  @SuppressCompatibility @androidx.photopicker.ExperimentalPhotoPickerApi public static interface EmbeddedPhotoPickerView.EmbeddedPhotoPickerStateChangeListener {
     method public void onSelectionComplete();
     method public void onSessionError(Throwable throwable);
     method public void onSessionOpened(android.widget.photopicker.EmbeddedPhotoPickerSession newSession);

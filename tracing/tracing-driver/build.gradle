@@ -63,6 +63,12 @@ androidXMultiplatform {
     }
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.tracing.driver.DelicateTracingApi")
+    }
+}
+
 androidx {
     name = "Tracing Driver"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS

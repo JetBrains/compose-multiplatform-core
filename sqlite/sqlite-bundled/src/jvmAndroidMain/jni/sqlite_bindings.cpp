@@ -1,7 +1,8 @@
 #include <jni.h>
 #include "sqlite3.h"
-#include <sstream>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 /**
  * Throws SQLiteException with the given error code and message.
@@ -17,12 +18,21 @@ static bool throwSQLiteException(JNIEnv *env, int errorCode, const char *errorMs
         env->ExceptionClear();
         exceptionClass = env->FindClass("android/database/SQLException");
     }
-    std::stringstream message;
-    message << "Error code: " << errorCode;
+    int codeLength = snprintf(nullptr, 0, "%d", errorCode);
+    size_t prefixLength = strlen("Error code: ");
+    size_t msgLength = 0;
     if (errorMsg != nullptr) {
-        message << ", message: " << errorMsg;
+        msgLength = strlen(", message: ") + strlen(errorMsg);
     }
-    int throwResult = env->ThrowNew(exceptionClass, message.str().c_str());
+    size_t totalSize = prefixLength + codeLength + msgLength + 1;
+    char* message = (char*) malloc(totalSize);
+    if (errorMsg != nullptr) {
+        snprintf(message, totalSize, "Error code: %d, message: %s", errorCode, errorMsg);
+    } else {
+        snprintf(message, totalSize, "Error code: %d", errorCode);
+    }
+    int throwResult = env->ThrowNew(exceptionClass, message);
+    free(message);
     return throwResult == 0;
 }
 

@@ -50,7 +50,34 @@ data class DexInfo(
 
     /** r8 markers */
     val r8Markers: List<R8Marker>,
+
+    /**
+     * top level (non-inner) classes which appear to be minified (based on starting with lowercase
+     * identifier)
+     */
+    val minifiedClassCountLowercase: Int,
+    /** top level (non-inner) classes which appear to be minified (based on length heuristic) */
+    val minifiedClassCountLengthHeuristic: Int,
+    val noPackageClassCount: Int,
+    val classInfo: List<ClassInfo>,
 ) {
+    class ClassInfo(val packageName: String, val className: String) {
+        val fullName: String = if (packageName.isEmpty()) className else "$packageName.$className"
+        val startsWithLowerCase = className[0].isLowerCase()
+        val classNameAppearsMinified =
+            className.length <= 2 || className.length <= 3 && hasObfuscatedPackageName()
+
+        private fun hasObfuscatedPackageName(): Boolean {
+            val parts = packageName.split("\\.".toRegex())
+            for (part in parts) {
+                if (part.length > 2) {
+                    return false
+                }
+            }
+            return true
+        }
+    }
+
     init {
         require(uncompressedSize >= 0) { "Uncompressed size must be non-negative" }
     }
@@ -73,6 +100,42 @@ data class DexInfo(
     }
 
     companion object {
+        internal fun packageNameForType(type: String?): String {
+            val parts = type!!.split("\\.".toRegex())
+            val sb = StringBuilder()
+            for (i in 0 until parts.size - 1) {
+                val part = parts[i]
+                if (part.isNotEmpty()) {
+                    if (sb.isNotEmpty()) {
+                        sb.append('.')
+                    }
+                    sb.append(part)
+                }
+            }
+            return sb.toString()
+        }
+
+        private fun signatureToType(signature: String): String {
+            return if (signature.isEmpty()) {
+                signature
+            } else {
+                when (signature[0]) {
+                    'L' -> signature.substring(1, signature.length - 1).replace('/', '.')
+                    '[' -> // We strip arrays as we only care about the underlying type used.
+                    signatureToType(signature.substring(1))
+                    else -> ""
+                }
+            }
+        }
+
+        private fun classNameForType(type: String): String {
+            val parts = type.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            return if (parts.isEmpty()) {
+                ""
+            } else {
+                parts[parts.size - 1]
+            }
+        }
 
         fun from(entryName: String, compressedSize: Long, src: InputStream): DexInfo {
             val crc = CRC32()
@@ -92,6 +155,30 @@ data class DexInfo(
                     r8MapId = it
                 }
             }
+            var minifiedClassCountLowercase = 0
+            var minifiedClassCountLengthHeuristic = 0
+            var noPackage = 0
+            var classCount = 0
+            val classInfo = mutableListOf<ClassInfo>()
+            dexFile.classes.forEach { cls ->
+                val isTopLevel = !cls.type.contains("$")
+
+                if (!isTopLevel) return@forEach
+
+                classCount++
+
+                val type = signatureToType(cls.type)
+                val packageName = packageNameForType(type)
+                val className = classNameForType(type)
+
+                ClassInfo(packageName, className).apply {
+                    if (startsWithLowerCase) minifiedClassCountLowercase++
+                    if (classNameAppearsMinified) minifiedClassCountLengthHeuristic++
+                    if (packageName.isEmpty()) noPackage++
+                    classInfo.add(this)
+                }
+            }
+            check(classCount == classInfo.size)
 
             // Finalize the SHA-256 hash and format it as a hex string.
             val sha256Bytes = sha256.digest()
@@ -107,11 +194,21 @@ data class DexInfo(
                 compressedSize = compressedSize,
                 r8MapId = r8MapId,
                 r8Markers = r8Markers,
+                minifiedClassCountLowercase = minifiedClassCountLowercase,
+                minifiedClassCountLengthHeuristic = minifiedClassCountLengthHeuristic,
+                noPackageClassCount = noPackage,
+                classInfo = classInfo,
             )
         }
 
         val CSV_TITLES =
-            listOf("dex_totalSizeMb") +
+            listOf(
+                "dex_totalSizeMb",
+                "dex_minifiedClassesLower",
+                "dex_minifiedClassesLength",
+                "dex_noPackageClasses",
+                "dex_classes",
+            ) +
                 if (VERBOSE) {
                     listOf("dex_names", "dex_sortedChecksumsSha256", "dex_sortedChecksumsCrc32")
                 } else {
@@ -119,7 +216,13 @@ data class DexInfo(
                 }
 
         fun List<DexInfo>.csvEntries(): List<String> {
-            return listOf((this.sumOf { it.uncompressedSize } / (1024.0 * 1024)).toString()) +
+            return listOf(
+                (this.sumOf { it.uncompressedSize } / (1024.0 * 1024)).toString(),
+                this.sumOf { it.minifiedClassCountLowercase }.toString(),
+                this.sumOf { it.minifiedClassCountLengthHeuristic }.toString(),
+                this.sumOf { it.noPackageClassCount }.toString(),
+                this.sumOf { it.classInfo.size }.toString(),
+            ) +
                 if (VERBOSE)
                     listOf(
                         joinToString(INTERNAL_CSV_SEPARATOR) { it.entryName },

@@ -7,10 +7,10 @@ package androidx.navigation.ui {
   }
 
   public final class AppBarConfiguration {
-    method @Deprecated public androidx.drawerlayout.widget.DrawerLayout? getDrawerLayout();
-    method public androidx.navigation.ui.AppBarConfiguration.OnNavigateUpListener? getFallbackOnNavigateUpListener();
-    method public androidx.customview.widget.Openable? getOpenableLayout();
-    method public java.util.Set<java.lang.Integer> getTopLevelDestinations();
+    method @InaccessibleFromKotlin @Deprecated public androidx.drawerlayout.widget.DrawerLayout? getDrawerLayout();
+    method @InaccessibleFromKotlin public androidx.navigation.ui.AppBarConfiguration.OnNavigateUpListener? getFallbackOnNavigateUpListener();
+    method @InaccessibleFromKotlin public androidx.customview.widget.Openable? getOpenableLayout();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.Integer> getTopLevelDestinations();
     method public boolean isTopLevelDestination(androidx.navigation.NavDestination destination);
     property @Deprecated public androidx.drawerlayout.widget.DrawerLayout? drawerLayout;
     property public androidx.navigation.ui.AppBarConfiguration.OnNavigateUpListener? fallbackOnNavigateUpListener;

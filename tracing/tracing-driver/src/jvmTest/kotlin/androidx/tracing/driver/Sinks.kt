@@ -26,6 +26,10 @@ class NoOpSink : TraceSink() {
         // Does nothing
     }
 
+    override fun onDroppedTraceEvent() {
+        // Does nothing
+    }
+
     override fun close() {
         // Does nothing
     }

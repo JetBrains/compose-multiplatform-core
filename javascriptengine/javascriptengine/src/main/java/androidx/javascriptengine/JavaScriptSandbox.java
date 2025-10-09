@@ -151,6 +151,7 @@ public final class JavaScriptSandbox implements AutoCloseable {
                     JS_FEATURE_CONSOLE_MESSAGING,
                     JS_FEATURE_ISOLATE_CLIENT,
                     JS_FEATURE_EVALUATE_FROM_FD,
+                    JS_FEATURE_MESSAGE_PORTS,
             })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -248,6 +249,17 @@ public final class JavaScriptSandbox implements AutoCloseable {
      */
     public static final String JS_FEATURE_EVALUATE_FROM_FD =
             "JS_FEATURE_EVALUATE_FROM_FD";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}
+     * <p>
+     * When this feature is present,
+     * {@link MessagePort#postMessage(androidx.javascriptengine.common.Message)}
+     * can be used to send messages between the embedder and the sandboxed
+     * JavaScript isolate, through Binder or AssetFileDescriptors.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String JS_FEATURE_MESSAGE_PORTS = "JS_FEATURE_MESSAGE_PORTS";
 
     // This set must not be modified after JavaScriptSandbox construction.
     @NonNull
@@ -549,6 +561,9 @@ public final class JavaScriptSandbox implements AutoCloseable {
         }
         if (features.contains(IJsSandboxService.EVALUATE_FROM_FD)) {
             featureSet.add(JS_FEATURE_EVALUATE_FROM_FD);
+        }
+        if (features.contains(IJsSandboxService.MESSAGE_PORTS)) {
+            featureSet.add(JS_FEATURE_MESSAGE_PORTS);
         }
         return featureSet;
     }

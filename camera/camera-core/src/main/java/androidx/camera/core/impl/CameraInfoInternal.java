@@ -377,7 +377,7 @@ public interface CameraInfoInternal extends CameraInfo {
 
     @Override
     default @NonNull CameraIdentifier getCameraIdentifier() {
-        return CameraIdentifier.create(getCameraId());
+        return CameraIdentifier.Factory.create(getCameraId());
     }
 
     /**

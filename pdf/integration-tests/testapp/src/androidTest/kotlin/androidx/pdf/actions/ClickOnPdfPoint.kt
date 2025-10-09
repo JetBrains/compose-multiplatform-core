@@ -61,6 +61,13 @@ private class PdfCoordinatesProvider(private val pdfPoint: PdfPoint) : Coordinat
         Truth.assertThat(viewPoint).isNotNull()
         checkNotNull(viewPoint)
 
-        return floatArrayOf(viewPoint.x, viewPoint.y)
+        // The co-ordinates obtained above are w.r.t. the View itself, since espresso taps on
+        // the screen co-ordinates, we must adjust it to get absolute co-ordinates on the screen.
+        val screenPos = IntArray(2)
+        view.getLocationOnScreen(screenPos)
+        val screenX = (screenPos[0] + viewPoint.x)
+        val screenY = (screenPos[1] + viewPoint.y)
+
+        return floatArrayOf(screenX, screenY)
     }
 }

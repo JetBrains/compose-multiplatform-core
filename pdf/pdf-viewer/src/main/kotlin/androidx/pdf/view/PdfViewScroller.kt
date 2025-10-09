@@ -19,6 +19,7 @@ package androidx.pdf.view
 import androidx.annotation.IntDef
 import androidx.pdf.PdfPoint
 import androidx.pdf.util.ZoomUtils
+import androidx.pdf.view.layout.PageMetadataLoader
 import kotlin.math.roundToInt
 
 internal class PdfViewScroller(private val pdfView: PdfView) {

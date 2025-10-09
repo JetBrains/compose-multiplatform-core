@@ -180,8 +180,13 @@ private constructor(
             "}"
     }
 
+    /**
+     * Factory for creating [CameraIdentifier] instances.
+     *
+     * This is for internal, cross-module use within the CameraX library group only.
+     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public companion object {
+    public object Factory {
         /**
          * Creates a new [CameraIdentifier] from an ordered list of camera IDs and an optional
          * compatibility ID.

@@ -119,32 +119,24 @@ internal fun rememberGlimmerListMeasurePolicy(
 
             val density = this
             with(layoutProperties) {
-                val measureResult =
-                    measureGlimmerList(
-                        itemsCount = itemsCount,
-                        measuredItemProvider = measuredItemProvider,
-                        firstVisibleItemIndex = firstVisibleItemIndex,
-                        firstVisibleItemScrollOffset = firstVisibleScrollOffset,
-                        scrollToBeConsumed = state.scrollToBeConsumed,
-                        pinnedIndices = pinnedIndices,
-                        reverseLayout = reverseLayout,
-                        density = density,
-                        layout = { width, height, placement ->
-                            layout(
-                                containerConstraints.constrainWidth(width + totalHorizontalPadding),
-                                containerConstraints.constrainHeight(height + totalVerticalPadding),
-                                emptyMap(),
-                                placement,
-                            )
-                        },
-                    )
-                state.autoFocusBehaviour.applyMeasureResult(
-                    scrollToBeConsumed = state.scrollToBeConsumed,
-                    layoutProperties = layoutProperties,
-                    measureResult = measureResult,
+                applyMeasureResult(
+                    state = state,
+                    itemsCount = itemsCount,
+                    measuredItemProvider = measuredItemProvider,
+                    firstVisibleItemIndex = firstVisibleItemIndex,
+                    firstVisibleItemScrollOffset = firstVisibleScrollOffset,
+                    pinnedIndices = pinnedIndices,
+                    reverseLayout = reverseLayout,
+                    density = density,
+                    layout = { width, height, placement ->
+                        layout(
+                            containerConstraints.constrainWidth(width + totalHorizontalPadding),
+                            containerConstraints.constrainHeight(height + totalVerticalPadding),
+                            emptyMap(),
+                            placement,
+                        )
+                    },
                 )
-                state.applyMeasureResult(measureResult)
-                measureResult
             }
         }
     }

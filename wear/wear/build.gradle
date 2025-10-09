@@ -52,9 +52,6 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }

@@ -22,6 +22,7 @@ import androidx.compose.foundation.internal.isWriteSupported
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.ContextMenuArea
 import androidx.compose.foundation.text.detectDownAndDragGesturesWithObserver
+import androidx.compose.foundation.text.rememberClipboardEventsHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -118,6 +119,11 @@ internal fun SelectionContainer(
             rememberPlatformSelectionBehaviors(SelectedTextType.StaticText, null)
         manager.coroutineScope = coroutineScope
     }
+
+    rememberClipboardEventsHandler(
+        onCopy = { manager.getSelectedText() },
+        isEnabled = manager.isNonEmptySelection(),
+    )
 
     /*
      * Need a layout for selection gestures that span multiple text children.

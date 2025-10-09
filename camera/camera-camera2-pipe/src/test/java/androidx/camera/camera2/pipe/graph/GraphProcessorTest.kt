@@ -22,10 +22,17 @@ import android.hardware.camera2.CaptureRequest.CONTROL_AE_LOCK
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraGraphId
+import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraPipe
+import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.GraphState.GraphStateError
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
+import androidx.camera.camera2.pipe.GraphStateListener
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.compat.Camera2Quirks
+import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.isCapture
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.isClose
@@ -60,6 +67,7 @@ internal class GraphProcessorTest {
     private val graphListener3A = Listener3A()
     private val streamId = StreamId(0)
     private val surfaceMap = mapOf(streamId to Surface(SurfaceTexture(1)))
+    private val fakeGraphStateListener = FakeGraphStateListener()
 
     private val csp1 = FakeCaptureSequenceProcessor().also { it.surfaceMap = surfaceMap }
     private val csp2 = FakeCaptureSequenceProcessor().also { it.surfaceMap = surfaceMap }
@@ -77,9 +85,16 @@ internal class GraphProcessorTest {
         GraphProcessorImpl(
             fakeThreads,
             CameraGraphId.nextId(),
-            FakeGraphConfigs.graphConfig,
+            FakeGraphConfigs.graphConfig.copy(graphStateListeners = listOf(fakeGraphStateListener)),
             graphListener3A,
             arrayListOf(globalListener),
+            Camera2Quirks(
+                metadataProvider =
+                    FakeCamera2MetadataProvider(
+                        mapOf(CameraId("0") to FakeCameraMetadata(cameraId = CameraId("0")))
+                    ),
+                cameraPipeFlags = CameraPipe.Flags(),
+            ),
         )
 
     @After
@@ -439,4 +454,68 @@ internal class GraphProcessorTest {
             )
             assertThat(graphProcessor.graphState.value).isEqualTo(GraphStateStopped)
         }
+
+    @Test
+    fun graphProcessorChangesGraphStateListenerOnError() =
+        testScope.runTest {
+            assertThat(fakeGraphStateListener.states).isEmpty()
+
+            graphProcessor.onGraphStarted(grp1)
+            assertThat(fakeGraphStateListener.states.last()).isEqualTo(GraphState.GraphStateStarted)
+
+            val testError =
+                GraphStateError(CameraError.ERROR_CAMERA_DEVICE, willAttemptRetry = true)
+            graphProcessor.onGraphError(testError)
+
+            val lastState = fakeGraphStateListener.states.last()
+            assertThat(lastState).isInstanceOf(GraphStateError::class.java)
+            assertThat((lastState as GraphStateError).cameraError).isEqualTo(testError.cameraError)
+        }
+
+    @Test
+    fun graphProcessorForwardsAllEvents() =
+        testScope.runTest {
+            // Initially, no states have been dispatched to the listener.
+            assertThat(fakeGraphStateListener.states).isEmpty()
+
+            // When an error is received, it should be forwarded immediately.
+            val error1 = GraphStateError(CameraError.ERROR_CAMERA_DEVICE, willAttemptRetry = true)
+            graphProcessor.onGraphError(error1)
+            assertThat(fakeGraphStateListener.states).containsExactly(error1)
+
+            // After stopping, if another error is received, it should also be forwarded, as the
+            // GraphProcessor is now stateless and just dispatches events.
+            graphProcessor.onGraphStopping()
+            graphProcessor.onGraphStopped(null)
+            val error2 = GraphStateError(CameraError.ERROR_CAMERA_SERVICE, willAttemptRetry = false)
+            graphProcessor.onGraphError(error2)
+
+            assertThat(fakeGraphStateListener.states)
+                .containsExactly(error1, GraphState.GraphStateStopping, GraphStateStopped, error2)
+                .inOrder()
+        }
+
+    private class FakeGraphStateListener : GraphStateListener {
+        val states = mutableListOf<GraphState>()
+
+        override fun onGraphStarting() {
+            states.add(GraphState.GraphStateStarting)
+        }
+
+        override fun onGraphStarted() {
+            states.add(GraphState.GraphStateStarted)
+        }
+
+        override fun onGraphStopping() {
+            states.add(GraphState.GraphStateStopping)
+        }
+
+        override fun onGraphStopped() {
+            states.add(GraphStateStopped)
+        }
+
+        override fun onGraphError(graphStateError: GraphStateError) {
+            states.add(graphStateError)
+        }
+    }
 }

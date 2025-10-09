@@ -42,11 +42,12 @@ dependencies {
     lintChecks(project(":wear:protolayout:protolayout-lint"))
 
     testImplementation(libs.kotlinTest)
-    // Newer version require higher compile SDK
-    testImplementation("androidx.core:core:1.12.0")
     testImplementation(libs.testExtJunit)
-    testImplementation(libs.testExtTruth)
     testImplementation(libs.testRunner)
+    testImplementation(libs.guavaAndroid)
+    testImplementation(libs.junit)
+    testImplementation(libs.testCore)
+    testImplementation(libs.truth)
 }
 
 android {

@@ -548,7 +548,7 @@ package androidx.wear.tiles {
     method @Deprecated public int getValue();
   }
 
-  @Deprecated public static final class LayoutElementBuilders.FontVariantProp.Builder {
+  @Deprecated @SuppressCompatibility @androidx.wear.tiles.TilesExperimental public static final class LayoutElementBuilders.FontVariantProp.Builder {
     ctor @Deprecated public LayoutElementBuilders.FontVariantProp.Builder();
     method @Deprecated public androidx.wear.tiles.LayoutElementBuilders.FontVariantProp build();
     method @Deprecated public androidx.wear.tiles.LayoutElementBuilders.FontVariantProp.Builder setValue(int);

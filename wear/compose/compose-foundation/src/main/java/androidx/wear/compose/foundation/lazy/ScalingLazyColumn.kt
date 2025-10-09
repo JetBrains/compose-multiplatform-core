@@ -619,20 +619,7 @@ public fun ScalingLazyColumn(
 ) {
     var initialized by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
-    BoxWithConstraints(
-        modifier =
-            if (rotaryScrollableBehavior != null && userScrollEnabled)
-                modifier
-                    .requestFocusOnHierarchyActive()
-                    .rotaryScrollable(
-                        behavior = rotaryScrollableBehavior,
-                        focusRequester = focusRequester,
-                        reverseDirection = reverseLayout,
-                        overscrollEffect = overscrollEffect,
-                    )
-            else modifier,
-        propagateMinConstraints = true,
-    ) {
+    BoxWithConstraints(modifier = modifier, propagateMinConstraints = true) {
         val density = LocalDensity.current
         val layoutDirection = LocalLayoutDirection.current
         val reduceMotion = LocalReduceMotion.current
@@ -699,7 +686,18 @@ public fun ScalingLazyColumn(
                             ) {
                                 initialized = true
                             }
-                        },
+                        }
+                        .then(
+                            if (rotaryScrollableBehavior != null && userScrollEnabled)
+                                Modifier.requestFocusOnHierarchyActive()
+                                    .rotaryScrollable(
+                                        behavior = rotaryScrollableBehavior,
+                                        focusRequester = focusRequester,
+                                        reverseDirection = reverseLayout,
+                                        overscrollEffect = overscrollEffect,
+                                    )
+                            else Modifier
+                        ),
                 horizontalAlignment = horizontalAlignment,
                 overscrollEffect = overscrollEffect,
                 contentPadding = combinedPaddingValues,

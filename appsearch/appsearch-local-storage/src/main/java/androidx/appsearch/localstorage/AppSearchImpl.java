@@ -112,6 +112,7 @@ import com.google.android.icing.proto.GetResultSpecProto;
 import com.google.android.icing.proto.GetSchemaResultProto;
 import com.google.android.icing.proto.IcingSearchEngineOptions;
 import com.google.android.icing.proto.InitializeResultProto;
+import com.google.android.icing.proto.InitializeStatsProto;
 import com.google.android.icing.proto.LogSeverity;
 import com.google.android.icing.proto.NamespaceBlobStorageInfoProto;
 import com.google.android.icing.proto.NamespaceStorageInfoProto;
@@ -310,7 +311,6 @@ public final class AppSearchImpl implements Closeable {
     @GuardedBy("mReadWriteLock")
     private int mLastReadOrWriteOperationLatencyMillisLocked;
 
-    @ExperimentalAppSearchApi
     private final @Nullable RevocableFileDescriptorStore mRevocableFileDescriptorStore;
 
     /** Whether this instance has been closed, and therefore unusable. */
@@ -473,6 +473,9 @@ public final class AppSearchImpl implements Closeable {
                     }
                 }
                 checkSuccess(initializeResultProto.getStatus());
+                if (hasDatabaseStateChangedAfterInit(initializeResultProto)) {
+                    mNeedsPersistToDisk.set(true);
+                }
 
                 if (Flags.enableAppSearchManageBlobFiles() && !mBlobFilesDir.exists()
                         && !mBlobFilesDir.mkdirs()) {
@@ -604,7 +607,8 @@ public final class AppSearchImpl implements Closeable {
                 LogUtil.piiTrace(TAG, "Init completed successfully");
             } catch (AppSearchException e) {
                 // Some error. Reset and see if it fixes it.
-                Log.e(TAG, "Error initializing, attempting to reset IcingSearchEngine.", e);
+                LogUtil.criticalError(
+                        TAG, "Error initializing, attempting to reset IcingSearchEngine.", e);
                 if (initStatsBuilder != null) {
                     initStatsBuilder.setStatusCode(e.getResultCode());
                 }
@@ -2159,7 +2163,6 @@ public final class AppSearchImpl implements Closeable {
      * @param databaseName   The databaseName this blob resides in.
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public @NonNull ParcelFileDescriptor openWriteBlob(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -2225,7 +2228,6 @@ public final class AppSearchImpl implements Closeable {
      * @param databaseName   The databaseName this blob resides in.
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public void removeBlob(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -2291,7 +2293,6 @@ public final class AppSearchImpl implements Closeable {
      * @throws IOException        if there is an error opening or reading the blob file.
      */
     @GuardedBy("mReadWriteLock")
-    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private void verifyBlobIntegrityLocked(@NonNull AppSearchBlobHandle handle)
             throws AppSearchException, IOException {
         // Since the blob has not yet been committed, we open the blob for *write* again to
@@ -2358,7 +2359,6 @@ public final class AppSearchImpl implements Closeable {
      * @param databaseName   The databaseName this blob resides in.
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public void commitBlob(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -2417,7 +2417,6 @@ public final class AppSearchImpl implements Closeable {
      * @param databaseName   The databaseName this blob resides in.
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public @NonNull ParcelFileDescriptor openReadBlob(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -2472,7 +2471,6 @@ public final class AppSearchImpl implements Closeable {
      *
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public @NonNull ParcelFileDescriptor globalOpenReadBlob(@NonNull AppSearchBlobHandle handle,
             @NonNull CallerAccess access,
             CallStats.@Nullable Builder callStatsBuilder)
@@ -2553,7 +2551,6 @@ public final class AppSearchImpl implements Closeable {
      *                            This could happen if the database is closed or in an invalid
      *                            state.
      */
-    @ExperimentalAppSearchApi
     public void setBlobNamespaceVisibility(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -5298,7 +5295,6 @@ public final class AppSearchImpl implements Closeable {
         return ResultCodeToProtoConverter.toResultCode(statusProto.getCode());
     }
 
-    @ExperimentalAppSearchApi
     private static void verifyCallingBlobHandle(@NonNull String callingPackageName,
             @NonNull String callingDatabaseName, @NonNull AppSearchBlobHandle blobHandle)
             throws AppSearchException {
@@ -5314,6 +5310,32 @@ public final class AppSearchImpl implements Closeable {
                             + callingDatabaseName + ", blob database: "
                             + blobHandle.getDatabaseName());
         }
+    }
+
+    /**
+     * Returns whether the database is in a stable state after initialization. If not, then we may
+     * need flushing.
+     */
+    private boolean hasDatabaseStateChangedAfterInit(
+            @NonNull InitializeResultProto initializeResultProto) {
+        // TODO(b/417463182): add boolean field(s) into InitializeResultProto indicating whether
+        //   ground truths and derived files have changed or not, and we can have a simpler way here
+        //   to decide if persistToDisk is needed or not.
+        InitializeStatsProto initializeStatsProto = initializeResultProto.getInitializeStats();
+        return initializeStatsProto.getDocumentStoreDataStatus()
+                        != InitializeStatsProto.DocumentStoreDataStatus.NO_DATA_LOSS
+                || initializeStatsProto.getSchemaStoreRecoveryCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getDocumentStoreRecoveryCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getIndexRestorationCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getIntegerIndexRestorationCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getQualifiedIdJoinIndexRestorationCause()
+                        != InitializeStatsProto.RecoveryCause.NONE
+                || initializeStatsProto.getEmbeddingIndexRestorationCause()
+                        != InitializeStatsProto.RecoveryCause.NONE;
     }
 
     /** Calls getSchema in a thread safe manner. */
@@ -5343,6 +5365,20 @@ public final class AppSearchImpl implements Closeable {
         mReadWriteLock.readLock().lock();
         try {
             return mIcingSearchEngineLocked.getNextPage(nextPageToken);
+        } finally {
+            mReadWriteLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Calls getAllBlobInfos in a thread safe manner.
+     *
+     * <p>Currently this is only used and tested in PlatformStorage.
+     */
+    public @NonNull BlobProto rawGetAllBlobInfos() {
+        mReadWriteLock.readLock().lock();
+        try {
+            return mIcingSearchEngineLocked.getAllBlobInfos();
         } finally {
             mReadWriteLock.readLock().unlock();
         }
@@ -5383,7 +5419,7 @@ public final class AppSearchImpl implements Closeable {
         if (callStatsBuilder != null) {
             // This is a read operation, only write operation could be a blocker.
             callStatsBuilder.setJavaLockAcquisitionLatencyMillis(
-                            (int) (totalLatencyStartMillis - javaLockAcquisitionEndTimeMillis))
+                            (int) (javaLockAcquisitionEndTimeMillis - totalLatencyStartMillis))
                     .setUnblockedAppSearchLatencyMillis(executeTime);
         }
         mLastReadOrWriteOperationLocked = callType;

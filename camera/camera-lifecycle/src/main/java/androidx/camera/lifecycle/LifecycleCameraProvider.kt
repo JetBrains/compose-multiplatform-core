@@ -15,7 +15,6 @@
  */
 package androidx.camera.lifecycle
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.camera.core.Camera
@@ -70,9 +69,7 @@ public interface LifecycleCameraProvider : CameraProvider {
      * reaches a [Lifecycle.State.DESTROYED] state or if is unbound by calls to [unbind] or
      * [unbindAll].
      */
-    @SuppressLint("NullAnnotationGroup")
-    @ExperimentalSessionConfig
-    public fun isBound(sessionConfig: SessionConfig): Boolean
+    @ExperimentalSessionConfig public fun isBound(sessionConfig: SessionConfig): Boolean
 
     /**
      * Unbinds all specified use cases from the lifecycle provider.
@@ -105,9 +102,7 @@ public interface LifecycleCameraProvider : CameraProvider {
      * @throws IllegalStateException If not called on main thread.
      * @throws UnsupportedOperationException If called in concurrent mode.
      */
-    @SuppressLint("NullAnnotationGroup")
-    @ExperimentalSessionConfig
-    public fun unbind(sessionConfig: SessionConfig): Unit
+    @ExperimentalSessionConfig public fun unbind(sessionConfig: SessionConfig): Unit
 
     /**
      * Unbinds all use cases from the lifecycle provider and removes them from CameraX.
@@ -244,7 +239,6 @@ public interface LifecycleCameraProvider : CameraProvider {
      *
      * @sample androidx.camera.lifecycle.samples.bindSessionConfigToLifecycle
      */
-    @SuppressLint("NullAnnotationGroup")
     @ExperimentalSessionConfig
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,

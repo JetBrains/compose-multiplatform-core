@@ -98,7 +98,7 @@ androidXMultiplatform {
             dependsOn(commonJvmTest)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonJvmTest)
             dependencies {
                 implementation(libs.testRunner)
@@ -107,6 +107,13 @@ androidXMultiplatform {
 
         webTest {
             dependsOn(commonTest)
+        }
+
+        wasmJsTest {
+            dependsOn(webTest)
+            dependencies {
+                implementation(libs.kotlinXw3c)
+            }
         }
 
         targets.configureEach { target ->

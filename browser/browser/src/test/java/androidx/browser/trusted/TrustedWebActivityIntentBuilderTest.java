@@ -88,7 +88,7 @@ public class TrustedWebActivityIntentBuilderTest {
         CustomTabsSession session = TestUtil.makeMockSession();
 
         List<TrustedWebActivityDisplayMode> displayOverride =
-                Arrays.asList(new TrustedWebActivityDisplayMode.WindowControlsOverlay());
+                Arrays.asList(new TrustedWebActivityDisplayMode.WindowControlsOverlayMode());
 
         ImmersiveMode displayMode = new ImmersiveMode(true,
                 LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES);
@@ -167,6 +167,6 @@ public class TrustedWebActivityIntentBuilderTest {
         assertEquals(displayOverride.size(), displayOverrideBundlesFromIntent.size());
         assertEquals(TrustedWebActivityDisplayMode.fromBundle(
                         displayOverrideBundlesFromIntent.get(0)).getClass(),
-                TrustedWebActivityDisplayMode.WindowControlsOverlay.class);
+                TrustedWebActivityDisplayMode.WindowControlsOverlayMode.class);
     }
 }

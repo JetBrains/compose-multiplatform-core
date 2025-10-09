@@ -804,13 +804,17 @@ private fun Project.configureNode() {
     plugins.withType<WasmNodeJsPlugin>().configureEach {
         the<WasmNodeJsEnvSpec>().let {
             it.version.set(getVersionByName("node"))
-            it.downloadBaseUrl.set(nodeJsPrebuilt)
+            if (!ProjectLayoutType.isPlayground(this)) {
+                it.downloadBaseUrl.set(nodeJsPrebuilt)
+            }
         }
     }
     plugins.withType<NodeJsPlugin>().configureEach {
         the<NodeJsEnvSpec>().let {
             it.version.set(getVersionByName("node"))
-            it.downloadBaseUrl.set(nodeJsPrebuilt)
+            if (!ProjectLayoutType.isPlayground(this)) {
+                it.downloadBaseUrl.set(nodeJsPrebuilt)
+            }
         }
     }
 
@@ -888,7 +892,6 @@ private fun Project.configureKotlinJsTests() {
                 )
             }
         }
-        task.testLogging.showStandardStreams = true
         // From: https://nodejs.org/api/cli.html
         task.nodeJsArgs.addAll(listOf("--trace-warnings", "--trace-uncaught", "--trace-sigint"))
     }

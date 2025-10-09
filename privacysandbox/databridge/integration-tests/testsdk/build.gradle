@@ -15,6 +15,7 @@
  */
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.google.devtools.ksp.gradle.KspAATask
 
 plugins {
     id("AndroidXPlugin")
@@ -55,4 +56,7 @@ dependencies {
 // TODO(b/430983364): Fix when incremental doesn't break compileReleaseKotlin
 tasks.withType(KotlinCompile).configureEach {
     incremental = false
+}
+tasks.withType(KspAATask).configureEach {
+    it.kspConfig.incremental.set(false)
 }

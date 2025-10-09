@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // TODO(b/444197377): add a jvmname
+
 package androidx.health.connect.client.testing.stubs
 
 /**

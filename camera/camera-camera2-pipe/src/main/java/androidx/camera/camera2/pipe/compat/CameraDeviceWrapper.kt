@@ -108,7 +108,15 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
 internal fun CameraDevice?.closeWithTrace() {
     this?.let {
         Log.info { "Closing Camera ${it.id}" }
-        Debug.instrument("CXCP#CameraDevice-${it.id}#close") { it.close() }
+        Debug.instrument("CXCP#CameraDevice-${it.id}#close") {
+            try {
+                it.close()
+            } catch (e: NullPointerException) {
+                // Certain vendors add buggy modifications to CameraDevice.close() such that it can
+                // throw NPEs during the call. See b/443330486.
+                Log.warn(e) { "NPE encountered during CameraDevice.close()" }
+            }
+        }
     }
 }
 

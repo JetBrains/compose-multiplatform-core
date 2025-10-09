@@ -44,14 +44,12 @@ internal constructor(
      *   [TraceContext].
      */
     public open fun getOrCreateProcessTrack(id: Int, name: String): ProcessTrack {
-        val track = processes[id]
-        return track
-            ?: synchronized(processTrackLock) {
-                val track =
-                    processes.getOrPut(id) { ProcessTrack(context = this, id = id, name = name) }
-                check(track.name == name)
-                track
-            }
+        return synchronized(processTrackLock) {
+            val track =
+                processes.getOrPut(id) { ProcessTrack(context = this, id = id, name = name) }
+            check(track.name == name)
+            track
+        }
     }
 
     /** Flushes the trace packets into the underlying [TraceSink]. */

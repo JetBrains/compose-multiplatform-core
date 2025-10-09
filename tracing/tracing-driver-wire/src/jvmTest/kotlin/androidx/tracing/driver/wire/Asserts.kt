@@ -16,31 +16,36 @@
 
 package androidx.tracing.driver.wire
 
-import kotlin.test.assertNotNull
 import perfetto.protos.MutableTracePacket
 import perfetto.protos.MutableTrackEvent
 
-internal fun List<MutableTracePacket>.trackEventPacket(
-    name: String?,
-    type: MutableTrackEvent.Type? = null,
-): MutableTracePacket? {
-    return find { packet ->
-        var result = packet.track_event?.name == name
-        if (type != null) {
-            val sameType = type == packet.track_event?.type
-            result = result and sameType
+internal fun TestSink.firstStartStopWithName(
+    name: String
+): Pair<MutableTracePacket, MutableTracePacket> {
+    val start = packets.find { packet -> packet.track_event?.name == name }
+    check(start != null) { "Cannot find a trace packet with name $name " }
+    var end: MutableTracePacket? = null
+    var starts = 0
+    for (packet in packets) {
+        if (packet.track_event?.track_uuid != start.track_event?.track_uuid) continue
+        if (packet.timestamp <= start.timestamp) continue
+        if (packet.track_event?.type == MutableTrackEvent.Type.TYPE_SLICE_BEGIN) {
+            starts += 1
+        } else if (packet.track_event?.type == MutableTrackEvent.Type.TYPE_SLICE_END) {
+            starts -= 1
+            if (starts <= 0) {
+                end = packet
+            }
         }
-        result
     }
+    check(end != null) { "Cannot find an end marker for a trace packet with $name" }
+    return start to end
 }
 
-internal fun List<MutableTracePacket>.assertTraceSection(name: String) {
-    val begin = trackEventPacket(name = name, type = MutableTrackEvent.Type.TYPE_SLICE_BEGIN)
-    val end = trackEventPacket(name = null, type = MutableTrackEvent.Type.TYPE_SLICE_END)
-    assertNotNull(begin) {
-        "Cannot find a track event of type ${MutableTrackEvent.Type.TYPE_SLICE_BEGIN} for $name"
-    }
-    assertNotNull(end) {
-        "Cannot find a track event of type ${MutableTrackEvent.Type.TYPE_SLICE_END} for $name"
-    }
+internal fun TestSink.firstStartStopWithName(
+    name: String,
+    block: (start: MutableTracePacket, end: MutableTracePacket) -> Unit,
+) {
+    val (start, end) = firstStartStopWithName(name)
+    block(start, end)
 }

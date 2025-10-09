@@ -6,6 +6,7 @@ package androidx.tracing.driver.wire {
     method public void close();
     method public void enqueue(androidx.tracing.driver.PooledTracePacketArray pooledPacketArray);
     method public void flush();
+    method public void onDroppedTraceEvent();
   }
 
   public final class TraceSink_androidKt {

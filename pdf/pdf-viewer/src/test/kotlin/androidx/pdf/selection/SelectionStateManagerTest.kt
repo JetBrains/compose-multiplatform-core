@@ -78,6 +78,7 @@ class SelectionStateManagerTest {
                 handleTouchTargetSizePx = HANDLE_TOUCH_TARGET_PX,
                 errorFlow,
                 pageMetadataLoader = null,
+                pageManager = null,
             )
     }
 
@@ -90,7 +91,7 @@ class SelectionStateManagerTest {
             selectionStateManager.selectionUiSignalBus.toList(uiSignals)
         }
 
-        selectionStateManager.maybeSelectWordAtPoint(selectionPoint)
+        selectionStateManager.maybeSelectContentAtPoint(selectionPoint)
         testDispatcher.scheduler.runCurrent()
 
         val selectionModel = selectionStateManager.selectionModel.value
@@ -139,8 +140,8 @@ class SelectionStateManagerTest {
         val selectionPoint = PdfPoint(pageNum = 10, PointF(150F, 265F))
         val selectionPoint2 = PdfPoint(pageNum = 10, PointF(250F, 193F))
 
-        selectionStateManager.maybeSelectWordAtPoint(selectionPoint)
-        selectionStateManager.maybeSelectWordAtPoint(selectionPoint2)
+        selectionStateManager.maybeSelectContentAtPoint(selectionPoint)
+        selectionStateManager.maybeSelectContentAtPoint(selectionPoint2)
         testDispatcher.scheduler.runCurrent()
 
         val selectionModel = selectionStateManager.selectionModel.value
@@ -179,7 +180,7 @@ class SelectionStateManagerTest {
             selectionStateManager.selectionUiSignalBus.toList(uiSignals)
         }
 
-        selectionStateManager.maybeSelectWordAtPoint(selectionPoint)
+        selectionStateManager.maybeSelectContentAtPoint(selectionPoint)
         testDispatcher.scheduler.runCurrent()
         assertThat(selectionStateManager.selectionModel).isNotNull()
         selectionStateManager.clearSelection()
@@ -200,7 +201,7 @@ class SelectionStateManagerTest {
         val selectionPoint = PdfPoint(pageNum = 10, PointF(150F, 265F))
 
         // Start a selection and don't finish it (i.e. no runCurrent)
-        selectionStateManager.maybeSelectWordAtPoint(selectionPoint)
+        selectionStateManager.maybeSelectContentAtPoint(selectionPoint)
         assertThat(selectionStateManager.selectionModel.value).isNull()
 
         // Clear selection, flush the scheduler, and make sure selection remains null (i.e. the work

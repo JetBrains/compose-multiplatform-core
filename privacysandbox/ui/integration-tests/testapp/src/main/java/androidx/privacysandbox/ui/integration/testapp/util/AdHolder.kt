@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.integration.testapp.util
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
@@ -31,7 +30,6 @@ import androidx.privacysandbox.ui.client.view.SharedUiContainer
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(
     ExperimentalFeatures.SharedUiPresentationApi::class,
     ExperimentalFeatures.ChangingContentUiZOrderApi::class,

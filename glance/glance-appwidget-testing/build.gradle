@@ -48,7 +48,6 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdk = 23
         compileSdk = 35
     }
     namespace = "androidx.glance.appwidget.testing"

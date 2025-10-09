@@ -11,3 +11,79 @@ RemovedFromJava: androidx.graphics.opengl.egl.EGLConfigAttributes.Builder#to(int
     Source breaking change: method androidx.graphics.opengl.egl.EGLConfigAttributes.Builder.to(int,int) can no longer be resolved from Java source
 RemovedFromJava: androidx.graphics.opengl.egl.EGLConfigAttributesKt#EGLConfigAttributes(kotlin.jvm.functions.Function1<? super androidx.graphics.opengl.egl.EGLConfigAttributes.Builder,kotlin.Unit>):
     Source breaking change: method androidx.graphics.opengl.egl.EGLConfigAttributesKt.EGLConfigAttributes(kotlin.jvm.functions.Function1<androidx.graphics.opengl.egl.EGLConfigAttributes.Builder,kotlin.Unit>) can no longer be resolved from Java source
+
+
+RemovedFromKotlin: androidx.graphics.CanvasBufferedRenderer#getBufferFormat():
+    Source breaking change: method androidx.graphics.CanvasBufferedRenderer.getBufferFormat() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.CanvasBufferedRenderer#getMaxBuffers():
+    Source breaking change: method androidx.graphics.CanvasBufferedRenderer.getMaxBuffers() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.CanvasBufferedRenderer#getUsageFlags():
+    Source breaking change: method androidx.graphics.CanvasBufferedRenderer.getUsageFlags() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.CanvasBufferedRenderer#isClosed():
+    Source breaking change: method androidx.graphics.CanvasBufferedRenderer.isClosed() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.CanvasBufferedRenderer.RenderResult#getFence():
+    Source breaking change: method androidx.graphics.CanvasBufferedRenderer.RenderResult.getFence() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.CanvasBufferedRenderer.RenderResult#getHardwareBuffer():
+    Source breaking change: method androidx.graphics.CanvasBufferedRenderer.RenderResult.getHardwareBuffer() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.CanvasBufferedRenderer.RenderResult#getStatus():
+    Source breaking change: method androidx.graphics.CanvasBufferedRenderer.RenderResult.getStatus() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.BufferInfo#getFrameBufferId():
+    Source breaking change: method androidx.graphics.lowlatency.BufferInfo.getFrameBufferId() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.BufferInfo#getHeight():
+    Source breaking change: method androidx.graphics.lowlatency.BufferInfo.getHeight() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.BufferInfo#getWidth():
+    Source breaking change: method androidx.graphics.lowlatency.BufferInfo.getWidth() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.CanvasFrontBufferedRenderer#getBufferFormat():
+    Source breaking change: method androidx.graphics.lowlatency.CanvasFrontBufferedRenderer.getBufferFormat() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.CanvasFrontBufferedRenderer#getColorSpace():
+    Source breaking change: method androidx.graphics.lowlatency.CanvasFrontBufferedRenderer.getColorSpace() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.CanvasFrontBufferedRenderer#setColorSpace(android.graphics.ColorSpace):
+    Source breaking change: method androidx.graphics.lowlatency.CanvasFrontBufferedRenderer.setColorSpace(android.graphics.ColorSpace) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.FrontBufferSyncStrategy#isVisible():
+    Source breaking change: method androidx.graphics.lowlatency.FrontBufferSyncStrategy.isVisible() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.FrontBufferSyncStrategy#setVisible(boolean):
+    Source breaking change: method androidx.graphics.lowlatency.FrontBufferSyncStrategy.setVisible(boolean) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.lowlatency.GLFrontBufferedRenderer#getBufferFormat():
+    Source breaking change: method androidx.graphics.lowlatency.GLFrontBufferedRenderer.getBufferFormat() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.FrameBuffer#getHardwareBuffer():
+    Source breaking change: method androidx.graphics.opengl.FrameBuffer.getHardwareBuffer() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.FrameBuffer#isClosed():
+    Source breaking change: method androidx.graphics.opengl.FrameBuffer.isClosed() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.GLFrameBufferRenderer#getBufferFormat():
+    Source breaking change: method androidx.graphics.opengl.GLFrameBufferRenderer.getBufferFormat() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.GLFrameBufferRenderer#getGLRenderer():
+    Source breaking change: method androidx.graphics.opengl.GLFrameBufferRenderer.getGLRenderer() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.GLFrameBufferRenderer#getMaxBuffers():
+    Source breaking change: method androidx.graphics.opengl.GLFrameBufferRenderer.getMaxBuffers() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.GLFrameBufferRenderer#getSyncStrategy():
+    Source breaking change: method androidx.graphics.opengl.GLFrameBufferRenderer.getSyncStrategy() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.GLFrameBufferRenderer#getUsageFlags():
+    Source breaking change: method androidx.graphics.opengl.GLFrameBufferRenderer.getUsageFlags() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLException#getError():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLException.getError() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLException#getMsg():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLException.getMsg() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLManager#getCurrentDrawSurface():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLManager.getCurrentDrawSurface() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLManager#getCurrentReadSurface():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLManager.getCurrentReadSurface() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLManager#getDefaultSurface():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLManager.getDefaultSurface() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLManager#getEGLConfig():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLManager.getEGLConfig() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLManager#getEGLContext():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLManager.getEGLContext() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLManager#getEGLSpec():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLManager.getEGLSpec() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLManager#getEGLVersion():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLManager.getEGLVersion() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLVersion#getMajor():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLVersion.getMajor() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.graphics.opengl.egl.EGLVersion#getMinor():
+    Source breaking change: method androidx.graphics.opengl.egl.EGLVersion.getMinor() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.opengl.EGLHandle#getNativeHandle():
+    Source breaking change: method androidx.opengl.EGLHandle.getNativeHandle() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.opengl.EGLImageKHR#getNativeHandle():
+    Source breaking change: method androidx.opengl.EGLImageKHR.getNativeHandle() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.opengl.EGLSyncKHR#getNativeHandle():
+    Source breaking change: method androidx.opengl.EGLSyncKHR.getNativeHandle() can no longer be resolved from Kotlin source

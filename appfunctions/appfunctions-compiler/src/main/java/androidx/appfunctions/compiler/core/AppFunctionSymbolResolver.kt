@@ -27,6 +27,7 @@ import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.Modifier
 
 /** The helper class to resolve AppFunction related symbols. */
 class AppFunctionSymbolResolver(private val resolver: Resolver) {
@@ -77,9 +78,9 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
     /**
      * Resolves all classes annotated with @AppFunctionSerializable
      *
-     * @return a list of AnnotatedAppFunctionSerializable
+     * @return a list of [AppFunctionSerializableType]
      */
-    fun resolveAnnotatedAppFunctionSerializables(): List<AnnotatedAppFunctionSerializable> {
+    fun resolveAnnotatedAppFunctionSerializables(): List<AppFunctionSerializableType> {
         return resolver
             .getSymbolsWithAnnotation(AppFunctionSerializableAnnotation.CLASS_NAME.canonicalName)
             .map { declaration ->
@@ -89,7 +90,11 @@ class AppFunctionSymbolResolver(private val resolver: Resolver) {
                         declaration,
                     )
                 }
-                AnnotatedAppFunctionSerializable(declaration).validate()
+                if (declaration.modifiers.contains(Modifier.SEALED)) {
+                    AnnotatedOneOfAppFunctionSerializable(declaration).validate()
+                } else {
+                    AnnotatedAppFunctionSerializable(declaration).validate()
+                }
             }
             .toList()
     }

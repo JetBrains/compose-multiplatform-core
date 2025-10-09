@@ -15,7 +15,7 @@
  */
 
 /**
- * The androidx.webkit library is a static library you can add to your Android application
+ * The Jetpack Webkit library is a static library you can add to your Android application
  * in order to use android.webkit APIs that are not available for older platform versions.
  *
  * <p><b>How to use this library in your app</b>
@@ -34,7 +34,7 @@
  *
  * <p>Please check out the WebView samples <a
  * href="https://github.com/android/views-widgets-samples/tree/main/WebView">on GitHub</a> for a
- * showcase of a handful of androidx.webkit APIs.
+ * showcase of a handful of Jetpack Webkit APIs.
  *
  * <p>For more APIs, check out the sample app in the <a
  * href="https://android.googlesource.com/platform/frameworks/support/+/androidx-main/webkit/integration-tests/testapp/README.md">AndroidX
@@ -42,10 +42,10 @@
  *
  * <p><b>Public bug tracker</b>
  *
- * <p>If you find bugs in the androidx.webkit library or want to request new features, please
+ * <p>If you find bugs in the Jetpack Webkit library or want to request new features, please
  * <a href="https://issuetracker.google.com/issues/new?component=460423">file a ticket</a>.
  *
- * <p><b>Migrating to androidx.webkit</b>
+ * <p><b>Migrating to Jetpack Webkit</b>
  *
  * <p>For static methods:
  *

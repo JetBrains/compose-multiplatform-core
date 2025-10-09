@@ -122,7 +122,6 @@ class CameraHelper(private val cameraImplementation: CameraImplementation) {
 
         private val FPS_30 = Range(30, 30)
 
-        @SuppressLint("NullAnnotationGroup")
         @OptIn(ExperimentalCamera2Interop::class)
         @kotlin.OptIn(
             androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop::class
@@ -146,7 +145,6 @@ class CameraHelper(private val cameraImplementation: CameraImplementation) {
             return this
         }
 
-        @SuppressLint("NullAnnotationGroup")
         @OptIn(ExperimentalCamera2Interop::class)
         @kotlin.OptIn(
             androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop::class

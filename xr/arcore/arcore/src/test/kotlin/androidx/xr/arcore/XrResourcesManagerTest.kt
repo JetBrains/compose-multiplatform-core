@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,20 @@ package androidx.xr.arcore
 import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakeRuntimeAnchor
+import androidx.xr.arcore.testing.FakeRuntimeArDevice
+import androidx.xr.arcore.testing.FakeRuntimeAugmentedObject
+import androidx.xr.arcore.testing.FakeRuntimeDepthMap
+import androidx.xr.arcore.testing.FakeRuntimeEarth
+import androidx.xr.arcore.testing.FakeRuntimeFace
+import androidx.xr.arcore.testing.FakeRuntimeHand
+import androidx.xr.arcore.testing.FakeRuntimePlane
+import androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.internal.Earth as RuntimeEarth
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.testing.FakePerceptionManager
-import androidx.xr.runtime.testing.FakeRuntimeAnchor
-import androidx.xr.runtime.testing.FakeRuntimeArDevice
-import androidx.xr.runtime.testing.FakeRuntimeAugmentedObject
-import androidx.xr.runtime.testing.FakeRuntimeDepthMap
-import androidx.xr.runtime.testing.FakeRuntimeEarth
-import androidx.xr.runtime.testing.FakeRuntimeFace
-import androidx.xr.runtime.testing.FakeRuntimeHand
-import androidx.xr.runtime.testing.FakeRuntimePlane
-import androidx.xr.runtime.testing.FakeRuntimeRenderViewpoint
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
@@ -115,7 +115,7 @@ class XrResourcesManagerTest {
 
     @Test
     fun addUpdatable_addsUpdatable() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val anchor = Anchor(fakePerceptionManager.createAnchor(Pose()), underTest)
         check(underTest.updatables.isEmpty())
 
@@ -126,7 +126,7 @@ class XrResourcesManagerTest {
 
     @Test
     fun removeUpdatable_removesUpdatable() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val anchor = Anchor(fakePerceptionManager.createAnchor(Pose()), underTest)
         underTest.addUpdatable(anchor)
         check(underTest.updatables.contains(anchor))
@@ -139,7 +139,7 @@ class XrResourcesManagerTest {
 
     @Test
     fun clear_clearAllUpdatables() = createTestSessionAndRunTest {
-        val fakePerceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+        val fakePerceptionManager = getFakePerceptionManager()
         val runtimeAnchor = fakePerceptionManager.createAnchor(Pose())
         val runtimeAnchor2 = fakePerceptionManager.createAnchor(Pose())
         val anchor = Anchor(runtimeAnchor, underTest)
@@ -223,16 +223,17 @@ class XrResourcesManagerTest {
     @Test
     fun update_updatesDepthMaps() = doBlocking {
         val runtimeDepthMap = FakeRuntimeDepthMap()
-        underTest.initiateDepthMaps(listOf(runtimeDepthMap))
+        underTest.initiateDepthMaps(runtimeDepthMap, null, null)
         underTest.update()
-        check(underTest.depthMaps.size == 1)
-        check(underTest.depthMaps[0].state.value.width == 0)
+        check(underTest.leftDepthMap != null)
+        check(underTest.leftDepthMap!!.state.value.width == 0)
         val expectedWidth: Int = 100
         runtimeDepthMap.width = expectedWidth
 
         underTest.update()
+        underTest.leftDepthMap!!.update()
 
-        assertThat(underTest.depthMaps[0].state.value.width).isEqualTo(expectedWidth)
+        assertThat(underTest.leftDepthMap!!.state.value.width).isEqualTo(expectedWidth)
     }
 
     private fun createTestSessionAndRunTest(testBody: () -> Unit) {
@@ -241,10 +242,14 @@ class XrResourcesManagerTest {
                 session =
                     (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)
                         .session
-                underTest.lifecycleManager = session.runtime.lifecycleManager
+                underTest.lifecycleManager = session.perceptionRuntime.lifecycleManager
 
                 testBody()
             }
         }
+    }
+
+    private fun getFakePerceptionManager(): FakePerceptionManager {
+        return session.perceptionRuntime.perceptionManager as FakePerceptionManager
     }
 }

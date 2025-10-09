@@ -26,6 +26,11 @@ import android.os.PersistableBundle
  *
  * @throws IllegalArgumentException When a value is not a supported type of [PersistableBundle].
  */
+@Deprecated(
+    message =
+        "This method does not provide type safety at compile time. Use the platform " +
+            "`PersistableBundle` class directly instead."
+)
 fun persistableBundleOf(vararg pairs: Pair<String, Any?>): PersistableBundle {
     val persistableBundle = PersistableBundle(pairs.size)
     pairs.forEach { (key, value) ->

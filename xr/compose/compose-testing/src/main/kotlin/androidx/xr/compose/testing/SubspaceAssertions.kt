@@ -333,45 +333,67 @@ public fun SubspaceSemanticsNodeInteraction.assertZPositionIsEqualTo(
  * Asserts that the layout of this node has rotation in the root composable that is equal to the
  * given rotation.
  *
- * @param expected The rotation to assert.
+ * This assertion uses a tolerance to account for floating-point inaccuracies.
+ *
+ * @param expected The expected rotation in the root space to assert.
+ * @param tolerance The maximum allowed difference in degrees.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertRotationInRootIsEqualTo(
-    expected: Quaternion
+    expected: Quaternion,
+    tolerance: Float = 0.01f,
 ): SubspaceSemanticsNodeInteraction {
+    val actual = getRotationInRoot()
+    val angleDiff = Quaternion.angle(actual, expected)
 
-    val makeError = { subject: String, exp: Float, actual: Float ->
-        "Actual $subject is $actual: expected $exp"
+    if (abs(angleDiff) >= tolerance) {
+        val errorMessage =
+            """
+            Rotation assertion in root failed.
+            Angular difference of ${"%.4f".format(angleDiff)}° is greater than or equal to the allowed tolerance of ${"%.4f".format(tolerance)}°.
+            Actual rotation in root:   $actual
+            Expected rotation in root: $expected
+            """
+                .trimIndent()
+        throw AssertionError(errorMessage)
     }
 
-    return withRotationInRoot {
-        check(it.x.equals(expected.x)) { makeError.invoke("x", expected.x, it.x) }
-        check(it.y.equals(expected.y)) { makeError.invoke("y", expected.y, it.y) }
-        check(it.z.equals(expected.z)) { makeError.invoke("z", expected.z, it.z) }
-        check(it.w.equals(expected.w)) { makeError.invoke("w", expected.w, it.w) }
-    }
+    return this
 }
 
 /**
  * Asserts that the layout of this node has rotation that is equal to the given rotation.
  *
+ * This assertion uses a tolerance to account for floating-point inaccuracies.
+ *
  * @param expected The rotation to assert.
+ * @param tolerance The maximum allowed difference in degrees.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertRotationIsEqualTo(
-    expected: Quaternion
+    expected: Quaternion,
+    tolerance: Float = 0.01f,
 ): SubspaceSemanticsNodeInteraction {
+    val actual = getRotation()
+    val angleDiff = Quaternion.angle(actual, expected)
 
-    return withRotation {
-        check(it.x.equals(expected.x)) { "Actual x is ${it.x}: expected ${expected.x}" }
-        check(it.y.equals(expected.y)) { "Actual y is ${it.y}: expected ${expected.y}" }
-        check(it.z.equals(expected.z)) { "Actual z is ${it.z}: expected ${expected.z}" }
-        check(it.w.equals(expected.w)) { "Actual w is ${it.w}: expected ${expected.w}" }
+    if (abs(angleDiff) >= tolerance) {
+        val errorMessage =
+            """
+            Rotation assertion failed.
+            Angular difference of ${"%.4f".format(angleDiff)}° is greater than or equal to the allowed tolerance of ${"%.4f".format(tolerance)}°.
+            Actual rotation:   $actual
+            Expected rotation: $expected
+            """
+                .trimIndent()
+        throw AssertionError(errorMessage)
     }
+
+    return this
 }
 
 /**

@@ -17,7 +17,6 @@
 
 package androidx.privacysandbox.ui.provider
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
@@ -38,7 +37,6 @@ import java.util.concurrent.Executor
  * to the client in order for the [SharedUiAdapter] to be used to maintain a connection with a UI
  * provider.
  */
-@SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
 public fun SharedUiAdapter.toCoreLibInfo(): Bundle {
     // If the ui adapter has already been wrapped as a client SharedUiAdapter
@@ -59,7 +57,6 @@ public fun SharedUiAdapter.toCoreLibInfo(): Bundle {
     return bundle
 }
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 private class BinderSharedUiAdapterDelegate(private val adapter: SharedUiAdapter) :
     ISharedUiAdapter.Stub(), LocalSharedUiAdapter {

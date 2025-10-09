@@ -27,39 +27,59 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("androidx.stableaidl")
+    id("com.squareup.wire")
+    id("AndroidXComposePlugin")
 }
 
 dependencies {
+    def composeVersion = "1.9.0"
+
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     api("androidx.annotation:annotation:1.9.1")
-    implementation("androidx.lifecycle:lifecycle-service:2.9.2")
+    api("androidx.compose.runtime:runtime:$composeVersion")
+    api("androidx.lifecycle:lifecycle-service:2.9.2")
 
+    implementation(project(":compose:remote:remote-creation"))
+    implementation(project(":compose:remote:remote-creation-compose"))
+    implementation(project(":glance:wear:wear-core"))
+
+    testImplementation("androidx.core:core-ktx:1.17.0")
+    testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
+    testImplementation(libs.mockitoKotlin4)
+    testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation("androidx.core:core-ktx:1.17.0")
+    androidTestImplementation(project(":compose:test-utils"))
+    androidTestImplementation(project(":compose:remote:remote-player-core"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
+    implementation("androidx.compose.ui:ui-graphics:$composeVersion")
+    androidTestImplementation("androidx.compose.foundation:foundation:$composeVersion")
+}
+
+wire {
+    kotlin {}
+
+    sourcePath {
+        srcDir 'src/main/proto'
+    }
 }
 
 android {
     namespace = "androidx.glance.wear"
     defaultConfig {
-        minSdk = 33
+        minSdk = 28
         compileSdk = 36
-    }
-    buildFeatures {
-        aidl = true
-    }
-    buildTypes.all {
-        stableAidl {
-            version 1
-        }
     }
 }
 
 androidx {
     name = "Glance Wear"
-    type = SoftwareType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2025"
     description = "Allows developers to build Widgets on Wear OS using Remote Compose."
     enableRobolectric()

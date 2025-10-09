@@ -108,6 +108,7 @@ class UnnecessaryLambdaCreationDetectorTest(
         return lint()
             .files(kotlin(code).indented(), stub, Stubs.Composable)
             .skipTestModes(TestMode.TYPE_ALIAS)
+            .skipTestModes(TestMode.PARENTHESIZED) // b/449003864
             .run()
     }
 

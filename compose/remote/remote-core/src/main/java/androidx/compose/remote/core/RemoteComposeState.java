@@ -15,6 +15,8 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.DataDynamicListFloat;
 import androidx.compose.remote.core.operations.utilities.ArrayAccess;
 import androidx.compose.remote.core.operations.utilities.CollectionsAccess;
 import androidx.compose.remote.core.operations.utilities.DataMap;
@@ -34,6 +36,7 @@ import java.util.HashMap;
  * Represents runtime state for a RemoteCompose document State includes things like the value of
  * variables
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeState implements CollectionsAccess {
     public static final int START_ID = 42;
     //    private static final int MAX_FLOATS = 500;
@@ -162,10 +165,10 @@ public class RemoteComposeState implements CollectionsAccess {
     }
 
     /**
-     * The path data the Array of floats that is asoicated with the path It also removes the current
-     * path object.
+     * The path data the Array of floats that is associated with the path It also removes the
+     * current path object.
      *
-     * @param id the integer asociated with the data and path
+     * @param id the integer associated with the data and path
      * @param data the array of floats that represents the path
      */
     public void putPathData(int id, float @NonNull [] data) {
@@ -596,6 +599,20 @@ public class RemoteComposeState implements CollectionsAccess {
     }
 
     @Override
+    public float @Nullable [] getDynamicFloats(int id) {
+        ArrayAccess array = mCollectionMap.get(id & 0xFFFFF);
+        if (array instanceof DataDynamicListFloat) {
+            return array.getFloats();
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable ArrayAccess getArray(int id) {
+        return mCollectionMap.get(id & 0xFFFFF);
+    }
+
+    @Override
     public int getId(int listId, int index) {
         ArrayAccess array = mCollectionMap.get(listId & 0xFFFFF);
         if (array != null) {
@@ -662,4 +679,13 @@ public class RemoteComposeState implements CollectionsAccess {
     public @Nullable Object getObject(int id) {
         return mObjectMap.get(id);
     }
+
+    /**
+     * Mark the variable with id to be dirty
+     * @param id
+     */
+    public void markVariableDirty(int id) {
+        updateListeners(id);
+    }
+
 }

@@ -300,13 +300,19 @@ class ProjectDependencyGraph {
         Matcher matcherCompileSdk = compileSdk.matcher(line)
         if (matcherCompileSdk) {
             String middlePart = matcherCompileSdk.group(1)
-            if (middlePart !in [" = ", "Extension = "]) {
+            if (middlePart !in [" = ", "Extension = ", "Minor = "]) {
                 String compileSdkValue = matcherCompileSdk.group(2)
                 if (middlePart.contains("Extension")) {
                     throw new Exception("Invalid way to set compileSdkExtension " +
                             "in $buildFile.absolutePath.\n" +
                             "It is compileSdk$middlePart$compileSdkValue, " +
                             "but should be compileSdkExtension = $compileSdkValue"
+                    )
+                } else if (middlePart.contains("Minor")) {
+                    throw new Exception("Invalid way to set compileSdkMinor " +
+                            "in $buildFile.absolutePath.\n" +
+                            "It is compileSdk$middlePart$compileSdkValue, " +
+                            "but should be compileSdkMinor = $compileSdkValue"
                     )
                 } else {
                     throw new Exception("Invalid way to set compileSdk " +

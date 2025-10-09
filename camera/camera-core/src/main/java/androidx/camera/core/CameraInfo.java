@@ -27,10 +27,12 @@ import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.StringDef;
+import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.featuregroup.GroupableFeature;
 import androidx.camera.core.impl.DynamicRanges;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.internal.compat.MediaActionSoundCompat;
+import androidx.core.util.Consumer;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -43,6 +45,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 /**
  * An interface for retrieving camera information.
@@ -204,6 +207,34 @@ public interface CameraInfo {
      * @return a {@link LiveData} of the camera's state.
      */
     @NonNull LiveData<CameraState> getCameraState();
+
+    /**
+     * Adds a listener for the camera's state.
+     *
+     * <p> The listener will be called on the given executor whenever the
+     * {@linkplain CameraState camera's state} changes. This is helpful in tests where awaiting
+     * a LiveData change is difficult due to main thread getting blocked.
+     *
+     * @param executor The executor on which the observer will be invoked.
+     * @param listener The listener to be added.
+     * @see #removeCameraStateListener(Consumer)
+     */
+    @VisibleForTesting
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    default void addCameraStateListener(@NonNull Executor executor,
+            @NonNull Consumer<@NonNull CameraState> listener) {
+    }
+
+    /**
+     * Removes a previously added listener for the camera's state.
+     *
+     * @param listener The listener to be removed.
+     * @see #addCameraStateListener(Executor, Consumer)
+     */
+    @VisibleForTesting
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    default void removeCameraStateListener(@NonNull Consumer<@NonNull CameraState> listener) {
+    }
 
     /**
      * Returns the implementation type of the camera, this depends on the {@link CameraXConfig}

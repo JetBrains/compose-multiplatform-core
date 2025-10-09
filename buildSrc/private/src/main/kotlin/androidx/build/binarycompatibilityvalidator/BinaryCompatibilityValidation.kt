@@ -25,7 +25,7 @@ import androidx.build.checkapi.getBcvFileDirectory
 import androidx.build.checkapi.getBuiltBcvFileDirectory
 import androidx.build.checkapi.getRequiredCompatibilityApiFileFromDir
 import androidx.build.checkapi.shouldWriteVersionedApiFile
-import androidx.build.getDistributionDirectoryProperty
+import androidx.build.getDistributionDirectory
 import androidx.build.getLibraryByName
 import androidx.build.getSupportRootFolder
 import androidx.build.isWriteVersionedApiFilesEnabled
@@ -169,7 +169,7 @@ class BinaryCompatibilityValidation(
                 project.projectDir.path.removePrefix(project.getSupportRootFolder().path + "/")
 
             it.debugOutFile.set(
-                project.getDistributionDirectoryProperty().map { outDir ->
+                project.getDistributionDirectory().map { outDir ->
                     // e.g. out/bcv/foo/bar/bar
                     outDir.dir("bcv").dir(projectDirPath).file("actual_current.txt")
                 }
@@ -460,8 +460,8 @@ private val nonPublicMarkers =
         "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext11OptIn",
         "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn",
         "androidx.privacysandbox.ui.core.ExperimentalFeatures.DelegatingAdapterApi",
-        "androidx.room.ExperimentalRoomApi",
-        "androidx.room.compiler.processing.ExperimentalProcessingApi",
+        "androidx.room3.ExperimentalRoomApi",
+        "androidx.room3.compiler.processing.ExperimentalProcessingApi",
         "androidx.tv.foundation.ExperimentalTvFoundationApi",
         "androidx.wear.compose.foundation.ExperimentalWearFoundationApi",
         "androidx.wear.compose.material.ExperimentalWearMaterialApi",

@@ -16,17 +16,17 @@
 
 package androidx.xr.glimmer.list
 
-import androidx.compose.foundation.clipScrollableContainer
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableDefaults
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.layout.LazyLayout
+import androidx.compose.foundation.scrollableArea
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 
 /**
@@ -120,6 +120,8 @@ internal fun List(
 
     val semanticState = rememberGlimmerListSemanticState(state, orientation)
 
+    val scrollEnabled = isScrollEnabled(userScrollEnabled, state)
+
     val measurePolicy =
         rememberGlimmerListMeasurePolicy(
             itemProviderLambda = itemProvider,
@@ -134,7 +136,7 @@ internal fun List(
         )
 
     val beyondBoundsModifier =
-        if (userScrollEnabled) {
+        if (scrollEnabled) {
             Modifier.lazyLayoutBeyondBoundsModifier(
                 state = rememberGlimmerListBeyondBoundsState(state),
                 beyondBoundsInfo = state.beyondBoundsInfo,
@@ -156,25 +158,30 @@ internal fun List(
                     itemProviderLambda = itemProvider,
                     state = semanticState,
                     orientation = orientation,
-                    userScrollEnabled = userScrollEnabled,
+                    userScrollEnabled = scrollEnabled,
                     reverseScrolling = reverseLayout,
                 )
                 // TODO: b/433235501 - Behaviour conflicts between the AutoFocus and BeyondBounds.
                 .then(beyondBoundsModifier)
-                .clipScrollableContainer(orientation)
-                .scrollable(
+                .scrollableArea(
                     state = state,
                     orientation = orientation,
-                    enabled = userScrollEnabled,
-                    reverseDirection =
-                        ScrollableDefaults.reverseDirection(
-                            layoutDirection = LocalLayoutDirection.current,
-                            orientation = orientation,
-                            reverseScrolling = reverseLayout,
-                        ),
+                    enabled = scrollEnabled,
                     interactionSource = state.internalInteractionSource,
+                    overscrollEffect = null,
                 ),
         itemProvider = itemProvider,
         measurePolicy = measurePolicy,
     )
+}
+
+@Composable
+private fun isScrollEnabled(userScrollEnabled: Boolean, state: ListState): Boolean {
+    if (userScrollEnabled) {
+        val derivedState =
+            remember(state) { derivedStateOf { state.canScrollForward || state.canScrollBackward } }
+        return derivedState.value
+    } else {
+        return false
+    }
 }

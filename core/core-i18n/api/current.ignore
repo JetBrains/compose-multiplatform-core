@@ -1,0 +1,27 @@
+// Baseline format: 1.0
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterJdkStyleOptions#getDateStyle():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterJdkStyleOptions.getDateStyle() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterJdkStyleOptions#getTimeStyle():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterJdkStyleOptions.getTimeStyle() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Day#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Day.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Era#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Era.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.FractionalSecond#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.FractionalSecond.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Hour#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Hour.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Minute#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Minute.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Month#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Month.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Period#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Period.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Second#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Second.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Timezone#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Timezone.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.WeekDay#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.WeekDay.getValue() can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.core.i18n.DateTimeFormatterSkeletonOptions.Year#getValue():
+    Source breaking change: method androidx.core.i18n.DateTimeFormatterSkeletonOptions.Year.getValue() can no longer be resolved from Kotlin source

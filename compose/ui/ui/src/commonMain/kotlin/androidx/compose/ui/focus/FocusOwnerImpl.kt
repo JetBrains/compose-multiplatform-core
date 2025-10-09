@@ -20,7 +20,6 @@ import androidx.collection.MutableLongSet
 import androidx.collection.MutableObjectList
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.CustomDestinationResult.Cancelled
 import androidx.compose.ui.focus.CustomDestinationResult.None
@@ -43,6 +42,7 @@ import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyUp
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.node.DelegatableNode
@@ -57,6 +57,7 @@ import androidx.compose.ui.node.visitAncestors
 import androidx.compose.ui.node.visitLocalDescendants
 import androidx.compose.ui.node.visitSubtree
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.trace
@@ -236,6 +237,25 @@ internal class FocusOwnerImpl(
      * @return true if focus was moved successfully. false if the focused item is unchanged.
      */
     override fun moveFocus(focusDirection: FocusDirection): Boolean {
+        return moveFocus(focusDirection, wrapAroundForOneDimensionalFocus = true)
+    }
+
+    /**
+     * Moves focus in the specified direction.
+     *
+     * This is an internal overload of the public API [moveFocus]. This is kept internal because:
+     * 1. We don't have a clear understanding of external use cases that need this.
+     * 2. We support wrap around only for 1D focus search. But based on the actual use cases we
+     *    might want to support this for 2D focus search too.
+     * 3. This is a compose only feature and won't work correctly in all interop scenarios on
+     *    Android. We make a best effort, and will not wrap around if there is a view after the
+     *    currently focused composable, but once focus moves to that view, we have no control over
+     *    the wrapping around behavior.
+     */
+    override fun moveFocus(
+        focusDirection: FocusDirection,
+        wrapAroundForOneDimensionalFocus: Boolean,
+    ): Boolean {
         // First check to see if the focus should move within child Views
         @OptIn(ExperimentalComposeUiApi::class)
         if (
@@ -267,7 +287,7 @@ internal class FocusOwnerImpl(
         if (focusSearchSuccess && requestFocusSuccess) return true
 
         // To wrap focus around, we clear focus and request initial focus.
-        if (focusDirection.is1dFocusSearch()) {
+        if (focusDirection.is1dFocusSearch() && wrapAroundForOneDimensionalFocus) {
             val clearFocus =
                 clearFocus(
                     force = false,
@@ -309,7 +329,13 @@ internal class FocusOwnerImpl(
                     Default -> {
                         /* Do Nothing */
                     }
-                    else -> return customDest.findFocusTargetNode(onFound)
+                    else ->
+                        @OptIn(ExperimentalComposeUiApi::class)
+                        return if (ComposeUiFlags.isRequestFocusOnNonFocusableFocusTargetEnabled) {
+                            customDest.findFocusTarget(onFound)
+                        } else {
+                            customDest.findFocusTargetNode(onFound)
+                        }
                 }
             }
 
@@ -398,11 +424,7 @@ internal class FocusOwnerImpl(
         return false
     }
 
-    @OptIn(ExperimentalIndirectTouchTypeApi::class)
-    override fun dispatchIndirectTouchEvent(
-        event: IndirectTouchEvent,
-        onFocusedItem: () -> Boolean,
-    ): Boolean {
+    override fun dispatchIndirectTouchEvent(event: IndirectTouchEvent): Boolean {
         if (focusInvalidationManager.hasPendingInvalidation()) {
             // Ignoring this to unblock b/379289347.
             println(
@@ -412,15 +434,43 @@ internal class FocusOwnerImpl(
         }
 
         val focusedIndirectTouchInputNode =
-            findFocusTargetNode()?.nearestAncestorIncludingSelf(Nodes.IndirectTouchInput)
-        focusedIndirectTouchInputNode?.traverseAncestorsIncludingSelf(
-            type = Nodes.IndirectTouchInput,
-            onPreVisit = { if (it.onPreIndirectTouchEvent(event)) return true },
-            onVisit = { if (onFocusedItem()) return true },
-            onPostVisit = { if (it.onIndirectTouchEvent(event)) return true },
-        )
+            activeFocusTargetNode?.nearestAncestorIncludingSelf(Nodes.IndirectTouchInput)
 
-        return false
+        focusedIndirectTouchInputNode?.let { node ->
+            val ancestors = node.ancestors(Nodes.IndirectTouchInput)
+
+            // Initial pass (tunneling)
+            ancestors?.fastForEachReversed {
+                it.onIndirectTouchEvent(event, PointerEventPass.Initial)
+            }
+            node.onIndirectTouchEvent(event, PointerEventPass.Initial)
+
+            // Main pass (bubbling)
+            node.onIndirectTouchEvent(event, PointerEventPass.Main)
+            ancestors?.fastForEach { it.onIndirectTouchEvent(event, PointerEventPass.Main) }
+
+            // Final pass (tunneling)
+            ancestors?.fastForEachReversed {
+                it.onIndirectTouchEvent(event, PointerEventPass.Final)
+            }
+            node.onIndirectTouchEvent(event, PointerEventPass.Final)
+        }
+
+        val isConsumed = event.changes.fastAny { it.isConsumed }
+        return isConsumed
+    }
+
+    override fun dispatchIndirectTouchCancel() {
+        val focusedIndirectTouchInputNode =
+            activeFocusTargetNode?.nearestAncestorIncludingSelf(Nodes.IndirectTouchInput)
+
+        focusedIndirectTouchInputNode?.let { node ->
+            val ancestors = node.ancestors(Nodes.IndirectTouchInput)
+
+            // Triggers cancel from main focused node to highest ancestor (bubbling)
+            node.onCancelIndirectTouchInput()
+            ancestors?.fastForEach { it.onCancelIndirectTouchInput() }
+        }
     }
 
     override fun focusTargetAvailable() {

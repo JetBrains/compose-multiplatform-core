@@ -16,9 +16,7 @@
 
 package androidx.camera.camera2.pipe.graph
 
-import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF
 import android.hardware.camera2.CameraMetadata.CONTROL_AE_PRECAPTURE_TRIGGER_START
-import android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF
 import android.hardware.camera2.CameraMetadata.CONTROL_AWB_MODE_OFF
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureRequest.CONTROL_AE_LOCK
@@ -735,40 +733,40 @@ internal class Controller3A(
         isAfTriggered: Boolean,
         waitForAwb: Boolean,
     ): ((FrameMetadata) -> Boolean) = { frameMetadata ->
-        val afMode = AfMode(frameMetadata[CaptureResult.CONTROL_AF_MODE] ?: CONTROL_AF_MODE_OFF)
         val meetsAfCondition =
-            if (afMode.isOn()) {
-                if (isAfTriggered) {
-                    afLockedStateList.contains(frameMetadata[CaptureResult.CONTROL_AF_STATE])
-                    frameMetadata[CaptureResult.CONTROL_AF_STATE].isNullOrIn(afLockedStateList)
-                } else if (afMode.isContinuous()) {
-                    // Even if AF is not triggered, we can still wait for PASSIVE_FOCUS in this case
-                    afConvergedStateList.contains(frameMetadata[CaptureResult.CONTROL_AF_STATE])
-                } else {
-                    true
+            frameMetadata[CaptureResult.CONTROL_AF_MODE]?.let { afModeValue ->
+                val afMode = AfMode(afModeValue)
+                when {
+                    !afMode.isOn() -> true
+                    isAfTriggered ->
+                        frameMetadata[CaptureResult.CONTROL_AF_STATE].isNullOrIn(afLockedStateList)
+                    afMode.isContinuous() ->
+                        afConvergedStateList.contains(frameMetadata[CaptureResult.CONTROL_AF_STATE])
+                    else -> true
                 }
-            } else {
-                true
-            }
+            } ?: false // AF mode is null (e.g., partial result), so need to await total result.
 
-        // AE/AWB state may be null in some devices and thus should not be waited for in such case
-
-        val aeMode = AeMode(frameMetadata[CaptureResult.CONTROL_AE_MODE] ?: CONTROL_AE_MODE_OFF)
         val meetsAeCondition =
-            if (aeMode.isOn()) {
-                frameMetadata[CaptureResult.CONTROL_AE_STATE].isNullOrIn(aePostPrecaptureStateList)
-            } else {
-                true
-            }
+            frameMetadata[CaptureResult.CONTROL_AE_MODE]?.let { aeModeValue ->
+                val aeMode = AeMode(aeModeValue)
+                // Condition is met if mode is OFF, OR if mode is ON and state is converged. AE/AWB
+                // state may be null in some devices and thus should not be waited for in such case.
+                !aeMode.isOn() ||
+                    frameMetadata[CaptureResult.CONTROL_AE_STATE].isNullOrIn(
+                        aePostPrecaptureStateList
+                    )
+            } ?: false // AE mode is null (partial result), so need to await total result.
 
-        val awbMode = AwbMode(frameMetadata[CaptureResult.CONTROL_AWB_MODE] ?: CONTROL_AWB_MODE_OFF)
+        val awbModeValue = frameMetadata[CaptureResult.CONTROL_AWB_MODE]
+        val awbMode = AwbMode(awbModeValue ?: CONTROL_AWB_MODE_OFF)
         val meetsAwbCondition =
-            if (awbMode.isOn() && waitForAwb) {
-                frameMetadata[CaptureResult.CONTROL_AWB_STATE].isNullOrIn(
-                    awbPostPrecaptureStateList
-                )
-            } else {
-                true
+            when {
+                waitForAwb && awbModeValue == null -> false
+                waitForAwb && awbMode.isOn() ->
+                    frameMetadata[CaptureResult.CONTROL_AWB_STATE].isNullOrIn(
+                        awbPostPrecaptureStateList
+                    )
+                else -> true
             }
 
         debug {

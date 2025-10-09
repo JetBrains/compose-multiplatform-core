@@ -39,6 +39,7 @@ androidXMultiplatform {
             it.consumerKeepRules.publish = true
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
         }
+        lint.disable += "ComposeTestRuleDispatcher"
     }
     desktop()
     mingwX64()
@@ -78,7 +79,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(project(":lifecycle:lifecycle-runtime-testing"))
                 implementation(project(":compose:ui:ui-test"))

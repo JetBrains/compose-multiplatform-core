@@ -231,8 +231,8 @@ class CameraValidatorTest {
         private const val CAMERA_ID_FRONT = "1"
         private const val CAMERA_ID_EXTERNAL = "2"
 
-        private val IDENTIFIER_BACK = CameraIdentifier.create(CAMERA_ID_BACK)
-        private val IDENTIFIER_FRONT = CameraIdentifier.create(CAMERA_ID_FRONT)
-        private val IDENTIFIER_EXTERNAL = CameraIdentifier.create(CAMERA_ID_EXTERNAL)
+        private val IDENTIFIER_BACK = CameraIdentifier.Factory.create(CAMERA_ID_BACK)
+        private val IDENTIFIER_FRONT = CameraIdentifier.Factory.create(CAMERA_ID_FRONT)
+        private val IDENTIFIER_EXTERNAL = CameraIdentifier.Factory.create(CAMERA_ID_EXTERNAL)
     }
 }

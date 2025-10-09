@@ -22,7 +22,7 @@ limitations under the License.
         android:theme="@style/AppTheme">
         <activity
             android:name=".ConcurrentCameraActivity"
-            android:screenOrientation="sensorPortrait"
+            android:screenOrientation="sensor"
             android:exported="true"
             android:label="Concurrent Camera Test App"
             android:taskAffinity="androidx.camera.integration.core.ConcurrentCameraActivity">

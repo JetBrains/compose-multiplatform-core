@@ -62,6 +62,9 @@ dependencies {
 android {
     compileSdk = 35
     namespace = "androidx.tv.material"
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }
 
 androidx {

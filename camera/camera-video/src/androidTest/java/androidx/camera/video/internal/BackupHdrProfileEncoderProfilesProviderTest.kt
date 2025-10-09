@@ -21,7 +21,6 @@ import android.media.CamcorderProfile
 import android.media.EncoderProfiles.VideoProfile.HDR_HLG
 import android.os.Build
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.internal.Camera2EncoderProfilesProvider
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
 import androidx.camera.core.CameraXConfig
@@ -143,7 +142,7 @@ class BackupHdrProfileEncoderProfilesProviderTest(
             if (implName == CameraPipeConfig::class.simpleName) {
                 EncoderProfilesProviderAdapter(cameraId, cameraInfo.cameraQuirks)
             } else {
-                Camera2EncoderProfilesProvider(cameraId, cameraInfo.cameraQuirks)
+                EncoderProfilesProviderAdapter(cameraId, cameraInfo.cameraQuirks)
             }
     }
 

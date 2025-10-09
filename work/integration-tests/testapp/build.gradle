@@ -45,8 +45,8 @@ android {
 
 dependencies {
     api(libs.jspecify)
-    annotationProcessor(project(":room:room-compiler"))
-    implementation(project(":room:room-runtime"))
+    annotationProcessor("androidx.room:room-compiler:2.7.2")
+    implementation("androidx.room:room-runtime:2.7.2")
 
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(libs.constraintLayout)

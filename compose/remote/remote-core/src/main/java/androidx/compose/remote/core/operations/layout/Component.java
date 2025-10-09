@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.layout;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.PaintContext;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 /** Generic Component class */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Component extends PaintOperation
         implements Container, Measurable, SerializableToString, Serializable {
 
@@ -374,6 +376,15 @@ public class Component extends PaintOperation
      */
     public void registerVariables(@NonNull RemoteContext context) {
         // Nothing here
+    }
+
+    /**
+     * Returns the value for the given alignment line
+     *
+     * @param line type of line
+     */
+    public float getAlignValue(@NonNull PaintContext context, float line) {
+        return 0f;
     }
 
     public static class Visibility {

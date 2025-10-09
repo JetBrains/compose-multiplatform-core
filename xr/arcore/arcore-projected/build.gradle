@@ -35,15 +35,19 @@ plugins {
 dependencies {
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
-    api(project(":xr:runtime:runtime"))
+    api(project(":xr:arcore:arcore-runtime"))
 
-    implementation(project(":xr:projected:projected"))
     implementation("androidx.annotation:annotation:1.8.1")
-    implementation("androidx.core:core-ktx:1.12.0")
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinTest)
+    testImplementation(libs.mockitoKotlin)
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(libs.testParameterInjector)
+    testImplementation(project(":internal-testutils-truth"))
+    testImplementation("androidx.test:core-ktx:1.5.0")
 }
 
 android {
-    compileSdk = 35
     namespace = "androidx.xr.arcore.projected"
 
     buildFeatures {
@@ -52,18 +56,19 @@ android {
 
     buildTypes.all {
        stableAidl {
-        version 1
+        version = 1
        }
     }
 
     defaultConfig {
-        minSdk = 35
+        minSdk = 24
     }
 }
 
 androidx {
     name = "XR Projected ARCore"
-    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY_WITH_API_TASKS
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "An implementation of the XR Perception APIs using the XR Projected SDK."
+    enableRobolectric()
 }

@@ -18,6 +18,7 @@ package androidx.pdf.adapter
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.pdf.PdfRendererPreV
 import android.graphics.pdf.RenderParams
@@ -91,6 +92,15 @@ internal class PdfPagePreVAdapter(private val page: PdfRendererPreV.Page) : PdfP
     @SuppressLint("WrongConstant")
     override fun getFormWidgetInfos(types: IntArray): List<FormWidgetInfo> {
         return page.getFormWidgetInfos(types)
+    }
+
+    @SuppressLint("WrongConstant")
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 19)
+    override fun getTopPageObjectAtPosition(
+        point: PointF,
+        types: IntArray,
+    ): Pair<Int, PdfPageObject>? {
+        return page.getTopPageObjectAtPosition(point, types)
     }
 
     override fun selectPageText(start: SelectionBoundary, stop: SelectionBoundary): PageSelection? {

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// TODO(b/289518597): Remove this SuppressLint
-@file:SuppressLint("NullAnnotationGroup")
 @file:OptIn(
     ExperimentalMaterial3AdaptiveApi::class,
     ExperimentalMaterial3Api::class,
@@ -24,7 +22,6 @@
 
 package androidx.xr.compose.material3.integration.testapp
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent

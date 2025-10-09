@@ -126,6 +126,8 @@ public value class CameraError private constructor(public val value: Int) {
          */
         public val ERROR_CAMERA_OPENER: CameraError = CameraError(12)
 
+        public val ERROR_CAMERA_OPEN_TIMEOUT: CameraError = CameraError(13)
+
         internal fun from(throwable: Throwable) =
             when (throwable) {
                 is CameraAccessException -> from(throwable)
@@ -210,6 +212,7 @@ public value class CameraError private constructor(public val value: Int) {
                 ERROR_DO_NOT_DISTURB_ENABLED -> "ERROR_DO_NOT_DISTURB_ENABLED"
                 ERROR_UNKNOWN_EXCEPTION -> "ERROR_UNKNOWN_EXCEPTION"
                 ERROR_CAMERA_OPENER -> "ERROR_CAMERA_OPENER"
+                ERROR_CAMERA_OPEN_TIMEOUT -> "ERROR_CAMERA_OPEN_TIMEOUT"
                 else -> "ERROR_UNKNOWN"
             } +
             ")"

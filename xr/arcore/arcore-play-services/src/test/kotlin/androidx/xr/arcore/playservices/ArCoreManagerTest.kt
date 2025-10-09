@@ -28,7 +28,6 @@ import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
@@ -171,33 +170,33 @@ class ArCoreManagerTest {
     }
 
     @Test
-    fun configure_handTracking_throwsConfigurationNotSupportedException() {
+    fun configure_handTracking_throwsUnsupportedOperationException() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
         val config = Config(handTracking = HandTrackingMode.BOTH)
-        assertFailsWith<ConfigurationNotSupportedException> { underTest.configure(config) }
+        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
     }
 
     @Test
-    fun configure_depthEstimation_throwsConfigurationNotSupportedException() {
+    fun configure_depthEstimation_throwsUnsupportedOperationException() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
         val config = Config(depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW)
-        assertFailsWith<ConfigurationNotSupportedException> { underTest.configure(config) }
+        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
     }
 
     @Test
-    fun configure_anchorPersistence_throwsConfigurationNotSupportedException() {
+    fun configure_anchorPersistence_throwsUnsupportedOperationException() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
         val config = Config(anchorPersistence = AnchorPersistenceMode.LOCAL)
-        assertFailsWith<ConfigurationNotSupportedException> { underTest.configure(config) }
+        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
     }
 
     @Test
@@ -230,7 +229,7 @@ class ArCoreManagerTest {
     }
 
     @Test
-    fun configure_throwsConfigurationNotSupportedException_whenUnsupportedConfiguration() {
+    fun configure_throwsUnsupportedOperationException_whenUnsupportedConfiguration() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
@@ -238,7 +237,7 @@ class ArCoreManagerTest {
             .doThrow(UnsupportedConfigurationException("Test Exception"))
 
         val config = Config()
-        assertFailsWith<ConfigurationNotSupportedException> { underTest.configure(config) }
+        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
         verify(mockSession).configure(mockArConfig)
     }
 

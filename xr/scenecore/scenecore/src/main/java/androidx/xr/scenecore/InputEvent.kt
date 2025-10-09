@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Vector3
-import kotlin.annotation.Retention
 
 /**
  * Defines input events for SceneCore.
@@ -78,9 +77,9 @@ public class InputEvent(
     }
 
     /*
-     * There's a possibility of ABI mismatch here when the concrete platformAdapter starts receiving
+     * There's a possibility of ABI mismatch here when the concrete sceneRuntime starts receiving
      * input events with an updated field, such as if a newer source or pointer type has been added
-     * to the underlying platform OS. We need to perform a version check when the platformAdapter is
+     * to the underlying platform OS. We need to perform a version check when the sceneRuntime is
      * constructed to ensure that the application doesn't receive anything it wasn't compiled
      * against.
      */
@@ -97,7 +96,7 @@ public class InputEvent(
         Source.SOURCE_MOUSE,
         Source.SOURCE_GAZE_AND_GESTURE,
     )
-    internal annotation class SourceValue
+    public annotation class SourceValue
 
     /** Specifies the source (e.g. hands, controller, head) of the input event. */
     public object Source {
@@ -146,7 +145,7 @@ public class InputEvent(
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(Pointer.POINTER_TYPE_DEFAULT, Pointer.POINTER_TYPE_LEFT, Pointer.POINTER_TYPE_RIGHT)
-    internal annotation class PointerType
+    public annotation class PointerType
 
     /** Specifies the pointer type (e.g. left, right or default) of the input event. */
     public object Pointer {
@@ -178,7 +177,7 @@ public class InputEvent(
         Action.ACTION_HOVER_ENTER,
         Action.ACTION_HOVER_EXIT,
     )
-    internal annotation class ActionValue
+    public annotation class ActionValue
 
     /** Specifies the action (e.g. down, up, move, etc.) of the input event. */
     public object Action {

@@ -22,6 +22,6 @@ import androidx.annotation.RestrictTo
 /** Factory for creating instances of SceneRuntime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SceneRuntimeFactory : Service {
-    /** Creates a [SceneRuntime] instance */
-    public fun create(activity: Activity): SceneRuntime
+    /** Creates a [JxrRuntime] instance */
+    public fun create(activity: Activity): JxrRuntime
 }

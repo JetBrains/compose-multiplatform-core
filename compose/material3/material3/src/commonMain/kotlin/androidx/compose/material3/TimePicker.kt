@@ -35,7 +35,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -112,6 +114,8 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -122,8 +126,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.KeyEventType.Companion.KeyUp
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -143,16 +153,20 @@ import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.node.Ref
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.InspectorValueInfo
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.maxTextLength
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selectableGroup
@@ -1025,6 +1039,8 @@ private fun TimeInputImpl(modifier: Modifier, colors: TimePickerColors, state: T
                 color = colors.timeSelectorContentColor(true),
             )
 
+        val a11yServicesEnabled by rememberAccessibilityServiceState()
+
         CompositionLocalProvider(
             LocalTextStyle provides textStyle,
             // Always display the time input text field from left to right.
@@ -1054,6 +1070,7 @@ private fun TimeInputImpl(modifier: Modifier, colors: TimePickerColors, state: T
                             value = newValue,
                             prevValue = hourValue,
                             max = if (state.is24hour) 23 else 12,
+                            a11yServicesEnabled = a11yServicesEnabled,
                             userOverride = userOverride,
                         ) {
                             hourValue = it
@@ -1076,18 +1093,7 @@ private fun TimeInputImpl(modifier: Modifier, colors: TimePickerColors, state: T
                     Modifier.size(DisplaySeparatorWidth, PeriodSelectorContainerHeight)
                 )
                 TimePickerTextField(
-                    modifier =
-                        Modifier.onPreviewKeyEvent { event ->
-                            // 0 == KEYCODE_DEL
-                            val switchFocus =
-                                event.utf16CodePoint == 0 && minuteValue.selection.start == 0
-
-                            if (switchFocus) {
-                                state.selection = TimePickerSelectionMode.Hour
-                            }
-
-                            switchFocus
-                        },
+                    modifier = Modifier,
                     value = minuteValue,
                     onValueChange = { newValue ->
                         timeInputOnChange(
@@ -1097,6 +1103,7 @@ private fun TimeInputImpl(modifier: Modifier, colors: TimePickerColors, state: T
                             prevValue = minuteValue,
                             max = 59,
                             userOverride = userOverride,
+                            a11yServicesEnabled = a11yServicesEnabled,
                         ) {
                             minuteValue = it
                         }
@@ -1501,10 +1508,12 @@ internal class ClockDialNode(
             SuspendingPointerInputModifierNode {
                 detectTapGestures(
                     onPress = {
+                        currentValueOf(LocalFocusManager).clearFocus()
                         offsetX = it.x
                         offsetY = it.y
                     },
                     onTap = {
+                        currentValueOf(LocalFocusManager).clearFocus()
                         coroutineScope.launch {
                             state.onTap(
                                 it.x,
@@ -1590,6 +1599,7 @@ internal fun ClockFace(
     colors: TimePickerColors,
     autoSwitchToMinute: Boolean,
 ) {
+    val focusManager = LocalFocusManager.current
     // TODO Load the motionScheme tokens from the component tokens file
     Crossfade(
         modifier =
@@ -1626,6 +1636,7 @@ internal fun ClockFace(
                         state = state,
                         value = outerValue,
                         autoSwitchToMinute = autoSwitchToMinute,
+                        focusManager = focusManager,
                     )
                 }
 
@@ -1645,6 +1656,7 @@ internal fun ClockFace(
                                 state = state,
                                 value = innerValue,
                                 autoSwitchToMinute = autoSwitchToMinute,
+                                focusManager = focusManager,
                             )
                         }
                     }
@@ -1725,6 +1737,7 @@ private fun ClockText(
     state: AnalogTimePickerState,
     value: Int,
     autoSwitchToMinute: Boolean,
+    focusManager: FocusManager,
 ) {
     val style = ClockDialLabelTextFont.value
     val density: Density = LocalDensity.current
@@ -1732,6 +1745,7 @@ private fun ClockText(
     var center by remember { mutableStateOf(Offset.Zero) }
     var parentCenter by remember { mutableStateOf(IntOffset.Zero) }
     var boundsInParent by remember { mutableStateOf(Rect.Zero) }
+    val interactionSource = remember { MutableInteractionSource() }
     val scope = rememberCoroutineScope()
     val contentDescription =
         numberContentDescription(
@@ -1750,6 +1764,20 @@ private fun ClockText(
             }
         }
 
+    val onClockTextClick: () -> Unit = {
+        scope.launch {
+            state.onTap(
+                x = center.x,
+                y = center.y,
+                maxDist = maxDist,
+                autoSwitchToMinute = autoSwitchToMinute,
+                center = parentCenter,
+                animationSpec = SnapSpec(),
+            )
+        }
+    }
+    val focusable = LocalInputModeManager.current.inputMode != InputMode.Touch
+
     // TODO Load the motionScheme tokens from the component tokens file
     Box(
         contentAlignment = Alignment.Center,
@@ -1762,19 +1790,40 @@ private fun ClockText(
                 }
                 .minimumInteractiveComponentSize()
                 .size(MinimumInteractiveSize)
-                .focusable()
-                .semantics(mergeDescendants = true) {
-                    onClick {
+                .onKeyEvent {
+                    if (it.type == KeyEventType.KeyDown && it.isEnter) {
+                        // Emit ripple.
+                        scope.launch { interactionSource.emit(PressInteraction.Press(center)) }
+                    }
+                    if (it.isClick) {
+                        onClockTextClick()
+                        // Make sure indication is cleared.
                         scope.launch {
-                            state.onTap(
-                                x = center.x,
-                                y = center.y,
-                                maxDist = maxDist,
-                                autoSwitchToMinute = autoSwitchToMinute,
-                                center = parentCenter,
-                                animationSpec = SnapSpec(),
+                            interactionSource.emit(
+                                PressInteraction.Release(PressInteraction.Press(center))
                             )
                         }
+                        return@onKeyEvent true
+                    }
+                    // The arrow keys navigation should follow the same flow as tabbing navigation.
+                    // Down/Right moves focus forward and Up/Left moves focus backwards.
+                    if (it.type == KeyEventType.KeyDown) {
+                        if (it.key == Key.DirectionDown || it.key == Key.DirectionRight) {
+                            focusManager.moveFocus(FocusDirection.Next)
+                            return@onKeyEvent true
+                        } else if (it.key == Key.DirectionUp || it.key == Key.DirectionLeft) {
+                            focusManager.moveFocus(FocusDirection.Previous)
+                            return@onKeyEvent true
+                        }
+                    }
+
+                    false
+                }
+                .indication(interactionSource, ripple(radius = MinimumInteractiveSize / 2))
+                .focusable(focusable, interactionSource)
+                .semantics(mergeDescendants = true) {
+                    onClick {
+                        onClockTextClick()
                         true
                     }
                     this.selected = selected
@@ -1796,6 +1845,7 @@ private fun timeInputOnChange(
     prevValue: TextFieldValue,
     max: Int,
     userOverride: Ref<Boolean>,
+    a11yServicesEnabled: Boolean,
     onNewValue: (value: TextFieldValue) -> Unit,
 ) {
     userOverride.value = false
@@ -1833,7 +1883,7 @@ private fun timeInputOnChange(
                     } else {
                         newValue + if (state.isPm && !state.is24hour) 12 else 0
                     }
-                if (newValue > 1 && !state.is24hour) {
+                if (newValue > 1 && !state.is24hour && !a11yServicesEnabled) {
                     state.selection = TimePickerSelectionMode.Minute
                 }
             } else {
@@ -1906,7 +1956,10 @@ private fun TimePickerTextField(
                 modifier =
                     Modifier.focusRequester(focusRequester)
                         .size(TimeFieldContainerWidth, TimeFieldContainerHeight)
-                        .semantics { this.contentDescription = contentDescription },
+                        .semantics {
+                            this.contentDescription = contentDescription
+                            this.maxTextLength = 2
+                        },
                 interactionSource = interactionSource,
                 keyboardOptions = keyboardOptions,
                 keyboardActions = keyboardActions,
@@ -2045,6 +2098,19 @@ private enum class LayoutId {
     Selector,
     InnerCircle,
 }
+
+private val KeyEvent.isClick: Boolean
+    get() = type == KeyUp && isEnter
+
+private val KeyEvent.isEnter: Boolean
+    get() =
+        when (key) {
+            Key.DirectionCenter,
+            Key.Enter,
+            Key.NumPadEnter,
+            Key.Spacebar -> true
+            else -> false
+        }
 
 // TODO(https://github.com/JetBrains/compose-multiplatform/issues/3373) fix expect composable getter
 @OptIn(ExperimentalMaterial3Api::class)

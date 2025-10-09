@@ -29,26 +29,36 @@ import kotlin.math.atan2
 public class MutableParallelogram
 private constructor(
     override var center: MutableVec,
-    width: Float,
+    @FloatRange(from = 0.0) width: Float,
     override var height: Float,
-    @AngleRadiansFloat rotation: Float,
+    @FloatRange(from = 0.0, to = 360.0, toInclusive = false)
+    @AngleDegreesFloat
+    rotationDegrees: Float,
     override var skew: Float,
 ) : Parallelogram() {
 
+    init {
+        check(width >= 0) { "Width must be non-negative." }
+        check(rotationDegrees >= 0 && rotationDegrees < Angle.FULL_TURN_DEGREES) {
+            "Rotation must be in the range [0, 360)."
+        }
+    }
+
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toImmutable(): ImmutableParallelogram =
-        ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
+        ImmutableParallelogram.fromCenterDimensionsRotationInDegreesAndSkew(
             center.toImmutable(),
             width,
             height,
-            rotation,
+            rotationDegrees,
             skew,
         )
 
-    @get:AngleRadiansFloat
-    override var rotation: Float = rotation
-        set(@AngleRadiansFloat value) {
-            field = Angle.normalized(value)
+    @get:FloatRange(from = 0.0, to = 360.0, toInclusive = false)
+    @get:AngleDegreesFloat
+    override var rotationDegrees: Float = rotationDegrees
+        set(@FloatRange(from = 0.0, to = 360.0, toInclusive = false) @AngleDegreesFloat value) {
+            field = Angle.normalizedDegrees(value)
         }
 
     @get:FloatRange(from = 0.0)
@@ -56,11 +66,14 @@ private constructor(
         set(@FloatRange(from = 0.0) value) {
             // A [Parallelogram] may *not* have a negative width. If an operation is performed on
             // [Parallelogram] resulting in a negative width, it will be normalized.
-            normalizeAndRun(value, height, rotation) { w: Float, h: Float, r: Float ->
+            if (value >= 0) {
+                field = value
+                return
+            }
+            normalizeAndRun(value, height, rotationDegrees) { w: Float, h: Float, rDegrees: Float ->
                 field = w
                 height = h
-                rotation = r
-                this@MutableParallelogram
+                rotationDegrees = rDegrees
             }
         }
 
@@ -69,22 +82,22 @@ private constructor(
      * height, zero rotation, and zero skew. This is intended for subsequent population with one of
      * the `populateFrom` methods.
      */
-    public constructor() : this(MutableVec(), 0f, 0f, Angle.ZERO, 0f)
+    public constructor() : this(MutableVec(), 0f, 0f, Angle.ZERO_DEGREES, 0f)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @UsedByNative
-    public fun setCenterDimensionsRotationAndSkew(
+    public fun setCenterDimensionsRotationInDegreesAndSkew(
         centerX: Float,
         centerY: Float,
         width: Float,
         height: Float,
-        @AngleRadiansFloat rotation: Float,
+        @AngleDegreesFloat rotationDegrees: Float,
         skew: Float,
     ): MutableParallelogram = run {
-        normalizeAndRun(width, height, rotation) { w: Float, h: Float, r: Float ->
+        normalizeAndRun(width, height, rotationDegrees) { w: Float, h: Float, degrees: Float ->
             this.width = w
             this.height = h
-            this.rotation = r
+            this.rotationDegrees = degrees
             this.skew = skew
             this.center.x = centerX
             this.center.y = centerY
@@ -104,7 +117,7 @@ private constructor(
         center.y = input.center.y
         width = input.width
         height = input.height
-        rotation = input.rotation
+        rotationDegrees = input.rotationDegrees
         skew = input.skew
         return this
     }
@@ -122,6 +135,8 @@ private constructor(
      * resulting [Parallelogram] has zero [rotation] and [skew]. If the [width] is less than zero,
      * the [Parallelogram] will be normalized.
      *
+     * See the corresponding fields on [Parallelogram] for details about these parameters.
+     *
      * @return `this`
      */
     public fun populateFromCenterAndDimensions(
@@ -129,42 +144,53 @@ private constructor(
         @FloatRange(from = 0.0) width: Float,
         height: Float,
     ): MutableParallelogram =
-        normalizeAndRun(width, height, rotation = Angle.ZERO) { w: Float, h: Float, r: Float ->
-            setCenterDimensionsRotationAndSkew(center.x, center.y, w, h, r, skew = 0f)
-        }
+        populateFromCenterDimensionsAndRotationInDegrees(center, width, height, Angle.ZERO_DEGREES)
 
     /**
      * Populates the [MutableParallelogram] to have a given [center], [width], [height] and
-     * [rotation] and zero [skew]. If the [width] is less than zero or if the [rotation] is not in
-     * the range [0, 2π), it will be normalized.
+     * [rotationDegrees], with zero [skew]. If the [width] is less than zero or if the
+     * [rotationDegrees] is not in the range [0, 360), it will be normalized.
+     *
+     * See the corresponding fields on [Parallelogram] for details about these parameters.
      *
      * @return `this`
      */
-    public fun populateFromCenterDimensionsAndRotation(
+    public fun populateFromCenterDimensionsAndRotationInDegrees(
         center: MutableVec,
         @FloatRange(from = 0.0) width: Float,
         height: Float,
-        @AngleRadiansFloat rotation: Float,
+        @FloatRange(from = 0.0, to = 360.0, toInclusive = false)
+        @AngleDegreesFloat
+        rotationDegrees: Float,
     ): MutableParallelogram =
-        populateFromCenterDimensionsRotationAndSkew(center, width, height, rotation, skew = 0f)
+        populateFromCenterDimensionsRotationInDegreesAndSkew(
+            center,
+            width,
+            height,
+            rotationDegrees,
+            skew = 0f,
+        )
 
     /**
-     * Populates the [MutableParallelogram] to have a given [center], [width], [height], [rotation]
-     * and [skew]. If the [width] is less than zero or if the [rotation] is not in the range
-     * [0, 2π), it will be normalized. See the corresponding fields on [Parallelogram] for detail
-     * about these parameters.
+     * Populates the [MutableParallelogram] to have a given [center], [width], [height],
+     * [rotationDegrees] and [skew]. If the [width] is less than zero or if [rotationDegrees] is not
+     * within the range [0, 360.0), it will be normalized.
+     *
+     * See the corresponding fields on [Parallelogram] for details about these parameters.
      *
      * @return `this`
      */
-    public fun populateFromCenterDimensionsRotationAndSkew(
+    public fun populateFromCenterDimensionsRotationInDegreesAndSkew(
         center: MutableVec,
         @FloatRange(from = 0.0) width: Float,
         height: Float,
-        @AngleRadiansFloat rotation: Float,
+        @FloatRange(from = 0.0, to = 360.0, toInclusive = false)
+        @AngleDegreesFloat
+        rotationDegrees: Float,
         skew: Float,
     ): MutableParallelogram =
-        normalizeAndRun(width, height, rotation) { w: Float, h: Float, r: Float ->
-            setCenterDimensionsRotationAndSkew(center.x, center.y, w, h, r, skew)
+        normalizeAndRun(width, height, rotationDegrees) { w: Float, h: Float, degrees: Float ->
+            setCenterDimensionsRotationInDegreesAndSkew(center.x, center.y, w, h, degrees, skew)
         }
 
     /**
@@ -180,14 +206,17 @@ private constructor(
         normalizeAndRun(
             width = segment.computeLength() + 2 * padding,
             height = 2 * padding,
-            rotation = atan2((segment.start.y - segment.end.y), (segment.start.x - segment.end.x)),
-        ) { w: Float, h: Float, r: Float ->
-            setCenterDimensionsRotationAndSkew(
+            rotationDegrees =
+                Angle.radiansToDegrees(
+                    atan2((segment.start.y - segment.end.y), (segment.start.x - segment.end.x))
+                ),
+        ) { w: Float, h: Float, rDegrees: Float ->
+            setCenterDimensionsRotationInDegreesAndSkew(
                 segment.end.x / 2f + segment.start.x / 2f,
                 segment.end.y / 2f + segment.start.y / 2f,
                 width = w,
                 height = h,
-                rotation = r,
+                rotationDegrees = rDegrees,
                 skew = 0f,
             )
         }

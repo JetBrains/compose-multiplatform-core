@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package androidx.xr.scenecore
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.InputEventListener as RtInputEventListener
-import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.runtime.InputEventListener as RtInputEventListener
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -30,7 +30,7 @@ import java.util.function.Consumer
  */
 public class InteractableComponent
 private constructor(
-    private val runtime: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
     private val entityManager: EntityManager,
     private val executor: Executor,
     private val inputEventListener: Consumer<InputEvent>,
@@ -39,7 +39,7 @@ private constructor(
         inputEventListener.accept(rtEvent.toInputEvent(entityManager))
     }
     private val rtInteractableComponent by lazy {
-        runtime.createInteractableComponent(executor, rtInputEventListener)
+        sceneRuntime.createInteractableComponent(executor, rtInputEventListener)
     }
     private var entity: Entity? = null
 
@@ -55,7 +55,7 @@ private constructor(
             return false
         }
         this.entity = entity
-        return (entity as BaseEntity<*>).rtEntity.addComponent(rtInteractableComponent)
+        return (entity as BaseEntity<*>).rtEntity!!.addComponent(rtInteractableComponent)
     }
 
     /**
@@ -64,19 +64,19 @@ private constructor(
      * @param entity The [Entity] to detach this component from.
      */
     override fun onDetach(entity: Entity) {
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtInteractableComponent)
+        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtInteractableComponent)
         this.entity = null
     }
 
     public companion object {
         /** Factory for Interactable component. */
         internal fun create(
-            runtime: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             executor: Executor,
             inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent {
-            return InteractableComponent(runtime, entityManager, executor, inputEventListener)
+            return InteractableComponent(sceneRuntime, entityManager, executor, inputEventListener)
         }
 
         /**
@@ -93,12 +93,7 @@ private constructor(
             executor: Executor,
             inputEventListener: Consumer<InputEvent>,
         ): InteractableComponent =
-            create(
-                session.platformAdapter,
-                session.scene.entityManager,
-                executor,
-                inputEventListener,
-            )
+            create(session.sceneRuntime, session.scene.entityManager, executor, inputEventListener)
 
         /**
          * Public factory for creating an InteractableComponent. It enables access to raw input

@@ -32,7 +32,6 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
@@ -75,11 +74,20 @@ internal sealed class CoreEntity(protected val entity: Entity) : OpaqueEntity {
         get() = layout?.measurableLayout?.poseInParentEntity ?: Pose.Identity
 
     internal open var poseInMeters: Pose
-        get() = entity.getPose()
-        set(value) {
-            if (entity.getPose() != value) {
-                entity.setPose(value)
+        // TODO: b/440426914 - Avoid eating the IllegalStateException silently.
+        get() {
+            return try {
+                entity.getPose()
+            } catch (e: IllegalStateException) {
+                Pose.Identity
             }
+        }
+        set(value) {
+            try {
+                if (entity.getPose() != value) {
+                    entity.setPose(value)
+                }
+            } catch (e: IllegalStateException) {}
         }
 
     /** Get the [Entity] associated with this [CoreEntity] for testing purposes. */
@@ -411,7 +419,6 @@ internal class AdaptableCoreEntity<T : Entity>(
  */
 internal class CoreSphereSurfaceEntity(
     internal val surfaceEntity: SurfaceEntity,
-    private val headPose: Pose?,
     val initialDensity: Density,
 ) : CoreEntity(surfaceEntity) {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
@@ -450,18 +457,6 @@ internal class CoreSphereSurfaceEntity(
     // initialDensity.
     private val localDensity: Density
         get() = layout?.density ?: initialDensity
-
-    override val layoutPoseInPixels: Pose
-        get() =
-            super.layoutPoseInPixels.let {
-                it.copy(
-                    it.translation +
-                        (headPose?.translation?.convertMetersToPixels(localDensity) ?: Vector3())
-                )
-            }
-
-    /** The parent of spheres is always scene.activitySpace. Setting this has no affect. */
-    override var parent: CoreEntity? = null
 
     /** Radius in meters. */
     internal var radius: Float

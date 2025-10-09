@@ -16,8 +16,11 @@
 
 package androidx.xr.glimmer
 
+import android.app.Instrumentation
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.rules.ExternalResource
 
@@ -33,18 +36,30 @@ class InputModeRule(val inputMode: InputMode) : ExternalResource() {
     override fun before() {
         // TODO(b/267253920): Add a compose test API to set/reset InputMode.
         when (inputMode) {
-            InputMode.Touch -> InstrumentationRegistry.getInstrumentation().setInTouchMode(true)
-            InputMode.Keyboard -> InstrumentationRegistry.getInstrumentation().setInTouchMode(false)
+            InputMode.Touch ->
+                InstrumentationRegistry.getInstrumentation().setInTouchModeCompat(true)
+            InputMode.Keyboard ->
+                InstrumentationRegistry.getInstrumentation().setInTouchModeCompat(false)
             else -> error("Unexpected input mode [$inputMode].")
         }
     }
 
     override fun after() {
         // TODO(b/267253920): Add a compose test API to set/reset InputMode.
-        if (SDK_INT >= 33) {
-            InstrumentationRegistry.getInstrumentation().resetInTouchMode()
+        InstrumentationRegistry.getInstrumentation().resetInTouchModeCompat()
+    }
+
+    private fun Instrumentation.setInTouchModeCompat(touchMode: Boolean) {
+        if (touchMode) {
+            setInTouchMode(true)
         } else {
-            InstrumentationRegistry.getInstrumentation().setInTouchMode(true)
+            // setInTouchMode(false) is flaky, so we press a key to put the system in non-touch
+            // mode.
+            sendKeyDownUpSync(Key.Grave.nativeKeyCode)
         }
+    }
+
+    private fun Instrumentation.resetInTouchModeCompat() {
+        if (SDK_INT < 33) setInTouchMode(true) else resetInTouchMode()
     }
 }

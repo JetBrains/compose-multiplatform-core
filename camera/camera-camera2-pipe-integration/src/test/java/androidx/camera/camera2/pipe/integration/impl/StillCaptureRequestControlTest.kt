@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CaptureConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
@@ -434,7 +433,6 @@ class StillCaptureRequestControlTest {
             UseCaseGraphConfig(
                 graph = fakeCameraGraph,
                 surfaceToStreamMap = mapOf(fakeSurface to StreamId(0)),
-                cameraStateAdapter = CameraStateAdapter(),
             )
         fakeConfigAdapter =
             CaptureConfigAdapter(

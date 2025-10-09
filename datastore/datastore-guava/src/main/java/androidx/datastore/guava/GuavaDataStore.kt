@@ -17,8 +17,6 @@
 package androidx.datastore.guava
 
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture
 import androidx.datastore.core.CurrentDataProviderStore
 import androidx.datastore.core.DataMigration
@@ -55,24 +53,24 @@ internal constructor(
      * ongoing updates.
      */
     public fun getDataAsync(): ListenableFuture<T> {
-        return launchFuture(coroutineContext) { dataStore.currentData() }
+        return launchFuture(context = coroutineContext, launchUndispatched = false) {
+            dataStore.currentData()
+        }
     }
 
     /**
-     * Returns a [ListenableFuture] to update the data using the provided [transform]. The
-     * [transform] is given the latest persisted data to produce its output, which is then persisted
-     * and returned. Concurrent updates are serialized (at most one update running at a time).
+     * Returns a [ListenableFuture] to update the data using the provided [dataTransform]. The
+     * [dataTransform] is given the latest persisted data to produce its output, which is then
+     * persisted and returned. Concurrent updates are serialized (at most one update running at a
+     * time).
+     *
+     * Ideally the shape of the [DataTransform] param would have been a `T -> R` but we choose to
+     * keep it as `T -> T` to match [DataStore.updateData].
      */
-    // TODO(b/433318718): Change parameter type to be Function<T, T> after g3 migration.
-    public fun updateDataAsync(transform: (input: T) -> T): ListenableFuture<T> {
-        return launchFuture(coroutineContext) { dataStore.updateData { transform.invoke(it) } }
-    }
-
-    // TODO(b/433318718): Remove this function before we go to stable as we want users to use the
-    //  `Function<T, T>` function parameter version.
-    @RequiresApi(Build.VERSION_CODES.N)
-    public fun updateDataFunctionAsync(transform: Function<T, T>): ListenableFuture<T> {
-        return launchFuture(coroutineContext) { dataStore.updateData { transform.apply(it) } }
+    public fun updateDataAsync(dataTransform: DataTransform<T, T>): ListenableFuture<T> {
+        return launchFuture(context = coroutineContext, launchUndispatched = false) {
+            dataStore.updateData { dataTransform.transform(it) }
+        }
     }
 
     /** Builder class for a [GuavaDataStore]. */
@@ -210,6 +208,20 @@ internal constructor(
          * [GuavaDataStore] will be sequenced by the underlying [DataStore]. It is thread-safe.
          *
          * @param dataStore the DataStore used to create GuavaDataStore
+         * @param executor the Executor used to launch the calls to DataStore.
+         * @return the GuavaDataStore created with the provided parameters
+         */
+        @JvmStatic
+        public fun <T : Any> from(dataStore: DataStore<T>, executor: Executor): GuavaDataStore<T> {
+            return from(dataStore, executor.asCoroutineDispatcher())
+        }
+
+        /**
+         * Wraps a [GuavaDataStore] around a [DataStore]. This method does not create a new
+         * [DataStore], so all [getDataAsync] and [updateDataAsync] called from the resulting
+         * [GuavaDataStore] will be sequenced by the underlying [DataStore]. It is thread-safe.
+         *
+         * @param dataStore the DataStore used to create GuavaDataStore
          * @param coroutineContext the CoroutineContext used to launch the calls to DataStore. The
          *   default value is [Dispatchers.IO]
          * @return the GuavaDataStore created with the provided parameters
@@ -229,4 +241,20 @@ internal constructor(
             )
         }
     }
+}
+
+/**
+ * A functional interface for transforming data within [GuavaDataStore].
+ *
+ * @param I The type of the input data.
+ * @param O The type of the output data.
+ */
+public fun interface DataTransform<I, O> {
+    /**
+     * Applies a transformation to the input data.
+     *
+     * @param input The input data to be transformed.
+     * @return The transformed output data.
+     */
+    public fun transform(input: I): O
 }

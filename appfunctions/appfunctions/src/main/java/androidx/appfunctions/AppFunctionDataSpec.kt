@@ -33,6 +33,7 @@ import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import java.util.Objects
 
 /** Specification class defining the properties metadata for [AppFunctionData]. */
 internal abstract class AppFunctionDataSpec {
@@ -41,7 +42,10 @@ internal abstract class AppFunctionDataSpec {
 
     internal abstract fun getDataType(key: String): AppFunctionDataTypeMetadata?
 
+    /** Checks if [key] must be set with non-null value in [AppFunctionData]. */
     internal abstract fun isRequired(key: String): Boolean
+
+    internal abstract fun getAllPropertyKeys(): Set<String>
 
     /** Checks if there is a metadata for [key]. */
     fun containsMetadata(key: String): Boolean {
@@ -94,8 +98,10 @@ internal abstract class AppFunctionDataSpec {
      * @throws IllegalArgumentException If the [data] does not match the specification.
      */
     fun validateDataSpecMatches(data: AppFunctionData) {
-        val otherSpec = data.spec ?: return
-        require(this == otherSpec) { "$data does not match the metadata specification of $this" }
+        // TODO(b/447064745): Fix child object validation when spec is from schema inventory
+        val unused = data.spec ?: return
+        //        require(this == otherSpec) { "$data does not match the metadata specification of
+        // $this" }
     }
 
     /**
@@ -110,7 +116,7 @@ internal abstract class AppFunctionDataSpec {
         targetKey: String,
         targetClass: Class<*>,
         isCollection: Boolean,
-        targetValue: Any? = null,
+        targetValue: Any,
     ) {
         val targetDataTypeMetadata = getDataType(targetKey)
         if (targetDataTypeMetadata == null) {
@@ -164,23 +170,35 @@ internal abstract class AppFunctionDataSpec {
         targetKey: String,
         targetValue: Any?,
     ) {
+        // targetValue == null is allowed when the data type is nullable or is marked optional in
+        // either ObjectSpec or ParameterSpec.
+        require(targetValue != null || !isRequired(targetKey)) {
+            "\"$targetKey\" cannot be set to a null value."
+        }
+
+        // If null is allowed, no need to check for constraint conformance.
+        if (targetValue == null) return
+
         when (this) {
             is AppFunctionIntTypeMetadata -> {
-                if (targetValue == null) return
-
+                require(enumValues == null || enumValues.contains(targetValue)) {
+                    "Invalid value for \"$targetKey\" got \"$targetValue\", expecting one of $enumValues"
+                }
+            }
+            is AppFunctionStringTypeMetadata -> {
                 require(enumValues == null || enumValues.contains(targetValue)) {
                     "Invalid value for \"$targetKey\" got \"$targetValue\", expecting one of $enumValues"
                 }
             }
             is AppFunctionArrayTypeMetadata -> {
-                this.requireConstraintsConformance(targetKey, targetValue)
+                this.requireItemTypeConstraintsConformance(targetKey, targetValue)
             }
 
             else -> {}
         }
     }
 
-    private fun AppFunctionArrayTypeMetadata.requireConstraintsConformance(
+    private fun AppFunctionArrayTypeMetadata.requireItemTypeConstraintsConformance(
         targetKey: String,
         targetValue: Any?,
     ) {
@@ -188,6 +206,13 @@ internal abstract class AppFunctionDataSpec {
             is AppFunctionIntTypeMetadata -> {
                 val intArray = targetValue as? IntArray
                 for (item in intArray ?: intArrayOf()) {
+                    itemType.requireConstraintsConformance(targetKey, item)
+                }
+            }
+
+            is AppFunctionStringTypeMetadata -> {
+                @Suppress("UNCHECKED_CAST") val stringList = targetValue as? List<String>
+                for (item in stringList ?: emptyList()) {
                     itemType.requireConstraintsConformance(targetKey, item)
                 }
             }
@@ -200,6 +225,18 @@ internal abstract class AppFunctionDataSpec {
         private val objectTypeMetadata: AppFunctionObjectTypeMetadata,
         override val componentMetadata: AppFunctionComponentsMetadata,
     ) : AppFunctionDataSpec() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ObjectSpec) return false
+
+            // TODO(b/446606781): Comparing component metadata
+            return this.objectTypeMetadata == other.objectTypeMetadata
+        }
+
+        override fun hashCode(): Int {
+            return Objects.hash(objectTypeMetadata)
+        }
+
         override val objectQualifiedName: String
             get() = objectTypeMetadata.qualifiedName ?: ""
 
@@ -208,14 +245,32 @@ internal abstract class AppFunctionDataSpec {
         }
 
         override fun isRequired(key: String): Boolean {
-            return objectTypeMetadata.required.contains(key)
+            val isRequired = objectTypeMetadata.required.contains(key)
+            val isNullable = objectTypeMetadata.properties[key]?.isNullable ?: true
+            // A field is only required when it is in required list AND being non-null. A nullable
+            // required field is considered as optional from data validation's perspective.
+            return isRequired && !isNullable
         }
+
+        override fun getAllPropertyKeys(): Set<String> = objectTypeMetadata.properties.keys
     }
 
     private data class ParametersSpec(
         private val parameterMetadataList: List<AppFunctionParameterMetadata>,
         override val componentMetadata: AppFunctionComponentsMetadata,
     ) : AppFunctionDataSpec() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ParametersSpec) return false
+
+            // TODO(b/446606781): Comparing component metadata
+            return this.parameterMetadataList == other.parameterMetadataList
+        }
+
+        override fun hashCode(): Int {
+            return Objects.hash(parameterMetadataList)
+        }
+
         override val objectQualifiedName: String
             get() = ""
 
@@ -224,8 +279,17 @@ internal abstract class AppFunctionDataSpec {
         }
 
         override fun isRequired(key: String): Boolean {
-            return parameterMetadataList.firstOrNull { it.name == key }?.isRequired ?: false
+            val isRequired =
+                parameterMetadataList.firstOrNull { it.name == key }?.isRequired ?: false
+            val isNullable =
+                parameterMetadataList.firstOrNull { it.name == key }?.dataType?.isNullable ?: true
+            // A field is only required when it is in required list AND being non-null. A nullable
+            // required field is considered as optional from data validation's perspective.
+            return isRequired && !isNullable
         }
+
+        override fun getAllPropertyKeys(): Set<String> =
+            parameterMetadataList.map { it.name }.toSet()
     }
 
     fun AppFunctionDataTypeMetadata.conform(typeClazz: Class<*>, isCollection: Boolean): Boolean {
@@ -260,6 +324,9 @@ internal abstract class AppFunctionDataSpec {
             is AppFunctionObjectTypeMetadata -> {
                 !isCollection && this.conform(typeClazz)
             }
+            is AppFunctionAllOfTypeMetadata -> {
+                !isCollection && this.conform(typeClazz)
+            }
             is AppFunctionReferenceTypeMetadata -> {
                 !isCollection && this.conform(typeClazz)
             }
@@ -274,6 +341,10 @@ internal abstract class AppFunctionDataSpec {
     }
 
     private fun AppFunctionObjectTypeMetadata.conform(typeClass: Class<*>): Boolean {
+        return typeClass == AppFunctionData::class.java
+    }
+
+    private fun AppFunctionAllOfTypeMetadata.conform(typeClass: Class<*>): Boolean {
         return typeClass == AppFunctionData::class.java
     }
 

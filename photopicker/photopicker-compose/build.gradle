@@ -51,8 +51,12 @@ dependencies {
 android {
     namespace = "androidx.photopicker.compose"
     compileSdk = 36
+    compileSdkExtension = 19
     defaultConfig {
         minSdk = 34
+    }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
     }
 }
 

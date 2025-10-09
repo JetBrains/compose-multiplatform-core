@@ -17,16 +17,17 @@
 package androidx.xr.arcore
 
 import android.annotation.SuppressLint
-import androidx.xr.runtime.internal.ArDevice as RuntimeArDevice
-import androidx.xr.runtime.internal.AugmentedObject as RuntimeObject
-import androidx.xr.runtime.internal.DepthMap as RuntimeDepthMap
-import androidx.xr.runtime.internal.Earth as RuntimeEarth
-import androidx.xr.runtime.internal.Face as RuntimeFace
-import androidx.xr.runtime.internal.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
+import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
+import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
+import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.runtime.Eye as RuntimeEye
+import androidx.xr.arcore.runtime.Face as RuntimeFace
+import androidx.xr.arcore.runtime.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.Plane as RuntimePlane
+import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
+import androidx.xr.arcore.runtime.Trackable as RuntimeTrackable
 import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.Plane as RuntimePlane
-import androidx.xr.runtime.internal.RenderViewpoint as RuntimeRenderViewpoint
-import androidx.xr.runtime.internal.Trackable as RuntimeTrackable
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
@@ -49,6 +50,12 @@ internal class XrResourcesManager {
     private val _trackablesMap =
         java.util.concurrent.ConcurrentHashMap<RuntimeTrackable, Trackable<Trackable.State>>()
     val trackablesMap: Map<RuntimeTrackable, Trackable<Trackable.State>> = _trackablesMap
+
+    /** The data of eyes */
+    private var _leftRuntimeEye: RuntimeEye? = null
+    private var _rightRuntimeEye: RuntimeEye? = null
+    val leftEye: Eye? by lazy { _leftRuntimeEye?.let { Eye(it) } }
+    val rightEye: Eye? by lazy { _rightRuntimeEye?.let { Eye(it) } }
 
     /** The data of hands */
     private var _leftRuntimeHand: RuntimeHand? = null
@@ -80,14 +87,22 @@ internal class XrResourcesManager {
         get() = checkNotNull(_earth)
 
     /** The depth map data */
-    lateinit var _depthMaps: List<DepthMap>
+    var leftDepthMap: DepthMap? = null
         private set
 
-    val depthMaps: List<DepthMap>
-        get() = if (::_depthMaps.isInitialized) _depthMaps else emptyList()
+    var rightDepthMap: DepthMap? = null
+        private set
+
+    var monoDepthMap: DepthMap? = null
+        private set
 
     internal fun initiateEarth(runtimeEarth: RuntimeEarth) {
         _earth = Earth(runtimeEarth, this)
+    }
+
+    internal fun initiateEyes(leftRuntimeEye: RuntimeEye?, rightRuntimeEye: RuntimeEye?) {
+        _leftRuntimeEye = leftRuntimeEye
+        _rightRuntimeEye = rightRuntimeEye
     }
 
     internal fun initiateHands(leftRuntimeHand: RuntimeHand?, rightRuntimeHand: RuntimeHand?) {
@@ -113,8 +128,14 @@ internal class XrResourcesManager {
         }
     }
 
-    internal fun initiateDepthMaps(runtimeDepthMaps: List<RuntimeDepthMap>) {
-        _depthMaps = runtimeDepthMaps.map { DepthMap(it) }
+    internal fun initiateDepthMaps(
+        runtimeLeftDepthMap: RuntimeDepthMap?,
+        runtimeRightDepthMap: RuntimeDepthMap?,
+        runtimeMonoDepthMap: RuntimeDepthMap?,
+    ) {
+        runtimeLeftDepthMap?.let { leftDepthMap = DepthMap(it) }
+        runtimeRightDepthMap?.let { rightDepthMap = DepthMap(it) }
+        runtimeMonoDepthMap?.let { monoDepthMap = DepthMap(it) }
     }
 
     internal fun initiateFace(userFace: RuntimeFace?) {
@@ -147,10 +168,6 @@ internal class XrResourcesManager {
         // unit tests.
         if (_earth != null) {
             earth.update()
-        }
-
-        for (depthMap in depthMaps) {
-            depthMap.update()
         }
     }
 

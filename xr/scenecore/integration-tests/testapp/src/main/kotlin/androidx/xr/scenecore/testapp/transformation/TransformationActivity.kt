@@ -234,39 +234,51 @@ class TransformationActivity : AppCompatActivity() {
             val anchorSpacePose = trackedEntity.transformPoseTo(Pose.Identity, anchor!!)
             view.setLine("AnchorSpacePose", anchorSpacePose.toFormattedString())
             val anchorWorldPos = anchor!!.getPose(Space.REAL_WORLD).translation
-            view.setLine(
-                "Distance to Anchor (dest units)",
-                length(anchorSpacePose.translation).toString(),
-            )
-            view.setLine(
-                "Distance to Anchor (meters)",
-                distance(trackedEntityWorldPos, anchorWorldPos).toString(),
-            )
+            // Only show the distance to the anchor if it is not the anchor itself.
+            if (trackedEntity != anchor) {
+                view.setLine(
+                    "Distance to Anchor (dest units)",
+                    length(anchorSpacePose.translation).toString(),
+                )
+                view.setLine(
+                    "Distance to Anchor (meters)",
+                    distance(trackedEntityWorldPos, anchorWorldPos).toString(),
+                )
+            }
         } else {
             view.setLine("AnchorSpacePose", "N/A (Anchor not ready)")
-            view.setLine("Distance to Anchor (dest units)", "N/A")
-            view.setLine("Distance to Anchor (meters)", "N/A")
+            // Only show the distance to the anchor if it is not the anchor itself.
+            if (trackedEntity != anchor) {
+                view.setLine("Distance to Anchor (dest units)", "N/A")
+                view.setLine("Distance to Anchor (meters)", "N/A")
+            }
         }
         val activitySpacePos = session!!.scene.activitySpace.getPose(Space.REAL_WORLD).translation
-        view.setLine(
-            "Distance to ActivitySpace (dest units)",
-            length(activitySpacePose.translation).toString(),
-        )
-        view.setLine(
-            "Distance to ActivitySpace (meters)",
-            distance(trackedEntityWorldPos, activitySpacePos).toString(),
-        )
+        // Only show the distance to the activity space if it is not the activity space itself.
+        if (trackedEntity != session!!.scene.activitySpace) {
+            view.setLine(
+                "Distance to ActivitySpace (dest units)",
+                length(activitySpacePose.translation).toString(),
+            )
+            view.setLine(
+                "Distance to ActivitySpace (meters)",
+                distance(trackedEntityWorldPos, activitySpacePos).toString(),
+            )
+        }
 
         val mainPanelWorldPos =
             session!!.scene.mainPanelEntity.getPose(Space.REAL_WORLD).translation
-        view.setLine(
-            "Distance to Main Panel (dest units)",
-            length(mainPanelSpacePose.translation).toString(),
-        )
-        view.setLine(
-            "Distance to Main Panel (meters)",
-            distance(trackedEntityWorldPos, mainPanelWorldPos).toString(),
-        )
+        // Only show the distance to the main panel space if it is not the main panel space itself.
+        if (trackedEntity != session!!.scene.mainPanelEntity) {
+            view.setLine(
+                "Distance to Main Panel (dest units)",
+                length(mainPanelSpacePose.translation).toString(),
+            )
+            view.setLine(
+                "Distance to Main Panel (meters)",
+                distance(trackedEntityWorldPos, mainPanelWorldPos).toString(),
+            )
+        }
         when (trackedEntity) {
             is PanelEntity -> {
                 view.setLine("Panel size", trackedEntity.size.toString())

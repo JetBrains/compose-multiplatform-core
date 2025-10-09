@@ -65,12 +65,12 @@ public final class SearchSpecToPlatformConverter {
                 new android.app.appsearch.SearchSpec.Builder();
 
         if (!jetpackSearchSpec.getAdvancedRankingExpression().isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                 throw new UnsupportedOperationException(
                         Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION
                                 + " is not available on this AppSearch implementation.");
             }
-            ApiHelperForU.setRankingStrategy(
+            ApiHelperForSdkExtensionUBase.setRankingStrategy(
                     platformBuilder, jetpackSearchSpec.getAdvancedRankingExpression());
         } else {
             platformBuilder.setRankingStrategy(jetpackSearchSpec.getRankingStrategy());
@@ -213,10 +213,13 @@ public final class SearchSpecToPlatformConverter {
         }
 
         if (jetpackSearchSpec.isScorablePropertyRankingEnabled()) {
-            // TODO(b/379743983): Remove once this feature is available.
-            throw new UnsupportedOperationException(
-                    Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
-                            + " is not available on this AppSearch implementation.");
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
+                throw new UnsupportedOperationException(
+                        Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                                + " is not available on this AppSearch implementation.");
+            }
+            ApiHelperForSdkExtensionBBase.setScorablePropertyRankingEnabled(
+                    platformBuilder, jetpackSearchSpec.isScorablePropertyRankingEnabled());
         }
         return platformBuilder.build();
     }
@@ -228,6 +231,12 @@ public final class SearchSpecToPlatformConverter {
     private static class ApiHelperForSdkExtensionUBase {
         private ApiHelperForSdkExtensionUBase() {
             // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static void setRankingStrategy(android.app.appsearch.SearchSpec.@NonNull Builder builder,
+                @NonNull String rankingExpression) {
+            builder.setRankingStrategy(rankingExpression);
         }
 
         @DoNotInline
@@ -243,12 +252,6 @@ public final class SearchSpecToPlatformConverter {
     private static class ApiHelperForU {
         private ApiHelperForU() {
             // This class is not instantiable.
-        }
-
-        @DoNotInline
-        static void setRankingStrategy(android.app.appsearch.SearchSpec.@NonNull Builder builder,
-                @NonNull String rankingExpression) {
-            builder.setRankingStrategy(rankingExpression);
         }
 
         @DoNotInline
@@ -301,6 +304,21 @@ public final class SearchSpecToPlatformConverter {
                 android.app.appsearch.SearchSpec.Builder platformBuilder,
                 String searchSourceLogTag) {
             platformBuilder.setSearchSourceLogTag(searchSourceLogTag);
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.B_BASE)
+    private static class ApiHelperForSdkExtensionBBase {
+        private ApiHelperForSdkExtensionBBase() {
+            // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static void setScorablePropertyRankingEnabled(
+                android.app.appsearch.SearchSpec.Builder platformBuilder,
+                boolean isScorablePropertyRankingEnabled) {
+            platformBuilder.setScorablePropertyRankingEnabled(isScorablePropertyRankingEnabled);
         }
     }
 

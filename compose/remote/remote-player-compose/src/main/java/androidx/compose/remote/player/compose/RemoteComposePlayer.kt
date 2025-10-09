@@ -22,11 +22,13 @@ import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.SystemClock
 import androidx.compose.remote.player.compose.context.ComposePaintContext
 import androidx.compose.remote.player.compose.context.ComposeRemoteContext
-import androidx.compose.remote.player.view.RemoteComposeDocument
-import androidx.compose.remote.player.view.action.NamedActionHandler
-import androidx.compose.remote.player.view.action.StateUpdaterActionCallback
-import androidx.compose.remote.player.view.state.StateUpdater
-import androidx.compose.remote.player.view.state.StateUpdaterImpl
+import androidx.compose.remote.player.core.RemoteComposeDocument
+import androidx.compose.remote.player.core.action.NamedActionHandler
+import androidx.compose.remote.player.core.action.StateUpdaterActionCallback
+import androidx.compose.remote.player.core.platform.BitmapLoader
+import androidx.compose.remote.player.core.platform.SettingsRetriever
+import androidx.compose.remote.player.core.state.StateUpdater
+import androidx.compose.remote.player.core.state.StateUpdaterImpl
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -40,11 +42,12 @@ import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import java.time.Clock
 
 /**
- * This is a player for a [androidx.compose.remote.player.view.RemoteComposeDocument].
+ * This is a player for a [RemoteComposeDocument].
  *
  * <p>It displays the document as well as providing the integration with the Android system (e.g.
  * passing sensor values, etc.). It also exposes player APIs that allows to control how the document
@@ -58,20 +61,25 @@ internal fun RemoteComposePlayer(
     debugMode: Int = 0,
     clock: Clock = SystemClock(),
     onNamedAction: (name: String, value: Any?, stateUpdater: StateUpdater) -> Unit = { _, _, _ -> },
+    bitmapLoader: BitmapLoader? = null,
 ) {
     var start by remember(document) { mutableLongStateOf(System.nanoTime()) }
     var lastAnimationTime by remember(document) { mutableFloatStateOf(0.1f) }
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
 
     val remoteContext by
         remember(document) {
             val composeRemoteContext = ComposeRemoteContext(SystemClock())
             document.initializeContext(composeRemoteContext)
-            composeRemoteContext.isAnimationEnabled = true
+            composeRemoteContext.a11yAnimationEnabled = SettingsRetriever.animationsEnabled(context)
             composeRemoteContext.setDebug(debugMode)
             composeRemoteContext.theme = theme
             composeRemoteContext.setHaptic(haptic)
             composeRemoteContext.loadFloat(RemoteContext.ID_TOUCH_EVENT_TIME, -Float.MAX_VALUE)
+            if (bitmapLoader != null) {
+                composeRemoteContext.setBitmapLoader(bitmapLoader)
+            }
             mutableStateOf<RemoteContext>(composeRemoteContext)
         }
 
@@ -133,15 +141,18 @@ internal fun RemoteComposePlayer(
     ) {
         drawIntoCanvas {
             it.save()
+            it.clipRect(0f, 0f, size.width, size.height)
 
-            val nanoStart = nanoTime(clock)
-            val animationTime: Float = (nanoStart - start) * 1E-9f
-            remoteContext.animationTime = animationTime
-            remoteContext.loadFloat(RemoteContext.ID_ANIMATION_TIME, animationTime)
-            val loopTime: Float = animationTime - lastAnimationTime
-            remoteContext.loadFloat(RemoteContext.ID_ANIMATION_DELTA_TIME, loopTime)
-            lastAnimationTime = animationTime
-            remoteContext.currentTime = clock.millis()
+            if (remoteContext.isAnimationEnabled) {
+                val nanoStart = nanoTime(clock)
+                val animationTime: Float = (nanoStart - start) * 1E-9f
+                remoteContext.animationTime = animationTime
+                remoteContext.loadFloat(RemoteContext.ID_ANIMATION_TIME, animationTime)
+                val loopTime: Float = animationTime - lastAnimationTime
+                remoteContext.loadFloat(RemoteContext.ID_ANIMATION_DELTA_TIME, loopTime)
+                lastAnimationTime = animationTime
+                remoteContext.currentTime = clock.millis()
+            }
 
             remoteContext.density = density
             remoteContext.mWidth = size.width
@@ -152,7 +163,7 @@ internal fun RemoteComposePlayer(
             remoteContext.setPaintContext(
                 ComposePaintContext(remoteContext as ComposeRemoteContext, it)
             )
-            document.paint(remoteContext, 0)
+            document.paint(remoteContext, theme)
             it.restore()
         }
     }

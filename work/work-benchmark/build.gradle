@@ -34,7 +34,7 @@ dependencies {
     androidTestImplementation(project(":work:work-runtime-ktx"))
     androidTestImplementation(project(":work:work-multiprocess"))
     androidTestImplementation(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))
-    androidTestImplementation(project(":room:room-runtime"))
+    androidTestImplementation("androidx.room:room-runtime:2.7.2")
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)

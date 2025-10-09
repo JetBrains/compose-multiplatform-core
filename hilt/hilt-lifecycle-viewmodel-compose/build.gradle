@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -58,12 +59,16 @@ androidx {
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2025"
     description = "ViewModel Compose Hilt Extension"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {
     compileSdk = 35
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.lifecycle.viewmodel.compose.TestRunner"
+    }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
     }
     namespace = "androidx.hilt.lifecycle.viewmodel.compose"
 }

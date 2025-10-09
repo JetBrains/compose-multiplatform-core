@@ -16,17 +16,24 @@
 
 package androidx.glance.wear
 
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import androidx.glance.wear.data.IWearWidgetProvider
+import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.glance.wear.parcel.IWearWidgetCallback
+import androidx.glance.wear.parcel.IWearWidgetProvider
+import androidx.glance.wear.parcel.legacy.TileProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class GlanceWearTilesTest {
+class GlanceWearWidgetServiceTest {
+
+    private val mockWidgetCallback = mock<IWearWidgetCallback>()
 
     @Test
     fun onBind_withWidgetIntent_returnsWidgetProvider() {
@@ -39,6 +46,42 @@ class GlanceWearTilesTest {
     }
 
     @Test
+    fun onBind_withTileIntentAndSupportsWidgetProvider_returnsWidgetProvider() {
+        val service: TestService = Robolectric.setupService(TestService::class.java)
+        val bindIntent =
+            Intent(GlanceWearWidgetService.ACTION_BIND_TILE_PROVIDER).apply {
+                putExtra(GlanceWearWidgetService.EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED, true)
+            }
+
+        val binder: IBinder? = service.onBind(bindIntent)
+
+        assertThat(binder).isInstanceOf(IWearWidgetProvider::class.java)
+    }
+
+    @Test
+    fun onBind_withTileIntentAndDoesNotSupportWidgetProvider_returnsLegacyProvider() {
+        val service: TestService = Robolectric.setupService(TestService::class.java)
+        val bindIntent =
+            Intent(GlanceWearWidgetService.ACTION_BIND_TILE_PROVIDER).apply {
+                putExtra(GlanceWearWidgetService.EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED, false)
+            }
+
+        val binder: IBinder? = service.onBind(bindIntent)
+
+        assertThat(binder).isInstanceOf(TileProvider::class.java)
+    }
+
+    @Test
+    fun onBind_withTileIntentAndNoExtras_returnsLegacyProvider() {
+        val service: TestService = Robolectric.setupService(TestService::class.java)
+        val bindIntent = Intent(GlanceWearWidgetService.ACTION_BIND_TILE_PROVIDER)
+
+        val binder: IBinder? = service.onBind(bindIntent)
+
+        assertThat(binder).isInstanceOf(TileProvider::class.java)
+    }
+
+    @Test
     fun onBind_withWrongIntent_returnsNull() {
         val service: TestService = Robolectric.setupService(TestService::class.java)
 
@@ -47,5 +90,20 @@ class GlanceWearTilesTest {
         assertThat(binder).isNull()
     }
 
-    private class TestService() : GlanceWearWidgetService()
+    @Suppress("RestrictedApiAndroidX")
+    class TestWidget : GlanceWearWidget() {
+        var instanceId: Int? = null
+
+        override suspend fun provideWidgetContent(
+            context: Context,
+            request: WearWidgetRequest,
+        ): WearWidgetContent {
+            instanceId = request.instanceId
+            return WearWidgetContent { RemoteText("Testing...") }
+        }
+    }
+
+    private class TestService() : GlanceWearWidgetService() {
+        override val widget = TestWidget()
+    }
 }

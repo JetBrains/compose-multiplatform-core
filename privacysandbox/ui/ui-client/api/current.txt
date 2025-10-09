@@ -33,9 +33,9 @@ package androidx.privacysandbox.ui.client.view {
   @SuppressCompatibility @androidx.privacysandbox.ui.core.ExperimentalFeatures.SharedUiPresentationApi public final class SharedUiAsset {
     ctor public SharedUiAsset(android.view.View view, String assetId);
     ctor public SharedUiAsset(android.view.View view, String assetId, optional androidx.privacysandbox.ui.core.SandboxedUiAdapter? sandboxedUiAdapter);
-    method public String getAssetId();
-    method public androidx.privacysandbox.ui.core.SandboxedUiAdapter? getSandboxedUiAdapter();
-    method public android.view.View getView();
+    method @InaccessibleFromKotlin public String getAssetId();
+    method @InaccessibleFromKotlin public androidx.privacysandbox.ui.core.SandboxedUiAdapter? getSandboxedUiAdapter();
+    method @InaccessibleFromKotlin public android.view.View getView();
     property public String assetId;
     property public androidx.privacysandbox.ui.core.SandboxedUiAdapter? sandboxedUiAdapter;
     property public android.view.View view;

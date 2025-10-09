@@ -62,6 +62,12 @@ fun CardSample() {
 
 @Sampled
 @Composable
+fun NonClickableCardSample() {
+    Card { Text("Non Clickable Card") }
+}
+
+@Sampled
+@Composable
 fun CardWithOnLongClickSample(onLongClickHandler: () -> Unit) {
     Card(
         onClick = { /* Do something */ },
@@ -82,6 +88,18 @@ fun AppCardSample() {
         time = { Text("Now") },
     ) {
         Text("Card content")
+    }
+}
+
+@Sampled
+@Composable
+fun NonClickableAppCardSample() {
+    AppCard(
+        appName = { Text("App name") },
+        title = { Text("Card title") },
+        time = { Text("Now") },
+    ) {
+        Text("Non clickable card content")
     }
 }
 
@@ -159,6 +177,14 @@ fun TitleCardSample() {
 
 @Sampled
 @Composable
+fun NonClickableTitleCardSample() {
+    TitleCard(title = { Text("Title card") }, time = { Text("Now") }) {
+        Text("Non clickable Card content")
+    }
+}
+
+@Sampled
+@Composable
 fun TitleCardWithSubtitleAndTimeSample() {
     TitleCard(
         onClick = { /* Do something */ },
@@ -224,8 +250,30 @@ fun TitleCardWithImageWithTimeAndTitleSample() {
 
 @Sampled
 @Composable
+fun NonClickableTitleCardWithImageWithTimeAndTitleSample() {
+    TitleCard(
+        containerPainter =
+            CardDefaults.containerPainter(image = painterResource(id = R.drawable.backgroundimage)),
+        title = { Text("Card title") },
+        subtitle = { Text("Subtitle") },
+        time = { Text("Now") },
+        contentPadding = CardDefaults.CardWithContainerPainterContentPadding,
+        modifier = Modifier.semantics { contentDescription = "Background image" },
+    ) {
+        Text("Card content")
+    }
+}
+
+@Sampled
+@Composable
 fun OutlinedCardSample() {
     OutlinedCard(onClick = { /* Do something */ }) { Text("Outlined card") }
+}
+
+@Sampled
+@Composable
+fun NonClickableOutlinedCardSample() {
+    OutlinedCard { Text("Non-clickable outlined card") }
 }
 
 @Sampled
@@ -237,6 +285,17 @@ fun ImageCardSample() {
             CardDefaults.containerPainter(image = painterResource(id = R.drawable.backgroundimage)),
     ) {
         Text("Image card")
+    }
+}
+
+@Sampled
+@Composable
+fun NonClickableImageCardSample() {
+    Card(
+        containerPainter =
+            CardDefaults.containerPainter(image = painterResource(id = R.drawable.backgroundimage))
+    ) {
+        Text("Non clickable image card")
     }
 }
 

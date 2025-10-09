@@ -74,7 +74,7 @@ import java.util.concurrent.Executor
 /** Implementation of the [LifecycleCameraProvider] interface. */
 @OptIn(ExperimentalSessionConfig::class)
 @JavaOptIn(ExperimentalCameraProviderConfiguration::class)
-internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
+internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPresenceListener {
     private val lock = Any()
     @VisibleForTesting
     @GuardedBy("lock")
@@ -106,9 +106,19 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             val cameraX = CameraX(context, cameraXConfigProvider)
             configImplType = cameraX.configImplType
 
-            val initFuture =
+            val initFuture: ListenableFuture<Void> =
                 FutureChain.from(cameraXShutdownFuture)
                     .transformAsync({ cameraX.initializeFuture }, CameraXExecutors.directExecutor())
+                    .transform(
+                        { void: Void? ->
+                            this@LifecycleCameraProviderImpl.initInternal(
+                                cameraX,
+                                ContextUtil.getApplicationContext(context),
+                            )
+                            void
+                        },
+                        CameraXExecutors.directExecutor(),
+                    )
 
             cameraXInitializeFuture = initFuture
 
@@ -116,10 +126,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                 initFuture,
                 object : FutureCallback<Void?> {
                     override fun onSuccess(void: Void?) {
-                        this@LifecycleCameraProviderImpl.initInternal(
-                            cameraX,
-                            ContextUtil.getApplicationContext(context),
-                        )
+                        // No-op. Success is now handled by the .transform() block.
                     }
 
                     override fun onFailure(t: Throwable) {
@@ -143,6 +150,10 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
         synchronized(lock) {
             cameraX = newCameraX
             context = newContext
+
+            cameraX
+                ?.cameraAvailabilityProvider
+                ?.addCameraPresenceListener(this, CameraXExecutors.mainThreadExecutor())
         }
     }
 
@@ -176,7 +187,13 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
         }
 
         val shutdownFuture =
-            if (isInitialized) cameraX!!.shutdown() else Futures.immediateFuture<Void>(null)
+            if (isInitialized) {
+                // Make sure to remove the listener before shutdown
+                cameraX!!.cameraAvailabilityProvider.removeCameraPresenceListener(this)
+                cameraX!!.shutdown()
+            } else {
+                Futures.immediateFuture<Void>(null)
+            }
 
         synchronized(lock) {
             if (clearConfigProvider) {
@@ -615,7 +632,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             // CameraUseCaseAdapter
             // to ensure a correct lookup in the repository. It acts as the key.
             val cameraUseCaseAdapterId =
-                CameraIdentifier.fromAdapterInfos(
+                CameraIdentifier.Factory.fromAdapterInfos(
                     primaryAdapterCameraInfo,
                     secondaryAdapterCameraInfo,
                 )
@@ -691,7 +708,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             val cameraConfig = getCameraConfig(cameraSelector, cameraInfoInternal)
 
             val key =
-                CameraIdentifier.create(
+                CameraIdentifier.Factory.create(
                     cameraInfoInternal.cameraId,
                     null,
                     cameraConfig.compatibilityId,
@@ -715,6 +732,28 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
     @RestrictTo(Scope.LIBRARY_GROUP)
     override fun removeCameraPresenceListener(listener: CameraPresenceListener) =
         cameraX!!.cameraAvailabilityProvider.removeCameraPresenceListener(listener)
+
+    @MainThread
+    override fun onCamerasAdded(addedCameraIds: Set<CameraIdentifier>) {
+        // No action needed for additions, as the map is populated on-demand.
+    }
+
+    @MainThread
+    override fun onCamerasRemoved(removedCameraIds: Set<CameraIdentifier>) {
+        Threads.checkMainThread()
+        synchronized(lock) {
+            for (removedId in removedCameraIds) {
+                // Find all keys in the map that match the removed camera's base ID set,
+                // regardless of compatibilityId, and remove them.
+                val keysToRemove =
+                    cameraInfoMap.keys.filter { key -> key.cameraIds == removedId.cameraIds }
+
+                for (key in keysToRemove) {
+                    cameraInfoMap.remove(key)
+                }
+            }
+        }
+    }
 
     private fun isVideoCapture(useCase: UseCase): Boolean =
         useCase.currentConfig.containsOption(UseCaseConfig.OPTION_CAPTURE_TYPE) &&

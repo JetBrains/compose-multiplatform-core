@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.util.Range
 import android.util.Rational
 import androidx.camera.camera2.Camera2Config
@@ -45,6 +46,7 @@ import androidx.camera.testing.impl.FrameRateUtil.FPS_480_480
 import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.testing.impl.getCaptureFps
 import androidx.camera.testing.impl.getDurationMs
 import androidx.camera.testing.impl.getRotatedResolution
 import androidx.camera.testing.impl.useAndRelease
@@ -271,6 +273,15 @@ class HighSpeedVideoVerificationTest(
 
             // Verify video duration for slow-motion recording.
             if (isSlowMotionEnabled) {
+                if (Build.VERSION.SDK_INT >= 30) {
+                    // MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE is used to access
+                    // "com.android.capture.fps" video metadata.
+                    // Starting with API 30, MediaMuxer will write "com.android.capture.fps" video
+                    // metadata when "time-lapse-fps" value is set. This allows that Photos can
+                    // correctly identify the video as a slow-motion video.
+                    assertThat(it.getCaptureFps()).isEqualTo(captureFrameRate.upper)
+                }
+
                 // ex: For 1/4x slow-motion recording, i.e. 120 capture fps to 30 encoding fps,
                 // and the recording duration is 1 second at least,
                 // the recorded duration should be (1 / 1/4x) = 4 second at least.

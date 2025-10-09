@@ -94,6 +94,7 @@ public open class NavHostFragment : Fragment(), NavHost {
             }
             savedStateRegistry.registerSavedStateProvider(KEY_GRAPH_ID) {
                 if (graphId != 0) {
+                    @Suppress("DEPRECATION") // bundleOf is deprecated
                     bundleOf(KEY_GRAPH_ID to graphId)
                 } else {
                     Bundle.EMPTY

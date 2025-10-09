@@ -22,9 +22,11 @@ import android.graphics.Paint.FontMetrics
 import android.graphics.Paint.FontMetricsInt
 import android.icu.lang.UCharacter
 import android.icu.lang.UCharacterCategory
+import android.os.Build
 import android.text.Spanned
 import android.text.TextPaint
 import android.text.style.CharacterStyle
+import androidx.annotation.RequiresApi
 import java.util.LinkedList
 import kotlin.concurrent.getOrSet
 import kotlin.math.max
@@ -43,6 +45,7 @@ private const val VERTICAL = true
  * @param paint The TextPaint object used to measure and draw the text.
  * @param orientation The resolved orientation mode.
  */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal fun createLayoutRun(
     text: CharSequence,
     start: Int,
@@ -144,6 +147,7 @@ internal sealed class LayoutRun(val text: CharSequence, val start: Int, val end:
  * @param end The ending exclusive index of the text.
  * @param paint The paint used for text rendering.
  */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal class TateChuYokoLayoutRun(text: CharSequence, start: Int, end: Int, paint: TextPaint) :
     LayoutRun(text, start, end) {
     override val height: Float
@@ -365,6 +369,7 @@ internal class RotateLayoutRun(text: CharSequence, start: Int, end: Int, paint: 
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun getCharAdvances(out: FloatArray, paint: TextPaint) {
         text.forStyleRuns(start, end, paint, HORIZONTAL) { rStart, rEnd, rPaint, _, _, _, _ ->
             rPaint.getRunCharacterAdvance(
@@ -421,6 +426,7 @@ internal class UprightLayoutRun(text: CharSequence, start: Int, end: Int, paint:
         this.rightSideOffset = right
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun draw(canvas: Canvas, originX: Float, originY: Float, paint: TextPaint) {
         var y = originY
         text.forStyleRuns(start, end, paint, VERTICAL) {
@@ -501,6 +507,7 @@ internal class UprightLayoutRun(text: CharSequence, start: Int, end: Int, paint:
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun getCharAdvances(out: FloatArray, paint: TextPaint) {
         text.forStyleRuns(start, end, paint, VERTICAL) { rStart, rEnd, rPaint, _, _, _, _ ->
             rPaint.getRunCharacterAdvance(
@@ -649,6 +656,7 @@ private inline fun <reified T> CharSequence.getSpans(start: Int, end: Int): Arra
         emptyArray()
     }
 
+@RequiresApi(Build.VERSION_CODES.N)
 private fun isEmphasisTarget(cp: Int): Boolean {
     val type = UCharacter.getType(cp).toByte()
     if (

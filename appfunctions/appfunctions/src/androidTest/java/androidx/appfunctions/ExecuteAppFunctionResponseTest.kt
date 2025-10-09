@@ -18,17 +18,20 @@ package androidx.appfunctions
 
 import android.os.Build
 import android.os.Bundle
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionParameterMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.AssumptionViolatedException
 import org.junit.Test
 
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class ExecuteAppFunctionResponseTest {
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     fun toPlatformExtensionClass_success() {
         assumeAppFunctionExtensionLibraryAvailable()
-        val appFunctionData = AppFunctionData.Builder("").setString("testString", "value").build()
+        val appFunctionData = TEST_APP_FUNCTION_DATA
         val response = ExecuteAppFunctionResponse.Success(appFunctionData)
         val platformResponse = response.toPlatformExtensionClass()
 
@@ -50,7 +53,7 @@ class ExecuteAppFunctionResponseTest {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
     fun toPlatformClass_success() {
-        val appFunctionData = AppFunctionData.Builder("").setString("testString", "value").build()
+        val appFunctionData = TEST_APP_FUNCTION_DATA
         val response = ExecuteAppFunctionResponse.Success(appFunctionData)
         val platformResponse = response.toPlatformClass()
 
@@ -70,10 +73,9 @@ class ExecuteAppFunctionResponseTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     fun fromPlatformExtensionClass_success() {
         assumeAppFunctionExtensionLibraryAvailable()
-        val appFunctionData = AppFunctionData.Builder("").setString("testString", "value").build()
+        val appFunctionData = TEST_APP_FUNCTION_DATA
         val platformResponse =
             com.android.extensions.appfunctions.ExecuteAppFunctionResponse(
                 appFunctionData.genericDocument
@@ -88,7 +90,7 @@ class ExecuteAppFunctionResponseTest {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
     fun fromPlatformClass_success() {
-        val appFunctionData = AppFunctionData.Builder("").setString("testString", "value").build()
+        val appFunctionData = TEST_APP_FUNCTION_DATA
         val platformResponse =
             android.app.appfunctions.ExecuteAppFunctionResponse(appFunctionData.genericDocument)
         val response = ExecuteAppFunctionResponse.Success.fromPlatformClass(platformResponse)
@@ -104,5 +106,21 @@ class ExecuteAppFunctionResponseTest {
         } catch (e: ClassNotFoundException) {
             throw AssumptionViolatedException("Unable to find AppFunction extension library", e)
         }
+    }
+
+    companion object {
+        private val TEST_APP_FUNCTION_DATA: AppFunctionData =
+            AppFunctionData.Builder(
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "testString",
+                            isRequired = true,
+                            dataType = AppFunctionStringTypeMetadata(isNullable = false),
+                        )
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
+                .setString("testString", "value")
+                .build()
     }
 }

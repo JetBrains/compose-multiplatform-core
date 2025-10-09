@@ -72,6 +72,7 @@ dependencies {
     androidTestImplementation(libs.testParameterInjector)
     androidTestCompileOnly(project(":appfunctions:appfunctions-stubs"))
     androidTestImplementation(libs.kotlinTest)
+    androidTestImplementation(libs.testMonitor)
 }
 
 // Restricts AppSearch generated code to library to avoid it surfacing in public API.

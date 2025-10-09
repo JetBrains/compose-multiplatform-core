@@ -50,6 +50,7 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
     horizontalAlignment: Alignment.Horizontal,
     verticalArrangement: Arrangement.Vertical,
     measurementStrategy: TransformingLazyColumnMeasurementStrategy,
+    reverseLayout: Boolean,
 ): LazyLayoutMeasureScope.(Constraints) -> MeasureResult =
     remember(
         itemProviderLambda,
@@ -85,6 +86,7 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
                         measurementDirection = measurementDirection,
                         horizontalAlignment = horizontalAlignment,
                         layoutDirection = layoutDirection,
+                        reverseLayout = reverseLayout,
                         key = key,
                         spacing = verticalArrangement.spacing.roundToPx(),
                         leftPadding = measurementStrategy.leftContentPadding,
@@ -116,7 +118,7 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
                             itemsCount = itemsCount,
                             keyIndexMap = itemProvider.keyIndexMap,
                             measuredItemProvider = measuredItemProvider,
-                            itemSpacing = verticalArrangement.spacing.roundToPx(),
+                            verticalArrangement = verticalArrangement,
                             containerConstraints = containerConstraints,
                             scrollToBeConsumed = scrollToBeConsumed,
                             anchorItemKey = anchorItemKey,

@@ -63,24 +63,21 @@ internal class TraceProcessorHttpServer(
      */
     @Suppress("BanThreadSleep") // needed for awaiting trace processor instance
     fun startServer() {
-        if (hasStarted) {
-            log("Tried to start a trace shell processor that is already running.")
-        } else {
-            port = serverLifecycleManager.start()
-            // Wait for the trace_processor_shell server to start.
-            var elapsed = 0.milliseconds
-            while (!isRunning()) {
-                Thread.sleep(WAIT_INTERVAL.toLong(DurationUnit.MILLISECONDS))
-                elapsed += WAIT_INTERVAL
-                if (elapsed >= timeoutMs.toDuration(DurationUnit.MILLISECONDS)) {
-                    throw IllegalStateException(serverLifecycleManager.timeoutMessage())
-                }
+        if (hasStarted) return // Nothing to do.
+
+        port = serverLifecycleManager.start()
+        // Wait for the trace_processor_shell server to start.
+        var elapsed = 0.milliseconds
+        while (!isRunning()) {
+            Thread.sleep(WAIT_INTERVAL.toLong(DurationUnit.MILLISECONDS))
+            elapsed += WAIT_INTERVAL
+            if (elapsed >= timeoutMs.toDuration(DurationUnit.MILLISECONDS)) {
+                throw IllegalStateException(serverLifecycleManager.timeoutMessage())
             }
-
-            hasStarted = true
-
-            log("Perfetto trace processor shell server started (port=$port).")
         }
+
+        hasStarted = true
+        log("Perfetto trace processor shell server started (port=$port).")
     }
 
     /** Stops the server killing the associated process */

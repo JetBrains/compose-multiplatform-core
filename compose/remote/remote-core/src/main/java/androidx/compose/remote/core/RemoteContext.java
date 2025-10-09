@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.FloatExpression;
 import androidx.compose.remote.core.operations.ShaderData;
 import androidx.compose.remote.core.operations.Theme;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
  *
  * <p>We also contain a PaintContext, so that any operation can draw as needed.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class RemoteContext {
     private static final int MAX_OP_COUNT = 20_000; // Maximum cmds per frame
     private @NonNull Clock mClock;
@@ -213,6 +215,23 @@ public abstract class RemoteContext {
      * @param stringName the name of the string to override
      */
     public abstract void clearNamedStringOverride(@NonNull String stringName);
+
+    /**
+     * Set the value of a named Boolean. This overrides the boolean in the document
+     *
+     * @param booleanName the name of the boolean to override
+     * @param value Override the default boolean
+     */
+    public abstract void setNamedBooleanOverride(@NonNull String booleanName, boolean value);
+
+    /**
+     * Allows to clear a named Boolean.
+     *
+     * <p>If an override exists, we revert back to the default value in the document.
+     *
+     * @param booleanName the name of the boolean to override
+     */
+    public abstract void clearNamedBooleanOverride(@NonNull String booleanName);
 
     /**
      * Set the value of a named Integer. This overrides the integer in the document
@@ -543,6 +562,14 @@ public abstract class RemoteContext {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
+     * Mark the variable as dirty
+     * @param id
+     */
+    public void markVariableDirty(int id) {
+        // empty
+    }
+
+    /**
      * Save a bitmap under an imageId
      *
      * @param imageId the id of the image
@@ -685,6 +712,7 @@ public abstract class RemoteContext {
     /**
      * Notify commands with variables have changed
      *
+     *
      * @return the number of ms to next update
      */
     public abstract int updateOps();
@@ -753,6 +781,12 @@ public abstract class RemoteContext {
 
     /** The YEAR e.g. 2026 */
     public static final int ID_YEAR = 35;
+
+    /** First baseline (for alignment) */
+    public static final int ID_FIRST_BASELINE = 36;
+
+    /** last baseline (for alignment) */
+    public static final int ID_LAST_BASELINE = 37;
 
     public static final float FLOAT_DENSITY = Utils.asNan(ID_DENSITY);
 
@@ -850,6 +884,12 @@ public abstract class RemoteContext {
 
     /** The time in seconds since the epoch. */
     public static final long INT_EPOCH_SECOND = ((long) ID_EPOCH_SECOND) + 0x100000000L;
+
+    /** First Baseline */
+    public static final float FIRST_BASELINE = Utils.asNan(ID_FIRST_BASELINE);
+
+    /** Last Baseline */
+    public static final float LAST_BASELINE = Utils.asNan(ID_LAST_BASELINE);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Click handling

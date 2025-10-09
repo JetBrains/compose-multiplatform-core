@@ -34,7 +34,10 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 36
         namespace = "androidx.compose.material3.adaptive.navigation3"
+        androidResources.enable = true
     }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -44,6 +47,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinStdlib)
                 api(project(":compose:material3:adaptive:adaptive-navigation"))
                 api(project(":navigation3:navigation3-ui"))
+                implementation(project(":navigationevent:navigationevent-compose"))
             }
         }
 
@@ -60,7 +64,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:material3:material3"))
@@ -71,13 +75,25 @@ androidXMultiplatform {
                 implementation(libs.truth)
             }
         }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(nonAndroidMain)
+        }
     }
 }
 
 androidx {
     name = "Material Adaptive"
-    mavenVersion = LibraryVersions.COMPOSE_MATERIAL3_ADAPTIVE_NAV3
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2025"
     description = "Compose Material Design Adaptive Library"
+    addGoldenImageAssets()
 }

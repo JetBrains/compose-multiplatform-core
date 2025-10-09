@@ -18,13 +18,14 @@ package androidx.xr.scenecore
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.ExrImageResource as RtExrImage
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.runtime.ExrImageResource as RtExrImage
+import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import java.nio.file.Paths
@@ -43,8 +44,10 @@ import org.robolectric.Robolectric
 @RunWith(AndroidJUnit4::class)
 class ExrImageTest {
 
-    private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
+    private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
+    private val mockSceneRuntime = mock<SceneRuntime>()
+    private val mockRenderingRuntime = mock<RenderingRuntime>()
+
     private val mockActivitySpace = mock<RtActivitySpace>()
     private val mockPanelEntityImpl = mock<RtPanelEntity>()
     private val activity =
@@ -52,9 +55,8 @@ class ExrImageTest {
 
     @Before
     fun setUp() {
-        mockPlatformAdapter.stub {
+        mockSceneRuntime.stub {
             on { activitySpace }.thenReturn(mockActivitySpace)
-            on { activitySpaceRootImpl }.thenReturn(mockActivitySpace)
             on { perceptionSpaceActivityPose }.thenReturn(mock())
             on { spatialCapabilities }.thenReturn(RtSpatialCapabilities(0))
             on { mainPanelEntity }.thenReturn(mockPanelEntityImpl)
@@ -64,12 +66,20 @@ class ExrImageTest {
     @Test
     fun exrImage_createFromZip_failsForExrFile() {
         val mockRtExrImage = mock<RtExrImage>()
-        mockPlatformAdapter.stub {
+        mockRenderingRuntime.stub {
             on { loadExrImageByAssetName("test.exr") }
                 .thenReturn(Futures.immediateFuture(mockRtExrImage))
         }
         val session =
-            Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        mFakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockSceneRuntime,
+                        mockRenderingRuntime,
+                    ),
+            )
 
         runBlocking {
             @Suppress("UNUSED_VARIABLE", "NewApi")
@@ -83,18 +93,26 @@ class ExrImageTest {
                 .hasMessageThat()
                 .contains("Only preprocessed skybox files with the .zip extension are supported.")
         }
-        verify(mockPlatformAdapter, never()).loadExrImageByAssetName("test.exr")
+        verify(mockRenderingRuntime, never()).loadExrImageByAssetName("test.exr")
     }
 
     @Test
     fun exrImage_createFromZip_withZipExtension_passes() {
         val mockRtExrImage = mock<RtExrImage>()
-        mockPlatformAdapter.stub {
+        mockRenderingRuntime.stub {
             on { loadExrImageByAssetName("test.zip") }
                 .thenReturn(Futures.immediateFuture(mockRtExrImage))
         }
         val session =
-            Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+            Session(
+                activity,
+                runtimes =
+                    listOf(
+                        mFakePerceptionRuntimeFactory.createRuntime(activity),
+                        mockSceneRuntime,
+                        mockRenderingRuntime,
+                    ),
+            )
 
         runBlocking {
             @Suppress("UNUSED_VARIABLE", "NewApi")
@@ -102,6 +120,6 @@ class ExrImageTest {
 
             assertIs<ExrImage>(exrImage)
         }
-        verify(mockPlatformAdapter).loadExrImageByAssetName("test.zip")
+        verify(mockRenderingRuntime).loadExrImageByAssetName("test.zip")
     }
 }

@@ -32,6 +32,7 @@ import android.webkit.WebView;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
+import androidx.webkit.BackForwardCacheSettings;
 import androidx.webkit.Navigation;
 import androidx.webkit.Page;
 import androidx.webkit.PrerenderOperationCallback;
@@ -57,6 +58,7 @@ import androidx.webkit.WebViewClientCompat;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 import androidx.webkit.WebViewStartUpConfig;
+import androidx.webkit.WebViewStartUpResult;
 
 import org.chromium.support_lib_boundary.util.Features;
 import org.jspecify.annotations.NonNull;
@@ -550,8 +552,13 @@ public class WebViewFeatureInternal {
      * {@link WebSettingsCompat#setRequestedWithHeaderOriginAllowList(WebSettings, Set)},
      * {@link ServiceWorkerWebSettingsCompat#getRequestedWithHeaderOriginAllowList()}, and
      * {@link ServiceWorkerWebSettingsCompat#setRequestedWithHeaderOriginAllowList(Set)}.
+     *
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API no longer does anything.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     public static final ApiFeature.NoFramework REQUESTED_WITH_HEADER_ALLOW_LIST =
             new ApiFeature.NoFramework(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
                     Features.REQUESTED_WITH_HEADER_ALLOW_LIST);
@@ -674,6 +681,16 @@ public class WebViewFeatureInternal {
             new ApiFeature.NoFramework(WebViewFeature.BACK_FORWARD_CACHE,
                     Features.BACK_FORWARD_CACHE);
 
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link WebSettingsCompat#setBackForwardCacheSettings(WebSettings, BackForwardCacheSettings)}
+     * {@link WebSettingsCompat#getBackForwardCacheSettings(WebSettings)}
+     */
+    public static final ApiFeature.NoFramework BACK_FORWARD_CACHE_SETTINGS =
+            new ApiFeature.NoFramework(WebViewFeature.BACK_FORWARD_CACHE_SETTINGS,
+                    Features.BACK_FORWARD_CACHE_SETTINGS);
+
 
     public static final ApiFeature.NoFramework DELETE_BROWSING_DATA = new ApiFeature.NoFramework(
             WebViewFeature.DELETE_BROWSING_DATA, Features.WEB_STORAGE_DELETE_BROWSING_DATA
@@ -709,6 +726,17 @@ public class WebViewFeatureInternal {
     public static final ApiFeature.NoFramework ASYNC_WEBVIEW_STARTUP =
             new ApiFeature.NoFramework("IMPLEMENTATION_ONLY_FEATURE",
                     Features.ASYNC_WEBVIEW_STARTUP);
+
+    /**
+     * Feature that is relevant for the implementation of
+     * {@link WebViewStartUpResult#getAsyncStartUpLocations()}
+     *
+     * This feature is not referred to by the app and is only used by the library to choose
+     * different code paths based on underlying support from WebView.
+     */
+    public static final ApiFeature.NoFramework ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS =
+            new ApiFeature.NoFramework("IMPLEMENTATION_ONLY_FEATURE",
+                    Features.ASYNC_WEBVIEW_STARTUP_ASYNC_STARTUP_LOCATIONS);
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
@@ -755,11 +783,11 @@ public class WebViewFeatureInternal {
                     Features.WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE);
 
     /**
-     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers {@link WebViewCompat#setShouldCacheProvider(boolean)}.
+     * This is an internal only feature that indicate whether it is safe to cache WebView Provider
+     * objects for the current WebView APK.
      */
-    public static final ApiFeature.NoFramework CACHE_PROVIDER =
-            new ApiFeature.NoFramework(WebViewFeature.CACHE_PROVIDER,
+    public static final ApiFeature.NoFramework PROVIDER_WEAKLY_REF_WEBVIEW =
+            new ApiFeature.NoFramework(WebViewFeature.PROVIDER_WEAKLY_REF_WEBVIEW,
                     Features.PROVIDER_WEAKLY_REF_WEBVIEW);
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
@@ -809,12 +837,32 @@ public class WebViewFeatureInternal {
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link Profile#setOriginMatchedHeader(String, String, Set)},
      * {@link Profile#hasOriginMatchedHeader(String)},
-     * {@link Profile#clearOriginMatchedHeader(String)}, and {@link Profile#clearAllOriginMatchedHeaders()}.
+     * {@link Profile#clearOriginMatchedHeader(String)}, and
+     * {@link Profile#clearAllOriginMatchedHeaders()}.
      */
     @Profile.ExperimentalOriginMatchedHeader
+    @SuppressWarnings("deprecation")
     public static final ApiFeature.NoFramework ORIGIN_MATCHED_HEADERS =
             new ApiFeature.NoFramework(WebViewFeature.ORIGIN_MATCHED_HEADERS,
                     Features.EXTRA_HEADER_FOR_ORIGINS);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     *
+     * <p>This feature covers
+     * {@link Profile#addCustomHeader(androidx.webkit.CustomHeader)},
+     * {@link Profile#hasCustomHeader(String)},
+     * {@link Profile#getCustomHeaders()},
+     * {@link Profile#getCustomHeaders(String)},
+     * {@link Profile#getCustomHeaders(String, String)},
+     * {@link Profile#clearCustomHeader(String)},
+     * {@link Profile#clearCustomHeader(String, String)}, and
+     * {@link Profile#clearAllCustomHeaders()}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final ApiFeature.NoFramework CUSTOM_REQUEST_HEADERS =
+            new ApiFeature.NoFramework(WebViewFeature.CUSTOM_REQUEST_HEADERS,
+                    Features.CUSTOM_REQUEST_HEADERS);
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
@@ -844,6 +892,15 @@ public class WebViewFeatureInternal {
     public static final ApiFeature.NoFramework PRECONNECT =
             new ApiFeature.NoFramework(WebViewFeature.PRECONNECT,
                     Features.PRECONNECT);
+
+    /**
+     * Feature for {@link WebSettingsFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)},
+     */
+    public static final ApiFeature.NoFramework HYPERLINK_CONTEXT_MENU_ITEMS =
+            new ApiFeature.NoFramework(WebViewFeature.HYPERLINK_CONTEXT_MENU_ITEMS,
+                    Features.HYPERLINK_CONTEXT_MENU_ITEMS);
 
     // --- Add new feature constants above this line ---
 

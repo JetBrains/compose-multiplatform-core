@@ -35,6 +35,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -77,6 +78,7 @@ public class WebViewJavaScriptSandboxTest {
         Assume.assumeTrue(JavaScriptSandbox.isSupported());
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testSimpleJsEvaluation() throws Throwable {
@@ -95,6 +97,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testClosingOneIsolate() throws Throwable {
@@ -116,6 +119,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluationInTwoIsolates() throws Throwable {
@@ -141,6 +145,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testTwoIsolatesDoNotShareEnvironment() throws Throwable {
@@ -165,6 +170,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testTwoExecutionsShareEnvironment() throws Throwable {
@@ -188,6 +194,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testJsEvaluationError() throws Throwable {
@@ -215,6 +222,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testInfiniteLoop() throws Throwable {
@@ -243,6 +251,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testMultipleInfiniteLoops() throws Throwable {
@@ -277,6 +286,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testSimpleArrayBuffer() throws Throwable {
@@ -307,6 +317,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateJSFileAsAfd() throws Throwable {
@@ -326,6 +337,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateEmptyFileAsAfd() throws Throwable {
@@ -344,6 +356,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateJSFileAsPfd() throws Throwable {
@@ -363,6 +376,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateAfdWithNonZeroOffset() throws Throwable {
@@ -393,6 +407,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateAfdWithNegativeOffsetThrowsError() throws Throwable {
@@ -423,6 +438,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateAfdWithInvalidOffsetThrowsError() throws Throwable {
@@ -455,6 +471,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateAfdWithNegativeLengthThrowsError() throws Throwable {
@@ -484,6 +501,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateAfdWithFixedLengthEndingBeforeEof() throws Throwable {
@@ -513,6 +531,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testPreSeekedFileIsReadFromBeginning() throws Throwable {
@@ -541,6 +560,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluateAfdWithFixedLengthEndingAfterEofThrowsError() throws Throwable {
@@ -572,6 +592,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testArrayBufferWasmCompilation() throws Throwable {
@@ -604,6 +625,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testPromiseReturn() throws Throwable {
@@ -624,6 +646,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testPromiseReturnLaterResolve() throws Throwable {
@@ -651,6 +674,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testNestedConsumeNamedDataAsArrayBuffer() throws Throwable {
@@ -693,6 +717,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testPromiseEvaluationThrow() throws Throwable {
@@ -725,6 +750,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testEvaluationThrowsWhenSandboxClosed() throws Throwable {
@@ -768,6 +794,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testMultipleSandboxesCannotCoexist() throws Throwable {
@@ -791,6 +818,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testSandboxCanBeCreatedAfterClosed() throws Throwable {
@@ -812,6 +840,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testHeapSizeAdjustment() throws Throwable {
@@ -852,6 +881,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testHeapSizeEnforced() throws Throwable {
@@ -956,6 +986,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testIsolateCreationAfterOom() throws Throwable {
@@ -1028,6 +1059,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testIsolateCreationAfterDeath() throws Throwable {
@@ -1050,6 +1082,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testIsolateCreationAfterUnbinding() throws Throwable {
@@ -1072,6 +1105,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testAsyncPromiseCallbacks() throws Throwable {
@@ -1140,6 +1174,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testLargeScriptJsEvaluation() throws Throwable {
@@ -1164,6 +1199,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testLargeReturn() throws Throwable {
@@ -1185,6 +1221,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testLargeError() throws Throwable {
@@ -1210,6 +1247,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testResultSizeEnforced() throws Throwable {
@@ -1260,6 +1298,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testConsoleLogging() throws Throwable {
@@ -1412,6 +1451,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @MediumTest
     public void testConsoleCallbackCanCallService() throws Throwable {
@@ -1462,6 +1502,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testTerminationNotificationForSandboxDeath() throws Throwable {
@@ -1502,6 +1543,7 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Ignore // b/445967226
     @Test
     @LargeTest
     public void testOomOutsideOfEvaluation() throws Throwable {

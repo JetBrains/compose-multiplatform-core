@@ -26,6 +26,7 @@ import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.Migrator;
 import androidx.appsearch.app.PackageIdentifier;
 import androidx.appsearch.app.SchemaVisibilityConfig;
+import androidx.appsearch.app.SetBlobVisibilityRequest;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.core.util.Preconditions;
@@ -194,6 +195,36 @@ public final class SetSchemaRequestToPlatformConverter {
         return jetpackBuilder.build();
     }
 
+    /**
+     * Translates a jetpack {@link androidx.appsearch.app.SetBlobVisibilityRequest} into a platform
+     * {@link android.app.appsearch.SetBlobVisibilityRequest}.
+     */
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    public static android.app.appsearch.@NonNull SetBlobVisibilityRequest
+            toPlatformSetBlobVisibilityRequest(@NonNull SetBlobVisibilityRequest jetpackRequest) {
+        Preconditions.checkNotNull(jetpackRequest);
+        android.app.appsearch.SetBlobVisibilityRequest.Builder platformRequestBuilder =
+                new android.app.appsearch.SetBlobVisibilityRequest.Builder();
+        for (String namespacesNotDisplayedBySystem :
+                jetpackRequest.getNamespacesNotDisplayedBySystem()) {
+            platformRequestBuilder.setNamespaceDisplayedBySystem(
+                    namespacesNotDisplayedBySystem, /*displayed=*/false);
+        }
+        for (Map.Entry<String, Set<SchemaVisibilityConfig>> entry :
+                jetpackRequest.getNamespacesVisibleToConfigs().entrySet()) {
+            String namespace = entry.getKey();
+            for (SchemaVisibilityConfig schemaVisibilityConfig : entry.getValue()) {
+
+                android.app.appsearch.SchemaVisibilityConfig platformSchemaVisibilityConfig =
+                        ApiHelperForV.toPlatformSchemaVisibilityConfig(schemaVisibilityConfig);
+                platformRequestBuilder.addNamespaceVisibleToConfig(namespace,
+                        platformSchemaVisibilityConfig);
+            }
+        }
+
+        return platformRequestBuilder.build();
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private static class ApiHelperForT {
         private ApiHelperForT() {
@@ -236,7 +267,7 @@ public final class SetSchemaRequestToPlatformConverter {
          * Translates a jetpack {@link SchemaVisibilityConfig} into a platform
          * {@link android.app.appsearch.SchemaVisibilityConfig}.
          */
-        private static android.app.appsearch.@NonNull SchemaVisibilityConfig
+        public static android.app.appsearch.@NonNull SchemaVisibilityConfig
                 toPlatformSchemaVisibilityConfig(@NonNull SchemaVisibilityConfig jetpackConfig) {
             Preconditions.checkNotNull(jetpackConfig);
             android.app.appsearch.SchemaVisibilityConfig.Builder platformBuilder =

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package androidx.xr.scenecore
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.InputEventListener as RtInputEventListener
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PointerCaptureComponent as RtPointerCaptureComponent
+import androidx.xr.scenecore.runtime.InputEventListener as RtInputEventListener
+import androidx.xr.scenecore.runtime.PointerCaptureComponent as RtPointerCaptureComponent
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -36,7 +36,7 @@ import java.util.function.Consumer
  */
 public class PointerCaptureComponent
 private constructor(
-    private val platformAdapter: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
     private val entityManager: EntityManager,
     private val executor: Executor,
     private val stateListener: Consumer<@PointerCaptureStateValue Int>,
@@ -62,7 +62,7 @@ private constructor(
                 PointerCaptureState.POINTER_CAPTURE_STOPPED,
             ]
     )
-    internal annotation class PointerCaptureStateValue
+    public annotation class PointerCaptureStateValue
 
     /** Defines the possible states of a [PointerCaptureComponent]. */
     public object PointerCaptureState {
@@ -105,11 +105,7 @@ private constructor(
         }
 
     private val rtComponent by lazy {
-        platformAdapter.createPointerCaptureComponent(
-            executor,
-            rtStateListener,
-            rtInputEventListener,
-        )
+        sceneRuntime.createPointerCaptureComponent(executor, rtStateListener, rtInputEventListener)
     }
 
     override fun onAttach(entity: Entity): Boolean {
@@ -118,14 +114,14 @@ private constructor(
         }
         attachedEntity = entity
 
-        return (entity as BaseEntity<*>).rtEntity.addComponent(rtComponent)
+        return (entity as BaseEntity<*>).rtEntity!!.addComponent(rtComponent)
     }
 
     override fun onDetach(entity: Entity) {
         if (entity != attachedEntity) {
             return
         }
-        (entity as BaseEntity<*>).rtEntity.removeComponent(rtComponent)
+        (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtComponent)
         attachedEntity = null
     }
 
@@ -149,7 +145,7 @@ private constructor(
             inputListener: Consumer<InputEvent>,
         ): PointerCaptureComponent =
             PointerCaptureComponent(
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 executor,
                 stateListener,

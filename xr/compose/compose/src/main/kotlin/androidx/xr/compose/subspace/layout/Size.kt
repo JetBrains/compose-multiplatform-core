@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.spatial.LocalSubspaceRootNode
 import androidx.xr.compose.subspace.node.CompositionLocalConsumerSubspaceModifierNode
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
@@ -29,10 +30,14 @@ import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.compose.unit.constrain
+import androidx.xr.runtime.math.BoundingBox
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
+import kotlin.math.abs
 
 /** Declare the preferred size of the content to be exactly [width] dp along the x dimension. */
 public fun SubspaceModifier.width(width: Dp): SubspaceModifier =
@@ -177,6 +182,38 @@ private class RecommendedSizeNode :
     SubspaceLayoutModifierNode,
     CompositionLocalConsumerSubspaceModifierNode,
     SubspaceModifier.Node() {
+
+    // TODO(b/447385612): Deprecate this when Extensions bug is fixed.
+    // Define the specific "wrong" box values that indicate the old Extensions logic is being used.
+    companion object {
+        private const val BUGGY_MIN_X = -1.73f / 2
+        private const val BUGGY_MIN_Y = -1.61f / 2
+        private const val BUGGY_MIN_Z = -0.5f / 2
+        private const val BUGGY_MAX_X = 1.73f / 2
+        private const val BUGGY_MAX_Y = 1.61f / 2
+        private const val BUGGY_MAX_Z = 0.5f / 2
+        private const val EPSILON = 1e-5f
+    }
+
+    // TODO(b/447385612): Remove this when Extensions bug is fixed.
+    /**
+     * Checks if the recommended bounding box matches the known buggy value from older Extensions.
+     *
+     * @param recommendedBox The recommended content box.
+     * @return True if the box matches the buggy values, false otherwise.
+     */
+    private fun isBuggyRecommendedBox(recommendedBox: BoundingBox): Boolean =
+        abs(recommendedBox.min.x - BUGGY_MIN_X) < EPSILON &&
+            abs(recommendedBox.min.y - BUGGY_MIN_Y) < EPSILON &&
+            abs(recommendedBox.min.z - BUGGY_MIN_Z) < EPSILON &&
+            abs(recommendedBox.max.x - BUGGY_MAX_X) < EPSILON &&
+            abs(recommendedBox.max.y - BUGGY_MAX_Y) < EPSILON &&
+            abs(recommendedBox.max.z - BUGGY_MAX_Z) < EPSILON
+
+    /** Returns the size of the BoundingBox as a [FloatSize3d]. */
+    private fun BoundingBox.toFloatSize3d(): FloatSize3d =
+        FloatSize3d(width = max.x - min.x, height = max.y - min.y, depth = max.z - min.z)
+
     override fun SubspaceMeasureScope.measure(
         measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,
@@ -196,25 +233,44 @@ private class RecommendedSizeNode :
             }
         }
 
-        val recommendedBox = session.scene.activitySpace.recommendedContentBoxInFullSpace
+        // More future-proof than using `session.scene.keyEntity`, as it is closer to the actual
+        // Subspace Scene Root.
+        val subspaceRootNode = currentValueOf(LocalSubspaceRootNode)
+        val activitySpace = session.scene.activitySpace
+        val recommendedBox = activitySpace.recommendedContentBoxInFullSpace
+
+        val scale: Float =
+            subspaceRootNode?.getScale(relativeTo = Space.REAL_WORLD)
+                ?: activitySpace.getScale(relativeTo = Space.REAL_WORLD)
+                ?: 1.0f
+
+        val unscaledSize = recommendedBox.toFloatSize3d()
+        val recommendedSizeMeters: FloatSize3d =
+            // If the value is NOT the buggy one, it means we're running with a fixed Extensions
+            // library, so we must apply the correct scaling logic.
+            if (isBuggyRecommendedBox(recommendedBox) || scale == 0f) {
+                unscaledSize
+            } else {
+                unscaledSize / scale
+            }
 
         val finalMaxWidth =
             if (constraints.maxWidth == VolumeConstraints.INFINITY) {
-                Meter(recommendedBox.max.x - recommendedBox.min.x).roundToPx(density)
+                Meter(recommendedSizeMeters.width).roundToPx(density)
             } else {
                 constraints.maxWidth
             }
 
         val finalMaxHeight =
             if (constraints.maxHeight == VolumeConstraints.INFINITY) {
-                Meter(recommendedBox.max.y - recommendedBox.min.y).roundToPx(density)
+                Meter(recommendedSizeMeters.height).roundToPx(density)
             } else {
                 constraints.maxHeight
             }
 
         val finalMaxDepth =
             if (constraints.maxDepth == VolumeConstraints.INFINITY) {
-                Meter(recommendedBox.max.z - recommendedBox.min.z).roundToPx(density)
+                Meter(recommendedSizeMeters.depth).roundToPx(density)
             } else {
                 constraints.maxDepth
             }

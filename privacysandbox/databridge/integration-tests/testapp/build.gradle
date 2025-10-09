@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":privacysandbox:databridge:integration-tests:testsdk-asb"))
     implementation("androidx.appcompat:appcompat:1.6.0")
 
+    api(project(":preference:preference"))
     api(project(":privacysandbox:databridge:databridge-core"))
     api(project(":privacysandbox:databridge:databridge-client"))
     api(project(":privacysandbox:databridge:databridge-sdkprovider"))

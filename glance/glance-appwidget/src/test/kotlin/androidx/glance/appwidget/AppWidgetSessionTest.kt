@@ -260,7 +260,9 @@ class AppWidgetSessionTest {
     fun recreateWithEvents() = runTest {
         session.runLambda("1")
         session.runLambda("2")
-        val options = bundleOf("key" to "value")
+        val options =
+            @Suppress("DEPRECATION") // bundleOf is deprecated
+            bundleOf("key" to "value")
         session.updateAppWidgetOptions(options)
         session.updateGlance()
         session.waitForReady()

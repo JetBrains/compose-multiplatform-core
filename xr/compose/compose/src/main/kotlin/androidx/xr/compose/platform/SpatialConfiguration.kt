@@ -126,8 +126,8 @@ private class ContextOnlySpatialConfiguration(private val context: Context) : Sp
     override val bounds: DpVolumeSize
         get() =
             DpVolumeSize(
-                context.getActivity().resources.configuration.screenWidthDp.dp,
-                context.getActivity().resources.configuration.screenHeightDp.dp,
+                context.requireActivity().resources.configuration.screenWidthDp.dp,
+                context.requireActivity().resources.configuration.screenHeightDp.dp,
                 0.dp,
             )
 }

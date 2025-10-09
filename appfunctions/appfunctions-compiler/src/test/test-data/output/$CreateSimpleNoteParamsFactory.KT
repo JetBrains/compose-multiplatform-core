@@ -9,11 +9,12 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$CreateSimpleNoteParamsFactory` : AppFunctionSerializableFactory<CreateSimpleNoteParams> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): CreateSimpleNoteParams {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.CreateSimpleNoteParams")
     val simpleNoteSimpleAttachmentFactory = `$SimpleNote$SimpleAttachmentFactory`()
 
-    val title = checkNotNull(appFunctionData.getStringOrNull("title"))
-    val content = appFunctionData.getStringOrNull("content")
-    val attachmentsData = appFunctionData.getAppFunctionDataList("attachments") ?: emptyList()
+    val title = checkNotNull(appFunctionDataWithSpec.getStringOrNull("title"))
+    val content = appFunctionDataWithSpec.getStringOrNull("content")
+    val attachmentsData = appFunctionDataWithSpec.getAppFunctionDataList("attachments") ?: emptyList()
     val attachments = attachmentsData.map { data ->
       simpleNoteSimpleAttachmentFactory.fromAppFunctionData(data)
     }
@@ -26,7 +27,7 @@ public class `$CreateSimpleNoteParamsFactory` : AppFunctionSerializableFactory<C
     val createSimpleNoteParams_appFunctionSerializable = appFunctionSerializable
     val simpleNoteSimpleAttachmentFactory = `$SimpleNote$SimpleAttachmentFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.CreateSimpleNoteParams")
+    val builder = getAppFunctionDataBuilder("com.testdata.CreateSimpleNoteParams")
     val title = createSimpleNoteParams_appFunctionSerializable.title
     builder.setString("title", title)
     val content = createSimpleNoteParams_appFunctionSerializable.content

@@ -228,6 +228,7 @@ internal class Page(
                 previousJob?.cancelAndJoin()
                 ensureActive()
                 formWidgetInfos = formWidgetMetadataLoader.loadFormWidgetInfos(pageNum)
+                onPageUpdate()
             }
     }
 

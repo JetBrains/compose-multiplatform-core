@@ -16,8 +16,8 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.internal.SoundFieldAttributes as RtSoundFieldAttributes
-import androidx.xr.runtime.internal.SpatializerConstants as RtSpatializerConstants
+import androidx.xr.scenecore.runtime.SoundFieldAttributes as RtSoundFieldAttributes
+import androidx.xr.scenecore.runtime.SpatializerConstants as RtSpatializerConstants
 
 /**
  * Configures a sound source to be played as an ambisonics sound field.

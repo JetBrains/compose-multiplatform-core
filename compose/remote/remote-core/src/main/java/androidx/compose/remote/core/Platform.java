@@ -15,10 +15,13 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /** Services that are needed to be provided by the platform during encoding. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface Platform {
 
     /**

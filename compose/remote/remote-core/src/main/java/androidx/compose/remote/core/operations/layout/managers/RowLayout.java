@@ -18,6 +18,7 @@ package androidx.compose.remote.core.operations.layout.managers;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -29,6 +30,7 @@ import androidx.compose.remote.core.operations.layout.LayoutComponent;
 import androidx.compose.remote.core.operations.layout.measure.ComponentMeasure;
 import androidx.compose.remote.core.operations.layout.measure.MeasurePass;
 import androidx.compose.remote.core.operations.layout.measure.Size;
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ScrollModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.WidthInModifierOperation;
 import androidx.compose.remote.core.operations.layout.utils.DebugLog;
@@ -40,6 +42,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** Simple Row layout implementation - also supports weight and horizontal/vertical positioning */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RowLayout extends LayoutManager {
     public static final int START = 1;
     public static final int CENTER = 2;
@@ -292,6 +295,8 @@ public class RowLayout extends LayoutManager {
 
         childrenWidth = 0f;
         int visibleChildrens = 0;
+        boolean hasAlignBy = false;
+        float alignByValue = 0f;
         for (Component child : mChildrenComponents) {
             ComponentMeasure childMeasure = measure.get(child);
             if (childMeasure.isGone()) {
@@ -300,7 +305,14 @@ public class RowLayout extends LayoutManager {
             childrenWidth += childMeasure.getW();
             childrenHeight = Math.max(childrenHeight, childMeasure.getH());
             visibleChildrens++;
+            AlignByModifierOperation alignByModifier = child.selfOrModifier(
+                    AlignByModifierOperation.class);
+            if (alignByModifier != null) {
+                hasAlignBy = true;
+                alignByValue = Math.max(alignByValue, alignByModifier.getValue(context));
+            }
         }
+
         childrenWidth += mSpacedBy * (visibleChildrens - 1);
 
         float tx = 0f;
@@ -360,15 +372,34 @@ public class RowLayout extends LayoutManager {
 
         for (Component child : mChildrenComponents) {
             ComponentMeasure childMeasure = measure.get(child);
+            float alignByOffset = 0f;
+            if (hasAlignBy) {
+                AlignByModifierOperation alignByModifier = child.selfOrModifier(
+                        AlignByModifierOperation.class);
+                if (alignByModifier != null) {
+                    alignByOffset = alignByModifier.getValue(context);
+                }
+            }
             switch (mVerticalPositioning) {
                 case TOP:
                     ty = 0f;
+                    if (hasAlignBy) {
+                        ty += alignByValue - alignByOffset;
+                    }
                     break;
                 case CENTER:
                     ty = (selfHeight - childMeasure.getH()) / 2f;
+                    if (hasAlignBy) {
+                        ty = (selfHeight - childrenHeight) / 2f;
+                        ty += alignByValue - alignByOffset;
+                    }
                     break;
                 case BOTTOM:
                     ty = selfHeight - childMeasure.getH();
+                    if (hasAlignBy) {
+                        ty = (selfHeight - childrenHeight);
+                        ty += alignByValue - alignByOffset;
+                    }
                     break;
             }
             childMeasure.setX(tx);

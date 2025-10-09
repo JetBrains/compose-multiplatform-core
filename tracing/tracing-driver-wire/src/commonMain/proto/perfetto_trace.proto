@@ -58,6 +58,8 @@ message ProcessDescriptor {
 }
 
 message TrackEvent {
+  // non-interned variant.
+  repeated string categories = 22;
   oneof name_field {
     // non-interned variant.
     string name = 23;
@@ -76,6 +78,45 @@ message TrackEvent {
     double double_counter_value = 44;
   }
   repeated fixed64 flow_ids = 47 [packed = false];
+  // An opaque identifier to correlate this slice with other slices that are
+  // considered part of the same logical operation, even if they are not
+  // causally connected. Examples uses of a correlation id might be the number
+  // of frame going through various stages of rendering in a GPU, the id for an
+  // RPC request going through a distributed system, or the id of a network
+  // request going through various stages of processing by the kernel.
+  //
+  // NOTE: if the events *are* causually connected, you probably want to use
+  // flows instead of OR in addition to correlation ids.
+  //
+  // UIs can use this identifier to visually link these slices, for instance,
+  // by assigning them a consistent color or highlighting the entire correlated
+  // set when one slice is hovered.
+  //
+  // Only one field within this 'oneof' should be set to define the correlation.
+  oneof correlation_id_field {
+    // A 64-bit unsigned integer used as the correlation ID.
+    //
+    // Best for performance and compact traces if the identifier is naturally
+    // numerical or can be easily mapped to one by the trace producer.
+    uint64 correlation_id = 52;
+
+    // A string value used as the correlation ID.
+    //
+    // Offers maximum flexibility for human-readable or complex identifiers
+    // (e.g., GUIDs). Note: Using many unique, long strings may increase trace
+    // size. For frequently repeated string identifiers, consider
+    // 'correlation_id_string_iid'.
+    string correlation_id_str = 53;
+
+    // An interned string identifier (an IID) for correlation.
+    //
+    // This 64-bit ID refers to a string defined in the 'correlation_id_str'
+    // field within the packet sequence's InternedData. This approach combines
+    // the descriptiveness and uniqueness of strings with the efficiency of
+    // integer IDs for storage and comparison, especially for identifiers that
+    // repeat across many events.
+    uint64 correlation_id_str_iid = 54;
+  }
 
   // ---------------------------------------------------------------------------
   // TrackEvent arguments:
@@ -249,6 +290,7 @@ message TracePacket {
   uint32 sequence_flags = 13;
   bool incremental_state_cleared = 41;
   TracePacketDefaults trace_packet_defaults = 59;
+  optional bool previous_packet_dropped = 42;
 }
 
 message Trace {

@@ -178,3 +178,60 @@ fun TransformingLazyColumnAnimationSample() {
         }
     }
 }
+
+@Preview
+@Composable
+fun TransformingLazyColumnReverseLayoutSample() {
+    var reverseLayout by remember { mutableStateOf(true) }
+    val transformationSpec = rememberTransformationSpec()
+    val state = rememberTransformingLazyColumnState()
+    var elements by remember { mutableStateOf(listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) }
+    var nextElement by remember { mutableIntStateOf(10) }
+
+    fun addCardAfter(index: Int) {
+        elements =
+            elements.subList(0, index + 1) +
+                listOf(nextElement++) +
+                elements.subList(index + 1, elements.count())
+    }
+
+    fun removeCardAt(index: Int) {
+        elements = elements.subList(0, index) + elements.subList(index + 1, elements.count())
+    }
+
+    AppScaffold {
+        ScreenScaffold(
+            state,
+            edgeButton = {
+                EdgeButton(onClick = { reverseLayout = !reverseLayout }) { Text("Reverse") }
+            },
+        ) { contentPadding ->
+            TransformingLazyColumn(
+                state = state,
+                contentPadding = contentPadding,
+                reverseLayout = reverseLayout,
+            ) {
+                itemsIndexed(elements, key = { _, key -> key }) { index, cardKey ->
+                    Card(
+                        onClick = {},
+                        modifier =
+                            Modifier.transformedHeight(this, transformationSpec).animateItem(),
+                        transformation = SurfaceTransformation(transformationSpec),
+                    ) {
+                        Text("Card $cardKey")
+                        Row {
+                            Spacer(modifier = Modifier.weight(1f))
+                            CompactButton(
+                                onClick = { removeCardAt(index) },
+                                enabled = elements.count() > 1,
+                            ) {
+                                Text("-")
+                            }
+                            CompactButton(onClick = { addCardAfter(index) }) { Text("+") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

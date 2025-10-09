@@ -51,7 +51,7 @@ class AnnotationEditsHistoryManagerTest {
         val annotation = createStampAnnotationWithPath(pageNum = 1, pathSize = 10)
         val editId = EditId(1, "edit1")
 
-        historyManager.recordRemote(editId, annotation)
+        historyManager.recordRemove(editId, annotation)
 
         assertThat(historyManager.canUndo()).isTrue()
         assertThat(historyManager.canRedo()).isFalse()

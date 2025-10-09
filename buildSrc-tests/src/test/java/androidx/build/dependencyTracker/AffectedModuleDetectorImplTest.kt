@@ -20,6 +20,7 @@ import java.io.File
 import java.util.function.BiFunction
 import org.gradle.api.Project
 import org.gradle.api.Transformer
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
@@ -56,7 +57,17 @@ class AffectedModuleDetectorImplTest {
     private lateinit var p10: Project
     private lateinit var p11: Project
     private val projectGraph by lazy { ProjectGraph(root) }
-    private val dependencyTracker by lazy { DependencyTracker(root, logger) }
+    private val dependencyTracker by lazy {
+        val dependencyMap = mutableMapOf<String, MutableSet<String>>()
+        root.subprojects.forEach { project ->
+            project.configurations.forEach { config ->
+                config.dependencies.withType(ProjectDependency::class.java).forEach { dependency ->
+                    dependencyMap.getOrPut(dependency.path) { mutableSetOf() }.add(project.path)
+                }
+            }
+        }
+        DependencyTracker(dependencyMap, logger)
+    }
     private val cobuiltTestPaths = setOf(setOf(":cobuilt1", ":cobuilt2"))
     private val ignoredPaths = setOf("ignored/")
 

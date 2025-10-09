@@ -17,10 +17,8 @@
 package androidx.pdf.selection
 
 import android.annotation.SuppressLint
-import android.graphics.PointF
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.VisibleForTesting
 import androidx.core.util.isEmpty
 import androidx.pdf.PdfPoint
 import androidx.pdf.content.PageSelection
@@ -28,13 +26,10 @@ import androidx.pdf.content.toViewSelection
 import androidx.pdf.view.pdfPointFromParcel
 import androidx.pdf.view.writeToParcel
 import kotlin.collections.firstOrNull
-import kotlin.collections.lastOrNull
 
 /** Value class containing all data necessary to display UI related to content selection */
 @SuppressLint("BanParcelableUsage")
-internal class SelectionModel
-@VisibleForTesting
-internal constructor(
+internal class SelectionModel(
     val documentSelection: DocumentSelection,
     val startBoundary: UiSelectionBoundary,
     val endBoundary: UiSelectionBoundary,
@@ -89,25 +84,13 @@ internal constructor(
             val selection = mergeSelection(currentSelection, newPageSelections)
             if (selection.selectedContents.isEmpty()) return null
 
-            // Finding the first selection bound of first page in the selection
-            val firstPage = selection.selectedContents.keyAt(0)
-            val firstBound: PointF =
-                selection.selectedContents[firstPage].firstOrNull()?.bounds?.firstOrNull()?.let {
-                    PointF(it.left, it.bottom)
-                } ?: PointF(0f, 0f)
-
-            // Finding the last selection bound of last page in the selection
-            val lastPage = selection.selectedContents.keyAt(selection.selectedContents.size() - 1)
-            val lastBound: PointF =
-                selection.selectedContents[lastPage].lastOrNull()?.bounds?.lastOrNull()?.let {
-                    PointF(it.right, it.bottom)
-                } ?: PointF(0f, 0f)
+            val selectionBounds = selection.getSelectionEndpoints()
 
             val isRtl = newPageSelections.firstOrNull()?.start?.isRtl ?: false
             return SelectionModel(
                 selection,
-                UiSelectionBoundary(PdfPoint(firstPage, firstBound), isRtl),
-                UiSelectionBoundary(PdfPoint(lastPage, lastBound), isRtl),
+                UiSelectionBoundary(selectionBounds.first, isRtl),
+                UiSelectionBoundary(selectionBounds.second, isRtl),
             )
         }
 

@@ -16,10 +16,14 @@
 
 package androidx.navigationevent
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.window.BackEvent
 import androidx.annotation.RequiresApi
 
+// The suppress is for `swipeEdge`. The constants in NavigationEvent should be the same
+// or a superset of the constants in BackEvent.
+@SuppressLint("WrongConstant")
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal fun NavigationEvent(backEvent: BackEvent): NavigationEvent {
     return NavigationEvent(

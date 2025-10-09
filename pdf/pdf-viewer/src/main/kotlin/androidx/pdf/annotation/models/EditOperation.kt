@@ -46,7 +46,7 @@ public abstract class EditOperation<T>(public open val op: Operation, public ope
     public data object Update : Operation
 
     /** Represents an operation that does nothing. */
-    public data object Noop : Operation
+    public data object None : Operation
 
     public companion object {
         /** Returns the logical opposite of the current operation. */
@@ -55,7 +55,7 @@ public abstract class EditOperation<T>(public open val op: Operation, public ope
                 is Add -> Remove
                 is Remove -> Add
                 is Update -> Update // TODO: Update this code when implementing this operation
-                else -> Noop
+                else -> None
             }
         }
     }

@@ -7,3 +7,8 @@
 -keep class androidx.credentials.providerevents.playservices.DeviceSetupProviderPlayServices {
   *;
 }
+
+-if class androidx.credentials.providerevents.ProviderEventsManager
+-keep class androidx.credentials.providerevents.playservices.ProviderEventsApiProviderPlayServices {
+  *;
+}

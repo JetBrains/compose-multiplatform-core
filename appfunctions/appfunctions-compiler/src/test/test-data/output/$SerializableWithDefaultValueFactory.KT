@@ -9,43 +9,44 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$SerializableWithDefaultValueFactory` : AppFunctionSerializableFactory<SerializableWithDefaultValue> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): SerializableWithDefaultValue {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.SerializableWithDefaultValue")
     val nestedSerializableFactory = `$NestedSerializableFactory`()
 
-    val optionalNonNullInt = appFunctionData.getIntOrNull("optionalNonNullInt") ?: 0
-    val optionalNullableInt = appFunctionData.getIntOrNull("optionalNullableInt")
-    val optionalNonNullLong = appFunctionData.getLongOrNull("optionalNonNullLong") ?: 0L
-    val optionalNullableLong = appFunctionData.getLongOrNull("optionalNullableLong")
-    val optionalNonNullBoolean = appFunctionData.getBooleanOrNull("optionalNonNullBoolean") ?: false
-    val optionalNullableBoolean = appFunctionData.getBooleanOrNull("optionalNullableBoolean")
-    val optionalNonNullFloat = appFunctionData.getFloatOrNull("optionalNonNullFloat") ?: 0.0f
-    val optionalNullableFloat = appFunctionData.getFloatOrNull("optionalNullableFloat")
-    val optionalNonNullDouble = appFunctionData.getDoubleOrNull("optionalNonNullDouble") ?: 0.0
-    val optionalNullableDouble = appFunctionData.getDoubleOrNull("optionalNullableDouble")
-    val optionalNullableString = appFunctionData.getStringOrNull("optionalNullableString")
-    val optionalNullableSerializableData = appFunctionData.getAppFunctionData("optionalNullableSerializable")
+    val optionalNonNullInt = appFunctionDataWithSpec.getIntOrNull("optionalNonNullInt") ?: 0
+    val optionalNullableInt = appFunctionDataWithSpec.getIntOrNull("optionalNullableInt")
+    val optionalNonNullLong = appFunctionDataWithSpec.getLongOrNull("optionalNonNullLong") ?: 0L
+    val optionalNullableLong = appFunctionDataWithSpec.getLongOrNull("optionalNullableLong")
+    val optionalNonNullBoolean = appFunctionDataWithSpec.getBooleanOrNull("optionalNonNullBoolean") ?: false
+    val optionalNullableBoolean = appFunctionDataWithSpec.getBooleanOrNull("optionalNullableBoolean")
+    val optionalNonNullFloat = appFunctionDataWithSpec.getFloatOrNull("optionalNonNullFloat") ?: 0.0f
+    val optionalNullableFloat = appFunctionDataWithSpec.getFloatOrNull("optionalNullableFloat")
+    val optionalNonNullDouble = appFunctionDataWithSpec.getDoubleOrNull("optionalNonNullDouble") ?: 0.0
+    val optionalNullableDouble = appFunctionDataWithSpec.getDoubleOrNull("optionalNullableDouble")
+    val optionalNullableString = appFunctionDataWithSpec.getStringOrNull("optionalNullableString")
+    val optionalNullableSerializableData = appFunctionDataWithSpec.getAppFunctionData("optionalNullableSerializable")
     var optionalNullableSerializable: NestedSerializable? = null
     if (optionalNullableSerializableData != null) {
       optionalNullableSerializable = nestedSerializableFactory.fromAppFunctionData(optionalNullableSerializableData)
     }
-    val optionalNonNullIntArray = appFunctionData.getIntArray("optionalNonNullIntArray") ?: intArrayOf()
-    val optionalNullableIntArray = appFunctionData.getIntArray("optionalNullableIntArray")
-    val optionalNonNullLongArray = appFunctionData.getLongArray("optionalNonNullLongArray") ?: longArrayOf()
-    val optionalNullableLongArray = appFunctionData.getLongArray("optionalNullableLongArray")
-    val optionalNonNullBooleanArray = appFunctionData.getBooleanArray("optionalNonNullBooleanArray") ?: booleanArrayOf()
-    val optionalNullableBooleanArray = appFunctionData.getBooleanArray("optionalNullableBooleanArray")
-    val optionalNonNullFloatArray = appFunctionData.getFloatArray("optionalNonNullFloatArray") ?: floatArrayOf()
-    val optionalNullableFloatArray = appFunctionData.getFloatArray("optionalNullableFloatArray")
-    val optionalNonNullDoubleArray = appFunctionData.getDoubleArray("optionalNonNullDoubleArray") ?: doubleArrayOf()
-    val optionalNullableDoubleArray = appFunctionData.getDoubleArray("optionalNullableDoubleArray")
-    val optionalNonNullByteArray = appFunctionData.getByteArray("optionalNonNullByteArray") ?: byteArrayOf()
-    val optionalNullableByteArray = appFunctionData.getByteArray("optionalNullableByteArray")
-    val optionalNonNullListString = appFunctionData.getStringList("optionalNonNullListString") ?: emptyList()
-    val optionalNullableListString = appFunctionData.getStringList("optionalNullableListString")
-    val optionalNonNullSerializableListData = appFunctionData.getAppFunctionDataList("optionalNonNullSerializableList") ?: emptyList()
+    val optionalNonNullIntArray = appFunctionDataWithSpec.getIntArray("optionalNonNullIntArray") ?: intArrayOf()
+    val optionalNullableIntArray = appFunctionDataWithSpec.getIntArray("optionalNullableIntArray")
+    val optionalNonNullLongArray = appFunctionDataWithSpec.getLongArray("optionalNonNullLongArray") ?: longArrayOf()
+    val optionalNullableLongArray = appFunctionDataWithSpec.getLongArray("optionalNullableLongArray")
+    val optionalNonNullBooleanArray = appFunctionDataWithSpec.getBooleanArray("optionalNonNullBooleanArray") ?: booleanArrayOf()
+    val optionalNullableBooleanArray = appFunctionDataWithSpec.getBooleanArray("optionalNullableBooleanArray")
+    val optionalNonNullFloatArray = appFunctionDataWithSpec.getFloatArray("optionalNonNullFloatArray") ?: floatArrayOf()
+    val optionalNullableFloatArray = appFunctionDataWithSpec.getFloatArray("optionalNullableFloatArray")
+    val optionalNonNullDoubleArray = appFunctionDataWithSpec.getDoubleArray("optionalNonNullDoubleArray") ?: doubleArrayOf()
+    val optionalNullableDoubleArray = appFunctionDataWithSpec.getDoubleArray("optionalNullableDoubleArray")
+    val optionalNonNullByteArray = appFunctionDataWithSpec.getByteArray("optionalNonNullByteArray") ?: byteArrayOf()
+    val optionalNullableByteArray = appFunctionDataWithSpec.getByteArray("optionalNullableByteArray")
+    val optionalNonNullListString = appFunctionDataWithSpec.getStringList("optionalNonNullListString") ?: emptyList()
+    val optionalNullableListString = appFunctionDataWithSpec.getStringList("optionalNullableListString")
+    val optionalNonNullSerializableListData = appFunctionDataWithSpec.getAppFunctionDataList("optionalNonNullSerializableList") ?: emptyList()
     val optionalNonNullSerializableList = optionalNonNullSerializableListData.map { data ->
       nestedSerializableFactory.fromAppFunctionData(data)
     }
-    val optionalNullableSerializableListData = appFunctionData.getAppFunctionDataList("optionalNullableSerializableList")
+    val optionalNullableSerializableListData = appFunctionDataWithSpec.getAppFunctionDataList("optionalNullableSerializableList")
     val optionalNullableSerializableList = optionalNullableSerializableListData?.map { data ->
       nestedSerializableFactory.fromAppFunctionData(data)
     }
@@ -58,7 +59,7 @@ public class `$SerializableWithDefaultValueFactory` : AppFunctionSerializableFac
     val serializableWithDefaultValue_appFunctionSerializable = appFunctionSerializable
     val nestedSerializableFactory = `$NestedSerializableFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.SerializableWithDefaultValue")
+    val builder = getAppFunctionDataBuilder("com.testdata.SerializableWithDefaultValue")
     val optionalNonNullInt = serializableWithDefaultValue_appFunctionSerializable.optionalNonNullInt
     builder.setInt("optionalNonNullInt", optionalNonNullInt)
     val optionalNullableInt = serializableWithDefaultValue_appFunctionSerializable.optionalNullableInt

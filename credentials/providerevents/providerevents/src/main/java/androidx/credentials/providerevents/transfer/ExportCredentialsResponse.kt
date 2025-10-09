@@ -49,6 +49,7 @@ public class ExportCredentialsResponse(public val exportResults: Map<String, Per
 
         /** Unwraps the response class from a bundle */
         @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
         public fun fromBundle(bundle: Bundle): ExportCredentialsResponse {
             val exportResults = mutableMapOf<String, PerTypeExportResult>()
             for (key in bundle.keySet()) {

@@ -58,7 +58,6 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isFocusable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performIndirectTouchEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -71,6 +70,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,10 +80,11 @@ import org.junit.runner.RunWith
 // The expected min sdk is 35, but we test on 33 for wider device coverage (some APIs are not
 // available below 33)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
 class ListItemTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule val inputModeRule = nonTouchInputModeRule()
+    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
 
     @Test
     fun semantics() {
@@ -289,7 +290,6 @@ class ListItemTest {
         }
     }
 
-    @OptIn(ExperimentalIndirectTouchTypeApi::class)
     @Test
     fun emitsPressInteractions_clickable() {
         val interactionSource = MutableInteractionSource()
@@ -333,10 +333,11 @@ class ListItemTest {
         rule
             .onNodeWithTag("listItem")
             .performIndirectTouchEvent(
+                rule,
                 IndirectTouchEvent(
                     down,
                     primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-                )
+                ),
             )
 
         rule.runOnIdle {
@@ -357,10 +358,12 @@ class ListItemTest {
         rule
             .onNodeWithTag("listItem")
             .performIndirectTouchEvent(
+                rule,
                 IndirectTouchEvent(
                     up,
                     primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-                )
+                    down,
+                ),
             )
 
         rule.runOnIdle {
