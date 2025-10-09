@@ -20,12 +20,9 @@ import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VectorizedAnimationSpec
 import androidx.compose.animation.core.spring
-import com.google.common.truth.Truth.assertThat
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import androidx.kruth.assertThat
+import kotlin.test.Test
 
-@RunWith(JUnit4::class)
 class DelayedSpringSpecTest {
     @Test
     fun delayedSpring_identicalWithOriginPlusDelay() {
@@ -37,11 +34,11 @@ class DelayedSpringSpecTest {
 
         val delayedSpec =
             DelayedSpringSpec(
-                    dampingRatio = 0.7f,
-                    stiffness = 500f,
-                    visibilityThreshold = 0.1f,
-                    delayedRatio = delayedRatio,
-                )
+                dampingRatio = 0.7f,
+                stiffness = 500f,
+                visibilityThreshold = 0.1f,
+                delayedRatio = delayedRatio,
+            )
                 .vectorize(Float.VectorConverter)
 
         val originalDurationNanos = originalSpec.getDurationNanos()

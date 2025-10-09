@@ -23,8 +23,8 @@ import androidx.compose.ui.layout.Ruler
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.google.common.truth.Truth.assertThat
-import org.junit.Test
+import androidx.kruth.assertThat
+import kotlin.test.Test
 
 class PaneMarginsModifierTest {
     @Test
