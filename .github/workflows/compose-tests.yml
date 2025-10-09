@@ -45,6 +45,8 @@ jobs:
   compose-ios-tests:
     runs-on: macos-15-xlarge
     name: Compose iOS Tests
+    env:
+      GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -70,6 +72,8 @@ jobs:
   compose-ios-utils-tests:
     runs-on: macos-15-xlarge
     name: Compose iOS Utils Tests
+    env:
+      GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -101,6 +105,8 @@ jobs:
   compose-ios-instrumented-tests:
     runs-on: macos-15-xlarge
     name: Compose iOS Instrumented Tests
+    env:
+      GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
