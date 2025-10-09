@@ -18,6 +18,7 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.AndroidXComposeMultiplatformExtension
 import androidx.build.AndroidXExtension
 import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.multiplatformExtension
@@ -153,15 +154,17 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
     @Suppress("UNREACHABLE_CODE", "UNUSED_VARIABLE")
     override fun apply(project: Project) {
+        check(project.plugins.hasPlugin("AndroidXPlugin")) {
+            "JetBrainsAndroidXPlugin should be applied after AndroidXPlugin"
+        }
+
         val androidxExtension =
             project.extensions.getByType(AndroidXExtension::class.java)
         val androidxMultiplatformExtension =
             project.extensions.getByType(AndroidXMultiplatformExtension::class.java)
-
-        /* FIXME: Restore after fixing for new buildSrc state
+        project.changeMavenCoordinatesToJetBrains(androidxExtension)
         project.configureMavenArtifactUpload(
             androidxExtension, androidxMultiplatformExtension, componentFactory)
-        */
 
         project.plugins.all { plugin ->
             if (plugin is KotlinMultiplatformPluginWrapper) {
@@ -171,6 +174,12 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     }
 
     private fun onKotlinMultiplatformPluginApplied(project: Project) {
+        project.extensions.create(
+            AndroidXComposeMultiplatformExtension::class.java,
+            "androidXComposeMultiplatform",
+            AndroidXComposeMultiplatformExtensionImpl::class.java
+        )
+
         enableArtifactRedirectionPublishing(project)
         enableBinaryCompatibilityValidator(project)
         val multiplatformExtension =
@@ -206,7 +215,6 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
                 configuration.name.startsWith(it, ignoreCase = true)
             }
             val targetVersion = redirection.versionForTargetOrDefault(targetName ?: "")
-            @Suppress("DEPRECATION") // FIXME: Use single-string notation instead.
             project.dependencies.create(
                 redirection.groupId, project.name, targetVersion
             )
@@ -223,10 +231,8 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
 
 @OptIn(ExperimentalBCVApi::class)
 private fun enableBinaryCompatibilityValidator(project: Project) {
-    val androidXExtension = project.extensions.findByType(AndroidXExtension::class.java)
-        ?: throw Exception("You have applied AndroidXComposePlugin without AndroidXPlugin")
     project.afterEvaluate {
-        if (androidXExtension.shouldPublish()) {
+        if (JetBrainsPublication.shouldPublish(project)) {
             project.apply(plugin = "org.jetbrains.kotlinx.binary-compatibility-validator")
             project.extensions.getByType(ApiValidationExtension::class.java).apply {
                 klib.enabled = true

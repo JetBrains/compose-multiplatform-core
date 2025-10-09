@@ -144,9 +144,12 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
                 implementation(libs.atomicFu)
-                implementation(project(":compose:ui:ui-backhandler"))
+
+                // Required to properly resolve supertypes of DefaultArchitectureComponentsOwner
+                // Keep in sync with :ui:ui module
                 implementation(project(":lifecycle:lifecycle-runtime-compose"))
-                implementation(project(":navigationevent:navigationevent-compose"))
+                implementation(project(":lifecycle:lifecycle-viewmodel"))
+                implementation(project(":navigationevent:navigationevent"))
             }
         }
 
