@@ -58,6 +58,7 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
+
         awaitIdle()
 
         val a11yContainer = getA11YContainer()
@@ -74,7 +75,7 @@ class CfWA11YTest : OnCanvasTests {
         repeat(3) { repeatCounter ->
             button1.click()
             awaitIdle()
-            assertEquals(repeatCounter, clickCounter)
+            assertEquals(repeatCounter + 1, clickCounter)
         }
     }
 
