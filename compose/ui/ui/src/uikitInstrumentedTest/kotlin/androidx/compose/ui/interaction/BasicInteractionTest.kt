@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -122,6 +123,7 @@ class BasicInteractionTest {
         assertEquals(DpRect(DpOffset.Zero, DpSize(screenSize.width, 100.dp)), boxRect)
     }
 
+    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-8537
     @Test
     fun testBasicTextFieldToolbar() = runContextMenuTest(false) {
         UIPasteboard.generalPasteboard().string = "Paste text"
