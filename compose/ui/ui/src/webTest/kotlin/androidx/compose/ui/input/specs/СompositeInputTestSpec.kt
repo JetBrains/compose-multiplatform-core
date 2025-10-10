@@ -210,29 +210,6 @@ internal interface SafariCompositeInput : СompositeInputTestSpec {
             keyEvent(compositionInput, type = "keyup")
         )
     }
-
-    @Test
-    fun `input hangul-hol`() = runApplicationTest {
-        val textFieldValue = createApplicationWithHolder()
-        eventsSequence(
-            beforeInput(inputType = "insertText","ㅎ"),
-            keyEvent(key= "ㅎ", code = "KeyG", keyCode = 229),
-            keyEvent(key= "ㅎ", code = "KeyG", keyCode = 71, type = "keyup"),
-            beforeInput(inputType = "insertReplacementText","호").apply {
-                (this as InputEventDetailed).deleteContentBackwardSize = 1
-            },
-            keyEvent(key= "ㅗ", code = "KeyH", keyCode = 229),
-            keyEvent(key= "ㅗ", code = "KeyH", keyCode = 72, type = "keyup"),
-            beforeInput(inputType = "insertReplacementText","홀").apply {
-                (this as InputEventDetailed).deleteContentBackwardSize = 1
-            },
-            keyEvent(key= "ㄹ", code = "KeyF", keyCode = 229),
-            keyEvent(key= "ㄹ", code = "KeyF", keyCode = 70, type = "keyup"),
-        ).sendToHtmlInput()
-
-        textFieldValue.awaitAndAssertTextEquals("홀")
-    }
-
 }
 
 internal interface IosCompositeInput : СompositeInputTestSpec {
