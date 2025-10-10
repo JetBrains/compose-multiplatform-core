@@ -21,6 +21,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionData
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 
@@ -57,13 +58,24 @@ public interface AppFunctionSerializableFactory<T : Any> {
     public fun getAppFunctionDataBuilder(qualifiedName: String): AppFunctionData.Builder {
         val componentsMetadata = getAppFunctionComponentsMetadata()
 
-        val dataTypeMetadata =
-            componentsMetadata.dataTypes[qualifiedName] as? AppFunctionObjectTypeMetadata
+        val dataTypeMetadata = componentsMetadata.dataTypes[qualifiedName]
 
         // TODO(b/447302747): Remove after resolving affected tests.
         if (dataTypeMetadata == null) return AppFunctionData.Builder(qualifiedName)
 
-        return AppFunctionData.Builder(dataTypeMetadata, componentsMetadata)
+        return when (dataTypeMetadata) {
+            is AppFunctionObjectTypeMetadata -> {
+                AppFunctionData.Builder(dataTypeMetadata, componentsMetadata)
+            }
+            is AppFunctionAllOfTypeMetadata -> {
+                AppFunctionData.Builder(dataTypeMetadata, componentsMetadata)
+            }
+            else -> {
+                throw IllegalStateException(
+                    "Unable to serialize $qualifiedName with $dataTypeMetadata"
+                )
+            }
+        }
     }
 
     /**

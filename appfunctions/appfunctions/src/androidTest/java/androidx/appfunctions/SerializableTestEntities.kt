@@ -16,11 +16,16 @@
 
 package androidx.appfunctions
 
+import android.app.PendingIntent
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.Attachment.Companion.ATTACHMENT_OBJECT_TYPE_METADATA
 import androidx.appfunctions.internal.AppFunctionSerializableFactory
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 
 class MissingFactoryClass(val item: String)
@@ -47,9 +52,48 @@ data class Note(val title: String, val attachment: Attachment) {
                         "title" to AppFunctionStringTypeMetadata(isNullable = false),
                         "attachment" to ATTACHMENT_OBJECT_TYPE_METADATA,
                     ),
-                required = listOf("title"),
+                required = listOf("title", "attachment"),
                 qualifiedName = "androidx.appfunctions.Note",
                 isNullable = true,
+            )
+    }
+}
+
+data class OpenableNote(
+    val title: String,
+    val attachment: Attachment,
+    val intentToOpen: PendingIntent,
+) {
+    companion object {
+        val OPENABLE_NOTE_ALL_OF_TYPE_METADATA: AppFunctionAllOfTypeMetadata =
+            AppFunctionAllOfTypeMetadata(
+                qualifiedName = checkNotNull(OpenableNote::class.java.canonicalName),
+                isNullable = true,
+                matchAll =
+                    listOf(
+                        Note.NOTE_OBJECT_TYPE_METADATA,
+                        AppFunctionReferenceTypeMetadata(
+                            referenceDataType = "com.example.AppFunctionOpenable",
+                            isNullable = false,
+                        ),
+                    ),
+            )
+
+        val COMPONENT_METADATA: AppFunctionComponentsMetadata =
+            AppFunctionComponentsMetadata(
+                mapOf(
+                    "com.example.AppFunctionOpenable" to
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "intentToOpen" to
+                                        AppFunctionPendingIntentTypeMetadata(isNullable = false)
+                                ),
+                            required = listOf("intentToOpen"),
+                            qualifiedName = "com.example.AppFunctionOpenable",
+                            isNullable = true,
+                        )
+                )
             )
     }
 }
@@ -88,6 +132,33 @@ class `$NoteFactory` : AppFunctionSerializableFactory<Note> {
                     Attachment::class.java,
                 ),
             )
+            .build()
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+class `$OpenableNoteFactory` : AppFunctionSerializableFactory<OpenableNote> {
+    override fun fromAppFunctionData(appFunctionData: AppFunctionData): OpenableNote {
+        return OpenableNote(
+            title = checkNotNull(appFunctionData.getString("title")),
+            attachment =
+                checkNotNull(appFunctionData.getAppFunctionData("attachment"))
+                    .deserialize(Attachment::class.java),
+            intentToOpen = checkNotNull(appFunctionData.getPendingIntent("intentToOpen")),
+        )
+    }
+
+    override fun toAppFunctionData(appFunctionSerializable: OpenableNote): AppFunctionData {
+        return getAppFunctionDataBuilder("androidx.appfunctions.OpenableNote")
+            .setString("title", appFunctionSerializable.title)
+            .setAppFunctionData(
+                "attachment",
+                AppFunctionData.serialize(
+                    appFunctionSerializable.attachment,
+                    Attachment::class.java,
+                ),
+            )
+            .setPendingIntent("intentToOpen", appFunctionSerializable.intentToOpen)
             .build()
     }
 }

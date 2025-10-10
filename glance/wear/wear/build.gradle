@@ -43,6 +43,7 @@ dependencies {
 
     implementation(project(":compose:remote:remote-creation"))
     implementation(project(":compose:remote:remote-creation-compose"))
+    implementation(project(":glance:wear:wear-core"))
 
     testImplementation("androidx.core:core-ktx:1.17.0")
     testImplementation(libs.kotlinCoroutinesTest)

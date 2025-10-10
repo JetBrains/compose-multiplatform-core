@@ -73,6 +73,7 @@ import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
 import androidx.xr.compose.testapp.depthstacking.DepthStacking
 import androidx.xr.compose.testapp.focuschange.FSMFocusChangeActivity
 import androidx.xr.compose.testapp.focuschange.HSMFocusChangeActivity
+import androidx.xr.compose.testapp.gravityaligned.GravityAlignedActivity
 import androidx.xr.compose.testapp.lifecycle.LifecycleDataStore
 import androidx.xr.compose.testapp.lifecycle.OpenCloseActivity
 import androidx.xr.compose.testapp.lifecycle.ResizeActivity
@@ -349,6 +350,9 @@ class MainActivity : ComponentActivity() {
                         startTest<RuntimeSessionActivity>()
                     }
                     TestCaseColumnRowItem(getString(R.string.pose_test)) { startTest<Pose>() }
+                    TestCaseColumnRowItem(getString(R.string.gravity_aligned_test_case)) {
+                        startTest<GravityAlignedActivity>()
+                    }
                 }
             }
         }

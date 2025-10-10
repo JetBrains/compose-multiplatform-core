@@ -1400,6 +1400,96 @@ class AppFunctionDataTest {
         }
     }
 
+    @Test
+    fun buildAllOfTypeObject_allRequiredField_success() {
+        val data =
+            AppFunctionData.Builder(
+                    OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
+                    OpenableNote.COMPONENT_METADATA,
+                )
+                .setString("title", "test")
+                .setAppFunctionData(
+                    "attachment",
+                    AppFunctionData.Builder(
+                            ATTACHMENT_OBJECT_TYPE_METADATA,
+                            AppFunctionComponentsMetadata(),
+                        )
+                        .setString("uri", "test")
+                        .build(),
+                )
+                .setPendingIntent(
+                    "intentToOpen",
+                    PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
+                )
+                .build()
+
+        assertThat(data.getString("title")).isEqualTo("test")
+        assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("test")
+        assertThat(data.getPendingIntent("intentToOpen")).isNotNull()
+    }
+
+    @Test
+    fun serializeAllOfTypeObject_allRequiredField_success() {
+        val data =
+            AppFunctionData.serialize(
+                OpenableNote(
+                    title = "test",
+                    attachment = Attachment(uri = "test"),
+                    intentToOpen =
+                        PendingIntent.getActivity(
+                            context,
+                            0,
+                            Intent(),
+                            PendingIntent.FLAG_IMMUTABLE,
+                        ),
+                ),
+                OpenableNote::class.java,
+            )
+
+        assertThat(data.getString("title")).isEqualTo("test")
+        assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("test")
+        assertThat(data.getPendingIntent("intentToOpen")).isNotNull()
+        // Also ensure that read validation is applied
+        assertFailsWith<IllegalArgumentException> { data.getInt("intentToOpen") }
+    }
+
+    @Test
+    fun buildAllOfTypeObject_missOriginalClassField_fail() {
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder(
+                    OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
+                    OpenableNote.COMPONENT_METADATA,
+                )
+                .setString("title", "test")
+                .setPendingIntent(
+                    "intentToOpen",
+                    PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
+                )
+                .build()
+        }
+    }
+
+    @Test
+    fun buildAllOfTypeObject_missCapabilityField_fail() {
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder(
+                    OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
+                    OpenableNote.COMPONENT_METADATA,
+                )
+                .setString("title", "test")
+                .setAppFunctionData(
+                    "attachment",
+                    AppFunctionData.Builder(
+                            ATTACHMENT_OBJECT_TYPE_METADATA,
+                            AppFunctionComponentsMetadata(),
+                        )
+                        .setString("uri", "test")
+                        .build(),
+                )
+                .build()
+        }
+    }
+
     companion object {
         val TEST_OBJECT_METADATA =
             AppFunctionObjectTypeMetadata(

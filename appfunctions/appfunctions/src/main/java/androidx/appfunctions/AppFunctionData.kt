@@ -30,6 +30,7 @@ import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.annotation.WorkerThread
 import androidx.appfunctions.internal.AppFunctionSerializableFactory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
@@ -1054,9 +1055,8 @@ internal constructor(
         /**
          * Constructs a [Builder] to create input data for an AppFunction execution call.
          *
-         * This constructor is used when you need to write data that will be passed as input when
-         * executing an AppFunction. The [parameterMetadataList] defines the expected input
-         * parameters for that function.
+         * The caller can use this to construct the [AppFunctionData] for
+         * [ExecuteAppFunctionRequest.functionParameters].
          *
          * @param parameterMetadataList List of [AppFunctionParameterMetadata] defining the input
          *   parameters.
@@ -1072,10 +1072,8 @@ internal constructor(
         /**
          * Constructs a [Builder] to create [AppFunctionData] representing an object.
          *
-         * This constructor is used when you need to create [AppFunctionData] that represents an
-         * object used as either function parameters or return values, as defined by an
-         * [AppFunctionObjectTypeMetadata]. This metadata specifies the properties and their types
-         * for the object.
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [objectTypeMetadata].
          *
          * @param objectTypeMetadata [AppFunctionObjectTypeMetadata] defining the object structure.
          * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
@@ -1088,11 +1086,31 @@ internal constructor(
         ) : this(AppFunctionDataSpec.create(objectTypeMetadata, componentMetadata))
 
         /**
+         * Constructs a [Builder] to create [AppFunctionData] representing an all-of object.
+         *
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [allOfTypeMetadata].
+         *
+         * @param allOfTypeMetadata [AppFunctionAllOfTypeMetadata] defining the object structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @see [AppFunctionAllOfTypeMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        public constructor(
+            allOfTypeMetadata: AppFunctionAllOfTypeMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+        ) : this(
+            AppFunctionDataSpec.create(
+                allOfTypeMetadata.getPseudoObjectTypeMetadata(componentMetadata),
+                componentMetadata,
+            )
+        )
+
+        /**
          * Constructs a [Builder] to create [AppFunctionData] representing a response.
          *
-         * This constructor is used when you need to create [AppFunctionData] that represents a
-         * response, as defined by an [AppFunctionResponseMetadata]. This metadata specifies the
-         * properties and their types for the response.
+         * The caller can use this to construct the [AppFunctionData] for
+         * [ExecuteAppFunctionResponse.Success.returnValue].
          *
          * @param responseMetadata [AppFunctionResponseMetadata] defining the response structure.
          * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.

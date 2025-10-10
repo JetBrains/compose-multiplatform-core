@@ -60,30 +60,43 @@ internal class SubspaceLayoutModifierNodeCoordinator(
         get() = layoutPose ?: Pose.Identity
 
     /**
-     * The pose of this layout modifier node relative to the root entity of the Compose hierarchy.
-     */
-    override val poseInRoot: Pose
-        get() = coordinatesInRoot?.poseInRoot?.compose(pose) ?: pose
-
-    /**
      * The pose of this layout modifier node relative to its parent entity in the Compose hierarchy.
      */
     override val poseInParentEntity: Pose
         get() = coordinatesInParentEntity?.poseInParentEntity?.compose(pose) ?: pose
 
     /**
-     * The layout coordinates of the parent [SubspaceLayoutNode] up to the root of the hierarchy
-     * including application from any [SubspaceLayoutModifierNode] instances applied to this node.
-     *
-     * This applies the layout changes of all [SubspaceLayoutModifierNode] instances in the modifier
-     * chain and then [layoutNode]'s parent or just [layoutNode]'s parent and this modifier if no
-     * other [SubspaceLayoutModifierNode] is present.
+     * The pose of this layout modifier node relative to the root entity of the Compose hierarchy.
      */
-    private val coordinatesInRoot: SubspaceLayoutCoordinates?
-        get() = parent ?: layoutNode?.measurableLayout?.parentCoordinatesInRoot
+    override val poseInRoot: Pose
+        get() = parentCoordinates?.poseInRoot?.compose(pose) ?: pose
 
     /**
-     * The layout coordinates up to the nearest parent [CoreEntity] including mutations from any
+     * The coordinates of the immediate parent in the layout hierarchy.
+     *
+     * For a modifier, this returns the coordinates of the modifier that preceded it in the chain.
+     * If it is the first modifier, it falls back to returning the coordinates of the parent layout
+     * of the node it is attached to.
+     *
+     * Returns `null` only for a modifier on the root of the hierarchy.
+     */
+    override val parentCoordinates: SubspaceLayoutCoordinates?
+        get() = parent ?: parentLayoutCoordinates
+
+    /**
+     * The coordinates of the nearest parent layout, skipping any intermediate modifiers.
+     *
+     * This bypasses any other modifiers on the same layout node and returns the coordinates of the
+     * parent of the layout node itself.
+     *
+     * Returns `null` only for a modifier on the root of the hierarchy.
+     */
+    override val parentLayoutCoordinates: SubspaceLayoutCoordinates?
+        get() = layoutNode?.measurableLayout?.parentLayoutCoordinates
+
+    /**
+     * The layout coordinates up to the nearest parent
+     * [androidx.xr.compose.subspace.layout.CoreEntity] including mutations from any
      * [SubspaceLayoutModifierNode] instances applied to this node.
      *
      * This applies the layout changes of all [SubspaceLayoutModifierNode] instances in the modifier

@@ -215,7 +215,13 @@
             android:enableOnBackInvokedCallback="true"
             android:label="Pose"
             android:theme="@style/Theme.IntegrationTestsApp" />
-
+        <activity
+            android:name=".gravityaligned.GravityAlignedActivity"
+            android:exported="true"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+            android:enableOnBackInvokedCallback="true"
+            android:label="@string/gravity_aligned_test_case"
+            android:theme="@style/Theme.IntegrationTestsApp" />
 
         <property
             android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"

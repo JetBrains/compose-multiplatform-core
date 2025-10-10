@@ -496,6 +496,10 @@ package androidx.xr.compose.subspace.layout {
     property public abstract androidx.xr.compose.subspace.layout.SubspaceModifier.Node node;
   }
 
+  public final class GravityAlignedKt {
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier gravityAligned(androidx.xr.compose.subspace.layout.SubspaceModifier);
+  }
+
   public final class LayoutModifierKt {
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier layout(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.layout.SubspaceMeasureScope,? super androidx.xr.compose.subspace.layout.SubspaceMeasurable,? super androidx.xr.compose.unit.VolumeConstraints,? extends androidx.xr.compose.subspace.layout.SubspaceMeasureResult> measure);
   }
@@ -922,10 +926,14 @@ package androidx.xr.compose.subspace.layout {
   }
 
   public interface SubspaceLayoutCoordinates {
+    method @InaccessibleFromKotlin public androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates? getParentCoordinates();
+    method @InaccessibleFromKotlin public androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates? getParentLayoutCoordinates();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPoseInParentEntity();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPoseInRoot();
     method @InaccessibleFromKotlin public androidx.xr.compose.unit.IntVolumeSize getSize();
+    property public abstract androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates? parentCoordinates;
+    property public abstract androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates? parentLayoutCoordinates;
     property public abstract androidx.xr.runtime.math.Pose pose;
     property public abstract androidx.xr.runtime.math.Pose poseInParentEntity;
     property public abstract androidx.xr.runtime.math.Pose poseInRoot;

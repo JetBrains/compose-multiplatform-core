@@ -1,4 +1,3 @@
-
 <resources>
     <string name="app_name">JXR Compose Tests</string>
     <string name="title_activity_mode_change">Compose Mode Change Test Case</string>
@@ -39,6 +38,7 @@
     <string name="lifecycle_resize_test">Resizing Panel Test Case</string>
     <string name="lifecycle_runtime_session_test">Runtime Session Test Case</string>
     <string name="pose_test">Pose Test Case</string>
+    <string name="gravity_aligned_test_case">Gravity Aligned Test Case</string>
     <string name="hello_android_xr">Hello Android XR.</string>
     <string name="switch_to_home_space_mode">Switch to Home Space Mode</string>
     <string name="switch_to_full_space_mode">Switch to Full Space Mode</string>

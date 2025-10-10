@@ -19,6 +19,7 @@ package androidx.glance.wear
 import android.content.ComponentName
 import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel
 import androidx.glance.wear.proto.ActiveWearWidgetHandleProto
+import androidx.glance.wear.proto.ContainerTypeProto
 import java.util.Objects
 
 /**
@@ -63,12 +64,27 @@ public class ActiveWearWidgetHandle(
             provider: ComponentName,
         ): ActiveWearWidgetHandle {
             val handleProto = ActiveWearWidgetHandleProto.ADAPTER.decode(handleParcel.payload)
-            val containerType = ContainerType.fromProto(handleProto.container_type)
+            val containerType = containerTypeFromProto(handleProto.container_type)
             return ActiveWearWidgetHandle(
                 provider = provider,
                 instanceId = handleProto.instance_id,
                 containerType = containerType,
             )
         }
+
+        internal fun ContainerType.toProto(): ContainerTypeProto =
+            when (this) {
+                ContainerType.Fullscreen -> ContainerTypeProto.FULLSCREEN
+                ContainerType.Large -> ContainerTypeProto.LARGE
+                ContainerType.Small -> ContainerTypeProto.SMALL
+                else -> throw IllegalArgumentException("Invalid container type: $this")
+            }
+
+        internal fun containerTypeFromProto(typeProto: ContainerTypeProto): ContainerType =
+            when (typeProto) {
+                ContainerTypeProto.FULLSCREEN -> ContainerType.Fullscreen
+                ContainerTypeProto.LARGE -> ContainerType.Large
+                ContainerTypeProto.SMALL -> ContainerType.Small
+            }
     }
 }

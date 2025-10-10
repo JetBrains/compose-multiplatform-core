@@ -20,7 +20,6 @@ import android.content.ComponentName
 import androidx.annotation.DrawableRes
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY
-import androidx.glance.wear.proto.ContainerTypeProto
 
 /**
  * Describes the metadata for a Wear Widget provider.
@@ -125,14 +124,6 @@ public constructor(
 @JvmInline
 public value class ContainerType private constructor(private val value: Int) {
 
-    internal fun toProto(): ContainerTypeProto =
-        when (this) {
-            Fullscreen -> ContainerTypeProto.FULLSCREEN
-            Large -> ContainerTypeProto.LARGE
-            Small -> ContainerTypeProto.SMALL
-            else -> throw IllegalArgumentException("Invalid container type: $value")
-        }
-
     public companion object {
         /** Represents a fullscreen widget container, equivalent to a Wear Tile. */
         public val Fullscreen: ContainerType = ContainerType(0)
@@ -146,13 +137,6 @@ public value class ContainerType private constructor(private val value: Int) {
          * Represents a small widget container. Support for this container type is device dependent.
          */
         public val Small: ContainerType = ContainerType(2)
-
-        internal fun fromProto(typeProto: ContainerTypeProto): ContainerType =
-            when (typeProto) {
-                ContainerTypeProto.FULLSCREEN -> Fullscreen
-                ContainerTypeProto.LARGE -> Large
-                ContainerTypeProto.SMALL -> Small
-            }
     }
 }
 

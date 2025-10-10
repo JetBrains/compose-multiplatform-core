@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.Attachment.Companion.ATTACHMENT_OBJECT_TYPE_METADATA
 import androidx.appfunctions.Note.Companion.NOTE_OBJECT_TYPE_METADATA
+import androidx.appfunctions.OpenableNote
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
@@ -104,11 +105,16 @@ internal class AppFunctionUriGrantTestInventory : AppFunctionInventory {
             mapOf(
                 "androidx.appfunctions.Attachment" to ATTACHMENT_OBJECT_TYPE_METADATA,
                 "androidx.appfunctions.Note" to NOTE_OBJECT_TYPE_METADATA,
+                "androidx.appfunctions.OpenableNote" to
+                    OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
             )
 
         val TEST_COMPONENT_METADATA =
             AppFunctionComponentsMetadata(
-                dataTypes = URI_GRANT_COMPONENT_METADATA_MAP + NOTE_COMPONENT_METADATA_MAP
+                dataTypes =
+                    URI_GRANT_COMPONENT_METADATA_MAP +
+                        NOTE_COMPONENT_METADATA_MAP +
+                        OpenableNote.COMPONENT_METADATA.dataTypes
             )
     }
 }
