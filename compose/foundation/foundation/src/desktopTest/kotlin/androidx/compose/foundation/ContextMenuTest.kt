@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -32,7 +31,6 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalLocalization
 import androidx.compose.ui.platform.NativeClipboard
 import androidx.compose.ui.platform.PlatformLocalization
-import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -107,7 +105,6 @@ class ContextMenuTest {
 
 
     // https://youtrack.jetbrains.com/issue/CMP-7083/Context-menu-on-desktop-shows-incorrect-items-after-the-second-showing
-    @OptIn(InternalComposeApi::class)
     private fun `different items for different selections in textfield`(
         useBtf2: Boolean
     ) = runContextMenuTest {
