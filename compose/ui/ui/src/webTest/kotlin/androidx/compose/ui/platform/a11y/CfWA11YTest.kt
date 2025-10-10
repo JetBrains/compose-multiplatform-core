@@ -206,6 +206,7 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("Button3", buttonsContainer.children[2]!!.innerHTML)
     }
 
+    @Ignore // Sometimes fails on latest firefox FIXME: https://youtrack.jetbrains.com/issue/CMP-8955
     @Test
     fun changesMustBeBatched() = runApplicationTest {
         var show1 by mutableStateOf(true)
