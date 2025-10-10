@@ -71,9 +71,10 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("button", button1.getAttribute("role"))
         assertEquals("Button1", button1.innerText)
 
-        repeat(3) {
+        repeat(3) { repeatCounter ->
             button1.click()
-            assertEquals(it + 1, clickCounter)
+            awaitIdle()
+            assertEquals(repeatCounter, clickCounter)
         }
     }
 
@@ -127,11 +128,11 @@ class CfWA11YTest : OnCanvasTests {
         assertTrue(button2.isConnected)
 
 
-        repeat(3) {
+        repeat(3) { repeatCounter ->
             button1.click()
             button2.click()
-            assertEquals(it + 1, clickCounter1)
-            assertEquals(it + 1, clickCounter2)
+            assertEquals(repeatCounter + 1, clickCounter1)
+            assertEquals(repeatCounter + 1, clickCounter2)
         }
 
         showButton2 = false
