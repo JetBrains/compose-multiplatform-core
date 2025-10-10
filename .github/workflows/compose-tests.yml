@@ -86,9 +86,17 @@ jobs:
         working-directory: compose/ui/ui-uikit/src/uikitMain/objc/CMPUIKitUtils
         run: |
           xcodebuild test \
+            -resultBundlePath TestResults.xcresult \
             -scheme CMPUIKitUtilsTests \
             -project CMPUIKitUtils.xcodeproj \
             -destination 'platform=iOS Simulator,name=iPhone 16'
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: TestResults-${{ github.run_number }}.xcresult
+          path: compose/ui/ui-uikit/src/uikitMain/objc/CMPUIKitUtils/TestResults.xcresult
 
   compose-ios-instrumented-tests:
     runs-on: macos-15-xlarge
