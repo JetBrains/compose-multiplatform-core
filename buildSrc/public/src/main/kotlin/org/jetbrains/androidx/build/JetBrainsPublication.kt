@@ -79,8 +79,6 @@ object JetBrainsPublication {
                     "Jvmwindows-arm64",
                 )
             ),
-        ),
-        "COMPOSE_MATERIAL_NAVIGATION" to listOf(
             ComposeComponent(":compose:material:material-navigation"),
         ),
         "COMPOSE_MATERIAL3" to listOf(
