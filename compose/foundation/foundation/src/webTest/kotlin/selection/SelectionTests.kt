@@ -46,7 +46,7 @@ private val ResolvedKeyboardActions
         else -> DefaultKeyboardActions
     }
 
-class WasmSelectionTests {
+class WebSelectionTests {
     private val keyboardActions = ResolvedKeyboardActions
 
     @OptIn(ExperimentalTestApi::class)
