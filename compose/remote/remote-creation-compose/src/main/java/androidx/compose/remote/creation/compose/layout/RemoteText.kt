@@ -96,33 +96,28 @@ public fun RemoteText(
     maxLines: Int = Int.MAX_VALUE,
     style: TextStyle = LocalTextStyle.current,
 ) {
-    if (style != LocalTextStyle.current) {
-        RemoteText(
-            text,
-            modifier,
-            style.color,
-            style.fontSize,
-            style.fontStyle,
-            style.fontWeight,
-            style.fontFamily,
-            style.textAlign,
-            overflow,
-            maxLines,
+    val style =
+        style.merge(
+            color = color,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            textAlign = textAlign ?: TextAlign.Unspecified,
+            fontFamily = fontFamily,
+            fontStyle = fontStyle,
         )
-    } else {
-        RemoteText(
-            text,
-            modifier,
-            color,
-            fontSize,
-            fontStyle,
-            fontWeight,
-            fontFamily,
-            textAlign,
-            overflow,
-            maxLines,
-        )
-    }
+
+    RemoteText(
+        text,
+        modifier,
+        style.color,
+        style.fontSize,
+        style.fontStyle,
+        style.fontWeight,
+        style.fontFamily,
+        style.textAlign,
+        overflow,
+        maxLines,
+    )
 }
 
 /** Utility modifier to record the layout information */

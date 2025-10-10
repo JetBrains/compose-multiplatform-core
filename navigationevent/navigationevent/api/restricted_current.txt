@@ -175,8 +175,10 @@ package androidx.navigationevent {
   }
 
   public final class ViewTreeNavigationEventDispatcherOwner {
-    method public static androidx.navigationevent.NavigationEventDispatcherOwner? get(android.view.View);
-    method public static void set(android.view.View, androidx.navigationevent.NavigationEventDispatcherOwner? navigationEventDispatcherOwner);
+    method @KotlinOnly public static androidx.navigationevent.NavigationEventDispatcherOwner? findViewTreeNavigationEventDispatcherOwner(android.view.View);
+    method @InaccessibleFromKotlin public static androidx.navigationevent.NavigationEventDispatcherOwner? get(android.view.View);
+    method @InaccessibleFromKotlin public static void set(android.view.View, androidx.navigationevent.NavigationEventDispatcherOwner? navigationEventDispatcherOwner);
+    method @KotlinOnly public static void setViewTreeNavigationEventDispatcherOwner(android.view.View, androidx.navigationevent.NavigationEventDispatcherOwner? navigationEventDispatcherOwner);
   }
 
 }

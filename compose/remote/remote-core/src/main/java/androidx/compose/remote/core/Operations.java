@@ -15,6 +15,12 @@
  */
 package androidx.compose.remote.core;
 
+import static androidx.compose.remote.core.Profiles.PROFILE_ANDROIDX;
+import static androidx.compose.remote.core.Profiles.PROFILE_ANDROID_NATIVE;
+import static androidx.compose.remote.core.Profiles.PROFILE_DEPRECATED;
+import static androidx.compose.remote.core.Profiles.PROFILE_EXPERIMENTAL;
+import static androidx.compose.remote.core.Profiles.PROFILE_WIDGETS;
+
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.BitmapFontData;
@@ -365,24 +371,6 @@ public class Operations {
     static UniqueIntMap<CompanionOperation> sMapV7WidgetsExperimental;
     static UniqueIntMap<CompanionOperation> sMapV7WidgetsDeprecated;
 
-    ////////////////////////////////////////
-    // Available profiles
-    ////////////////////////////////////////
-
-    public static final int PROFILE_BASELINE = 0x0;
-
-    // Additive profiles
-    public static final int PROFILE_EXPERIMENTAL = 0x1;
-    public static final int PROFILE_DEPRECATED = 0x2;
-    public static final int PROFILE_OEM = 0x4;
-    public static final int PROFILE_LOW_POWER = 0x8;
-
-    // Intersected profiles
-    public static final int PROFILE_WIDGETS = 0x100;
-    public static final int PROFILE_ANDROIDX = 0x200;
-    public static final int PROFILE_ANDROID_NATIVE = 0x400;
-    public static final int PROFILE_WEAR_WIDGETS = 0x800;
-
     /**
      * Returns true if the operation exists for the given api level
      *
@@ -543,7 +531,7 @@ public class Operations {
                 if ((profiles & PROFILE_EXPERIMENTAL) != 0) {
                     androidx.putAll(createMapV7_Androidx_Experimental());
                 }
-                if ((profiles & Operations.PROFILE_DEPRECATED) != 0) {
+                if ((profiles & PROFILE_DEPRECATED) != 0) {
                     androidx.putAll(createMapV7_Androidx_Deprecated());
                 }
                 listProfiles.add(androidx);
@@ -555,7 +543,7 @@ public class Operations {
                 if ((profiles & PROFILE_EXPERIMENTAL) != 0) {
                     widgets.putAll(createMapV7_Widgets_Experimental());
                 }
-                if ((profiles & Operations.PROFILE_DEPRECATED) != 0) {
+                if ((profiles & PROFILE_DEPRECATED) != 0) {
                     widgets.putAll(createMapV7_Widgets_Deprecated());
                 }
                 listProfiles.add(widgets);

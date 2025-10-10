@@ -18,7 +18,7 @@ package androidx.compose.remote.creation.compose.state
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.Operations
+import androidx.compose.remote.core.Profiles.PROFILE_ANDROIDX
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.VariableSupport
 import androidx.compose.remote.core.operations.TextFromFloat
@@ -46,7 +46,7 @@ class RemoteStringTest {
             density = 1f,
             Size(1f, 1f),
             CoreDocument.DOCUMENT_API_LEVEL,
-            Operations.PROFILE_ANDROIDX,
+            PROFILE_ANDROIDX,
         )
     val namedRemoteFloat = RemoteFloat.createNamedRemoteFloat("testFloat", 12.0f)
     val namedRemoteInt = RemoteInt.createNamedRemoteInt("testInt", 12)

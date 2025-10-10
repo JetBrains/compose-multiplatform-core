@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
   Copyright 2025 The Android Open Source Project
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +15,7 @@
   limitations under the License.
   -->
 
+<<<<<<<< HEAD:xr/arcore/arcore-projected/src/main/AndroidManifest.xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
@@ -22,3 +24,9 @@
         tools:ignore="QueryAllPackagesPermission" />
 </manifest>
 
+========
+<resources>
+
+    <style name="Theme.RemoteComposeDemos" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
+>>>>>>>> jb-main:compose/remote/integration-tests/demos/src/main/res/values/themes.xml

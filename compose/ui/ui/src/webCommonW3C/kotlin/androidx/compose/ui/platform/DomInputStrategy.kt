@@ -1,5 +1,6 @@
 package androidx.compose.ui.platform
 
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,6 +45,8 @@ internal class DomInputStrategy(
         lastMeaningfulUpdate = textFieldValue
     }
 
+    private val tabKeyCode = Key.Tab.keyCode.toInt()
+
     private fun initEvents() {
         htmlInput.addEventListener("blur", { evt ->
             // TODO: any actions here?
@@ -51,6 +54,11 @@ internal class DomInputStrategy(
 
         htmlInput.addEventListener("keydown", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
+
+            if (evt.keyCode == tabKeyCode) {
+                // Compose logic will handle the focus movement or insert Tabs if necessary
+                evt.preventDefault()
+            }
         })
 
         htmlInput.addEventListener("keyup", { evt ->
@@ -62,9 +70,7 @@ internal class DomInputStrategy(
                 htmlInput as HTMLElementWithValue
                 val deleteContentBackwardSize = htmlInput.selectionEnd - htmlInput.selectionStart
 
-                if (deleteContentBackwardSize > 0) {
-                    evt.deleteContentBackwardSize = deleteContentBackwardSize
-                }
+                evt.deleteContentBackwardSize = deleteContentBackwardSize
                 nativeInputEventsProcessor.registerEvent(evt)
             }
         })

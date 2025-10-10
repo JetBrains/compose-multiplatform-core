@@ -19,7 +19,7 @@ package androidx.compose.remote.creation.compose.action
 import android.app.PendingIntent
 import android.content.Intent
 import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.Operations
+import androidx.compose.remote.core.Profiles.PROFILE_ANDROIDX
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.actions.HostAction
 import androidx.compose.remote.creation.compose.action.PendingIntentAction.Companion.ACTION_NAME
@@ -81,7 +81,7 @@ class PendingIntentActionTest {
 private class PendingIntentAwareProfile(val pendingIntents: MutableList<PendingIntent>) :
     Profile(
         CoreDocument.DOCUMENT_API_LEVEL,
-        Operations.PROFILE_ANDROIDX,
+        PROFILE_ANDROIDX,
         AndroidxPlatformServices(),
         { width, height, contentDescription, profile ->
             object :
@@ -90,7 +90,7 @@ private class PendingIntentAwareProfile(val pendingIntents: MutableList<PendingI
                     height,
                     contentDescription,
                     CoreDocument.DOCUMENT_API_LEVEL,
-                    Operations.PROFILE_ANDROIDX,
+                    PROFILE_ANDROIDX,
                     profile.platform,
                 ),
                 PendingIntentAwareWriter {

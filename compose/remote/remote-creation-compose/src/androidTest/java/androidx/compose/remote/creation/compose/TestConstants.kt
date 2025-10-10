@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+<<<<<<<< HEAD:compose/remote/remote-creation-compose/src/androidTest/java/androidx/compose/remote/creation/compose/TestConstants.kt
 package androidx.compose.remote.creation.compose
 
 internal const val SCREENSHOT_GOLDEN_DIRECTORY = "compose/remote/remote-creation-compose"
+========
+package androidx.compose.remote.wear.material3
+
+internal const val SCREENSHOT_GOLDEN_DIRECTORY = "compose/remote/wear/wear-material3"
+>>>>>>>> jb-main:compose/remote/wear/wear-material3/src/androidTest/java/androidx/compose/remote/wear/material3/TestConstants.kt

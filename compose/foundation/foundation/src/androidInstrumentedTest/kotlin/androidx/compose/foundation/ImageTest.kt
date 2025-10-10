@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -610,7 +611,8 @@ class ImageTest {
         var bitmapDrawable: BitmapDrawable? = null
         rule.setContent {
             bitmapDrawable =
-                LocalContext.current.getDrawable(R.drawable.webp_test) as BitmapDrawable
+                LocalResources.current.getDrawable(R.drawable.webp_test, LocalContext.current.theme)
+                    as BitmapDrawable
             Image(
                 painter = painterResource(id = R.drawable.webp_test),
                 null,

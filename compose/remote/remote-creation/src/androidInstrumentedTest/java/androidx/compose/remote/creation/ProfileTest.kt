@@ -17,7 +17,7 @@ package androidx.compose.remote.creation
 
 import android.graphics.Color
 import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.Operations
+import androidx.compose.remote.core.Profiles
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices
 import androidx.compose.remote.creation.profile.PlatformProfile
@@ -34,7 +34,7 @@ class ProfileTest {
         val androidx = PlatformProfile.ANDROIDX
 
         assertEquals(CoreDocument.DOCUMENT_API_LEVEL, androidx.apiLevel)
-        assertEquals(Operations.PROFILE_ANDROIDX, androidx.operationsProfiles)
+        assertEquals(Profiles.PROFILE_ANDROIDX, androidx.operationsProfiles)
 
         val writer = androidx.create(100, 100, "test")
         assertIs<RemoteComposeWriter>(writer)
@@ -47,7 +47,7 @@ class ProfileTest {
         val widgets = PlatformProfile.WIDGETS_V6
 
         assertEquals(6, widgets.apiLevel)
-        assertEquals(Operations.PROFILE_BASELINE, widgets.operationsProfiles)
+        assertEquals(Profiles.PROFILE_BASELINE, widgets.operationsProfiles)
 
         val writer = widgets.create(100, 100, "test")
         assertIs<WidgetsProfileWriterV6>(writer)
