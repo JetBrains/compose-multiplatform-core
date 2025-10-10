@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.internal.DropdownMenuPositionProvider
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -29,7 +31,9 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -43,6 +47,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.size
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
 import org.junit.Rule
@@ -50,7 +56,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(InternalComposeUiApi::class)
+@OptIn(InternalComposeUiApi::class, ExperimentalTestApi::class, InternalComposeApi::class)
 @RunWith(JUnit4::class)
 class DesktopMenuTest {
 
@@ -104,10 +110,15 @@ class DesktopMenuTest {
     }
 
     @Test
-    fun `pressing ESC button invokes onDismissRequest`() {
+    fun `back event invokes onDismissRequest`() {
         var dismissCount = 0
+        val navEventInput = DirectNavigationEventInput()
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f, 1f)) {
+                val owner = LocalNavigationEventDispatcherOwner.current
+                LaunchedEffect(owner) {
+                    owner?.navigationEventDispatcher?.addInput(navEventInput)
+                }
                 DropdownMenu(true, onDismissRequest = {
                     dismissCount++
                 }, modifier = Modifier.testTag("dropDownMenu")) {
@@ -116,16 +127,7 @@ class DesktopMenuTest {
             }
         }
 
-        rule.onNodeWithTag("dropDownMenu")
-            .performKeyPress(KeyEvent(Key.Escape, KeyEventType.KeyDown))
-
-        rule.runOnIdle {
-            Assert.assertEquals(1, dismissCount)
-        }
-
-        rule.onNodeWithTag("dropDownMenu")
-            .performKeyPress(KeyEvent(Key.Escape, KeyEventType.KeyUp))
-
+        navEventInput.backCompleted()
         rule.runOnIdle {
             Assert.assertEquals(1, dismissCount)
         }
