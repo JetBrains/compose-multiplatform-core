@@ -16,7 +16,15 @@
 
 package org.jetbrains.androidx.build
 
-import androidx.build.*
+import androidx.build.AndroidXExtension
+import androidx.build.AndroidXMultiplatformExtension
+import androidx.build.Release
+import androidx.build.getAlternativeProjectUrl
+import androidx.build.getBuildId
+import androidx.build.getProjectsMap
+import androidx.build.getRepositoryDirectory
+import androidx.build.multiplatformExtension
+import androidx.build.version
 import com.android.build.gradle.LibraryPlugin
 import com.android.utils.childrenIterator
 import com.android.utils.forEach
@@ -26,7 +34,10 @@ import com.google.gson.stream.JsonWriter
 import java.io.File
 import java.io.StringReader
 import java.io.StringWriter
-import java.util.*
+import java.util.StringTokenizer
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.find
 import kotlin.collections.iterator
 import org.apache.xerces.jaxp.SAXParserImpl.JAXPSAXParser
 import org.dom4j.Document
@@ -35,15 +46,13 @@ import org.dom4j.DocumentFactory
 import org.dom4j.Element
 import org.dom4j.io.SAXReader
 import org.dom4j.io.XMLWriter
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.XmlProvider
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.ModuleIdentifier
-import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.component.ComponentWithVariants
 import org.gradle.api.component.SoftwareComponent
 import org.gradle.api.component.SoftwareComponentFactory
-import org.gradle.api.internal.artifacts.DefaultModuleIdentifier
 import org.gradle.api.internal.component.SoftwareComponentInternal
 import org.gradle.api.internal.component.UsageContext
 import org.gradle.api.plugins.JavaPlugin
@@ -59,9 +68,12 @@ import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.findByType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.xml.sax.InputSource
 import org.xml.sax.XMLReader
+import org.gradle.api.artifacts.ModuleIdentifier
+import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.internal.artifacts.DefaultModuleIdentifier
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 
 fun Project.configureMavenArtifactUpload(
     extension: AndroidXExtension,
@@ -109,8 +121,6 @@ private fun Project.configureComponentPublishing(
     val androidLibrariesSetProvider: Provider<Set<String>> = provider {
         val androidxAndroidProjects = mutableSetOf<String>()
         // Check every project is the project map to see if they are an Android Library
-        /*
-        FIXME: No getProjectsMap() anymore
         val projectModules = project.getProjectsMap()
         for ((mavenCoordinates, projectPath) in projectModules) {
             project.findProject(projectPath)?.plugins?.let { plugins ->
@@ -124,7 +134,6 @@ private fun Project.configureComponentPublishing(
                 }
             }
         }
-        */
         androidxAndroidProjects
     }
 
@@ -200,8 +209,6 @@ private fun Project.configureComponentPublishing(
     }
 
     // Workaround for https://github.com/gradle/gradle/issues/11717
-    /*
-    FIXME: ProviderFactory.getBuildId(): Provider<String> now
     project.tasks.withType(GenerateModuleMetadata::class.java).configureEach { task ->
         task.doLast {
             val metadata = task.outputFile.asFile.get()
@@ -214,7 +221,6 @@ private fun Project.configureComponentPublishing(
             )
         }
     }
-    */
 }
 
 /**
@@ -496,8 +502,7 @@ private fun Project.addInformativeMetadata(extension: AndroidXExtension, pom: Ma
             license.url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
             license.distribution.set("repo")
         }
-        // TODO: Replaced getLicenses() to getExtraLicenses(). Needs to be re-checked
-        for (extraLicense in extension.getExtraLicenses()) {
+        for (extraLicense in extension.getLicenses()) {
             licenses.license { license ->
                 license.name.set(provider { extraLicense.name!! })
                 license.url.set(provider { extraLicense.url!! })

@@ -16,6 +16,8 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.getProjectsMap
+import com.android.utils.mapValuesNotNull
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.gradle.api.publish.PublishingExtension
@@ -33,6 +35,8 @@ import org.gradle.api.capabilities.Capability
 import org.gradle.api.component.ComponentWithCoordinates
 import org.gradle.api.component.ComponentWithVariants
 import org.gradle.api.component.SoftwareComponent
+import org.gradle.api.internal.artifacts.DefaultModuleIdentifier
+import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.api.internal.component.SoftwareComponentInternal
 import org.gradle.api.internal.component.UsageContext
 import org.gradle.api.publish.maven.MavenPublication
@@ -185,7 +189,6 @@ internal fun Project.originalToRedirectedDependency(
      * org.jetbrains.compose.collection-internal:collection-jvm=androidx.collection:collection-jvm:1.5.0-beta01
      * ...
      */
-    /* FIXME: Restore after fixing for new buildSrc state
     val projectDefined =
         getProjectsMap()
             .values
@@ -206,7 +209,6 @@ internal fun Project.originalToRedirectedDependency(
                 }
             }
             .associate { it }
-    */
 
     fun mainConfiguration() =
         configurations.find { it.name == "${componentName}RuntimeClasspath" } ?:
@@ -226,7 +228,6 @@ internal fun Project.originalToRedirectedDependency(
      * https://youtrack.jetbrains.com/issue/CMP-7764/Redirection-of-artifacts-breaks-poms-for-multiplatform-libraries-that-use-them
      * After it is resolved, externalWithHeuristic shouldn't be needed.
      */
-    /* FIXME: Restore after fixing for new buildSrc state
     val externalWithHeuristic = mainConfiguration()
         .resolvedConfiguration
         .firstLevelModuleDependencies
@@ -235,6 +236,4 @@ internal fun Project.originalToRedirectedDependency(
         .mapValuesNotNull { it.value.findRedirectedDependencyHeuristically()?.module?.id }
 
     return projectDefined + externalWithHeuristic
-    */
-    return emptyMap()
 }
