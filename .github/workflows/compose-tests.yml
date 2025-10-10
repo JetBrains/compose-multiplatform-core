@@ -113,6 +113,19 @@ jobs:
         run: |
           ./gradlew :compose:ui:ui:linkInstrumentedTestDebugFrameworkUikitSimArm64
 
+      - name: Configure Simulator
+        run: |
+          # Boot a test simulator
+          xcrun simctl boot "iPhone 16"
+          
+          # Write the accessibility flags inside the Simulator:
+          xcrun simctl spawn booted defaults write com.apple.Accessibility AccessibilityEnabled -bool true
+          xcrun simctl spawn booted defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true
+          xcrun simctl spawn booted defaults write com.apple.Accessibility AutomationEnabled -bool true
+          
+          # Restart SpringBoard (so system services pick up the change)
+          xcrun simctl spawn booted launchctl stop com.apple.SpringBoard
+
       - name: Run iOS Instrumented Tests
         timeout-minutes: 15
         shell: bash
