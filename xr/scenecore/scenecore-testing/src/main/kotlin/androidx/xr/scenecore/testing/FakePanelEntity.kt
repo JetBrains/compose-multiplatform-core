@@ -16,21 +16,60 @@
 
 package androidx.xr.scenecore.testing
 
+import android.content.Context
+import android.view.View
+import android.view.WindowManager
 import androidx.annotation.RestrictTo
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
+import kotlin.math.roundToInt
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.PanelEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class FakePanelEntity() : FakeEntity(), PanelEntity {
+public open class FakePanelEntity(private val view: View? = null) : FakeEntity(), PanelEntity {
+
+    private val context = view?.context
+    private val windowManager = context?.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
+    internal var dpPerMeter: Float = FakeSceneRuntime.DEFAULT_DP_PER_METER
+    private val density
+        get() = context?.resources?.displayMetrics?.density ?: 1f
+
+    init {
+        windowManager?.addView(
+            view,
+            WindowManager.LayoutParams(WindowManager.LayoutParams.TYPE_APPLICATION_PANEL).apply {
+                width = WindowManager.LayoutParams.WRAP_CONTENT
+                height = WindowManager.LayoutParams.WRAP_CONTENT
+            },
+        )
+    }
+
+    override fun dispose() {
+        windowManager?.removeView(view)
+        super.dispose()
+    }
+
     /**
      * Sets the pixel (not Dp) dimensions of the view underlying this PanelEntity. Calling this
      * might cause the layout of the Panel contents to change. Updating this will not cause the
      * scale or pixel density to change.
      */
-    override var sizeInPixels: PixelDimensions = PixelDimensions(640, 480)
+    override var sizeInPixels: PixelDimensions = Dimensions(1.0f, 1.0f, 0f).toPixelDimensions()
+        set(value) {
+            if (field != value && value.width >= 0 && value.height >= 0) {
+                field = value
+                windowManager?.updateViewLayout(
+                    view,
+                    WindowManager.LayoutParams(WindowManager.LayoutParams.TYPE_APPLICATION_PANEL)
+                        .apply {
+                            width = value.width
+                            height = value.height
+                        },
+                )
+            }
+        }
 
     /**
      * The corner radius of the panel in meters.
@@ -51,17 +90,12 @@ public open class FakePanelEntity() : FakeEntity(), PanelEntity {
      * @return [androidx.xr.scenecore.runtime.Dimensions] size of this panel in meters. (Z will
      *   be 0)
      */
-    override var size: Dimensions = Dimensions(1.0f, 1.0f, 0.0f)
+    override var size: Dimensions
+        get() = sizeInPixels.toMeterDimensions()
         set(value) {
-            if (value.width >= 0f && value.height >= 0f && value.depth >= 0f) {
-                field = Dimensions(value.width, value.height, 0.0f)
+            if (value.width >= 0 && value.height >= 0 && value.depth >= 0) {
+                sizeInPixels = value.toPixelDimensions()
             }
-        }
-        get() {
-            if (field.depth > 0f) {
-                field = Dimensions(field.width, field.height, 0.0f)
-            }
-            return field
         }
 
     private var perceivedResolutionResult: PerceivedResolutionResult =
@@ -100,5 +134,18 @@ public open class FakePanelEntity() : FakeEntity(), PanelEntity {
      */
     override fun getPerceivedResolution(): PerceivedResolutionResult {
         return perceivedResolutionResult
+    }
+
+    private fun Dimensions.toPixelDimensions(): PixelDimensions {
+        val pixelsPerMeter = dpPerMeter * density
+        return PixelDimensions(
+            (this.width * pixelsPerMeter).roundToInt(),
+            (this.height * pixelsPerMeter).roundToInt(),
+        )
+    }
+
+    private fun PixelDimensions.toMeterDimensions(): Dimensions {
+        val pixelsPerMeter = dpPerMeter * density
+        return Dimensions(this.width / pixelsPerMeter, this.height / pixelsPerMeter, 0f)
     }
 }

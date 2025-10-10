@@ -70,6 +70,7 @@ final class EntityManager {
      */
     <T extends Entity> List<T> getEntitiesOfType(@NonNull Class<T> entityClass) {
         return mNodeEntityMap.values().stream()
+                .distinct()
                 .filter(entityClass::isInstance)
                 .map(entityClass::cast)
                 .collect(toCollection(ArrayList::new));
@@ -77,7 +78,9 @@ final class EntityManager {
 
     /** Returns a collection of all {@link Entity}s. */
     Collection<Entity> getAllEntities() {
-        return mNodeEntityMap.values();
+        return mNodeEntityMap.values().stream()
+                .distinct()
+                .collect(toCollection(ArrayList::new));
     }
 
     /** Removes the given {@link Node} from the map. */

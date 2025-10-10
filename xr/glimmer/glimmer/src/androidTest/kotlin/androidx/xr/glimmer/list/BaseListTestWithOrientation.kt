@@ -56,11 +56,13 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.glimmer.Text
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 
 abstract class BaseListTestWithOrientation(protected val orientation: Orientation) {
 
-    @get:Rule val rule: ComposeContentTestRule = createComposeRule()
+    val testDispatcher = StandardTestDispatcher()
+    @get:Rule val rule: ComposeContentTestRule = createComposeRule(testDispatcher)
 
     val vertical: Boolean
         get() = orientation == Orientation.Vertical

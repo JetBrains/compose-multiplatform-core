@@ -31,6 +31,7 @@ import androidx.camera.camera2.pipe.CameraPipe.CameraMetadataConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.compat.AndroidDevicePolicyManagerWrapper
 import androidx.camera.camera2.pipe.compat.AudioRestrictionController
+import androidx.camera.camera2.pipe.compat.ConcurrentSessionSequencers
 import androidx.camera.camera2.pipe.compat.DevicePolicyManagerWrapper
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.SystemTimeSource
@@ -77,6 +78,8 @@ internal interface CameraPipeComponent {
     fun cameraSurfaceManager(): CameraSurfaceManager
 
     fun cameraAudioRestrictionController(): AudioRestrictionController
+
+    fun concurrentSessionSequencers(): ConcurrentSessionSequencers
 }
 
 @Module(

@@ -35,7 +35,9 @@ import java.util.concurrent.atomic.AtomicReference
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeActivitySpace() : FakeSystemSpaceEntity(), ActivitySpace {
     private val _bounds: AtomicReference<Dimensions> =
-        AtomicReference<Dimensions>(Dimensions(100.0f, 100.0f, 100.0f))
+        AtomicReference<Dimensions>(
+            Dimensions(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+        )
     private val _onBoundsChangedListeners: MutableSet<ActivitySpace.OnBoundsChangedListener> =
         Collections.synchronizedSet(
             mutableSetOf(

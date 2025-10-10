@@ -262,6 +262,30 @@ public class EntityManagerTest {
         assertThat(mEntityManager.getAllSystemSpaceActivityPoses()).isEmpty();
     }
 
+    @Test
+    public void setEntityForMultipleNodes_getEntityForNode_returnsSameEntityForBothNodes() {
+        GltfEntity primaryEntity = createGltfEntity();
+        Node primaryNode = ((AndroidXrEntity) primaryEntity).getNode();
+
+        Node aliasNode = mXrExtensions.createNode();
+
+        mEntityManager.setEntityForNode(aliasNode, primaryEntity);
+
+        assertThat(mEntityManager.getEntityForNode(primaryNode)).isSameInstanceAs(primaryEntity);
+        assertThat(mEntityManager.getEntityForNode(aliasNode)).isSameInstanceAs(primaryEntity);
+    }
+
+    @Test
+    public void setEntityForMultipleNodes_getAllEntities_returnsNonDuplicateEntities() {
+        GltfEntity primaryEntity = createGltfEntity();
+
+        Node aliasNode = mXrExtensions.createNode();
+
+        mEntityManager.setEntityForNode(aliasNode, primaryEntity);
+
+        assertThat(mEntityManager.getAllEntities()).containsNoDuplicates();
+    }
+
     /** Creates a generic glTF entity. */
     private GltfEntity createGltfEntity() {
         NodeHolder<?> nodeHolder = new NodeHolder<>(mXrExtensions.createNode(), Node.class);

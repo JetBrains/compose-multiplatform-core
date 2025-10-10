@@ -38,6 +38,7 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -56,7 +57,7 @@ class AndroidContentCaptureBenchmark {
     @get:Rule
     val benchmarkRule = BenchmarkRule(MicrobenchmarkConfig(traceAppTagEnabled = true))
 
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     private lateinit var androidComposeView: View
     private lateinit var contentCaptureManager: AndroidContentCaptureManager

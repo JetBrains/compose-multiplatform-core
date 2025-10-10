@@ -169,7 +169,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmAndroidTest)
             dependsOn(androidUnitAndInstrumentedTest)
             dependencies {

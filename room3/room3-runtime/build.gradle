@@ -165,7 +165,7 @@ androidXMultiplatform {
                 implementation(libs.testRunner) // Needed for @FlakyTest and @Ignore
             }
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":sqlite:sqlite-bundled"))
@@ -221,7 +221,7 @@ androidXMultiplatform {
 
 dependencies {
     sqliteSharedArchive(project(":sqlite:sqlite-bundled"))
-    add("kspAndroidInstrumentedTest", project(":room3:room3-compiler"))
+    add("kspAndroidDeviceTest", project(":room3:room3-compiler"))
 }
 
 androidx {
@@ -233,13 +233,13 @@ androidx {
 }
 
 // TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
 tasks.withType(AndroidLintAnalysisTask).configureEach {
     mustRunAfter(tasks.withType(KspAATask))
 }
 
 // TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
 tasks.withType(LintModelWriterTask).configureEach {
     mustRunAfter(tasks.withType(KspAATask))
 }

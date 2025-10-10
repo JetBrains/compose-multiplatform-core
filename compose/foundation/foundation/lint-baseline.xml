@@ -34,7 +34,7 @@
         errorLine1="    fun LazyGrid("
         errorLine2="        ~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/grid/BaseLazyGridTestWithOrientation.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/lazy/grid/BaseLazyGridTestWithOrientation.kt"/>
     </issue>
 
     <issue
@@ -43,7 +43,7 @@
         errorLine1="    internal fun &lt;T> createAnchoredDraggableModifier("
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/anchoredDraggable/AnchoredDraggableBackwardsCompatibleTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/anchoredDraggable/AnchoredDraggableBackwardsCompatibleTest.kt"/>
     </issue>
 
     <issue
@@ -52,7 +52,7 @@
         errorLine1="    fun LazyItemScope.fillParentMaxMainAxis() ="
         errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
     </issue>
 
     <issue
@@ -61,7 +61,7 @@
         errorLine1="    fun LazyItemScope.fillParentMaxCrossAxis() ="
         errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
     </issue>
 
     <issue
@@ -70,7 +70,7 @@
         errorLine1="    private fun createSubject(text: AnnotatedString): TextAnnotatedStringElement {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
     </issue>
 
     <issue
@@ -79,7 +79,7 @@
         errorLine1="    private fun createSubject(text: String): TextStringSimpleElement {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
     </issue>
 
     <issue
@@ -88,7 +88,7 @@
         errorLine1="    private fun createSubject(text: AnnotatedString): TextAnnotatedStringElement {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
     </issue>
 
     <issue
@@ -97,7 +97,7 @@
         errorLine1="    private fun createSubject(text: String): TextStringSimpleElement {"
         errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
     </issue>
 
     <issue
@@ -106,7 +106,7 @@
         errorLine1="        modifier: Modifier = Modifier.testTag(tag),"
         errorLine2="        ~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuUiTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuUiTest.kt"/>
     </issue>
 
     <issue
@@ -880,7 +880,7 @@
         errorLine1="                    Modifier.fillMaxSize().testTag(PagerTestTag).composed {"
         errorLine2="                                                                 ~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/PagerTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/pager/PagerTest.kt"/>
     </issue>
 
     <issue
@@ -889,7 +889,7 @@
         errorLine1="        texts = derivedStateOf {"
         errorLine2="                ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
     </issue>
 
     <issue
@@ -898,7 +898,7 @@
         errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
         errorLine2="                             ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
     </issue>
 
     <issue
@@ -907,7 +907,7 @@
         errorLine1="        texts = derivedStateOf {"
         errorLine2="                ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
     </issue>
 
     <issue
@@ -916,7 +916,7 @@
         errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
         errorLine2="                             ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
     </issue>
 
     <issue
@@ -925,7 +925,7 @@
         errorLine1="        texts = derivedStateOf {"
         errorLine2="                ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
     </issue>
 
     <issue
@@ -934,7 +934,7 @@
         errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
         errorLine2="                             ~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
     </issue>
 
     <issue
@@ -943,7 +943,7 @@
         errorLine1="                    BoxWithConstraints {"
         errorLine2="                                       ^">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ClickableTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/ClickableTest.kt"/>
     </issue>
 
     <issue
@@ -952,7 +952,7 @@
         errorLine1="                    BoxWithConstraints {"
         errorLine2="                                       ^">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/CombinedClickableTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/CombinedClickableTest.kt"/>
     </issue>
 
     <issue
@@ -961,7 +961,7 @@
         errorLine1="                    BoxWithConstraints {"
         errorLine2="                                       ^">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringNodeTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringNodeTest.kt"/>
     </issue>
 
     <issue
@@ -970,7 +970,7 @@
         errorLine1="                    BoxWithConstraints {"
         errorLine2="                                       ^">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringSimpleNodeTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringSimpleNodeTest.kt"/>
     </issue>
 
     <issue

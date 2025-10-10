@@ -207,12 +207,18 @@ private class MovableElement(
         )
 
     override fun update(node: MovableNode) {
+        val componentUpdateNeeded = node.scaleWithDistance != scaleWithDistance
+
         node.enabled = enabled
         node.onMoveStart = onMoveStart
         node.onMoveEnd = onMoveEnd
         node.onMove = onMove
         node.stickyPose = stickyPose
         node.scaleWithDistance = scaleWithDistance
+
+        if (componentUpdateNeeded) {
+            node.updateComponent()
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -313,7 +319,7 @@ internal class MovableNode(
         component =
             MovableComponent.createCustomMovable(
                 session = session,
-                scaleInZ = true,
+                scaleInZ = scaleWithDistance,
                 executor = MainExecutor,
                 entityMoveListener = this,
             )
@@ -326,15 +332,31 @@ internal class MovableNode(
     /**
      * Disables the MovableComponent for this CoreEntity. Takes care of life cycle tasks for the
      * underlying component in SceneCore.
+     *
+     * @param keepUserPose When `true`, the current [userPose] is retained. When `false`the decision
+     *   to retain the pose is determined by the [stickyPose] parameter configured in the modifier.
      */
-    private fun disableComponent() {
+    private fun disableComponent(keepUserPose: Boolean = false) {
         check(component != null) { "MovableComponent already disabled." }
+        val preservePose = keepUserPose || stickyPose
         component?.removeMoveListener(this)
         component?.let { coreEntity.removeComponent(it) }
         component = null
-        if (!stickyPose) {
+        if (!preservePose) {
             userPose = Pose.Identity
         }
+    }
+
+    /**
+     * Recreates the underlying [MovableComponent] with updated settings.
+     *
+     * This is necessary when a parameter that cannot be changed dynamically on the existing
+     * component, such as [scaleWithDistance], is updated. It temporarily removes and then re-adds
+     * the component with the new configuration.
+     */
+    internal fun updateComponent() {
+        disableComponent(keepUserPose = true)
+        enableComponent()
     }
 
     override fun onMoveStart(
@@ -424,9 +446,8 @@ internal class MovableNode(
                 userPose.translation + coreDeltaPose.translation,
                 userPose.rotation * coreDeltaPose.rotation,
             )
-        if (scaleWithDistance) {
-            scaleFromMovement = scale
-        }
+        scaleFromMovement = scale
+
         requestRelayout()
     }
 

@@ -164,6 +164,23 @@ class WearWidgetProviderInfoTest {
         assertThat(info.containers).isEmpty()
     }
 
+    @Test
+    fun parseWearWidgetProviderInfo_unrecognizedAttributes() {
+        val info =
+            getXml(R.xml.wear_widget_provider_info_unrecognized)
+                .parseWearWidgetProviderInfo(
+                    context.resources,
+                    service,
+                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+                    defaultGroup = "default.group",
+                )
+
+        assertThat(info.unrecognisedAttributes).hasSize(2)
+        assertThat(info.unrecognisedAttributes).containsEntry("unrecognizedStr", "some string")
+        assertThat(info.unrecognisedAttributes)
+            .containsEntry("unrecognizedRef", "@${android.R.string.ok}")
+    }
+
     @Test(expected = XmlPullParserException::class)
     fun parseWearWidgetProviderInfo_missingType() {
         getXml(R.xml.wear_widget_provider_info_missing_type)

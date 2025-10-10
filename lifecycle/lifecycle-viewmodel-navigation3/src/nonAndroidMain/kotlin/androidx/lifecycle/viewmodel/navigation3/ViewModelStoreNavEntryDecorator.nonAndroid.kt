@@ -23,7 +23,9 @@ import androidx.compose.runtime.Composable
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
 
-@Composable
-public actual fun removeViewModelStoreOnPopCallback(): () -> Boolean {
-    return { true }
+public actual object ViewModelStoreNavEntryDecoratorDefault {
+    @Composable
+    public actual fun removeViewModelStoreOnPop(): () -> Boolean {
+        return { true }
+    }
 }

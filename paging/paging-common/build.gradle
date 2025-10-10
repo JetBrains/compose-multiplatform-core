@@ -96,7 +96,7 @@ androidXMultiplatform {
             dependsOn(commonJvmAndroidMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonJvmAndroidTest)
             dependencies {
                 implementation(libs.testRunner)

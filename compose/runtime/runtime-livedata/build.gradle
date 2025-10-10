@@ -58,5 +58,4 @@ androidx {
 android {
     compileSdk = 35
     namespace = "androidx.compose.runtime.livedata"
-    lint.disable += "ComposeTestRuleDispatcher"
 }

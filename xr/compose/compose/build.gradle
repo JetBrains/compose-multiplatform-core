@@ -67,6 +67,7 @@ dependencies {
     testImplementation(project(":compose:ui:ui-test"))
     testImplementation(project(":compose:ui:ui-test-junit4"))
     testImplementation(project(":xr:compose:compose-testing"))
+    testImplementation(project(":xr:scenecore:scenecore-testing"))
     testImplementation("com.google.ar:impress:0.0.5")
 
     compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
@@ -79,9 +80,6 @@ android {
         minSdk = 24
     }
     namespace = "androidx.xr.compose"
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
 }
 
 androidx {

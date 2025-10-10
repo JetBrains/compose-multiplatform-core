@@ -64,7 +64,7 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonMain)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             // Declaring this source set even though we don't really have any instrumentation tests.
             // This is because commonTest is implicitly treated as something that can be used for
             // instrumentation tests. Therefore we need to include the test runner; otherwise the

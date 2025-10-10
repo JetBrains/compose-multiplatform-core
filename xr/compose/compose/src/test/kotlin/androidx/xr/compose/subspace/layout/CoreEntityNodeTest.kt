@@ -102,7 +102,7 @@ class CoreEntityNodeTest {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
-                        .modifyCoreEntity { setOrAppendAlpha(4f) }
+                        .modifyCoreEntity { setOrAppendAlpha(0.5f) }
                         .testTag("panel"),
                 )
             }
@@ -111,7 +111,7 @@ class CoreEntityNodeTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(2f)
+        assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(0.25f)
     }
 
     @Test
@@ -123,7 +123,7 @@ class CoreEntityNodeTest {
                     SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
                         .testTag("panel")
                         .modifyCoreEntity { setOrAppendScale(4f) }
-                        .modifyCoreEntity { setOrAppendAlpha(4f) },
+                        .modifyCoreEntity { setOrAppendAlpha(0.5f) },
                 )
             }
         }
@@ -131,7 +131,7 @@ class CoreEntityNodeTest {
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
-        assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(2f)
+        assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(0.25f)
     }
 
     @Test

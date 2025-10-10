@@ -93,7 +93,7 @@ androidXMultiplatform {
             dependsOn(jvmTest)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(project(":lifecycle:lifecycle-livedata-core"))

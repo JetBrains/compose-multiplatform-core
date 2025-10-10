@@ -34,7 +34,6 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 35
         namespace = "androidx.compose.runtime.rxjava2"
-        lint.disable += "ComposeTestRuleDispatcher"
     }
     desktop()
 
@@ -48,7 +47,7 @@ androidXMultiplatform {
                 api(libs.rxjava2)
             }
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":compose:test-utils"))

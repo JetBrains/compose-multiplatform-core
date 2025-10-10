@@ -7,7 +7,7 @@
         errorLine1="                        model = viewModel(remember { navController.getBackStackEntry(&quot;subGraph&quot;) })"
         errorLine2="                                                                   ~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/navigation/compose/NavHostTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostTest.kt"/>
     </issue>
 
     <issue
@@ -16,7 +16,7 @@
         errorLine1="                        model = viewModel(remember { navController.getBackStackEntry(&quot;subGraph&quot;) })"
         errorLine2="                                                                   ~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/navigation/compose/NavHostTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/navigation/compose/NavHostTest.kt"/>
     </issue>
 
 </issues>

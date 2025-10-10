@@ -75,7 +75,7 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation("androidx.compose.material:material:1.9.2")

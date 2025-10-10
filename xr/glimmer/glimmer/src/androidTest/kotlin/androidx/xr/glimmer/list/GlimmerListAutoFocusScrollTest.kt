@@ -46,17 +46,18 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
     BaseListTestWithOrientation(Orientation.Vertical) {
 
     @Test
-    fun verifyFocusIsSetCorrectlyAtEachScrollStep() = runTest {
-        val state = ListState()
-        val density = Density(1f)
-        rule.setContentForTestCase {
-            CompositionLocalProvider(LocalDensity provides density) {
-                FocusableTestList(state, testCase)
+    fun verifyFocusIsSetCorrectlyAtEachScrollStep() =
+        runTest(testDispatcher) {
+            val state = ListState()
+            val density = Density(1f)
+            rule.setContentForTestCase {
+                CompositionLocalProvider(LocalDensity provides density) {
+                    FocusableTestList(state, testCase)
+                }
             }
-        }
 
-        runTestCase(state, density, testCase)
-    }
+            runTestCase(state, density, testCase)
+        }
 
     private suspend fun runTestCase(
         state: ListState,
@@ -99,7 +100,7 @@ internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrateg
             content()
         }
         // Move focus to the list.
-        rule.runOnUiThread { focusManager.moveFocus(FocusDirection.Next) }
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
         rule.waitForIdle()
     }
 

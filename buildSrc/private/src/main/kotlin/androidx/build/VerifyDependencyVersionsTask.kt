@@ -180,7 +180,7 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
     if (name.startsWith("androidTest")) return false
     if (name.startsWith("androidAndroidTest")) return false
     if (name.startsWith("androidCommonTest")) return false
-    if (name.startsWith("androidInstrumentedTest")) return false
+    if (name.startsWith("androidDeviceTest")) return false
     if (name.startsWith("androidReleaseUnitTest")) return false
     if (name.startsWith("androidHostTest")) return false
     if (name.startsWith("debug")) return false
@@ -255,6 +255,7 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
 
     // don't verify baseline profile generating project dependencies
     if (name == "baselineProfile") return false
+    if (name == "releaseBaselineProfile") return false
 
     // Only used to run kotlinx benchmarks. Artifacts are not published by this configuration.
     if (name == "benchmarkGenerator.resolver") return false

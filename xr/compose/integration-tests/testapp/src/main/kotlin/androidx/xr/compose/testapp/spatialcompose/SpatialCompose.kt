@@ -263,7 +263,9 @@ class SpatialCompose : ComponentActivity() {
                     verticalArrangement = SpatialArrangement.SpaceAround,
                 ) {
                     SpatialMainPanel(modifier = SubspaceModifier.fillMaxWidth().height(600.dp))
-                    val intent = Intent(this@SpatialCompose, AnotherActivity::class.java)
+                    val intent = remember {
+                        Intent(this@SpatialCompose, AnotherActivity::class.java)
+                    }
                     intent.putExtra("SHOW_BOTTOM_BAR", true)
                     intent.putExtra("TITLE", "Top Bar")
                     intent.putExtra("BOTTOM_BAR_TEXT", "Bottom Bar")

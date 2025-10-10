@@ -144,12 +144,18 @@ class FakeSceneRuntimeTest {
     }
 
     @Test
-    fun requestFullSpaceMode_requested() {
-        check(!fakeSceneRuntime.requestedFullSpaceMode)
+    fun requestHomeSpaceMode_requestFullSpaceMode_spatialCapabilitiesIsUpdated() {
+        assertThat(fakeSceneRuntime.spatialCapabilities.capabilities)
+            .isEqualTo(ALL_SPATIAL_CAPABILITIES)
+
+        fakeSceneRuntime.requestHomeSpaceMode()
+
+        assertThat(fakeSceneRuntime.spatialCapabilities.capabilities).isEqualTo(0)
 
         fakeSceneRuntime.requestFullSpaceMode()
 
-        assertThat(fakeSceneRuntime.requestedFullSpaceMode).isTrue()
+        assertThat(fakeSceneRuntime.spatialCapabilities.capabilities)
+            .isEqualTo(ALL_SPATIAL_CAPABILITIES)
     }
 
     @Test
@@ -165,7 +171,9 @@ class FakeSceneRuntimeTest {
 
         assertThat(panelEntity).isInstanceOf(FakePanelEntity::class.java)
         assertThat(panelEntity.getPose()).isEqualTo(pose)
-        assertThat(panelEntity.size).isEqualTo(dimensions)
+        assertThat(panelEntity.size.width).isWithin(0.001f).of(dimensions.width)
+        assertThat(panelEntity.size.height).isWithin(0.001f).of(dimensions.height)
+        assertThat(panelEntity.size.depth).isWithin(0.001f).of(dimensions.depth)
         assertThat(panelEntity.parent).isEqualTo(parent)
     }
 

@@ -40,14 +40,18 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.Space
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.Ignore
 import kotlin.test.assertNotNull
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class GravityAlignedTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    @get:Rule
+    val composeTestRule =
+        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
 
     @Test
     fun gravityAligned_parentIsLevel_appliesNoRotation() {
@@ -340,6 +344,7 @@ class GravityAlignedTest {
     }
 
     @Test
+    @Ignore("b/448989958 - The SceneCore Fakes need to be updated to support this test.")
     fun gravityAligned_onApplicationSubspace_alignsTiltedRootToWorld() {
         composeTestRule.session = createFakeSession(composeTestRule.activity)
         val tiltedRootNode =

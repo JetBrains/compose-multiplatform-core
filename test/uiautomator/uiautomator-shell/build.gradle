@@ -64,7 +64,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(libs.testCore)
                 implementation(libs.testExtJunit)

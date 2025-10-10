@@ -114,7 +114,7 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation("androidx.annotation:annotation:1.8.0")

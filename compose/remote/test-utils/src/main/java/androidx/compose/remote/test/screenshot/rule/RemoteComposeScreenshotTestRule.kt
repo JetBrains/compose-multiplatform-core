@@ -32,6 +32,7 @@ import androidx.compose.remote.test.screenshot.TargetPlayer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -39,6 +40,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
@@ -100,6 +102,14 @@ class RemoteComposeScreenshotTestRule(
         RemoteComposePlayerFlags.isViewPlayerEnabled = true
     }
 
+    fun runTest(
+        size: Size = displaySize(),
+        backgroundColor: Color? = null,
+        content: @Composable @RemoteComposable () -> Unit,
+    ) {
+        setContent(size = size, backgroundColor = backgroundColor, content = content)
+    }
+
     fun runScreenshotTest(
         screenshotName: Description = testDescription,
         size: Size = displaySize(),
@@ -159,7 +169,7 @@ class RemoteComposeScreenshotTestRule(
                         Modifier
                     }
                 )
-                .testTag("playerRoot")
+                .testTag(ROOT_TEST_TAG)
         composeTestRule.setContent {
             Box(modifier = boxModifier) {
                 val document: CoreDocument? by rememberRemoteDocument(content = content)
@@ -201,7 +211,13 @@ class RemoteComposeScreenshotTestRule(
         return testIdentifier.replace("[\\[$]".toRegex(), "_").replace("]", "")
     }
 
+    fun assertRootNodeContainsColor(color: Color) {
+        composeTestRule.onNodeWithTag(ROOT_TEST_TAG).captureToImage().assertContainsColor(color)
+    }
+
     internal companion object {
+        const val ROOT_TEST_TAG = "playerRoot"
+
         fun displaySize(): Size {
             val width: Int = Resources.getSystem().displayMetrics.widthPixels
             val height: Int = Resources.getSystem().displayMetrics.heightPixels

@@ -77,7 +77,6 @@ public class WebViewCompat {
     private static final Uri WILDCARD_URI = Uri.parse("*");
     private static final Uri EMPTY_URI = Uri.parse("");
 
-    private static boolean sShouldCacheProvider = true;
     private static final WeakHashMap<WebView, WebViewProviderAdapter> sProviderAdapterCache =
             new WeakHashMap<>();
 
@@ -446,8 +445,8 @@ public class WebViewCompat {
     }
 
     private static WebViewProviderAdapter getProvider(WebView webview) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.CACHE_PROVIDER;
-        if (feature.isSupportedByWebView() && sShouldCacheProvider) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.PROVIDER_WEAKLY_REF_WEBVIEW;
+        if (feature.isSupportedByWebView()) {
             WebViewProviderAdapter adapter = sProviderAdapterCache.get(webview);
             if (adapter == null) {
                 adapter = new WebViewProviderAdapter(createProvider(webview));
@@ -1480,37 +1479,6 @@ public class WebViewCompat {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.SAVE_STATE;
         if (feature.isSupportedByWebView()) {
             getProvider(webView).saveState(outState, maxSizeBytes, includeForwardState);
-        } else {
-            throw WebViewFeatureInternal.getUnsupportedOperationException();
-        }
-    }
-
-    /**
-     * Denotes that the WebViewCompat#setShouldCacheProvider API surface is experimental.
-     * <p>
-     * It may change without warning and should not be relied upon for non-experimental purposes.
-     */
-    @Retention(RetentionPolicy.CLASS)
-    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
-    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
-    public @interface ExperimentalCacheProvider {
-    }
-
-    /**
-     * Enables or disables caching of WebView provider objects (objects internal to the
-     * androidx.webkit library). Caching should have no effect on behavior but will improve
-     * performance.
-     *
-     * @param shouldCacheProvider whether to enable caching of WebView provider objects.
-     */
-    @RequiresFeature(name = WebViewFeature.CACHE_PROVIDER,
-            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @AnyThread
-    @ExperimentalCacheProvider
-    public static void setShouldCacheProvider(boolean shouldCacheProvider) {
-        ApiFeature.NoFramework feature = WebViewFeatureInternal.CACHE_PROVIDER;
-        if (feature.isSupportedByWebView()) {
-            sShouldCacheProvider = shouldCacheProvider;
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }

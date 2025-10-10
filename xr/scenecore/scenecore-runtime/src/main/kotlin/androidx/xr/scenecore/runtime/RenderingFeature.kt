@@ -31,6 +31,8 @@ public interface RenderingFeature {
     /** Return the holder of underlying extension Node for the corresponding entity's creation. */
     public fun getNodeHolder(): NodeHolder<*>
 
+    public fun getSubspaceNodeHolder(): NodeHolder<*>?
+
     /**
      * Disposes the resources used by the feature. This is called by the corresponding entity's
      * dispose method.

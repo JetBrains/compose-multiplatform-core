@@ -24,7 +24,7 @@
                   android:exported="true">
             <meta-data
                 android:name="androidx.xr.compose.testing.USE_REAL_RUNTIME"
-                android:value="true" />
+                android:value="false" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -100,6 +100,7 @@ package androidx.xr.scenecore.testing {
     ctor public FakeBaseRenderingFeature(androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> _nodeHolder);
     method public void dispose();
     method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> getNodeHolder();
+    method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?>? getSubspaceNodeHolder();
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeCameraViewActivityPose extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.CameraViewActivityPose {
@@ -238,6 +239,7 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakePanelEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.runtime.PanelEntity {
     ctor public FakePanelEntity();
+    ctor public FakePanelEntity(optional android.view.View? view);
     method @InaccessibleFromKotlin public float getCornerRadius();
     method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
@@ -568,9 +570,10 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.runtime.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.scenecore.runtime.SubspaceNodeFeature feature);
     method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(androidx.xr.scenecore.runtime.SurfaceFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity parentEntity);
     method public void enablePanelDepthTest(boolean enabled);
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.ActivitySpace getActivitySpace();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.FakeActivitySpace getActivitySpace();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper getAudioTrackExtensionsWrapper();
     method public androidx.xr.scenecore.runtime.CameraViewActivityPose? getCameraViewActivityPose(@androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType int cameraType);
+    method @InaccessibleFromKotlin public float getDeviceDpPerMeter();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor? getExecutor();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.HeadActivityPose? getHeadActivityPose();
     method @InaccessibleFromKotlin public android.app.Activity? getLastSetPreferredAspectRatioActivity();
@@ -579,8 +582,6 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper getMediaPlayerExtensionsWrapper();
     method @InaccessibleFromKotlin public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions>> getPerceivedResolutionChangedMap();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose getPerceptionSpaceActivityPose();
-    method @InaccessibleFromKotlin public boolean getRequestedFullSpaceMode();
-    method @InaccessibleFromKotlin public boolean getRequestedHomeSpaceMode();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper getSoundPoolExtensionsWrapper();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialCapabilities getSpatialCapabilities();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialEnvironment getSpatialEnvironment();
@@ -591,17 +592,17 @@ package androidx.xr.scenecore.testing {
     method public void removeSpatialCapabilitiesChangedListener(java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialCapabilities> listener);
     method public void requestFullSpaceMode();
     method public void requestHomeSpaceMode();
+    method @InaccessibleFromKotlin public void setDeviceDpPerMeter(float);
     method public android.os.Bundle setFullSpaceMode(android.os.Bundle bundle);
     method public android.os.Bundle setFullSpaceModeWithEnvironmentInherited(android.os.Bundle bundle);
     method @InaccessibleFromKotlin public void setLastSetPreferredAspectRatioActivity(android.app.Activity?);
     method @InaccessibleFromKotlin public void setLastSetPreferredAspectRatioRatio(float);
     method public void setPreferredAspectRatio(android.app.Activity activity, float preferredRatio);
-    method @InaccessibleFromKotlin public void setRequestedFullSpaceMode(boolean);
-    method @InaccessibleFromKotlin public void setRequestedHomeSpaceMode(boolean);
     method @InaccessibleFromKotlin public void setSpatialModeChangeListener(androidx.xr.scenecore.runtime.SpatialModeChangeListener?);
     method public void setSpatialVisibilityChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialVisibility> listener);
-    property public androidx.xr.scenecore.runtime.ActivitySpace activitySpace;
+    property public androidx.xr.scenecore.testing.FakeActivitySpace activitySpace;
     property public androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper audioTrackExtensionsWrapper;
+    property public float deviceDpPerMeter;
     property public java.util.concurrent.Executor? executor;
     property public androidx.xr.scenecore.runtime.HeadActivityPose? headActivityPose;
     property public android.app.Activity? lastSetPreferredAspectRatioActivity;
@@ -610,14 +611,13 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper mediaPlayerExtensionsWrapper;
     property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions>> perceivedResolutionChangedMap;
     property public androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose perceptionSpaceActivityPose;
-    property public boolean requestedFullSpaceMode;
-    property public boolean requestedHomeSpaceMode;
     property public androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper soundPoolExtensionsWrapper;
     property public androidx.xr.scenecore.runtime.SpatialCapabilities spatialCapabilities;
     property public androidx.xr.scenecore.runtime.SpatialEnvironment spatialEnvironment;
     property public androidx.xr.scenecore.runtime.SpatialModeChangeListener? spatialModeChangeListener;
     property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialVisibility>> spatialVisibilityChangedMap;
     property public Enum<androidx.xr.scenecore.testing.FakeSceneRuntime.State> state;
+    field public static final float DEFAULT_DP_PER_METER = 1151.856f;
   }
 
   public enum FakeSceneRuntime.State {
@@ -629,7 +629,7 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntimeFactory implements androidx.xr.runtime.internal.SceneRuntimeFactory {
     ctor public FakeSceneRuntimeFactory();
-    method public androidx.xr.scenecore.runtime.SceneRuntime create(android.app.Activity activity);
+    method public androidx.xr.scenecore.testing.FakeSceneRuntime create(android.app.Activity activity);
     method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
   }

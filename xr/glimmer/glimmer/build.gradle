@@ -55,9 +55,6 @@ dependencies {
 android {
     namespace = "androidx.xr.glimmer"
     compileSdk = 35
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
 }
 
 androidx {

@@ -313,6 +313,9 @@ internal abstract class AppFunctionDataSpec {
             is AppFunctionObjectTypeMetadata -> {
                 !isCollection && this.conform(typeClazz)
             }
+            is AppFunctionAllOfTypeMetadata -> {
+                !isCollection && this.conform(typeClazz)
+            }
             is AppFunctionReferenceTypeMetadata -> {
                 !isCollection && this.conform(typeClazz)
             }
@@ -327,6 +330,10 @@ internal abstract class AppFunctionDataSpec {
     }
 
     private fun AppFunctionObjectTypeMetadata.conform(typeClass: Class<*>): Boolean {
+        return typeClass == AppFunctionData::class.java
+    }
+
+    private fun AppFunctionAllOfTypeMetadata.conform(typeClass: Class<*>): Boolean {
         return typeClass == AppFunctionData::class.java
     }
 

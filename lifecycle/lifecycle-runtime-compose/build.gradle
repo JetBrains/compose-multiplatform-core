@@ -79,7 +79,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(project(":lifecycle:lifecycle-runtime-testing"))
                 implementation(project(":compose:ui:ui-test"))

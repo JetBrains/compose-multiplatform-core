@@ -137,55 +137,57 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
     }
 
     @Test
-    fun accumulatedPart_isApplied() = runTest {
-        val state = ListState()
-        rule.setContentWithInitialFocus {
-            TestList(
-                state = state,
-                modifier = Modifier.size(100.dp),
-                itemContent = { index -> FocusableItem(index, Modifier.size(20.dp)) },
+    fun accumulatedPart_isApplied() =
+        runTest(testDispatcher) {
+            val state = ListState()
+            rule.setContentWithInitialFocus {
+                TestList(
+                    state = state,
+                    modifier = Modifier.size(100.dp),
+                    itemContent = { index -> FocusableItem(index, Modifier.size(20.dp)) },
+                )
+            }
+            // Set up the accumulated value. We expect it will be used in the next measure pass.
+            // The values inside the list state have an opposite sign, so it's negative.
+            val accumulatedValue = with(rule.density) { -60.dp.toPx() }
+            state.applyMeasureResult(
+                result = state.layoutInfo as GlimmerListMeasureResult,
+                consumedScroll = 0f,
+                accumulatedScroll = accumulatedValue,
             )
+
+            // Scroll by a single pixel - we expect that accumulated value will be added up.
+            state.scrollByAndWaitForIdle(1.dp)
+
+            // Check that 4th item is focused.
+            rule.onNodeWithTag("item-3").assertIsFocused()
         }
-        // Set up the accumulated value. We expect it will be used in the next measure pass.
-        // The values inside the list state have an opposite sign, so it's negative.
-        val accumulatedValue = with(rule.density) { -60.dp.toPx() }
-        state.applyMeasureResult(
-            result = state.layoutInfo as GlimmerListMeasureResult,
-            consumedScroll = 0f,
-            accumulatedScroll = accumulatedValue,
-        )
-
-        // Scroll by a single pixel - we expect that accumulated value will be added up.
-        state.scrollByAndWaitForIdle(1.dp)
-
-        // Check that 4th item is focused.
-        rule.onNodeWithTag("item-3").assertIsFocused()
-    }
 
     @Test
-    fun scrolling_and_nonScrolling_measurePasses_workTogether_correctly() = runTest {
-        val state = ListState()
-        rule.setContentWithInitialFocus {
-            TestList(
-                state = state,
-                modifier = Modifier.size(100.dp).background(Color.Black),
-                itemContent = { index -> FocusableItem(index, Modifier.size(20.dp)) },
-            )
+    fun scrolling_and_nonScrolling_measurePasses_workTogether_correctly() =
+        runTest(testDispatcher) {
+            val state = ListState()
+            rule.setContentWithInitialFocus {
+                TestList(
+                    state = state,
+                    modifier = Modifier.size(100.dp).background(Color.Black),
+                    itemContent = { index -> FocusableItem(index, Modifier.size(20.dp)) },
+                )
+            }
+
+            // Scrolling measure pass (item-2).
+            state.scrollByAndWaitForIdle(41.dp)
+            rule.onNodeWithTag("item-2").assertIsFocused()
+
+            // Non-scrolling measure pass (item-0).
+            scope.launch { state.animateScrollToItem(0) }
+            rule.waitForIdle()
+            rule.onNodeWithTag("item-0").assertIsFocused()
+
+            // Scrolling measure pass (item-1).
+            state.scrollByAndWaitForIdle(21.dp)
+            rule.onNodeWithTag("item-1").assertIsFocused()
         }
-
-        // Scrolling measure pass (item-2).
-        state.scrollByAndWaitForIdle(41.dp)
-        rule.onNodeWithTag("item-2").assertIsFocused()
-
-        // Non-scrolling measure pass (item-0).
-        scope.launch { state.animateScrollToItem(0) }
-        rule.waitForIdle()
-        rule.onNodeWithTag("item-0").assertIsFocused()
-
-        // Scrolling measure pass (item-1).
-        state.scrollByAndWaitForIdle(21.dp)
-        rule.onNodeWithTag("item-1").assertIsFocused()
-    }
 
     @Test
     fun initialState_withNonZeroParameters_isAppliedCorrectly() {
@@ -208,30 +210,31 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
     }
 
     @Test
-    fun scrollBy_reportsCorrectConsumedValue() = runTest {
-        val state = ListState()
-        rule.setContentWithInitialFocus {
-            CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                TestList(
-                    state = state,
-                    itemsCount = 100,
-                    modifier = Modifier.size(400.dp),
-                    itemContent = { FocusableItem(it, Modifier.size(100.dp)) },
-                )
+    fun scrollBy_reportsCorrectConsumedValue() =
+        runTest(testDispatcher) {
+            val state = ListState()
+            rule.setContentWithInitialFocus {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    TestList(
+                        state = state,
+                        itemsCount = 100,
+                        modifier = Modifier.size(400.dp),
+                        itemContent = { FocusableItem(it, Modifier.size(100.dp)) },
+                    )
+                }
             }
+
+            state.scrollByAndCheckConsumedValue(0.2f)
+            state.scrollByAndCheckConsumedValue(0.5f)
+            state.scrollByAndCheckConsumedValue(200f)
+
+            state.scrollByAndCheckConsumedValue(-0.2f)
+            state.scrollByAndCheckConsumedValue(-0.5f)
+            state.scrollByAndCheckConsumedValue(-200f)
+
+            Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(0)
+            Truth.assertThat(state.firstVisibleItemScrollOffset).isEqualTo(0)
         }
-
-        state.scrollByAndCheckConsumedValue(0.2f)
-        state.scrollByAndCheckConsumedValue(0.5f)
-        state.scrollByAndCheckConsumedValue(200f)
-
-        state.scrollByAndCheckConsumedValue(-0.2f)
-        state.scrollByAndCheckConsumedValue(-0.5f)
-        state.scrollByAndCheckConsumedValue(-200f)
-
-        Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(0)
-        Truth.assertThat(state.firstVisibleItemScrollOffset).isEqualTo(0)
-    }
 
     @Test
     @Ignore("b/444190961")

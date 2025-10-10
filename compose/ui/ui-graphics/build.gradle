@@ -94,7 +94,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))

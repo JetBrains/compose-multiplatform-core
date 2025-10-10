@@ -34,6 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 abstract class BaseRenderingEntity extends AndroidXrEntity {
     private final RenderingFeature mFeature;
+    private final Node mSubspaceNode;
 
     BaseRenderingEntity(
             Context context,
@@ -48,10 +49,24 @@ abstract class BaseRenderingEntity extends AndroidXrEntity {
                 entityManager,
                 executor);
         mFeature = feature;
+        NodeHolder<?> subspaceNodeHolder = feature.getSubspaceNodeHolder();
+        if (subspaceNodeHolder != null) {
+            // Establish an alias from the primary node to the subspace node. This is crucial for
+            // ensuring that input events, such as hit tests, which may be reported against the
+            // subspace node, can be correctly resolved back to this entity. Without this alias,
+            // getEntityForNode(subspaceNode) would fail.
+            mSubspaceNode = NodeHolder.assertGetValue(subspaceNodeHolder, Node.class);
+            entityManager.setEntityForNode(mSubspaceNode, this);
+        } else {
+            mSubspaceNode = null;
+        }
     }
 
     @Override
     public void dispose() {
+        if (mSubspaceNode != null) {
+            mEntityManager.removeEntityForNode(mSubspaceNode);
+        }
         mFeature.dispose();
         super.dispose();
     }

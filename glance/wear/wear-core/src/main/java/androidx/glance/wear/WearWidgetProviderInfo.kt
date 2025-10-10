@@ -81,6 +81,8 @@ import org.xmlpull.v1.XmlPullParserException
  *   when [isMultiInstanceSupported] is set to true. This can be null if no configuration is needed.
  * @property minSchemaVersion The minimum schema version supported by this widget provider.
  * @property maxSchemaVersion The maximum schema version supported by this widget provider.
+ * @property unrecognisedAttributes Any unrecognised attributes during the XML parsing of the
+ *   provider info.
  */
 // TODO: populate default min schema version for remote compose widgets.
 public class WearWidgetProviderInfo
@@ -97,6 +99,7 @@ public constructor(
     public val configIntentAction: String? = null,
     public val minSchemaVersion: SchemaVersion? = null,
     public val maxSchemaVersion: SchemaVersion? = null,
+    public val unrecognisedAttributes: Map<String, String> = emptyMap(),
 ) {
     public companion object {
         /** Name for the `meta-data` tag for the provider info. */

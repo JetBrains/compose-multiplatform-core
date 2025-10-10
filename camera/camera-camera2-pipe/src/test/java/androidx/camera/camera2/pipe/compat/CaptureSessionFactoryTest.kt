@@ -62,7 +62,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.robolectric.Shadows
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 internal class CaptureSessionFactoryTest {
@@ -136,6 +135,7 @@ internal class CaptureSessionFactoryTest {
                             finalizeSessionOnCloseBehavior = FinalizeSessionOnCloseBehavior.OFF,
                             closeCaptureSessionOnDisconnect = false,
                         ),
+                        concurrentSessionSequencer = null,
                         threads,
                         this,
                     ),

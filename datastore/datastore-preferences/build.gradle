@@ -80,7 +80,7 @@ androidXMultiplatform {
         androidHostTest {
             dependsOn(commonJvmTest)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonJvmTest)
             dependencies {
                 implementation(libs.testRunner)

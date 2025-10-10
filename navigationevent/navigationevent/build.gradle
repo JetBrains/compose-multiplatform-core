@@ -88,7 +88,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 runtimeOnly(libs.kotlinTestJunit)

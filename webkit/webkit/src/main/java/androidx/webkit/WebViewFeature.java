@@ -124,11 +124,11 @@ public class WebViewFeature {
             PRERENDER_WITH_URL,
             SAVE_STATE,
             NAVIGATION_CALLBACK_BASIC,
-            CACHE_PROVIDER,
             PAYMENT_REQUEST,
             WEBVIEW_BUILDER,
             WARM_UP_RENDERER_PROCESS,
             PRECONNECT,
+            PROVIDER_WEAKLY_REF_WEBVIEW,
             HYPERLINK_CONTEXT_MENU_ITEMS,
             CUSTOM_REQUEST_HEADERS,
     })
@@ -730,13 +730,6 @@ public class WebViewFeature {
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
-     * This feature covers {@link WebViewCompat#setShouldCacheProvider(boolean)}.
-     */
-    @WebViewCompat.ExperimentalCacheProvider
-    public static final String CACHE_PROVIDER = "CACHE_PROVIDER";
-
-    /**
-     * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
      * {@link WebSettingsCompat#setPaymentRequestEnabled(WebSettings, boolean)},
      * {@link WebSettingsCompat#getPaymentRequestEnabled(WebSettings)},
@@ -825,6 +818,13 @@ public class WebViewFeature {
      * {@link WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)},
      */
     public static final String HYPERLINK_CONTEXT_MENU_ITEMS = "HYPERLINK_CONTEXT_MENU_ITEMS";
+
+    /**
+     * This is an internal only feature that indicate whether it is safe to cache WebView Provider
+     * objects for the current WebView APK.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String PROVIDER_WEAKLY_REF_WEBVIEW = "PROVIDER_WEAKLY_REF_WEBVIEW";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

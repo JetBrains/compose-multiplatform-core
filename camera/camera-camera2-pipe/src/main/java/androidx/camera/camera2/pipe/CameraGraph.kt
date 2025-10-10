@@ -94,7 +94,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         val sessionColorSpace: CameraColorSpace? = null,
         // TODO: Internal error handling. May be better at the CameraPipe level.
     ) {
-        internal var sharedCameraIds: List<CameraId> = emptyList()
+        internal var concurrentCameraGraphs: ConcurrentCameraGraphs? = null
 
         init {
             check(cameraBackendId == null || customCameraBackend == null) {
@@ -103,9 +103,7 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
         }
     }
 
-    public class ConcurrentConfig(graphConfigs: List<Config>) {
-        public val graphConfigs: List<Config>
-
+    public class ConcurrentConfig(public val graphConfigs: List<Config>) {
         init {
             check(graphConfigs.size >= 2) {
                 "Cannot create ConcurrentGraphConfig without 2 or more CameraGraph.Config(s)"
@@ -119,13 +117,6 @@ public interface CameraGraph : CameraGraphBase<Session>, CameraControls3A {
             check(distinctCameraIds.size == graphConfigs.size) {
                 "Each CameraGraph.Config must have a distinct camera id!"
             }
-
-            this.graphConfigs =
-                graphConfigs.map { config ->
-                    config.apply {
-                        sharedCameraIds = distinctCameraIds.filter { it != config.camera }
-                    }
-                }
         }
     }
 

@@ -116,6 +116,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         rule.runOnIdle {
             scope.launch { state.scrollContentBy(with(rule.density) { itemSize.toPx() }) }
         }
+        rule.waitForIdle()
 
         state.assertScrollPosition(0, itemSize)
     }
@@ -142,6 +143,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         rule.runOnIdle {
             scope.launch { state.scrollContentBy(with(rule.density) { padding.toPx() }) }
         }
+        rule.waitForIdle()
 
         state.assertScrollPosition(1, padding - itemSize)
 
@@ -170,6 +172,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
             scope.launch { state.scrollContentBy(with(rule.density) { (itemSize * 3).toPx() }) }
             scope.launch { state.scrollContentBy(with(rule.density) { (-itemSize * 1.5f).toPx() }) }
         }
+        rule.waitForIdle()
 
         state.assertScrollPosition(1, itemSize * 0.5f)
 
@@ -197,6 +200,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         rule.runOnIdle {
             scope.launch { state.scrollContentBy(with(rule.density) { (itemSize * 4).toPx() }) }
         }
+        rule.waitForIdle()
 
         state.assertScrollPosition(3, 0.dp)
 

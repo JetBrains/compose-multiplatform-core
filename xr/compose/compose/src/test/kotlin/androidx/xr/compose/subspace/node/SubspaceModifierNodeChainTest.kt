@@ -43,6 +43,7 @@ import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +52,9 @@ import org.junit.runner.RunWith
 /** Tests for [SubspaceModifierNodeChain]. */
 @RunWith(AndroidJUnit4::class)
 class SubspaceModifierNodeChainTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+    @get:Rule
+    val composeTestRule =
+        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
 
     // This is used to track the number of times CountNode is reused.
     var nodeCount = 0
@@ -156,7 +159,8 @@ class SubspaceModifierNodeChainTest {
             }
         }
 
-        // There should be multiple initial compositions as the SpatialPanel is attempting to size
+        // There should be multiple initial compositions as the SpatialPanel is attempting to
+        // size
         // itself and the state manager is initialized and settled.
         var count = 2
         composeTestRule.waitForIdle()

@@ -47,6 +47,8 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -84,7 +86,14 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         rule.setAutoFocusContent { FocusableTestList(itemsCount = 100) }
 
         rule.onNodeWithTag(LIST_TEST_TAG).performScrollToIndex(25)
-        rule.waitForIdle()
+
+        // TODO: b/447024357 - list focus not recovered immediately
+        rule.waitUntil {
+            rule
+                .onAllNodes(hasTestTag("item-27") and isFocused())
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
 
         // TODO: b/433687753 - performScrollToIndex() isn't aligned with the auto-focused item.
         // We brought item-25 to the top, but centered item-27 is focused.
@@ -107,16 +116,17 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
     }
 
     @Test
-    fun scrollBy_movesAutoFocus_whenUserScrollIsDisabled() = runTest {
-        val state = ListState()
-        rule.setAutoFocusContent { FocusableTestList(userScrollEnabled = false, state = state) }
+    fun scrollBy_movesAutoFocus_whenUserScrollIsDisabled() =
+        runTest(testDispatcher) {
+            val state = ListState()
+            rule.setAutoFocusContent { FocusableTestList(userScrollEnabled = false, state = state) }
 
-        // Default size of items is 100.dp
-        state.scrollByAndWaitForIdle(250.dp)
+            // Default size of items is 100.dp
+            state.scrollByAndWaitForIdle(250.dp)
 
-        // The third item must be focused.
-        rule.onListItem(2).assertIsFocused()
-    }
+            // The third item must be focused.
+            rule.onListItem(2).assertIsFocused()
+        }
 
     @Test
     fun performSemanticsAction_scrollBy_movesAutoFocus() {

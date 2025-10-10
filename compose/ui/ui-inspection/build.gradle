@@ -102,9 +102,6 @@ android {
             version = libs.versions.cmake.get()
         }
     }
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
     namespace = "androidx.compose.ui.inspection"
 }
 

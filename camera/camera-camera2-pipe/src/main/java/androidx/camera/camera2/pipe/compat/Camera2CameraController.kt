@@ -74,6 +74,7 @@ constructor(
     private val timeSource: TimeSource,
     override val cameraGraphId: CameraGraphId,
     private val shutdownListener: ShutdownListener,
+    concurrentSessionSequencers: ConcurrentSessionSequencers,
 ) : CameraController {
     private val lock = Any()
 
@@ -97,6 +98,11 @@ constructor(
     @GuardedBy("lock") private var lastCameraPrioritiesChangedTs: TimestampNs? = null
 
     @GuardedBy("lock") private var restartJob: Job? = null
+
+    private val concurrentSessionSequencer =
+        graphConfig.concurrentCameraGraphs?.let {
+            concurrentSessionSequencers.getSequencer(cameraGraphId, it)
+        }
 
     private val closedDeferred = CompletableDeferred<Unit>()
 
@@ -194,10 +200,12 @@ constructor(
             return
         }
         lastCameraError = null
+        val cameraId = graphConfig.camera
+        val allCameraIds = graphConfig.concurrentCameraGraphs?.cameraIds ?: setOf(cameraId)
         val camera =
             camera2DeviceManager.open(
-                cameraId = graphConfig.camera,
-                sharedCameraIds = graphConfig.sharedCameraIds,
+                cameraId = cameraId,
+                sharedCameraIds = (allCameraIds - cameraId).toList(),
                 graphListener = graphListener,
                 isPrewarm = false,
             ) { _ ->
@@ -220,6 +228,7 @@ constructor(
                 cameraSurfaceManager,
                 timeSource,
                 graphConfig.flags,
+                concurrentSessionSequencer,
                 threads,
                 scope,
             )

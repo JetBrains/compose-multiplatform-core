@@ -121,11 +121,11 @@ class PointerLogManager(context: Context, session: Session) {
             origin = inputEvent.origin
             direction = inputEvent.direction
             actionCount[action] = actionCount.getOrDefault(action, 0) + 1
-            if (hitInfos.isEmpty()) {
-                this.hitInfos.clear()
-            } else {
+
+            this.hitInfos.clear()
+            if (!inputEvent.hitInfoList.isEmpty()) {
                 hitInfoCount++
-                for (hitInfo in hitInfos) {
+                for (hitInfo in inputEvent.hitInfoList) {
                     this.hitInfos.add(hitInfo)
                 }
             }
@@ -217,12 +217,11 @@ class PointerLogManager(context: Context, session: Session) {
             } else {
                 str += String.format("%02d", hitInfoCount % 100)
                 for (i in 0..hitInfos.size - 1) {
-                    val hitPos = hitInfos[i].hitPosition
-                    if (hitPos != null) {
-                        str += " [${i}]:${hitPos.toShortString()}"
-                    } else {
-                        str += " [${i}]:null"
-                    }
+                    str += " [${i}]:"
+                    str += (hitInfos[i].inputEntity.javaClass.simpleName ?: "null") + "@"
+                    str +=
+                        if (hitInfos[i].hitPosition == null) "[null]"
+                        else hitInfos[i].hitPosition!!.toShortString()
                 }
             }
             return str

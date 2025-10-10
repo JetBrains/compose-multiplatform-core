@@ -60,7 +60,8 @@ public fun <T : Any> rememberViewModelStoreNavEntryDecorator(
         checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         },
-    removeViewModelStoreOnPop: () -> Boolean = removeViewModelStoreOnPopCallback(),
+    removeViewModelStoreOnPop: () -> Boolean =
+        ViewModelStoreNavEntryDecoratorDefault.removeViewModelStoreOnPop(),
 ): ViewModelStoreNavEntryDecorator<T> {
     val currentRemoveViewModelStoreOnPop = rememberUpdatedState(removeViewModelStoreOnPop)
     return remember(viewModelStoreOwner, currentRemoveViewModelStoreOnPop) {
@@ -149,14 +150,17 @@ private class EntryViewModel : ViewModel() {
     }
 }
 
-/**
- * Controls whether the [ViewModelStoreNavEntryDecorator] should clear the ViewModelStore scoped to
- * a [NavEntry] when [NavEntryDecorator.onPop] is invoked for that [NavEntry]'s
- * [NavEntry.contentKey]
- *
- * The ViewModelStore is cleared if this returns true. The store is retained if false.
- */
-@Composable public expect fun removeViewModelStoreOnPopCallback(): () -> Boolean
+/** Holds the default functions for the [ViewModelStoreNavEntryDecorator]. */
+public expect object ViewModelStoreNavEntryDecoratorDefault {
+    /**
+     * Controls whether the [ViewModelStoreNavEntryDecorator] should clear the ViewModelStore scoped
+     * to a [NavEntry] when [NavEntryDecorator.onPop] is invoked for that [NavEntry]'s
+     * [NavEntry.contentKey]
+     *
+     * The ViewModelStore is cleared if this returns true. The store is retained if false.
+     */
+    @Composable public fun removeViewModelStoreOnPop(): () -> Boolean
+}
 
 private fun ViewModelStore.getEntryViewModel(): EntryViewModel {
     val provider =

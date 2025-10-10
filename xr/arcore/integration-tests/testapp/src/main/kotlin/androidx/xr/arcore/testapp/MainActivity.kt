@@ -98,6 +98,8 @@ class MainActivity : ComponentActivity() {
                 HAND_TRACKING_PERMISSION,
                 HEAD_TRACKING_PERMISSION,
                 FACE_TRACKING_PERMISSION,
+                EYE_TRACKING_COARSE_PERMISSION,
+                EYE_TRACKING_FINE_PERMISSION,
             )
         )
 

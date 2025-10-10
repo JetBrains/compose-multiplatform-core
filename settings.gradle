@@ -176,6 +176,16 @@ dependencyResolutionManagement {
                 logger.warn("Using custom version ${metalavaOverride} of metalava due to METALAVA_VERSION being set.")
                 version('metalava', metalavaOverride)
             }
+            def agpOverride = System.getenv("GRADLE_PLUGIN_VERSION")
+            if (agpOverride != null) {
+                logger.warn("Using custom version ${agpOverride} of AGP due to GRADLE_PLUGIN_VERSION being set.")
+                version('androidGradlePlugin', agpOverride)
+            }
+            def lintOverride = System.getenv("LINT_VERSION")
+            if (lintOverride != null) {
+                logger.warn("Using custom version ${lintOverride} of Lint due to LINT_VERSION being set.")
+                version('androidLint', lintOverride)
+            }
         }
     }
 }
@@ -609,6 +619,7 @@ includeProject(":compose:material3:material3:material3-samples", "compose/materi
 includeProject(":compose:mpp:demo", [BuildType.COMPOSE])
 includeProject(":compose:mpp:demo-swiftui", [BuildType.COMPOSE])
 includeProject(":compose:remote:integration-tests:demos", [BuildType.MAIN])
+includeProject(":compose:remote:integration-tests:player-view-demos", [BuildType.MAIN])
 includeProject(":compose:remote:remote-core", [BuildType.MAIN])
 includeProject(":compose:remote:remote-creation-compose", [BuildType.MAIN])
 includeProject(":compose:remote:remote-creation-core", [BuildType.MAIN])

@@ -545,7 +545,6 @@ package androidx.webkit {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void setProfile(android.webkit.WebView, String);
     method @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.SAFE_BROWSING_ALLOWLIST, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setSafeBrowsingAllowlist(java.util.Set<java.lang.String!>, android.webkit.ValueCallback<java.lang.Boolean!>?);
     method @Deprecated @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.SAFE_BROWSING_WHITELIST, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public static void setSafeBrowsingWhitelist(java.util.List<java.lang.String!>, android.webkit.ValueCallback<java.lang.Boolean!>?);
-    method @SuppressCompatibility @AnyThread @RequiresFeature(name=androidx.webkit.WebViewFeature.CACHE_PROVIDER, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @androidx.webkit.WebViewCompat.ExperimentalCacheProvider public static void setShouldCacheProvider(boolean);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.NAVIGATION_CALLBACK_BASIC, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static void setWebNavigationClient(android.webkit.WebView, androidx.webkit.WebNavigationClient);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_VIEW_RENDERER_CLIENT_BASIC_USAGE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void setWebViewRenderProcessClient(android.webkit.WebView, androidx.webkit.WebViewRenderProcessClient?);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.WEB_VIEW_RENDERER_CLIENT_BASIC_USAGE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public static void setWebViewRenderProcessClient(android.webkit.WebView, java.util.concurrent.Executor, androidx.webkit.WebViewRenderProcessClient);
@@ -554,9 +553,6 @@ package androidx.webkit {
   }
 
   @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.FIELD}) public static @interface WebViewCompat.ExperimentalAsyncStartUp {
-  }
-
-  @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.FIELD}) public static @interface WebViewCompat.ExperimentalCacheProvider {
   }
 
   @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.FIELD}) public static @interface WebViewCompat.ExperimentalSaveState {
@@ -581,7 +577,6 @@ package androidx.webkit {
     field public static final String ATTRIBUTION_REGISTRATION_BEHAVIOR = "ATTRIBUTION_REGISTRATION_BEHAVIOR";
     field public static final String BACK_FORWARD_CACHE = "BACK_FORWARD_CACHE";
     field public static final String BACK_FORWARD_CACHE_SETTINGS = "BACK_FORWARD_CACHE_SETTINGS";
-    field @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalCacheProvider public static final String CACHE_PROVIDER = "CACHE_PROVIDER";
     field public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";
     field public static final String CREATE_WEB_MESSAGE_CHANNEL = "CREATE_WEB_MESSAGE_CHANNEL";
     field public static final String CUSTOM_REQUEST_HEADERS = "CUSTOM_REQUEST_HEADERS";

@@ -26,7 +26,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
-import androidx.xr.scenecore.runtime.ActivitySpace
 import androidx.xr.scenecore.runtime.AnchorPlacement
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper
 import androidx.xr.scenecore.runtime.CameraViewActivityPose
@@ -62,6 +61,14 @@ import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
+internal const val ALL_SPATIAL_CAPABILITIES: Int =
+    SpatialCapabilities.SPATIAL_CAPABILITY_UI or
+        SpatialCapabilities.SPATIAL_CAPABILITY_3D_CONTENT or
+        SpatialCapabilities.SPATIAL_CAPABILITY_SPATIAL_AUDIO or
+        SpatialCapabilities.SPATIAL_CAPABILITY_APP_ENVIRONMENT or
+        SpatialCapabilities.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL or
+        SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY
+
 /**
  * Test-only implementation of [androidx.xr.scenecore.runtime.SceneRuntime].
  *
@@ -90,9 +97,16 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
     public val state: Enum<State>
         get() = _state
 
-    override val spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
+    override var spatialCapabilities: SpatialCapabilities =
+        SpatialCapabilities(ALL_SPATIAL_CAPABILITIES)
+        private set(value) {
+            field = value
+            spatialCapabilitiesChangedMap.forEach { (executor, consumer) ->
+                executor.execute { consumer.accept(value) }
+            }
+        }
 
-    override val activitySpace: ActivitySpace = FakeActivitySpace()
+    override val activitySpace: FakeActivitySpace = FakeActivitySpace()
 
     override val headActivityPose: HeadActivityPose? = FakeHeadActivityPose()
 
@@ -131,6 +145,8 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         }
     }
 
+    public var deviceDpPerMeter: Float = DEFAULT_DP_PER_METER
+
     override fun createPanelEntity(
         context: Context,
         pose: Pose,
@@ -138,14 +154,13 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         dimensions: Dimensions,
         name: String,
         parent: Entity,
-    ): PanelEntity {
-        val panelEntity = FakePanelEntity()
-        panelEntity.setPose(pose)
-        panelEntity.size = dimensions
-        panelEntity.parent = parent
-
-        return panelEntity
-    }
+    ): PanelEntity =
+        FakePanelEntity(view).apply {
+            dpPerMeter = deviceDpPerMeter
+            size = dimensions
+            this.parent = parent
+            setPose(pose)
+        }
 
     override fun createPanelEntity(
         context: Context,
@@ -154,14 +169,13 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         pixelDimensions: PixelDimensions,
         name: String,
         parent: Entity,
-    ): PanelEntity {
-        val panelEntity = FakePanelEntity()
-        panelEntity.setPose(pose)
-        panelEntity.sizeInPixels = pixelDimensions
-        panelEntity.parent = parent
-
-        return panelEntity
-    }
+    ): PanelEntity =
+        FakePanelEntity(view).apply {
+            dpPerMeter = deviceDpPerMeter
+            sizeInPixels = pixelDimensions
+            this.parent = parent
+            setPose(pose)
+        }
 
     override fun createActivityPanelEntity(
         pose: Pose,
@@ -169,14 +183,13 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         name: String,
         hostActivity: Activity,
         parent: Entity,
-    ): ActivityPanelEntity {
-        val activityPanelEntity = FakeActivityPanelEntity()
-        activityPanelEntity.setPose(pose)
-        activityPanelEntity.sizeInPixels = windowBoundsPx
-        activityPanelEntity.parent = parent
-
-        return activityPanelEntity
-    }
+    ): ActivityPanelEntity =
+        FakeActivityPanelEntity().apply {
+            dpPerMeter = deviceDpPerMeter
+            sizeInPixels = windowBoundsPx
+            this.parent = parent
+            setPose(pose)
+        }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun createAnchorEntity(
@@ -360,18 +373,16 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         lastSetPreferredAspectRatioRatio = preferredRatio
     }
 
-    /** This value is used to verify [requestedFullSpaceMode] is invoked. */
-    public var requestedFullSpaceMode: Boolean = false
-
     override fun requestFullSpaceMode() {
-        requestedFullSpaceMode = true
+        spatialCapabilities = SpatialCapabilities(ALL_SPATIAL_CAPABILITIES)
+        activitySpace.onBoundsChanged(
+            Dimensions(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+        )
     }
 
-    /** This value is used to verify [requestHomeSpaceMode] is invoked. */
-    public var requestedHomeSpaceMode: Boolean = false
-
     override fun requestHomeSpaceMode() {
-        requestedHomeSpaceMode = true
+        spatialCapabilities = SpatialCapabilities(0)
+        activitySpace.onBoundsChanged(Dimensions(1f, 1f, 1f))
     }
 
     override fun setFullSpaceMode(bundle: Bundle): Bundle = bundle
@@ -423,4 +434,8 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
 
     override fun createSpatialPointerComponent(): SpatialPointerComponent =
         FakeSpatialPointerComponent()
+
+    internal companion object {
+        const val DEFAULT_DP_PER_METER: Float = 1151.856f
+    }
 }

@@ -39,6 +39,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Event
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetAllParametersResponse
@@ -193,7 +194,7 @@ private const val TRACE_ITEM_UPDATE_LIST_STATE =
 
 @LargeTest
 class RecompositionTest {
-    private val rule = createAndroidComposeRule<RecompositionTestActivity>()
+    private val rule = createAndroidComposeRule<RecompositionTestActivity>(StandardTestDispatcher())
 
     @get:Rule val chain = RuleChain.outerRule(JvmtiRule()).around(rule)!!
 

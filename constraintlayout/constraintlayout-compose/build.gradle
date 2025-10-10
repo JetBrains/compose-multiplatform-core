@@ -76,7 +76,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmCommonTest)
             dependencies {
                 implementation(libs.kotlinTest)

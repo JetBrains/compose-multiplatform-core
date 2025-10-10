@@ -556,6 +556,7 @@ package androidx.xr.scenecore.runtime {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface RenderingFeature {
     method public void dispose();
     method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> getNodeHolder();
+    method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?>? getSubspaceNodeHolder();
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface RenderingRuntime extends androidx.xr.runtime.internal.JxrRuntime {

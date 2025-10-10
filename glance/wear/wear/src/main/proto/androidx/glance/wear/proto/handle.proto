@@ -18,19 +18,13 @@ syntax = "proto3";
 
 package androidx.glance.wear.proto;
 
-// Encodes the widget Container type.
-enum ContainerTypeProto {
-  FULLSCREEN = 0;
-  LARGE = 1;
-  SMALL = 2;
-}
-
 // Encodes data for an Active widget handle.
 message ActiveWearWidgetHandleProto {
 
   // The ID of the widget instance for which an update is being requested.
   uint32 instance_id = 1;
 
-  // The container type of the widget.
-  ContainerTypeProto container_type = 2;
+  // The container type of the widget. This is an integer which corresponds to
+  // the values in WearWidgetProviderInfo.ContainerType.
+  uint32 container_type = 2;
 }

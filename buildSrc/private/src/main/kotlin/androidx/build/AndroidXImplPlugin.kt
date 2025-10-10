@@ -1124,15 +1124,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             }
 
         withHostTestBuilder {} // enable Android host tests
-
-        @Suppress("UnstableApiUsage") // usage of withDeviceTestBuilder
-        withDeviceTestBuilder {
-                @Suppress("DEPRECATION")
-                compilationName = "instrumentedTest"
-                @Suppress("DEPRECATION")
-                defaultSourceSetName = "androidInstrumentedTest"
-                sourceSetTreeName = "test"
-            }
+        withDeviceTestBuilder { sourceSetTreeName = "test" }
             .configure { signing.storeFile = project.getKeystore() }
         configureTargetSdkForTests(project.defaultAndroidConfig.targetSdk)
 
@@ -1219,7 +1211,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         sourceSets
             .findByName("androidTest")!!
             .manifest
-            .srcFile("src/androidInstrumentedTest/AndroidManifest.xml")
+            .srcFile("src/androidDeviceTest/AndroidManifest.xml")
     }
 
     private fun Project.configureKmp() {

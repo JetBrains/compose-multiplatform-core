@@ -37,7 +37,6 @@ androidXMultiplatform {
         androidResources.enable = true
         // TODO(b/345531033)
         experimentalProperties["android.lint.useK2Uast"] = false
-        lint.disable += "ComposeTestRuleDispatcher"
     }
     jvmStubs()
 
@@ -87,7 +86,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))

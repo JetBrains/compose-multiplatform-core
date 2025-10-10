@@ -34,9 +34,13 @@ import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.testing.SubspaceTestingActivity
+import androidx.xr.compose.testing.TestSceneRuntime
+import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.session
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.MovableComponent
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -113,6 +117,76 @@ class MovableModifierTest {
         composeTestRule.onNodeWithTag("button").performClick()
         // After recompose there should still only exist one Component.
         assertSingleMovableComponentExist()
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun movable_scaleWithDistance_setTrue() {
+        val runtime = TestSceneRuntime.create(composeTestRule.activity)
+        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .width(200.dp)
+                        .movable(enabled = true, scaleWithDistance = true)
+                ) {}
+            }
+        }
+
+        assertThat(runtime.scalesInZ.size).isEqualTo(1)
+        assertThat(runtime.scalesInZ[0]).isTrue()
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun movable_scaleWithDistance_setFalse() {
+        val runtime = TestSceneRuntime.create(composeTestRule.activity)
+        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .width(200.dp)
+                        .movable(enabled = true, scaleWithDistance = false)
+                ) {}
+            }
+        }
+        assertThat(runtime.scalesInZ.size).isEqualTo(1)
+        assertThat(runtime.scalesInZ[0]).isFalse()
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun movable_scaleWithDistance_scaleFlip() {
+        val runtime = TestSceneRuntime.create(composeTestRule.activity)
+        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                var scaleWithDistance by remember { mutableStateOf(true) }
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .width(200.dp)
+                        .movable(enabled = true, scaleWithDistance = scaleWithDistance)
+                ) {
+                    Button(
+                        modifier = Modifier.testTag("button"),
+                        onClick = { scaleWithDistance = !scaleWithDistance },
+                    ) {
+                        Text(text = "Sample button for testing")
+                    }
+                }
+            }
+        }
+        assertThat(runtime.scalesInZ.size).isEqualTo(1)
+        assertThat(runtime.scalesInZ[0]).isTrue()
+
+        composeTestRule.onNodeWithTag("button").performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(runtime.scalesInZ.size).isEqualTo(2)
+        assertThat(runtime.scalesInZ[0]).isTrue()
+        assertThat(runtime.scalesInZ[1]).isFalse()
     }
 
     @Test

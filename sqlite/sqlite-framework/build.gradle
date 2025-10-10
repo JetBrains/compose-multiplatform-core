@@ -86,7 +86,7 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonMain)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)

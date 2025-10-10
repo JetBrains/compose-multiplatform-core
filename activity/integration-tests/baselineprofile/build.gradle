@@ -43,8 +43,8 @@ android {
 }
 
 dependencies {
-    implementation(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))
-    implementation(androidx.projectOrArtifact(":benchmark:benchmark-macro-junit4"))
+    implementation("androidx.benchmark:benchmark-junit4:1.4.1")
+    implementation("androidx.benchmark:benchmark-macro-junit4:1.4.1")
     implementation(libs.testRules)
     implementation(libs.testExtJunit)
     implementation(libs.testCore)

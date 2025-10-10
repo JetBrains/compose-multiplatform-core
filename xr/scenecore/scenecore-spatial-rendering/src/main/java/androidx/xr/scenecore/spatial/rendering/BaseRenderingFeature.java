@@ -55,6 +55,14 @@ abstract class BaseRenderingFeature implements RenderingFeature {
         return new NodeHolder<>(mNode, Node.class);
     }
 
+    @Override
+    public NodeHolder<?> getSubspaceNodeHolder() {
+        if (mSubspace == null) {
+            return null;
+        }
+        return new NodeHolder<>(mSubspace.getSubspaceNode(), Node.class);
+    }
+
     protected void bindImpressNodeToSubspace(String subspaceName, ImpressNode impressNode) {
         // System will only render Impress nodes that are parented by this subspace node.
         ImpressNode subspaceImpressNode = mImpressApi.createImpressNode();

@@ -86,6 +86,25 @@ internal object WearWidgetProviderInfoXmlParser {
             getAttributeValue(NAMESPACE_DISABLED, ATTR_MAX_SCHEMA_VERSION)?.let {
                 parseSchemaVersion(it)
             }
+        val unrecognisedAttributes = mutableMapOf<String, String>()
+        val knownAttributes =
+            setOf(
+                ATTR_LABEL,
+                ATTR_DESCRIPTION,
+                ATTR_ICON,
+                ATTR_PREFERRED_TYPE,
+                ATTR_GROUP,
+                ATTR_IS_MULTI_INSTANCE_SUPPORTED,
+                ATTR_CONFIG_INTENT_ACTION,
+                ATTR_MIN_SCHEMA_VERSION,
+                ATTR_MAX_SCHEMA_VERSION,
+            )
+        for (i in 0 until attributeCount) {
+            val attrName = getAttributeName(i)
+            if (attrName !in knownAttributes) {
+                unrecognisedAttributes[attrName] = getAttributeValue(i)
+            }
+        }
 
         val containers = mutableListOf<ContainerInfo>()
         val providerDepth = depth
@@ -110,6 +129,7 @@ internal object WearWidgetProviderInfoXmlParser {
             configIntentAction = configIntentAction,
             minSchemaVersion = minSchemaVersion,
             maxSchemaVersion = maxSchemaVersion,
+            unrecognisedAttributes = unrecognisedAttributes,
         )
     }
 

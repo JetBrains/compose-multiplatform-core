@@ -76,7 +76,7 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-tooling"))

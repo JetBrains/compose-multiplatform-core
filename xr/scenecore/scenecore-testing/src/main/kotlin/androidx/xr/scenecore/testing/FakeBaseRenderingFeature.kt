@@ -27,5 +27,7 @@ public open class FakeBaseRenderingFeature(private val _nodeHolder: NodeHolder<*
 
     override fun getNodeHolder(): NodeHolder<*> = _nodeHolder
 
+    override fun getSubspaceNodeHolder(): NodeHolder<*>? = null
+
     override fun dispose() {}
 }

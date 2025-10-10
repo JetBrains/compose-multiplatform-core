@@ -32,6 +32,7 @@ import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +40,10 @@ import org.junit.runner.RunWith
 /** Tests for [rotate] modifier. */
 @RunWith(AndroidJUnit4::class)
 class RotateTest {
-    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    @get:Rule
+    val composeTestRule =
+        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
 
     @Test
     fun rotation_canApplySingleRotation() {

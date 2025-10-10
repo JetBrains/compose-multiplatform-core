@@ -98,7 +98,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation("androidx.emoji2:emoji2-bundled:1.4.0")

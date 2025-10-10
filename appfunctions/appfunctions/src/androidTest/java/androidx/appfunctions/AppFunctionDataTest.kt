@@ -32,6 +32,7 @@ import androidx.appfunctions.Note.Companion.NOTE_OBJECT_TYPE_METADATA
 import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA
 import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_COMPONENT_METADATA
 import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
@@ -926,6 +927,61 @@ class AppFunctionDataTest {
 
         assertThat(outerData.getAppFunctionData("nestedData")?.getDouble("innerDouble"))
             .isEqualTo(500.0)
+    }
+
+    @Test
+    fun testReadWrite_nestedAllOfType_conformSpec() {
+        val innerObjectType =
+            AppFunctionAllOfTypeMetadata(
+                matchAll =
+                    listOf(
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "innerLong" to AppFunctionLongTypeMetadata(isNullable = false)
+                                ),
+                            required = emptyList(),
+                            qualifiedName = "innerLongData",
+                            isNullable = false,
+                            description = "Inner data description",
+                        ),
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "innerDouble" to
+                                        AppFunctionDoubleTypeMetadata(isNullable = false)
+                                ),
+                            required = emptyList(),
+                            qualifiedName = "innerDoubleData",
+                            isNullable = false,
+                            description = "Inner data description",
+                        ),
+                    ),
+                qualifiedName = null,
+                isNullable = false,
+            )
+        val outerObjectType =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("nestedData" to innerObjectType),
+                required = emptyList(),
+                qualifiedName = "outerData",
+                isNullable = false,
+                description = "Outer data description",
+            )
+
+        val innerDataBuilder =
+            AppFunctionData.Builder(innerObjectType, AppFunctionComponentsMetadata())
+        val outerDataBuilder =
+            AppFunctionData.Builder(outerObjectType, AppFunctionComponentsMetadata())
+
+        innerDataBuilder.setDouble("innerDouble", 500.0)
+        innerDataBuilder.setLong("innerLong", 100)
+        outerDataBuilder.setAppFunctionData("nestedData", innerDataBuilder.build())
+        val outerData = outerDataBuilder.build()
+
+        assertThat(outerData.getAppFunctionData("nestedData")?.getDouble("innerDouble"))
+            .isEqualTo(500.0)
+        assertThat(outerData.getAppFunctionData("nestedData")?.getLong("innerLong")).isEqualTo(100)
     }
 
     @Test

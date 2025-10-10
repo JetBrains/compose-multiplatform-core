@@ -82,8 +82,13 @@ internal interface CameraGraphComponent {
 }
 
 @Module
-internal class CameraGraphConfigModule(private val config: CameraGraph.Config) {
+internal class CameraGraphConfigModule(
+    private val config: CameraGraph.Config,
+    private val cameraGraphId: CameraGraphId,
+) {
     @Provides fun provideCameraGraphConfig(): CameraGraph.Config = config
+
+    @Provides fun provideCameraGraphId(): CameraGraphId = cameraGraphId
 }
 
 @Module
@@ -107,12 +112,6 @@ internal abstract class SharedCameraGraphModules {
     @Binds abstract fun bindCameraGraphParameters(parameters: CameraGraphParametersImpl): Parameters
 
     companion object {
-        @CameraGraphScope
-        @Provides
-        fun provideCameraGraphId(): CameraGraphId {
-            return CameraGraphId.nextId()
-        }
-
         @CameraGraphScope
         @Provides
         @ForCameraGraph

@@ -42,6 +42,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -51,7 +52,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class StackStateTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val focusRequester = FocusRequester()
 
@@ -256,11 +257,15 @@ class StackStateTest {
 
         state.scrollToItem(2)
 
+        rule.waitForIdle()
+
         // In the middle
         assertThat(state.canScrollForward).isTrue()
         assertThat(state.canScrollBackward).isTrue()
 
         state.scrollToItem(4)
+
+        rule.waitForIdle()
 
         // At the end
         assertThat(state.canScrollForward).isFalse()

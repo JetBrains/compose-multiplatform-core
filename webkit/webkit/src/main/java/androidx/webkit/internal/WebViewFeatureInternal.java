@@ -783,11 +783,11 @@ public class WebViewFeatureInternal {
                     Features.WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE);
 
     /**
-     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers {@link WebViewCompat#setShouldCacheProvider(boolean)}.
+     * This is an internal only feature that indicate whether it is safe to cache WebView Provider
+     * objects for the current WebView APK.
      */
-    public static final ApiFeature.NoFramework CACHE_PROVIDER =
-            new ApiFeature.NoFramework(WebViewFeature.CACHE_PROVIDER,
+    public static final ApiFeature.NoFramework PROVIDER_WEAKLY_REF_WEBVIEW =
+            new ApiFeature.NoFramework(WebViewFeature.PROVIDER_WEAKLY_REF_WEBVIEW,
                     Features.PROVIDER_WEAKLY_REF_WEBVIEW);
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.

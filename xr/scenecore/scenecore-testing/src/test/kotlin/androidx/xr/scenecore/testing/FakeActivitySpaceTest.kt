@@ -39,10 +39,10 @@ class FakeActivitySpaceTest {
 
     @Test
     fun getBounds_callsOnBoundsChangedToUpdateBounds_returnsCorrectBounds() {
-        // The default bound size is (100, 100, 100)
-        check(underTest.bounds.width == 100.0f)
-        check(underTest.bounds.height == 100.0f)
-        check(underTest.bounds.depth == 100.0f)
+        // The default bound size is (INFINITY, INFINITY, INFINITY)
+        assertThat(underTest.bounds.width).isEqualTo(Float.POSITIVE_INFINITY)
+        assertThat(underTest.bounds.height).isEqualTo(Float.POSITIVE_INFINITY)
+        assertThat(underTest.bounds.depth).isEqualTo(Float.POSITIVE_INFINITY)
 
         val expectedDimensions = Dimensions(100.0f, 200.0f, 300.0f)
         underTest.onBoundsChanged(expectedDimensions)

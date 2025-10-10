@@ -64,7 +64,7 @@ androidXMultiplatform {
         pagingCommonTest {
             dependsOn(commonTest)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependsOn(pagingCommonTest)
             dependencies {
@@ -118,7 +118,7 @@ androidXMultiplatform {
 // TODO(b/325111583): Create a helper function to configure KSP with KMP targets
 dependencies {
     def roomCompilerDependency = project(":room3:room3-compiler")
-    add("kspAndroidInstrumentedTest", roomCompilerDependency) // Android instrumentation test
+    add("kspAndroidDeviceTest", roomCompilerDependency) // Android instrumentation test
     add("kspAndroidHostTest", roomCompilerDependency) // Android unit test
     add("kspJvmTest", roomCompilerDependency)
     add("kspLinuxX64Test", roomCompilerDependency)
@@ -173,13 +173,13 @@ androidx {
 }
 
 // TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
 tasks.withType(AndroidLintAnalysisTask).configureEach {
     mustRunAfter(tasks.withType(KspAATask))
 }
 
 // TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
-// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+// Without this, dependency introduced between lintAnalyzeAndroidDeviceTest and kspAndroidDeviceTest
 tasks.withType(LintModelWriterTask).configureEach {
     mustRunAfter(tasks.withType(KspAATask))
 }

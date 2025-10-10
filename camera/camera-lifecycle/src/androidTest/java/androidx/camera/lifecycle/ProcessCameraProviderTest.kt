@@ -284,16 +284,16 @@ class ProcessCameraProviderTest(
         }
         previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
 
-        val analyisLatch = CountDownLatch(1)
+        val analysisLatch = CountDownLatch(1)
         withContext(Dispatchers.Main) {
             imageAnalysis.setAnalyzer(CameraXExecutors.directExecutor()) {
-                analyisLatch.countDown()
+                analysisLatch.countDown()
                 it.close()
             }
             provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig2)
         }
         previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
-        assertThat(analyisLatch.await(5, TimeUnit.SECONDS)).isTrue()
+        assertThat(analysisLatch.await(5, TimeUnit.SECONDS)).isTrue()
 
         assertThat(provider.isBound(sessionConfig1)).isFalse()
         assertThat(provider.isBound(sessionConfig2)).isTrue()
@@ -316,29 +316,29 @@ class ProcessCameraProviderTest(
         val sessionConfig2 = SessionConfig(useCases = listOf(preview2, imageAnalysis2))
         lifecycleOwner0.startAndResume()
 
-        val analyisLatch1 = CountDownLatch(1)
+        val analysisLatch1 = CountDownLatch(1)
         withContext(Dispatchers.Main) {
             preview1.surfaceProvider = previewSurfaceProvider1
             imageAnalysis1.setAnalyzer(CameraXExecutors.directExecutor()) {
-                analyisLatch1.countDown()
+                analysisLatch1.countDown()
                 it.close()
             }
             provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig1)
         }
         previewSurfaceProvider1.assertFramesReceivedAfterSurfaceRequested()
-        assertThat(analyisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
+        assertThat(analysisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
 
-        val analyisLatch2 = CountDownLatch(1)
+        val analysisLatch2 = CountDownLatch(1)
         withContext(Dispatchers.Main) {
             preview2.surfaceProvider = previewSurfaceProvider2
             imageAnalysis2.setAnalyzer(CameraXExecutors.directExecutor()) {
-                analyisLatch2.countDown()
+                analysisLatch2.countDown()
                 it.close()
             }
             provider.bindToLifecycle(lifecycleOwner0, cameraSelector, sessionConfig2)
         }
         previewSurfaceProvider2.assertFramesReceivedAfterSurfaceRequested()
-        assertThat(analyisLatch2.await(5, TimeUnit.SECONDS)).isTrue()
+        assertThat(analysisLatch2.await(5, TimeUnit.SECONDS)).isTrue()
 
         assertThat(provider.isBound(sessionConfig1)).isFalse()
         assertThat(provider.isBound(sessionConfig2)).isTrue()
@@ -366,29 +366,29 @@ class ProcessCameraProviderTest(
         val sessionConfig2 = SessionConfig(useCases = listOf(preview2, imageAnalysis2))
         lifecycleOwner0.startAndResume()
 
-        val analyisLatch1 = CountDownLatch(1)
+        val analysisLatch1 = CountDownLatch(1)
         withContext(Dispatchers.Main) {
             preview1.surfaceProvider = previewSurfaceProvider1
             imageAnalysis1.setAnalyzer(CameraXExecutors.directExecutor()) {
-                analyisLatch1.countDown()
+                analysisLatch1.countDown()
                 it.close()
             }
             provider.bindToLifecycle(lifecycleOwner0, cameraSelectors[0], sessionConfig1)
         }
         previewSurfaceProvider1.assertFramesReceivedAfterSurfaceRequested()
-        assertThat(analyisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
+        assertThat(analysisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
 
-        val analyisLatch2 = CountDownLatch(1)
+        val analysisLatch2 = CountDownLatch(1)
         withContext(Dispatchers.Main) {
             preview2.surfaceProvider = previewSurfaceProvider2
             imageAnalysis2.setAnalyzer(CameraXExecutors.directExecutor()) {
-                analyisLatch2.countDown()
+                analysisLatch2.countDown()
                 it.close()
             }
             provider.bindToLifecycle(lifecycleOwner0, cameraSelectors[1], sessionConfig2)
         }
         previewSurfaceProvider2.assertFramesReceivedAfterSurfaceRequested()
-        assertThat(analyisLatch2.await(5, TimeUnit.SECONDS)).isTrue()
+        assertThat(analysisLatch2.await(5, TimeUnit.SECONDS)).isTrue()
 
         assertThat(provider.isBound(sessionConfig1)).isFalse()
         assertThat(provider.isBound(sessionConfig2)).isTrue()
@@ -412,24 +412,24 @@ class ProcessCameraProviderTest(
         val sessionConfig = SessionConfig(useCases = listOf(preview, imageAnalysis))
         lifecycleOwner0.startAndResume()
 
-        var analyisLatch1 = CountDownLatch(1)
+        var analysisLatch1 = CountDownLatch(1)
         withContext(Dispatchers.Main) {
             preview.surfaceProvider = previewSurfaceProvider
             imageAnalysis.setAnalyzer(CameraXExecutors.directExecutor()) {
-                analyisLatch1.countDown()
+                analysisLatch1.countDown()
                 it.close()
             }
             provider.bindToLifecycle(lifecycleOwner0, cameraSelectors[0], sessionConfig)
         }
         previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
-        assertThat(analyisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
+        assertThat(analysisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
 
         withContext(Dispatchers.Main) {
             provider.bindToLifecycle(lifecycleOwner0, cameraSelectors[1], sessionConfig)
         }
         previewSurfaceProvider.assertFramesReceivedAfterSurfaceRequested()
-        analyisLatch1 = CountDownLatch(1)
-        assertThat(analyisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
+        analysisLatch1 = CountDownLatch(1)
+        assertThat(analysisLatch1.await(5, TimeUnit.SECONDS)).isTrue()
 
         assertThat(provider.isBound(sessionConfig)).isTrue()
         assertThat(provider.isBound(imageAnalysis)).isTrue()

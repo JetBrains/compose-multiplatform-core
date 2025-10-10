@@ -24,6 +24,7 @@ import androidx.appfunctions.AppFunctionAppUnknownException
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
@@ -132,6 +133,14 @@ private fun AppFunctionDataTypeMetadata.unsafeBuildReturnValue(
                 )
                 .build()
         }
+        is AppFunctionAllOfTypeMetadata -> {
+            builder
+                .setAppFunctionData(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    AppFunctionData.serialize(result, checkNotNull(this.qualifiedName)),
+                )
+                .build()
+        }
         is AppFunctionReferenceTypeMetadata -> {
             builder
                 .setAppFunctionData(
@@ -222,6 +231,17 @@ private fun AppFunctionArrayTypeMetadata.unsafeBuildReturnValue(
                 .build()
         }
         is AppFunctionObjectTypeMetadata -> {
+            @Suppress("UNCHECKED_CAST")
+            builder
+                .setAppFunctionDataList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    (result as List<Any>).map {
+                        AppFunctionData.serialize(it, checkNotNull(castItemType.qualifiedName))
+                    },
+                )
+                .build()
+        }
+        is AppFunctionAllOfTypeMetadata -> {
             @Suppress("UNCHECKED_CAST")
             builder
                 .setAppFunctionDataList(

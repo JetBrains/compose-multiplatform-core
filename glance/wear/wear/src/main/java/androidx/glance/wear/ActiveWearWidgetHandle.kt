@@ -20,7 +20,6 @@ import android.content.ComponentName
 import androidx.glance.wear.ContainerInfo.ContainerType
 import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel
 import androidx.glance.wear.proto.ActiveWearWidgetHandleProto
-import androidx.glance.wear.proto.ContainerTypeProto
 import java.util.Objects
 
 /**
@@ -50,12 +49,8 @@ public class ActiveWearWidgetHandle(
     override fun hashCode(): Int = Objects.hash(provider, instanceId, containerType)
 
     internal fun toParcel(): ActiveWearWidgetHandleParcel {
-        val containerTypeProto = containerTypeToProto(containerType)
         val handleProto =
-            ActiveWearWidgetHandleProto(
-                instance_id = instanceId,
-                container_type = containerTypeProto,
-            )
+            ActiveWearWidgetHandleProto(instance_id = instanceId, container_type = containerType)
         return ActiveWearWidgetHandleParcel().apply { payload = handleProto.encode() }
     }
 
@@ -65,28 +60,11 @@ public class ActiveWearWidgetHandle(
             provider: ComponentName,
         ): ActiveWearWidgetHandle {
             val handleProto = ActiveWearWidgetHandleProto.ADAPTER.decode(handleParcel.payload)
-            val containerType = containerTypeFromProto(handleProto.container_type)
             return ActiveWearWidgetHandle(
                 provider = provider,
                 instanceId = handleProto.instance_id,
-                containerType = containerType,
+                containerType = handleProto.container_type,
             )
         }
-
-        internal fun containerTypeToProto(@ContainerType type: Int): ContainerTypeProto =
-            when (type) {
-                ContainerInfo.CONTAINER_TYPE_FULLSCREEN -> ContainerTypeProto.FULLSCREEN
-                ContainerInfo.CONTAINER_TYPE_LARGE -> ContainerTypeProto.LARGE
-                ContainerInfo.CONTAINER_TYPE_SMALL -> ContainerTypeProto.SMALL
-                else -> throw IllegalArgumentException("Invalid container type: $this")
-            }
-
-        @ContainerType
-        internal fun containerTypeFromProto(typeProto: ContainerTypeProto): Int =
-            when (typeProto) {
-                ContainerTypeProto.FULLSCREEN -> ContainerInfo.CONTAINER_TYPE_FULLSCREEN
-                ContainerTypeProto.LARGE -> ContainerInfo.CONTAINER_TYPE_LARGE
-                ContainerTypeProto.SMALL -> ContainerInfo.CONTAINER_TYPE_SMALL
-            }
     }
 }

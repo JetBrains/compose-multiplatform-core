@@ -82,7 +82,7 @@ androidXMultiplatform {
             dependsOn(jvmTest)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation("androidx.lifecycle:lifecycle-runtime:2.9.2")

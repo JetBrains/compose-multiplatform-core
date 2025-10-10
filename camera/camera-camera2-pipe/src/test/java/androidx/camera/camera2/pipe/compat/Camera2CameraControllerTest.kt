@@ -88,6 +88,7 @@ class Camera2CameraControllerTest {
     private val fakeTimeSource: TimeSource = mock()
     private val fakeGraphId = CameraGraphId.nextId()
     private val fakeShutdownListener: Camera2CameraController.ShutdownListener = mock()
+    private val fakeConcurrentSessionSequencers = ConcurrentSessionSequencers()
 
     private val fakeSurfaceTexture = SurfaceTexture(0).apply { setDefaultBufferSize(1280, 720) }
     private val fakeSurface = Surface(fakeSurfaceTexture)
@@ -108,6 +109,7 @@ class Camera2CameraControllerTest {
             fakeTimeSource,
             fakeGraphId,
             fakeShutdownListener,
+            fakeConcurrentSessionSequencers,
         )
     }
 
