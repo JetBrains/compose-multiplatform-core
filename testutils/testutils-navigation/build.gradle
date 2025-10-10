@@ -66,11 +66,11 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testExtJunit)
