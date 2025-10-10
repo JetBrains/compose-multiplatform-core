@@ -48,6 +48,7 @@ import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import java.awt.datatransfer.StringSelection
 import kotlin.test.assertEquals
 import org.junit.Test
