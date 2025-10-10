@@ -25,14 +25,14 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
 /**
- * Returns a [SavedStateNavEntryDecorator] that is remembered across recompositions.
+ * Returns a [SaveableStateHolderNavEntryDecorator] that is remembered across recompositions.
  *
  * @param saveableStateHolder the [SaveableStateHolder] that scopes the returned NavEntryDecorator
  */
 @Composable
-public fun <T : Any> rememberSavedStateNavEntryDecorator(
+public fun <T : Any> rememberSaveableStateHolderNavEntryDecorator(
     saveableStateHolder: SaveableStateHolder = rememberSaveableStateHolder()
-): NavEntryDecorator<T> = remember { SavedStateNavEntryDecorator(saveableStateHolder) }
+): NavEntryDecorator<T> = remember { SaveableStateHolderNavEntryDecorator(saveableStateHolder) }
 
 /**
  * Wraps the content of a [NavEntry] with a [SaveableStateHolder.SaveableStateProvider] to ensure
@@ -47,12 +47,12 @@ public fun <T : Any> rememberSavedStateNavEntryDecorator(
  *   [rememberSaveable]. A saved state can only be restored from the [SaveableStateHolder] that it
  *   was saved with.
  */
-public fun <T : Any> SavedStateNavEntryDecorator(
+public class SaveableStateHolderNavEntryDecorator<T : Any>(
     saveableStateHolder: SaveableStateHolder
-): NavEntryDecorator<T> {
-    val onPop: (Any) -> Unit = { contentKey -> saveableStateHolder.removeState(contentKey) }
-
-    return NavEntryDecorator(onPop = onPop) { entry ->
-        saveableStateHolder.SaveableStateProvider(entry.contentKey) { entry.Content() }
-    }
-}
+) :
+    NavEntryDecorator<T>(
+        onPop = { contentKey -> saveableStateHolder.removeState(contentKey) },
+        decorate = { entry ->
+            saveableStateHolder.SaveableStateProvider(entry.contentKey) { entry.Content() }
+        },
+    )

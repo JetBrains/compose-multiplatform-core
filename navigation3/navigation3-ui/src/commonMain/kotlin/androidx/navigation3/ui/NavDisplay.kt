@@ -41,7 +41,7 @@ import androidx.compose.ui.util.fastForEachReversed
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.LocalEntriesToRenderInCurrentScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneInfo
@@ -178,7 +178,8 @@ public fun <T : Any> NavDisplay(
             backStack.removeLastOrNull()
         }
     },
-    entryDecorators: List<NavEntryDecorator<T>> = listOf(rememberSavedStateNavEntryDecorator()),
+    entryDecorators: List<NavEntryDecorator<T>> =
+        listOf(rememberSaveableStateHolderNavEntryDecorator()),
     sceneStrategy: SceneStrategy<T> = SinglePaneSceneStrategy(),
     sizeTransform: SizeTransform? = null,
     transitionSpec: AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform =

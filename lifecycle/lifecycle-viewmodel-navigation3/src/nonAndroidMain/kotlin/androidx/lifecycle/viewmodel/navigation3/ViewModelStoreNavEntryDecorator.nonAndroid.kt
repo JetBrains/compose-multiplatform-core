@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle.viewmodel.navigation3.internal
+@file:JvmName("ViewModelStoreNavEntryDecoratorKt")
+@file:JvmMultifileClass
+
+package androidx.lifecycle.viewmodel.navigation3
 
 import androidx.compose.runtime.Composable
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 
-@Composable internal expect fun shouldRemoveViewModelStoreCallback(): () -> Boolean
+@Composable
+public actual fun removeViewModelStoreOnPopCallback(): () -> Boolean {
+    return { true }
+}

@@ -35,9 +35,6 @@ public object PdfFeatureFlags {
     // Toggles handling of external hardware events like keyboard and mouse shortcuts.
     public var isExternalHardwareInteractionEnabled: Boolean = false
 
-    // Toggles handling of link selection in a pdf.
-    public var isLinkSelectionEnabled: Boolean = false
-
     // Toggles multi touch scroll functionality for the PDF viewer.
     public var isMultiTouchScrollEnabled: Boolean = false
 

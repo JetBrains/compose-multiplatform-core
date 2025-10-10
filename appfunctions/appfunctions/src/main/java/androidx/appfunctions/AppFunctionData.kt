@@ -21,6 +21,7 @@ import android.app.appsearch.GenericDocument
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.os.ext.SdkExtensions
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -80,6 +81,12 @@ internal constructor(
         genericDocument: GenericDocument,
         extras: Bundle,
     ) : this(null, genericDocument, extras)
+
+    init {
+        // This will set the Bundle's classLoader to be the classLoader from the App using this
+        // AppFunctionData class.
+        extras.classLoader = AppFunctionData::class.java.classLoader
+    }
 
     /** Qualified name of the underlying object */
     public val qualifiedName: String
@@ -503,6 +510,71 @@ internal constructor(
     }
 
     /**
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
+     *
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [clazz].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param key The key to retrieve the value for.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
+     * @return The value associated with the [key], or null if the associated value is not found or
+     *   is not of type [T].
+     */
+    public fun <T : Parcelable> getParcelable(key: String, clazz: Class<T>): T? {
+        return getParcelableOrNull(key, clazz)
+    }
+
+    /**
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
+     *
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [T].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param T The type of the [Parcelable] object to retrieve.
+     * @param key The key to retrieve the value for.
+     * @return The value associated with the [key], or null if the associated value is not found or
+     *   is not of type [T].
+     */
+    public inline fun <reified T : Parcelable> getParcelable(key: String): T? {
+        return getParcelable(key, T::class.java)
+    }
+
+    /**
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
+     *
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [clazz].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param key The key to retrieve the value for.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
+     * @return The value associated with the [key], or null if the associated value is not found.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public fun <T : Parcelable> getParcelableOrNull(key: String, clazz: Class<T>): T? {
+        val parcelable = extras.getParcelable(extrasKey(key), clazz)
+        // TODO: b/447530985 - Implement spec validation
+        return parcelable
+    }
+
+    /**
      * Retrieves a [BooleanArray] value associated with the specified [key].
      *
      * @param key The key to retrieve the value for.
@@ -719,6 +791,48 @@ internal constructor(
             targetValue = pendingIntentListValue,
         )
         return pendingIntentListValue
+    }
+
+    /**
+     * Retrieves a [List] of [Parcelable] values of type [T] associated with the specified [key].
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param key The key to retrieve the list for.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
+     * @return The [List] associated with the [key], or null if the value is not found or if any
+     *   list item is not of type [T].
+     */
+    @Suppress("NullableCollection")
+    public fun <T : Parcelable> getParcelableList(key: String, clazz: Class<T>): List<T>? {
+        extras.classLoader = clazz.classLoader
+        val parcelableList = extras.getParcelableArrayList(extrasKey(key), clazz)
+        // TODO: b/447530985 - Implement spec validation
+        if (parcelableList?.all { clazz.isInstance(it) } != true) {
+            // For some reason Bundle.getParcelableArrayList doesn't return null even when type is
+            // wrong.
+            return null
+        }
+        return parcelableList
+    }
+
+    /**
+     * Retrieves a [List] of [Parcelable] values of type [T] associated with the specified [key].
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param T The type of the [Parcelable] object to retrieve.
+     * @param key The key to retrieve the list for.
+     * @return The [List] associated with the [key], or null if the value is not found or if any
+     *   list item is not of type [T].
+     */
+    @Suppress("NullableCollection")
+    public inline fun <reified T : Parcelable> getParcelableList(key: String): List<T>? {
+        return getParcelableList(key, T::class.java)
     }
 
     override fun toString(): String {
@@ -1175,6 +1289,23 @@ internal constructor(
         }
 
         /**
+         * Sets a [Parcelable] value of type [T] for the given [key].
+         *
+         * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+         * between agents and apps), forward and backward compatibility is **not guaranteed** by
+         * this library. The sender and receiver of the `Parcelable` are responsible for managing
+         * any compatibility and versioning concerns.
+         *
+         * @param key The key to set the value for.
+         * @param value The [Parcelable] value of type [T] to set.
+         */
+        public fun <T : Parcelable> setParcelable(key: String, value: T): Builder {
+            // TODO: b/447530985 - Implement spec validation
+            extrasBuilder.putParcelable(extrasKey(key), value)
+            return this
+        }
+
+        /**
          * Sets a [BooleanArray] value for the given [key].
          *
          * @param key The key to set the [BooleanArray] value for.
@@ -1358,6 +1489,23 @@ internal constructor(
                 targetValue = value,
             )
             extrasBuilder.putParcelableArrayList(extrasKey(key), ArrayList<PendingIntent>(value))
+            return this
+        }
+
+        /**
+         * Sets a [List] of [Parcelable] values of type [T] for the given [key].
+         *
+         * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+         * between agents and apps), forward and backward compatibility is **not guaranteed** by
+         * this framework. The sender and receiver of the `Parcelable` are responsible for managing
+         * any compatibility and versioning concerns.
+         *
+         * @param key The key to set the list for.
+         * @param value The [List] of [Parcelable] values of type [T] to set.
+         */
+        public fun <T : Parcelable> setParcelableList(key: String, value: List<T>): Builder {
+            // TODO: b/447530985 - Implement spec validation
+            extrasBuilder.putParcelableArrayList(extrasKey(key), ArrayList(value))
             return this
         }
 

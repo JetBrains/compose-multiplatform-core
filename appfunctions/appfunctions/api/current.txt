@@ -44,6 +44,10 @@ package androidx.appfunctions {
     method public long getLong(String key);
     method public long getLong(String key, long defaultValue);
     method public long[]? getLongArray(String key);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> T? getParcelable(String key);
+    method public <T extends android.os.Parcelable> T? getParcelable(String key, Class<T> clazz);
+    method @KotlinOnly public inline <reified T extends android.os.Parcelable> java.util.List<T>? getParcelableList(String key);
+    method public <T extends android.os.Parcelable> java.util.List<T>? getParcelableList(String key, Class<T> clazz);
     method public android.app.PendingIntent? getPendingIntent(String key);
     method public java.util.List<android.app.PendingIntent>? getPendingIntentList(String key);
     method @InaccessibleFromKotlin public String getQualifiedName();
@@ -73,6 +77,8 @@ package androidx.appfunctions {
     method public androidx.appfunctions.AppFunctionData.Builder setIntArray(String key, int[] value);
     method public androidx.appfunctions.AppFunctionData.Builder setLong(String key, long value);
     method public androidx.appfunctions.AppFunctionData.Builder setLongArray(String key, long[] value);
+    method public <T extends android.os.Parcelable> androidx.appfunctions.AppFunctionData.Builder setParcelable(String key, T value);
+    method public <T extends android.os.Parcelable> androidx.appfunctions.AppFunctionData.Builder setParcelableList(String key, java.util.List<? extends T> value);
     method public androidx.appfunctions.AppFunctionData.Builder setPendingIntent(String key, android.app.PendingIntent value);
     method public androidx.appfunctions.AppFunctionData.Builder setPendingIntentList(String key, java.util.List<android.app.PendingIntent> value);
     method public androidx.appfunctions.AppFunctionData.Builder setString(String key, String value);

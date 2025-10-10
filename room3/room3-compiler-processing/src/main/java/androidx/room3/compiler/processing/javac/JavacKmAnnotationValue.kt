@@ -26,6 +26,7 @@ internal class JavacKmAnnotationValue(
     override val valueType: XType = method.returnType,
     private val kmAnnotationArgumentContainer: KmAnnotationArgumentContainer,
 ) : InternalXAnnotationValue() {
-    override val name: String = method.jvmName
+    override val name: String = method.propertyName ?: method.name
+    override val jvmName: String = method.jvmName
     override val value: Any? by lazy { kmAnnotationArgumentContainer.getValue(method) }
 }

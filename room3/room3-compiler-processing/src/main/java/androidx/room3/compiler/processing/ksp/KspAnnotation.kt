@@ -17,40 +17,36 @@
 package androidx.room3.compiler.processing.ksp
 
 import androidx.room3.compiler.processing.InternalXAnnotation
-import androidx.room3.compiler.processing.XAnnotationValue
 import androidx.room3.compiler.processing.XType
-import com.google.devtools.ksp.getConstructors
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueArgument
 import com.google.devtools.ksp.symbol.Origin
 
-internal class KspAnnotation(val env: KspProcessingEnv, val ksAnnotated: KSAnnotation) :
+internal class KspAnnotation(val env: KspProcessingEnv, val ksAnnotation: KSAnnotation) :
     InternalXAnnotation() {
 
-    val ksType: KSType by lazy { ksAnnotated.annotationType.resolve() }
+    val ksType: KSType by lazy { ksAnnotation.annotationType.resolve() }
 
     override val name: String
-        get() = ksAnnotated.shortName.asString()
+        get() = ksAnnotation.shortName.asString()
 
     override val qualifiedName: String
         get() = ksType.declaration.qualifiedName?.asString() ?: ""
 
     override val type: XType by lazy { env.wrap(ksType, allowPrimitives = true) }
 
-    override val declaredAnnotationValues: List<XAnnotationValue> by lazy {
-        annotationValues.filterNot {
-            (it as KspAnnotationValue).valueArgument.origin == Origin.SYNTHETIC
-        }
+    override val declaredAnnotationValues: List<KspAnnotationValue> by lazy {
+        annotationValues.filterNot { it.valueArgument.origin == Origin.SYNTHETIC }
     }
 
-    override val defaultValues: List<XAnnotationValue> by lazy {
-        wrap(ksAnnotated.defaultArguments)
+    override val defaultValues: List<KspAnnotationValue> by lazy {
+        wrap(ksAnnotation.defaultArguments)
     }
 
-    override val annotationValues: List<XAnnotationValue> by lazy {
-        val defaultValuesByName = defaultValues.associateBy { it.name }
-        wrap(ksAnnotated.arguments).mapNotNull {
+    override val annotationValues: List<KspAnnotationValue> by lazy {
+        val defaultValuesByName by lazy { defaultValues.associateBy { it.name } }
+        wrap(ksAnnotation.arguments).mapNotNull {
             if (it.value != null) {
                 return@mapNotNull it
             }
@@ -62,50 +58,18 @@ internal class KspAnnotation(val env: KspProcessingEnv, val ksAnnotated: KSAnnot
         }
     }
 
-    private fun wrap(source: List<KSValueArgument>): List<XAnnotationValue> {
-        // KSAnnotated.arguments / KSAnnotated.defaultArguments isn't guaranteed to have the same
+    private fun wrap(values: List<KSValueArgument>): List<KspAnnotationValue> {
+        // KSAnnotation.arguments / KSAnnotation.defaultArguments isn't guaranteed to have the same
         // ordering as declared in the annotation declaration, so we order it manually using a map
-        // from name to index.
-        val indexByName = typesByName.keys.mapIndexed { index, name -> name to index }.toMap()
-        return source
-            .map {
-                val valueName =
-                    it.name?.asString() ?: error("Value argument $it does not have a name.")
-                val valueType =
-                    typesByName[valueName] ?: error("Value type not found for $valueName.")
-                KspAnnotationValue(env, this, valueType, it)
-            }
-            .sortedBy { indexByName[it.name] }
+        // from name to index (see https://github.com/google/ksp/issues/2616).
+        return values.map { env.wrapAnnotationValue(it) }.sortedBy { indexByName[it.name] }
     }
 
-    // A map of annotation value name to type.
-    private val typesByName: Map<String, XType> by lazy {
-        buildMap {
-            typeElement
-                .getDeclaredMethods()
-                .filter {
-                    // Whether the annotation value is being treated as property or
-                    // abstract method depends on the actual usage of the annotation.
-                    // If the annotation is being used on Java source, then the annotation
-                    // value will have a corresponding method element, otherwise, it
-                    // will become a kotlin property.
-                    if (
-                        (typeElement as KspTypeElement)
-                            .declaration
-                            .getConstructors()
-                            .single()
-                            .parameters
-                            .isNotEmpty()
-                    ) {
-                        it.isKotlinPropertyMethod()
-                    } else {
-                        it.isAbstract()
-                    }
-                }
-                .forEach {
-                    put(it.name, it.returnType)
-                    put(it.jvmName, it.returnType)
-                }
-        }
+    // A map of annotation value name to index.
+    private val indexByName: Map<String, Int> by lazy {
+        typeElement
+            .getDeclaredMethods()
+            .mapIndexed { index, method -> (method.propertyName ?: method.name) to index }
+            .toMap()
     }
 }

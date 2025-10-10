@@ -507,6 +507,15 @@ public class RemoteComposeWriter {
         return id;
     }
 
+    /**
+     * Get a byte array with the current buffer contents.
+     * The array is a copy, so further changes to the buffer don't affect the array.
+     * @return a byte array with the current buffer contents.
+     */
+    public byte @NonNull [] encodeToByteArray() {
+        return mBuffer.getBuffer().cloneBytes();
+    }
+
     /** Used to create the tag values in the header */
     public static class HTag {
         @NonNull Short mTag;

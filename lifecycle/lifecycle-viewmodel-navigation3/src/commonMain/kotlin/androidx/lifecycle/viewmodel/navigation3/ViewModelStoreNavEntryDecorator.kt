@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+@file:JvmName("ViewModelStoreNavEntryDecoratorKt")
+@file:JvmMultifileClass
+
 package androidx.lifecycle.viewmodel.navigation3
 
 import androidx.compose.runtime.Composable
@@ -33,21 +36,22 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.navigation3.internal.shouldRemoveViewModelStoreCallback
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 
 /**
  * Returns a [ViewModelStoreNavEntryDecorator] that is remembered across recompositions.
  *
  * @param [viewModelStoreOwner] The [ViewModelStoreOwner] that provides the [ViewModelStore] to
  *   NavEntries
- * @param [shouldRemoveStoreOwner] A lambda that returns a Boolean for whether the store owner for a
- *   [NavEntry] should be cleared when the [NavEntry] is popped from the backStack. If true, the
- *   entry's ViewModelStoreOwner will be removed.
+ * @param [removeViewModelStoreOnPop] A lambda that returns a Boolean for whether the store for a
+ *   [NavEntry] should be removed when the [NavEntry] is popped from the backStack. If true, the
+ *   entry's ViewModelStore will be removed.
  */
 @Composable
 public fun <T : Any> rememberViewModelStoreNavEntryDecorator(
@@ -55,72 +59,74 @@ public fun <T : Any> rememberViewModelStoreNavEntryDecorator(
         checkNotNull(LocalViewModelStoreOwner.current) {
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         },
-    shouldRemoveStoreOwner: () -> Boolean = shouldRemoveViewModelStoreCallback(),
+    removeViewModelStoreOnPop: () -> Boolean = removeViewModelStoreOnPopCallback(),
 ): NavEntryDecorator<T> = remember {
-    ViewModelStoreNavEntryDecorator(viewModelStoreOwner.viewModelStore, shouldRemoveStoreOwner)
+    ViewModelStoreNavEntryDecorator(viewModelStoreOwner.viewModelStore, removeViewModelStoreOnPop)
 }
 
 /**
  * Provides the content of a [NavEntry] with a [ViewModelStoreOwner] and provides that
  * [ViewModelStoreOwner] as a [LocalViewModelStoreOwner] so that it is available within the content.
  *
- * This requires the usage of [androidx.navigation3.runtime.SavedStateNavEntryDecorator] to ensure
- * that the [NavEntry] scoped [ViewModel]s can properly provide access to
+ * This requires the usage of [androidx.navigation3.runtime.SaveableStateHolderNavEntryDecorator] to
+ * ensure that the [NavEntry] scoped [ViewModel]s can properly provide access to
  * [androidx.lifecycle.SavedStateHandle]s
  *
  * @param [viewModelStore] The [ViewModelStore] that provides to NavEntries
- * @param [shouldRemoveStoreOwner] A lambda that returns a Boolean for whether the store owner for a
+ * @param [removeViewModelStoreOnPop] A lambda that returns a Boolean for whether the store for a
  *   [NavEntry] should be cleared when the [NavEntry] is popped from the backStack. If true, the
- *   entry's ViewModelStoreOwner will be removed.
+ *   entry's ViewModelStore will be removed.
+ * @see NavEntryDecorator.onPop for more details on when this callback is invoked
  */
-public fun <T : Any> ViewModelStoreNavEntryDecorator(
+public class ViewModelStoreNavEntryDecorator<T : Any>(
     viewModelStore: ViewModelStore,
-    shouldRemoveStoreOwner: () -> Boolean,
-): NavEntryDecorator<T> {
-    val storeOwnerProvider: EntryViewModel = viewModelStore.getEntryViewModel()
-    val onPop: (Any) -> Unit = { key ->
-        if (shouldRemoveStoreOwner()) {
-            storeOwnerProvider.clearViewModelStoreOwnerForKey(key)
-        }
-    }
-    return NavEntryDecorator(onPop) { entry ->
-        val viewModelStore = storeOwnerProvider.viewModelStoreForKey(entry.contentKey)
+    removeViewModelStoreOnPop: () -> Boolean,
+) :
+    NavEntryDecorator<T>(
+        onPop = ({ key ->
+                if (removeViewModelStoreOnPop()) {
+                    viewModelStore.getEntryViewModel().clearViewModelStoreOwnerForKey(key)
+                }
+            }),
+        decorate = { entry ->
+            val viewModelStore =
+                viewModelStore.getEntryViewModel().viewModelStoreForKey(entry.contentKey)
 
-        val savedStateRegistryOwner = LocalSavedStateRegistryOwner.current
-        val childViewModelStoreOwner = remember {
-            object :
-                ViewModelStoreOwner,
-                SavedStateRegistryOwner by savedStateRegistryOwner,
-                HasDefaultViewModelProviderFactory {
-                override val viewModelStore: ViewModelStore
-                    get() = viewModelStore
+            val savedStateRegistryOwner = LocalSavedStateRegistryOwner.current
+            val childViewModelStoreOwner = remember {
+                object :
+                    ViewModelStoreOwner,
+                    SavedStateRegistryOwner by savedStateRegistryOwner,
+                    HasDefaultViewModelProviderFactory {
+                    override val viewModelStore: ViewModelStore
+                        get() = viewModelStore
 
-                override val defaultViewModelProviderFactory: ViewModelProvider.Factory
-                    get() = SavedStateViewModelFactory()
+                    override val defaultViewModelProviderFactory: ViewModelProvider.Factory
+                        get() = SavedStateViewModelFactory()
 
-                override val defaultViewModelCreationExtras: CreationExtras
-                    get() =
-                        MutableCreationExtras().also {
-                            it[SAVED_STATE_REGISTRY_OWNER_KEY] = this
-                            it[VIEW_MODEL_STORE_OWNER_KEY] = this
+                    override val defaultViewModelCreationExtras: CreationExtras
+                        get() =
+                            MutableCreationExtras().also {
+                                it[SAVED_STATE_REGISTRY_OWNER_KEY] = this
+                                it[VIEW_MODEL_STORE_OWNER_KEY] = this
+                            }
+
+                    init {
+                        require(this.lifecycle.currentState == Lifecycle.State.INITIALIZED) {
+                            "The Lifecycle state is already beyond INITIALIZED. The " +
+                                "ViewModelStoreNavEntryDecorator requires adding the " +
+                                "SavedStateNavEntryDecorator to ensure support for " +
+                                "SavedStateHandles."
                         }
-
-                init {
-                    require(this.lifecycle.currentState == Lifecycle.State.INITIALIZED) {
-                        "The Lifecycle state is already beyond INITIALIZED. The " +
-                            "ViewModelStoreNavEntryDecorator requires adding the " +
-                            "SavedStateNavEntryDecorator to ensure support for " +
-                            "SavedStateHandles."
+                        enableSavedStateHandles()
                     }
-                    enableSavedStateHandles()
                 }
             }
-        }
-        CompositionLocalProvider(LocalViewModelStoreOwner provides childViewModelStoreOwner) {
-            entry.Content()
-        }
-    }
-}
+            CompositionLocalProvider(LocalViewModelStoreOwner provides childViewModelStoreOwner) {
+                entry.Content()
+            }
+        },
+    )
 
 private class EntryViewModel : ViewModel() {
     private val owners = mutableMapOf<Any, ViewModelStore>()
@@ -135,6 +141,15 @@ private class EntryViewModel : ViewModel() {
         owners.forEach { (_, store) -> store.clear() }
     }
 }
+
+/**
+ * Controls whether the [ViewModelStoreNavEntryDecorator] should clear the ViewModelStore scoped to
+ * a [NavEntry] when [NavEntryDecorator.onPop] is invoked for that [NavEntry]'s
+ * [NavEntry.contentKey]
+ *
+ * The ViewModelStore is cleared if this returns true. The store is retained if false.
+ */
+@Composable public expect fun removeViewModelStoreOnPopCallback(): () -> Boolean
 
 private fun ViewModelStore.getEntryViewModel(): EntryViewModel {
     val provider =

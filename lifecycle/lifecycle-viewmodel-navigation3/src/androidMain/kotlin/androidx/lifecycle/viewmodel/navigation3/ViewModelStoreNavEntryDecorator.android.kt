@@ -14,8 +14,17 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.tooling.preview
+@file:JvmName("ViewModelStoreNavEntryDecoratorKt")
+@file:JvmMultifileClass
 
-internal actual fun validateUiModes() {
-    implementedInJetBrainsFork()
+package androidx.lifecycle.viewmodel.navigation3
+
+import androidx.activity.compose.LocalActivity
+import androidx.compose.runtime.Composable
+
+@Composable
+@Suppress("PairedRegistration")
+public actual fun removeViewModelStoreOnPopCallback(): () -> Boolean {
+    val activity = LocalActivity.current
+    return { activity?.isChangingConfigurations != true }
 }

@@ -144,7 +144,7 @@ Result:                  No statistically significant difference.
 
 *   **Descriptive Statistics**: `Count`, `Min`, `Mean`, `Median`, and `Std. Dev.` provide a basic overview of the timing distributions for each revision.
 *   **Median Difference**: Shows the absolute and percentage change between the median of Rev B and Rev A. A negative value indicates a performance improvement (Rev B is faster).
-*   **95% CI of Diff**: The 95% bootstrap confidence interval for the median difference.
+*   **95% CI of Diff (BCa Bootstrap)**: The 95% Bias-Corrected and Accelerated (BCa) bootstrap confidence interval for the median difference.
     *   If this interval **does not** contain zero, there is strong evidence that a real performance difference exists.
     *   If this interval **does** contain zero, the observed difference may be due to random chance.
 *   **P-value**: The result of the Mann-Whitney U Test.
@@ -174,10 +174,10 @@ withTrailingLambdas_compose,100,160768.30,160433.01,-335.28,-0.21%,167300.93,167
 *   `p-value`: The p-value from the Mann-Whitney U test.
 *   `median_diff_%`: The percentage difference in medians (`(median2 - median1) / median1`).
 *   `median_diff`: The absolute difference in medians (`median2 - median1`).
-*   `median_diff_CI_lower`: The lower bound of the 95% confidence interval for the median difference.
-*   `median_diff_CI_upper`: The upper bound of the 95% confidence interval for the median difference.
-*   `median_diff_CI_lower_%`: The lower bound of the confidence interval as a percentage.
-*   `median_diff_CI_upper_%`: The upper bound of the confidence interval as a percentage.
+*   `median_diff_CI_lower`: The lower bound of the 95% BCa confidence interval for the median difference.
+*   `median_diff_CI_upper`: The upper bound of the 95% BCa confidence interval for the median difference.
+*   `median_diff_CI_lower_%`: The lower bound of the BCa confidence interval as a percentage.
+*   `median_diff_CI_upper_%`: The upper bound of the BCa confidence interval as a percentage.
 
 ### Metadata File
 

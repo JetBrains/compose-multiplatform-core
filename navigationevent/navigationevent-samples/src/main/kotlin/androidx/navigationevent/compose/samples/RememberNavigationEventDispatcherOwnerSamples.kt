@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle.viewmodel.navigation3.internal
+package androidx.navigationevent.compose.samples
 
-import androidx.activity.compose.LocalActivity
+import androidx.annotation.Sampled
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 
+@Sampled
 @Composable
-internal actual fun shouldRemoveViewModelStoreCallback(): () -> Boolean {
-    val activity = LocalActivity.current
-    return { activity?.isChangingConfigurations != true }
+fun RememberNavigationEventDispatcherOwner() {
+    val newOwner = rememberNavigationEventDispatcherOwner(enabled = true)
+    CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides newOwner) {
+        // This content will now be part of the new navigation scope
+    }
 }

@@ -28,7 +28,11 @@ import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 
 /** Synthetic indirect swipe. */
 @OptIn(ExperimentalIndirectTouchTypeApi::class)
-internal fun SemanticsNodeInteraction.performIndirectSwipe(rule: ComposeTestRule, distance: Float) {
+internal fun SemanticsNodeInteraction.performIndirectSwipe(
+    rule: ComposeTestRule,
+    distance: Float,
+    moveDuration: Long = 200L,
+) {
     val currentTime = SystemClock.uptimeMillis()
 
     val down =
@@ -51,8 +55,8 @@ internal fun SemanticsNodeInteraction.performIndirectSwipe(rule: ComposeTestRule
 
     val move =
         MotionEvent.obtain(
-            currentTime + 200L,
-            currentTime + 200L,
+            currentTime,
+            currentTime + moveDuration,
             MotionEvent.ACTION_MOVE,
             distance,
             Offset.Zero.y,
@@ -70,8 +74,8 @@ internal fun SemanticsNodeInteraction.performIndirectSwipe(rule: ComposeTestRule
 
     val up =
         MotionEvent.obtain(
-            currentTime + 400L,
-            currentTime + 400L,
+            currentTime,
+            currentTime + moveDuration + 20,
             MotionEvent.ACTION_UP,
             distance,
             Offset.Zero.y,
@@ -84,6 +88,44 @@ internal fun SemanticsNodeInteraction.performIndirectSwipe(rule: ComposeTestRule
             motionEvent = up,
             primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
             previousMotionEvent = move,
+        ),
+    )
+}
+
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
+internal fun SemanticsNodeInteraction.performIndirectClick(
+    rule: ComposeTestRule,
+    durationMillis: Long = 40L,
+) {
+    val currentTime = SystemClock.uptimeMillis()
+
+    val down = MotionEvent.obtain(currentTime, currentTime, MotionEvent.ACTION_DOWN, 0f, 0f, 0)
+    down.source = SOURCE_TOUCH_NAVIGATION
+
+    performIndirectTouchEvent(
+        rule,
+        IndirectTouchEvent(
+            motionEvent = down,
+            primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+        ),
+    )
+
+    val up =
+        MotionEvent.obtain(
+            currentTime,
+            currentTime + durationMillis,
+            MotionEvent.ACTION_UP,
+            0f,
+            0f,
+            0,
+        )
+
+    performIndirectTouchEvent(
+        rule,
+        IndirectTouchEvent(
+            motionEvent = up,
+            primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
+            previousMotionEvent = down,
         ),
     )
 }

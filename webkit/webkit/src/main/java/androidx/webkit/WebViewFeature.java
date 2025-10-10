@@ -779,7 +779,9 @@ public class WebViewFeature {
      * {@link Profile#hasOriginMatchedHeader(String)},
      * {@link Profile#clearOriginMatchedHeader(String)}, and
      * {@link Profile#clearAllOriginMatchedHeaders()}.
+     *
      */
+    @Profile.ExperimentalOriginMatchedHeader
     public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
 
     /**
@@ -795,7 +797,6 @@ public class WebViewFeature {
      * {@link Profile#clearCustomHeader(String, String)}, and
      * {@link Profile#clearAllCustomHeaders()}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String CUSTOM_REQUEST_HEADERS = "CUSTOM_REQUEST_HEADERS";
 
     /**

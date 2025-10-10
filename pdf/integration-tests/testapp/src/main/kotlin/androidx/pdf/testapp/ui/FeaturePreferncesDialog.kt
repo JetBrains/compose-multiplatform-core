@@ -55,12 +55,6 @@ internal class FeaturePreferencesDialog(
                 context.getString(R.string.external_input),
             ),
             FeatureFlagConfig(
-                R.id.switch_link_selection,
-                PdfFeatureFlags::isLinkSelectionEnabled,
-                FeatureFlagNames.LINK_SELECTION,
-                context.getString(R.string.link_selection),
-            ),
-            FeatureFlagConfig(
                 R.id.custom_link_handling_switch,
                 PdfFeatureFlags::isCustomLinkHandlingEnabled,
                 FeatureFlagNames.CUSTOM_LINK_HANDLING,

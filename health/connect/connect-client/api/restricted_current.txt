@@ -66,6 +66,7 @@ package androidx.health.connect.client {
     method public int getFeatureStatus(int feature);
     field public static final androidx.health.connect.client.HealthConnectFeatures.Companion Companion;
     field public static final int FEATURE_ACTIVITY_INTENSITY = 7; // 0x7
+    field public static final int FEATURE_EXTENDED_DEVICE_TYPES = 8; // 0x8
     field public static final int FEATURE_MINDFULNESS_SESSION = 5; // 0x5
     field @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final int FEATURE_PERSONAL_HEALTH_RECORD = 6; // 0x6
     field public static final int FEATURE_PLANNED_EXERCISE = 3; // 0x3
@@ -78,6 +79,7 @@ package androidx.health.connect.client {
 
   public static final class HealthConnectFeatures.Companion {
     property public static int FEATURE_ACTIVITY_INTENSITY;
+    property public static int FEATURE_EXTENDED_DEVICE_TYPES;
     property public static int FEATURE_MINDFULNESS_SESSION;
     property @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static int FEATURE_PERSONAL_HEALTH_RECORD;
     property public static int FEATURE_PLANNED_EXERCISE;
@@ -87,6 +89,7 @@ package androidx.health.connect.client {
     property public static int FEATURE_STATUS_AVAILABLE;
     property public static int FEATURE_STATUS_UNAVAILABLE;
     field public static final int FEATURE_ACTIVITY_INTENSITY = 7; // 0x7
+    field public static final int FEATURE_EXTENDED_DEVICE_TYPES = 8; // 0x8
     field public static final int FEATURE_MINDFULNESS_SESSION = 5; // 0x5
     field @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final int FEATURE_PERSONAL_HEALTH_RECORD = 6; // 0x6
     field public static final int FEATURE_PLANNED_EXERCISE = 3; // 0x3
@@ -2182,9 +2185,16 @@ package androidx.health.connect.client.records.metadata {
     property public int type;
     field public static final androidx.health.connect.client.records.metadata.Device.Companion Companion;
     field public static final int TYPE_CHEST_STRAP = 7; // 0x7
+    field public static final int TYPE_CONSUMER_MEDICAL_DEVICE = 9; // 0x9
     field public static final int TYPE_FITNESS_BAND = 6; // 0x6
+    field public static final int TYPE_FITNESS_EQUIPMENT = 13; // 0xd
+    field public static final int TYPE_FITNESS_MACHINE = 12; // 0xc
+    field public static final int TYPE_GLASSES = 10; // 0xa
     field public static final int TYPE_HEAD_MOUNTED = 5; // 0x5
+    field public static final int TYPE_HEARABLE = 11; // 0xb
+    field public static final int TYPE_METER = 15; // 0xf
     field public static final int TYPE_PHONE = 2; // 0x2
+    field public static final int TYPE_PORTABLE_COMPUTER = 14; // 0xe
     field public static final int TYPE_RING = 4; // 0x4
     field public static final int TYPE_SCALE = 3; // 0x3
     field public static final int TYPE_SMART_DISPLAY = 8; // 0x8
@@ -2194,9 +2204,16 @@ package androidx.health.connect.client.records.metadata {
 
   public static final class Device.Companion {
     property public static int TYPE_CHEST_STRAP;
+    property public static int TYPE_CONSUMER_MEDICAL_DEVICE;
     property public static int TYPE_FITNESS_BAND;
+    property public static int TYPE_FITNESS_EQUIPMENT;
+    property public static int TYPE_FITNESS_MACHINE;
+    property public static int TYPE_GLASSES;
     property public static int TYPE_HEAD_MOUNTED;
+    property public static int TYPE_HEARABLE;
+    property public static int TYPE_METER;
     property public static int TYPE_PHONE;
+    property public static int TYPE_PORTABLE_COMPUTER;
     property public static int TYPE_RING;
     property public static int TYPE_SCALE;
     property public static int TYPE_SMART_DISPLAY;

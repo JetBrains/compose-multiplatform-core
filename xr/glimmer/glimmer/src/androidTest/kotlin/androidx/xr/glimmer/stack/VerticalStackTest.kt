@@ -262,7 +262,7 @@ class VerticalStackTest {
     }
 
     @Test
-    fun contentStateChange_updatesItems() {
+    fun increaseItemCount_updatesItems() {
         var itemHeight = 0
         val state = StackState()
         var itemCount by mutableStateOf(3)
@@ -288,6 +288,32 @@ class VerticalStackTest {
         requestFocusAndPerformIndirectSwipe(itemHeight)
         rule.onNodeWithText("Item 3").assertIsDisplayed() // Reached the end
         assertThat(state.topItem).isEqualTo(3)
+    }
+
+    @Test
+    fun decreaseItemCount_updatesItems() {
+        var itemHeight = 0
+        val state = StackState()
+        var itemCount by mutableStateOf(3)
+        rule.setContentWithInitialFocus {
+            VerticalStack(state = state) {
+                items(itemCount) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        requestFocusAndPerformIndirectSwipe(itemHeight * 2)
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        assertThat(state.topItem).isEqualTo(2)
+        requestFocusAndPerformIndirectSwipe(itemHeight)
+        rule.onNodeWithText("Item 2").assertIsDisplayed() // Reached the end
+        assertThat(state.topItem).isEqualTo(2)
+
+        rule.runOnIdle { itemCount-- }
+
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+        assertThat(state.topItem).isEqualTo(1)
+        requestFocusAndPerformIndirectSwipe(itemHeight)
+        rule.onNodeWithText("Item 1").assertIsDisplayed() // Reached the end
+        assertThat(state.topItem).isEqualTo(1)
     }
 
     @Test

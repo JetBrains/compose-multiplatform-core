@@ -25,7 +25,6 @@ import androidx.pdf.PdfDocument.PdfPageLinks
 import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
-import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.view.FakePdfDocument
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.PdfViewTestActivity
@@ -54,7 +53,6 @@ class SelectionContextualMenuTest {
 
     @Before
     fun setUp() {
-        PdfFeatureFlags.isLinkSelectionEnabled = true
         val textContents = FAKE_PAGE_TEXT.map { text -> PdfPageTextContent(BOUNDS, text) }
         val emailLinkContent =
             PdfPageLinks(
@@ -103,7 +101,6 @@ class SelectionContextualMenuTest {
     @After
     fun tearDown() {
         PdfViewTestActivity.onCreateCallback = {}
-        PdfFeatureFlags.isLinkSelectionEnabled = false
     }
 
     @Test

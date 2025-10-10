@@ -41,12 +41,8 @@ import androidx.navigationevent.NavigationEventInput
  *
  * To provide the new [NavigationEventDispatcherOwner] to a sub-composition, use
  * [androidx.compose.runtime.CompositionLocalProvider]:
- * ```
- * val newOwner = rememberNavigationEventDispatcherOwner()
- * CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides newOwner) {
- * // This content will now be part of the new navigation scope
- * }
- * ```
+ *
+ * @samples androidx.navigationevent.compose.samples.RememberNavigationEventDispatcherOwner
  *
  * **Null parent:** If [parent] is **EXPLICITLY** `null`, this creates a root dispatcher that runs
  * independently. By default, it requires a parent from the [LocalNavigationEventDispatcherOwner]

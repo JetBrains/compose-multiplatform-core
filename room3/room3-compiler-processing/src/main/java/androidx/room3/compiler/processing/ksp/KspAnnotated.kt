@@ -43,12 +43,12 @@ internal sealed class KspAnnotated(val env: KspProcessingEnv) : InternalXAnnotat
         if (containerAnnotation != null) {
             // if container also repeats, this won't work but we don't have that use case
             findAnnotations(containerAnnotation).firstOrNull()?.let {
-                return KspAnnotation(env = env, ksAnnotated = it).getAsAnnotationList("value")
+                return KspAnnotation(env = env, ksAnnotation = it).getAsAnnotationList("value")
             }
         }
         // didn't find anything with the container, try the annotation class
         return findAnnotations(annotation)
-            .map { KspAnnotation(env = env, ksAnnotated = it) }
+            .map { KspAnnotation(env = env, ksAnnotation = it) }
             .toList()
     }
 

@@ -25,6 +25,7 @@ import androidx.compose.remote.creation.profile.WidgetsProfileWriterV6
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import org.junit.Test
 
 class ProfileTest {
@@ -74,6 +75,8 @@ class ProfileTest {
             0,
             Integer.MAX_VALUE,
         )
+
+        assertTrue(writer.encodeToByteArray().isNotEmpty())
 
         // Fails with dynamic size
         val fontSizeVar = writer.addFloatConstant(10f)
@@ -128,5 +131,7 @@ class ProfileTest {
             0,
             Integer.MAX_VALUE,
         )
+
+        assertTrue(writer.encodeToByteArray().isNotEmpty())
     }
 }

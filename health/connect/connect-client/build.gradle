@@ -78,6 +78,7 @@ android {
     }
     namespace = "androidx.health.connect.client"
     compileSdk = 36
+    compileSdkExtension = 19
 }
 
 androidx {

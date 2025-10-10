@@ -34,7 +34,7 @@
     <string name="desc_goto_link" msgid="2461368384824849714">"Одете на страницата <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>"</string>
     <string name="desc_copy" msgid="385275789223074637">"Ги копира избраните содржини во привремената меморија"</string>
     <string name="desc_copy_link" msgid="4764327179483836535">"Го копира линкот во привремената меморија"</string>
-    <string name="desc_jump_to" msgid="9085362382536609454">"Скока до делот или страницата во PDF-датотеката"</string>
+    <string name="desc_jump_to" msgid="9085362382536609454">"Скокнува до делот или страницата во PDF-датотеката"</string>
     <string name="desc_select_all" msgid="428248654717550270">"Го избира целиот текст во PDF-датотеката"</string>
     <string name="desc_page" msgid="6702471448987833953">"Страница <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"Празна страница"</string>

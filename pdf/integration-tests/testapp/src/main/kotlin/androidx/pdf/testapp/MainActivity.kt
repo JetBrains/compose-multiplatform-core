@@ -66,7 +66,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         PdfFeatureFlags.isExternalHardwareInteractionEnabled = true
-        PdfFeatureFlags.isLinkSelectionEnabled = true
 
         val mainActivity = MainActivityBinding.inflate(layoutInflater)
         setContentView(mainActivity.root)

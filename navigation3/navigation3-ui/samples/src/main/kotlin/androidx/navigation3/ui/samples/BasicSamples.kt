@@ -50,7 +50,7 @@ import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.samples.Dashboard
 import androidx.navigation3.runtime.samples.DialogBase
 import androidx.navigation3.runtime.samples.DialogContent
@@ -74,7 +74,7 @@ fun SceneNav() {
         backStack = backStack,
         entryDecorators =
             listOf(
-                rememberSavedStateNavEntryDecorator(),
+                rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),
             ),
         onBack = { backStack.removeAt(backStack.lastIndex) },
@@ -158,7 +158,7 @@ fun SceneNavSharedEntrySample() {
                 entryDecorators =
                     listOf(
                         sharedEntryInSceneNavEntryDecorator,
-                        rememberSavedStateNavEntryDecorator(),
+                        rememberSaveableStateHolderNavEntryDecorator(),
                     ),
                 entryProvider =
                     entryProvider {

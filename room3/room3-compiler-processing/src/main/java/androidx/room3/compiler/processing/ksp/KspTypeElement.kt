@@ -283,6 +283,25 @@ internal sealed class KspTypeElement(
                     }
                 }
             }
+            .let { declaredMethods ->
+                if (isAnnotationClass() && isFromKotlin()) {
+                    // TODO: KSP gives incorrect ordering for Kotlin annotation properties when
+                    //  using Resolver#getDeclarationsInSourceOrder() so reorder based on
+                    //  the constructor's parameters, which should have the correct order.
+                    //  See https://github.com/google/ksp/issues/2617.
+                    val orderByName =
+                        declaration.primaryConstructor!!
+                            .parameters
+                            .mapIndexed { index, it -> it.name!!.asString() to index }
+                            .toMap()
+                    declaredMethods.sortedBy {
+                        val key = it.propertyName
+                        orderByName[key] ?: error("$key is not in $orderByName")
+                    }
+                } else {
+                    declaredMethods
+                }
+            }
             .filterMethodsByConfig(env)
     }
 

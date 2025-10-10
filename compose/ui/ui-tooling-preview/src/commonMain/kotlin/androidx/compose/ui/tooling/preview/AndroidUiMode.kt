@@ -19,14 +19,12 @@ package androidx.compose.ui.tooling.preview
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 
-internal expect fun validateUiModes()
-
-/** List of ui modes available to be used in the preview. */
-object UiModes {
-
-    init {
-        validateUiModes()
-    }
+/**
+ * List of ui modes available to be used in the preview.
+ *
+ * Note: the constants are lifted from Android API: `android.content.res.Configuration.uiMode`.
+ */
+object AndroidUiModes {
 
     /** Bits that encode the mode type. */
     const val UI_MODE_TYPE_MASK: Int = 0x0f
@@ -111,19 +109,19 @@ object UiModes {
 @IntDef(
     value =
         [
-            UiModes.UI_MODE_TYPE_MASK,
-            UiModes.UI_MODE_TYPE_UNDEFINED,
-            UiModes.UI_MODE_TYPE_APPLIANCE,
-            UiModes.UI_MODE_TYPE_CAR,
-            UiModes.UI_MODE_TYPE_DESK,
-            UiModes.UI_MODE_TYPE_NORMAL,
-            UiModes.UI_MODE_TYPE_TELEVISION,
-            UiModes.UI_MODE_TYPE_VR_HEADSET,
-            UiModes.UI_MODE_TYPE_WATCH,
-            UiModes.UI_MODE_NIGHT_MASK,
-            UiModes.UI_MODE_NIGHT_UNDEFINED,
-            UiModes.UI_MODE_NIGHT_NO,
-            UiModes.UI_MODE_NIGHT_YES,
+            AndroidUiModes.UI_MODE_TYPE_MASK,
+            AndroidUiModes.UI_MODE_TYPE_UNDEFINED,
+            AndroidUiModes.UI_MODE_TYPE_APPLIANCE,
+            AndroidUiModes.UI_MODE_TYPE_CAR,
+            AndroidUiModes.UI_MODE_TYPE_DESK,
+            AndroidUiModes.UI_MODE_TYPE_NORMAL,
+            AndroidUiModes.UI_MODE_TYPE_TELEVISION,
+            AndroidUiModes.UI_MODE_TYPE_VR_HEADSET,
+            AndroidUiModes.UI_MODE_TYPE_WATCH,
+            AndroidUiModes.UI_MODE_NIGHT_MASK,
+            AndroidUiModes.UI_MODE_NIGHT_UNDEFINED,
+            AndroidUiModes.UI_MODE_NIGHT_NO,
+            AndroidUiModes.UI_MODE_NIGHT_YES,
         ]
 )
-annotation class UiMode
+annotation class AndroidUiMode
