@@ -175,7 +175,7 @@ androidXMultiplatform {
             dependsOn(skikoMain)
         }
 
-        webTest {
+        nonJvmTest {
             dependsOn(skikoTest)
         }
 
@@ -184,7 +184,7 @@ androidXMultiplatform {
         }
 
         nativeTest {
-            dependsOn(webTest)
+            dependsOn(nonJvmTest)
         }
 
         darwinMain {
@@ -220,7 +220,7 @@ androidXMultiplatform {
         }
 
         webTest {
-            dependsOn(webTest)
+            dependsOn(nonJvmTest)
         }
 
         jsMain {
