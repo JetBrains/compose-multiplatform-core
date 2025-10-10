@@ -29,12 +29,14 @@ import org.gradle.api.Project
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
+import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.mpp.AbstractKotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinSoftwareComponentWithCoordinatesAndPublication
+import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 open class JetBrainsExtensions(
@@ -198,6 +200,7 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
     }
 }
 
+@OptIn(ExternalKotlinTargetApi::class)
 private fun enableArtifactRedirectionPublishing(project: Project) {
     val redirection = project.artifactRedirection() ?: return
 
@@ -222,7 +225,11 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
     @OptIn(InternalKotlinGradlePluginApi::class)
     ext.targets.all { target ->
         if (target.name.lowercase() in redirection.targetNames) {
-            project.publishAndroidxReference(target as AbstractKotlinTarget, newRootComponent)
+            if (target is AbstractKotlinTarget) {
+                project.setupRedirection(target, newRootComponent)
+            } else if (target is DecoratedExternalKotlinTarget) {
+                project.setupRedirection(target, newRootComponent)
+            }
         }
     }
 }
