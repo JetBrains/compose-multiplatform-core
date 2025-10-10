@@ -55,6 +55,10 @@ kotlin {
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
         }
+
+        // TODO(buildsrc): Correctly apply AndroidXPlugin to pass all verification checks (replace "kotlin {" by "androidXMultiplatform {")
+        commonMain.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
+        uikitMain.languageSettings.languageVersion = KotlinTarget.DEFAULT.apiVersion.version
     }
 }
 

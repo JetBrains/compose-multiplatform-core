@@ -218,7 +218,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             it.configureWithAndroidXExtension(androidXExtension)
         }
         project.configureConstraintsWithinGroup(androidXExtension)
-        project.validateProjectParser(androidXExtension)
+        if (!org.jetbrains.androidx.build.isJetBrainsForkStructureEnabled(project)) project.validateProjectParser(androidXExtension)
         project.validateAllArchiveInputsRecognized()
         project.afterEvaluate {
             if (androidXExtension.shouldPublishSbom()) {
