@@ -16,45 +16,97 @@
 
 package androidx.navigation.compose
 
-import android.net.Uri
-import android.os.Bundle
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.core.net.toUri
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.kruth.assertThat
+import androidx.kruth.assertWithMessage
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.NavGraph
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
+import androidx.navigation.NavUri
 import androidx.navigation.contains
 import androidx.navigation.get
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
+import androidx.navigation.serialization.generateHashCode
 import androidx.navigation.testing.TestNavHostController
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.LargeTest
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
+import androidx.savedstate.SavedState
+import androidx.savedstate.read
+import kotlin.reflect.KClass
 import kotlin.reflect.typeOf
+import kotlin.test.Test
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
+import kotlinx.serialization.serializer
 
+@OptIn(ExperimentalTestApi::class)
 @ExperimentalCoroutinesApi
-@LargeTest
-@RunWith(AndroidJUnit4::class)
 class NavGraphBuilderTest {
-    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
-    fun testCurrentBackStackEntryNavigate() {
+    fun testDeepLink() = runComposeUiTestOnUiThread {
+        lateinit var navController: TestNavHostController
+        val uriString = "https://www.example.com"
+        val deeplink = NavDeepLinkRequest.Builder.fromUri(NavUri(uriString)).build()
+        setContent {
+            navController = TestNavHostController()
+            navController.navigatorProvider.addNavigator(ComposeNavigator())
+
+            NavHost(navController, startDestination = firstRoute) {
+                composable(firstRoute) {}
+                composable(
+                    secondRoute,
+                    deepLinks = listOf(navDeepLink { uriPattern = uriString })
+                ) {}
+            }
+        }
+
+        runOnUiThread {
+            navController.navigate(NavUri(uriString))
+            assertThat(navController.currentBackStackEntry!!.destination.hasDeepLink(deeplink))
+                .isTrue()
+        }
+    }
+
+    @Test
+    fun testNestedNavigationDeepLink() = runComposeUiTestOnUiThread {
+        lateinit var navController: TestNavHostController
+        val uriString = "https://www.example.com"
+        val deeplink = NavDeepLinkRequest.Builder.fromUri(NavUri(uriString)).build()
+        setContent {
+            navController = TestNavHostController()
+            navController.navigatorProvider.addNavigator(ComposeNavigator())
+
+            NavHost(navController, startDestination = firstRoute) {
+                composable(firstRoute) {}
+                navigation(
+                    startDestination = thirdRoute,
+                    route = secondRoute,
+                    deepLinks = listOf(navDeepLink { uriPattern = uriString })
+                ) {
+                    composable(thirdRoute) {}
+                }
+            }
+        }
+
+        runOnUiThread {
+            navController.navigate(NavUri(uriString))
+            assertThat(
+                navController.getBackStackEntry(secondRoute).destination.hasDeepLink(deeplink)
+            )
+                .isTrue()
+        }
+    }
+
+    @Test
+    fun testCurrentBackStackEntryNavigate() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
         val key = "key"
         val arg = "myarg"
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -63,20 +115,20 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             navController.navigate("$secondRoute/$arg")
-            assertThat(navController.currentBackStackEntry!!.arguments!!.getString(key))
+            assertThat(navController.currentBackStackEntry!!.arguments!!.read { getString(key) })
                 .isEqualTo(arg)
         }
     }
 
     @Test
-    fun testDefaultArguments() {
+    fun testDefaultArguments() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
         val key = "key"
         val defaultArg = "default"
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -88,27 +140,27 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             navController.navigate(secondRoute)
-            assertThat(navController.currentBackStackEntry!!.arguments!!.getString(key))
+            assertThat(navController.currentBackStackEntry!!.arguments!!.read { getString(key) })
                 .isEqualTo(defaultArg)
         }
     }
 
     @Test
-    fun testDeepLink() {
+    fun testNavigationNestedStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
         val uriString = "https://www.example.com"
-        val deeplink = NavDeepLinkRequest.Builder.fromUri(Uri.parse(uriString)).build()
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        val deeplink = NavDeepLinkRequest.Builder.fromUri(NavUriUtils.parse(uriString)).build()
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
                 composable(firstRoute) {}
                 composable(
                     secondRoute,
-                    deepLinks = listOf(navDeepLink { uriPattern = uriString }),
+                    deepLinks = listOf(navDeepLink { uriPattern = uriString })
                 ) {}
             }
         }
@@ -121,10 +173,10 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationNestedStart() {
+    fun testNavigationNestedStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -134,7 +186,7 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertWithMessage("Destination should be added to the graph")
                 .that(firstRoute in navController.graph)
                 .isTrue()
@@ -142,10 +194,10 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationNestedInGraph() {
+    fun testNavigationNestedInGraph() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -156,7 +208,7 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             navController.navigate(secondRoute)
             assertWithMessage("Destination should be added to the graph")
                 .that(secondRoute in navController.graph)
@@ -165,12 +217,12 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNestedNavigationDefaultArguments() {
+    fun testNestedNavigationDefaultArguments() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
         val key = "key"
         val defaultArg = "default"
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -185,19 +237,19 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             navController.navigate(secondRoute)
-            assertThat(navController.currentBackStackEntry!!.arguments!!.getString(key))
+            assertThat(navController.currentBackStackEntry!!.arguments!!.read { getString(key) })
                 .isEqualTo(defaultArg)
         }
     }
 
     @Test
-    fun testNestedNavigationDeepLink() {
+    fun testNestedNavigationDeepLink() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
         val uriString = "https://www.example.com"
-        val deeplink = NavDeepLinkRequest.Builder.fromUri(Uri.parse(uriString)).build()
-        composeTestRule.setContent {
+        val deeplink = NavDeepLinkRequest.Builder.fromUri(UriNavUriUtils.parse(uriString)).build()
+        setContentWithLifecycleOwner {
             navController = TestNavHostController(LocalContext.current)
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -206,7 +258,7 @@ class NavGraphBuilderTest {
                 navigation(
                     startDestination = thirdRoute,
                     route = secondRoute,
-                    deepLinks = listOf(navDeepLink { uriPattern = uriString }),
+                    deepLinks = listOf(navDeepLink { uriPattern = uriString })
                 ) {
                     composable(thirdRoute) {}
                 }
@@ -223,16 +275,16 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationKClassStart() {
+    fun testNavigationKClassStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = TestClass::class) { composable<TestClass> {} }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(TestClass::class in navController.graph)
@@ -242,12 +294,11 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationNestedKClassStart() {
+    fun testNavigationNestedKClassStart() = runComposeUiTestOnUiThread {
         @Serializable class TestOuterClass
-
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = TestOuterClass::class) {
@@ -257,7 +308,7 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(TestOuterClass::class in navController.graph)
@@ -267,37 +318,12 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationNestedNonReifiedKClassStart() {
-        @Serializable class TestOuterClass
-
-        lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
-            navController.navigatorProvider.addNavigator(ComposeNavigator())
-
-            NavHost(navController, startDestination = TestOuterClass::class) {
-                navigation(startDestination = TestClass::class, TestOuterClass::class) {
-                    composable<TestClass> {}
-                }
-            }
-        }
-
-        composeTestRule.runOnUiThread {
-            assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ROUTE)
-            assertWithMessage("Destination should be added to the graph")
-                .that(TestOuterClass::class in navController.graph)
-                .isTrue()
-            assertThat(navController.graph.findStartDestination().route).isEqualTo(TEST_CLASS_ROUTE)
-        }
-    }
-
-    @Test
-    fun testNavigationKClassNestedInGraph() {
+    fun testNavigationKClassNestedInGraph() = runComposeUiTestOnUiThread {
         @Serializable class NestedGraph
 
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -308,7 +334,7 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             navController.navigate(NestedGraph())
             assertWithMessage("Destination should be added to the graph")
                 .that(NestedGraph::class in navController.graph)
@@ -320,16 +346,16 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationObjectStart() {
+    fun testNavigationObjectStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = TestClass()) { composable<TestClass> {} }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(TestClass::class in navController.graph)
@@ -339,10 +365,10 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationObjectStartArgs() {
+    fun testNavigationObjectStartArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = TestClassArg(15)) {
@@ -350,22 +376,22 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ARG_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(TestClassArg::class in navController.graph)
                 .isTrue()
             assertThat(navController.graph.findStartDestination().route)
                 .isEqualTo(TEST_CLASS_ARG_ROUTE)
-            assertThat(navController.currentBackStackEntry?.arguments?.getInt("arg")).isEqualTo(15)
+            assertThat(navController.currentBackStackEntry?.arguments?.read { getInt("arg") }).isEqualTo(15)
         }
     }
 
     @Test
-    fun testNavigationNestedObjectStart() {
+    fun testNavigationNestedObjectStart() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = TestClassArg(1)) {
@@ -375,7 +401,7 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(TestClassArg::class in navController.graph)
@@ -385,10 +411,10 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationNestedObjectStartArgs() {
+    fun testNavigationNestedObjectStartArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = TestClass::class) {
@@ -398,24 +424,24 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ARG_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(TestClass::class in navController.graph)
                 .isTrue()
             assertThat(navController.graph.findStartDestination().route)
                 .isEqualTo(TEST_CLASS_ARG_ROUTE)
-            assertThat(navController.currentBackStackEntry?.arguments?.getInt("arg")).isEqualTo(15)
+            assertThat(navController.currentBackStackEntry?.arguments?.read { getInt("arg") }).isEqualTo(15)
         }
     }
 
     @Test
-    fun testNavigationNestedAllObjectsStart() {
+    fun testNavigationNestedAllObjectsStart() = runComposeUiTestOnUiThread {
         @Serializable class NestedGraph
 
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = NestedGraph()) {
@@ -423,7 +449,7 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(NestedGraph::class in navController.graph)
@@ -433,12 +459,12 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationNestedAllObjectsStartArgs() {
+    fun testNavigationNestedAllObjectsStartArgs() = runComposeUiTestOnUiThread {
         @Serializable class NestedGraph(val graphArg: Boolean)
 
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = NestedGraph(false)) {
@@ -448,26 +474,26 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ARG_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(NestedGraph::class in navController.graph)
                 .isTrue()
             assertThat(navController.graph.findStartDestination().route)
                 .isEqualTo(TEST_CLASS_ARG_ROUTE)
-            assertThat(navController.currentBackStackEntry?.arguments?.getBoolean("graphArg"))
+            assertThat(navController.currentBackStackEntry?.arguments?.read { getBoolean("graphArg") })
                 .isEqualTo(false)
-            assertThat(navController.currentBackStackEntry?.arguments?.getInt("arg")).isEqualTo(15)
+            assertThat(navController.currentBackStackEntry?.arguments?.read { getInt("arg") }).isEqualTo(15)
         }
     }
 
     @Test
-    fun testNavigationObjectNestedInGraph() {
+    fun testNavigationObjectNestedInGraph() = runComposeUiTestOnUiThread {
         @Serializable class NestedGraph
 
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -476,7 +502,7 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             navController.navigate(NestedGraph())
             assertWithMessage("Destination should be added to the graph")
                 .that(NestedGraph::class in navController.graph)
@@ -488,12 +514,12 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNavigationObjectArgsNestedInGraph() {
+    fun testNavigationObjectArgsNestedInGraph() = runComposeUiTestOnUiThread {
         @Serializable class NestedGraph
 
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -504,7 +530,7 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             navController.navigate(NestedGraph())
             assertWithMessage("Destination should be added to the graph")
                 .that(NestedGraph::class in navController.graph)
@@ -512,15 +538,15 @@ class NavGraphBuilderTest {
             val nestedGraph = navController.graph.findNode<NestedGraph>() as NavGraph
             assertThat(nestedGraph.findStartDestination().route).isEqualTo(TEST_CLASS_ARG_ROUTE)
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ARG_ROUTE)
-            assertThat(navController.currentBackStackEntry?.arguments?.getInt("arg")).isEqualTo(15)
+            assertThat(navController.currentBackStackEntry?.arguments?.read { getInt("arg") }).isEqualTo(15)
         }
     }
 
     @Test
-    fun testComposableKClass() {
+    fun testComposableKClass() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -528,7 +554,7 @@ class NavGraphBuilderTest {
                 composable<TestClass> {}
             }
         }
-        composeTestRule.runOnIdle {
+        runOnIdle {
             assertThat(firstRoute in navController.graph).isTrue()
             assertThat(TestClass::class in navController.graph).isTrue()
             assertThat(navController.graph[TestClass::class].route).isEqualTo(TEST_CLASS_ROUTE)
@@ -536,29 +562,10 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testComposableKClassNonReified() {
+    fun testComposableKClassArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
-            navController.navigatorProvider.addNavigator(ComposeNavigator())
-
-            NavHost(navController, startDestination = firstRoute) {
-                composable(firstRoute) {}
-                composable(TestClass::class) {}
-            }
-        }
-        composeTestRule.runOnIdle {
-            assertThat(firstRoute in navController.graph).isTrue()
-            assertThat(TestClass::class in navController.graph).isTrue()
-            assertThat(navController.graph[TestClass::class].route).isEqualTo(TEST_CLASS_ROUTE)
-        }
-    }
-
-    @Test
-    fun testComposableKClassArgs() {
-        lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -566,7 +573,7 @@ class NavGraphBuilderTest {
                 composable<TestClassArg> {}
             }
         }
-        composeTestRule.runOnIdle {
+        runOnIdle {
             assertThat(TestClassArg::class in navController.graph).isTrue()
             val dest = navController.graph[TestClassArg::class]
             assertThat(dest.route).isEqualTo(TEST_CLASS_ARG_ROUTE)
@@ -575,12 +582,12 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testComposableKClassArgsCustomType() {
+    fun testComposableKClassArgsCustomType() = runComposeUiTestOnUiThread {
         @Serializable class TestClass(val arg: CustomType)
 
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -588,7 +595,7 @@ class NavGraphBuilderTest {
                 composable<TestClass>(typeMap = mapOf(typeOf<CustomType>() to customNavType)) {}
             }
         }
-        composeTestRule.runOnIdle {
+        runOnIdle {
             val dest = navController.graph[TestClass::class]
             assertThat(dest.arguments["arg"]).isNotNull()
             assertThat(dest.arguments["arg"]!!.type).isEqualTo(customNavType)
@@ -596,10 +603,10 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNestedComposableKClassArgs() {
+    fun testNestedComposableKClassArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = firstRoute) {
@@ -609,7 +616,7 @@ class NavGraphBuilderTest {
                 }
             }
         }
-        composeTestRule.runOnIdle {
+        runOnIdle {
             val nestedGraph = navController.graph[secondRoute] as NavGraph
             val dest = nestedGraph.findNode<TestClassArg>()
             assertThat(dest).isNotNull()
@@ -619,14 +626,14 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testComposableKClassArgsMissingCustomType() {
+    fun testComposableKClassArgsMissingCustomType() = runComposeUiTestOnUiThread {
         @Serializable class TestClass(val arg: CustomType)
 
         lateinit var exception: String
         lateinit var navController: TestNavHostController
         try {
-            composeTestRule.setContent {
-                navController = TestNavHostController(LocalContext.current)
+            setContent {
+                navController = TestNavHostController()
                 navController.navigatorProvider.addNavigator(ComposeNavigator())
 
                 NavHost(navController, startDestination = firstRoute) {
@@ -639,18 +646,17 @@ class NavGraphBuilderTest {
         }
         assertThat(exception)
             .isEqualTo(
-                "Route androidx.navigation.compose.NavGraphBuilderTest" +
-                    ".testComposableKClassArgsMissingCustomType.TestClass could " +
+                "Route ${TestClass.serializer().descriptor.serialName} could " +
                     "not find any NavType for argument arg of type androidx" +
                     ".navigation.compose.CustomType - typeMap received was {}"
             )
     }
 
     @Test
-    fun testDialogKClass() {
+    fun testDialogKClass() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
             navController.navigatorProvider.addNavigator(DialogNavigator())
 
@@ -659,7 +665,7 @@ class NavGraphBuilderTest {
                 dialog<TestClass> {}
             }
         }
-        composeTestRule.runOnIdle {
+        runOnIdle {
             assertThat(firstRoute in navController.graph).isTrue()
             assertThat(TestClass::class in navController.graph).isTrue()
             assertThat(navController.graph[TestClass::class].route).isEqualTo(TEST_CLASS_ROUTE)
@@ -667,30 +673,10 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testDialogKClassNonReified() {
+    fun testDialogKClassArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
-            navController.navigatorProvider.addNavigator(ComposeNavigator())
-            navController.navigatorProvider.addNavigator(DialogNavigator())
-
-            NavHost(navController, startDestination = firstRoute) {
-                composable(firstRoute) {}
-                dialog(TestClass::class) {}
-            }
-        }
-        composeTestRule.runOnIdle {
-            assertThat(firstRoute in navController.graph).isTrue()
-            assertThat(TestClass::class in navController.graph).isTrue()
-            assertThat(navController.graph[TestClass::class].route).isEqualTo(TEST_CLASS_ROUTE)
-        }
-    }
-
-    @Test
-    fun testDialogKClassArgs() {
-        lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(DialogNavigator())
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -699,7 +685,7 @@ class NavGraphBuilderTest {
                 dialog<TestClassArg> {}
             }
         }
-        composeTestRule.runOnIdle {
+        runOnIdle {
             assertThat(TestClassArg::class in navController.graph).isTrue()
             val dest = navController.graph[TestClassArg::class]
             assertThat(dest.route).isEqualTo(TEST_CLASS_ARG_ROUTE)
@@ -708,12 +694,12 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testDialogKClassArgsCustomType() {
+    fun testDialogKClassArgsCustomType() = runComposeUiTestOnUiThread {
         @Serializable class TestClass(val arg: CustomType)
 
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(DialogNavigator())
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -722,7 +708,7 @@ class NavGraphBuilderTest {
                 dialog<TestClass>(typeMap = mapOf(typeOf<CustomType>() to customNavType)) {}
             }
         }
-        composeTestRule.runOnIdle {
+        runOnIdle {
             val dest = navController.graph[TestClass::class]
             assertThat(dest.arguments["arg"]).isNotNull()
             assertThat(dest.arguments["arg"]!!.type).isEqualTo(customNavType)
@@ -730,10 +716,10 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testNestedDialogKClassArgs() {
+    fun testNestedDialogKClassArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(DialogNavigator())
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -744,7 +730,7 @@ class NavGraphBuilderTest {
                 }
             }
         }
-        composeTestRule.runOnIdle {
+        runOnIdle {
             val nestedGraph = navController.graph[secondRoute] as NavGraph
             val dest = nestedGraph.findNode<TestClassArg>()
             assertThat(dest).isNotNull()
@@ -754,14 +740,14 @@ class NavGraphBuilderTest {
     }
 
     @Test
-    fun testDialogKClassArgsMissingCustomType() {
+    fun testDialogKClassArgsMissingCustomType() = runComposeUiTestOnUiThread {
         @Serializable class TestClass(val arg: CustomType)
 
         lateinit var exception: String
         lateinit var navController: TestNavHostController
         try {
-            composeTestRule.setContent {
-                navController = TestNavHostController(LocalContext.current)
+            setContent {
+                navController = TestNavHostController()
                 navController.navigatorProvider.addNavigator(DialogNavigator())
                 navController.navigatorProvider.addNavigator(ComposeNavigator())
 
@@ -775,40 +761,39 @@ class NavGraphBuilderTest {
         }
         assertThat(exception)
             .isEqualTo(
-                "Route androidx.navigation.compose.NavGraphBuilderTest" +
-                    ".testDialogKClassArgsMissingCustomType.TestClass could not " +
+                "Route ${TestClass.serializer().descriptor.serialName} could not " +
                     "find any NavType for argument arg of type androidx.navigation" +
                     ".compose.CustomType - typeMap received was {}"
             )
     }
 
     @Test
-    fun testNavigationDialogObjectStartArgs() {
+    fun testNavigationDialogObjectStartArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(DialogNavigator())
             navController.navigatorProvider.addNavigator(ComposeNavigator())
 
             NavHost(navController, startDestination = TestClassArg(15)) { dialog<TestClassArg> {} }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ARG_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(TestClassArg::class in navController.graph)
                 .isTrue()
             assertThat(navController.graph.findStartDestination().route)
                 .isEqualTo(TEST_CLASS_ARG_ROUTE)
-            assertThat(navController.currentBackStackEntry?.arguments?.getInt("arg")).isEqualTo(15)
+            assertThat(navController.currentBackStackEntry?.arguments?.read { getInt("arg") }).isEqualTo(15)
         }
     }
 
     @Test
-    fun testNavigationDialogNestedObjectStartArgs() {
+    fun testNavigationDialogNestedObjectStartArgs() = runComposeUiTestOnUiThread {
         lateinit var navController: TestNavHostController
-        composeTestRule.setContent {
-            navController = TestNavHostController(LocalContext.current)
+        setContent {
+            navController = TestNavHostController()
             navController.navigatorProvider.addNavigator(ComposeNavigator())
             navController.navigatorProvider.addNavigator(DialogNavigator())
 
@@ -819,14 +804,14 @@ class NavGraphBuilderTest {
             }
         }
 
-        composeTestRule.runOnUiThread {
+        runOnUiThread {
             assertThat(navController.currentDestination?.route).isEqualTo(TEST_CLASS_ARG_ROUTE)
             assertWithMessage("Destination should be added to the graph")
                 .that(TestClass::class in navController.graph)
                 .isTrue()
             assertThat(navController.graph.findStartDestination().route)
                 .isEqualTo(TEST_CLASS_ARG_ROUTE)
-            assertThat(navController.currentBackStackEntry?.arguments?.getInt("arg")).isEqualTo(15)
+            assertThat(navController.currentBackStackEntry?.arguments?.read { getInt("arg") }).isEqualTo(15)
         }
     }
 }
@@ -845,11 +830,18 @@ internal const val TEST_CLASS_ARG_ROUTE = "androidx.navigation.compose.TestClass
 
 internal val customNavType =
     object : NavType<CustomType>(false) {
-        override fun put(bundle: Bundle, key: String, value: CustomType) {}
+        override fun put(bundle: SavedState, key: String, value: CustomType) {}
 
-        override fun get(bundle: Bundle, key: String): CustomType? = null
+        override fun get(bundle: SavedState, key: String): CustomType? = null
 
         override fun parseValue(value: String): CustomType = CustomType()
 
         override fun serializeAsValue(value: CustomType) = "customValue"
     }
+
+
+@OptIn(InternalSerializationApi::class)
+private operator fun NavGraph.get(route: KClass<*>) = findNode(route.serializer().generateHashCode())!!
+
+@OptIn(InternalSerializationApi::class)
+private operator fun NavGraph.contains(route: KClass<*>) = findNode(route.serializer().generateHashCode()) != null
