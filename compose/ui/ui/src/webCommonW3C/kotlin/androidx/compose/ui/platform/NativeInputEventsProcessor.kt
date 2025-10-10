@@ -134,7 +134,7 @@ internal abstract class NativeInputEventsProcessor(
                     // This happens when an autocorrection is applied on mobile:
                     // The system first tells us to delete the old text,
                     // and then it would send the "insertText" event.
-                    val deleteSize = deleteContentBackwardSize
+                    val deleteSize = deleteContentBackwardSize ?: 0
                     if (deleteSize > 0) {
                         add(DeleteSurroundingTextCommand(deleteSize, 0))
                     } else if (deleteSize == 0) {
@@ -147,7 +147,7 @@ internal abstract class NativeInputEventsProcessor(
 
             "insertReplacementText" -> buildList {
                 if (data == null) return@buildList
-                val deleteSize = deleteContentBackwardSize
+                val deleteSize = deleteContentBackwardSize ?: 0
                 if (deleteSize > 0) {
                     add(DeleteSurroundingTextCommand(deleteSize, 0))
                 }
@@ -157,7 +157,7 @@ internal abstract class NativeInputEventsProcessor(
 
             "insertText" -> buildList {
                 if (data == null) return@buildList
-                val deleteSize = deleteContentBackwardSize
+                val deleteSize = deleteContentBackwardSize ?: 0
                 if (deleteSize > 0 && currentTextFieldValue.selection.collapsed) {
                     add(DeleteSurroundingTextCommand(deleteSize, 0))
                 }
@@ -167,7 +167,7 @@ internal abstract class NativeInputEventsProcessor(
 
             "insertCompositionText" -> buildList {
                 if (data == null) return@buildList
-                val deleteSize = deleteContentBackwardSize
+                val deleteSize = deleteContentBackwardSize ?: 0
                 if (deleteSize > 0) {
                     add(DeleteSurroundingTextCommand(deleteSize, 0))
                 }

@@ -83,7 +83,7 @@ internal external class InputEvent : UIEvent {
     val inputType: String
     val data: String?
     val isComposing: Boolean
-    var deleteContentBackwardSize: Int
+    var deleteContentBackwardSize: Int?
 }
 
 private fun ImeOptions.createDomElement(): HTMLElement {
