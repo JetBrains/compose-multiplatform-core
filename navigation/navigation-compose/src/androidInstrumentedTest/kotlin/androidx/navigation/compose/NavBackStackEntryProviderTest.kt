@@ -21,10 +21,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.testing.TestNavigatorState
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.testutils.TestNavigator
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Rule
@@ -33,9 +40,43 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-class NavBackStackEntryProviderAndroidTest {
+class NavBackStackEntryProviderTest {
 
     @get:Rule val composeTestRule = createComposeRule()
+
+    @Test
+    fun testViewModelStoreOwnerProvided() {
+        val backStackEntry = createBackStackEntry()
+        var viewModelStoreOwner: ViewModelStoreOwner? = null
+
+        composeTestRule.setContent {
+            val saveableStateHolder = rememberSaveableStateHolder()
+            backStackEntry.LocalOwnersProvider(saveableStateHolder) {
+                viewModelStoreOwner = LocalViewModelStoreOwner.current
+            }
+        }
+
+        assertWithMessage("ViewModelStoreOwner is provided by $backStackEntry")
+            .that(viewModelStoreOwner)
+            .isEqualTo(backStackEntry)
+    }
+
+    @Test
+    fun testLifecycleOwnerProvided() {
+        val backStackEntry = createBackStackEntry()
+        var lifecycleOwner: LifecycleOwner? = null
+
+        composeTestRule.setContent {
+            val saveableStateHolder = rememberSaveableStateHolder()
+            backStackEntry.LocalOwnersProvider(saveableStateHolder) {
+                lifecycleOwner = LocalLifecycleOwner.current
+            }
+        }
+
+        assertWithMessage("LifecycleOwner is provided by $backStackEntry")
+            .that(lifecycleOwner)
+            .isEqualTo(backStackEntry)
+    }
 
     @Test
     fun testLocalSavedStateRegistryOwnerProvided() {
@@ -105,5 +146,16 @@ class NavBackStackEntryProviderAndroidTest {
         restorationTester.emulateSavedInstanceStateRestore()
 
         assertThat(nonSaveable).isEqualTo(initialValue)
+    }
+
+    private fun createBackStackEntry(): NavBackStackEntry {
+        val testNavigator = TestNavigator()
+        val testNavigatorState = TestNavigatorState()
+        testNavigator.onAttach(testNavigatorState)
+        val backStackEntry =
+            testNavigatorState.createBackStackEntry(testNavigator.createDestination(), null)
+        // We navigate to move the NavBackStackEntry to the correct state
+        testNavigator.navigate(listOf(backStackEntry), null, null)
+        return backStackEntry
     }
 }
