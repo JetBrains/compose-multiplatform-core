@@ -66,7 +66,7 @@ package androidx.camera.video {
     property public androidx.camera.video.VideoCapture<? extends java.lang.Object?> videoCapture;
   }
 
-  public static final class HighSpeedVideoSessionConfig.Builder {
+  @SuppressCompatibility public static final class HighSpeedVideoSessionConfig.Builder {
     ctor public HighSpeedVideoSessionConfig.Builder(androidx.camera.video.VideoCapture<? extends java.lang.Object?> videoCapture);
     method public androidx.camera.video.HighSpeedVideoSessionConfig build();
     method public androidx.camera.video.HighSpeedVideoSessionConfig.Builder setFrameRateRange(android.util.Range<java.lang.Integer> frameRateRange);

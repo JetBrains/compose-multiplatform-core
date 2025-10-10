@@ -109,19 +109,6 @@ internal constructor(
             return generateCreateResult(runtimeAnchor, perceptionStateExtender.xrResourcesManager)
         }
 
-        /** Loads an [Anchor] of the given native pointer. */
-        // TODO(b/373711152) : Remove this method once the Jetpack XR Runtime API migration is done.
-        @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-        public fun loadFromNativePointer(session: Session, nativePointer: Long): Anchor {
-            val perceptionStateExtender = getPerceptionStateExtender(session)
-            val runtimeAnchor =
-                session.perceptionRuntime.perceptionManager.loadAnchorFromNativePointer(
-                    nativePointer
-                )
-            return Anchor(runtimeAnchor, perceptionStateExtender.xrResourcesManager)
-        }
-
         /**
          * Deletes a persisted Anchor denoted by [uuid] from local storage.
          *

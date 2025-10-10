@@ -41,7 +41,7 @@ package androidx.xr.scenecore {
     method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.arcore.Anchor anchor);
     method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType);
     method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType, optional java.time.Duration timeout);
-    method public androidx.xr.arcore.Anchor getAnchor(androidx.xr.runtime.Session session);
+    method public androidx.xr.arcore.Anchor? getAnchor();
     method @InaccessibleFromKotlin public int getState();
     method public void setOnSpaceUpdatedListener(Runnable? listener);
     method public void setOnSpaceUpdatedListener(java.util.concurrent.Executor executor, Runnable? listener);

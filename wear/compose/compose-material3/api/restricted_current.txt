@@ -515,6 +515,8 @@ package androidx.wear.compose.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void FailureIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public void SuccessIcon(optional androidx.compose.ui.Modifier modifier);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void SuccessIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public void VariantFailureIcon(optional androidx.compose.ui.Modifier modifier);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void VariantFailureIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.ConfirmationDialogColors colors();
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.ConfirmationDialogColors colors(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.ConfirmationDialogColors colors(optional androidx.compose.ui.graphics.Color iconColor, optional androidx.compose.ui.graphics.Color iconContainerColor, optional androidx.compose.ui.graphics.Color textColor);

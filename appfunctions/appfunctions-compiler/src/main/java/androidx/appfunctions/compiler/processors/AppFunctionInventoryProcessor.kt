@@ -85,7 +85,7 @@ class AppFunctionInventoryProcessor(private val codeGenerator: CodeGenerator) : 
                 generatedInventoryComponents,
             )
         return resolvedAnnotatedSerializableProxies.resolvedAnnotatedSerializableProxies.map {
-            it.appFunctionSerializableProxyClass
+            it.classDeclaration
         }
     }
 

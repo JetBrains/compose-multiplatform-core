@@ -586,7 +586,7 @@ package androidx.wear.compose.material {
     field public static final androidx.wear.compose.material.RevealActionType.Companion Companion;
   }
 
-  public static final class RevealActionType.Companion {
+  @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public static final class RevealActionType.Companion {
     method @BytecodeOnly public int getNone-q4j9Tlc();
     method @BytecodeOnly public int getPrimaryAction-q4j9Tlc();
     method @BytecodeOnly public int getSecondaryAction-q4j9Tlc();
@@ -605,7 +605,7 @@ package androidx.wear.compose.material {
     field public static final androidx.wear.compose.material.RevealDirection.Companion Companion;
   }
 
-  public static final class RevealDirection.Companion {
+  @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public static final class RevealDirection.Companion {
     method @BytecodeOnly public int getBoth-idLvUIo();
     method @BytecodeOnly public int getRightToLeft-idLvUIo();
     property public androidx.wear.compose.material.RevealDirection Both;
@@ -644,7 +644,7 @@ package androidx.wear.compose.material {
     field public static final androidx.wear.compose.material.RevealValue.Companion Companion;
   }
 
-  public static final class RevealValue.Companion {
+  @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public static final class RevealValue.Companion {
     method @BytecodeOnly public int getCovered-ddmf4Cg();
     method @BytecodeOnly public int getLeftRevealed-ddmf4Cg();
     method @BytecodeOnly public int getLeftRevealing-ddmf4Cg();
@@ -1062,7 +1062,7 @@ package androidx.wear.compose.material {
     field public static final androidx.wear.compose.material.SwipeableState.Companion Companion;
   }
 
-  public static final class SwipeableState.Companion {
+  @SuppressCompatibility @androidx.wear.compose.material.ExperimentalWearMaterialApi public static final class SwipeableState.Companion {
     method public <T> androidx.compose.runtime.saveable.Saver<androidx.wear.compose.material.SwipeableState<T>,T> Saver(androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, kotlin.jvm.functions.Function1<? super T,java.lang.Boolean> confirmStateChange);
   }
 

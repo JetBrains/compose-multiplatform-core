@@ -18,9 +18,10 @@ package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity as RtSubspaceNodeEntity
+import androidx.xr.scenecore.spatial.core.SpatialSceneRuntime
+import com.android.extensions.xr.node.Node
 
 /**
  * Represents an entity that manages a subspace node.
@@ -50,23 +51,17 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
          * Creates a [SubspaceNodeEntity] from a [SubspaceNodeHolder] with a given [FloatSize3d].
          *
          * @param session The [Session].
-         * @param subspaceNodeHolder The [SubspaceNodeHolder] to create the [SubspaceNodeEntity]
-         *   from.
+         * @param the [Node] to create the [SubspaceNodeEntity] from.
          * @param size The initial [FloatSize3d] of the [SubspaceNodeEntity] in meters in unscaled
          *   local space.
          */
         @JvmStatic
-        public fun create(
-            session: Session,
-            subspaceNodeHolder: SubspaceNodeHolder<*>,
-            size: FloatSize3d,
-        ): SubspaceNodeEntity =
-            SubspaceNodeEntity(
-                session.renderingRuntime.createSubspaceNodeEntity(
-                    subspaceNodeHolder,
-                    size.toRtDimensions(),
-                ),
+        public fun create(session: Session, node: Node, size: FloatSize3d): SubspaceNodeEntity {
+            val sceneRuntime: SpatialSceneRuntime = session.sceneRuntime as SpatialSceneRuntime
+            return SubspaceNodeEntity(
+                sceneRuntime.createSubspaceNodeEntity(node, size.toRtDimensions()),
                 session.scene.entityManager,
             )
+        }
     }
 }

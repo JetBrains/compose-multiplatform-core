@@ -449,7 +449,7 @@ package androidx.compose.foundation.content {
     field public static final androidx.compose.foundation.content.TransferableContent.Source.Companion Companion;
   }
 
-  public static final class TransferableContent.Source.Companion {
+  @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public static final class TransferableContent.Source.Companion {
     method @BytecodeOnly public int getClipboard-kB6V9T0();
     method @BytecodeOnly public int getDragAndDrop-kB6V9T0();
     method @BytecodeOnly public int getKeyboard-kB6V9T0();

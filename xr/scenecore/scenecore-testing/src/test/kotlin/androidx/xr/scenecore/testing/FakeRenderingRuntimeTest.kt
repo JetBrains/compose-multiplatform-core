@@ -23,7 +23,6 @@ import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -435,18 +434,5 @@ class FakeRenderingRuntimeTest {
         assertThat(surfaceEntity.parent).isEqualTo(sceneRuntime.activitySpace)
 
         surfaceEntity.dispose()
-    }
-
-    @Test
-    fun createSubspaceNodeEntity_returnSubspaceNodeEntity() {
-        val subspaceNodeEntity =
-            renderingRuntime.createSubspaceNodeEntity(
-                fakeRenderingRuntime.createSubspaceNodeHolder(),
-                Dimensions(1.0f, 1.0f, 1.0f),
-            )
-
-        assertThat(subspaceNodeEntity).isNotNull()
-
-        subspaceNodeEntity.dispose()
     }
 }

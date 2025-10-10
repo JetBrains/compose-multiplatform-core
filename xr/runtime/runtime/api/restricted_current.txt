@@ -321,10 +321,6 @@ package androidx.xr.runtime {
     method public void initialize(java.util.List<? extends androidx.xr.runtime.internal.JxrRuntime> runtimes);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SubspaceNodeHolder<T> extends androidx.xr.runtime.TypeHolder<T> {
-    ctor public SubspaceNodeHolder(T subspaceNode, Class<? extends java.lang.Object?> type);
-  }
-
   public final class TrackingState {
     field public static final androidx.xr.runtime.TrackingState.Companion Companion;
     field public static final androidx.xr.runtime.TrackingState PAUSED;

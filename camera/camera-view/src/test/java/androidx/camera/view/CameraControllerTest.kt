@@ -71,7 +71,6 @@ import java.util.concurrent.TimeUnit
 import org.junit.Assert
 import org.junit.Assume.assumeTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -1023,7 +1022,6 @@ class CameraControllerTest {
             .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
     }
 
-    @Ignore // b/425365173
     @Test
     fun setTapToFocusAutoCancelDuration_stateNeverResetsToNotStarted_whenDurationIsZero() {
         completeCameraInitialization()

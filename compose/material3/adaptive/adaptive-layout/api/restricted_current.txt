@@ -6,12 +6,12 @@ package androidx.compose.material3.adaptive.layout {
     field public static final androidx.compose.material3.adaptive.layout.AdaptStrategy.Companion Companion;
   }
 
-  public static final class AdaptStrategy.Companion {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi public static final class AdaptStrategy.Companion {
     method @InaccessibleFromKotlin public androidx.compose.material3.adaptive.layout.AdaptStrategy getHide();
     property public androidx.compose.material3.adaptive.layout.AdaptStrategy Hide;
   }
 
-  @androidx.compose.runtime.Immutable public static final class AdaptStrategy.Levitate implements androidx.compose.material3.adaptive.layout.AdaptStrategy {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi @androidx.compose.runtime.Immutable public static final class AdaptStrategy.Levitate implements androidx.compose.material3.adaptive.layout.AdaptStrategy {
     ctor public AdaptStrategy.Levitate();
     ctor public AdaptStrategy.Levitate(optional androidx.compose.ui.Alignment alignment, optional kotlin.jvm.functions.Function0<kotlin.Unit>? scrim);
     ctor @BytecodeOnly public AdaptStrategy.Levitate(androidx.compose.ui.Alignment, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?);
@@ -21,7 +21,7 @@ package androidx.compose.material3.adaptive.layout {
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.compose.material3.adaptive.layout.AdaptStrategy onlyIfSinglePane(androidx.compose.material3.adaptive.layout.PaneScaffoldDirective, androidx.compose.runtime.Composer?, int);
   }
 
-  @androidx.compose.runtime.Immutable public static final class AdaptStrategy.Reflow implements androidx.compose.material3.adaptive.layout.AdaptStrategy {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi @androidx.compose.runtime.Immutable public static final class AdaptStrategy.Reflow implements androidx.compose.material3.adaptive.layout.AdaptStrategy {
     ctor public AdaptStrategy.Reflow(androidx.compose.material3.adaptive.layout.PaneScaffoldRole reflowUnder);
   }
 
@@ -130,19 +130,19 @@ package androidx.compose.material3.adaptive.layout {
     field public static final androidx.compose.material3.adaptive.layout.PaneAdaptedValue.Companion Companion;
   }
 
-  public static final class PaneAdaptedValue.Companion {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi public static final class PaneAdaptedValue.Companion {
     method @InaccessibleFromKotlin public androidx.compose.material3.adaptive.layout.PaneAdaptedValue getExpanded();
     method @InaccessibleFromKotlin public androidx.compose.material3.adaptive.layout.PaneAdaptedValue getHidden();
     property public androidx.compose.material3.adaptive.layout.PaneAdaptedValue Expanded;
     property public androidx.compose.material3.adaptive.layout.PaneAdaptedValue Hidden;
   }
 
-  @androidx.compose.runtime.Immutable public static final class PaneAdaptedValue.Levitated implements androidx.compose.material3.adaptive.layout.PaneAdaptedValue {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi @androidx.compose.runtime.Immutable public static final class PaneAdaptedValue.Levitated implements androidx.compose.material3.adaptive.layout.PaneAdaptedValue {
     ctor public PaneAdaptedValue.Levitated(androidx.compose.ui.Alignment alignment, optional kotlin.jvm.functions.Function0<kotlin.Unit>? scrim);
     ctor @BytecodeOnly public PaneAdaptedValue.Levitated(androidx.compose.ui.Alignment, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?);
   }
 
-  @androidx.compose.runtime.Immutable public static final class PaneAdaptedValue.Reflowed implements androidx.compose.material3.adaptive.layout.PaneAdaptedValue {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi @androidx.compose.runtime.Immutable public static final class PaneAdaptedValue.Reflowed implements androidx.compose.material3.adaptive.layout.PaneAdaptedValue {
     ctor public PaneAdaptedValue.Reflowed(androidx.compose.material3.adaptive.layout.PaneScaffoldRole reflowUnder);
   }
 
@@ -212,7 +212,7 @@ package androidx.compose.material3.adaptive.layout {
     field public static final androidx.compose.material3.adaptive.layout.PaneExpansionStateKey.Companion Companion;
   }
 
-  public static final class PaneExpansionStateKey.Companion {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi public static final class PaneExpansionStateKey.Companion {
     method @InaccessibleFromKotlin public androidx.compose.material3.adaptive.layout.PaneExpansionStateKey getDefault();
     property public androidx.compose.material3.adaptive.layout.PaneExpansionStateKey Default;
   }
@@ -257,7 +257,7 @@ package androidx.compose.material3.adaptive.layout {
     field public static final androidx.compose.material3.adaptive.layout.PaneMotion.Companion Companion;
   }
 
-  public static final class PaneMotion.Companion {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi public static final class PaneMotion.Companion {
     method @InaccessibleFromKotlin public androidx.compose.material3.adaptive.layout.PaneMotion getAnimateBounds();
     method @InaccessibleFromKotlin public androidx.compose.material3.adaptive.layout.PaneMotion getEnterAsModal();
     method @InaccessibleFromKotlin public androidx.compose.material3.adaptive.layout.PaneMotion getEnterFromLeft();
@@ -292,7 +292,7 @@ package androidx.compose.material3.adaptive.layout {
     field public static final androidx.compose.material3.adaptive.layout.PaneMotion.Type.Companion Companion;
   }
 
-  public static final class PaneMotion.Type.Companion {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi public static final class PaneMotion.Type.Companion {
     method @BytecodeOnly public int getEntering-havYhsk();
     method @BytecodeOnly public int getEnteringModal-havYhsk();
     method @BytecodeOnly public int getExiting-havYhsk();
@@ -487,7 +487,7 @@ package androidx.compose.material3.adaptive.layout {
     field public static final androidx.compose.material3.adaptive.layout.ThreePaneMotion.Companion Companion;
   }
 
-  public static final class ThreePaneMotion.Companion {
+  @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi public static final class ThreePaneMotion.Companion {
     method @InaccessibleFromKotlin public androidx.compose.material3.adaptive.layout.ThreePaneMotion getNoMotion();
     property public androidx.compose.material3.adaptive.layout.ThreePaneMotion NoMotion;
   }

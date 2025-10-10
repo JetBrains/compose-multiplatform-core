@@ -24,8 +24,9 @@ import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.SpaceValue;
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
-import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
 
+import com.android.extensions.xr.node.Node;
+import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.XrExtensions;
 
 import org.jspecify.annotations.NonNull;
@@ -40,50 +41,87 @@ import java.util.concurrent.ScheduledExecutorService;
  * underlying impress nodes like the [SurfaceEntityImpl], so it treats the subspace node as sibling
  * disjointed from scene graph and applies all transformations to it explicitly.
  */
-final class SubspaceNodeEntityImpl extends BaseRenderingEntity implements SubspaceNodeEntity {
-    private final SubspaceNodeFeature mFeature;
+final class SubspaceNodeEntityImpl extends AndroidXrEntity implements SubspaceNodeEntity {
+    private final Node mSubspaceNode;
+    private Dimensions mSize;
+    private Vector3 mInternalScale = Vector3.One;
 
     SubspaceNodeEntityImpl(
             Context context,
-            SubspaceNodeFeature feature,
             XrExtensions extensions,
+            Node subspaceNode,
             EntityManager entityManager,
             ScheduledExecutorService executor) {
-        super(context, feature, extensions, entityManager, executor);
-        mFeature = feature;
+        super(context, extensions.createNode(), extensions, entityManager, executor);
+        mSubspaceNode = subspaceNode;
     }
 
     @Override
     public void setPose(@NonNull Pose pose, @SpaceValue int relativeTo) {
         super.setPose(pose, relativeTo);
-        mFeature.setPose(pose);
+        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+            transaction
+                    .setPosition(
+                            mSubspaceNode,
+                            pose.getTranslation().getX(),
+                            pose.getTranslation().getY(),
+                            pose.getTranslation().getZ())
+                    .setOrientation(
+                            mSubspaceNode,
+                            pose.getRotation().getX(),
+                            pose.getRotation().getY(),
+                            pose.getRotation().getZ(),
+                            pose.getRotation().getW())
+                    .apply();
+        }
     }
 
     @Override
     public void setScale(@NonNull Vector3 scale, @SpaceValue int relativeTo) {
         super.setScale(scale, relativeTo);
-        mFeature.setScale(super.getScale(Space.ACTIVITY));
+        mInternalScale = super.getScale(Space.ACTIVITY);
+        Dimensions size =
+                new Dimensions(
+                        mSize.width * mInternalScale.getX(),
+                        mSize.height * mInternalScale.getY(),
+                        mSize.depth * mInternalScale.getZ());
+        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+            transaction.setScale(mSubspaceNode, size.width, size.height, size.depth).apply();
+        }
     }
 
     @Override
     public void setAlpha(float alpha, @SpaceValue int relativeTo) {
         super.setAlpha(alpha, relativeTo);
-        mFeature.setAlpha(alpha);
+        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+            transaction.setAlpha(mSubspaceNode, alpha).apply();
+        }
     }
 
     @Override
     public void setSize(@NonNull Dimensions size) {
-        mFeature.setSize(size);
+        mSize = size;
+        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+            transaction
+                    .setScale(
+                            mSubspaceNode,
+                            size.width * mInternalScale.getX(),
+                            size.height * mInternalScale.getY(),
+                            size.depth * mInternalScale.getZ())
+                    .apply();
+        }
     }
 
     @Override
     public @NonNull Dimensions getSize() {
-        return mFeature.getSize();
+        return mSize;
     }
 
     @Override
     public void setHidden(boolean hidden) {
         super.setHidden(hidden);
-        mFeature.setHidden(hidden);
+        try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
+            transaction.setVisibility(mSubspaceNode, !hidden).apply();
+        }
     }
 }

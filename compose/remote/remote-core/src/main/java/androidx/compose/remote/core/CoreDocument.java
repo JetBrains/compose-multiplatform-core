@@ -37,6 +37,7 @@ import androidx.compose.remote.core.operations.layout.ContainerEnd;
 import androidx.compose.remote.core.operations.layout.LayoutComponent;
 import androidx.compose.remote.core.operations.layout.LoopOperation;
 import androidx.compose.remote.core.operations.layout.RootLayoutComponent;
+import androidx.compose.remote.core.operations.layout.TouchOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentModifiers;
 import androidx.compose.remote.core.operations.layout.modifiers.ModifierOperation;
 import androidx.compose.remote.core.operations.utilities.IntMap;
@@ -859,6 +860,7 @@ public class CoreDocument implements Serializable {
     public void initFromBuffer(@NonNull RemoteComposeBuffer buffer) {
         mOperations = new ArrayList<Operation>();
         buffer.inflateFromBuffer(mOperations);
+        boolean hasTouchOperations = false;
         for (Operation op : mOperations) {
             if (op instanceof Header) {
                 // Make sure we parse the version at init time...
@@ -873,6 +875,9 @@ public class CoreDocument implements Serializable {
                 FloatExpression expression = (FloatExpression) op;
                 mFloatExpressions.put(expression.mId, expression);
             }
+            if (op instanceof TouchOperation) {
+                hasTouchOperations = true;
+            }
         }
         mBitmapMemory = 0;
         mOperations = inflateComponents(mOperations);
@@ -885,6 +890,7 @@ public class CoreDocument implements Serializable {
             }
         }
         if (mRootLayoutComponent != null) {
+            mRootLayoutComponent.setHasTouchListeners(hasTouchOperations);
             mRootLayoutComponent.assignIds(mLastId);
         }
     }

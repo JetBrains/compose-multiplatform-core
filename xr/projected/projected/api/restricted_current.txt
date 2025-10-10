@@ -10,14 +10,15 @@ package androidx.xr.projected {
     property public int sourceType;
   }
 
-  public final class ProjectedAudioManager {
-    method public static suspend Object? create(android.content.Context context, androidx.lifecycle.LifecycleOwner lifecycleOwner, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedAudioManager>);
+  public final class ProjectedAudioManager implements java.lang.AutoCloseable {
+    method public void close();
+    method public static suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedAudioManager>);
     method public java.util.List<androidx.xr.projected.ProjectedAudioConfig> getSupportedAudioCaptureConfigs();
     field public static final androidx.xr.projected.ProjectedAudioManager.Companion Companion;
   }
 
   public static final class ProjectedAudioManager.Companion {
-    method public suspend Object? create(android.content.Context context, androidx.lifecycle.LifecycleOwner lifecycleOwner, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedAudioManager>);
+    method public suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedAudioManager>);
   }
 
   public final class ProjectedContext {

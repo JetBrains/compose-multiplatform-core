@@ -161,7 +161,6 @@ package androidx.xr.arcore.openxr {
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Face? getUserFace();
     method public java.util.List<androidx.xr.arcore.runtime.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method public androidx.xr.arcore.runtime.Anchor loadAnchor(java.util.UUID uuid);
-    method public androidx.xr.arcore.runtime.Anchor loadAnchorFromNativePointer(long nativePointer);
     method public void unpersistAnchor(java.util.UUID uuid);
     method public void update(long xrTime);
     property public androidx.xr.arcore.openxr.OpenXrDevice arDevice;

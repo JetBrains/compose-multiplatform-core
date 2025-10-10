@@ -228,7 +228,7 @@ package androidx.xr.compose.subspace {
     field public static final androidx.xr.compose.subspace.BodyPart.Companion Companion;
   }
 
-  public static final class BodyPart.Companion {
+  @SuppressCompatibility @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi public static final class BodyPart.Companion {
     method @BytecodeOnly public int getHead-SDaINFc();
     property public androidx.xr.compose.subspace.BodyPart Head;
   }
@@ -257,7 +257,7 @@ package androidx.xr.compose.subspace {
     field public static final androidx.xr.compose.subspace.LockDimensions.Companion Companion;
   }
 
-  public static final class LockDimensions.Companion {
+  @SuppressCompatibility @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi public static final class LockDimensions.Companion {
     method @InaccessibleFromKotlin public androidx.xr.compose.subspace.LockDimensions getAll();
     property public androidx.xr.compose.subspace.LockDimensions All;
   }
@@ -269,7 +269,7 @@ package androidx.xr.compose.subspace {
     field public static final androidx.xr.compose.subspace.LockingBehavior.Companion Companion;
   }
 
-  public static final class LockingBehavior.Companion {
+  @SuppressCompatibility @androidx.xr.compose.spatial.ExperimentalUserSubspaceApi public static final class LockingBehavior.Companion {
     method public androidx.xr.compose.subspace.LockingBehavior lazy(optional @IntRange(from=100L) int durationMs);
     method public androidx.xr.compose.subspace.LockingBehavior static();
   }

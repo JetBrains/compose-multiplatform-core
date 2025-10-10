@@ -185,11 +185,6 @@ class ArCorePerceptionManagerTest {
     }
 
     @Test
-    fun loadAnchorFromNativePointer_throwsNotImplementedError() {
-        assertFailsWith<NotImplementedError> { underTest.loadAnchorFromNativePointer(0L) }
-    }
-
-    @Test
     fun unpersistAnchor_throwsNotImplementedError() {
         val uuid = UUID.randomUUID()
 

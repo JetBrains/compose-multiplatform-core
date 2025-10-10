@@ -413,20 +413,6 @@ class OpenXrPerceptionManagerTest {
     }
 
     @Test
-    fun loadAnchorFromNativePointer_returnsAnchorWithGivenNativePointer() =
-        initOpenXrManagerAndRunTest {
-            val anchor = underTest.loadAnchorFromNativePointer(123L) as OpenXrAnchor
-            assertThat(anchor.nativePointer).isEqualTo(123L)
-
-            // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time
-            // being they
-            // come from `kPose` defined in
-            // //third_party/arcore/androidx/native/openxr/openxr_stub.cc
-            assertThat(anchor.pose)
-                .isEqualTo(Pose(Vector3(0f, 0f, 2.0f), Quaternion(0f, 1.0f, 0f, 1.0f)))
-        }
-
-    @Test
     fun unpersistAnchor_doesNotThrowIllegalStateException() = initOpenXrManagerAndRunTest {
         underTest.unpersistAnchor(UUID.randomUUID())
     }

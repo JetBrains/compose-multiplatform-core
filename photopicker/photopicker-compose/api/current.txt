@@ -27,7 +27,7 @@ package androidx.photopicker.compose {
     field public static final androidx.photopicker.compose.AbstractEmbeddedPhotoPickerState.Companion Companion;
   }
 
-  public static final class AbstractEmbeddedPhotoPickerState.Companion {
+  @SuppressCompatibility @androidx.photopicker.compose.ExperimentalPhotoPickerComposeApi public static final class AbstractEmbeddedPhotoPickerState.Companion {
     method @RequiresExtension(extension=android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version=15) public android.widget.photopicker.EmbeddedPhotoPickerClient createEmbeddedPhotoPickerClient(kotlin.jvm.functions.Function1<? super android.widget.photopicker.EmbeddedPhotoPickerSession,kotlin.Unit> onSessionOpened, kotlin.jvm.functions.Function1<? super java.lang.Throwable,kotlin.Unit> onSessionError, kotlin.jvm.functions.Function1<? super java.util.List<? extends android.net.Uri>,kotlin.Unit> onUriPermissionGranted, kotlin.jvm.functions.Function1<? super java.util.List<? extends android.net.Uri>,kotlin.Unit> onUriPermissionRevoked, kotlin.jvm.functions.Function0<kotlin.Unit> onSelectionComplete);
   }
 

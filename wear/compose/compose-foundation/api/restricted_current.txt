@@ -363,7 +363,7 @@ package androidx.wear.compose.foundation {
     field @Deprecated public static final androidx.wear.compose.foundation.RevealActionType.Companion Companion;
   }
 
-  @Deprecated public static final class RevealActionType.Companion {
+  @Deprecated @SuppressCompatibility @androidx.wear.compose.foundation.ExperimentalWearFoundationApi public static final class RevealActionType.Companion {
     method @BytecodeOnly @Deprecated public int getNone-Bxv7xxc();
     method @BytecodeOnly @Deprecated public int getPrimaryAction-Bxv7xxc();
     method @BytecodeOnly @Deprecated public int getSecondaryAction-Bxv7xxc();
@@ -382,7 +382,7 @@ package androidx.wear.compose.foundation {
     field @Deprecated public static final androidx.wear.compose.foundation.RevealDirection.Companion Companion;
   }
 
-  @Deprecated public static final class RevealDirection.Companion {
+  @Deprecated @SuppressCompatibility @androidx.wear.compose.foundation.ExperimentalWearFoundationApi public static final class RevealDirection.Companion {
     method @BytecodeOnly @Deprecated public int getBoth-orZwqdU();
     method @BytecodeOnly @Deprecated public int getRightToLeft-orZwqdU();
     property @Deprecated public androidx.wear.compose.foundation.RevealDirection Both;
@@ -421,7 +421,7 @@ package androidx.wear.compose.foundation {
     field @Deprecated public static final androidx.wear.compose.foundation.RevealValue.Companion Companion;
   }
 
-  @Deprecated public static final class RevealValue.Companion {
+  @Deprecated @SuppressCompatibility @androidx.wear.compose.foundation.ExperimentalWearFoundationApi public static final class RevealValue.Companion {
     method @BytecodeOnly @Deprecated public int getCovered-EhNvi2Q();
     method @BytecodeOnly @Deprecated public int getLeftRevealed-EhNvi2Q();
     method @BytecodeOnly @Deprecated public int getLeftRevealing-EhNvi2Q();

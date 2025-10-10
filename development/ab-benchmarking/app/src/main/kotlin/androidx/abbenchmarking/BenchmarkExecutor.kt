@@ -72,6 +72,7 @@ internal fun runBenchmarkTest(
  *
  * @param outputPath The directory where the final aggregated CSV output will be stored.
  * @param gitRevision The name of the Git revision to check out and test.
+ * @param gitRevisionCommit The commit hash of the revision.
  * @param module The Gradle module path containing the benchmark test (e.g.,
  *   "compose:ui:ui-benchmark").
  * @param benchmarkTest The test to run, which can be a fully qualified class name or a specific
@@ -84,13 +85,16 @@ internal fun runBenchmarkTest(
 internal fun checkoutAndRunTest(
     outputPath: Path,
     gitRevision: String,
+    gitRevisionHash: String,
     module: String,
     benchmarkTest: String,
     iterationCount: Int,
     targetDeviceId: String?,
 ) {
-    if (!checkoutGitRevision(gitRevision)) {
-        throw RuntimeException("ERROR: Could not checkout revision '$gitRevision'. Aborting.")
+    if (!checkoutGitRevision(gitRevisionHash)) {
+        throw RuntimeException(
+            "ERROR: Could not checkout revision '$gitRevision' (commit $gitRevisionHash). Aborting."
+        )
     }
     runBenchmarkTest(module, benchmarkTest, iterationCount, targetDeviceId)
     // Now, discover the directory that was just created

@@ -19,12 +19,14 @@ package androidx.appfunctions.compiler.core
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 
 /** Represents a class annotated with [androidx.appfunctions.AppFunctionSerializableInterface]. */
-class AnnotatedAppFunctionSerializableInterface(private val classDeclaration: KSClassDeclaration) :
-    AnnotatedAppFunctionSerializable(classDeclaration) {
+class AnnotatedAppFunctionSerializableInterface(override val classDeclaration: KSClassDeclaration) :
+    AppFunctionSerializableType {
+
+    override val isDescribedByKdoc = false
 
     override fun validate(
         allowSerializableInterfaceTypes: Boolean
-    ): AnnotatedAppFunctionSerializable {
+    ): AnnotatedAppFunctionSerializableInterface {
         val validator = AppFunctionSerializableValidateHelper(this)
         validator.validateParameters(allowSerializableInterfaceTypes)
         return this

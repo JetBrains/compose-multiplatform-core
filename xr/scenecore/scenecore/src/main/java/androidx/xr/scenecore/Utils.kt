@@ -19,6 +19,7 @@ package androidx.xr.scenecore
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.xr.arcore.Plane
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
@@ -246,6 +247,26 @@ internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
     }
     return rtAnchorPlacementSet
 }
+
+/** Extension function that converts an ARCore [Plane.Type] to a Scene [PlaneOrientationValue] */
+internal fun Plane.Type.toSceneCoreOrientation(): @PlaneOrientationValue Int =
+    when (this) {
+        Plane.Type.HORIZONTAL_UPWARD_FACING -> PlaneOrientation.HORIZONTAL
+        Plane.Type.HORIZONTAL_DOWNWARD_FACING -> PlaneOrientation.HORIZONTAL
+        Plane.Type.VERTICAL -> PlaneOrientation.VERTICAL
+        else -> error("Unknown plane orientation: $this")
+    }
+
+/** Extension function that converts an ARCore [Plane.Label] to a Scene [PlaneSemanticTypeValue] */
+internal fun Plane.Label.toSceneCoreSemanticType(): @PlaneSemanticTypeValue Int =
+    when (this) {
+        Plane.Label.FLOOR -> PlaneSemanticType.FLOOR
+        Plane.Label.TABLE -> PlaneSemanticType.TABLE
+        Plane.Label.WALL -> PlaneSemanticType.WALL
+        Plane.Label.CEILING -> PlaneSemanticType.CEILING
+        Plane.Label.UNKNOWN -> PlaneSemanticType.ANY
+        else -> error("Unknown semantic type: $this")
+    }
 
 /** Extension function that converts a [Int] to [MoveEvent.MoveState]. */
 @MoveEvent.MoveState

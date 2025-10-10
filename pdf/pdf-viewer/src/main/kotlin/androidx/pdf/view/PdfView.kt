@@ -155,6 +155,34 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
     /**
+     * The number of pages displayed side-by-side in a single row.
+     *
+     * This property controls the layout mode:
+     * - [SINGLE_PAGE]: Displays one page per row (standard display).
+     * - [TWO_PAGE]: Displays two pages per row (like an open book).
+     */
+    @PagesPerRow
+    internal var pagesPerRow: Int = SINGLE_PAGE
+        set(value) {
+            if (value != SINGLE_PAGE && value != TWO_PAGE) {
+                throw IllegalArgumentException("Invalid pages per row")
+            }
+            if (field == value) return
+            field = value
+        }
+
+    /**
+     * The spacing between two horizontally adjacent pages in dp.
+     *
+     * Note: This value is only relevant when [pagesPerRow] is set to [TWO_PAGE].
+     */
+    internal var horizontalPageSpacing: Float =
+        context.getDimensions(R.dimen.horizontal_page_spacing)
+
+    /** The spacing between vertically adjacent pages in dp. */
+    internal var verticalPageSpacing: Float = context.getDimensions(R.dimen.vertical_page_spacing)
+
+    /**
      * Controls the vertical alignment of a page within the [PdfView].
      *
      * This attribute aligns a page within the view when the page's height is smaller than the
@@ -236,6 +264,15 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     fastScrollVerticalThumbMarginEnd,
                 )
         }
+        if (typedArray.hasValue(R.styleable.PdfView_horizontalPageSpacing)) {
+            horizontalPageSpacing =
+                typedArray
+                    .getDimensionPixelSize(
+                        R.styleable.PdfView_horizontalPageSpacing,
+                        horizontalPageSpacing.toInt(),
+                    )
+                    .toFloat()
+        }
         if (typedArray.hasValue(R.styleable.PdfView_isFormFillingEnabled)) {
             isFormFillingEnabled =
                 typedArray.getBoolean(R.styleable.PdfView_isFormFillingEnabled, false)
@@ -246,9 +283,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         if (typedArray.hasValue(R.styleable.PdfView_maxZoom)) {
             maxZoom = typedArray.getFloat(R.styleable.PdfView_maxZoom, maxZoom)
         }
+        if (typedArray.hasValue(R.styleable.PdfView_pagesPerRow)) {
+            pagesPerRow = typedArray.getInt(R.styleable.PdfView_pagesPerRow, SINGLE_PAGE)
+        }
         if (typedArray.hasValue(R.styleable.PdfView_verticalAlignment)) {
             verticalAlignment =
                 typedArray.getInt(R.styleable.PdfView_verticalAlignment, VERTICAL_ALIGNMENT_CENTER)
+        }
+        if (typedArray.hasValue(R.styleable.PdfView_verticalPageSpacing)) {
+            verticalPageSpacing =
+                typedArray
+                    .getDimensionPixelSize(
+                        R.styleable.PdfView_verticalPageSpacing,
+                        verticalPageSpacing.toInt(),
+                    )
+                    .toFloat()
         }
         typedArray.recycle()
     }
@@ -1364,7 +1413,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     localPdfDocument,
                     backgroundScope,
                     topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                    pageSpacingPx = context.getDimensions(R.dimen.page_spacing),
+                    pageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
                     paginationModel = requireNotNull(localStateToRestore.paginationModel),
                     pdfFormFillingState = requireNotNull(localStateToRestore.pdfFormFillingState),
                     errorFlow = errorFlow,
@@ -1680,7 +1729,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         localPdfDocument,
                         backgroundScope,
                         topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                        pageSpacingPx = context.getDimensions(R.dimen.page_spacing),
+                        pageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
                         errorFlow = errorFlow,
                         isFormFillingEnabled = isFormFillingEnabled,
                     )
@@ -2098,6 +2147,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     @IntDef(VERTICAL_ALIGNMENT_TOP, VERTICAL_ALIGNMENT_CENTER)
     public annotation class VerticalAlignment
 
+    /** Defines the allowed values for the number of pages displayed per row in the [PdfView]. */
+    @IntDef(SINGLE_PAGE, TWO_PAGE) internal annotation class PagesPerRow
+
     /** Adjusts the position of [PdfView] in response to gestures detected by [GestureTracker] */
     private inner class ZoomScrollGestureHandler : GestureTracker.GestureHandler() {
 
@@ -2415,6 +2467,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * e.g. settling on a final position following a fling gesture.
          */
         public const val GESTURE_STATE_SETTLING: Int = 2
+
+        /** Represents the configuration for displaying a single page per row (standard display). */
+        internal const val SINGLE_PAGE: Int = 1
+
+        /** Represents the configuration for displaying two pages per row (like an open book). */
+        internal const val TWO_PAGE: Int = 2
 
         /**
          * Vertically aligns the page to the top of the PdfView.

@@ -53,7 +53,7 @@ package androidx.window.area {
     field public static final androidx.window.area.WindowAreaCapability.Operation OPERATION_TRANSFER_ACTIVITY_TO_AREA;
   }
 
-  public static final class WindowAreaCapability.Operation.Companion {
+  @SuppressCompatibility @androidx.window.core.ExperimentalWindowApi public static final class WindowAreaCapability.Operation.Companion {
     property public androidx.window.area.WindowAreaCapability.Operation OPERATION_PRESENT_ON_AREA;
     property public androidx.window.area.WindowAreaCapability.Operation OPERATION_TRANSFER_ACTIVITY_TO_AREA;
   }
@@ -66,7 +66,7 @@ package androidx.window.area {
     field public static final androidx.window.area.WindowAreaCapability.Status WINDOW_AREA_STATUS_UNSUPPORTED;
   }
 
-  public static final class WindowAreaCapability.Status.Companion {
+  @SuppressCompatibility @androidx.window.core.ExperimentalWindowApi public static final class WindowAreaCapability.Status.Companion {
     property public androidx.window.area.WindowAreaCapability.Status WINDOW_AREA_STATUS_ACTIVE;
     property public androidx.window.area.WindowAreaCapability.Status WINDOW_AREA_STATUS_AVAILABLE;
     property public androidx.window.area.WindowAreaCapability.Status WINDOW_AREA_STATUS_UNAVAILABLE;
@@ -82,7 +82,7 @@ package androidx.window.area {
     field public static final androidx.window.area.WindowAreaController.Companion Companion;
   }
 
-  public static final class WindowAreaController.Companion {
+  @SuppressCompatibility @androidx.window.core.ExperimentalWindowApi public static final class WindowAreaController.Companion {
     method public androidx.window.area.WindowAreaController getOrCreate();
   }
 
@@ -103,7 +103,7 @@ package androidx.window.area {
     field public static final androidx.window.area.WindowAreaInfo.Type TYPE_REAR_FACING;
   }
 
-  public static final class WindowAreaInfo.Type.Companion {
+  @SuppressCompatibility @androidx.window.core.ExperimentalWindowApi public static final class WindowAreaInfo.Type.Companion {
     property public androidx.window.area.WindowAreaInfo.Type TYPE_REAR_FACING;
   }
 

@@ -118,10 +118,6 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
         anchorUuids.add(anchor.uuid!!)
     }
 
-    override fun loadAnchorFromNativePointer(nativePointer: Long): Anchor {
-        return FakeRuntimeAnchor(Pose(), this)
-    }
-
     override fun detachAnchor(anchor: Anchor) {
         anchors.remove(anchor)
         anchor.uuid?.let { anchorUuids.remove(it) }

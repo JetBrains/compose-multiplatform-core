@@ -254,7 +254,7 @@ package androidx.compose.foundation.layout {
     field @Deprecated public static final androidx.compose.foundation.layout.FlowRowOverflow.Companion Companion;
   }
 
-  @Deprecated public static final class FlowRowOverflow.Companion {
+  @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public static final class FlowRowOverflow.Companion {
     method @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public androidx.compose.foundation.layout.FlowRowOverflow expandIndicator(kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.FlowRowOverflowScope,kotlin.Unit> content);
     method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public androidx.compose.foundation.layout.FlowRowOverflow expandIndicator(kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.FlowRowOverflowScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @KotlinOnly @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi @androidx.compose.runtime.Composable public androidx.compose.foundation.layout.FlowRowOverflow expandOrCollapseIndicator(kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.FlowRowOverflowScope,kotlin.Unit> expandIndicator, kotlin.jvm.functions.Function1<androidx.compose.foundation.layout.FlowRowOverflowScope,kotlin.Unit> collapseIndicator, optional int minRowsToShowCollapse, optional androidx.compose.ui.unit.Dp minHeightToShowCollapse);

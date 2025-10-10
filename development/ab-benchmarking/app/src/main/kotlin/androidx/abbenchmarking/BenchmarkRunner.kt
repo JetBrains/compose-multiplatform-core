@@ -93,6 +93,8 @@ fun main(args: Array<String>) {
     parser.parse(args)
 
     // --- 2. Pre-flight Checks ---
+    val gitCommitHashA = resolveGitCommit(revA)
+    val gitCommitHashB = resolveGitCommit(revB)
     val repoRoot = getGitRoot()
     println("DEBUG: Found repository root at: ${repoRoot.absolutePath}")
     if (!isGitStatusClean()) {
@@ -135,24 +137,30 @@ fun main(args: Array<String>) {
     try {
         repeat(runCount) { i ->
             // Run tests on git rev A
-            println("\nRunning test ${i + 1}/$runCount on git rev '$revA'...")
+            println(
+                "\nRunning test ${i + 1}/$runCount on git rev '$revA' (commit $gitCommitHashA)..."
+            )
             checkoutAndRunTest(
-                outputPath,
-                revA,
-                module,
-                benchmarkTest,
-                iterationCount,
-                targetDeviceId,
+                outputPath = outputPath,
+                gitRevision = revA,
+                gitRevisionHash = gitCommitHashA,
+                module = module,
+                benchmarkTest = benchmarkTest,
+                iterationCount = iterationCount,
+                targetDeviceId = targetDeviceId,
             )
             // Run tests on git rev B
-            println("\nRunning test ${i + 1}/$runCount on git rev '$revB'...")
+            println(
+                "\nRunning test ${i + 1}/$runCount on git rev '$revB' (commit $gitCommitHashB)..."
+            )
             checkoutAndRunTest(
-                outputPath,
-                revB,
-                module,
-                benchmarkTest,
-                iterationCount,
-                targetDeviceId,
+                outputPath = outputPath,
+                gitRevision = revB,
+                gitRevisionHash = gitCommitHashB,
+                module = module,
+                benchmarkTest = benchmarkTest,
+                iterationCount = iterationCount,
+                targetDeviceId = targetDeviceId,
             )
         }
     } catch (e: Exception) {
@@ -194,8 +202,8 @@ fun main(args: Array<String>) {
     val metadata =
         Metadata(
             executionTimestamp = executionTimestamp,
-            revA = RevInfo(name = revA, commit = resolveGitCommit(revA)),
-            revB = RevInfo(name = revB, commit = resolveGitCommit(revB)),
+            revA = RevInfo(name = revA, commit = gitCommitHashA),
+            revB = RevInfo(name = revB, commit = gitCommitHashB),
             deviceInfo = deviceInfo,
             inputParameters = inputParameters,
         )

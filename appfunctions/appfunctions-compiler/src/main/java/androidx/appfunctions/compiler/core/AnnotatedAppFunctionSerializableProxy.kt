@@ -25,20 +25,21 @@ import com.squareup.kotlinpoet.ClassName
 /**
  * A class that represents a class annotated with @AppFunctionSerializableProxy.
  *
- * @param appFunctionSerializableProxyClass The class annotated with @AppFunctionSerializableProxy.
+ * @param classDeclaration The class annotated with @AppFunctionSerializableProxy.
  */
 data class AnnotatedAppFunctionSerializableProxy(
-    val appFunctionSerializableProxyClass: KSClassDeclaration
-) : AnnotatedAppFunctionSerializable(appFunctionSerializableProxyClass) {
+    override val classDeclaration: KSClassDeclaration
+) : AppFunctionSerializableType {
 
+    override val isDescribedByKdoc = false
     /** The type of the class that the proxy class is proxying. */
     val targetClassDeclaration: KSClassDeclaration by lazy {
-        (appFunctionSerializableProxyClass.annotations.findAnnotation(
+        (classDeclaration.annotations.findAnnotation(
                 IntrospectionHelper.AppFunctionSerializableProxyAnnotation.CLASS_NAME
             )
                 ?: throw ProcessingException(
                     "Class Must have @AppFunctionSerializableProxy annotation",
-                    appFunctionSerializableProxyClass,
+                    classDeclaration,
                 ))
             .requirePropertyValueOfType(
                 IntrospectionHelper.AppFunctionSerializableProxyAnnotation.PROPERTY_TARGET_CLASS,
@@ -61,7 +62,7 @@ data class AnnotatedAppFunctionSerializableProxy(
     // TODO(b/403199251): Clean up hack.
     val serializableReferenceType: KSTypeReference by lazy {
         checkNotNull(
-            appFunctionSerializableProxyClass.declarations
+            classDeclaration.declarations
                 .filterIsInstance<KSClassDeclaration>()
                 .filter { it.isCompanionObject }
                 .single()
@@ -80,7 +81,9 @@ data class AnnotatedAppFunctionSerializableProxy(
     override fun validate(
         allowSerializableInterfaceTypes: Boolean
     ): AnnotatedAppFunctionSerializableProxy {
-        super.validate(allowSerializableInterfaceTypes)
+        val validateHelper = AppFunctionSerializableValidateHelper(this)
+        validateHelper.validatePrimaryConstructor()
+        validateHelper.validateParameters(allowSerializableInterfaceTypes)
         validateProxyHasToTargetClassMethod()
         validateProxyHasFromTargetClassMethod()
         return this
@@ -89,22 +92,22 @@ data class AnnotatedAppFunctionSerializableProxy(
     /** The generated factory ClassName. */
     override val factoryClassName: ClassName by lazy {
         ClassName(
-            originalClassName.packageName,
-            "\$${targetClassDeclaration.getJvmClassName()}Factory",
+            appFunctionSerializableTypeClassDeclaration.originalClassName.packageName,
+            "$${targetClassDeclaration.getJvmClassName()}Factory",
         )
     }
 
     /** Validates that the proxy class has a method that returns an instance of the target class. */
     private fun validateProxyHasToTargetClassMethod() {
         val toTargetClassNameFunctionList: List<KSFunctionDeclaration> =
-            appFunctionSerializableProxyClass
+            classDeclaration
                 .getAllFunctions()
                 .filter { it.simpleName.asString() == toTargetClassMethodName }
                 .toList()
         if (toTargetClassNameFunctionList.size != 1) {
             throw ProcessingException(
                 "Class must have exactly one member function: $toTargetClassMethodName",
-                appFunctionSerializableProxyClass,
+                classDeclaration,
             )
         }
         val toTargetClassNameFunction = toTargetClassNameFunctionList.first()
@@ -119,7 +122,7 @@ data class AnnotatedAppFunctionSerializableProxy(
         ) {
             throw ProcessingException(
                 "Function $toTargetClassMethodName should return an instance of target class",
-                appFunctionSerializableProxyClass,
+                classDeclaration,
             )
         }
     }
@@ -128,7 +131,7 @@ data class AnnotatedAppFunctionSerializableProxy(
     private fun validateProxyHasFromTargetClassMethod() {
         val targetClassName = checkNotNull(targetClassDeclaration.simpleName).asString()
         val targetCompanionClass =
-            appFunctionSerializableProxyClass.declarations
+            classDeclaration.declarations
                 .filterIsInstance<KSClassDeclaration>()
                 .filter { it.isCompanionObject }
                 .single()
@@ -142,7 +145,7 @@ data class AnnotatedAppFunctionSerializableProxy(
             throw ProcessingException(
                 "Companion Class must have exactly one member function: " +
                     fromTargetClassMethodName,
-                appFunctionSerializableProxyClass,
+                classDeclaration,
             )
         }
         val fromTargetClassNameFunction = fromTargetClassNameFunctionList.first()
@@ -154,7 +157,7 @@ data class AnnotatedAppFunctionSerializableProxy(
             throw ProcessingException(
                 "Function $fromTargetClassMethodName should have one parameter of type " +
                     targetClassName,
-                appFunctionSerializableProxyClass,
+                classDeclaration,
             )
         }
         val returnTypeClassDeclaration =
@@ -162,11 +165,11 @@ data class AnnotatedAppFunctionSerializableProxy(
                 as KSClassDeclaration
         if (
             checkNotNull(returnTypeClassDeclaration.qualifiedName).asString() !=
-                checkNotNull(appFunctionSerializableProxyClass.qualifiedName).asString()
+                checkNotNull(classDeclaration.qualifiedName).asString()
         ) {
             throw ProcessingException(
                 "Function $fromTargetClassMethodName should return an instance of " +
-                    "this serializable class (${checkNotNull(appFunctionSerializableProxyClass
+                    "this serializable class (${checkNotNull(classDeclaration
                         .qualifiedName).asString()}). Instead, it returns ${checkNotNull(
                             returnTypeClassDeclaration.qualifiedName).asString()}",
                 fromTargetClassNameFunction.returnType,

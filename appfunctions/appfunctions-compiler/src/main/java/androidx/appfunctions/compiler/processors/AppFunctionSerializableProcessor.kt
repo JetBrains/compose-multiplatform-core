@@ -123,7 +123,7 @@ class AppFunctionSerializableProcessor(
                 )
             }
             return globalResolvedAnnotatedSerializableProxies.resolvedAnnotatedSerializableProxies
-                .map { it.appFunctionSerializableProxyClass }
+                .map { it.classDeclaration }
         } catch (e: ProcessingException) {
             logger.logException(e)
         }
@@ -137,7 +137,7 @@ class AppFunctionSerializableProcessor(
     ) {
         val superInterfaceClass =
             AppFunctionSerializableFactoryClass.CLASS_NAME.parameterizedBy(
-                listOf(annotatedClass.typeName)
+                listOf(annotatedClass.appFunctionSerializableTypeClassDeclaration.typeName)
             )
 
         val factoryCodeBuilder =
@@ -149,7 +149,8 @@ class AppFunctionSerializableProcessor(
         val generatedFactoryClassName = annotatedClass.factoryClassName.simpleName
         val fileSpec =
             FileSpec.builder(
-                    annotatedClass.originalClassName.packageName,
+                    annotatedClass.appFunctionSerializableTypeClassDeclaration.originalClassName
+                        .packageName,
                     generatedFactoryClassName,
                 )
                 .addType(
@@ -158,12 +159,22 @@ class AppFunctionSerializableProcessor(
                         .addAnnotation(AppFunctionCompiler.GENERATED_ANNOTATION)
                         .addSuperinterface(superInterfaceClass)
                         .apply {
-                            if (annotatedClass.modifiers.contains(Modifier.INTERNAL)) {
+                            if (
+                                annotatedClass.appFunctionSerializableTypeClassDeclaration.modifiers
+                                    .contains(Modifier.INTERNAL)
+                            ) {
                                 addModifiers(KModifier.INTERNAL)
                             }
 
-                            if (annotatedClass.typeParameters.isNotEmpty()) {
-                                setGenericPrimaryConstructor(annotatedClass.typeParameters)
+                            if (
+                                annotatedClass.appFunctionSerializableTypeClassDeclaration
+                                    .typeParameters
+                                    .isNotEmpty()
+                            ) {
+                                setGenericPrimaryConstructor(
+                                    annotatedClass.appFunctionSerializableTypeClassDeclaration
+                                        .typeParameters
+                                )
                             }
                         }
                         .addFunction(
@@ -181,7 +192,8 @@ class AppFunctionSerializableProcessor(
                     aggregating = true,
                     *annotatedClass.getSerializableSourceFiles().toTypedArray(),
                 ),
-                annotatedClass.originalClassName.packageName,
+                annotatedClass.appFunctionSerializableTypeClassDeclaration.originalClassName
+                    .packageName,
                 generatedFactoryClassName,
             )
             .bufferedWriter()
@@ -253,7 +265,9 @@ class AppFunctionSerializableProcessor(
         )
         val fileSpec =
             FileSpec.builder(
-                    annotatedProxyClass.originalClassName.packageName,
+                    annotatedProxyClass.appFunctionSerializableTypeClassDeclaration
+                        .originalClassName
+                        .packageName,
                     generatedSerializableProxyFactoryClassName,
                 )
                 .addType(serializableProxyClassBuilder.build())
@@ -264,7 +278,8 @@ class AppFunctionSerializableProcessor(
                     aggregating = true,
                     *annotatedProxyClass.getSerializableSourceFiles().toTypedArray(),
                 ),
-                annotatedProxyClass.originalClassName.packageName,
+                annotatedProxyClass.appFunctionSerializableTypeClassDeclaration.originalClassName
+                    .packageName,
                 generatedSerializableProxyFactoryClassName,
             )
             .bufferedWriter()
@@ -284,7 +299,7 @@ class AppFunctionSerializableProcessor(
                     .build()
             )
             .addCode(factoryCodeBuilder.appendFromAppFunctionDataMethodBody())
-            .returns(annotatedClass.typeName)
+            .returns(annotatedClass.appFunctionSerializableTypeClassDeclaration.typeName)
             .build()
     }
 
@@ -314,7 +329,10 @@ class AppFunctionSerializableProcessor(
             )
             .addModifiers(KModifier.OVERRIDE)
             .addParameter(
-                ParameterSpec.builder(APP_FUNCTION_SERIALIZABLE_PARAM_NAME, annotatedClass.typeName)
+                ParameterSpec.builder(
+                        APP_FUNCTION_SERIALIZABLE_PARAM_NAME,
+                        annotatedClass.appFunctionSerializableTypeClassDeclaration.typeName,
+                    )
                     .build()
             )
             .addCode(factoryCodeBuilder.appendToAppFunctionDataMethodBody())

@@ -83,17 +83,17 @@ package androidx.benchmark {
   @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public abstract sealed class ProfilerConfig {
   }
 
-  public static final class ProfilerConfig.MethodTracing extends androidx.benchmark.ProfilerConfig {
+  @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public static final class ProfilerConfig.MethodTracing extends androidx.benchmark.ProfilerConfig {
     ctor public ProfilerConfig.MethodTracing();
     field public static final boolean AFFECTS_MEASUREMENTS_ON_THIS_DEVICE;
     field public static final androidx.benchmark.ProfilerConfig.MethodTracing.Companion Companion;
   }
 
-  public static final class ProfilerConfig.MethodTracing.Companion {
+  @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public static final class ProfilerConfig.MethodTracing.Companion {
     property public boolean AFFECTS_MEASUREMENTS_ON_THIS_DEVICE;
   }
 
-  public static final class ProfilerConfig.StackSampling extends androidx.benchmark.ProfilerConfig {
+  @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public static final class ProfilerConfig.StackSampling extends androidx.benchmark.ProfilerConfig {
     ctor public ProfilerConfig.StackSampling();
   }
 
@@ -122,13 +122,13 @@ package androidx.benchmark.perfetto {
   @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public abstract sealed class PerfettoConfig {
   }
 
-  public static final class PerfettoConfig.Binary extends androidx.benchmark.perfetto.PerfettoConfig {
+  @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static final class PerfettoConfig.Binary extends androidx.benchmark.perfetto.PerfettoConfig {
     ctor public PerfettoConfig.Binary(byte[] bytes);
     method @InaccessibleFromKotlin public byte[] getBytes();
     property public byte[] bytes;
   }
 
-  public static final class PerfettoConfig.Text extends androidx.benchmark.perfetto.PerfettoConfig {
+  @SuppressCompatibility @androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi public static final class PerfettoConfig.Text extends androidx.benchmark.perfetto.PerfettoConfig {
     ctor public PerfettoConfig.Text(String text);
     method @InaccessibleFromKotlin public String getText();
     property public String text;

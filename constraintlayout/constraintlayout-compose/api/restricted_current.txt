@@ -7,7 +7,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.Arc.Companion Companion;
   }
 
-  public static final class Arc.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class Arc.Companion {
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.Arc getAbove();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.Arc getBelow();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.Arc getFlip();
@@ -394,7 +394,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.CurveFit.Companion Companion;
   }
 
-  public static final class CurveFit.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class CurveFit.Companion {
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.CurveFit getLinear();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.CurveFit getSpline();
     property public androidx.constraintlayout.compose.CurveFit Linear;
@@ -471,7 +471,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.Easing.Companion Companion;
   }
 
-  public static final class Easing.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class Easing.Companion {
     method public androidx.constraintlayout.compose.Easing cubic(float x1, float y1, float x2, float y2);
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.Easing getAccelerate();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.Easing getAnticipate();
@@ -879,7 +879,7 @@ package androidx.constraintlayout.compose {
     method public androidx.compose.ui.Modifier onStartEndBoundsChanged(androidx.compose.ui.Modifier, Object layoutId, kotlin.jvm.functions.Function2<? super androidx.compose.ui.geometry.Rect,? super androidx.compose.ui.geometry.Rect,kotlin.Unit> onBoundsChanged);
   }
 
-  public final class MotionLayoutScope.CustomProperties {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public final class MotionLayoutScope.CustomProperties {
     method @KotlinOnly public androidx.compose.ui.graphics.Color color(String name);
     method @BytecodeOnly public long color-vNxB06k(String);
     method @KotlinOnly public androidx.compose.ui.unit.Dp distance(String name);
@@ -890,7 +890,7 @@ package androidx.constraintlayout.compose {
     method public int int(String name);
   }
 
-  public final class MotionLayoutScope.MotionProperties {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public final class MotionLayoutScope.MotionProperties {
     method @KotlinOnly public androidx.compose.ui.graphics.Color color(String name);
     method @BytecodeOnly public long color-vNxB06k(String);
     method @KotlinOnly public androidx.compose.ui.unit.Dp distance(String name);
@@ -942,7 +942,7 @@ package androidx.constraintlayout.compose {
     property public float androidx.constraintlayout.compose.ConstrainScope.staggeredWeight;
   }
 
-  public final class MotionSceneScope.ConstrainedLayoutReferences {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public final class MotionSceneScope.ConstrainedLayoutReferences {
     method public operator androidx.constraintlayout.compose.ConstrainedLayoutReference component1();
     method public operator androidx.constraintlayout.compose.ConstrainedLayoutReference component10();
     method public operator androidx.constraintlayout.compose.ConstrainedLayoutReference component11();
@@ -998,7 +998,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.RelativePosition.Companion Companion;
   }
 
-  public static final class RelativePosition.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class RelativePosition.Companion {
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.RelativePosition getDelta();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.RelativePosition getParent();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.RelativePosition getPath();
@@ -1037,7 +1037,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.SpringBoundary.Companion Companion;
   }
 
-  public static final class SpringBoundary.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class SpringBoundary.Companion {
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SpringBoundary getBounceBoth();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SpringBoundary getBounceEnd();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SpringBoundary getBounceStart();
@@ -1066,7 +1066,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.SwipeDirection.Companion Companion;
   }
 
-  public static final class SwipeDirection.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class SwipeDirection.Companion {
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeDirection getClockwise();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeDirection getCounterclockwise();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeDirection getDown();
@@ -1091,7 +1091,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.SwipeMode.Companion Companion;
   }
 
-  public static final class SwipeMode.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class SwipeMode.Companion {
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeMode getSpring();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeMode getVelocity();
     method public androidx.constraintlayout.compose.SwipeMode spring(optional float mass, optional float stiffness, optional float damping, optional float threshold, optional androidx.constraintlayout.compose.SpringBoundary boundary);
@@ -1106,7 +1106,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.SwipeSide.Companion Companion;
   }
 
-  public static final class SwipeSide.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class SwipeSide.Companion {
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeSide getBottom();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeSide getEnd();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeSide getLeft();
@@ -1129,7 +1129,7 @@ package androidx.constraintlayout.compose {
     field public static final androidx.constraintlayout.compose.SwipeTouchUp.Companion Companion;
   }
 
-  public static final class SwipeTouchUp.Companion {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public static final class SwipeTouchUp.Companion {
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeTouchUp getAutoComplete();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeTouchUp getDecelerate();
     method @InaccessibleFromKotlin public androidx.constraintlayout.compose.SwipeTouchUp getNeverCompleteEnd();

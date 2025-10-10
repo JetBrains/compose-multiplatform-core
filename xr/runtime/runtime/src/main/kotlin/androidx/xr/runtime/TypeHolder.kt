@@ -77,14 +77,6 @@ public sealed class TypeHolder<T>(public val value: T, public val type: Class<*>
 public class NodeHolder<T>(node: T, type: Class<*>) : TypeHolder<T>(node, type)
 
 /**
- * SubspaceNodeHolder is used to decouple the dependency to rendering runtime. Pass the rendering
- * runtime object to rendering runtime through the JXR SDK with SubspaceNodeHolder.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SubspaceNodeHolder<T>(subspaceNode: T, type: Class<*>) :
-    TypeHolder<T>(subspaceNode, type)
-
-/**
  * SpatialStateHolder is used to decouple the dependency to rendering runtime. Pass the rendering
  * runtime SpatialState to rendering runtime through the JXR SDK with SpatialStateHolder.
  */

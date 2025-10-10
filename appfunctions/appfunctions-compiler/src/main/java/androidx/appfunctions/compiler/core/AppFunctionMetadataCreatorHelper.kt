@@ -399,7 +399,7 @@ class AppFunctionMetadataCreatorHelper(
      */
     // TODO: Document traversal rules.
     private fun addSerializableTypeMetadataToSharedDataTypeMap(
-        appFunctionSerializableType: AnnotatedAppFunctionSerializable,
+        appFunctionSerializableType: AppFunctionSerializableType,
         unvisitedSerializableProperties: MutableMap<String, AppFunctionPropertyDeclaration>,
         sharedDataTypeMap: MutableMap<String, AppFunctionDataTypeMetadata>,
         seenDataTypeQualifiers: MutableSet<String>,
@@ -679,7 +679,7 @@ class AppFunctionMetadataCreatorHelper(
     private fun getAnnotatedAppFunctionSerializable(
         appFunctionTypeReference: AppFunctionTypeReference,
         allowSerializableInterfaceTypes: Boolean,
-    ): AnnotatedAppFunctionSerializable {
+    ): AppFunctionSerializableType {
         val appFunctionSerializableClassDeclaration =
             appFunctionTypeReference.selfOrItemTypeReference.resolve().declaration
                 as KSClassDeclaration

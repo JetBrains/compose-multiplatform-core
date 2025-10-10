@@ -51,7 +51,4 @@ public interface RenderingEntityFactory {
         pose: Pose,
         parentEntity: Entity,
     ): SurfaceEntity
-
-    /** A factory function to create a SubspaceNodeEntity. */
-    public fun createSubspaceNodeEntity(feature: SubspaceNodeFeature): SubspaceNodeEntity
 }

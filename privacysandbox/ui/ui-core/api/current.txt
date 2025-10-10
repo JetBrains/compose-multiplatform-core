@@ -10,7 +10,7 @@ package androidx.privacysandbox.ui.core {
     method public suspend Object? updateDelegate(android.os.Bundle delegate, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
-  public static interface DelegatingSandboxedUiAdapter.DelegateChangeListener {
+  @SuppressCompatibility @androidx.privacysandbox.ui.core.ExperimentalFeatures.DelegatingAdapterApi public static interface DelegatingSandboxedUiAdapter.DelegateChangeListener {
     method public default suspend Object? onDelegateChanged(android.os.Bundle delegate, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
@@ -119,11 +119,11 @@ package androidx.privacysandbox.ui.core {
     method public void openSession(java.util.concurrent.Executor clientExecutor, androidx.privacysandbox.ui.core.SharedUiAdapter.SessionClient client);
   }
 
-  public static interface SharedUiAdapter.Session extends java.lang.AutoCloseable {
+  @SuppressCompatibility @androidx.privacysandbox.ui.core.ExperimentalFeatures.SharedUiPresentationApi public static interface SharedUiAdapter.Session extends java.lang.AutoCloseable {
     method public void close();
   }
 
-  public static interface SharedUiAdapter.SessionClient {
+  @SuppressCompatibility @androidx.privacysandbox.ui.core.ExperimentalFeatures.SharedUiPresentationApi public static interface SharedUiAdapter.SessionClient {
     method public void onSessionError(Throwable throwable);
     method public void onSessionOpened(androidx.privacysandbox.ui.core.SharedUiAdapter.Session session);
   }

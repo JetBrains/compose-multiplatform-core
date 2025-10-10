@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 
 import android.app.Activity;
 
-import androidx.xr.runtime.SubspaceNodeHolder;
 import androidx.xr.runtime.math.FloatSize2d;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
@@ -379,18 +378,6 @@ public class SpatialRenderingRuntimeTest {
                                 .filter(node -> node.getMaterialOverride() != null)
                                 .toArray())
                 .isEmpty();
-    }
-
-    @Test
-    public void createSubspaceNodeEntity_returnSubspaceNodeEntity() {
-        Dimensions size = new Dimensions(1.0f, 2.0f, 3.0f);
-        Node node = mXrExtensions.createNode();
-        SubspaceNode subspaceNode = new SubspaceNode(SUBSPACE_ID + 1, node);
-        SubspaceNodeHolder<?> holder = new SubspaceNodeHolder<>(subspaceNode, SubspaceNode.class);
-        SubspaceNodeEntity entity = mRenderingRuntime.createSubspaceNodeEntity(holder, size);
-
-        assertThat(entity).isNotNull();
-        assertThat(entity.getSize()).isEqualTo(size);
     }
 
     @Test

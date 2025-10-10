@@ -34,7 +34,6 @@ plugins {
 }
 
 android {
-    compileSdk = 35
     defaultConfig {
         minSdk = 27
         targetSdk = 35

@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore
 
+import androidx.xr.arcore.Plane
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Matrix4
@@ -692,6 +693,46 @@ class UtilsTest {
         val rtPlacementSet = emptySet<AnchorPlacement>().toRtAnchorPlacement(mockRuntime)
 
         assertThat(rtPlacementSet).isEmpty()
+    }
+
+    @Test
+    fun planeTypeToSceneCoreOrientation_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        Plane.Type.HORIZONTAL_UPWARD_FACING,
+                        Plane.Type.HORIZONTAL_DOWNWARD_FACING,
+                        Plane.Type.VERTICAL,
+                    )
+                    .map { it.toSceneCoreOrientation() }
+            )
+            .containsExactly(
+                PlaneOrientation.HORIZONTAL,
+                PlaneOrientation.HORIZONTAL,
+                PlaneOrientation.VERTICAL,
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun planeLabelToSceneCoreSemanticType_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        Plane.Label.FLOOR,
+                        Plane.Label.TABLE,
+                        Plane.Label.WALL,
+                        Plane.Label.CEILING,
+                        Plane.Label.UNKNOWN,
+                    )
+                    .map { it.toSceneCoreSemanticType() }
+            )
+            .containsExactly(
+                PlaneSemanticType.FLOOR,
+                PlaneSemanticType.TABLE,
+                PlaneSemanticType.WALL,
+                PlaneSemanticType.CEILING,
+                PlaneSemanticType.ANY,
+            )
+            .inOrder()
     }
 
     @Test

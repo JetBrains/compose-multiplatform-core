@@ -87,8 +87,7 @@ class MovableComponentTest {
         whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
         whenever(mockSceneRuntime.createGroupEntity(any(), any(), any()))
             .thenReturn(mockGroupEntity)
-        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
-            .thenReturn(mockAnchorEntity)
+        whenever(mockSceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntity)
         whenever(mockAnchorEntity.state).thenReturn(RtAnchorEntity.State.UNANCHORED)
         session =
             Session(

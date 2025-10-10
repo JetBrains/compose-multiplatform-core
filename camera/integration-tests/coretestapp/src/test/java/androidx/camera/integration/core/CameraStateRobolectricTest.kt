@@ -43,6 +43,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
@@ -176,6 +177,7 @@ class CameraStateRobolectricTest(private val config: TestConfig) {
         ShadowCameraBridge.agent = null
     }
 
+    @Ignore // b/446723558
     @Test
     @LooperMode(LooperMode.Mode.INSTRUMENTATION_TEST)
     fun cameraStateTransitionsToCorrectError_whenOpenFails() {

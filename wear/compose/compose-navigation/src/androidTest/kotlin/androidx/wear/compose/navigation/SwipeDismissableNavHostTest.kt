@@ -65,7 +65,6 @@ import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.testing.TestNavHostController
-import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CompactChip
@@ -99,21 +98,19 @@ class SwipeDismissableNavHostTest {
     }
 
     @Test
-    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun navigates_back_to_previous_level_after_swipe() {
 
         rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 
         // Click to move to next destination then swipe to dismiss.
         rule.onNodeWithText(START).performClick()
-        rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
+        rule.swipeRight()
 
         // Should now display "start".
         rule.onNodeWithText(START).assertExists()
     }
 
     @Test
-    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun does_not_navigate_back_to_previous_level_when_swipe_disabled() {
         rule.setContentWithBackPressedDispatcher {
             SwipeDismissWithNavigation(userSwipeEnabled = false)
@@ -121,7 +118,7 @@ class SwipeDismissableNavHostTest {
 
         // Click to move to next destination then swipe to dismiss.
         rule.onNodeWithText(START).performClick()
-        rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
+        rule.swipeRight()
 
         // Should still display "next".
         rule.onNodeWithText(NEXT).assertExists()
@@ -149,7 +146,6 @@ class SwipeDismissableNavHostTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 36)
     fun navigates_back_to_previous_level_with_back_button_previous_state_destroyed() {
         lateinit var navController: NavHostController
 
@@ -184,7 +180,6 @@ class SwipeDismissableNavHostTest {
 
     @ExperimentalTestApi
     @Test
-    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun displays_previous_screen_during_swipe_gesture() {
         rule.setContentWithBackPressedDispatcher {
             WithTouchSlop(0f) { SwipeDismissWithNavigation() }
@@ -193,52 +188,7 @@ class SwipeDismissableNavHostTest {
         // Click to move to next destination.
         rule.onNodeWithText(START).performClick()
         // Click and drag to begin a swipe gesture, but do not release the finger.
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .performTouchInput({
-                down(Offset(x = 0f, y = height / 2f))
-                moveTo(Offset(x = width / 4f, y = height / 2f))
-            })
-
-        // As the finger is still 'down', the background should be visible.
-        rule.onNodeWithText(START).assertExists()
-        // Assert that the foreground screen still holds the focus
-        // Child is the one which has items and it needs to hold the focus to perform scrolling.
-        rule.onNodeWithTag(TEST_TAG_NEXT).onChild().assertIsFocused()
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 36)
-    fun does_not_navigate_back_to_previous_level_after_swipe_api_36() {
-
-        rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
-
-        // Click to move to next destination then swipe to dismiss.
-        rule.onNodeWithText(START).performClick()
-        rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
-
-        // Should not display "start".
-        rule.onNodeWithText(START).assertDoesNotExist()
-    }
-
-    @ExperimentalTestApi
-    @Test
-    @SdkSuppress(minSdkVersion = 36)
-    fun displays_previous_screen_during_predictive_back_api_36() {
-
-        rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
-
-        // Click to move to next destination.
-        rule.onNodeWithText(START).performClick()
-        // Click and drag to begin a back event gesture, but do not release the finger.
-        rule.runOnIdle {
-            backPressedDispatcher.dispatchOnBackStarted(
-                BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
-            )
-            backPressedDispatcher.dispatchOnBackProgressed(
-                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
-            )
-        }
+        rule.dragRight()
 
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
@@ -287,7 +237,7 @@ class SwipeDismissableNavHostTest {
 
         rule.onNodeWithText("Off").performClick()
         rule.onNodeWithText("Go").performClick()
-        goBack()
+        rule.swipeRight()
         rule.onNodeWithText("On").assertExists()
     }
 
@@ -352,10 +302,10 @@ class SwipeDismissableNavHostTest {
         rule.onNodeWithText("Jump").performClick()
         rule.waitForIdle()
         rule.onNodeWithText("Off").assertExists()
-        goBack()
+        rule.swipeRight()
         // Next screen should still display the incremented counter.
         rule.onNodeWithText("1").assertExists()
-        goBack()
+        rule.swipeRight()
         // Start screen should still display 'On'
         rule.waitForIdle()
         rule.onNodeWithText("On").assertExists()
@@ -449,7 +399,7 @@ class SwipeDismissableNavHostTest {
 
         // Click to move to next destination then swipe back.
         rule.onNodeWithText(START).performClick()
-        rule.onNodeWithTag(TEST_TAG).performTouchInput({ swipeRight() })
+        rule.swipeRight()
 
         rule.runOnIdle {
             assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
@@ -554,13 +504,48 @@ class SwipeDismissableNavHostTest {
     }
 
     /**
-     * Depending on API level, either swipes right on the view with TEST_TAG, or presses back button
+     * Depending on API level, either swipes right on the view with TEST_TAG, or emulates
+     * system-level swipe using backPressedDispatcher
      */
-    private fun goBack() {
+    private fun ComposeContentTestRule.swipeRight() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            rule.runOnIdle { backPressedDispatcher.onBackPressed() }
+            runOnIdle {
+                backPressedDispatcher.dispatchOnBackStarted(
+                    BackEventCompat(0.1f, 0.1f, 0.1f, BackEvent.EDGE_LEFT)
+                )
+                backPressedDispatcher.dispatchOnBackProgressed(
+                    BackEventCompat(0.1f, 0.1f, 0.8f, BackEvent.EDGE_LEFT)
+                )
+                backPressedDispatcher.onBackPressed()
+            }
         } else {
-            rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
+            onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
+        }
+    }
+
+    /**
+     * Dragss without releasing the finger.
+     *
+     * Depending on API level, either drags right on the view with TEST_TAG, or emulates
+     * system-level drag using backPressedDispatcher
+     */
+    private fun ComposeContentTestRule.dragRight() {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            runOnIdle {
+                backPressedDispatcher.dispatchOnBackStarted(
+                    BackEventCompat(0.1f, 0.1f, 0.1f, BackEvent.EDGE_LEFT)
+                )
+                backPressedDispatcher.dispatchOnBackProgressed(
+                    BackEventCompat(0.1f, 0.1f, 0.8f, BackEvent.EDGE_LEFT)
+                )
+            }
+        } else {
+            rule
+                .onNodeWithTag(TEST_TAG)
+                .performTouchInput({
+                    down(Offset(x = 0f, y = height / 2f))
+                    moveTo(Offset(x = width / 4f, y = height / 2f))
+                })
         }
     }
 

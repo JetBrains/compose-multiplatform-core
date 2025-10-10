@@ -176,7 +176,7 @@ package androidx.appsearch.builtintypes {
     field public static final int APPLICATION_TYPE_PRODUCER = 0; // 0x0
   }
 
-  public static final class GlobalSearchApplicationInfo.Builder {
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final class GlobalSearchApplicationInfo.Builder {
     ctor public GlobalSearchApplicationInfo.Builder(String, String, int);
     method public androidx.appsearch.builtintypes.GlobalSearchApplicationInfo build();
     method public androidx.appsearch.builtintypes.GlobalSearchApplicationInfo.Builder setDocumentClasses(java.util.List<java.lang.Class<? extends java.lang.Object!>>) throws androidx.appsearch.exceptions.AppSearchException;
@@ -224,7 +224,7 @@ package androidx.appsearch.builtintypes {
     method public long getUpdatedTimestampMillis();
   }
 
-  public static final class MobileApplication.Builder {
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final class MobileApplication.Builder {
     ctor public MobileApplication.Builder(androidx.appsearch.builtintypes.MobileApplication);
     ctor public MobileApplication.Builder(String, String, String, byte[]);
     method public androidx.appsearch.builtintypes.MobileApplication.Builder addAlternateName(String);
@@ -254,7 +254,7 @@ package androidx.appsearch.builtintypes {
     method public String getReferencedQualifiedId();
   }
 
-  public static final class Nickname.Builder {
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final class Nickname.Builder {
     ctor public Nickname.Builder(androidx.appsearch.builtintypes.Nickname);
     ctor public Nickname.Builder(String, String, String);
     method public androidx.appsearch.builtintypes.Nickname build();
@@ -348,7 +348,7 @@ package androidx.appsearch.builtintypes {
     method public String? getUri();
   }
 
-  public static final class PotentialAction.Builder {
+  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final class PotentialAction.Builder {
     ctor public PotentialAction.Builder();
     ctor public PotentialAction.Builder(androidx.appsearch.builtintypes.PotentialAction);
     method public androidx.appsearch.builtintypes.PotentialAction build();

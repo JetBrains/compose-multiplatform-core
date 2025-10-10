@@ -795,15 +795,15 @@ class BasicMarqueeTest {
             }
         }
 
-        rule.onRoot().captureToImage().assertPixels(expectedSize = IntSize(100, 100)) { Color2 }
+        rule.onRoot().captureToImage().assertPixels(expectedSize = IntSize(100, 100)) { Color1 }
 
         // First stage of animation: show all the content.
         repeat(30) { frameNum ->
             rule.mainClock.advanceTimeByFrame()
             rule.waitForIdle()
             val image = rule.onRoot().captureToImage()
-            val edge1 = image.findFirstColorEdge(Color1, Color2)
-            val edge2 = image.findFirstColorEdge(Color2, Color1)
+            val edge1 = image.findFirstColorEdge(Color2, Color1)
+            val edge2 = image.findFirstColorEdge(Color1, Color2)
             val expectedEdge1 = frameNum * 10
             val expectedEdge2 = (frameNum - 10) * 10
 
@@ -943,16 +943,16 @@ class BasicMarqueeTest {
     /** See b/297974036. */
     @Test
     fun animationRestarted_whenVelocityChanges() {
-        var velocity by mutableStateOf(10f)
+        var velocity by mutableStateOf(1)
         rule.setContent {
-            TestMarqueeContent(Modifier.basicMarqueeWithTestParams(velocity = velocity.dp))
+            TestMarqueeContent(Modifier.basicMarqueeWithTestParams(velocity = velocity.pxPerFrame))
         }
 
         // Run the animation for a bit so we can tell when it resets.
         repeat(3) { rule.mainClock.advanceTimeByFrame() }
         rule.onRoot().captureToImage().assertContainsColor(Color1).assertContainsColor(Color2)
 
-        velocity += 1f
+        velocity += 1
 
         // Check that animation was restarted.
         rule.mainClock.advanceTimeByFrame()

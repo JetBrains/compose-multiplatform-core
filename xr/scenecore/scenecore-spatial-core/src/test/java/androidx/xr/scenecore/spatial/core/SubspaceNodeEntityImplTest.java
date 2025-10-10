@@ -27,10 +27,8 @@ import android.app.Activity;
 import androidx.xr.runtime.NodeHolder;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.Dimensions;
-import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
-import androidx.xr.scenecore.testing.FakeSubspaceNodeFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
@@ -46,8 +44,6 @@ public final class SubspaceNodeEntityImplTest {
     private XrExtensions mXrExtensions;
     private Activity mActivity;
     private SubspaceNodeEntityImpl mSubspaceNodeEntity;
-    private SubspaceNodeFeature mFakeSubspaceNodeFeature;
-    private SubspaceNodeFeature mMockSubspaceNodeFeature = mock(SubspaceNodeFeature.class);
 
     @Before
     public void setUp() {
@@ -68,68 +64,51 @@ public final class SubspaceNodeEntityImplTest {
 
         Dimensions size = new Dimensions(1.0f, 2.0f, 3.0f);
 
-        NodeHolder<?> nodeHolder = new NodeHolder<>(mXrExtensions.createNode(), Node.class);
-        mFakeSubspaceNodeFeature =
-                FakeSubspaceNodeFeature.Companion.createWithMockFeature(
-                        mMockSubspaceNodeFeature,
-                        nodeHolder,
-                        size);
-
         mSubspaceNodeEntity =
                 new SubspaceNodeEntityImpl(
                         mActivity,
-                        mFakeSubspaceNodeFeature,
                         mXrExtensions,
+                        mXrExtensions.createNode(),
                         entityManager,
                         executor);
         mSubspaceNodeEntity.setParent(activitySpace);
     }
 
     @Test
-    public void setSize_featureSizeIsUpdated() {
+    public void setSize_sizeIsUpdated() {
         Dimensions size = new Dimensions(3.0f, 4.0f, 5.0f);
+
         mSubspaceNodeEntity.setSize(size);
 
-        // Only test feature receive the size.  No real logic in FakeSubspaceNodeFeature.
-        verify(mMockSubspaceNodeFeature).setSize(size);
-    }
-
-    @Test
-    public void getSize_featureSizeReturns() {
-        Dimensions size = new Dimensions(3.0f, 4.0f, 5.0f);
-        when(mMockSubspaceNodeFeature.getSize()).thenReturn(size);
-
-        // Only test feature receive the size.  No real logic in FakeSubspaceNodeFeature.
         assertThat(mSubspaceNodeEntity.getSize()).isEqualTo(size);
     }
 
     @Test
-    public void setScale_featureScaleIsUpdated() {
+    public void setScale_scaleIsUpdated() {
+        Dimensions size = new Dimensions(3.0f, 4.0f, 5.0f);
         Vector3 scale = new Vector3(1.0f, 2.0f, 3.0f);
 
+        mSubspaceNodeEntity.setSize(size);
         mSubspaceNodeEntity.setScale(scale);
 
-        // Only test feature receive the size.  No real logic in FakeSubspaceNodeFeature.
-        verify(mMockSubspaceNodeFeature).setScale(scale);
+        assertThat(mSubspaceNodeEntity.getScale()).isEqualTo(scale);
     }
 
     @Test
-    public void setAlpha_featureAlphaIsUpdated() {
+    public void setAlpha_alphaIsUpdated() {
         float alpha = 0.5f;
 
         mSubspaceNodeEntity.setAlpha(alpha);
 
-        // Only test feature receive the size.  No real logic in FakeSubspaceNodeFeature.
-        verify(mMockSubspaceNodeFeature).setAlpha(alpha);
+        assertThat(mSubspaceNodeEntity.getAlpha()).isEqualTo(alpha);
     }
 
     @Test
-    public void setHidden_featureVisibilityIsUpdated() {
+    public void setHidden_visibilityIsUpdated() {
         boolean hidden = true;
 
         mSubspaceNodeEntity.setHidden(hidden);
 
-        // Only test feature receive the size.  No real logic in FakeSubspaceNodeFeature.
-        verify(mMockSubspaceNodeFeature).setHidden(hidden);
+        assertThat(mSubspaceNodeEntity.isHidden(false)).isEqualTo(hidden);
     }
 }

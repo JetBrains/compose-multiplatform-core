@@ -43,10 +43,9 @@ package androidx.xr.scenecore.runtime {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface AnchorEntity extends androidx.xr.scenecore.runtime.SystemSpaceEntity {
-    method @InaccessibleFromKotlin public long getNativePointer();
     method @InaccessibleFromKotlin public int getState();
+    method public boolean setAnchor(androidx.xr.arcore.Anchor anchor);
     method public void setOnStateChangedListener(androidx.xr.scenecore.runtime.AnchorEntity.OnStateChangedListener onStateChangedListener);
-    property public abstract long nativePointer;
     property public abstract int state;
   }
 
@@ -549,7 +548,6 @@ package androidx.xr.scenecore.runtime {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface RenderingEntityFactory {
     method public androidx.xr.scenecore.runtime.GltfEntity createGltfEntity(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity parentEntity);
-    method public androidx.xr.scenecore.runtime.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.scenecore.runtime.SubspaceNodeFeature feature);
     method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(androidx.xr.scenecore.runtime.SurfaceFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity parentEntity);
   }
 
@@ -563,7 +561,6 @@ package androidx.xr.scenecore.runtime {
     method public androidx.xr.scenecore.runtime.TextureResource? borrowReflectionTexture();
     method public androidx.xr.scenecore.runtime.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.GltfModelResource loadedGltf, androidx.xr.scenecore.runtime.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.MaterialResource> createKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.runtime.SubspaceNodeEntity createSubspaceNodeEntity(androidx.xr.runtime.SubspaceNodeHolder<? extends java.lang.Object?> subspaceNodeHolder, androidx.xr.scenecore.runtime.Dimensions size);
     method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape, @androidx.xr.scenecore.runtime.SurfaceEntity.SurfaceProtection int surfaceProtection, int superSampling, androidx.xr.scenecore.runtime.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.MaterialResource> createWaterMaterial(boolean isAlphaMapVersion);
     method public void destroyKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material);
@@ -672,8 +669,7 @@ package androidx.xr.scenecore.runtime {
     method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialCapabilities> listener);
     method public void clearSpatialVisibilityChangedListener();
     method public androidx.xr.scenecore.runtime.ActivityPanelEntity createActivityPanelEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.PixelDimensions windowBoundsPx, String name, android.app.Activity hostActivity, androidx.xr.scenecore.runtime.Entity parent);
-    method public androidx.xr.scenecore.runtime.AnchorEntity createAnchorEntity(androidx.xr.arcore.runtime.Anchor anchor);
-    method public androidx.xr.scenecore.runtime.AnchorEntity createAnchorEntity(androidx.xr.scenecore.runtime.Dimensions bounds, androidx.xr.scenecore.runtime.PlaneType planeType, androidx.xr.scenecore.runtime.PlaneSemantic planeSemantic, java.time.Duration searchTimeout);
+    method public androidx.xr.scenecore.runtime.AnchorEntity createAnchorEntity();
     method public androidx.xr.scenecore.runtime.AnchorPlacement createAnchorPlacementForPlanes(java.util.Set<androidx.xr.scenecore.runtime.PlaneType> planeTypeFilter, java.util.Set<androidx.xr.scenecore.runtime.PlaneSemantic> planeSemanticFilter);
     method public androidx.xr.scenecore.runtime.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.scenecore.runtime.Entity parent);
     method public androidx.xr.scenecore.runtime.InteractableComponent createInteractableComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.InputEventListener listener);
@@ -681,7 +677,6 @@ package androidx.xr.scenecore.runtime {
     method public androidx.xr.scenecore.runtime.MovableComponent createMovableComponent(boolean systemMovable, boolean scaleInZ, java.util.Set<androidx.xr.scenecore.runtime.AnchorPlacement> anchorPlacement, boolean shouldDisposeParentAnchor);
     method public androidx.xr.scenecore.runtime.PanelEntity createPanelEntity(android.content.Context context, androidx.xr.runtime.math.Pose pose, android.view.View view, androidx.xr.scenecore.runtime.Dimensions dimensions, String name, androidx.xr.scenecore.runtime.Entity parent);
     method public androidx.xr.scenecore.runtime.PanelEntity createPanelEntity(android.content.Context context, androidx.xr.runtime.math.Pose pose, android.view.View view, androidx.xr.scenecore.runtime.PixelDimensions pixelDimensions, String name, androidx.xr.scenecore.runtime.Entity parent);
-    method public androidx.xr.scenecore.runtime.AnchorEntity createPersistedAnchorEntity(java.util.UUID uuid, java.time.Duration searchTimeout);
     method public androidx.xr.scenecore.runtime.PointerCaptureComponent createPointerCaptureComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener stateListener, androidx.xr.scenecore.runtime.InputEventListener inputListener);
     method public androidx.xr.scenecore.runtime.ResizableComponent createResizableComponent(androidx.xr.scenecore.runtime.Dimensions minimumSize, androidx.xr.scenecore.runtime.Dimensions maximumSize);
     method public androidx.xr.scenecore.runtime.SpatialPointerComponent createSpatialPointerComponent();
@@ -912,16 +907,6 @@ package androidx.xr.scenecore.runtime {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SubspaceNodeEntity extends androidx.xr.scenecore.runtime.Entity {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
-    method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
-    property public abstract androidx.xr.scenecore.runtime.Dimensions size;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SubspaceNodeFeature extends androidx.xr.scenecore.runtime.RenderingFeature {
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
-    method public void setAlpha(float alpha);
-    method public void setHidden(boolean hidden);
-    method public void setPose(androidx.xr.runtime.math.Pose pose);
-    method public void setScale(androidx.xr.runtime.math.Vector3 scaleActivity);
     method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
     property public abstract androidx.xr.scenecore.runtime.Dimensions size;
   }

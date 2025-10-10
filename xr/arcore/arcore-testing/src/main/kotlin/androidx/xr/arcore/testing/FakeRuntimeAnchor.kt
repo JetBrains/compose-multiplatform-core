@@ -16,18 +16,14 @@
 
 package androidx.xr.arcore.testing
 
-import android.os.Binder
-import android.os.IBinder
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
 import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
-import androidx.xr.arcore.runtime.ExportableAnchor
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import java.util.UUID
 
-// TODO(b/448471400): Remove ExportableAnchor from FakeRuntimeAnchor once aosp/3751914 is submitted.
 /** Test-only implementation of [androidx.xr.arcore.runtime.Anchor] */
 public class FakeRuntimeAnchor
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -36,7 +32,7 @@ public constructor(
     internal val anchorHolder: AnchorHolder? = null,
     /** Flag to represent available tracking state of the camera when creating the anchor. */
     public val isTrackingAvailable: Boolean = true,
-) : RuntimeAnchor, ExportableAnchor {
+) : RuntimeAnchor {
     init {
         if (!isTrackingAvailable) {
             throw AnchorNotTrackingException()
@@ -76,12 +72,9 @@ public constructor(
         if (anchorHolder != null) {
             anchorHolder.detachAnchor(this)
             isAttached = false
+            --anchorsCreatedCount
         }
     }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val nativePointer: Long = 12345L
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val anchorToken: IBinder = Binder()
 
     public companion object {
         /** Limit for the number of anchors that can be created. */

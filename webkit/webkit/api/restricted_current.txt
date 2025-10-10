@@ -6,7 +6,7 @@ package androidx.webkit {
     method public long getTimeoutSeconds();
   }
 
-  public static final class BackForwardCacheSettings.Builder {
+  @SuppressCompatibility @androidx.webkit.WebSettingsCompat.ExperimentalBackForwardCacheSettings public static final class BackForwardCacheSettings.Builder {
     ctor public BackForwardCacheSettings.Builder();
     method public androidx.webkit.BackForwardCacheSettings build();
     method public androidx.webkit.BackForwardCacheSettings.Builder setMaxPagesInCache(int);
@@ -242,7 +242,7 @@ package androidx.webkit {
     method public boolean isJavaScriptEnabled();
   }
 
-  public static final class SpeculativeLoadingParameters.Builder {
+  @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public static final class SpeculativeLoadingParameters.Builder {
     ctor public SpeculativeLoadingParameters.Builder();
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.SpeculativeLoadingParameters.Builder addAdditionalHeader(String, String);
     method @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public androidx.webkit.SpeculativeLoadingParameters.Builder addAdditionalHeaders(java.util.Map<java.lang.String!,java.lang.String!>);

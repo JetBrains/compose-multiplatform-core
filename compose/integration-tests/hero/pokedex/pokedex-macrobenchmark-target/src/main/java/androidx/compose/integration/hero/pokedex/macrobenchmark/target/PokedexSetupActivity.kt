@@ -17,20 +17,50 @@
 package androidx.compose.integration.hero.pokedex.macrobenchmark.target
 
 import android.os.Bundle
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.util.trace
-import com.skydoves.pokedex.compose.core.model.AllPokemonNames
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * This setup activity is responsible for setting up any required data, like fake images for the
  * pokedex, for both Pokedex-Views and Pokedex-Compose.
+ *
+ * It emits [POKEDEX_SETUP_COMPLETE] when it finishes its operations. It *does not* call [finish] on
+ * itself in order to allow benchmarks more control over its lifecycle.
  */
 class PokedexSetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        trace("Create and Store Gradient Images") {
-            createAndStoreGradientImages(AllPokemonNames.take(150), directory = filesDir)
+        val amountOfImagesRequested = intent.getIntExtra(EXTRA_AMOUNT_OF_IMAGES, 150)
+        val container = FrameLayout(this)
+        setContentView(container)
+        val statusText =
+            TextView(this).apply {
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    )
+                text = POKEDEX_SETTING_UP_IMAGES
+            }
+        container.addView(statusText)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val pokemonToCreateImagesFor =
+                findPokemonNamesWithoutCachedImage(filesDir, amountOfImagesRequested)
+            createAndStoreGradientImages(pokemonToCreateImagesFor, directory = filesDir)
+            withContext(Dispatchers.Main) { statusText.text = POKEDEX_SETUP_COMPLETE }
         }
+    }
+
+    companion object {
+        private const val POKEDEX_SETUP_COMPLETE = "pokedex-setup-complete"
+        private const val POKEDEX_SETTING_UP_IMAGES = "pokedex-setting-up-images"
+        private const val EXTRA_AMOUNT_OF_IMAGES = "AMOUNT_OF_IMAGES"
     }
 }

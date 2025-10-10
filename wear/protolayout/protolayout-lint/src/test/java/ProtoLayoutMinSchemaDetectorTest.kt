@@ -19,6 +19,7 @@
 package androidx.wear.protolayout.lint
 
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -290,6 +291,7 @@ src/foo/Bar.java:12: Error: This API is not guaranteed to be available on the de
             .expectClean()
     }
 
+    @Ignore // b/449009812
     @Test
     fun `annotated call-site doesn't requires SDK version check`() {
         lint()
@@ -366,6 +368,7 @@ src/foo/Bar.java:12: Error: This API is not guaranteed to be available on the de
             .expectClean()
     }
 
+    @Ignore // b/449009812
     @Test
     fun `project with proper minSdk doesn't requires SDK version check`() {
         lint()

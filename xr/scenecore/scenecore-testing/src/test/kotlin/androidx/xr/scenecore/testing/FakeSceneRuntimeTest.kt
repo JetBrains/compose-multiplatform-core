@@ -21,10 +21,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.test.filters.SdkSuppress
-import androidx.xr.arcore.testing.FakeRuntimeAnchor
-import androidx.xr.arcore.testing.FakeRuntimePlane
-import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement
 import androidx.xr.scenecore.runtime.CameraViewActivityPose
 import androidx.xr.scenecore.runtime.Dimensions
@@ -38,8 +36,6 @@ import androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener
 import androidx.xr.scenecore.runtime.SpatialCapabilities
 import androidx.xr.scenecore.runtime.SpatialVisibility
 import com.google.common.truth.Truth.assertThat
-import java.time.Duration
-import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 import org.junit.Before
@@ -218,33 +214,11 @@ class FakeSceneRuntimeTest {
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
-    fun createAnchorEntity_withPlaneAttributes_returnsInitialValue() {
-        val bounds = Dimensions(2f, 1f, 0f)
-        val planeType = PlaneType.HORIZONTAL
-        val planeSemantic = PlaneSemantic.FLOOR
-        val searchTimeout = Duration.ofMillis(100)
-        val anchorEntity =
-            fakeSceneRuntime.createAnchorEntity(bounds, planeType, planeSemantic, searchTimeout)
+    fun createAnchorEntity_returnsInitialValue() {
+        val anchorEntity = fakeSceneRuntime.createAnchorEntity()
 
         assertThat(anchorEntity).isInstanceOf(FakeAnchorEntity::class.java)
-        assertThat(anchorEntity.anchorCreationData.bounds).isEqualTo(bounds)
-        assertThat(anchorEntity.anchorCreationData.planeType).isEqualTo(planeType)
-        assertThat(anchorEntity.anchorCreationData.planeSemantic).isEqualTo(planeSemantic)
-        assertThat(anchorEntity.anchorCreationData.searchTimeout).isEqualTo(searchTimeout)
-    }
-
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    @Test
-    fun createAnchorEntity_withAnAnchor_returnsInitialValue() {
-        val anchor =
-            FakeRuntimeAnchor(
-                Pose.Identity,
-                FakeRuntimePlane(trackingState = TrackingState.STOPPED),
-            )
-        val anchorEntity = fakeSceneRuntime.createAnchorEntity(anchor)
-
-        assertThat(anchorEntity).isInstanceOf(FakeAnchorEntity::class.java)
-        assertThat(anchorEntity.anchor).isEqualTo(anchor)
+        assertThat(anchorEntity.state).isEqualTo(AnchorEntity.State.UNANCHORED)
     }
 
     @Test
@@ -334,19 +308,6 @@ class FakeSceneRuntimeTest {
     fun createSpatialPointerComponent_returnsInitialValue() {
         assertThat(fakeSceneRuntime.createSpatialPointerComponent())
             .isInstanceOf(FakeSpatialPointerComponent::class.java)
-    }
-
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    @Test
-    fun createPersistedAnchorEntity_returnsInitialValue() {
-        val uuid = UUID(0L, 0L)
-        val searchTimeout = Duration.ofMillis(100)
-        val persistedAnchorEntity =
-            fakeSceneRuntime.createPersistedAnchorEntity(uuid, searchTimeout)
-
-        assertThat(persistedAnchorEntity).isInstanceOf(FakeAnchorEntity::class.java)
-        assertThat(persistedAnchorEntity.anchorCreationData.uuid).isEqualTo(uuid)
-        assertThat(persistedAnchorEntity.anchorCreationData.searchTimeout).isEqualTo(searchTimeout)
     }
 
     @Test

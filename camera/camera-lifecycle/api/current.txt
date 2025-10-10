@@ -21,7 +21,7 @@ package androidx.camera.lifecycle {
     field public static final androidx.camera.lifecycle.LifecycleCameraProvider.Companion Companion;
   }
 
-  public static final class LifecycleCameraProvider.Companion {
+  @SuppressCompatibility @androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration public static final class LifecycleCameraProvider.Companion {
     method public suspend Object? createInstance(android.content.Context context, optional androidx.camera.core.CameraXConfig? cameraXConfig, kotlin.coroutines.Continuation<? super androidx.camera.lifecycle.LifecycleCameraProvider>);
     method public suspend Object? createInstance(android.content.Context context, optional kotlin.coroutines.Continuation<? super androidx.camera.lifecycle.LifecycleCameraProvider>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.camera.lifecycle.LifecycleCameraProvider> createInstanceAsync(android.content.Context context);

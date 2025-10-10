@@ -417,7 +417,7 @@ package androidx.compose.material {
     field public static final androidx.compose.material.DismissState.Companion Companion;
   }
 
-  public static final class DismissState.Companion {
+  @SuppressCompatibility @androidx.compose.material.ExperimentalMaterialApi public static final class DismissState.Companion {
     method public androidx.compose.runtime.saveable.Saver<androidx.compose.material.DismissState,androidx.compose.material.DismissValue> Saver(kotlin.jvm.functions.Function1<? super androidx.compose.material.DismissValue,java.lang.Boolean> confirmStateChange);
   }
 
@@ -977,7 +977,7 @@ package androidx.compose.material {
     field @Deprecated public static final androidx.compose.material.SwipeableState.Companion Companion;
   }
 
-  @Deprecated public static final class SwipeableState.Companion {
+  @Deprecated @SuppressCompatibility @androidx.compose.material.ExperimentalMaterialApi public static final class SwipeableState.Companion {
     method @Deprecated public <T> androidx.compose.runtime.saveable.Saver<androidx.compose.material.SwipeableState<T>,T> Saver(androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpec, kotlin.jvm.functions.Function1<? super T,java.lang.Boolean> confirmStateChange);
   }
 

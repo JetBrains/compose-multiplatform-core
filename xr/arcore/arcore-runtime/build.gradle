@@ -32,7 +32,6 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
     namespace = "androidx.xr.arcore.runtime"
     defaultConfig {
         consumerProguardFiles 'proguard-rules.pro'

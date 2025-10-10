@@ -9,7 +9,6 @@ package androidx.xr.arcore {
     method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Anchor getRuntimeAnchor();
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Anchor.State> getState();
     method public static androidx.xr.arcore.AnchorCreateResult load(androidx.xr.runtime.Session session, java.util.UUID uuid);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.Anchor loadFromNativePointer(androidx.xr.runtime.Session session, long nativePointer);
     method public suspend Object? persist(kotlin.coroutines.Continuation<? super java.util.UUID>);
     method public static void unpersist(androidx.xr.runtime.Session session, java.util.UUID uuid);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -22,7 +21,6 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.AnchorCreateResult create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.Pose pose);
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids(androidx.xr.runtime.Session session);
     method public androidx.xr.arcore.AnchorCreateResult load(androidx.xr.runtime.Session session, java.util.UUID uuid);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Anchor loadFromNativePointer(androidx.xr.runtime.Session session, long nativePointer);
     method public void unpersist(androidx.xr.runtime.Session session, java.util.UUID uuid);
   }
 

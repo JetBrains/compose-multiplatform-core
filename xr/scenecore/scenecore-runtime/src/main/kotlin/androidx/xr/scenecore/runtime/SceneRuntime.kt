@@ -21,11 +21,8 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Pose
-import java.time.Duration
-import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -144,39 +141,8 @@ public interface SceneRuntime : JxrRuntime {
         parent: Entity,
     ): ActivityPanelEntity
 
-    /**
-     * A factory function to create an Anchor entity.
-     *
-     * @param bounds Bounds for this Anchor.
-     * @param planeType Orientation of the plane to which this anchor should attach.
-     * @param planeSemantic Semantic type of the plane to which this anchor should attach.
-     * @param searchTimeout How long to search for an anchor. If this is Duration.ZERO, this will
-     *   search for an anchor indefinitely.
-     */
-    public fun createAnchorEntity(
-        bounds: Dimensions,
-        planeType: PlaneType,
-        planeSemantic: PlaneSemantic,
-        searchTimeout: Duration,
-    ): AnchorEntity
-
-    /**
-     * A factory function to create an Anchor entity from a {@link
-     * androidx.xr.runtime.internal.Anchor}.
-     *
-     * @param anchor The {@link androidx.xr.runtime.internal.Anchor} to create the Anchor entity
-     *   from.
-     */
-    public fun createAnchorEntity(anchor: Anchor): AnchorEntity
-
-    /**
-     * A factory function to recreate an Anchor entity which was persisted in a previous session.
-     *
-     * @param uuid The UUID of the persisted anchor.
-     * @param searchTimeout How long to search for an anchor. If this is Duration.ZERO, this will
-     *   search for an anchor indefinitely.
-     */
-    public fun createPersistedAnchorEntity(uuid: UUID, searchTimeout: Duration): AnchorEntity
+    /** A factory function to create an Anchor entity. */
+    public fun createAnchorEntity(): AnchorEntity
 
     /**
      * A factory function to create a group entity. This entity is used as a connection point for

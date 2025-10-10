@@ -21,7 +21,6 @@ import android.os.Looper;
 
 import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
-import androidx.xr.runtime.SubspaceNodeHolder;
 import androidx.xr.runtime.math.Matrix3;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
@@ -45,7 +44,6 @@ import androidx.xr.scenecore.runtime.RenderingRuntime;
 import androidx.xr.scenecore.runtime.SceneRuntime;
 import androidx.xr.scenecore.runtime.SpatialEnvironmentExt;
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
-import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.TextureResource;
 import androidx.xr.scenecore.runtime.TextureSampler;
@@ -1035,23 +1033,6 @@ class SpatialRenderingRuntime implements RenderingRuntime {
                         contentSecurityLevel,
                         superSampling);
         return mRenderingEntityFactory.createSurfaceEntity(feature, pose, parentEntity);
-    }
-
-    @Override
-    @NonNull
-    public SubspaceNodeEntity createSubspaceNodeEntity(
-            @NonNull SubspaceNodeHolder<?> subspaceNodeHolder, @NonNull Dimensions size) {
-        SubspaceNodeFeature feature =
-                new SubspaceNodeFeatureImpl(
-                        mImpressApi,
-                        mSplitEngineSubspaceManager,
-                        mExtensions,
-                        SubspaceNodeHolder.assertGetValue(subspaceNodeHolder, SubspaceNode.class)
-                                .getSubspaceNode(),
-                        size);
-        SubspaceNodeEntity entity = mRenderingEntityFactory.createSubspaceNodeEntity(feature);
-        entity.setSize(size);
-        return entity;
     }
 
     // JxrRuntime lifecycle

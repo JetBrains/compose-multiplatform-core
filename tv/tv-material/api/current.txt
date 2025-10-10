@@ -179,7 +179,7 @@ package androidx.tv.material3 {
     field public static final androidx.tv.material3.CarouselState.Companion Companion;
   }
 
-  public static final class CarouselState.Companion {
+  @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public static final class CarouselState.Companion {
     method @InaccessibleFromKotlin public androidx.compose.runtime.saveable.Saver<androidx.tv.material3.CarouselState,? extends java.lang.Object?> getSaver();
     property public androidx.compose.runtime.saveable.Saver<androidx.tv.material3.CarouselState,? extends java.lang.Object?> Saver;
   }
@@ -254,7 +254,7 @@ package androidx.tv.material3 {
     field public static final androidx.tv.material3.ClickableChipScale.Companion Companion;
   }
 
-  public static final class ClickableChipScale.Companion {
+  @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public static final class ClickableChipScale.Companion {
     method @InaccessibleFromKotlin public androidx.tv.material3.ClickableChipScale getNone();
     property public androidx.tv.material3.ClickableChipScale None;
   }
@@ -911,7 +911,7 @@ package androidx.tv.material3 {
     field public static final androidx.tv.material3.SelectableChipScale.Companion Companion;
   }
 
-  public static final class SelectableChipScale.Companion {
+  @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public static final class SelectableChipScale.Companion {
     method @InaccessibleFromKotlin public androidx.tv.material3.SelectableChipScale getNone();
     property public androidx.tv.material3.SelectableChipScale None;
   }

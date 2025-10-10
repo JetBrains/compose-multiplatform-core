@@ -48,7 +48,6 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
     namespace = "androidx.xr.arcore.projected"
 
     buildFeatures {

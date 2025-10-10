@@ -51,6 +51,7 @@ import androidx.compose.ui.semantics.SemanticsNodeWithAdjustedBounds
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.isAccessibilityIgnoredLink
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
@@ -123,7 +124,8 @@ internal class AndroidContentCaptureManager(
                 currentSemanticsNodesInvalidated = false
                 field =
                     view.semanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
-                        customRootNodeId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                        customRootNodeId = AccessibilityNodeProviderCompat.HOST_VIEW_ID,
+                        shouldIgnoreNode = { it.isAccessibilityIgnoredLink },
                     )
                 currentSemanticsNodesSnapshotTimestampMillis = System.currentTimeMillis()
             }

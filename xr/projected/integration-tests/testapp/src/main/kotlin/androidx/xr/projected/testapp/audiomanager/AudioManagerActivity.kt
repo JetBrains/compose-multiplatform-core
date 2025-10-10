@@ -26,10 +26,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -52,12 +50,13 @@ class AudioManagerActivity : ComponentActivity() {
 
         LaunchedEffect(Unit) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                val manager = ProjectedAudioManager.create(activity, activity)
-                configs.apply {
-                    configs.clear()
-                    configs.addAll(manager.getSupportedAudioCaptureConfigs())
+                ProjectedAudioManager.create(activity).use {
+                    configs.apply {
+                        configs.clear()
+                        configs.addAll(it.getSupportedAudioCaptureConfigs())
+                    }
+                    Log.i(TAG, "Found ${configs.count()} audio configs")
                 }
-                Log.i(TAG, "Found ${configs.count()} audio configs")
             }
         }
 

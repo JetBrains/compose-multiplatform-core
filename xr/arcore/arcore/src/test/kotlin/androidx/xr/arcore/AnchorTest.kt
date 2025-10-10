@@ -270,11 +270,6 @@ class AnchorTest {
     }
 
     @Test
-    fun loadFromNativePointer_returnsAnchorCreateSuccess() = createTestSessionAndRunTest {
-        assertThat(Anchor.loadFromNativePointer(session, 123L)).isNotNull()
-    }
-
-    @Test
     fun unpersist_removesAnchorFromStorage() = createTestSessionAndRunTest {
         runTest {
             val fakePerceptionManager = getFakePerceptionManager()

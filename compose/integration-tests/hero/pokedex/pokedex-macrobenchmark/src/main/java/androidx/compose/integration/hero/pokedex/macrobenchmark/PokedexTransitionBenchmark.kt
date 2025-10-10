@@ -111,7 +111,7 @@ class PokedexTransitionBenchmark(
             iterations = iterations,
             setupBlock = {
                 device.pressHome()
-                device.waitForIdle()
+                setupPokedexBenchmarkTarget()
                 databaseCleanupRule.deleteDatabaseFiles()
 
                 val intent = Intent()

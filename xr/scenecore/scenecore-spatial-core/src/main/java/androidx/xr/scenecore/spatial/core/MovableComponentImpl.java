@@ -515,8 +515,7 @@ class MovableComponentImpl implements MovableComponent {
                         mActivitySpaceEntity,
                         mExtensions,
                         mEntityManager,
-                        mRuntimeExecutor,
-                        mPerceptionLibrary);
+                        mRuntimeExecutor);
         if (anchorEntity.getState() != AnchorEntityImpl.State.ANCHORED) {
             return Pair.create(updatedPose, null);
         }

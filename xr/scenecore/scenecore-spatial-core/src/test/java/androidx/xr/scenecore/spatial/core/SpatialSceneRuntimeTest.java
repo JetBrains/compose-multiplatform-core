@@ -41,7 +41,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,16 +50,15 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.perception.Anchor;
 import androidx.xr.scenecore.impl.perception.Fov;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
-import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjection;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
 import androidx.xr.scenecore.impl.perception.exceptions.FailedToInitializeException;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
+import androidx.xr.scenecore.runtime.AnchorEntity.State;
 import androidx.xr.scenecore.runtime.AnchorPlacement;
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
 import androidx.xr.scenecore.runtime.CameraViewActivityPose;
@@ -90,13 +88,11 @@ import androidx.xr.scenecore.runtime.SpatialModeChangeListener;
 import androidx.xr.scenecore.runtime.SpatialPointerComponent;
 import androidx.xr.scenecore.runtime.SpatialVisibility;
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
-import androidx.xr.scenecore.runtime.SubspaceNodeFeature;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeComponent;
 import androidx.xr.scenecore.testing.FakeGltfFeature;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
-import androidx.xr.scenecore.testing.FakeSubspaceNodeFeature;
 import androidx.xr.scenecore.testing.FakeSurfaceFeature;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -133,10 +129,8 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -150,10 +144,6 @@ public class SpatialSceneRuntimeTest {
     private final EntityManager mEntityManager = new EntityManager();
     private final PerceptionLibrary mPerceptionLibrary = mock(PerceptionLibrary.class);
     private final Session mSession = mock(Session.class);
-    private final androidx.xr.scenecore.impl.perception.Plane mPlane =
-            mock(androidx.xr.scenecore.impl.perception.Plane.class);
-    private final Anchor mAnchor = mock(Anchor.class);
-    private final IBinder mSharedAnchorToken = mock(IBinder.class);
     private final NodeRepository mNodeRepository = NodeRepository.getInstance();
     private final @NonNull XrExtensions mXrExtensions =
             Objects.requireNonNull(XrExtensionsProvider.getXrExtensions());
@@ -566,16 +556,12 @@ public class SpatialSceneRuntimeTest {
     @Test
     public void createSubspaceNodeEntity_returnSubspaceNodeEntity() {
         Dimensions size = new Dimensions(1.0f, 2.0f, 3.0f);
-        NodeHolder<?> nodeHolder = new NodeHolder<>(mXrExtensions.createNode(), Node.class);
-        SubspaceNodeFeature mockSubspaceNodeFeature = mock(SubspaceNodeFeature.class);
-        SubspaceNodeFeature fakeSubspaceNodeFeature =
-                FakeSubspaceNodeFeature.Companion.createWithMockFeature(
-                        mockSubspaceNodeFeature, nodeHolder, size);
 
-        SubspaceNodeEntity entity = mRuntime.createSubspaceNodeEntity(fakeSubspaceNodeFeature);
+        SubspaceNodeEntity entity =
+            mRuntime.createSubspaceNodeEntity(mXrExtensions.createNode(), size);
+        entity.setSize(size);
 
         assertThat(entity).isNotNull();
-        verify(mockSubspaceNodeFeature).setSize(size);
         assertThat(entity.getSize()).isEqualTo(size);
     }
 
@@ -721,77 +707,11 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void createAnchorEntity_returnsAndInitsAnchor() throws Exception {
-        Dimensions anchorDimensions = new Dimensions(2f, 5f, 0f);
-        androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                androidx.xr.scenecore.impl.perception.Pose.identity();
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mSession.getAllPlanes()).thenReturn(ImmutableList.of(mPlane));
-        when(mPlane.getData(any()))
-                .thenReturn(
-                        new Plane.PlaneData(
-                                perceptionPose,
-                                3.0f,
-                                5.0f,
-                                Plane.Type.VERTICAL.intValue,
-                                Plane.Label.WALL.intValue));
-        when(mPlane.createAnchor(eq(perceptionPose), any())).thenReturn(mAnchor);
-        when(mAnchor.getAnchorToken()).thenReturn(mSharedAnchorToken);
-
-        AnchorEntity anchorEntity =
-                mRuntime.createAnchorEntity(
-                        anchorDimensions, PlaneType.VERTICAL, PlaneSemantic.WALL, Duration.ZERO);
+    public void createAnchorEntity_returnsUnanchoredAnchorEntity() {
+        AnchorEntity anchorEntity = mRuntime.createAnchorEntity();
 
         assertThat(anchorEntity).isNotNull();
-        assertThat(anchorEntity.getState()).isEqualTo(AnchorEntity.State.ANCHORED);
-    }
-
-    @Test
-    public void createPersistedAnchorEntity_returnsEntityInNominalCase() throws Exception {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mSession.createAnchorFromUuid(any())).thenReturn(mAnchor);
-
-        assertThat(
-                        mRuntime.createPersistedAnchorEntity(
-                                UUID.randomUUID(), /* searchTimeout= */ Duration.ofSeconds(1)))
-                .isNotNull();
-    }
-
-    @Test
-    public void createPersistedAnchorEntity_returnsEntityForNullSession() throws Exception {
-        when(mPerceptionLibrary.getSession()).thenReturn(null);
-
-        assertThat(
-                        mRuntime.createPersistedAnchorEntity(
-                                UUID.randomUUID(), /* searchTimeout= */ Duration.ofSeconds(1)))
-                .isNotNull();
-    }
-
-    @Test
-    public void createPersistedAnchorEntity_returnsEntityForNullAnchor() throws Exception {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mSession.createAnchorFromUuid(any())).thenReturn(null);
-
-        assertThat(
-                        mRuntime.createPersistedAnchorEntity(
-                                UUID.randomUUID(), /* searchTimeout= */ Duration.ofSeconds(1)))
-                .isNotNull();
-    }
-
-    @Test
-    public void createPersistedAnchorEntity_returnsEntityForNullAnchorToken() throws Exception {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mSession.createAnchorFromUuid(any())).thenReturn(mAnchor);
-        when(mAnchor.getAnchorToken()).thenReturn(null);
-        UUID uuid = UUID.randomUUID();
-
-        assertThat(
-                        mRuntime.createPersistedAnchorEntity(
-                                uuid, /* searchTimeout= */ Duration.ofSeconds(1)))
-                .isNotNull();
-        verify(mPerceptionLibrary, times(3)).getSession();
-        verify(mSession).createAnchorFromUuid(uuid);
-        verify(mAnchor).getAnchorToken();
+        assertThat(anchorEntity.getState()).isEqualTo(State.UNANCHORED);
     }
 
     @Test

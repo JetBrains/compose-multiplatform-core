@@ -41,11 +41,7 @@ public interface PerceptionManager {
     /** Loads an [Anchor] from local storage. */
     public fun loadAnchor(uuid: UUID): Anchor
 
-    /** Loads an [Anchor] from a native pointer. */
-    // TODO(b/373711152) : Remove this method once the Jetpack XR Runtime API migration is done.
-    public fun loadAnchorFromNativePointer(nativePointer: Long): Anchor
-
-    /** Deletes a persisted [Anchor] from local storage. */
+    /** Deletes a persisted [androidx.xr.arcore.internal.Anchor] from local storage. */
     public fun unpersistAnchor(uuid: UUID)
 
     /** Checks the VPS availability at the given location. */

@@ -1127,7 +1127,7 @@ package androidx.health.connect.client.records {
     field public static final int FHIR_RESOURCE_TYPE_PROCEDURE = 5; // 0x5
   }
 
-  public static final class FhirResource.Companion {
+  @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final class FhirResource.Companion {
     property public static int FHIR_RESOURCE_TYPE_ALLERGY_INTOLERANCE;
     property public static int FHIR_RESOURCE_TYPE_CONDITION;
     property public static int FHIR_RESOURCE_TYPE_ENCOUNTER;
@@ -1158,7 +1158,7 @@ package androidx.health.connect.client.records {
     field public static final androidx.health.connect.client.records.FhirVersion.Companion Companion;
   }
 
-  public static final class FhirVersion.Companion {
+  @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final class FhirVersion.Companion {
     method public androidx.health.connect.client.records.FhirVersion parseFhirVersion(String fhirVersionString);
   }
 
@@ -1373,7 +1373,7 @@ package androidx.health.connect.client.records {
     field public static final int MEDICAL_RESOURCE_TYPE_VITAL_SIGNS = 5; // 0x5
   }
 
-  public static final class MedicalResource.Companion {
+  @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final class MedicalResource.Companion {
     property public static int MEDICAL_RESOURCE_TYPE_ALLERGIES_INTOLERANCES;
     property public static int MEDICAL_RESOURCE_TYPE_CONDITIONS;
     property public static int MEDICAL_RESOURCE_TYPE_LABORATORY_RESULTS;
@@ -1400,7 +1400,7 @@ package androidx.health.connect.client.records {
     field public static final androidx.health.connect.client.records.MedicalResourceId.Companion Companion;
   }
 
-  public static final class MedicalResourceId.Companion {
+  @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final class MedicalResourceId.Companion {
     method public androidx.health.connect.client.records.MedicalResourceId fromFhirReference(String dataSourceId, String fhirReference);
   }
 
@@ -2360,7 +2360,7 @@ package androidx.health.connect.client.request {
     field public static final int DEFAULT_PAGE_SIZE = 1000; // 0x3e8
   }
 
-  public static final class ReadMedicalResourcesRequest.Companion {
+  @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final class ReadMedicalResourcesRequest.Companion {
     property public static int DEFAULT_PAGE_SIZE;
   }
 

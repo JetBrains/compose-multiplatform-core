@@ -21,6 +21,7 @@ import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
 import androidx.appfunctions.compiler.core.AnnotatedParameterizedAppFunctionSerializable
 import androidx.appfunctions.compiler.core.AppFunctionPropertyDeclaration
+import androidx.appfunctions.compiler.core.AppFunctionSerializableType
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_ARRAY
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_LIST
@@ -52,7 +53,7 @@ import com.squareup.kotlinpoet.buildCodeBlock
  */
 // TODO(b/392587953): extract common format maps
 class AppFunctionSerializableFactoryCodeBuilder(
-    val annotatedClass: AnnotatedAppFunctionSerializable,
+    val annotatedClass: AppFunctionSerializableType,
     val resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
 ) {
     /**
@@ -138,7 +139,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
         if (annotatedClass !is AnnotatedAppFunctionSerializableProxy) {
             throw ProcessingException(
                 "Attempting to generate proxy getter for non proxy serializable.",
-                annotatedClass.attributeNode,
+                annotatedClass.appFunctionSerializableTypeClassDeclaration.attributeNode,
             )
         }
         return buildCodeBlock {
@@ -215,7 +216,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
                 }
             }
             appendGetterResultConstructorCallStatement(
-                annotatedClass.originalClassName,
+                annotatedClass.appFunctionSerializableTypeClassDeclaration.originalClassName,
                 annotatedClass.getProperties(),
                 getterResultName,
             )
@@ -317,7 +318,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
         if (annotatedClass !is AnnotatedAppFunctionSerializableProxy) {
             throw ProcessingException(
                 "Attempting to generate proxy setter for non proxy serializable.",
-                annotatedClass.attributeNode,
+                annotatedClass.appFunctionSerializableTypeClassDeclaration.attributeNode,
             )
         }
         return buildCodeBlock {
@@ -327,7 +328,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
                 """
                     .trimIndent(),
                 getSerializableParamName(annotatedClass),
-                annotatedClass.originalClassName,
+                annotatedClass.appFunctionSerializableTypeClassDeclaration.originalClassName,
                 annotatedClass.fromTargetClassMethodName,
                 APP_FUNCTION_SERIALIZABLE_PARAM_NAME,
             )
@@ -808,7 +809,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
     }
 
     private val factoryInitStatements = buildCodeBlock {
-        val factoryInstanceNameToAnnotatedClassMap: Map<String, AnnotatedAppFunctionSerializable> =
+        val factoryInstanceNameToAnnotatedClassMap: Map<String, AppFunctionSerializableType> =
             buildMap {
                 for (serializableTypeReference in
                     annotatedClass.getSerializablePropertyTypeReferences()) {
@@ -1006,12 +1007,13 @@ class AppFunctionSerializableFactoryCodeBuilder(
         return replaceFirstChar { it -> it.lowercase() }
     }
 
-    private fun getResultParamName(annotatedClass: AnnotatedAppFunctionSerializable): String {
-        return "result${annotatedClass.originalClassName.simpleName}"
+    private fun getResultParamName(annotatedClass: AppFunctionSerializableType): String {
+        return "result${annotatedClass.appFunctionSerializableTypeClassDeclaration.originalClassName.simpleName}"
     }
 
-    private fun getSerializableParamName(annotatedClass: AnnotatedAppFunctionSerializable): String {
-        return "${annotatedClass.originalClassName.simpleName.replaceFirstChar {
+    private fun getSerializableParamName(annotatedClass: AppFunctionSerializableType): String {
+        return "${
+            annotatedClass.appFunctionSerializableTypeClassDeclaration.originalClassName.simpleName.replaceFirstChar {
                 it -> it.lowercase() }}_appFunctionSerializable"
     }
 

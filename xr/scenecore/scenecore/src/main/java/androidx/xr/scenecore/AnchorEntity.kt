@@ -17,21 +17,25 @@
 package androidx.xr.scenecore
 
 import android.annotation.SuppressLint
+import android.os.SystemClock
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.Anchor
+import androidx.xr.arcore.AnchorCreateSuccess
+import androidx.xr.arcore.Plane
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
-import androidx.xr.scenecore.runtime.SceneRuntime
 import java.time.Duration
-import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
+import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * An AnchorEntity tracks a [androidx.xr.runtime.math.Pose] relative to some position or surface in
@@ -49,6 +53,10 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
 
     @VisibleForTesting internal var onStateChangedListener: Consumer<@StateValue Int>? = null
     private var onStateChangedExecutor: Executor = HandlerExecutor.mainThreadExecutor
+    /** Asynchronous job responsible for finding a suitable plane to anchor this entity to. */
+    private var planeFindingJob: CompletableJob? = null
+    /** Plane [Anchor] this anchor entity represents. */
+    private var planeAnchor: Anchor? = null
 
     /** The current tracking state for this AnchorEntity. */
     public var state: @StateValue Int = rtEntity.state.fromRtState()
@@ -97,58 +105,134 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
     }
 
     /**
-     * Loads the ARCore for Jetpack XR Anchor using a Jetpack XR Runtime session.
+     * Returns the ARCore for Jetpack XR Anchor associated with this AnchorEntity.
      *
-     * @param session the Jetpack XR Runtime session from which to load the Anchor.
-     * @return the ARCore for Jetpack XR Anchor corresponding to the native pointer.
+     * @return the ARCore for Jetpack XR Anchor associated with this AnchorEntity. This may be null
+     *   if the AnchorEntity is still searching for a suitable anchor.
      */
-    // TODO(b/373711152) : Remove this method once the ARCore for XR API migration is done.
-    public fun getAnchor(session: Session): Anchor {
+    public fun getAnchor(): Anchor? {
         checkNotDisposed()
-        return Anchor.loadFromNativePointer(session, rtEntity!!.nativePointer)
+        return planeAnchor
+    }
+
+    internal data class PlaneFindingInfo(
+        val dimensions: FloatSize2d,
+        val orientation: @PlaneOrientationValue Int,
+        val semanticType: @PlaneSemanticTypeValue Int,
+        val searchDeadline: Long?,
+    )
+
+    private fun updateState(state: @StateValue Int) {
+        if (state != this.state) {
+            this.state = state
+            when (state) {
+                State.ANCHORED,
+                State.TIMEDOUT -> {
+                    planeFindingJob?.complete()
+                    planeFindingJob = null
+                }
+                State.ERROR -> {
+                    planeAnchor?.detach()
+                }
+            }
+        }
     }
 
     public companion object {
-        /**
-         * Factory method for AnchorEntity.
-         *
-         * @param sceneRuntime SceneRuntime to use.
-         * @param minimumPlaneExtents The minimum extents (in meters) of the plane to which this
-         *   AnchorEntity should attach.
-         * @param planeType Orientation for the plane to which this Anchor should attach.
-         * @param planeSemantic Semantics for the plane to which this Anchor should attach.
-         * @param timeout Maximum time to search for the anchor, if a suitable plane is not found
-         *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
-         */
-        internal fun create(
-            sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
-            minimumPlaneExtents: FloatSize2d,
-            planeType: @PlaneOrientationValue Int,
-            planeSemantic: @PlaneSemanticTypeValue Int,
-            timeout: Duration = Duration.ZERO,
-        ): AnchorEntity {
-            val rtAnchorEntity =
-                sceneRuntime.createAnchorEntity(
-                    minimumPlaneExtents.to3d().toRtDimensions(),
-                    planeType.toRtPlaneType(),
-                    planeSemantic.toRtPlaneSemantic(),
-                    timeout,
+        private fun getAnchorDeadline(anchorSearchTimeout: Duration?): Long? {
+            // If the timeout is zero or null then we return null here and the anchor search will
+            // continue indefinitely.
+            if (anchorSearchTimeout == null || anchorSearchTimeout.isZero()) {
+                return null
+            }
+            return SystemClock.uptimeMillis() + anchorSearchTimeout.toMillis()
+        }
+
+        private fun findAndSetPlaneAnchor(
+            session: Session,
+            info: PlaneFindingInfo,
+            entity: AnchorEntity,
+        ) {
+            entity.planeFindingJob =
+                SupervisorJob(
+                    session.coroutineScope.launch {
+                        Plane.subscribe(session).collect {
+                            val timeNow = SystemClock.uptimeMillis()
+                            if (info.searchDeadline != null && timeNow > info.searchDeadline) {
+                                entity.updateState(State.TIMEDOUT)
+                                return@collect
+                            }
+
+                            val plane =
+                                it.firstOrNull {
+                                    val planeState = it.state.value
+                                    val planeOrientation = it.type.toSceneCoreOrientation()
+                                    val planeSemanticType =
+                                        planeState.label.toSceneCoreSemanticType()
+                                    (info.orientation == planeOrientation ||
+                                        info.orientation == PlaneOrientation.ANY) &&
+                                        (info.semanticType == planeSemanticType ||
+                                            info.semanticType == PlaneSemanticType.ANY) &&
+                                        info.dimensions.width <= planeState.extents.width &&
+                                        info.dimensions.height <= planeState.extents.height
+                                }
+
+                            if (plane != null) {
+                                val anchorCreateResult = plane.createAnchor(Pose.Identity)
+                                if (anchorCreateResult is AnchorCreateSuccess) {
+                                    val anchor = anchorCreateResult.anchor
+                                    if (entity.rtEntity!!.setAnchor(anchor)) {
+                                        entity.planeAnchor = anchor
+                                        entity.updateState(State.ANCHORED)
+                                    } else {
+                                        anchor.detach()
+                                    }
+                                }
+                            }
+                        }
+                    }
                 )
-            return create(rtAnchorEntity, entityManager)
         }
 
         /**
          * Factory method for AnchorEntity.
          *
-         * @param anchor Anchor to create an AnchorEntity for.
+         * @param session Session to use.
+         * @param entityManager EntityManager to use.
+         * @param minimumPlaneExtents The minimum extents (in meters) of the plane to which this
+         *   AnchorEntity should attach.
+         * @param planeOrientation Orientation for the plane to which this Anchor should attach.
+         * @param planeSemanticType Semantics for the plane to which this Anchor should attach.
+         * @param timeout Maximum time to search for the anchor, if a suitable plane is not found
+         *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
          */
         internal fun create(
-            sceneRuntime: SceneRuntime,
+            session: Session,
             entityManager: EntityManager,
-            anchor: Anchor,
-        ): AnchorEntity =
-            create(sceneRuntime.createAnchorEntity(anchor.runtimeAnchor), entityManager)
+            minimumPlaneExtents: FloatSize2d,
+            planeOrientation: @PlaneOrientationValue Int,
+            planeSemanticType: @PlaneSemanticTypeValue Int,
+            timeout: Duration = Duration.ZERO,
+        ): AnchorEntity {
+            check(session.config.planeTracking != PlaneTrackingMode.DISABLED) {
+                "Config.PlaneTrackingMode is set to Disabled."
+            }
+
+            val rtAnchorEntity = session.sceneRuntime.createAnchorEntity()
+            val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
+            rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
+
+            val info =
+                PlaneFindingInfo(
+                    minimumPlaneExtents,
+                    planeOrientation,
+                    planeSemanticType,
+                    getAnchorDeadline(timeout),
+                )
+            findAndSetPlaneAnchor(session, info, anchorEntity)
+
+            return anchorEntity
+        }
 
         /**
          * Factory method for AnchorEntity.
@@ -160,41 +244,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
             entityManager: EntityManager,
         ): AnchorEntity {
             val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
-            rtAnchorEntity.setOnStateChangedListener { newRtState ->
-                when (newRtState) {
-                    RtAnchorEntity.State.UNANCHORED -> anchorEntity.state = State.UNANCHORED
-                    RtAnchorEntity.State.ANCHORED -> anchorEntity.state = State.ANCHORED
-                    RtAnchorEntity.State.TIMED_OUT -> anchorEntity.state = State.TIMEDOUT
-                    RtAnchorEntity.State.ERROR -> anchorEntity.state = State.ERROR
-                }
-            }
-            return anchorEntity
-        }
-
-        /**
-         * Factory method for AnchorEntity.
-         *
-         * @param sceneRuntime SceneRuntime to use.
-         * @param uuid UUID of the persisted Anchor Entity to create.
-         * @param timeout Maximum time to search for the anchor, if a persisted anchor isn't located
-         *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
-         */
-        internal fun create(
-            sceneRuntime: SceneRuntime,
-            entityManager: EntityManager,
-            uuid: UUID,
-            timeout: Duration = Duration.ZERO,
-        ): AnchorEntity {
-            val rtAnchorEntity = sceneRuntime.createPersistedAnchorEntity(uuid, timeout)
-            val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
-            rtAnchorEntity.setOnStateChangedListener { newRtState ->
-                when (newRtState) {
-                    RtAnchorEntity.State.UNANCHORED -> anchorEntity.state = State.UNANCHORED
-                    RtAnchorEntity.State.ANCHORED -> anchorEntity.state = State.ANCHORED
-                    RtAnchorEntity.State.TIMED_OUT -> anchorEntity.state = State.TIMEDOUT
-                    RtAnchorEntity.State.ERROR -> anchorEntity.state = State.ERROR
-                }
-            }
+            rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
             return anchorEntity
         }
 
@@ -226,12 +276,8 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
             planeSemanticType: @PlaneSemanticTypeValue Int,
             timeout: Duration = Duration.ZERO,
         ): AnchorEntity {
-            check(session.config.planeTracking != PlaneTrackingMode.DISABLED) {
-                "Config.PlaneTrackingMode is set to Disabled."
-            }
-
             return create(
-                session.sceneRuntime,
+                session,
                 session.scene.entityManager,
                 minimumPlaneExtents,
                 planeOrientation,
@@ -248,8 +294,16 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          */
         @JvmStatic
         public fun create(session: Session, anchor: Anchor): AnchorEntity {
-            return create(session.sceneRuntime, session.scene.entityManager, anchor)
+            val rtAnchorEntity = session.sceneRuntime.createAnchorEntity()
+            val anchorEntity = AnchorEntity(rtAnchorEntity, session.scene.entityManager)
+            rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
+            rtAnchorEntity.setAnchor(anchor)
+            return anchorEntity
         }
+    }
+
+    private val defaultStateChangedListener: (@RtAnchorEntity.State Int) -> Unit = { newRtState ->
+        updateState(newRtState.fromRtState())
     }
 
     /**

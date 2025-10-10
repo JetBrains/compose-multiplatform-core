@@ -621,21 +621,21 @@ package androidx.paging {
     method public abstract suspend Object? load(androidx.paging.LoadType loadType, androidx.paging.PagingState<Key,Value> state, kotlin.coroutines.Continuation<? super androidx.paging.RemoteMediator.MediatorResult>);
   }
 
-  public enum RemoteMediator.InitializeAction {
+  @SuppressCompatibility @androidx.paging.ExperimentalPagingApi public enum RemoteMediator.InitializeAction {
     enum_constant public static final androidx.paging.RemoteMediator.InitializeAction LAUNCH_INITIAL_REFRESH;
     enum_constant public static final androidx.paging.RemoteMediator.InitializeAction SKIP_INITIAL_REFRESH;
   }
 
-  public abstract static sealed class RemoteMediator.MediatorResult {
+  @SuppressCompatibility @androidx.paging.ExperimentalPagingApi public abstract static sealed class RemoteMediator.MediatorResult {
   }
 
-  public static final class RemoteMediator.MediatorResult.Error extends androidx.paging.RemoteMediator.MediatorResult {
+  @SuppressCompatibility @androidx.paging.ExperimentalPagingApi public static final class RemoteMediator.MediatorResult.Error extends androidx.paging.RemoteMediator.MediatorResult {
     ctor public RemoteMediator.MediatorResult.Error(Throwable throwable);
     method @InaccessibleFromKotlin public Throwable getThrowable();
     property public Throwable throwable;
   }
 
-  public static final class RemoteMediator.MediatorResult.Success extends androidx.paging.RemoteMediator.MediatorResult {
+  @SuppressCompatibility @androidx.paging.ExperimentalPagingApi public static final class RemoteMediator.MediatorResult.Success extends androidx.paging.RemoteMediator.MediatorResult {
     ctor public RemoteMediator.MediatorResult.Success(boolean endOfPaginationReached);
     method @InaccessibleFromKotlin public boolean endOfPaginationReached();
     property public boolean endOfPaginationReached;

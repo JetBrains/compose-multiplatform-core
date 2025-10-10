@@ -145,15 +145,6 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     }
 
     /**
-     * Loads an anchor from the given native pointer.
-     *
-     * This method throws [NotImplementedError] because ARCore does not support native pointers.
-     */
-    override fun loadAnchorFromNativePointer(nativePointer: Long): Anchor {
-        throw NotImplementedError("Native pointers are not supported by ARCore.")
-    }
-
-    /**
      * Unpersists an anchor with the given UUID.
      *
      * This method throws [NotImplementedError] because ARCore does not support anchor persistence.

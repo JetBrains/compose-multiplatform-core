@@ -150,7 +150,8 @@ class PdfViewerTest {
     fun pdfViewerState_coordinateTranslation() {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
         val topPageMarginPx = context.resources.getDimension(androidx.pdf.R.dimen.top_page_margin)
-        val pageSpacingPx = context.resources.getDimension(androidx.pdf.R.dimen.page_spacing)
+        val pageSpacingPx =
+            context.resources.getDimension(androidx.pdf.R.dimen.vertical_page_spacing)
 
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {

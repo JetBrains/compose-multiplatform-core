@@ -57,7 +57,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Paths
-import java.util.UUID
 import java.util.concurrent.Executor
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.seconds
@@ -69,7 +68,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -94,7 +92,7 @@ class EntityTest {
     private val mockActivityPanelEntity = mock<RtActivityPanelEntity>()
     private val mockGroupEntity = mock<RtEntity>()
     private val mockSurfaceEntity = mock<RtSurfaceEntity>()
-    private val entityManager = EntityManager()
+    private lateinit var entityManager: EntityManager
     private lateinit var session: Session
 
     private lateinit var lifecycleManager: LifecycleManager
@@ -300,8 +298,7 @@ class EntityTest {
                 )
             )
             .thenReturn(mockPanelEntityImpl)
-        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
-            .thenReturn(mockAnchorEntityImpl)
+        whenever(mockSceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntityImpl)
         whenever(mockAnchorEntityImpl.state).thenReturn(RtAnchorEntity.State.UNANCHORED)
         whenever(mockSceneRuntime.createActivityPanelEntity(any(), any(), any(), any(), any()))
             .thenReturn(mockActivityPanelEntity)
@@ -327,6 +324,7 @@ class EntityTest {
                 headTracking = Config.HeadTrackingMode.LAST_KNOWN,
             )
         )
+        entityManager = session.scene.entityManager
         activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
         gltfModel = GltfModel.create(session, Paths.get("test.glb"))
         gltfModelEntity =
@@ -343,8 +341,7 @@ class EntityTest {
             )
         anchorEntity =
             AnchorEntity.create(
-                mockSceneRuntime,
-                entityManager,
+                session,
                 FloatSize2d(),
                 PlaneOrientation.ANY,
                 PlaneSemanticType.ANY,
@@ -374,16 +371,9 @@ class EntityTest {
 
     @Test
     fun anchorEntityCreateWithNullTimeout_passesNullToImpl() {
-        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
-            .thenReturn(mockAnchorEntityImpl)
+        whenever(mockSceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntityImpl)
         anchorEntity =
-            AnchorEntity.create(
-                mockSceneRuntime,
-                entityManager,
-                FloatSize2d(),
-                PlaneOrientation.ANY,
-                PlaneSemanticType.ANY,
-            )
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
 
         assertThat(anchorEntity).isNotNull()
     }
@@ -1099,15 +1089,6 @@ class EntityTest {
     }
 
     @Test
-    fun anchorEntity_createPersistAnchorSuccess() {
-        whenever(mockSceneRuntime.createPersistedAnchorEntity(any(), any()))
-            .thenReturn(mockAnchorEntityImpl)
-        val persistAnchorEntity =
-            AnchorEntity.create(mockSceneRuntime, entityManager, UUID.randomUUID())
-        assertThat(persistAnchorEntity).isNotNull()
-    }
-
-    @Test
     fun allEntity_disposeRemovesAllComponents() {
         val component = mock<Component>()
         whenever(component.onAttach(any())).thenReturn(true)
@@ -1285,8 +1266,7 @@ class EntityTest {
 
     @Test
     fun createAnchorEntity_callsRuntimeCreateAnchorEntity() {
-        whenever(mockEntitySceneRuntime.createAnchorEntity(any(), any(), any(), anyOrNull()))
-            .thenReturn(mockAnchorEntityImpl)
+        whenever(mockEntitySceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntityImpl)
         @Suppress("UNUSED_VARIABLE")
         val unused =
             AnchorEntity.create(
@@ -1296,7 +1276,7 @@ class EntityTest {
                 PlaneSemanticType.ANY,
             )
 
-        verify(mockEntitySceneRuntime).createAnchorEntity(any(), any(), any(), anyOrNull())
+        verify(mockEntitySceneRuntime).createAnchorEntity()
     }
 
     @Test
@@ -1323,7 +1303,6 @@ class EntityTest {
 
         assertFailsWith<IllegalStateException> { surfaceEntity.stereoMode }
         assertFailsWith<IllegalStateException> { panelEntity.size }
-        assertFailsWith<IllegalStateException> { anchorEntity.getAnchor(session) }
         assertFailsWith<IllegalStateException> { groupEntity.getScale() }
         assertFailsWith<IllegalStateException> { activityPanelEntity.getPerceivedResolution() }
         assertFailsWith<IllegalStateException> { gltfModelEntity.stopAnimation() }

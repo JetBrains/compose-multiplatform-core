@@ -21,10 +21,10 @@ import kotlinx.coroutines.ThreadContextElement
 
 internal class DefaultThreadContextElement(
     override val name: String,
-    override val flowIds: List<Long>,
+    override val token: FlowToken,
     internal val updateThreadContextBlock: (context: CoroutineContext) -> Unit,
     internal val restoreThreadContextBlock: (context: CoroutineContext) -> Unit,
-) : ThreadContextElement<Unit>, PlatformThreadContextElement<Unit>(name = name, flowIds = flowIds) {
+) : ThreadContextElement<Unit>, PlatformThreadContextElement<Unit>(name = name, token = token) {
     /**
      * This method is called **before a coroutine is resumed** on a thread that belongs to a
      * dispatcher.
@@ -42,13 +42,13 @@ internal class DefaultThreadContextElement(
 @PublishedApi
 internal actual fun buildThreadContextElement(
     name: String,
-    flowIds: List<Long>,
+    element: FlowToken,
     updateThreadContextBlock: (context: CoroutineContext) -> Unit,
     restoreThreadContextBlock: (context: CoroutineContext) -> Unit,
 ): PlatformThreadContextElement<Unit> {
     return DefaultThreadContextElement(
         name = name,
-        flowIds = flowIds,
+        token = element,
         updateThreadContextBlock = updateThreadContextBlock,
         restoreThreadContextBlock = restoreThreadContextBlock,
     )

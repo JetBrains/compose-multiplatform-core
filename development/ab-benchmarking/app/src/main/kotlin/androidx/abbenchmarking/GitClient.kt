@@ -70,8 +70,12 @@ internal fun getCurrentGitRevision(): String =
     runCommand("git", "rev-parse", "--abbrev-ref", "HEAD", workingDir = projectRoot).trim()
 
 /** Resolves a git reference (like a branch name or HEAD) to its full commit hash. */
-internal fun resolveGitCommit(rev: String): String? {
-    return runCommand(*(listOf("git", "rev-parse", rev)).toTypedArray())?.trim()
+internal fun resolveGitCommit(rev: String): String {
+    val commitHash = runCommand(*(listOf("git", "rev-parse", rev)).toTypedArray())?.trim()
+    if (commitHash == null) {
+        throw IllegalArgumentException("Can't find a commit hash for revision '$rev'.")
+    }
+    return commitHash
 }
 
 /**

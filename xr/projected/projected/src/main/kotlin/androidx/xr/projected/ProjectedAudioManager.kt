@@ -17,7 +17,6 @@
 package androidx.xr.projected
 
 import android.content.Context
-import androidx.lifecycle.LifecycleOwner
 import androidx.xr.projected.ProjectedAudioManager.Companion.create
 
 /**
@@ -27,11 +26,12 @@ import androidx.xr.projected.ProjectedAudioManager.Companion.create
  * This class provides a way to connect to and communicate with the ProjectedAudioManager, which is
  * expected to be running in the host process.
  *
- * Use [create] to create an instance of this class. The connection is managed automatically with
- * the provided [LifecycleOwner].
+ * Use [create] to create an instance of this class. Use [close] to clear the instance.
  */
 public class ProjectedAudioManager
-private constructor(private val projectedService: IProjectedService) {
+private constructor(private val connection: ProjectedServiceConnection) : AutoCloseable {
+
+    private lateinit var projectedService: IProjectedService
 
     /**
      * Retrieves the supported audio capture configurations for the Projected device.
@@ -56,20 +56,27 @@ private constructor(private val projectedService: IProjectedService) {
             .toList()
     }
 
+    override fun close() {
+        connection.disconnect()
+    }
+
+    private suspend fun getInitialized(): ProjectedAudioManager {
+        projectedService = connection.connect()
+        return this
+    }
+
     public companion object {
         /**
          * Connects to the service providing features for Projected devices and returns the
          * [ProjectedAudioManager] when the connection is established.
          *
          * @param context The context to use for binding to the service.
-         * @param lifecycleOwner The lifecycle owner to scope the service connection to.
          * @return A [ProjectedAudioManager] instance.
+         * @throws IllegalStateException if the projected service is not found or binding is not
+         *   permitted
          */
         @JvmStatic
-        public suspend fun create(
-            context: Context,
-            lifecycleOwner: LifecycleOwner,
-        ): ProjectedAudioManager =
-            ProjectedAudioManager(ProjectedServiceConnection.connect(context, lifecycleOwner))
+        public suspend fun create(context: Context): ProjectedAudioManager =
+            ProjectedAudioManager(ProjectedServiceConnection(context)).getInitialized()
     }
 }

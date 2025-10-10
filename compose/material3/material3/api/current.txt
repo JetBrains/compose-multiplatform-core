@@ -251,7 +251,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.BottomAppBarState.Companion Companion;
   }
 
-  public static final class BottomAppBarState.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class BottomAppBarState.Companion {
     method @InaccessibleFromKotlin public androidx.compose.runtime.saveable.Saver<androidx.compose.material3.BottomAppBarState,? extends java.lang.Object?> getSaver();
     property public androidx.compose.runtime.saveable.Saver<androidx.compose.material3.BottomAppBarState,? extends java.lang.Object?> Saver;
   }
@@ -1499,7 +1499,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.FloatingToolbarExitDirection.Companion Companion;
   }
 
-  public static final class FloatingToolbarExitDirection.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public static final class FloatingToolbarExitDirection.Companion {
     method @BytecodeOnly public int getBottom-8LIK8-E();
     method @BytecodeOnly public int getEnd-8LIK8-E();
     method @BytecodeOnly public int getStart-8LIK8-E();
@@ -1516,7 +1516,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.FloatingToolbarHorizontalFabPosition.Companion Companion;
   }
 
-  public static final class FloatingToolbarHorizontalFabPosition.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public static final class FloatingToolbarHorizontalFabPosition.Companion {
     method @BytecodeOnly public int getEnd-EdPuMIg();
     method @BytecodeOnly public int getStart-EdPuMIg();
     property public androidx.compose.material3.FloatingToolbarHorizontalFabPosition End;
@@ -1570,7 +1570,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.FloatingToolbarState.Companion Companion;
   }
 
-  public static final class FloatingToolbarState.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public static final class FloatingToolbarState.Companion {
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @kotlin.jvm.JvmInline public final value class FloatingToolbarVerticalFabPosition {
@@ -1579,7 +1579,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.FloatingToolbarVerticalFabPosition.Companion Companion;
   }
 
-  public static final class FloatingToolbarVerticalFabPosition.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public static final class FloatingToolbarVerticalFabPosition.Companion {
     method @BytecodeOnly public int getBottom-dDJPGzU();
     method @BytecodeOnly public int getTop-dDJPGzU();
     property public androidx.compose.material3.FloatingToolbarVerticalFabPosition Bottom;
@@ -2025,7 +2025,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.MaterialShapes.Companion Companion;
   }
 
-  public static final class MaterialShapes.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public static final class MaterialShapes.Companion {
     method @InaccessibleFromKotlin public androidx.graphics.shapes.RoundedPolygon getArch();
     method @InaccessibleFromKotlin public androidx.graphics.shapes.RoundedPolygon getArrow();
     method @InaccessibleFromKotlin public androidx.graphics.shapes.RoundedPolygon getBoom();
@@ -2259,7 +2259,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.MotionScheme.Companion Companion;
   }
 
-  public static final class MotionScheme.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public static final class MotionScheme.Companion {
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.material3.MotionScheme expressive();
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public androidx.compose.material3.MotionScheme standard();
   }
@@ -2624,7 +2624,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.RangeSliderState.Companion Companion;
   }
 
-  public static final class RangeSliderState.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class RangeSliderState.Companion {
     method public androidx.compose.runtime.saveable.Saver<androidx.compose.material3.RangeSliderState,? extends java.lang.Object?> Saver(kotlin.jvm.functions.Function0<kotlin.Unit>? onValueChangeFinished, kotlin.ranges.ClosedFloatingPointRange<java.lang.Float> valueRange);
   }
 
@@ -2695,8 +2695,9 @@ package androidx.compose.material3 {
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public final class SearchBarDefaults {
-    method @BytecodeOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public void InputField(androidx.compose.foundation.text.input.TextFieldState, androidx.compose.material3.SearchBarState, kotlin.jvm.functions.Function1<? super java.lang.String!,kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, boolean, androidx.compose.ui.text.TextStyle?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.compose.foundation.text.input.InputTransformation?, androidx.compose.foundation.text.input.OutputTransformation?, androidx.compose.foundation.ScrollState?, androidx.compose.ui.graphics.Shape?, androidx.compose.material3.TextFieldColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int, int);
-    method @KotlinOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public void InputField(androidx.compose.foundation.text.input.TextFieldState textFieldState, androidx.compose.material3.SearchBarState searchBarState, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSearch, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional boolean readOnly, optional androidx.compose.ui.text.TextStyle textStyle, optional kotlin.jvm.functions.Function0<kotlin.Unit>? placeholder, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? prefix, optional kotlin.jvm.functions.Function0<kotlin.Unit>? suffix, optional androidx.compose.foundation.text.input.InputTransformation? inputTransformation, optional androidx.compose.foundation.text.input.OutputTransformation? outputTransformation, optional androidx.compose.foundation.ScrollState scrollState, optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.material3.TextFieldColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
+    method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public void InputField(androidx.compose.foundation.text.input.TextFieldState!, androidx.compose.material3.SearchBarState!, kotlin.jvm.functions.Function1!, androidx.compose.ui.Modifier!, boolean, boolean, androidx.compose.ui.text.TextStyle!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function2!, androidx.compose.foundation.text.input.InputTransformation!, androidx.compose.foundation.text.input.OutputTransformation!, androidx.compose.foundation.ScrollState!, androidx.compose.ui.graphics.Shape!, androidx.compose.material3.TextFieldColors!, androidx.compose.foundation.interaction.MutableInteractionSource!, androidx.compose.runtime.Composer!, int, int, int);
+    method @BytecodeOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public void InputField(androidx.compose.foundation.text.input.TextFieldState, androidx.compose.material3.SearchBarState, kotlin.jvm.functions.Function1<? super java.lang.String!,kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, boolean, androidx.compose.ui.text.TextStyle?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.compose.foundation.text.input.InputTransformation?, androidx.compose.foundation.text.input.OutputTransformation?, androidx.compose.foundation.text.KeyboardOptions?, androidx.compose.foundation.text.input.TextFieldLineLimits?, androidx.compose.foundation.ScrollState?, androidx.compose.ui.graphics.Shape?, androidx.compose.material3.TextFieldColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int, int, int);
+    method @KotlinOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public void InputField(androidx.compose.foundation.text.input.TextFieldState textFieldState, androidx.compose.material3.SearchBarState searchBarState, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSearch, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional boolean readOnly, optional androidx.compose.ui.text.TextStyle textStyle, optional kotlin.jvm.functions.Function0<kotlin.Unit>? placeholder, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? prefix, optional kotlin.jvm.functions.Function0<kotlin.Unit>? suffix, optional androidx.compose.foundation.text.input.InputTransformation? inputTransformation, optional androidx.compose.foundation.text.input.OutputTransformation? outputTransformation, optional androidx.compose.foundation.text.KeyboardOptions keyboardOptions, optional androidx.compose.foundation.text.input.TextFieldLineLimits lineLimits, optional androidx.compose.foundation.ScrollState scrollState, optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.material3.TextFieldColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public void InputField(androidx.compose.foundation.text.input.TextFieldState, kotlin.jvm.functions.Function1<? super java.lang.String!,kotlin.Unit!>, boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean!,kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, boolean, androidx.compose.ui.text.TextStyle?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.compose.foundation.text.input.InputTransformation?, androidx.compose.foundation.text.input.OutputTransformation?, androidx.compose.foundation.ScrollState?, androidx.compose.ui.graphics.Shape?, androidx.compose.material3.TextFieldColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int, int);
     method @KotlinOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public void InputField(androidx.compose.foundation.text.input.TextFieldState state, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSearch, boolean expanded, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit> onExpandedChange, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional boolean readOnly, optional androidx.compose.ui.text.TextStyle textStyle, optional kotlin.jvm.functions.Function0<kotlin.Unit>? placeholder, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? prefix, optional kotlin.jvm.functions.Function0<kotlin.Unit>? suffix, optional androidx.compose.foundation.text.input.InputTransformation? inputTransformation, optional androidx.compose.foundation.text.input.OutputTransformation? outputTransformation, optional androidx.compose.foundation.ScrollState scrollState, optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.material3.TextFieldColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public void InputField(String, kotlin.jvm.functions.Function1<? super java.lang.String!,kotlin.Unit!>, kotlin.jvm.functions.Function1<? super java.lang.String!,kotlin.Unit!>, boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean!,kotlin.Unit!>, androidx.compose.ui.Modifier?, boolean, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>?, androidx.compose.material3.TextFieldColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int, int);
@@ -2793,7 +2794,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.SearchBarState.Companion Companion;
   }
 
-  public static final class SearchBarState.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class SearchBarState.Companion {
     method public androidx.compose.runtime.saveable.Saver<androidx.compose.material3.SearchBarState,? extends java.lang.Object?> Saver(androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpecForExpand, androidx.compose.animation.core.AnimationSpec<java.lang.Float> animationSpecForCollapse);
   }
 
@@ -2973,7 +2974,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.SheetState.Companion Companion;
   }
 
-  public static final class SheetState.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class SheetState.Companion {
     method public androidx.compose.runtime.saveable.Saver<androidx.compose.material3.SheetState,androidx.compose.material3.SheetValue> Saver(boolean skipPartiallyExpanded, kotlin.jvm.functions.Function0<java.lang.Float> positionalThreshold, kotlin.jvm.functions.Function0<java.lang.Float> velocityThreshold, kotlin.jvm.functions.Function1<? super androidx.compose.material3.SheetValue,java.lang.Boolean> confirmValueChange, boolean skipHiddenState);
     method @BytecodeOnly @Deprecated public androidx.compose.runtime.saveable.Saver! Saver(boolean, kotlin.jvm.functions.Function1!, androidx.compose.ui.unit.Density!, boolean);
   }
@@ -3200,7 +3201,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.SliderState.Companion Companion;
   }
 
-  public static final class SliderState.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class SliderState.Companion {
     method public androidx.compose.runtime.saveable.Saver<androidx.compose.material3.SliderState,? extends java.lang.Object?> Saver(kotlin.jvm.functions.Function0<kotlin.Unit>? onValueChangeFinished, kotlin.ranges.ClosedFloatingPointRange<java.lang.Float> valueRange);
   }
 
@@ -3911,7 +3912,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.TimePickerLayoutType.Companion Companion;
   }
 
-  public static final class TimePickerLayoutType.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class TimePickerLayoutType.Companion {
     method @BytecodeOnly public int getHorizontal-QJTpgSE();
     method @BytecodeOnly public int getVertical-QJTpgSE();
     property public androidx.compose.material3.TimePickerLayoutType Horizontal;
@@ -3926,7 +3927,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.TimePickerSelectionMode.Companion Companion;
   }
 
-  public static final class TimePickerSelectionMode.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class TimePickerSelectionMode.Companion {
     method @BytecodeOnly public int getHour-yecRtBI();
     method @BytecodeOnly public int getMinute-yecRtBI();
     property public androidx.compose.material3.TimePickerSelectionMode Hour;
@@ -4093,7 +4094,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.TooltipAnchorPosition.Companion Companion;
   }
 
-  public static final class TooltipAnchorPosition.Companion {
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class TooltipAnchorPosition.Companion {
     method @BytecodeOnly public int getAbove-lOKsHw4();
     method @BytecodeOnly public int getBelow-lOKsHw4();
     method @BytecodeOnly public int getEnd-lOKsHw4();

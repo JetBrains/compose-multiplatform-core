@@ -132,7 +132,7 @@ package androidx.xr.compose.material3 {
     field public static final androidx.xr.compose.material3.XrComponentOverride.Companion Companion;
   }
 
-  public static final class XrComponentOverride.Companion {
+  @SuppressCompatibility @androidx.xr.compose.material3.ExperimentalMaterial3XrApi public static final class XrComponentOverride.Companion {
     method @BytecodeOnly @SuppressCompatibility @androidx.xr.compose.material3.ExperimentalMaterial3XrApi public String getBasicAlertDialog-sKf2Msg();
     method @BytecodeOnly @SuppressCompatibility @androidx.xr.compose.material3.ExperimentalMaterial3XrApi public String getHorizontalFloatingToolbar-sKf2Msg();
     method @BytecodeOnly @SuppressCompatibility @androidx.xr.compose.material3.ExperimentalMaterial3XrApi public String getNavigationBar-sKf2Msg();

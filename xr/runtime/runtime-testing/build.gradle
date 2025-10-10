@@ -40,7 +40,6 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
     namespace = "androidx.xr.runtime.testing"
 }
 

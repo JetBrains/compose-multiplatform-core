@@ -19,63 +19,23 @@ package androidx.xr.scenecore.testing
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.runtime.Anchor
-import androidx.xr.arcore.testing.FakeRuntimeAnchor
-import androidx.xr.arcore.testing.FakeRuntimePlane
+import androidx.xr.arcore.Anchor
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.AnchorEntity.OnStateChangedListener
-import androidx.xr.scenecore.runtime.Dimensions
-import androidx.xr.scenecore.runtime.PlaneSemantic
-import androidx.xr.scenecore.runtime.PlaneType
-import java.time.Duration
-import java.util.UUID
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.AnchorEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 @RequiresApi(Build.VERSION_CODES.O)
-public class FakeAnchorEntity(
+public class FakeAnchorEntity : FakeSystemSpaceEntity(), AnchorEntity {
     /**
-     * The configuration data used to create this [FakeAnchorEntity]. This field is currently used
-     * by [FakeSceneRuntime.createAnchorEntity] only.
-     *
-     * In tests, this property can be inspected to verify that the anchor was instantiated with the
-     * correct parameters, such as bounds or plane type. It can also be modified to simulate
-     * different anchor configurations.
-     *
-     * @see AnchorCreationData
-     */
-    internal val anchorCreationData: AnchorCreationData = AnchorCreationData(),
-
-    /**
-     * The underlying [androidx.xr.arcore.runtime.Anchor] instance that this fake entity represents.
-     *
-     * In tests, this property can be accessed to inspect or modify the state of the underlying
-     * (fake) anchor, such as its pose or tracking state. It is initialized by default with a
-     * [androidx.xr.arcore.testing.FakeRuntimeAnchor] instance.
+     * The underlying [androidx.xr.arcore.runtime.Anchor] instance that this fake entity represents,
+     * set when [setAnchor] is called.
      *
      * @see androidx.xr.arcore.runtime.Anchor
      * @see androidx.xr.arcore.testing.FakeRuntimeAnchor
      */
-    internal val anchor: Anchor = FakeRuntimeAnchor(Pose(), FakeRuntimePlane()),
-) : FakeSystemSpaceEntity(), AnchorEntity {
-
-    /**
-     * A data class holding the configuration parameters for a [FakeAnchorEntity].
-     *
-     * This class is used within tests to specify the initial properties of a fake anchor, such as
-     * its dimensions, plane classification, and search timeout. It allows for the creation of
-     * test-specific anchor configurations and enables verification of these parameters after
-     * instantiation.
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    public data class AnchorCreationData(
-        val bounds: Dimensions = Dimensions(1f, 1f, 1f),
-        val planeType: PlaneType = PlaneType.ANY,
-        val planeSemantic: PlaneSemantic = PlaneSemantic.ANY,
-        val searchTimeout: Duration = Duration.ZERO,
-        val uuid: UUID = UUID.randomUUID(),
-    )
+    internal var anchor: Anchor? = null
 
     private var onStateChangedListener: OnStateChangedListener =
         OnStateChangedListener { newState ->
@@ -92,12 +52,20 @@ public class FakeAnchorEntity(
     @Suppress("ExecutorRegistration")
     override fun setOnStateChangedListener(onStateChangedListener: OnStateChangedListener) {
         this.onStateChangedListener = onStateChangedListener
+        onStateChangedListener.onStateChanged(_state)
     }
 
-    /** Returns the native pointer of the anchor. */
-    // TODO(b/373711152) : Remove this property once the Jetpack XR Runtime API migration is done.
-    override val nativePointer: Long
-        get() = 0L
+    override fun setAnchor(anchor: Anchor): Boolean {
+        // detach current
+        anchor.detach()
+        this.anchor = anchor
+        onStateChangedListener.onStateChanged(AnchorEntity.State.ANCHORED)
+        return true
+    }
+
+    override fun getPose(relativeTo: Int): Pose {
+        return anchor?.runtimeAnchor?.pose ?: Pose.Identity
+    }
 
     /**
      * Test function to invoke the onStateChanged listener callback.

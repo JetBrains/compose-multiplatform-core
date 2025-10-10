@@ -53,6 +53,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnviron
     private boolean mIsPreferredSpatialEnvironmentActive = false;
     private final AtomicReference<SpatialEnvironmentPreference> mSpatialEnvironmentPreference =
             new AtomicReference<>(null);
+    private final @NonNull Activity mActivity;
 
     // The active passthrough opacity value is updated with every opacity change event. A null value
     // indicates it has not yet been initialized and the value should be read from the
@@ -77,6 +78,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnviron
             @NonNull XrExtensions xrExtensions,
             @NonNull Node rootSceneNode,
             @NonNull Supplier<SpatialState> spatialStateProvider) {
+        mActivity = activity;
         mXrExtensions = xrExtensions;
         mPassthroughNode = xrExtensions.createNode();
         mSpatialStateProvider = spatialStateProvider;
@@ -263,10 +265,27 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnviron
     public void setPreferredSpatialEnvironment(
             @Nullable SpatialEnvironmentPreference newPreference) {
         if (mSpatialEnvironmentFeature == null) {
-            throw new UnsupportedOperationException(
+            if(newPreference == null) {
+            // Detaching the app environment to go back to the system environment.
+                mXrExtensions.detachSpatialEnvironment(
+                        mActivity, Runnable::run, (result) -> {});
+            }
+            else if(newPreference.getSkybox() == null && newPreference.getGeometry() == null) {
+                Node currentRootEnvironmentNode =  mXrExtensions.createNode();
+                int skyboxMode = XrExtensions.NO_SKYBOX;
+                mXrExtensions.attachSpatialEnvironment(
+                    mActivity,
+                    currentRootEnvironmentNode,
+                    skyboxMode,
+                    Runnable::run,
+                    (result) -> {});
+            }
+            else throw new UnsupportedOperationException(
                     "Did you forget to add scenecore-spatial-rendering in dependencies?");
         }
-        mSpatialEnvironmentFeature.setPreferredSpatialEnvironment(newPreference);
+        else {
+            mSpatialEnvironmentFeature.setPreferredSpatialEnvironment(newPreference);
+        }
     }
 
     @Override

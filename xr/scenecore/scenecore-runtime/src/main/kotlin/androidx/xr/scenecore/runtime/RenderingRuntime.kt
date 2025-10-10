@@ -17,7 +17,6 @@
 package androidx.xr.scenecore.runtime
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.internal.JxrRuntime
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
@@ -622,16 +621,4 @@ public interface RenderingRuntime : JxrRuntime {
         superSampling: Int,
         parentEntity: Entity,
     ): SurfaceEntity
-
-    /**
-     * A factory function to create a SubspaceNodeEntity.
-     *
-     * @param subspaceNodeHolder Hold the SubspaceNode to create the SubspaceNodeEntity from.
-     * @param size The (width, depth, height) of the [SubspaceNodeEntity].
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public fun createSubspaceNodeEntity(
-        subspaceNodeHolder: SubspaceNodeHolder<*>,
-        size: Dimensions,
-    ): SubspaceNodeEntity
 }

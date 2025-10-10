@@ -498,7 +498,7 @@ package androidx.compose.ui.contentcapture {
     field public static final androidx.compose.ui.contentcapture.ContentCaptureManager.Companion Companion;
   }
 
-  public static final class ContentCaptureManager.Companion {
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static final class ContentCaptureManager.Companion {
     method @InaccessibleFromKotlin @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public boolean isEnabled();
     method @InaccessibleFromKotlin @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public void setEnabled(boolean);
     property @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public boolean isEnabled;
@@ -4187,7 +4187,7 @@ package androidx.compose.ui.platform {
     field public static final androidx.compose.ui.platform.WindowRecomposerFactory.Companion Companion;
   }
 
-  public static final class WindowRecomposerFactory.Companion {
+  @SuppressCompatibility @androidx.compose.ui.InternalComposeUiApi public static final class WindowRecomposerFactory.Companion {
     method @InaccessibleFromKotlin public androidx.compose.ui.platform.WindowRecomposerFactory getLifecycleAware();
     property public androidx.compose.ui.platform.WindowRecomposerFactory LifecycleAware;
   }

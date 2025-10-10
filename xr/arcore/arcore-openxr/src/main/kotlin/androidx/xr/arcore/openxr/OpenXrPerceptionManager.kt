@@ -89,13 +89,6 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         return anchor
     }
 
-    override fun loadAnchorFromNativePointer(nativePointer: Long): Anchor {
-        val anchor = OpenXrAnchor(nativePointer, xrResources)
-        anchor.update(lastUpdateXrTime)
-        xrResources.addUpdatable(anchor as Updatable)
-        return anchor
-    }
-
     override fun unpersistAnchor(uuid: UUID) {
         check(nativeUnpersistAnchor(uuid)) { "Failed to unpersist anchor." }
     }

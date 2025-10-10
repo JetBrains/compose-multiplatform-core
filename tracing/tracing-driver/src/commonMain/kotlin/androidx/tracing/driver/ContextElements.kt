@@ -32,7 +32,7 @@ internal suspend fun obtainPlatformThreadContextElement(): PlatformThreadContext
  */
 @PublishedApi
 internal abstract class PlatformThreadContextElement<S>
-internal constructor(public open val name: String, public open val flowIds: List<Long>) :
+internal constructor(public open val name: String, public open val token: FlowToken) :
     AbstractCoroutineContextElement(key = KEY) {
     // Always starts in a begin state.
     @PublishedApi internal val started: AtomicInteger = AtomicInteger(STATE_BEGIN)
@@ -62,7 +62,7 @@ internal constructor(public open val name: String, public open val flowIds: List
 @PublishedApi
 internal expect fun buildThreadContextElement(
     name: String,
-    flowIds: List<Long>,
+    element: FlowToken,
     updateThreadContextBlock: (context: CoroutineContext) -> Unit,
     restoreThreadContextBlock: (context: CoroutineContext) -> Unit,
 ): PlatformThreadContextElement<Unit>

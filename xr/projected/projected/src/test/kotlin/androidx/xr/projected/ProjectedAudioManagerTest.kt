@@ -1,19 +1,18 @@
 /*
-* Copyright 2025 The Android Open Source Project
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package androidx.xr.projected
 
@@ -23,15 +22,12 @@ import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.ServiceInfo
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.xr.projected.ProjectedServiceBinding.ACTION_BIND
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,12 +40,10 @@ class ProjectedAudioManagerTest {
 
     private val testProjectedService = TestProjectedService()
     private lateinit var context: Application
-    private lateinit var lifecycleOwner: TestLifecycleOwner
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        lifecycleOwner = TestLifecycleOwner(Lifecycle.State.INITIALIZED, UnconfinedTestDispatcher())
         shadowOf(context.packageManager).apply {
             addServiceIfNotPresent(COMPONENT_NAME)
             addOrUpdateService(SERVICE_INFO)
@@ -62,10 +56,10 @@ class ProjectedAudioManagerTest {
     }
 
     @Test
-    fun getSupportedAudioConfigs_returnsAudioConfigs() = runBlocking {
+    fun getSupportedAudioCaptureConfigs_returnsAudioConfigs() = runTest {
         shadowOf(context).setBindServiceCallsOnServiceConnectedDirectly(true)
 
-        val projectedAudioManager = ProjectedAudioManager.create(context, lifecycleOwner)
+        val projectedAudioManager = ProjectedAudioManager.create(context)
 
         val supportedAudioConfigs = projectedAudioManager.getSupportedAudioCaptureConfigs()
         assertThat(supportedAudioConfigs).hasSize(1)
@@ -75,23 +69,30 @@ class ProjectedAudioManagerTest {
     }
 
     @Test
-    fun initialize_returnsProjectedCapabilitiesInstance() = runBlocking {
+    fun create_returnsProjectedAudioManagerInstance() = runTest {
         shadowOf(context).setBindServiceCallsOnServiceConnectedDirectly(true)
 
-        val projectedAudioManager = ProjectedAudioManager.create(context, lifecycleOwner)
+        val projectedAudioManager = ProjectedAudioManager.create(context)
 
         assertThat(projectedAudioManager).isNotNull()
     }
 
     @Test
-    fun initialize_bindingToServiceNotPermitted_throwsException() {
+    fun create_bindingToServiceNotPermitted_throwsException() = runTest {
         shadowOf(context).declareComponentUnbindable(COMPONENT_NAME)
 
-        assertFailsWith<IllegalStateException> {
-            runBlocking {
-                val unused = ProjectedAudioManager.create(context, lifecycleOwner)
-            }
-        }
+        assertFailsWith<IllegalStateException> { ProjectedAudioManager.create(context) }
+    }
+
+    @Test
+    fun close_disconnectsService() = runTest {
+        shadowOf(context).setBindServiceCallsOnServiceConnectedDirectly(true)
+        val projectedAudioManager = ProjectedAudioManager.create(context)
+        assertThat(shadowOf(context).boundServiceConnections).hasSize(1)
+
+        projectedAudioManager.close()
+
+        assertThat(shadowOf(context).boundServiceConnections).isEmpty()
     }
 
     companion object {

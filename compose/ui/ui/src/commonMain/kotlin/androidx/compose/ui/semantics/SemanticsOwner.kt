@@ -175,7 +175,8 @@ internal class SemanticsNodeWithAdjustedBounds(
  * completely covered by siblings drawn on top of it will be pruned. Return the results in a map.
  */
 internal fun SemanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
-    customRootNodeId: Int
+    customRootNodeId: Int,
+    shouldIgnoreNode: (SemanticsNode) -> Boolean,
 ): IntObjectMap<SemanticsNodeWithAdjustedBounds> {
     trace("getAllUncoveredSemanticsNodesToIntObjectMap") {
         val root = unmergedRootSemanticsNode
@@ -217,11 +218,7 @@ internal fun SemanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
                 // if block.
                 val children = currentNode.replacedChildren
                 for (i in children.size - 1 downTo 0) {
-                    // Links in text nodes are semantics children. But for Android accessibility
-                    // support
-                    // we don't publish them to the accessibility services because they are exposed
-                    // as UrlSpan/ClickableSpan spans instead
-                    if (children[i].config.contains(SemanticsProperties.LinkTestMarker)) {
+                    if (shouldIgnoreNode(children[i])) {
                         continue
                     }
                     findAllSemanticNodesRecursive(children[i], region)

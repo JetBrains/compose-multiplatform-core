@@ -65,7 +65,10 @@ import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
 import androidx.compose.remote.integration.view.demos.examples.RcSimpleClock1
+import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
+import androidx.compose.remote.integration.view.demos.examples.ShaderCalendar
 import androidx.compose.remote.integration.view.demos.examples.SimplePath
+import androidx.compose.remote.integration.view.demos.examples.SwitchWidgetDemo
 import androidx.compose.remote.integration.view.demos.examples.WeatherDemo
 import androidx.compose.remote.integration.view.demos.examples.countDown
 import androidx.compose.remote.integration.view.demos.examples.cube3d
@@ -233,9 +236,15 @@ class ExperimentActivity : ComponentActivity() {
                     get("SimplePath") { SimplePath() },
                     get("WeatherDemo") { WeatherDemo() },
                     get("Simple Clock") { RcSimpleClock1() },
+                    get("Switch Widget") { SwitchWidgetDemo() },
+                    get("Calendar") { ScrollViewDemo() },
                 ),
             "Procedural..." to
-                listOf(getpc("CountDown") { countDown() }, getpc("Cube 3D") { cube3d() }),
+                listOf(
+                    getpc("CountDown") { countDown() },
+                    getpc("Cube 3D") { cube3d() },
+                    getpc("Shader Calendar") { ShaderCalendar() },
+                ),
         )
 
     fun getpc(
@@ -518,6 +527,8 @@ inline fun <reified Activity : ComponentActivity> Context.getActivity(): Activit
     }
 }
 
+val shaderControl: (String) -> Boolean = { true }
+
 @Suppress("RestrictedApiAndroidX")
 @Composable
 private fun DocumentView(
@@ -535,6 +546,7 @@ private fun DocumentView(
                 if (currentDocument.value != null) {
                     player.setDocument(RemoteComposeDocument(currentDocument.value!!))
                 }
+                player.setShaderControl(shaderControl)
                 player.addIdActionListener { _id, _metadata -> println("click $_id $_metadata") }
                 player
             },
@@ -598,6 +610,7 @@ fun DisplayStats(fileReady: Boolean, func: RemoteComposeFunc) {
                     if (currentDocument.value != null) {
                         player.setDocument(RemoteComposeDocument(currentDocument.value!!))
                     }
+                    player.setShaderControl(shaderControl)
                     playerRef.value = player
                     player.addIdActionListener { _id, _metadata ->
                         println("click $_id $_metadata")
@@ -697,6 +710,7 @@ fun DisplayDoc(fileReady: Boolean, func: RemoteComposeFunc) {
                     if (currentDocument.value != null) {
                         player.setDocument(RemoteComposeDocument(currentDocument.value!!))
                     }
+                    player.setShaderControl(shaderControl)
                     player.addIdActionListener { _id, _metadata ->
                         println("click $_id $_metadata")
                     }
@@ -758,6 +772,7 @@ fun DisplayMain(
                         if (currentDocument.value != null) {
                             player.setDocument(RemoteComposeDocument(currentDocument.value!!))
                         }
+                        player.setShaderControl(shaderControl)
                         player.addIdActionListener { _id, _metadata ->
                             id = _id
                             metadata = _metadata ?: "empty"

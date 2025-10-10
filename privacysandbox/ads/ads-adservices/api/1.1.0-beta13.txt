@@ -140,7 +140,7 @@ package androidx.privacysandbox.ads.adservices.adselection {
     field public static final int FLAG_REPORTING_DESTINATION_SELLER = 1; // 0x1
   }
 
-  public static final class ReportEventRequest.Companion {
+  @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn public static final class ReportEventRequest.Companion {
     property public static int FLAG_REPORTING_DESTINATION_BUYER;
     property public static int FLAG_REPORTING_DESTINATION_SELLER;
   }
@@ -293,7 +293,7 @@ package androidx.privacysandbox.ads.adservices.common {
     field public static final androidx.privacysandbox.ads.adservices.common.FrequencyCapFilters.Companion Companion;
   }
 
-  public static final class FrequencyCapFilters.Companion {
+  @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn public static final class FrequencyCapFilters.Companion {
     property public static int AD_EVENT_TYPE_CLICK;
     property public static int AD_EVENT_TYPE_IMPRESSION;
     property public static int AD_EVENT_TYPE_VIEW;
@@ -519,7 +519,7 @@ package androidx.privacysandbox.ads.adservices.measurement {
     property public java.util.List<android.net.Uri> registrationUris;
   }
 
-  public static final class SourceRegistrationRequest.Builder {
+  @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.RegisterSourceOptIn public static final class SourceRegistrationRequest.Builder {
     ctor public SourceRegistrationRequest.Builder(java.util.List<? extends android.net.Uri> registrationUris);
     method public androidx.privacysandbox.ads.adservices.measurement.SourceRegistrationRequest build();
     method public androidx.privacysandbox.ads.adservices.measurement.SourceRegistrationRequest.Builder setInputEvent(android.view.InputEvent inputEvent);

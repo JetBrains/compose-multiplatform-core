@@ -22,6 +22,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
@@ -99,8 +100,7 @@ class EntityManagerTest {
                 )
             )
             .thenReturn(mockPanelEntityImpl)
-        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
-            .thenReturn(mockAnchorEntityImpl)
+        whenever(mockSceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntityImpl)
         whenever(mockAnchorEntityImpl.state).thenReturn(RtAnchorEntity.State.UNANCHORED)
         whenever(mockSceneRuntime.createActivityPanelEntity(any(), any(), any(), any(), any()))
             .thenReturn(mockActivityPanelEntity)
@@ -117,6 +117,7 @@ class EntityManagerTest {
                         mockRenderingRuntime,
                     ),
             )
+        session.configure(Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
     }
 
@@ -282,7 +283,7 @@ class EntityManagerTest {
     private fun createAnchorEntity() {
         anchorEntity =
             AnchorEntity.create(
-                mockSceneRuntime,
+                session,
                 entityManager,
                 FloatSize2d(),
                 PlaneOrientation.ANY,

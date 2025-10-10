@@ -167,7 +167,7 @@ package androidx.browser.customtabs {
     method @SuppressCompatibility @androidx.browser.customtabs.CustomTabsIntent.ContentTargetType public int getTargetType();
   }
 
-  public static final class CustomContentAction.Builder {
+  @SuppressCompatibility @androidx.browser.customtabs.ExperimentalCustomContentAction public static final class CustomContentAction.Builder {
     ctor public CustomContentAction.Builder(@IntRange(from=0) int, String, android.app.PendingIntent, @SuppressCompatibility @androidx.browser.customtabs.CustomTabsIntent.ContentTargetType int);
     method public androidx.browser.customtabs.CustomContentAction build();
   }

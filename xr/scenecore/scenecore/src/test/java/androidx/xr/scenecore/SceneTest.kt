@@ -182,8 +182,7 @@ class SceneTest {
                 )
             )
             .thenReturn(mockPanelEntity)
-        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
-            .thenReturn(mockAnchorEntity)
+        whenever(mockSceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntity)
         val panelEntity =
             PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test1")
         val anchorEntity =
@@ -432,8 +431,7 @@ class SceneTest {
 
     @Test
     fun keyEntity_setWithAnchorEntity_throwsIllegalArgumentException() {
-        whenever(mockSceneRuntime.createAnchorEntity(any(), any(), any(), any()))
-            .thenReturn(mockAnchorEntity)
+        whenever(mockSceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntity)
         val anchorEntity =
             AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
 

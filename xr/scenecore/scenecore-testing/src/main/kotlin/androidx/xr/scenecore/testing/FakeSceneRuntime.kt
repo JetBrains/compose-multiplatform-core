@@ -23,9 +23,9 @@ import android.os.Bundle
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
+import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper
 import androidx.xr.scenecore.runtime.CameraViewActivityPose
@@ -53,11 +53,8 @@ import androidx.xr.scenecore.runtime.SpatialModeChangeListener
 import androidx.xr.scenecore.runtime.SpatialPointerComponent
 import androidx.xr.scenecore.runtime.SpatialVisibility
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity
-import androidx.xr.scenecore.runtime.SubspaceNodeFeature
 import androidx.xr.scenecore.runtime.SurfaceEntity
 import androidx.xr.scenecore.runtime.SurfaceFeature
-import java.time.Duration
-import java.util.UUID
 import java.util.concurrent.Executor
 import java.util.function.Consumer
 
@@ -192,35 +189,8 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun createAnchorEntity(
-        bounds: Dimensions,
-        planeType: PlaneType,
-        planeSemantic: PlaneSemantic,
-        searchTimeout: Duration,
-    ): FakeAnchorEntity {
-        val anchorCreationData =
-            FakeAnchorEntity.AnchorCreationData(
-                bounds = bounds,
-                planeType = planeType,
-                planeSemantic = planeSemantic,
-                searchTimeout = searchTimeout,
-            )
-        return FakeAnchorEntity(anchorCreationData)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun createAnchorEntity(anchor: Anchor): FakeAnchorEntity {
-        return FakeAnchorEntity(anchor = anchor)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun createPersistedAnchorEntity(
-        uuid: UUID,
-        searchTimeout: Duration,
-    ): FakeAnchorEntity {
-        val anchorCreationData =
-            FakeAnchorEntity.AnchorCreationData(searchTimeout = searchTimeout, uuid = uuid)
-        return FakeAnchorEntity(anchorCreationData)
+    override fun createAnchorEntity(): AnchorEntity {
+        return FakeAnchorEntity()
     }
 
     override fun createGltfEntity(
@@ -247,13 +217,6 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
         surfaceEntity.parent = parentEntity
 
         return surfaceEntity
-    }
-
-    override fun createSubspaceNodeEntity(feature: SubspaceNodeFeature): SubspaceNodeEntity {
-        val subspaceNodeEntity = FakeSubspaceNodeEntity()
-        subspaceNodeEntity.parent = activitySpace
-
-        return subspaceNodeEntity
     }
 
     override fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity {
@@ -434,6 +397,10 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
 
     override fun createSpatialPointerComponent(): SpatialPointerComponent =
         FakeSpatialPointerComponent()
+
+    // Assuming the subspaceNodeHolder contains a valid FakeSubspaceNode and a valid FakeNode.
+    public fun createSubspaceNodeEntity(node: FakeNode, size: Dimensions): SubspaceNodeEntity =
+        FakeSubspaceNodeEntity()
 
     internal companion object {
         const val DEFAULT_DP_PER_METER: Float = 1151.856f

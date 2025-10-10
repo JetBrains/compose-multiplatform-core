@@ -3074,6 +3074,7 @@ class AndroidAccessibilityTest {
         }
     }
 
+    @Ignore // b/449663140
     @Test
     fun sendStateChangeEvent_whenClickToggleable() {
         // Arrange.

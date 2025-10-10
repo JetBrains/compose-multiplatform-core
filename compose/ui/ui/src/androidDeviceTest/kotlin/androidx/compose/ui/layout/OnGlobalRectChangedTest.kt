@@ -391,6 +391,76 @@ class OnGlobalRectChangedTest {
     }
 
     @Test
+    fun callbackCalledForChildWhenParentMoved_defaultDebounce() {
+        var position by mutableStateOf(0)
+        var childGlobalPosition = IntOffset(0, 0)
+        var latch = CountDownLatch(1)
+        rule.setContent {
+            Layout(
+                measurePolicy = { measurables, constraints ->
+                    layout(10, 10) { measurables[0].measure(constraints).place(position, 0) }
+                },
+                content = {
+                    Wrap(minWidth = 10, minHeight = 10) {
+                        Wrap(
+                            minWidth = 10,
+                            minHeight = 10,
+                            modifier =
+                                Modifier.onLayoutRectChanged { rect ->
+                                    childGlobalPosition = rect.boundsInRoot.offset()
+                                    latch.countDown()
+                                },
+                        )
+                    }
+                },
+            )
+        }
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+        latch = CountDownLatch(1)
+        rule.runOnUiThread { position = 10 }
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+        assertEquals(IntOffset(10, 0), childGlobalPosition)
+    }
+
+    @Test
+    fun callbackCalledForChildWhenParentMoved_largerDebounce() {
+        var position by mutableStateOf(0)
+        var childGlobalPosition = IntOffset(0, 0)
+        var latch = CountDownLatch(1)
+        rule.setContent {
+            Layout(
+                measurePolicy = { measurables, constraints ->
+                    layout(10, 10) { measurables[0].measure(constraints).place(position, 0) }
+                },
+                content = {
+                    Wrap(minWidth = 10, minHeight = 10) {
+                        Wrap(
+                            minWidth = 10,
+                            minHeight = 10,
+                            modifier =
+                                Modifier.onLayoutRectChanged(debounceMillis = 150) { rect ->
+                                    childGlobalPosition = rect.boundsInRoot.offset()
+                                    latch.countDown()
+                                },
+                        )
+                    }
+                },
+            )
+        }
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+        latch = CountDownLatch(1)
+        rule.runOnUiThread { position = 10 }
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+        assertEquals(IntOffset(10, 0), childGlobalPosition)
+    }
+
+    @Test
     fun callbackCalledForChildWhenParentMoved_1000children() {
         var position by mutableStateOf(0)
         var childGlobalPosition = IntOffset(0, 0)
