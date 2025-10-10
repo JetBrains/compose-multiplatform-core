@@ -30,9 +30,13 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.yield
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 
 class TextFieldFocusTest : OnCanvasTests {
 
@@ -75,6 +79,8 @@ class TextFieldFocusTest : OnCanvasTests {
             }
         }
 
+        var lastKeydownEventOnRoot: Event? = null
+
         focusRequester.requestFocus()
 
         val htmlInput1 = waitForSingleLineHtmlInput()
@@ -82,6 +88,10 @@ class TextFieldFocusTest : OnCanvasTests {
         assertNotNull(secondTextFieldFocusState)
         assertEquals(true, firstTextFieldFocusState.isFocused)
         assertEquals(false, secondTextFieldFocusState.isFocused)
+
+        getShadowRoot().addEventListener("keydown", {
+            lastKeydownEventOnRoot = it
+        })
 
         val tabKeyDown = keyEvent(
             key = "Tab",
@@ -91,6 +101,11 @@ class TextFieldFocusTest : OnCanvasTests {
         )
         htmlInput1.dispatchEvent(tabKeyDown)
         awaitAnimationFrame()
+        assertNotNull(lastKeydownEventOnRoot)
+        assertEquals("Tab", (lastKeydownEventOnRoot as KeyboardEvent).key)
+        assertFalse((lastKeydownEventOnRoot as KeyboardEvent).shiftKey)
+        assertTrue(lastKeydownEventOnRoot!!.defaultPrevented)
+        lastKeydownEventOnRoot = null
 
         assertEquals(false, firstTextFieldFocusState.isFocused)
         assertEquals(true, secondTextFieldFocusState.isFocused)
@@ -111,5 +126,10 @@ class TextFieldFocusTest : OnCanvasTests {
 
         assertEquals(true, firstTextFieldFocusState.isFocused)
         assertEquals(false, secondTextFieldFocusState.isFocused)
+
+        assertNotNull(lastKeydownEventOnRoot)
+        assertEquals("Tab", (lastKeydownEventOnRoot as KeyboardEvent).key)
+        assertTrue((lastKeydownEventOnRoot as KeyboardEvent).shiftKey)
+        assertTrue(lastKeydownEventOnRoot!!.defaultPrevented)
     }
 }
