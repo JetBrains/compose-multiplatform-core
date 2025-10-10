@@ -142,6 +142,9 @@ androidXMultiplatform {
 
         nonJvmMain {
             dependsOn(nonAndroidMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
         }
 
         nonJvmTest {

@@ -18,7 +18,6 @@ package org.jetbrains.androidx.build
 
 import androidx.build.AndroidXExtension
 import androidx.build.AndroidXMultiplatformExtension
-import androidx.build.Release
 import androidx.build.getRepositoryDirectory
 import androidx.build.hasAndroidMultiplatformPlugin
 import androidx.build.multiplatformExtension
@@ -69,7 +68,7 @@ import org.xml.sax.XMLReader
 import org.gradle.api.artifacts.ModuleIdentifier
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+import org.w3c.dom.Node
 
 fun Project.configureMavenArtifactUpload(
     extension: AndroidXExtension,
@@ -182,7 +181,7 @@ private fun Project.configureComponentPublishing(
     project.tasks.withType(GenerateMavenPom::class.java).configureEach { task ->
         task.doLast {
             fun hasTargetWithComponent(componentName: String) =
-                multiplatformExtension?.targets?.find { target ->
+                task.project.multiplatformExtension?.targets?.find { target ->
                     target.components.any { it.name == componentName }
                 } != null
 
@@ -195,7 +194,7 @@ private fun Project.configureComponentPublishing(
 
             val pomFile = task.destination
             val pom = pomFile.readText()
-            val modifiedPom = modifyPomDependencies(extension, pom, componentName)
+            val modifiedPom = task.project.modifyPomDependencies(extension, pom, componentName)
             if (pom != modifiedPom) {
                 pomFile.writeText(modifiedPom)
             }
@@ -344,16 +343,6 @@ private val jetBrainsLibrariesWithAndroidTarget = setOf(
 )
 private fun Project.configureMultiplatformPublication(componentFactory: SoftwareComponentFactory) {
     if (project.path !in jetBrainsLibrariesWithAndroidTarget) return
-    val multiplatformExtension = extensions.findByType<KotlinMultiplatformExtension>()!!
-    multiplatformExtension.targets.all { target ->
-        if (target is KotlinAndroidTarget) {
-            target.publishLibraryVariants(
-                Release.DEFAULT_PUBLISH_CONFIG,
-                "debug"
-            )
-        }
-    }
-
     replaceBaseMultiplatformPublication(componentFactory)
 }
 
@@ -568,7 +557,7 @@ fun insertDefaultMultiplatformDependencies(
     }
 }
 
-private fun org.w3c.dom.Node.appendElement(
+private fun Node.appendElement(
     tagName: String,
     textValue: String? = null
 ): org.w3c.dom.Element {
@@ -583,9 +572,9 @@ private fun org.w3c.dom.Node.appendElement(
     return element
 }
 
-private fun org.w3c.dom.Node.find(
-    predicate: (org.w3c.dom.Node) -> Boolean
-): org.w3c.dom.Node? {
+private fun Node.find(
+    predicate: (Node) -> Boolean
+): Node? {
     val iterator = childrenIterator()
     while (iterator.hasNext()) {
         val node = iterator.next()

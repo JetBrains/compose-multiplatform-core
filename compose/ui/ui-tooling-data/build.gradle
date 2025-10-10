@@ -36,7 +36,7 @@ androidXMultiplatform {
         namespace = "androidx.compose.ui.tooling.data"
         compileSdk = 35
     }
-    jvmStubs()
+    desktop()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 

@@ -20,9 +20,10 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
+    //id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("kotlin-multiplatform")
-    id("JetBrainsAndroidXPlugin")
+    //id("JetBrainsAndroidXPlugin")
     alias(libs.plugins.kotlinSerialization)
 }
 
