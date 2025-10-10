@@ -16,7 +16,7 @@
 
 package org.jetbrains.androidx.build
 
-import androidx.build.getProjectsMap
+import androidx.build.AndroidXExtension
 import com.android.utils.mapValuesNotNull
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
@@ -158,6 +158,7 @@ internal class CustomRootComponent(
 }
 
 internal fun Project.originalToRedirectedDependency(
+    extension: AndroidXExtension,
     componentName: String
 ): Map<ModuleIdentifier, ModuleVersionIdentifier> {
     /**
@@ -190,7 +191,7 @@ internal fun Project.originalToRedirectedDependency(
      * ...
      */
     val projectDefined =
-        getProjectsMap()
+        extension.mavenCoordinatesToProjectPathMap
             .values
             .mapNotNull { project.findProject(it) }
             .flatMap { project ->

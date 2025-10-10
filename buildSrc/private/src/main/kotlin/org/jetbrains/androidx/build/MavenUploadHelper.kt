@@ -19,12 +19,9 @@ package org.jetbrains.androidx.build
 import androidx.build.AndroidXExtension
 import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.Release
-import androidx.build.getAlternativeProjectUrl
-import androidx.build.getBuildId
-import androidx.build.getProjectsMap
 import androidx.build.getRepositoryDirectory
+import androidx.build.hasAndroidMultiplatformPlugin
 import androidx.build.multiplatformExtension
-import androidx.build.version
 import com.android.build.gradle.LibraryPlugin
 import com.android.utils.childrenIterator
 import com.android.utils.forEach
@@ -46,7 +43,6 @@ import org.dom4j.DocumentFactory
 import org.dom4j.Element
 import org.dom4j.io.SAXReader
 import org.dom4j.io.XMLWriter
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.XmlProvider
 import org.gradle.api.artifacts.Configuration
@@ -121,16 +117,14 @@ private fun Project.configureComponentPublishing(
     val androidLibrariesSetProvider: Provider<Set<String>> = provider {
         val androidxAndroidProjects = mutableSetOf<String>()
         // Check every project is the project map to see if they are an Android Library
-        val projectModules = project.getProjectsMap()
+        val projectModules = extension.mavenCoordinatesToProjectPathMap
         for ((mavenCoordinates, projectPath) in projectModules) {
-            project.findProject(projectPath)?.plugins?.let { plugins ->
-                if (plugins.hasPlugin(LibraryPlugin::class.java)) {
-                    if (plugins.hasPlugin(KotlinMultiplatformPluginWrapper::class.java)) {
-                        // For KMP projects, android AAR is published under -android
-                        androidxAndroidProjects.add("$mavenCoordinates-android")
-                    } else {
-                        androidxAndroidProjects.add(mavenCoordinates)
-                    }
+            project.findProject(projectPath)?.let { project ->
+                if (project.plugins.hasPlugin(LibraryPlugin::class.java)) {
+                    androidxAndroidProjects.add(mavenCoordinates)
+                }
+                if (project.hasAndroidMultiplatformPlugin()) {
+                    androidxAndroidProjects.add("$mavenCoordinates-android")
                 }
             }
         }
@@ -201,24 +195,10 @@ private fun Project.configureComponentPublishing(
 
             val pomFile = task.destination
             val pom = pomFile.readText()
-            val modifiedPom = modifyPomDependencies(pom, componentName)
+            val modifiedPom = modifyPomDependencies(extension, pom, componentName)
             if (pom != modifiedPom) {
                 pomFile.writeText(modifiedPom)
             }
-        }
-    }
-
-    // Workaround for https://github.com/gradle/gradle/issues/11717
-    project.tasks.withType(GenerateModuleMetadata::class.java).configureEach { task ->
-        task.doLast {
-            val metadata = task.outputFile.asFile.get()
-            val text = metadata.readText()
-            metadata.writeText(
-                text.replace(
-                    "\"buildId\": .*".toRegex(),
-                    "\"buildId:\": \"${getBuildId()}\""
-                )
-            )
         }
     }
 }
@@ -226,7 +206,7 @@ private fun Project.configureComponentPublishing(
 /**
  * Looks for a dependencies XML element within [pom], sorts its contents and modify it by redirecting coordinates
  */
-internal fun Project.modifyPomDependencies(pom: String, componentName: String?): String {
+internal fun Project.modifyPomDependencies(extension: AndroidXExtension, pom: String, componentName: String?): String {
     // Workaround for using the default namespace in dom4j.
     val namespaceUris = mapOf("ns" to "http://maven.apache.org/POM/4.0.0")
     val docFactory = DocumentFactory()
@@ -236,7 +216,7 @@ internal fun Project.modifyPomDependencies(pom: String, componentName: String?):
     val document = parseText(docFactory, xmlReader, pom)
 
     val originalToRedirected = if (componentName != null) {
-        originalToRedirectedDependency(componentName)
+        originalToRedirectedDependency(extension, componentName)
     } else {
         emptyMap()
     }
@@ -502,7 +482,7 @@ private fun Project.addInformativeMetadata(extension: AndroidXExtension, pom: Ma
             license.url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
             license.distribution.set("repo")
         }
-        for (extraLicense in extension.getLicenses()) {
+        for (extraLicense in extension.getExtraLicenses()) {
             licenses.license { license ->
                 license.name.set(provider { extraLicense.name!! })
                 license.url.set(provider { extraLicense.url!! })
