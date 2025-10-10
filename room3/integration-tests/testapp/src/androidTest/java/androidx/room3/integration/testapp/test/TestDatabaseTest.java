@@ -20,7 +20,6 @@ import android.content.Context;
 
 import androidx.room3.Room;
 import androidx.room3.integration.testapp.TestDatabase;
-import androidx.room3.integration.testapp.dao.FunnyNamedDao;
 import androidx.room3.integration.testapp.dao.PagingSourceOnlyUserDao;
 import androidx.room3.integration.testapp.dao.PetCoupleDao;
 import androidx.room3.integration.testapp.dao.PetDao;
@@ -50,7 +49,6 @@ public abstract class TestDatabaseTest {
     protected ToyDao mToyDao;
     protected SpecificDogDao mSpecificDogDao;
     protected WithClauseDao mWithClauseDao;
-    protected FunnyNamedDao mFunnyNamedDao;
     protected RawDao mRawDao;
     protected UserHouseDao mUserHouseDao;
     protected RobotsDao mRobotsDao;
@@ -68,7 +66,6 @@ public abstract class TestDatabaseTest {
         mToyDao = mDatabase.getToyDao();
         mSpecificDogDao = mDatabase.getSpecificDogDao();
         mWithClauseDao = mDatabase.getWithClauseDao();
-        mFunnyNamedDao = mDatabase.getFunnyNamedDao();
         mRawDao = mDatabase.getRawDao();
         mUserHouseDao = mDatabase.getUserHouseDao();
         mRobotsDao = mDatabase.getRobotsDao();

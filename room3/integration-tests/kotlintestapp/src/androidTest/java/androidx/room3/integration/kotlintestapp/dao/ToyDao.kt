@@ -26,7 +26,7 @@ import androidx.room3.integration.kotlintestapp.vo.Toy
 interface ToyDao {
     @Insert fun insert(vararg toys: Toy)
 
-    @Query("SELECT * FROM Toy WHERE mId = :id") fun getToy(id: Int): Toy?
+    @Query("SELECT * FROM Toy WHERE id = :id") fun getToy(id: Int): Toy?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE) fun insertOrReplace(toy: Toy)
 

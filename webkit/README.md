@@ -5,7 +5,8 @@ markdown](https://android.googlesource.com/platform/frameworks/support/+/android
 
 The Jetpack Webkit library (also known as AndroidX Webkit) is a static library
 you can add to your Android application in order to use android.webkit APIs that
-are not available for older platform versions.
+are not available for older platform versions, as well as access new features
+available in [Android System WebView].
 
 ## Basic info
 
@@ -16,17 +17,35 @@ are not available for older platform versions.
 * [Existing open bugs](https://issuetracker.google.com/issues?q=componentid:460423%20status:open)
 * [File a new bug](https://issuetracker.google.com/issues/new?component=460423)
 
+## Jetpack Webkit and Android System WebView
+
+The Jetpack Webkit library enables developers to access new features that are
+available in the installed version of [Android System WebView], even if those
+features are not exposed through the
+[android.webkit](https://developer.android.com/reference/android/webkit/package-summary)
+framework API. It does this by dynamically checking the set of available
+features through the
+[`WebViewFeature`](http://go/android-dev/reference/androidx/webkit/WebViewFeature#isFeatureSupported(java.lang.String))
+class.
+
+You should take care to always check feature availability before calling an
+API, as you otherwise risk a runtime crash if the WebView provider installed on
+a users device doesn't support the feature in question. This is most likely to
+happen if the user in question has not yet updated to a version of [Android
+System WebView] that supports the feature, but in rare cases WebView may also
+stop supporting a previously supported feature as part of an API deprecation.
+
 ## How to use this library in your app
 
 Add this to your `build.gradle` file:
 
 ```
 dependencies {
-    implementation "androidx.webkit:webkit:1.13.0"
+    implementation "androidx.webkit:webkit:1.14.0"
 }
 ```
 
-**Important:** replace `1.13.0` with the latest version from
+**Important:** replace `1.14.0` with the latest version from
 https://developer.android.com/jetpack/androidx/releases/webkit.
 
 ## Sample apps
@@ -36,6 +55,7 @@ of a handful of Jetpack Webkit APIs.
 
 For more APIs, check out the sample app in the [AndroidX repo][AndroidX demo
 app].
+
 
 ## Public bug tracker
 
@@ -79,3 +99,4 @@ above.
 
 [GitHub demo app]: https://github.com/android/views-widgets-samples/tree/main/WebView
 [AndroidX demo app]: /androidx-main/webkit/integration-tests/testapp/README.md
+[Android System WebView]: https://play.google.com/store/apps/details?id=com.google.android.webview

@@ -22,7 +22,7 @@ import androidx.room3.PrimaryKey
 
 @Entity
 data class User(
-    @PrimaryKey var userId: String,
-    @Embedded(prefix = "email_") var email: Email,
+    @PrimaryKey var uId: Int,
+    @Embedded(prefix = "email_") var email: Email?,
     @Embedded(prefix = "secondary_email_") var secondaryEmail: Email?,
 )

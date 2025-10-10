@@ -52,6 +52,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
@@ -928,6 +929,7 @@ class AppFunctionDataTest {
     }
 
     @Test
+    @Ignore("b/447064745: Re-enable when the child object validation is fixed")
     fun testWrite_nestedAppFunctionData_notConformSpec() {
         val innerObjectType =
             AppFunctionObjectTypeMetadata(
@@ -967,6 +969,7 @@ class AppFunctionDataTest {
     }
 
     @Test
+    @Ignore("b/447064745: Re-enable when the child object validation is fixed")
     fun testWrite_nestedListAppFunctionData_notConformSpec() {
         val innerObjectType =
             AppFunctionObjectTypeMetadata(

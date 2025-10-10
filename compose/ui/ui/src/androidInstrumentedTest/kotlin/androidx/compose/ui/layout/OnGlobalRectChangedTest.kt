@@ -1743,6 +1743,47 @@ class OnGlobalRectChangedTest {
     }
 
     @Test
+    fun testLayoutModifierPlacingWithScaledLayerLater() {
+        var actualPosition: IntOffset = IntOffset.Max
+        var actualPositionChild: IntOffset = IntOffset.Max
+        var needLayer by mutableStateOf(false)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                layout(constraints.maxWidth, constraints.maxHeight) {
+                                    if (needLayer) {
+                                        placeable.placeWithLayer(10, 10) {
+                                            scaleX = 2f
+                                            scaleY = 2f
+                                        }
+                                    } else {
+                                        placeable.place(10, 10)
+                                    }
+                                }
+                            }
+                            .onLayoutRectChanged(0, 0) { actualPosition = it.positionInRoot }
+                    ) {
+                        Box(
+                            Modifier.onLayoutRectChanged(0, 0) {
+                                    actualPositionChild = it.positionInRoot
+                                }
+                                .size(10.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { needLayer = true }
+
+        rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(5, 5)) }
+        rule.runOnIdle { assertThat(actualPositionChild).isEqualTo(IntOffset(5, 5)) }
+    }
+
+    @Test
     fun removingLayoutModifierShouldInvalidateOffsetCacheForSubtree() {
         with(rule.density) {
             var actualPosition: IntOffset = IntOffset.Max

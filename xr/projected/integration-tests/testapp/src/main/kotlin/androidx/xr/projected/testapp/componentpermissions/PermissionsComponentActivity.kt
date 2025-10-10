@@ -48,7 +48,11 @@ class PermissionsComponentActivity : ComponentActivity() {
         requestPermissionLauncher.launch(
             listOf(
                 ProjectedPermissionsRequestParams(
-                    listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA),
+                    listOf(
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.RECORD_AUDIO,
+                    ),
                     "Some good rationale.",
                 )
             )

@@ -493,7 +493,14 @@ class TestFactory {
 
 class NotesFunctions : CreateNoteAppFunction {
 
-    @AppFunction
+    /**
+     * Create a note.
+     *
+     * @param parameters The parameters.
+     * @param tag The optional tag.
+     * @return [CreateNoteAppFunction.Response] as response.
+     */
+    @AppFunction(isDescribedByKdoc = true)
     override suspend fun createNote(
         appFunctionContext: AppFunctionContext,
         parameters: CreateNoteAppFunction.Parameters,

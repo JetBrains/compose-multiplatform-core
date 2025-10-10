@@ -39,26 +39,26 @@ interface PetDao {
     @Query("SELECT COUNT(*) FROM Pet") fun count(): Int
 
     @Transaction
-    @Query("SELECT * FROM Pet ORDER BY Pet.mPetId ASC")
+    @Query("SELECT * FROM Pet ORDER BY Pet.petId ASC")
     fun allPetsWithToyIds(): List<PetWithToyIds>
 
     @Transaction @Query("SELECT * FROM Pet") fun allPetsWithOwners(): List<PetAndOwner>
 
-    @Query("SELECT * FROM Pet WHERE Pet.mPetId = :id")
+    @Query("SELECT * FROM Pet WHERE Pet.petId = :id")
     fun petWithIdFuture(id: Int): ListenableFuture<Optional<Pet>>
 
-    @Query("SELECT * FROM Pet WHERE Pet.mPetId = :id") fun petWithIdFlowable(id: Int): Flowable<Pet>
+    @Query("SELECT * FROM Pet WHERE Pet.petId = :id") fun petWithIdFlowable(id: Int): Flowable<Pet>
 
-    @Query("SELECT * FROM Pet WHERE Pet.mPetId = :id") fun petWithId(id: Int): Pet
+    @Query("SELECT * FROM Pet WHERE Pet.petId = :id") fun petWithId(id: Int): Pet
 
-    @Query("SELECT * FROM Pet WHERE Pet.mPetId = :id") fun petWithIdLiveData(id: Int): LiveData<Pet>
+    @Query("SELECT * FROM Pet WHERE Pet.petId = :id") fun petWithIdLiveData(id: Int): LiveData<Pet>
 
-    @Query("SELECT * FROM PetWithUser WHERE mPetId = :id")
+    @Query("SELECT * FROM PetWithUser WHERE petId = :id")
     fun petWithUserLiveData(id: Int): LiveData<PetWithUser>
 
     @Delete fun delete(pet: Pet)
 
-    @Query("SELECT mPetId FROM Pet") fun allIds(): IntArray
+    @Query("SELECT petId FROM Pet") fun allIds(): IntArray
 
     @Transaction
     fun deleteAndInsert(oldPet: Pet, newPet: Pet, shouldFail: Boolean) {

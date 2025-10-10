@@ -22,7 +22,8 @@ import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.runtime.Composable
 import androidx.glance.wear.ActiveWearWidgetHandle
-import androidx.glance.wear.ContainerType
+import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_LARGE
+import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_SMALL
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.WearWidgetContent
 import androidx.glance.wear.WearWidgetRequest
@@ -105,7 +106,7 @@ class WearWidgetProviderImplTest {
 
     @Test
     fun onActivated_callsWidgetAndCallback() = runTest {
-        val handle = ActiveWearWidgetHandle(testName, 12, ContainerType.Large)
+        val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
         val provider = WearWidgetProviderImpl(context, testName, this, testWidget)
 
         provider.onActivated(handle.toParcel(), fakeExecutionCallback)
@@ -117,7 +118,7 @@ class WearWidgetProviderImplTest {
 
     @Test
     fun onActivated_throws_callsCallbackOnError() = runTest {
-        val handle = ActiveWearWidgetHandle(testName, 12, ContainerType.Large)
+        val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
         val exceptionHandlerScope =
             CoroutineScope(
                 coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, _ -> }
@@ -134,7 +135,7 @@ class WearWidgetProviderImplTest {
 
     @Test
     fun onDeactivated_callsWidgetAndCallback() = runTest {
-        val handle = ActiveWearWidgetHandle(testName, 12, ContainerType.Small)
+        val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_SMALL)
         val provider = WearWidgetProviderImpl(context, testName, this, testWidget)
 
         provider.onDeactivated(handle.toParcel(), fakeExecutionCallback)
@@ -146,7 +147,7 @@ class WearWidgetProviderImplTest {
 
     @Test
     fun onDeactivated_throws_callsCallbackOnError() = runTest {
-        val handle = ActiveWearWidgetHandle(testName, 12, ContainerType.Large)
+        val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
         val exceptionHandlerScope =
             CoroutineScope(
                 coroutineContext + SupervisorJob() + CoroutineExceptionHandler { _, _ -> }

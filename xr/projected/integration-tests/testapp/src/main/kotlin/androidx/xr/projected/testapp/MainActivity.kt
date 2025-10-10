@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.projected.ProjectedContext
+import androidx.xr.projected.testapp.audio.AudioActivity
 import androidx.xr.projected.testapp.audiomanager.AudioManagerActivity
 import androidx.xr.projected.testapp.componentpermissions.PermissionsComponentActivity
 import androidx.xr.projected.testapp.permissions.PermissionsActivity
@@ -131,6 +132,7 @@ class MainActivity : ComponentActivity() {
             mapOf(
                 "Projected Context" to ProjectedContextActivity::class.java,
                 "Audio Manager" to AudioManagerActivity::class.java,
+                "Audio" to AudioActivity::class.java,
             )
 
         // A list of projected activities that are launchable from the main activity.

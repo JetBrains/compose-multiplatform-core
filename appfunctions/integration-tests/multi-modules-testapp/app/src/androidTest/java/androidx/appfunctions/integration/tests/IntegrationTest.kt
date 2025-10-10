@@ -16,6 +16,13 @@
 
 package androidx.appfunctions.integration.tests
 
+import android.Manifest
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageInstaller
 import android.net.Uri
 import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
@@ -42,11 +49,15 @@ import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.io.InputStream
 import java.time.LocalDateTime
+import kotlin.coroutines.resumeWithException
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Assume.assumeFalse
@@ -73,16 +84,20 @@ class IntegrationTest {
             // "androidx.appfunctions.integration.testapp",
             // while the app functions are defined under
             // "androidx.appfunctions.integration.testapp.test"
-            adoptShellPermissionIdentity("android.permission.EXECUTE_APP_FUNCTIONS")
+            adoptShellPermissionIdentity(
+                Manifest.permission.INSTALL_PACKAGES,
+                "android.permission.EXECUTE_APP_FUNCTIONS",
+            )
             executeShellCommand(
                 "device_config put appsearch max_allowed_app_function_doc_size_in_bytes $TEST_APP_FUNCTION_DOC_SIZE_LIMIT"
             )
         }
-        awaitAppFunctionsIndexed(FUNCTION_IDS)
+        context.awaitAppFunctionsIndexed(context.packageName, FUNCTION_IDS)
     }
 
     @After
     fun tearDown() {
+        uiAutomation.executeShellCommand("pm uninstall $ADDITIONAL_APP_PACKAGE")
         uiAutomation.dropShellPermissionIdentity()
     }
 
@@ -817,6 +832,110 @@ class IntegrationTest {
     }
 
     @Test
+    fun executeAppFunction_legacySchemaCreateNote_success() = doBlocking {
+        targetContext.installApk(ADDITIONAL_APK_FILE)
+        targetContext.awaitAppFunctionsIndexed(
+            ADDITIONAL_APP_PACKAGE,
+            setOf(ADDITIONAL_LEGACY_CREATE_NOTE),
+        )
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(packageNames = setOf(ADDITIONAL_APP_PACKAGE))
+                )
+                .first()
+                .flatMap { it.appFunctions }
+                .single()
+
+        val response =
+            appFunctionManager.executeAppFunction(
+                ExecuteAppFunctionRequest(
+                    functionIdentifier = createNoteMetadata.id,
+                    targetPackageName = createNoteMetadata.packageName,
+                    functionParameters =
+                        AppFunctionData.Builder(
+                                createNoteMetadata.parameters,
+                                createNoteMetadata.components,
+                            )
+                            .setAppFunctionData(
+                                "createNoteParams",
+                                AppFunctionData.Builder(
+                                        requireTargetObjectTypeMetadata(
+                                            "createNoteParams",
+                                            createNoteMetadata.parameters,
+                                            createNoteMetadata.components,
+                                        ),
+                                        createNoteMetadata.components,
+                                    )
+                                    .setString("title", "Test Title")
+                                    .setString("content", "Test Content")
+                                    .build(),
+                            )
+                            .build(),
+                )
+            )
+
+        assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val returnValue =
+            response.returnValue.getAppFunctionData(
+                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
+            )
+        assertThat(returnValue).isNotNull()
+        assertThat(checkNotNull(returnValue).getString("title")).isEqualTo("Test Title")
+        assertThat(returnValue.getString("content")).isEqualTo("Test Content")
+    }
+
+    @Test
+    fun executeAppFunction_legacySchemaCreateNoteSerialization_success() = doBlocking {
+        targetContext.installApk(ADDITIONAL_APK_FILE)
+        targetContext.awaitAppFunctionsIndexed(
+            ADDITIONAL_APP_PACKAGE,
+            setOf(ADDITIONAL_LEGACY_CREATE_NOTE),
+        )
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(packageNames = setOf(ADDITIONAL_APP_PACKAGE))
+                )
+                .first()
+                .flatMap { it.appFunctions }
+                .single()
+        val createNoteParams =
+            LegacyCreateNoteParams(title = "Test Title", content = "Test Content")
+
+        val response =
+            appFunctionManager.executeAppFunction(
+                ExecuteAppFunctionRequest(
+                    functionIdentifier = createNoteMetadata.id,
+                    targetPackageName = createNoteMetadata.packageName,
+                    functionParameters =
+                        AppFunctionData.Builder(
+                                createNoteMetadata.parameters,
+                                createNoteMetadata.components,
+                            )
+                            .setAppFunctionData(
+                                "createNoteParams",
+                                AppFunctionData.serialize(
+                                    createNoteParams,
+                                    LegacyCreateNoteParams::class.java,
+                                ),
+                            )
+                            .build(),
+                )
+            )
+
+        assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val returnValue =
+            response.returnValue.getAppFunctionData(
+                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
+            )
+        assertThat(returnValue).isNotNull()
+        val note = checkNotNull(returnValue).deserialize(LegacyNote::class.java)
+        assertThat(note.title).isEqualTo("Test Title")
+        assertThat(note.content).isEqualTo("Test Content")
+    }
+
+    @Test
     fun executeAppFunction_schemaCreateNote_success() = doBlocking {
         val createNoteMetadata =
             appFunctionManager
@@ -856,6 +975,59 @@ class IntegrationTest {
                                 .setString("groupId", "testGroupId")
                                 .setString("externalUuid", "testExternalUuid")
                                 .build(),
+                        )
+                        .build(),
+            )
+
+        val response = appFunctionManager.executeAppFunction(request)
+
+        assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val resultNote =
+            response.returnValue
+                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                ?.getAppFunctionData("createdNote")
+        assertThat(resultNote?.getString("id")).isEqualTo("testId")
+        assertThat(resultNote?.getString("title")).isEqualTo("Test Title")
+    }
+
+    @Test
+    fun executeAppFunction_schemaCreateNoteSerialization_success() = doBlocking {
+        val createNoteMetadata =
+            appFunctionManager
+                .observeAppFunctions(
+                    AppFunctionSearchSpec(
+                        packageNames = setOf(context.packageName),
+                        schemaCategory = "myNotes",
+                        schemaName = "createNote",
+                        minSchemaVersion = 2,
+                    )
+                )
+                .first()
+                .flatMap { it.appFunctions }
+                .single()
+        val parameters =
+            CreateNoteAppFunction.Parameters(
+                title = "Test Title",
+                content = "Some valid content",
+                attachments = emptyList(),
+                groupId = "testGroupId",
+                externalUuid = "testExternalUuid",
+            )
+        val request =
+            ExecuteAppFunctionRequest(
+                functionIdentifier = createNoteMetadata.id,
+                targetPackageName = createNoteMetadata.packageName,
+                functionParameters =
+                    AppFunctionData.Builder(
+                            createNoteMetadata.parameters,
+                            createNoteMetadata.components,
+                        )
+                        .setAppFunctionData(
+                            "parameters",
+                            AppFunctionData.serialize(
+                                parameters,
+                                CreateNoteAppFunction.Parameters::class.java,
+                            ),
                         )
                         .build(),
             )
@@ -1500,14 +1672,92 @@ class IntegrationTest {
             .single { it.id == id }
     }
 
-    private suspend fun awaitAppFunctionsIndexed(expectedFunctionIds: Set<String>) {
+    private suspend fun Context.awaitAppFunctionsIndexed(
+        targetPackage: String,
+        expectedFunctionIds: Set<String>,
+    ) {
         retryAssert {
-            val functionIds = AppSearchMetadataHelper.collectSelfFunctionIds(context)
+            val functionIds =
+                AppSearchMetadataHelper.collectFunctionIds(
+                    this@awaitAppFunctionsIndexed,
+                    targetPackage,
+                )
             assertThat(functionIds).containsAtLeastElementsIn(expectedFunctionIds)
         }
     }
 
+    private suspend fun Context.installApk(apk: String) {
+        val installer = packageManager.packageInstaller
+        val sessionParams =
+            PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+
+        val sessionId = installer.createSession(sessionParams)
+
+        installer.openSession(sessionId).use { session ->
+            session.openWrite("apk_install", 0, -1).use { outputStream ->
+                getResourceAsStream(apk).transferTo(outputStream)
+            }
+            assertThat(session.commitSession(this@installApk)).isTrue()
+        }
+    }
+
+    fun getResourceAsStream(name: String): InputStream {
+        return checkNotNull(Thread.currentThread().contextClassLoader).getResourceAsStream(name)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun PackageInstaller.Session.commitSession(context: Context): Boolean {
+        val action = "com.example.COMMIT_COMPLETE.${System.currentTimeMillis()}"
+
+        return suspendCancellableCoroutine { continuation ->
+            val receiver =
+                object : BroadcastReceiver() {
+                    override fun onReceive(context: Context, intent: Intent) {
+                        context.unregisterReceiver(this)
+
+                        val status =
+                            intent.getIntExtra(
+                                PackageInstaller.EXTRA_STATUS,
+                                PackageInstaller.STATUS_FAILURE,
+                            )
+                        val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+
+                        if (status == PackageInstaller.STATUS_SUCCESS) {
+                            continuation.resume(true) { cause, _, _ -> }
+                        } else {
+                            continuation.resumeWithException(
+                                Exception("Installation failed: $message")
+                            )
+                        }
+                    }
+                }
+
+            val filter = IntentFilter(action)
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+
+            val intent = Intent(action).setPackage(context.packageName)
+            val sender =
+                PendingIntent.getBroadcast(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+                )
+
+            this.commit(sender.intentSender)
+
+            continuation.invokeOnCancellation {
+                // Unregister the receiver if the coroutine is cancelled
+                context.unregisterReceiver(receiver)
+            }
+        }
+    }
+
     private companion object {
+        const val ADDITIONAL_APK_FILE = "notes.apk"
+        const val ADDITIONAL_APP_PACKAGE = "com.google.android.app.notes"
+        const val ADDITIONAL_LEGACY_CREATE_NOTE =
+            "com.example.android.architecture.blueprints.todoapp#NoteFunctions_createNote"
         const val TEST_APP_FUNCTION_DOC_SIZE_LIMIT = 512 * 1024 // 512kb
 
         val FUNCTION_IDS =

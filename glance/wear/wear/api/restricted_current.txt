@@ -2,12 +2,11 @@
 package androidx.glance.wear {
 
   public final class ActiveWearWidgetHandle {
-    ctor @KotlinOnly public ActiveWearWidgetHandle(android.content.ComponentName provider, int instanceId, androidx.glance.wear.ContainerType containerType);
-    ctor @BytecodeOnly public ActiveWearWidgetHandle(android.content.ComponentName!, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method @BytecodeOnly public int getContainerType-fdHHBOo();
+    ctor public ActiveWearWidgetHandle(android.content.ComponentName provider, int instanceId, int containerType);
+    method @InaccessibleFromKotlin public int getContainerType();
     method @InaccessibleFromKotlin public int getInstanceId();
     method @InaccessibleFromKotlin public android.content.ComponentName getProvider();
-    property public androidx.glance.wear.ContainerType containerType;
+    property public int containerType;
     property public int instanceId;
     property public android.content.ComponentName provider;
   }

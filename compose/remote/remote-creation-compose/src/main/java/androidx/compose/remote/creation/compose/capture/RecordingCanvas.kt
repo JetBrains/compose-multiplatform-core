@@ -21,6 +21,7 @@ import android.graphics.Bitmap
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
@@ -29,6 +30,7 @@ import android.graphics.RectF
 import android.graphics.Region
 import android.graphics.Typeface
 import android.os.Build
+import androidx.annotation.ColorInt
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.ConditionalOperations
@@ -1421,7 +1423,47 @@ public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
         forceSendingPaint(true)
         drawCommands()
+        forceSendingPaint(true)
         document.endConditionalOperations()
+    }
+
+    /**
+     * Instructs the player to draw [drawCommands] into an offscreen [RemoteBitmap] created with the
+     * specified [width] & [height]. The offscreen bitmap will be cleared with [clearColor] before
+     * any [drawCommands] are processed.
+     *
+     * @param width The width in pixels for the created offscreen bitmap.
+     * @param height The height in pixels for the created offscreen bitmap.
+     * @param clearColor If non-null the color the created offecreen bitmap will be cleared with.
+     * @param drawCommands The commands the player will execute in the offscreen buffer.
+     * @return The [RemoteBitmap] the [drawCommands] were drawn into.
+     */
+    public fun drawToOffscreenBitmap(
+        width: Int,
+        height: Int,
+        @ColorInt clearColor: Int,
+        drawCommands: () -> Unit,
+    ): RemoteBitmap {
+        val bitmapId = document.createBitmap(width, height)
+        if (clearColor != Color.BLACK) {
+            document.drawOnBitmap(bitmapId, 0, clearColor)
+        } else {
+            document.drawOnBitmap(bitmapId, 1, 0)
+        }
+        forceSendingPaint(true)
+        drawCommands()
+        forceSendingPaint(true)
+        document.drawOnBitmap(0, 0, 0)
+
+        return object : RemoteBitmap(creationState, null) {
+            public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
+                bitmapId
+
+            public override val value: Bitmap
+                get() {
+                    throw UnsupportedOperationException()
+                }
+        }
     }
 
     public companion object {

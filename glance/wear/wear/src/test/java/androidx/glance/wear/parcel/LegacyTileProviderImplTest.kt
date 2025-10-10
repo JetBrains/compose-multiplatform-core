@@ -19,7 +19,7 @@ package androidx.glance.wear.parcel
 import android.content.ComponentName
 import android.content.Context
 import androidx.glance.wear.ActiveWearWidgetHandle
-import androidx.glance.wear.ContainerType
+import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.parcel.legacy.TileAddEventData
 import androidx.glance.wear.parcel.legacy.TileRemoveEventData
@@ -52,7 +52,7 @@ class LegacyTileProviderImplTest {
         val addEvent = TileAddEvent(tile_id = tileId)
         val eventData = TileAddEventData(addEvent.encode(), TileAddEventData.VERSION_PROTOBUF)
         val expectedWidgetId =
-            ActiveWearWidgetHandle(providerName, tileId, ContainerType.Fullscreen)
+            ActiveWearWidgetHandle(providerName, tileId, CONTAINER_TYPE_FULLSCREEN)
 
         legacyTileProvider.onTileAddEvent(eventData)
         testScope.advanceUntilIdle()
@@ -67,7 +67,7 @@ class LegacyTileProviderImplTest {
         val eventData =
             TileRemoveEventData(removeEvent.encode(), TileRemoveEventData.VERSION_PROTOBUF)
         val expectedWidgetId =
-            ActiveWearWidgetHandle(providerName, tileId, ContainerType.Fullscreen)
+            ActiveWearWidgetHandle(providerName, tileId, CONTAINER_TYPE_FULLSCREEN)
 
         legacyTileProvider.onTileRemoveEvent(eventData)
         testScope.advanceUntilIdle()

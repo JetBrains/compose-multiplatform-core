@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +35,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.assertIsDisplayed
@@ -42,6 +44,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -634,6 +637,45 @@ class PlacedChildTest {
         rule.runOnIdle { need = true }
 
         rule.runOnIdle { assertThat(actualPosition).isEqualTo(Offset(10f, 10f)) }
+    }
+
+    @Test
+    fun testLayoutModifierPlacingWithScaledLayerLater() {
+        var actualPosition: Offset? = null
+        var actualPositionChild: Offset? = null
+        var needLayer by mutableStateOf(false)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                layout(constraints.maxWidth, constraints.maxHeight) {
+                                    if (needLayer) {
+                                        placeable.placeWithLayer(10, 10) {
+                                            scaleX = 2f
+                                            scaleY = 2f
+                                        }
+                                    } else {
+                                        placeable.place(10, 10)
+                                    }
+                                }
+                            }
+                            .onPlaced { actualPosition = it.positionInRoot() }
+                    ) {
+                        Box(
+                            Modifier.onPlaced { actualPositionChild = it.positionInRoot() }
+                                .size(10.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { needLayer = true }
+
+        rule.runOnIdle { assertThat(actualPosition).isEqualTo(Offset(5f, 5f)) }
+        rule.runOnIdle { assertThat(actualPositionChild).isEqualTo(Offset(5f, 5f)) }
     }
 }
 

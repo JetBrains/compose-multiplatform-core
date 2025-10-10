@@ -54,10 +54,16 @@
             android:exported="true"
             android:label="AudioManager Activity">
         </activity>
+        <activity
+            android:name="androidx.xr.projected.testapp.audio.AudioActivity"
+            android:exported="true"
+            android:label="Audio Activity">
+        </activity>
     </application>
 
     <uses-feature android:name="android.hardware.camera" />
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
 </manifest>

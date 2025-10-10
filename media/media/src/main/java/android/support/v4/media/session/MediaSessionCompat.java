@@ -29,6 +29,8 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaDescription;
@@ -414,11 +416,94 @@ public class MediaSessionCompat {
     public static final String KEY_SESSION2_TOKEN =
             "android.support.v4.media.session.SESSION_TOKEN2";
 
-    // Maximum size of the bitmap in dp.
-    private static final int MAX_BITMAP_SIZE_IN_DP = 320;
+    // Bitmap dimension limit in pixels
+    private static class MediaMetadataBitmapMaxSizeHolder {
+        static final int value = getMediaMetadataBitmapMaxSize();
+    }
 
-    // Maximum size of the bitmap in px. It shouldn't be changed.
-    static int sMaxBitmapSize;
+    @SuppressWarnings("DiscouragedApi") // Using Resources.getIdentifier() is less efficient
+    private static int getMediaMetadataBitmapMaxSize() {
+        Resources res = Resources.getSystem();
+        int limit = res.getDisplayMetrics().widthPixels;
+        try {
+            int id = res.getIdentifier("config_mediaMetadataBitmapMaxSize", "dimen", "android");
+            limit = res.getDimensionPixelSize(id);
+        } catch (Resources.NotFoundException e) {
+            // do nothing
+        }
+        return limit;
+    }
+
+    /**
+     * Gets the bitmap dimension limit in pixels. Bitmaps with width or height larger than this
+     * will be scaled down to fit within the limit.
+     *
+     * Apps are recommended to use bitmaps whose width or height is no larger than this limit.
+     * Otherwise, for example, when setting a bitmap in MediaSession metadata {@link
+     * MediaSession.setMetadata()}, a downscaling will be performed, which incurs performance
+     * cost as well as an intermediate scaled down bitmap.
+     *
+     * Example usage:
+     *
+     * <pre>{@code
+     *   int width = calculateRequestBitmapWidthPx();
+     *   int height = calculateRequestBitmapHeightPx();
+     *   final int limit = mediaSession.getBitmapDimensionLimit();
+     *   if (width >= limit || height >= limit) {
+     *     float scale = Math.max((float)(width) / limit,
+     *                            (float)(height) / limit);
+     *     if (scale < THRESHOLD) {
+     *       width = (int)(width * scale);
+     *       height = (int)(height * scale);
+     *     }
+     *   }
+     *
+     *   Bitmap bitmap = BitmapLoader.load(uri, width, height);
+     * }</pre>
+     */
+    public static int getBitmapDimensionLimit() {
+        return MediaMetadataBitmapMaxSizeHolder.value;
+    }
+
+    /**
+     * Scales down the given bitmap if its width or height exceeds the limit returned by
+     * {@link #getBitmapDimensionLimit()}. The bitmap will be scaled to fit within the limit
+     * while maintaining its aspect ratio. On API 31+, the returned bitmap will be a shared
+     * bitmap.
+     *
+     * @param bitmap The bitmap to potentially scale.
+     * @return The original bitmap if it's within the dimension limit, or a scaled-down version.
+     * @see #getBitmapDimensionLimit()
+     */
+    public static Bitmap getScaledBitmap(Bitmap bitmap) {
+        return getScaledBitmap(bitmap, getBitmapDimensionLimit());
+    }
+
+    /**
+     * Scales down the given bitmap if its width or height exceeds either the provided
+     * {@code dimensionLimit} or the limit returned by {@link #getBitmapDimensionLimit()}.
+     * The bitmap will be scaled to fit within that limit while maintaining its aspect ratio.
+     * On API 31+, the returned bitmap will be a shared bitmap.
+     *
+     * @param bitmap The bitmap to potentially scale.
+     * @param dimensionLimit The maximum allowed width or height for the bitmap.
+     * @return The original bitmap if it's within the dimension limit, or a scaled-down version.
+     */
+    public static Bitmap getScaledBitmap(Bitmap bitmap, int dimensionLimit) {
+        int limit = Math.min(getBitmapDimensionLimit(), dimensionLimit);
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        if (width > limit || height > limit) {
+            float scale = Math.min((float) limit / width, (float) limit / height);
+            width = (int)(width * scale);
+            height = (int)(height * scale);
+            bitmap = Bitmap.createScaledBitmap(bitmap, width, height, /* filter= */ true);
+        }
+        if (Build.VERSION.SDK_INT >= 31) {
+            return bitmap.asShared();
+        }
+        return bitmap;
+    }
 
     /**
      * Creates a new session. You must call {@link #release()} when finished with the session.
@@ -545,11 +630,6 @@ public class MediaSessionCompat {
         setCallback(new Callback() {}, handler);
         mImpl.setMediaButtonReceiver(mbrIntent);
         mController = new MediaControllerCompat(context, this);
-
-        if (sMaxBitmapSize == 0) {
-            sMaxBitmapSize = (int) (TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                    MAX_BITMAP_SIZE_IN_DP, context.getResources().getDisplayMetrics()) + 0.5f);
-        }
     }
 
     private MediaSessionCompat(Context context, MediaSessionImpl impl) {

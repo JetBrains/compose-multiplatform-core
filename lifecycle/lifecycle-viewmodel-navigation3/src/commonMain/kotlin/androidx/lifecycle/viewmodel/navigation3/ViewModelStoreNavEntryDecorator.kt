@@ -22,6 +22,7 @@ package androidx.lifecycle.viewmodel.navigation3
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
@@ -60,8 +61,14 @@ public fun <T : Any> rememberViewModelStoreNavEntryDecorator(
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         },
     removeViewModelStoreOnPop: () -> Boolean = removeViewModelStoreOnPopCallback(),
-): NavEntryDecorator<T> = remember {
-    ViewModelStoreNavEntryDecorator(viewModelStoreOwner.viewModelStore, removeViewModelStoreOnPop)
+): ViewModelStoreNavEntryDecorator<T> {
+    val currentRemoveViewModelStoreOnPop = rememberUpdatedState(removeViewModelStoreOnPop)
+    return remember(viewModelStoreOwner, currentRemoveViewModelStoreOnPop) {
+        ViewModelStoreNavEntryDecorator(
+            viewModelStoreOwner.viewModelStore,
+            removeViewModelStoreOnPop,
+        )
+    }
 }
 
 /**

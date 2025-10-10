@@ -43,6 +43,7 @@ import androidx.navigation3.scene.SceneStrategyScope
  *   during the back navigation. See [BackNavigationBehavior].
  * @param directive The top-level directives about how the list-detail scaffold should arrange its
  *   panes.
+ * @sample androidx.compose.material3.adaptive.samples.ListDetailWithNavigation3Sample
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
@@ -70,6 +71,7 @@ public fun <T : Any> rememberListDetailSceneStrategy(
  *   during the back navigation. See [BackNavigationBehavior].
  * @param directive The top-level directives about how the list-detail scaffold should arrange its
  *   panes.
+ * @sample androidx.compose.material3.adaptive.samples.ListDetailWithNavigation3Sample
  */
 @ExperimentalMaterial3AdaptiveApi
 public class ListDetailSceneStrategy<T : Any>(

@@ -32,7 +32,8 @@ import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 @Composable
 public fun <T : Any> rememberSaveableStateHolderNavEntryDecorator(
     saveableStateHolder: SaveableStateHolder = rememberSaveableStateHolder()
-): NavEntryDecorator<T> = remember { SaveableStateHolderNavEntryDecorator(saveableStateHolder) }
+): SaveableStateHolderNavEntryDecorator<T> =
+    remember(saveableStateHolder) { SaveableStateHolderNavEntryDecorator(saveableStateHolder) }
 
 /**
  * Wraps the content of a [NavEntry] with a [SaveableStateHolder.SaveableStateProvider] to ensure

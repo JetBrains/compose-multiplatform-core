@@ -17,6 +17,7 @@
 package androidx.glance.wear
 
 import android.content.ComponentName
+import androidx.glance.wear.ContainerInfo.ContainerType
 import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel
 import androidx.glance.wear.proto.ActiveWearWidgetHandleProto
 import androidx.glance.wear.proto.ContainerTypeProto
@@ -34,7 +35,7 @@ import java.util.Objects
 public class ActiveWearWidgetHandle(
     public val provider: ComponentName,
     public val instanceId: Int,
-    public val containerType: ContainerType,
+    @ContainerType public val containerType: Int,
 ) {
     override fun equals(other: Any?): Boolean =
         when {
@@ -49,7 +50,7 @@ public class ActiveWearWidgetHandle(
     override fun hashCode(): Int = Objects.hash(provider, instanceId, containerType)
 
     internal fun toParcel(): ActiveWearWidgetHandleParcel {
-        val containerTypeProto = containerType.toProto()
+        val containerTypeProto = containerTypeToProto(containerType)
         val handleProto =
             ActiveWearWidgetHandleProto(
                 instance_id = instanceId,
@@ -72,19 +73,20 @@ public class ActiveWearWidgetHandle(
             )
         }
 
-        internal fun ContainerType.toProto(): ContainerTypeProto =
-            when (this) {
-                ContainerType.Fullscreen -> ContainerTypeProto.FULLSCREEN
-                ContainerType.Large -> ContainerTypeProto.LARGE
-                ContainerType.Small -> ContainerTypeProto.SMALL
+        internal fun containerTypeToProto(@ContainerType type: Int): ContainerTypeProto =
+            when (type) {
+                ContainerInfo.CONTAINER_TYPE_FULLSCREEN -> ContainerTypeProto.FULLSCREEN
+                ContainerInfo.CONTAINER_TYPE_LARGE -> ContainerTypeProto.LARGE
+                ContainerInfo.CONTAINER_TYPE_SMALL -> ContainerTypeProto.SMALL
                 else -> throw IllegalArgumentException("Invalid container type: $this")
             }
 
-        internal fun containerTypeFromProto(typeProto: ContainerTypeProto): ContainerType =
+        @ContainerType
+        internal fun containerTypeFromProto(typeProto: ContainerTypeProto): Int =
             when (typeProto) {
-                ContainerTypeProto.FULLSCREEN -> ContainerType.Fullscreen
-                ContainerTypeProto.LARGE -> ContainerType.Large
-                ContainerTypeProto.SMALL -> ContainerType.Small
+                ContainerTypeProto.FULLSCREEN -> ContainerInfo.CONTAINER_TYPE_FULLSCREEN
+                ContainerTypeProto.LARGE -> ContainerInfo.CONTAINER_TYPE_LARGE
+                ContainerTypeProto.SMALL -> ContainerInfo.CONTAINER_TYPE_SMALL
             }
     }
 }

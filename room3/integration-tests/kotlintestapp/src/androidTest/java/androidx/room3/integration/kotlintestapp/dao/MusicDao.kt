@@ -31,6 +31,7 @@ import androidx.room3.Query
 import androidx.room3.RawQuery
 import androidx.room3.RewriteQueriesToDropUnusedColumns
 import androidx.room3.Transaction
+import androidx.room3.Update
 import androidx.room3.integration.kotlintestapp.vo.Album
 import androidx.room3.integration.kotlintestapp.vo.AlbumNameAndBandName
 import androidx.room3.integration.kotlintestapp.vo.AlbumWithSongs
@@ -54,6 +55,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MusicDao {
     @Insert fun addSongs(vararg songs: Song)
+
+    @Update fun updateSong(song: Song)
 
     @Insert fun addArtists(vararg artists: Artist)
 
@@ -370,6 +373,10 @@ interface MusicDao {
     @Transaction
     @Query("SELECT * FROM Playlist WHERE mPlaylistId = :id")
     fun getPlaylistsWithSongsFlow(id: Int): Flow<PlaylistWithSongs>
+
+    @Transaction
+    @Query("SELECT * FROM Album WHERE mAlbumId = :id")
+    fun getAlbumWithSongsFlow(id: Int): Flow<AlbumWithSongs>
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
     @RewriteQueriesToDropUnusedColumns

@@ -18,5 +18,5 @@ package androidx.room3.integration.kotlintestapp.vo
 import androidx.room3.DatabaseView
 import androidx.room3.Embedded
 
-@DatabaseView("SELECT Pet.*, PetUser.* FROM Pet INNER JOIN PetUser ON Pet.mUserId = PetUser.mId")
-data class PetWithUser(@Embedded var mPet: Pet, @Embedded var mUser: PetUser)
+@DatabaseView("SELECT Pet.*, PetUser.* FROM Pet INNER JOIN PetUser ON Pet.userId = PetUser.id")
+data class PetWithUser(@Embedded var pet: Pet, @Embedded var user: PetUser)

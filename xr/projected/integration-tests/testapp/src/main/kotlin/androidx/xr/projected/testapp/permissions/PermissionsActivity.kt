@@ -40,7 +40,11 @@ class PermissionsActivity : Activity() {
     private fun requestPermissions() {
         val data =
             ProjectedPermissionsRequestParams(
-                listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA),
+                listOf(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO,
+                ),
                 "Some good rationale.",
             )
         intent = projectedPermissionsResultContract.createIntent(this, listOf(data))

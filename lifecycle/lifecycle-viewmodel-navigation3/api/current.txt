@@ -6,8 +6,8 @@ package androidx.lifecycle.viewmodel.navigation3 {
   }
 
   public final class ViewModelStoreNavEntryDecoratorKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable public static <T> androidx.navigation3.runtime.NavEntryDecorator<T> rememberViewModelStoreNavEntryDecorator(optional androidx.lifecycle.ViewModelStoreOwner viewModelStoreOwner, optional kotlin.jvm.functions.Function0<java.lang.Boolean> removeViewModelStoreOnPop);
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> androidx.navigation3.runtime.NavEntryDecorator<T!> rememberViewModelStoreNavEntryDecorator(androidx.lifecycle.ViewModelStoreOwner?, kotlin.jvm.functions.Function0<java.lang.Boolean!>?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public static <T> androidx.lifecycle.viewmodel.navigation3.ViewModelStoreNavEntryDecorator<T> rememberViewModelStoreNavEntryDecorator(optional androidx.lifecycle.ViewModelStoreOwner viewModelStoreOwner, optional kotlin.jvm.functions.Function0<java.lang.Boolean> removeViewModelStoreOnPop);
+    method @BytecodeOnly @androidx.compose.runtime.Composable public static <T> androidx.lifecycle.viewmodel.navigation3.ViewModelStoreNavEntryDecorator<T!> rememberViewModelStoreNavEntryDecorator(androidx.lifecycle.ViewModelStoreOwner?, kotlin.jvm.functions.Function0<java.lang.Boolean!>?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public static kotlin.jvm.functions.Function0<java.lang.Boolean> removeViewModelStoreOnPopCallback();
     method @BytecodeOnly @androidx.compose.runtime.Composable public static kotlin.jvm.functions.Function0<java.lang.Boolean!> removeViewModelStoreOnPopCallback(androidx.compose.runtime.Composer?, int);
   }

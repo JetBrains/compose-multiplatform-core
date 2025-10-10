@@ -21,7 +21,6 @@ import androidx.room3.RoomDatabase;
 import androidx.room3.TypeConverter;
 import androidx.room3.TypeConverters;
 import androidx.room3.integration.testapp.dao.BlobEntityDao;
-import androidx.room3.integration.testapp.dao.FunnyNamedDao;
 import androidx.room3.integration.testapp.dao.LibraryItemDao;
 import androidx.room3.integration.testapp.dao.PagingSourceOnlyUserDao;
 import androidx.room3.integration.testapp.dao.PetCoupleDao;
@@ -39,7 +38,6 @@ import androidx.room3.integration.testapp.dao.WithClauseDao;
 import androidx.room3.integration.testapp.vo.BlobEntity;
 import androidx.room3.integration.testapp.vo.Day;
 import androidx.room3.integration.testapp.vo.FriendsJunction;
-import androidx.room3.integration.testapp.vo.FunnyNamedEntity;
 import androidx.room3.integration.testapp.vo.Hivemind;
 import androidx.room3.integration.testapp.vo.House;
 import androidx.room3.integration.testapp.vo.Pet;
@@ -59,7 +57,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Database(entities = {User.class, Pet.class, School.class, PetCouple.class, Toy.class,
-        BlobEntity.class, Product.class, FunnyNamedEntity.class, House.class,
+        BlobEntity.class, Product.class, House.class,
         FriendsJunction.class, Hivemind.class, Robot.class, RoomLibraryPojo.class},
         views = {PetWithUser.class},
         version = 1, exportSchema = false)
@@ -76,7 +74,6 @@ public abstract class TestDatabase extends RoomDatabase {
     public abstract ProductDao getProductDao();
     public abstract SpecificDogDao getSpecificDogDao();
     public abstract WithClauseDao getWithClauseDao();
-    public abstract FunnyNamedDao getFunnyNamedDao();
     public abstract RawDao getRawDao();
     public abstract UserHouseDao getUserHouseDao();
     public abstract RobotsDao getRobotsDao();

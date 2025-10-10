@@ -97,8 +97,10 @@ internal abstract class AppFunctionDataSpec {
      * @throws IllegalArgumentException If the [data] does not match the specification.
      */
     fun validateDataSpecMatches(data: AppFunctionData) {
-        val otherSpec = data.spec ?: return
-        require(this == otherSpec) { "$data does not match the metadata specification of $this" }
+        // TODO(b/447064745): Fix child object validation when spec is from schema inventory
+        val unused = data.spec ?: return
+        //        require(this == otherSpec) { "$data does not match the metadata specification of
+        // $this" }
     }
 
     /**

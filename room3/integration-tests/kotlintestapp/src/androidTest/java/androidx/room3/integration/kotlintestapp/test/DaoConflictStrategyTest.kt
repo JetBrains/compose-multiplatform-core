@@ -58,7 +58,7 @@ class DaoConflictStrategyTest(useDriver: UseDriver) : TestDatabaseTest(useDriver
         toyDao.insertOrReplace(newToy)
         val output: Toy? = toyDao.getToy(10)
         assertThat(output).isNotNull()
-        assertThat(output!!.mName).isEqualTo(newToy.mName)
+        assertThat(output!!.name).isEqualTo(newToy.name)
     }
 
     @Test
@@ -67,7 +67,7 @@ class DaoConflictStrategyTest(useDriver: UseDriver) : TestDatabaseTest(useDriver
         toyDao.insertOrIgnore(newToy)
         val output: Toy? = toyDao.getToy(10)
         assertThat(output).isNotNull()
-        assertThat(output!!.mName).isEqualTo(originalToy.mName)
+        assertThat(output!!.name).isEqualTo(originalToy.name)
     }
 
     @Test
@@ -83,7 +83,7 @@ class DaoConflictStrategyTest(useDriver: UseDriver) : TestDatabaseTest(useDriver
         // Row is updated
         val output: Toy? = toyDao.getToy(11)
         assertThat(output).isNotNull()
-        assertThat(output!!.mName).isEqualTo(conflictToy.mName)
+        assertThat(output!!.name).isEqualTo(conflictToy.name)
     }
 
     @Test
@@ -99,6 +99,6 @@ class DaoConflictStrategyTest(useDriver: UseDriver) : TestDatabaseTest(useDriver
         // Row is not updated
         val output: Toy? = toyDao.getToy(11)
         assertThat(output).isNotNull()
-        assertThat(output!!.mName).isEqualTo(newToy.mName)
+        assertThat(output!!.name).isEqualTo(newToy.name)
     }
 }

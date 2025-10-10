@@ -72,7 +72,7 @@ class MissingMasterTableTest {
                     }
                 }
             }
-        val user = User("u1", Email("e1", "email address 1"), Email("e2", "email address 2"))
+        val user = User(1, Email("e1", "email address 1"), Email("e2", "email address 2"))
 
         fun openDb(): TestDatabase {
             return Room.databaseBuilder<TestDatabase>(context = context, name = "existingDb.db")

@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateListOf
@@ -40,8 +41,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -1036,6 +1039,50 @@ class PlacementLayoutCoordinatesTest {
         rule.runOnIdle { need = true }
 
         rule.runOnIdle { assertThat(actualCoordinates).isEqualTo(listOf(null, Offset(10f, 0f))) }
+    }
+
+    @Test
+    fun testLayoutModifierPlacingWithScaledLayerLater() {
+        var actualPosition: Offset? = null
+        var actualPositionChild: Offset? = null
+        var needLayer by mutableStateOf(false)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                layout(constraints.maxWidth, constraints.maxHeight) {
+                                    if (needLayer) {
+                                        placeable.placeWithLayer(10, 10) {
+                                            scaleX = 2f
+                                            scaleY = 2f
+                                        }
+                                    } else {
+                                        placeable.place(10, 10)
+                                    }
+                                }
+                            }
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                layout(placeable.width, placeable.height) {
+                                    actualPosition = coordinates?.positionInRoot()
+                                    placeable.place(0, 0)
+                                }
+                            }
+                    ) {
+                        Layout { measurables, constraints ->
+                            layout(10, 10) { actualPositionChild = coordinates?.positionInRoot() }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { needLayer = true }
+
+        rule.runOnIdle { assertThat(actualPosition).isEqualTo(Offset(5f, 5f)) }
+        rule.runOnIdle { assertThat(actualPositionChild).isEqualTo(Offset(5f, 5f)) }
     }
 }
 

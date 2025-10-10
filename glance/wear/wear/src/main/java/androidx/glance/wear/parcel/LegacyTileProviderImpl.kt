@@ -20,7 +20,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.util.Log
 import androidx.glance.wear.ActiveWearWidgetHandle
-import androidx.glance.wear.ContainerType
+import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.parcel.legacy.TileAddEventData
 import androidx.glance.wear.parcel.legacy.TileProvider
@@ -47,7 +47,11 @@ internal class LegacyTileProviderImpl(
             try {
                 val addEvent = TileAddEvent.ADAPTER.decode(eventData.contents)
                 val widgetId =
-                    ActiveWearWidgetHandle(providerName, addEvent.tile_id, ContainerType.Fullscreen)
+                    ActiveWearWidgetHandle(
+                        providerName,
+                        addEvent.tile_id,
+                        CONTAINER_TYPE_FULLSCREEN,
+                    )
                 widget.onActivated(context, widgetId)
             } catch (ex: IOException) {
                 Log.e(TAG, "Error deserializing TileAddEvent payload.", ex)
@@ -66,7 +70,7 @@ internal class LegacyTileProviderImpl(
                     ActiveWearWidgetHandle(
                         providerName,
                         removeEvent.tile_id,
-                        ContainerType.Fullscreen,
+                        CONTAINER_TYPE_FULLSCREEN,
                     )
                 widget.onDeactivated(context, widgetId)
             } catch (ex: IOException) {

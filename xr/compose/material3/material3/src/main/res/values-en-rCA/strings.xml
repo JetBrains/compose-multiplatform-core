@@ -17,6 +17,6 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="xr_compose_material3_space_mode_switch_collapse" msgid="2304391857258488376">"Collapse into HomeSpaceMode"</string>
-    <string name="xr_compose_material3_space_mode_switch_expand" msgid="2967869985415673240">"Expand into FullSpaceMode"</string>
+    <string name="xr_compose_material3_space_mode_switch_collapse" msgid="5797879265427018835">"Collapse into "<notranslate>"Home Space"</notranslate></string>
+    <string name="xr_compose_material3_space_mode_switch_expand" msgid="4666431554142220795">"Expand into "<notranslate>"Full Space"</notranslate></string>
 </resources>

@@ -27,9 +27,10 @@ import androidx.navigation3.runtime.NavEntryDecorator
 
 /** Returns a [SceneSetupNavEntryDecorator] that is remembered across recompositions. */
 @Composable
-internal fun <T : Any> rememberSceneSetupNavEntryDecorator(): NavEntryDecorator<T> = remember {
-    SceneSetupNavEntryDecorator()
-}
+internal fun <T : Any> rememberSceneSetupNavEntryDecorator(): SceneSetupNavEntryDecorator<T> =
+    remember {
+        SceneSetupNavEntryDecorator()
+    }
 
 /**
  * A [NavEntryDecorator] that wraps each entry in a [movableContentOf] to allow nav displays to

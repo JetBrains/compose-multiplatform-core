@@ -5,26 +5,21 @@ package androidx.glance.wear {
     method @InaccessibleFromKotlin public String? getDescription();
     method @InaccessibleFromKotlin public String? getLabel();
     method @InaccessibleFromKotlin public int getPreviewImage();
-    method @BytecodeOnly public int getType-fdHHBOo();
+    method @InaccessibleFromKotlin public int getType();
     property public String? description;
     property public String? label;
     property public int previewImage;
-    property public androidx.glance.wear.ContainerType type;
+    property public int type;
+    field public static final int CONTAINER_TYPE_FULLSCREEN = 0; // 0x0
+    field public static final int CONTAINER_TYPE_LARGE = 1; // 0x1
+    field public static final int CONTAINER_TYPE_SMALL = 2; // 0x2
+    field public static final androidx.glance.wear.ContainerInfo.Companion Companion;
   }
 
-  @kotlin.jvm.JvmInline public final value class ContainerType {
-    method @BytecodeOnly public static androidx.glance.wear.ContainerType! box-impl(int);
-    method @BytecodeOnly public int unbox-impl();
-    field public static final androidx.glance.wear.ContainerType.Companion Companion;
-  }
-
-  public static final class ContainerType.Companion {
-    method @BytecodeOnly public int getFullscreen-fdHHBOo();
-    method @BytecodeOnly public int getLarge-fdHHBOo();
-    method @BytecodeOnly public int getSmall-fdHHBOo();
-    property public androidx.glance.wear.ContainerType Fullscreen;
-    property public androidx.glance.wear.ContainerType Large;
-    property public androidx.glance.wear.ContainerType Small;
+  public static final class ContainerInfo.Companion {
+    property public static int CONTAINER_TYPE_FULLSCREEN;
+    property public static int CONTAINER_TYPE_LARGE;
+    property public static int CONTAINER_TYPE_SMALL;
   }
 
   public final class SchemaVersion {
@@ -44,9 +39,10 @@ package androidx.glance.wear {
     method @InaccessibleFromKotlin public String getLabel();
     method @InaccessibleFromKotlin public androidx.glance.wear.SchemaVersion? getMaxSchemaVersion();
     method @InaccessibleFromKotlin public androidx.glance.wear.SchemaVersion? getMinSchemaVersion();
-    method @BytecodeOnly public int getPreferredType-fdHHBOo();
+    method @InaccessibleFromKotlin public int getPreferredContainerType();
     method @InaccessibleFromKotlin public android.content.ComponentName getProviderService();
     method @InaccessibleFromKotlin public boolean isMultiInstanceSupported();
+    method @kotlin.jvm.Throws(exceptionClasses=XmlPullParserException::class) public static androidx.glance.wear.WearWidgetProviderInfo parseFromService(android.content.Context context, android.content.ComponentName providerService) throws org.xmlpull.v1.XmlPullParserException;
     property public String? configIntentAction;
     property public java.util.List<androidx.glance.wear.ContainerInfo> containers;
     property public String description;
@@ -56,8 +52,13 @@ package androidx.glance.wear {
     property public String label;
     property public androidx.glance.wear.SchemaVersion? maxSchemaVersion;
     property public androidx.glance.wear.SchemaVersion? minSchemaVersion;
-    property public androidx.glance.wear.ContainerType preferredType;
+    property public int preferredContainerType;
     property public android.content.ComponentName providerService;
+    field public static final androidx.glance.wear.WearWidgetProviderInfo.Companion Companion;
+  }
+
+  public static final class WearWidgetProviderInfo.Companion {
+    method @kotlin.jvm.Throws(exceptionClasses=XmlPullParserException::class) public androidx.glance.wear.WearWidgetProviderInfo parseFromService(android.content.Context context, android.content.ComponentName providerService) throws org.xmlpull.v1.XmlPullParserException;
   }
 
 }

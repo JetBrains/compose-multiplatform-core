@@ -30,85 +30,85 @@ class ActiveWearWidgetHandleTest {
 
     @Test
     fun equals_sameInstance() {
-        val id = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
+        val id = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
 
         assertThat(id).isEqualTo(id)
     }
 
     @Test
     fun equals_SameValues() {
-        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
-        val id2 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
+        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
+        val id2 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
 
         assertThat(id1).isEqualTo(id2)
     }
 
     @Test
     fun equals_differentProvider() {
-        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
-        val id2 = ActiveWearWidgetHandle(provider2, 17, ContainerType.Large)
+        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
+        val id2 = ActiveWearWidgetHandle(provider2, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
 
         assertThat(id1).isNotEqualTo(id2)
     }
 
     @Test
     fun equals_differentInstanceId() {
-        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
-        val id2 = ActiveWearWidgetHandle(provider1, 123, ContainerType.Large)
+        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
+        val id2 = ActiveWearWidgetHandle(provider1, 123, ContainerInfo.CONTAINER_TYPE_LARGE)
 
         assertThat(id1).isNotEqualTo(id2)
     }
 
     @Test
     fun equals_differentContainerType() {
-        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
-        val id2 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Small)
+        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
+        val id2 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_SMALL)
 
         assertThat(id1).isNotEqualTo(id2)
     }
 
     @Test
     fun equals_differentType() {
-        val id = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
+        val id = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
 
-        assertThat(id).isNotEqualTo(ContainerType.Large)
+        assertThat(id).isNotEqualTo(ContainerInfo.CONTAINER_TYPE_LARGE)
     }
 
     @Test
     fun equals_null() {
-        val id = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
+        val id = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
 
         assertThat(id).isNotEqualTo(null)
     }
 
     @Test
     fun hashCode_sameForEqualObjects() {
-        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
-        val id2 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
+        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
+        val id2 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
 
         assertThat(id1.hashCode()).isEqualTo(id2.hashCode())
     }
 
     @Test
     fun hashCode_differentForDifferentProvider() {
-        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
-        val id2 = ActiveWearWidgetHandle(provider2, 17, ContainerType.Large)
+        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
+        val id2 = ActiveWearWidgetHandle(provider2, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
 
         assertThat(id1.hashCode()).isNotEqualTo(id2.hashCode())
     }
 
     @Test
     fun hashCode_differentForDifferentInstanceId() {
-        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
-        val id2 = ActiveWearWidgetHandle(provider1, 123, ContainerType.Large)
+        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
+        val id2 = ActiveWearWidgetHandle(provider1, 123, ContainerInfo.CONTAINER_TYPE_LARGE)
 
         assertThat(id1.hashCode()).isNotEqualTo(id2.hashCode())
     }
 
     @Test
     fun hashCode_differentForDifferentContainerType() {
-        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Large)
-        val id2 = ActiveWearWidgetHandle(provider1, 17, ContainerType.Small)
+        val id1 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_LARGE)
+        val id2 = ActiveWearWidgetHandle(provider1, 17, ContainerInfo.CONTAINER_TYPE_SMALL)
 
         assertThat(id1.hashCode()).isNotEqualTo(id2.hashCode())
     }

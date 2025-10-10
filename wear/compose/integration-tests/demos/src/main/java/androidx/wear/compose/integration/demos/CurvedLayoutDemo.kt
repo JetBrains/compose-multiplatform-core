@@ -423,7 +423,7 @@ fun CurvedIconsDemo() {
             angularDirection = CurvedDirection.Angular.CounterClockwise,
         ) {
             curvedComposable(rotationLocked = true) { Text("Foo", color = Color.White) }
-            listOf(R.drawable.ic_skip_previous, R.drawable.ic_play, R.drawable.ic_skip_next)
+            listOf(R.drawable.icon_skip_previous, R.drawable.icon_play, R.drawable.icon_skip_next)
                 .forEach {
                     curvedComposable(
                         modifier = CurvedModifier.angularSize(40f),

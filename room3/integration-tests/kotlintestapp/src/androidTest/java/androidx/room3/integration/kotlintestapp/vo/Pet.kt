@@ -22,41 +22,34 @@ import java.util.Date
 
 @Entity
 class Pet(
-    @PrimaryKey var mPetId: Int,
-    var mUserId: Int,
-    @ColumnInfo(name = "mPetName") var mName: String?,
-    var mAdoptionDate: Date?,
+    @PrimaryKey var petId: Int,
+    var userId: Int,
+    @ColumnInfo(name = "petName") var name: String?,
+    var adoptionDate: Date?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
-        val pet = other as Pet
-        if (mPetId != pet.mPetId) return false
-        if (mUserId != pet.mUserId) return false
-        if (if (mName != null) mName != pet.mName else pet.mName != null) return false
-        return if (mAdoptionDate != null) mAdoptionDate == pet.mAdoptionDate
-        else pet.mAdoptionDate == null
+        if (javaClass != other?.javaClass) return false
+
+        other as Pet
+
+        if (petId != other.petId) return false
+        if (userId != other.userId) return false
+        if (name != other.name) return false
+        if (adoptionDate != other.adoptionDate) return false
+
+        return true
     }
 
     override fun hashCode(): Int {
-        var result = mPetId
-        result = 31 * result + mUserId
-        result = 31 * result + if (mName != null) mName.hashCode() else 0
-        result = 31 * result + if (mAdoptionDate != null) mAdoptionDate.hashCode() else 0
+        var result = petId
+        result = 31 * result + userId
+        result = 31 * result + (name?.hashCode() ?: 0)
+        result = 31 * result + (adoptionDate?.hashCode() ?: 0)
         return result
     }
 
     override fun toString(): String {
-        return ("Pet{" +
-            "mPetId=" +
-            mPetId +
-            ", mUserId=" +
-            mUserId +
-            ", mName='" +
-            mName +
-            '\'' +
-            ", mAdoptionDate=" +
-            mAdoptionDate +
-            '}')
+        return "Pet(petId=$petId, userId=$userId, name=$name, adoptionDate=$adoptionDate)"
     }
 }

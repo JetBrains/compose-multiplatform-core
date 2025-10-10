@@ -333,6 +333,13 @@ public final class Flags {
     public static final String FLAG_ENABLE_DIRECTLY_WRITE_COMMIT_REMOVE_BLOB_RESPONSE =
             FLAG_PREFIX + "directly_write_commit_remove_blob_response";
 
+    /**
+     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
+     * existing types will be preserved when possible.
+     */
+    public static final String FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION =
+            FLAG_PREFIX + "enable_schema_type_id_optimization";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -733,5 +740,15 @@ public final class Flags {
      */
     public static boolean enableDirectlyWriteCommitRemoveBlobResponse() {
         return true;
+    }
+
+    /**
+     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
+     * existing types will be preserved when possible, and there will be no schema-type id
+     * reassignment for adding new types.
+     */
+    public static boolean enableSchemaTypeIdOptimization() {
+        // TODO(b/434218554): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
     }
 }

@@ -20,42 +20,42 @@ import androidx.room3.Ignore
 import androidx.room3.Relation
 
 class PetWithToyIds {
-    @Embedded val mPet: Pet?
+    @Embedded val pet: Pet?
 
     @Relation(
-        parentColumn = "mPetId",
-        entityColumn = "mPetId",
-        projection = ["mId"],
+        parentColumn = "petId",
+        entityColumn = "petId",
+        projection = ["id"],
         entity = Toy::class,
     )
-    var mToyIds: List<Int>? = null
+    var toyIds: List<Int>? = null
 
     // for the relation
     constructor(pet: Pet?) {
-        this.mPet = pet
+        this.pet = pet
     }
 
     @Ignore
     constructor(pet: Pet?, toyIds: List<Int>?) {
-        this.mPet = pet
-        this.mToyIds = toyIds
+        this.pet = pet
+        this.toyIds = toyIds
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || javaClass != other.javaClass) return false
         val that = other as PetWithToyIds
-        if (if (mPet != null) !mPet.equals(that.mPet) else that.mPet != null) return false
-        return if (mToyIds != null) mToyIds == that.mToyIds else that.mToyIds == null
+        if (if (pet != null) pet != that.pet else that.pet != null) return false
+        return if (toyIds != null) toyIds == that.toyIds else that.toyIds == null
     }
 
     override fun hashCode(): Int {
-        var result = mPet?.hashCode() ?: 0
-        result = 31 * result + if (mToyIds != null) mToyIds.hashCode() else 0
+        var result = pet?.hashCode() ?: 0
+        result = 31 * result + (toyIds?.hashCode() ?: 0)
         return result
     }
 
     override fun toString(): String {
-        return ("PetWithToyIds{" + "pet=" + mPet + ", toyIds=" + mToyIds + '}')
+        return ("PetWithToyIds{pet=$pet, toyIds=$toyIds}")
     }
 }

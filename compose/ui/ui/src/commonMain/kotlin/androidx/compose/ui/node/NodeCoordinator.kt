@@ -557,14 +557,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
                 layoutNode.innerLayerCoordinatorIsDirty = true
                 invalidateParentLayer()
             } else if (updateParameters) {
-                val positionalPropertiesChanged = updateLayerParameters()
-                if (positionalPropertiesChanged) {
-                    layoutNode.onCoordinatorPositionChanged()
-                    layoutNode
-                        .requireOwner()
-                        .rectManager
-                        .onLayoutLayerPositionalPropertiesChanged(layoutNode)
-                }
+                updateLayerParameters()
             }
         } else {
             this.layerBlock = null
@@ -585,10 +578,10 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
     }
 
     /** returns true if some of the positional properties did change. */
-    private fun updateLayerParameters(invokeOnLayoutChange: Boolean = true): Boolean {
+    private fun updateLayerParameters(invokeOnLayoutChange: Boolean = true) {
         if (explicitLayer != null) {
             // the parameters of the explicit layers are configured differently.
-            return false
+            return
         }
         val layer = layer
         if (layer != null) {
@@ -633,10 +626,34 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             ) {
                 layoutNode.owner?.onLayoutChange(layoutNode)
             }
-            return positionalPropertiesChanged
+            if (positionalPropertiesChanged) {
+                val layoutNode = layoutNode
+                val layoutDelegate = layoutNode.layoutDelegate
+                if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
+                    if (
+                        layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
+                            layoutDelegate.coordinatesAccessedDuringPlacement
+                    ) {
+                        layoutNode.requestRelayout()
+                    }
+                    layoutDelegate.measurePassDelegate.notifyChildrenUsingCoordinatesWhilePlacing()
+                }
+                layoutNode.onCoordinatorPositionChanged()
+                val owner = layoutNode.requireOwner()
+                val rectManager = owner.rectManager
+                if (this === layoutNode.outerCoordinator) {
+                    // transformations on the outer coordinator define the layout position
+                    rectManager.onLayoutPositionChanged(layoutNode)
+                } else {
+                    // transformations on other coordinators invalidate outerToInnerOffset
+                    rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
+                }
+                if (layoutNode.globallyPositionedObservers > 0) {
+                    owner.requestOnPositionedCallback(layoutNode)
+                }
+            }
         } else {
             checkPrecondition(layerBlock == null) { "null layer with a non-null layerBlock" }
-            return false
         }
     }
 
@@ -1485,39 +1502,7 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         private val onCommitAffectingLayerParams: (NodeCoordinator) -> Unit = { coordinator ->
             withComposeStackTrace(coordinator.layoutNode) {
                 if (coordinator.isValidOwnerScope) {
-                    // coordinator.layerPositionalProperties should always be non-null here, but
-                    // we'll just be careful with a null check.
-                    val positionalPropertiesChanged = coordinator.updateLayerParameters()
-                    if (positionalPropertiesChanged) {
-                        val layoutNode = coordinator.layoutNode
-                        val layoutDelegate = layoutNode.layoutDelegate
-                        if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
-                            if (
-                                layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
-                                    layoutDelegate.coordinatesAccessedDuringPlacement
-                            ) {
-                                layoutNode.requestRelayout()
-                            }
-                            layoutDelegate.measurePassDelegate
-                                .notifyChildrenUsingCoordinatesWhilePlacing()
-                        }
-                        layoutNode.onCoordinatorPositionChanged()
-                        val owner = layoutNode.requireOwner()
-                        val rectManager = owner.rectManager
-                        if (coordinator === layoutNode.outerCoordinator) {
-                            // transformations on the outer coordinator define the layout position
-                            rectManager.onLayoutPositionChanged(layoutNode)
-                            // we need to manually trigger the callbacks as the state based layer
-                            // invalidations are processed outside of the measure pass.
-                            rectManager.invalidateCallbacksFor(layoutNode)
-                        } else {
-                            // transformations on other coordinators invalidate outerToInnerOffset
-                            rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
-                        }
-                        if (layoutNode.globallyPositionedObservers > 0) {
-                            owner.requestOnPositionedCallback(layoutNode)
-                        }
-                    }
+                    coordinator.updateLayerParameters()
                 }
             }
         }

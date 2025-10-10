@@ -62,7 +62,7 @@ class ProvidedTypeConverterTest {
                 .setDriver(AndroidSQLiteDriver())
                 .build()
         val pet: Pet = TestUtil.createPet(3)
-        pet.mName = "pet"
+        pet.name = "pet"
         db.petDao().insertOrReplace(pet)
 
         val robot = Robot(UUID.randomUUID(), UUID.randomUUID())
@@ -96,7 +96,7 @@ class ProvidedTypeConverterTest {
                     .setDriver(AndroidSQLiteDriver())
                     .build()
             val pet: Pet = TestUtil.createPet(3)
-            pet.mName = "pet"
+            pet.name = "pet"
             db.petDao().insertOrReplace(pet)
             assertWithMessage("Should have thrown an IllegalArgumentException").fail()
         } catch (throwable: Throwable) {
@@ -114,7 +114,7 @@ class ProvidedTypeConverterTest {
                     .setDriver(AndroidSQLiteDriver())
                     .build()
             val pet: Pet = TestUtil.createPet(3)
-            pet.mName = "pet"
+            pet.name = "pet"
             db.petDao().insertOrReplace(pet)
             assertWithMessage("Should have thrown an IllegalArgumentException").fail()
         } catch (throwable: Throwable) {

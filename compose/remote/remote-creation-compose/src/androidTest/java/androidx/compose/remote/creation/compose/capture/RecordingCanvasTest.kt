@@ -23,6 +23,8 @@ import android.graphics.BlendMode
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.Operation
 import androidx.compose.remote.core.Profiles
@@ -284,6 +286,48 @@ class RecordingCanvasTest {
 
         assertThat(paintCopy.remoteColor).isEqualTo(paint.remoteColor)
         assertThat(paintCopy.remoteColorFilter).isEqualTo(paint.remoteColorFilter)
+    }
+
+    @Test
+    fun drawToOffscreenBitmap() {
+        recordingCanvas.drawRect(0, 0, WIDTH, HEIGHT, Paint().apply { color = Color.BLACK })
+        recordingCanvas.drawRect(
+            20,
+            20,
+            WIDTH - 20,
+            HEIGHT - 20,
+            Paint().apply { color = Color.YELLOW },
+        )
+        val bitmap =
+            recordingCanvas.drawToOffscreenBitmap(WIDTH, HEIGHT, Color.BLACK) {
+                recordingCanvas.drawOval(
+                    20,
+                    20,
+                    WIDTH - 20,
+                    HEIGHT - 20,
+                    Paint().apply { color = Color.RED },
+                )
+                recordingCanvas.drawText(
+                    "HI",
+                    20,
+                    HEIGHT - 50,
+                    Paint().apply {
+                        textSize = 380f
+                        typeface = Typeface.DEFAULT_BOLD
+                        blendMode = BlendMode.CLEAR
+                    },
+                )
+            }
+        val rect = Rect(0, 0, WIDTH, HEIGHT)
+        recordingCanvas.drawBitmap(
+            bitmap,
+            rect,
+            rect,
+            Paint().apply { blendMode = BlendMode.SRC_OVER },
+        )
+
+        val document = constructDocument()
+        assertScreenshot(document, "offscreenBitmap")
     }
 
     private fun constructDocument() =

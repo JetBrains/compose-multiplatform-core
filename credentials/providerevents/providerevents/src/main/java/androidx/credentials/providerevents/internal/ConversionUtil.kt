@@ -20,6 +20,8 @@ import androidx.annotation.RestrictTo
 import androidx.credentials.providerevents.exception.ImportCredentialsException
 import androidx.credentials.providerevents.exception.ImportCredentialsInvalidJsonException
 import androidx.credentials.providerevents.exception.ImportCredentialsInvalidJsonException.Companion.TYPE_IMPORT_CREDENTIALS_INVALID_JSON_EXCEPTION
+import androidx.credentials.providerevents.exception.ImportCredentialsNoExportOptionException
+import androidx.credentials.providerevents.exception.ImportCredentialsNoExportOptionException.Companion.TYPE_IMPORT_CREDENTIALS_NO_EXPORT_OPTION
 import androidx.credentials.providerevents.exception.ImportCredentialsProviderConfigurationException
 import androidx.credentials.providerevents.exception.ImportCredentialsProviderConfigurationException.Companion.TYPE_IMPORT_CREDENTIALS_PROVIDER_CONFIGURATION_EXCEPTION
 import androidx.credentials.providerevents.exception.ImportCredentialsSystemErrorException
@@ -43,6 +45,8 @@ public fun toJetpackGetException(errorType: String, errorMsg: String?): ImportCr
             ImportCredentialsUnknownCallerException(errorMsg)
         TYPE_IMPORT_CREDENTIALS_UNKNOWN_ERROR_EXCEPTION ->
             ImportCredentialsUnknownErrorException(errorMsg)
+        TYPE_IMPORT_CREDENTIALS_NO_EXPORT_OPTION ->
+            ImportCredentialsNoExportOptionException(errorMsg)
         else -> {
             ImportCredentialsUnknownErrorException(errorMsg)
         }
