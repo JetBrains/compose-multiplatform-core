@@ -19,7 +19,9 @@ import androidx.build.KotlinTarget
 // TODO: Correctly apply AndroidXPlugin to pass all verification checks.
 
 plugins {
+    id("AndroidXPlugin")
     id("kotlin-multiplatform")
+    id("JetBrainsAndroidXPlugin")
 }
 
 kotlin {

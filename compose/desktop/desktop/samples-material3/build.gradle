@@ -17,6 +17,7 @@
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
     id("kotlin-multiplatform")
 }
 

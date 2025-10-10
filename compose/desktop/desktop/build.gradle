@@ -20,6 +20,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {
