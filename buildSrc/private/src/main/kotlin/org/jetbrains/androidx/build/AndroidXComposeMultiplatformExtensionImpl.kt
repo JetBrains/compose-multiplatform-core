@@ -111,7 +111,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         val jsMain = sourceSets.getByName("jsMain")
         jsMain.dependsOn(commonMain)
 
-        val resourcesDir = project.buildDir.resolve("resources/skiko-js")
+        val resourcesDir = project.layout.buildDirectory.asFile.get().resolve("resources/skiko-js")
 
         // Below code helps configure the tests for k/wasm targets
         project.dependencies {
@@ -164,7 +164,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
             }
         }
 
-        val resourcesDir = project.buildDir.resolve("resources/skiko-wasm")
+        val resourcesDir = project.layout.buildDirectory.asFile.get().resolve("resources/skiko-wasm")
 
         // Below code helps configure the tests for k/wasm targets
         project.dependencies {

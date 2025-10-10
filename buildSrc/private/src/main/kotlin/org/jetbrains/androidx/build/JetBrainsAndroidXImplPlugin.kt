@@ -201,9 +201,7 @@ private fun enableArtifactRedirectionPublishing(project: Project) {
                 configuration.name.startsWith(it, ignoreCase = true)
             }
             val targetVersion = redirection.versionForTargetOrDefault(targetName ?: "")
-            project.dependencies.create(
-                redirection.groupId, project.name, targetVersion
-            )
+            project.dependencies.create("${redirection.groupId}:${project.name}:${targetVersion}") as org.gradle.api.artifacts.ModuleDependency
         }
     }
 
