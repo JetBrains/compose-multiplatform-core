@@ -16,6 +16,7 @@
 
 import androidx.build.AndroidXConfig
 import androidx.build.SoftwareType
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
 
 plugins {
     id("AndroidXPlugin")
