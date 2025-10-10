@@ -20,7 +20,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -36,11 +35,8 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.junit4.sendBackEvent
 import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.DirectNavigationEventInput
@@ -51,7 +47,6 @@ import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalTestApi::class, InternalComposeApi::class)
 class DesktopPopupTest {
     @get:Rule
     val rule = createComposeRule()
