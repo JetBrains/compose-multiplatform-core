@@ -26,9 +26,6 @@ plugins {
     id("JetBrainsAndroidXPlugin")
 }
 
-AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetBrainsAndroidXPlugin.applyAndConfigure(project)
-
 androidXComposeMultiplatform {
     js()
     wasm()

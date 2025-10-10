@@ -35,6 +35,7 @@ import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 androidXMultiplatform {

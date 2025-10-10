@@ -32,8 +32,6 @@ plugins {
     id("JetBrainsAndroidXPlugin")
 }
 
-JetBrainsAndroidXPlugin.applyAndConfigure(project)
-
 androidXMultiplatform {
     desktop()
     android()
