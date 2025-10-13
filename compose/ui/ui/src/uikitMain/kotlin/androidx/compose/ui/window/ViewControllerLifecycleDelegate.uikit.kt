@@ -18,13 +18,39 @@ package androidx.compose.ui.window
 
 import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
 import androidx.compose.ui.uikit.utils.CMPViewControllerLifecycleDelegateProtocol
+import platform.Foundation.NSNotificationCenter
+import platform.UIKit.UIWindowScene
 import platform.darwin.NSObject
 
 internal class ViewControllerLifecycleDelegate(
-    private val componentsOwner: UIKitArchitectureComponentsOwner
+    private val componentsOwner: UIKitArchitectureComponentsOwner,
+    private val notificationCenter: NSNotificationCenter = NSNotificationCenter.defaultCenter,
 ): NSObject(), CMPViewControllerLifecycleDelegateProtocol {
+    private val activeStateListener = SceneActiveStateListener(
+        notificationCenter = notificationCenter,
+        getScene = ::windowScene
+    ) { isSceneActive ->
+        componentsOwner.isSceneActive = isSceneActive
+    }
+    private val foregroundStateListener = SceneForegroundStateListener(
+        notificationCenter = notificationCenter,
+        getScene = ::windowScene
+    ) { isSceneInForeground ->
+        componentsOwner.isSceneInForeground = isSceneInForeground
+    }
+
+    var windowScene: UIWindowScene? = null
+        set(value) {
+            field = value
+            componentsOwner.isSceneInForeground = foregroundStateListener.isSceneInForeground
+            componentsOwner.isSceneActive = activeStateListener.isSceneActive
+        }
+
     override fun viewControllerWillDealloc() {
         componentsOwner.dispose()
+        activeStateListener.dispose()
+        foregroundStateListener.dispose()
+        windowScene = null
     }
 
     override fun viewControllerWillAppear() {

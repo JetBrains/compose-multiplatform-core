@@ -55,7 +55,6 @@ import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
-import androidx.compose.ui.window.SceneForegroundStateListener
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
@@ -97,8 +96,9 @@ internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
     private val architectureComponentsOwner: UIKitArchitectureComponentsOwner = UIKitArchitectureComponentsOwner(),
-    coroutineContext: CoroutineContext = Dispatchers.Main
-) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(architectureComponentsOwner)) {
+    coroutineContext: CoroutineContext = Dispatchers.Main,
+    private val lifecycleDelegate: ViewControllerLifecycleDelegate = ViewControllerLifecycleDelegate(architectureComponentsOwner)
+) : CMPViewController(lifecycleDelegate = lifecycleDelegate) {
     private val hapticFeedback = CupertinoHapticFeedback()
 
     private val rootView = ComposeView(
@@ -113,7 +113,6 @@ internal class ComposeHostingViewController(
     private val layoutDirection get() = getLayoutDirection()
     private val motionDurationScale = MotionDurationScaleImpl()
     private var activeStateListener: SceneActiveStateListener? = null
-    private var foregroundStateListener: SceneForegroundStateListener? = null
     private val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
     private var savableStateRegistry = SaveableStateRegistry(
         restoredValues = null, canBeSaved = { true }
@@ -214,7 +213,7 @@ internal class ComposeHostingViewController(
         layersHolder?.layersViewController?.referenceWindow = view.window
         windowContext.setWindowContainer(windowContainer)
         updateMotionSpeed()
-        updateSceneDependentProperties()
+        lifecycleDelegate.windowScene = window.windowScene
     }
 
     private fun updateInterfaceOrientationState() {
@@ -334,19 +333,18 @@ internal class ComposeHostingViewController(
             }
         }
 
-        activeStateListener = SceneActiveStateListener(::windowScene) { isSceneActive ->
+        activeStateListener = SceneActiveStateListener(
+            getScene = ::windowScene
+        ) { isSceneActive ->
             if (isSceneActive) {
                 updateMotionSpeed()
             }
-            architectureComponentsOwner.isSceneActive = isSceneActive
-        }
-        foregroundStateListener = SceneForegroundStateListener(::windowScene) { isSceneInForeground ->
-            architectureComponentsOwner.isSceneInForeground = isSceneInForeground
         }
 
         interfaceOrientationObserver.isObservingEnabled = true
 
         architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
+        lifecycleDelegate.windowScene = windowScene
         navigationEventInput.onDidMoveToWindow(view.window, rootView)
         onAccessibilityChanged()
     }
@@ -537,12 +535,6 @@ internal class ComposeHostingViewController(
         } else {
             1f / (view.window?.layer?.speed?.takeIf { it > 0 } ?: 1f)
         }
-    }
-
-    private fun updateSceneDependentProperties() {
-        architectureComponentsOwner.isSceneInForeground =
-            foregroundStateListener?.isSceneInForeground ?: false
-        architectureComponentsOwner.isSceneActive = activeStateListener?.isSceneActive ?: false
     }
 
     private val windowScene: UIWindowScene? get() =

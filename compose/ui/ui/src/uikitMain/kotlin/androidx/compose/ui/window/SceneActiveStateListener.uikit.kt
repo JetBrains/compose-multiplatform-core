@@ -28,17 +28,19 @@ import platform.UIKit.UIWindowScene
 import platform.darwin.NSObject
 
 internal class SceneActiveStateListener(
+    /**
+     * [NSNotificationCenter] to listen to, can be customized for tests purposes
+     */
+    private val notificationCenter: NSNotificationCenter = NSNotificationCenter.defaultCenter,
+    /**
+     * Provides [UIWindowScene] as soon as compose container is attached to the scene
+     */
     private var getScene: () -> UIWindowScene?,
     /**
      * Callback which will be called with `true` when the app becomes active, and `false` when the app goes background
      */
     private var onSceneActiveStateChanged: (Boolean) -> Unit
 ) : NSObject() {
-    /**
-     * [NSNotificationCenter] to listen to, can be customized for tests purposes
-     */
-    private val notificationCenter: NSNotificationCenter = NSNotificationCenter.defaultCenter
-
     init {
         notificationCenter.addObserver(
             observer = this,

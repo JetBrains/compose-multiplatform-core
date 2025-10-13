@@ -21,12 +21,17 @@ import platform.Foundation.NSNotification
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSSelectorFromString
 import platform.UIKit.UISceneActivationStateBackground
+import platform.UIKit.UISceneActivationStateUnattached
 import platform.UIKit.UISceneDidEnterBackgroundNotification
 import platform.UIKit.UISceneWillEnterForegroundNotification
 import platform.UIKit.UIWindowScene
 import platform.darwin.NSObject
 
 internal class SceneForegroundStateListener(
+    /**
+     * Provides [UIWindowScene] as soon as compose container is attached to the scene
+     */
+    private val notificationCenter: NSNotificationCenter = NSNotificationCenter.defaultCenter,
     /**
      * Provides [UIWindowScene] as soon as compose container component is attached to the scene
      */
@@ -36,8 +41,6 @@ internal class SceneForegroundStateListener(
      */
     private var onSceneForegroundStateChanged: (Boolean) -> Unit,
 ) : NSObject() {
-    private val notificationCenter: NSNotificationCenter = NSNotificationCenter.defaultCenter
-
     init {
         notificationCenter.addObserver(
             observer = this,
@@ -68,8 +71,12 @@ internal class SceneForegroundStateListener(
         }
     }
 
-    val isSceneInForeground: Boolean get() =
-        getScene()?.activationState != UISceneActivationStateBackground
+    val isSceneInForeground: Boolean
+        get() =
+            getScene()?.let {
+                it.activationState != UISceneActivationStateBackground &&
+                    it.activationState != UISceneActivationStateUnattached
+            } ?: false
 
     /**
      * Deregister from [NSNotificationCenter]
