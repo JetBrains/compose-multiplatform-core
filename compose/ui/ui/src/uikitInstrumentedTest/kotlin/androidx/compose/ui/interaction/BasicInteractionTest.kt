@@ -200,7 +200,6 @@ class BasicInteractionTest {
         findNodeWithTag("TextField").doubleTap()
 
         waitForContextMenu()
-        println(getAccessibilityTree().printTree())
 
         assertFalse(textFieldValue.isFullySelected())
 
@@ -225,7 +224,6 @@ class BasicInteractionTest {
         findNodeWithTag("TextField").doubleTap()
 
         waitForContextMenu()
-        println(getAccessibilityTree().printTree())
 
         assertFalse(textFieldState.isFullySelected())
 
@@ -253,8 +251,6 @@ class BasicInteractionTest {
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         // Verify elements from context menu present
         waitForContextMenu()
-
-        println(getAccessibilityTree().printTree())
 
         findNodeWithLabel("Cut").let {
             it.assertVisibleInContainer()
