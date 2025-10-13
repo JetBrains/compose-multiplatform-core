@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.platform.testTag
+import kotlin.coroutines.Continuation
 import kotlin.coroutines.suspendCoroutine
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -48,29 +49,28 @@ import org.w3c.dom.get
 class CfWA11YTest : OnCanvasTests {
     private fun getAppRoot() = getShadowRoot().children[0] as HTMLElement
 
-    suspend fun awaitA11YChanges() {
+    private suspend fun awaitA11YChanges() {
         val a11yContainer = getA11YContainer() ?: return
 
-        fun skipFramesUntil(skipCondition: () -> Boolean, onTrue: () -> Unit) {
+        fun Continuation<Unit>.skipFramesUntil(skipCondition: () -> Boolean) {
             window.requestAnimationFrame {
                 if (skipCondition()) {
-                    skipFramesUntil(skipCondition, onTrue)
+                    skipFramesUntil(skipCondition)
                 } else {
-                    onTrue()
+                    resumeWith(Result.success(Unit))
                 }
             }
         }
 
         suspendCoroutine { continuation ->
             val initialContent = a11yContainer.innerHTML
-            skipFramesUntil(
-                skipCondition = { a11yContainer.innerHTML == initialContent },
-                onTrue = { continuation.resumeWith(Result.success(Unit)) }
-            )
+            continuation.skipFramesUntil {
+                a11yContainer.innerHTML == initialContent
+            }
         }
     }
 
-    fun getA11YContainer(): HTMLElement? {
+    private fun getA11YContainer(): HTMLElement? {
         return if (getAppRoot().children.length < 3) {
             null
         } else {
