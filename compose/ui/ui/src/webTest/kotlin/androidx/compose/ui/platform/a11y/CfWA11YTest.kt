@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.platform.testTag
+import kotlin.coroutines.suspendCoroutine
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,6 +37,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -45,6 +47,38 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.get
 
 class CfWA11YTest : OnCanvasTests {
+    private fun getAppRoot() = getShadowRoot().children[0] as HTMLElement
+
+    suspend fun awaitA11YChanges() {
+        val a11yContainer = getA11YContainer() ?: return
+
+        fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
+            window.requestAnimationFrame {
+                if (!condition()) {
+                    skipFramesUntil(condition, onTrue)
+                } else {
+                    onTrue()
+                }
+            }
+        }
+
+        suspendCoroutine { continuation ->
+            val initialContent = a11yContainer.innerHTML
+            skipFramesUntil(
+                condition = { a11yContainer.innerHTML != initialContent },
+                onTrue = { continuation.resumeWith(Result.success(Unit)) }
+            )
+        }
+    }
+
+    fun getA11YContainer(): HTMLElement? {
+        return if (getAppRoot().children.length < 3) {
+            null
+        } else {
+            // The expected order is: canvas, interop container <div>, a11y container <div>
+            getAppRoot().children[2] as HTMLElement
+        }
+    }
 
     @Test
     fun a11yButtonClick() = runApplicationTest {

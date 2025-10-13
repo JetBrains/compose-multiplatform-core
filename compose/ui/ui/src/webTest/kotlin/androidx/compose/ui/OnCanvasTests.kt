@@ -76,16 +76,6 @@ internal interface OnCanvasTests {
 
     private fun getContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
 
-    private fun getAppRoot() = getShadowRoot().children[0] as HTMLElement
-
-    fun getA11YContainer(): HTMLElement? {
-        return if (getAppRoot().children.length < 3) {
-            null
-        } else {
-            // The expected order is: canvas, interop container <div>, a11y container <div>
-            getAppRoot().children[2] as HTMLElement
-        }
-    }
 
     fun getShadowRoot(): ExtendedShadowRoot =
         (getContainer().shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
@@ -108,28 +98,6 @@ internal interface OnCanvasTests {
             // (it does so to let the event loop run / release the single thread)
             // I don't expect any issue from doing this, since a test will suspend and won't do anything.
             window.requestAnimationFrame { continuation.resumeWith(Result.success(it)) }
-        }
-    }
-
-    suspend fun awaitA11YChanges() {
-        val a11yContainer = getA11YContainer() ?: return
-
-        fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
-            window.requestAnimationFrame {
-                if (!condition()) {
-                    skipFramesUntil(condition, onTrue)
-                } else {
-                    onTrue()
-                }
-            }
-        }
-
-        suspendCoroutine { continuation ->
-            val initialContent = a11yContainer.innerHTML
-            skipFramesUntil(
-                condition = { a11yContainer.innerHTML != initialContent },
-                onTrue = { continuation.resumeWith(Result.success(Unit)) }
-            )
         }
     }
 
