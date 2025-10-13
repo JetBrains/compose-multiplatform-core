@@ -280,6 +280,13 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
     }
 
     /**
+     * Renders the window's content synchronously.
+     */
+    fun renderImmediately() {
+        composePanel.renderImmediately()
+    }
+
+    /**
      * Retrieve underlying platform-specific operating system handle for the root window where
      * ComposeWindow is rendered. Currently returns HWND on Windows, Window on X11 and NSWindow
      * on macOS.

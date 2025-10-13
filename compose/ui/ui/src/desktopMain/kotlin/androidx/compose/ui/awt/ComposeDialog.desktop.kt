@@ -294,6 +294,13 @@ class ComposeDialog : JDialog {
     }
 
     /**
+     * Renders the dialog's content synchronously.
+     */
+    fun renderImmediately() {
+        composePanel.renderImmediately()
+    }
+
+    /**
      * Retrieve underlying platform-specific operating system handle for the root window where
      * ComposeDialog is rendered. Currently returns HWND on Windows, Window on X11 and NSWindow
      * on macOS.
