@@ -71,6 +71,8 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinTest)
                 implementation(project(":compose:ui:ui-test"))
+                implementation(project(":navigationevent:navigationevent-testing"))
+                implementation(project(":navigationevent:navigationevent-compose"))
             }
         }
 

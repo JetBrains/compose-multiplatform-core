@@ -245,9 +245,10 @@ androidXMultiplatform {
         skikoTest {
             dependsOn(commonTest)
             dependencies {
-                // TODO: Move to commonTest?]
+                // TODO: Move to commonTest?
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:foundation:foundation"))
+                implementation(project(":navigationevent:navigationevent-compose"))
             }
         }
 
