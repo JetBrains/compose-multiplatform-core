@@ -34,6 +34,7 @@ import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.firstNodeOrNull
+import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
@@ -199,6 +200,8 @@ class BasicInteractionTest {
         findNodeWithTag("TextField").doubleTap()
 
         waitForContextMenu()
+        println(getAccessibilityTree().printTree())
+
         assertFalse(textFieldValue.isFullySelected())
 
         findNodeWithLabel("Select All").tap()
@@ -222,6 +225,8 @@ class BasicInteractionTest {
         findNodeWithTag("TextField").doubleTap()
 
         waitForContextMenu()
+        println(getAccessibilityTree().printTree())
+
         assertFalse(textFieldState.isFullySelected())
 
         findNodeWithLabel("Select All").tap()
@@ -248,6 +253,8 @@ class BasicInteractionTest {
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         // Verify elements from context menu present
         waitForContextMenu()
+
+        println(getAccessibilityTree().printTree())
 
         findNodeWithLabel("Cut").let {
             it.assertVisibleInContainer()
