@@ -25,6 +25,12 @@ defaults export com.apple.iphonesimulator - > "$PREF_PLIST"
 echo "$DEVICES" | jq -r '.DEVICES | to_entries[] | select(.key | startswith("com.apple.CoreSimulator.SimRuntime.iOS")) | .value[] | "\(.udid)"' | while read -r UUID; do
     /usr/libexec/PlistBuddy -c "Set :DevicePreferences:$UUID:ConnectHardwareKeyboard false" "$PREF_PLIST" 2>/dev/null || \
     /usr/libexec/PlistBuddy -c "Add :DevicePreferences:$UUID:ConnectHardwareKeyboard bool false" "$PREF_PLIST"
+
+    xcrun simctl spawn $UUID defaults write com.apple.Accessibility AccessibilityEnabled -bool true
+    xcrun simctl spawn $UUID defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true
+    xcrun simctl spawn $UUID defaults write com.apple.Accessibility AutomationEnabled -bool true
+    # Restart SpringBoard (so system services pick up the change)
+    xcrun simctl spawn $UUID launchctl stop com.apple.SpringBoard
 done
 
 # Import back the modified plist
