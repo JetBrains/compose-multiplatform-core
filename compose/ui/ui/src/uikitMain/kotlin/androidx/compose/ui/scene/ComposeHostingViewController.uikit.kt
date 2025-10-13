@@ -49,12 +49,13 @@ import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
-import androidx.compose.ui.window.ApplicationActiveStateListener
+import androidx.compose.ui.window.SceneActiveStateListener
 import androidx.compose.ui.window.ComposeView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
+import androidx.compose.ui.window.SceneForegroundStateListener
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
@@ -95,9 +96,9 @@ import platform.darwin.dispatch_get_main_queue
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
-    private val archComponentsOwner: UIKitArchitectureComponentsOwner = UIKitArchitectureComponentsOwner(),
+    private val architectureComponentsOwner: UIKitArchitectureComponentsOwner = UIKitArchitectureComponentsOwner(),
     coroutineContext: CoroutineContext = Dispatchers.Main
-) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(archComponentsOwner)) {
+) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(architectureComponentsOwner)) {
     private val hapticFeedback = CupertinoHapticFeedback()
 
     private val rootView = ComposeView(
@@ -111,7 +112,8 @@ internal class ComposeHostingViewController(
     private var layersHolder: ComposeLayersHolder? = null
     private val layoutDirection get() = getLayoutDirection()
     private val motionDurationScale = MotionDurationScaleImpl()
-    private var applicationActiveStateListener: ApplicationActiveStateListener? = null
+    private var activeStateListener: SceneActiveStateListener? = null
+    private var foregroundStateListener: SceneForegroundStateListener? = null
     private val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
     private var savableStateRegistry = SaveableStateRegistry(
         restoredValues = null, canBeSaved = { true }
@@ -149,9 +151,9 @@ internal class ComposeHostingViewController(
         get() {
             return InterfaceOrientation.getByRawValue(
                 if (available(OS.Ios to OSVersion(16))) {
-                    view.window?.windowScene?.effectiveGeometry?.interfaceOrientation
+                    windowScene?.effectiveGeometry?.interfaceOrientation
                 } else {
-                    view.window?.windowScene?.interfaceOrientation
+                    windowScene?.interfaceOrientation
                 } ?: UIApplication.sharedApplication.statusBarOrientation
             )
         }
@@ -212,6 +214,7 @@ internal class ComposeHostingViewController(
         layersHolder?.layersViewController?.referenceWindow = view.window
         windowContext.setWindowContainer(windowContainer)
         updateMotionSpeed()
+        updateSceneDependentProperties()
     }
 
     private fun updateInterfaceOrientationState() {
@@ -312,7 +315,7 @@ internal class ComposeHostingViewController(
             onFocusBehavior = configuration.onFocusBehavior,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
-            architectureComponentsOwner = archComponentsOwner,
+            architectureComponentsOwner = architectureComponentsOwner,
             coroutineContext = composeCoroutineContext,
             redrawer = metalView.redrawer,
             composeSceneFactory = { invalidate, context ->
@@ -331,14 +334,19 @@ internal class ComposeHostingViewController(
             }
         }
 
-        applicationActiveStateListener = ApplicationActiveStateListener { isApplicationActive ->
-            if (isApplicationActive) {
+        activeStateListener = SceneActiveStateListener(::windowScene) { isSceneActive ->
+            if (isSceneActive) {
                 updateMotionSpeed()
             }
+            architectureComponentsOwner.isSceneActive = isSceneActive
         }
+        foregroundStateListener = SceneForegroundStateListener(::windowScene) { isSceneInForeground ->
+            architectureComponentsOwner.isSceneInForeground = isSceneInForeground
+        }
+
         interfaceOrientationObserver.isObservingEnabled = true
 
-        archComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
+        architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
         navigationEventInput.onDidMoveToWindow(view.window, rootView)
         onAccessibilityChanged()
     }
@@ -356,13 +364,13 @@ internal class ComposeHostingViewController(
 
         rootView.updateMetalView(metalView = null)
         navigationEventInput.onDidMoveToWindow(null, rootView)
-        archComponentsOwner.navigationEventDispatcher.removeInput(navigationEventInput)
+        architectureComponentsOwner.navigationEventDispatcher.removeInput(navigationEventInput)
 
         mediator?.dispose()
         mediator = null
 
-        applicationActiveStateListener?.dispose()
-        applicationActiveStateListener = null
+        activeStateListener?.dispose()
+        activeStateListener = null
 
         layersHolder?.disposeIfNeeded()
         layersHolder = null
@@ -459,10 +467,10 @@ internal class ComposeHostingViewController(
                     onAccessibilityChanged = ::onAccessibilityChanged,
                     focusedViewsList = if (focusable) focusedViewsList?.childFocusedViewsList() else null,
                     compositionContext = compositionContext,
-                    ownerProvider = archComponentsOwner,
+                    ownerProvider = architectureComponentsOwner,
                     coroutineContext = composeCoroutineContext,
                     interfaceOrientationState = interfaceOrientationState,
-                    navigationEventDispatcher = archComponentsOwner.navigationEventDispatcher,
+                    navigationEventDispatcher = architectureComponentsOwner.navigationEventDispatcher,
                 )
 
                 layersHolder.getLayersViewController().attach(layer)
@@ -530,6 +538,15 @@ internal class ComposeHostingViewController(
             1f / (view.window?.layer?.speed?.takeIf { it > 0 } ?: 1f)
         }
     }
+
+    private fun updateSceneDependentProperties() {
+        architectureComponentsOwner.isSceneInForeground =
+            foregroundStateListener?.isSceneInForeground ?: false
+        architectureComponentsOwner.isSceneActive = activeStateListener?.isSceneActive ?: false
+    }
+
+    private val windowScene: UIWindowScene? get() =
+        view.window?.windowScene
 }
 
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
