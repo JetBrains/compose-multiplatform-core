@@ -36,7 +36,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -52,10 +51,10 @@ class CfWA11YTest : OnCanvasTests {
     suspend fun awaitA11YChanges() {
         val a11yContainer = getA11YContainer() ?: return
 
-        fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
+        fun skipFramesUntil(skipCondition: () -> Boolean, onTrue: () -> Unit) {
             window.requestAnimationFrame {
-                if (!condition()) {
-                    skipFramesUntil(condition, onTrue)
+                if (skipCondition()) {
+                    skipFramesUntil(skipCondition, onTrue)
                 } else {
                     onTrue()
                 }
@@ -65,7 +64,7 @@ class CfWA11YTest : OnCanvasTests {
         suspendCoroutine { continuation ->
             val initialContent = a11yContainer.innerHTML
             skipFramesUntil(
-                condition = { a11yContainer.innerHTML != initialContent },
+                skipCondition = { a11yContainer.innerHTML == initialContent },
                 onTrue = { continuation.resumeWith(Result.success(Unit)) }
             )
         }
