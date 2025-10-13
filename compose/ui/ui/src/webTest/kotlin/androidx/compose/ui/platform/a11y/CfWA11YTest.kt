@@ -29,7 +29,6 @@ import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.platform.testTag
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.suspendCoroutine
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -241,7 +240,6 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("Button3", buttonsContainer.children[2]!!.innerHTML)
     }
 
-    @Ignore // Sometimes fails on latest firefox FIXME: https://youtrack.jetbrains.com/issue/CMP-8955
     @Test
     fun changesMustBeBatched() = runApplicationTest {
         var show1 by mutableStateOf(true)
@@ -292,7 +290,6 @@ class CfWA11YTest : OnCanvasTests {
         assertTrue(waitedForChangesMs in 50..150, "Changes must be batched, waited for $waitedForChangesMs ms. Allowed tolerance 50ms was exceeded")
     }
 
-    @Ignore // Sometimes fails on latest firefox FIXME: https://youtrack.jetbrains.com/issue/CMP-8955
     @Test
     fun changesMustBeAppliedDespiteConstantDebounceAfter1Second() = runApplicationTest {
         var show1 by mutableStateOf(true)
@@ -359,7 +356,6 @@ class CfWA11YTest : OnCanvasTests {
         )
     }
 
-    @Ignore // Sometimes fails on latest firefox FIXME: https://youtrack.jetbrains.com/issue/CMP-8955
     @Test
     fun noChangesFor1SecondTheDebounceShouldWork() = runApplicationTest {
         var show by mutableStateOf(true)
