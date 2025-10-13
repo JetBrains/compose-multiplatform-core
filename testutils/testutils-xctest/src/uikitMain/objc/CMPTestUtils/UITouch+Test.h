@@ -18,6 +18,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface CMPActiveTouchesHolder : NSObject
+
+@property (strong, nonatomic) NSMutableArray<UITouch *> *touches;
+
++ (instancetype)shared;
+
+@end
+
 @interface UITouch (CMPTest)
 
 + (instancetype)touchAtPoint:(CGPoint)point

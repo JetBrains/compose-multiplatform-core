@@ -44,14 +44,6 @@ typedef struct {
 
 #pragma mark - ActiveTouchesHolder
 
-@interface CMPActiveTouchesHolder : NSObject
-
-@property (strong, nonatomic) NSMutableArray<UITouch *> *touches;
-
-+ (instancetype)shared;
-
-@end
-
 @implementation CMPActiveTouchesHolder
 
 + (instancetype)shared {
