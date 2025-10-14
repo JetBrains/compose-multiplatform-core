@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.tools.integration.testapp
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -35,7 +34,6 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.idling.CountingIdlingResource
 import kotlinx.coroutines.launch
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class MainActivity : AppCompatActivity() {
     internal var sdk: MySdk? = null
@@ -62,12 +60,33 @@ class MainActivity : AppCompatActivity() {
             try {
                 sandboxManagerCompat.loadSdk(
                     "androidx.privacysandbox.tools.integration.sdk",
-                    Bundle.EMPTY
+                    Bundle.EMPTY,
                 )
             } catch (e: LoadSdkCompatException) {
                 sandboxManagerCompat.getSandboxedSdks().first()
             }
         sdk = sandboxedSdk.getInterface()?.let { wrapToMySdk(it) }
+    }
+
+    internal suspend fun getUiAdapterAndRenderAd() {
+        idlingResource.increment()
+
+        val textViewAdAdapter = sdk!!.getAdapterForTextViewAd()
+        val sandboxedSdkView = findViewById<SandboxedSdkView>(R.id.sandboxedSdkView)
+
+        runOnUiThread {
+            class TestEventListener : SandboxedSdkViewEventListener {
+                override fun onUiDisplayed() {
+                    idlingResource.decrement()
+                }
+
+                override fun onUiError(error: Throwable) {}
+
+                override fun onUiClosed() {}
+            }
+            sandboxedSdkView.setEventListener(TestEventListener())
+            sandboxedSdkView.setAdapter(textViewAdAdapter)
+        }
     }
 
     internal suspend fun renderAd() {

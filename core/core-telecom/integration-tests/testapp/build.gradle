@@ -25,8 +25,7 @@ android {
 
     defaultConfig {
         applicationId = "androidx.core.telecom.test"
-        minSdkVersion 26
-        targetSdkVersion 34
+        minSdk = 26
     }
 
     buildTypes {

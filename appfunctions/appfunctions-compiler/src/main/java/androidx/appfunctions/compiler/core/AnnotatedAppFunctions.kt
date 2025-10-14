@@ -20,14 +20,15 @@ import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.SUPPORTED_TYPES_STRING
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.isAllowToBeOptional
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.isSupportedType
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
-import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
-import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionResponseMetadata
-import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
@@ -43,6 +44,11 @@ data class AnnotatedAppFunctions(
     val classDeclaration: KSClassDeclaration,
     /** The list of [KSFunctionDeclaration] that are annotated as app function. */
     val appFunctionDeclarations: List<KSFunctionDeclaration>,
+    /**
+     * A map of AppFunction's qualifiedName to its docstring. Provides cached docStrings from the
+     * component registry, which aren't available at runtime for non-root modules.
+     */
+    private val appFunctionNameToDocstringMap: Map<String, String> = mapOf(),
 ) {
     /** Gets all annotated nodes. */
     fun getAllAnnotated(): List<KSAnnotated> {
@@ -54,22 +60,26 @@ data class AnnotatedAppFunctions(
         }
     }
 
+    // TODO(b/410746104): Re-evaluate the validation pipeline.
     /**
      * Validates if the AppFunction implementation is valid.
      *
      * @throws SymbolNotReadyException if any related nodes are not ready for processing yet.
      */
     fun validate(): AnnotatedAppFunctions {
-        if (!classDeclaration.validate()) {
-            throw SymbolNotReadyException(
-                "AppFunction enclosing class not ready for processing yet",
-                classDeclaration,
-            )
-        }
         for (appFunction in appFunctionDeclarations) {
-            if (!appFunction.validate()) {
+            for (parameter in appFunction.parameters) {
+                if (!parameter.validate()) {
+                    throw SymbolNotReadyException(
+                        "AppFunction parameter ($parameter) not ready for processing yet",
+                        appFunction,
+                    )
+                }
+            }
+
+            if (appFunction.returnType?.validate() == false) {
                 throw SymbolNotReadyException(
-                    "AppFunction method not ready for processing yet",
+                    "AppFunction return type not ready for processing yet",
                     appFunction,
                 )
             }
@@ -122,6 +132,14 @@ data class AnnotatedAppFunctions(
                         ksValueParameter,
                     )
                 }
+
+                val isOptional = ksValueParameter.hasDefault
+                if (isOptional && !isAllowToBeOptional(ksValueParameter.type)) {
+                    throw ProcessingException(
+                        "Type ${ksValueParameter.type.toTypeName()} cannot be optional",
+                        ksValueParameter,
+                    )
+                }
             }
         }
     }
@@ -132,10 +150,9 @@ data class AnnotatedAppFunctions(
      * The format of the identifier is `packageName.className#methodName`.
      */
     fun getAppFunctionIdentifier(functionDeclaration: KSFunctionDeclaration): String {
-        val packageName = classDeclaration.packageName.asString()
-        val className = classDeclaration.simpleName.asString()
+        val fullClassName = classDeclaration.toClassName()
         val methodName = functionDeclaration.simpleName.asString()
-        return "${packageName}.${className}#${methodName}"
+        return "$fullClassName#${methodName}"
     }
 
     /**
@@ -188,10 +205,7 @@ data class AnnotatedAppFunctions(
 
     /** Gets the [classDeclaration]'s [ClassName]. */
     fun getEnclosingClassName(): ClassName {
-        return ClassName(
-            classDeclaration.packageName.asString(),
-            classDeclaration.simpleName.asString(),
-        )
+        return classDeclaration.toClassName()
     }
 
     /**
@@ -199,9 +213,10 @@ data class AnnotatedAppFunctions(
      * defined in this class.
      */
     fun createAppFunctionMetadataList(
-        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+        sharedDataTypeDescriptionMap: Map<String, String> = mapOf(),
     ): List<CompileTimeAppFunctionMetadata> {
-        val metadataCreatorHelper = AppFunctionMetadataCreatorHelper()
+        val metadataCreatorHelper = AppFunctionMetadataCreatorHelper(sharedDataTypeDescriptionMap)
         return appFunctionDeclarations.map { functionDeclaration ->
             // Defining the shared types locally for this iteration is to isolate the components
             // used per function. This is done with the expectation that they can be globally
@@ -211,12 +226,15 @@ data class AnnotatedAppFunctions(
 
             val appFunctionAnnotationProperties =
                 metadataCreatorHelper.computeAppFunctionAnnotationProperties(functionDeclaration)
+            val functionDescription =
+                functionDeclaration.getFunctionDescription(appFunctionAnnotationProperties)
             val parameterTypeMetadataList =
                 metadataCreatorHelper.buildParameterTypeMetadataList(
                     parameters = functionDeclaration.parameters,
                     resolvedAnnotatedSerializableProxies = resolvedAnnotatedSerializableProxies,
                     sharedDataTypeMap = sharedDataTypeMap,
                     seenDataTypeQualifiers = seenDataTypeQualifiers,
+                    parameterDescriptionMap = getParamDescriptionsFromKDoc(functionDescription),
                 )
             val responseTypeMetadata =
                 metadataCreatorHelper.buildResponseTypeMetadata(
@@ -224,6 +242,7 @@ data class AnnotatedAppFunctions(
                     resolvedAnnotatedSerializableProxies = resolvedAnnotatedSerializableProxies,
                     sharedDataTypeMap = sharedDataTypeMap,
                     seenDataTypeQualifiers = seenDataTypeQualifiers,
+                    functionAnnotations = functionDeclaration.annotations,
                 )
 
             CompileTimeAppFunctionMetadata(
@@ -232,8 +251,13 @@ data class AnnotatedAppFunctions(
                     checkNotNull(appFunctionAnnotationProperties.isEnabledByDefault),
                 schema = appFunctionAnnotationProperties.getAppFunctionSchemaMetadata(),
                 parameters = parameterTypeMetadataList,
-                response = AppFunctionResponseMetadata(valueType = responseTypeMetadata),
+                response =
+                    AppFunctionResponseMetadata(
+                        valueType = responseTypeMetadata,
+                        description = getResponseDescriptionFromKDoc(functionDescription),
+                    ),
                 components = AppFunctionComponentsMetadata(dataTypes = sharedDataTypeMap),
+                description = sanitizeKDoc(functionDescription),
             )
         }
     }
@@ -255,7 +279,7 @@ data class AnnotatedAppFunctions(
                 ?.findAnnotation(AppFunctionSchemaDefinitionAnnotation.CLASS_NAME)
         return computeAppFunctionAnnotationProperties(
             appFunctionAnnotation = appFunctionAnnotation,
-            schemaDefinitionAnnotation = schemaDefinitionAnnotation
+            schemaDefinitionAnnotation = schemaDefinitionAnnotation,
         )
     }
 
@@ -279,19 +303,43 @@ data class AnnotatedAppFunctions(
 
     private fun getAnnotatedAppFunctionSerializable(
         appFunctionTypeReference: AppFunctionTypeReference
-    ): AnnotatedAppFunctionSerializable {
-        val appFunctionSerializableClassDeclaration =
-            appFunctionTypeReference.selfOrItemTypeReference.resolve().declaration
-                as KSClassDeclaration
-        return AnnotatedAppFunctionSerializable(
-                appFunctionSerializableClassDeclaration,
-            )
-            .parameterizedBy(appFunctionTypeReference.selfOrItemTypeReference.resolve().arguments)
-            .validate()
+    ): AppFunctionSerializableType {
+        val appFunctionSerializableKSType =
+            appFunctionTypeReference.selfOrItemTypeReference.resolve()
+        return AppFunctionSerializableType.create(
+            classDeclaration =
+                appFunctionSerializableKSType.declaration as? KSClassDeclaration
+                    ?: throw ProcessingException(
+                        "Only classes/interfaces should be annotated with @AppFunctionSerializable",
+                        appFunctionSerializableKSType.declaration,
+                    ),
+            typeArguments = appFunctionSerializableKSType.arguments,
+        )
     }
 
     private fun AppFunctionTypeReference.typeOrItemTypeIsAppFunctionSerializable(): Boolean {
         return this.isOfTypeCategory(SERIALIZABLE_SINGULAR) ||
             this.isOfTypeCategory(SERIALIZABLE_LIST)
+    }
+
+    private fun KSFunctionDeclaration.getFunctionDescription(
+        appFunctionAnnotationProperties:
+            AppFunctionMetadataCreatorHelper.AppFunctionAnnotationProperties
+    ): String {
+        return if (appFunctionAnnotationProperties.isDescribedByKdoc == true) {
+            appFunctionNameToDocstringMap[ensureQualifiedName()] ?: ""
+        } else {
+            ""
+        }
+    }
+
+    /**
+     * Returns true if the developer opted for the given function's docString to be used as its
+     * description.
+     */
+    fun isDescribedByKdoc(functionDeclaration: KSFunctionDeclaration): Boolean {
+        return AppFunctionMetadataCreatorHelper()
+            .computeAppFunctionAnnotationProperties(functionDeclaration)
+            .isDescribedByKdoc ?: false
     }
 }

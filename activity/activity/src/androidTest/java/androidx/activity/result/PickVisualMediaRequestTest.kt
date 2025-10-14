@@ -61,7 +61,7 @@ class PickVisualMediaRequestTest {
         val request =
             PickVisualMediaRequest(
                 mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly,
-                maxItems = 5
+                maxItems = 5,
             )
 
         assertThat(request.mediaType).isEqualTo(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -85,7 +85,7 @@ class PickVisualMediaRequestTest {
         assertThrows(IllegalArgumentException::class.java) {
             request.createIntent(
                 context,
-                input = PickVisualMediaRequest(maxItems = 1 + defaultMaxItems)
+                input = PickVisualMediaRequest(maxItems = 1 + defaultMaxItems),
             )
         }
 
@@ -190,7 +190,7 @@ class PickVisualMediaRequestTest {
         request =
             PickVisualMediaRequest(
                 mediaCapabilitiesForTranscoding = mediaCapabilities,
-                accentColor = 0xffff0000
+                accentColor = 0xffff0000,
             )
         assertThat(request.isCustomAccentColorApplied).isEqualTo(true)
         assertThat(request.accentColor).isEqualTo(0xffff0000)

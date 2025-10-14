@@ -31,6 +31,7 @@ import android.view.Surface
 import androidx.annotation.GuardedBy
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
+import androidx.camera.viewfinder.core.impl.PixelCopyCompat.PixelCopyApi24Impl.KEEP_ALIVE_MILLIS
 import androidx.core.os.HandlerCompat
 import androidx.core.util.Consumer
 import androidx.tracing.Trace
@@ -47,7 +48,7 @@ sealed interface PixelCopyCompat {
         source: Surface,
         dest: Bitmap,
         executor: Executor,
-        listener: Consumer<@CopyResultStatus Int>
+        listener: Consumer<@CopyResultStatus Int>,
     )
 
     companion object {
@@ -64,7 +65,7 @@ sealed interface PixelCopyCompat {
         fun requestSync(
             source: Surface,
             dest: Bitmap,
-            timeoutMs: Long = -1
+            timeoutMs: Long = -1,
         ): @CopyResultStatus Int =
             trace("PixelCopyCompat.requestSync") {
                 val result = atomic(ERROR_TIMEOUT)
@@ -98,7 +99,7 @@ sealed interface PixelCopyCompat {
             source: Surface,
             dest: Bitmap,
             executor: Executor,
-            listener: Consumer<@CopyResultStatus Int>
+            listener: Consumer<@CopyResultStatus Int>,
         ) {
             impl.requestImpl(source, dest, executor, listener)
         }
@@ -169,7 +170,7 @@ sealed interface PixelCopyCompat {
             source: Surface,
             dest: Bitmap,
             executor: Executor,
-            listener: Consumer<@CopyResultStatus Int>
+            listener: Consumer<@CopyResultStatus Int>,
         ) {
             Trace.beginAsyncSection("PixelCopyApi24Impl.request", dest.hashCode())
             withHandlerScope { handler, onComplete ->
@@ -184,7 +185,7 @@ sealed interface PixelCopyCompat {
                             onComplete()
                         }
                     },
-                    handler
+                    handler,
                 )
             }
         }
@@ -197,7 +198,7 @@ sealed interface PixelCopyCompat {
             source: Surface,
             dest: Bitmap,
             executor: Executor,
-            listener: Consumer<@CopyResultStatus Int>
+            listener: Consumer<@CopyResultStatus Int>,
         ) {
             Trace.beginAsyncSection("PixelCopyApi34Impl.request", dest.hashCode())
             val request =
@@ -215,7 +216,7 @@ sealed interface PixelCopyCompat {
             source: Surface,
             dest: Bitmap,
             executor: Executor,
-            listener: Consumer<@CopyResultStatus Int>
+            listener: Consumer<@CopyResultStatus Int>,
         ) {
             executor.execute { listener.accept(ERROR_UNKNOWN) }
         }
@@ -230,7 +231,7 @@ sealed interface PixelCopyCompat {
                 ERROR_TIMEOUT,
                 ERROR_SOURCE_NO_DATA,
                 ERROR_SOURCE_INVALID,
-                ERROR_DESTINATION_INVALID
+                ERROR_DESTINATION_INVALID,
             ]
     )
     @Retention(AnnotationRetention.SOURCE)

@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.integration.sdkproviderutils
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -34,11 +33,10 @@ import androidx.privacysandbox.ui.provider.toCoreLibInfo
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executor
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class NativeAdGenerator(
     private val sdkContext: Context,
-    @MediationOption private val mediationOption: Int
+    @MediationOption private val mediationOption: Int,
 ) {
     private val testAdapters = TestAdapters(sdkContext)
     private val bitmap = BitmapFactory.decodeResource(sdkContext.resources, R.drawable.android_logo)
@@ -55,7 +53,7 @@ class NativeAdGenerator(
         Bundle().apply {
             putString(
                 NativeAdAssetProperties.TEXT,
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus condimentum rhoncus est volutpat venenatis."
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus condimentum rhoncus est volutpat venenatis.",
             )
             putString(NativeAdAssetProperties.COLOR, "darkgrey")
         }
@@ -80,7 +78,7 @@ class NativeAdGenerator(
 
     fun generateAdBundleWithAssets(
         @AdType adType: Int,
-        headlineText: String = defaultHeadlineText
+        headlineText: String = defaultHeadlineText,
     ): Bundle {
         return NativeAd().toCoreLibInfo().apply {
             putBundle(NativeAdAssetName.ASSET_BUNDLE_NAME, generateAssets(adType, headlineText))
@@ -96,7 +94,7 @@ class NativeAdGenerator(
             putBundle(NativeAdAssetName.MEDIA_VIEW_2, mediaView2Assets)
             putBundle(
                 NativeAdAssetName.AD_CHOICES,
-                testAdapters.TestBannerAd("@", withSlowDraw = false).toCoreLibInfo(sdkContext)
+                testAdapters.TestBannerAd("@", withSlowDraw = false).toCoreLibInfo(sdkContext),
             )
             putBundle(NativeAdAssetName.CALL_TO_ACTION, callToActionAssets)
         }
@@ -113,7 +111,7 @@ class NativeAdGenerator(
                 AdType.BASIC_NON_WEBVIEW ->
                     testAdapters.TestBannerAd(
                         "[$mediationTypeDescription] Native ad remote MediaView",
-                        withSlowDraw = false
+                        withSlowDraw = false,
                     )
                 AdType.BASIC_WEBVIEW -> testAdapters.WebViewBannerAd()
                 AdType.WEBVIEW_FROM_LOCAL_ASSETS -> testAdapters.WebViewAdFromLocalAssets()
@@ -122,7 +120,7 @@ class NativeAdGenerator(
                     val videoAdAdapter = testAdapters.VideoBannerAd(playerViewProvider)
                     PlayerViewabilityHandler.addObserverFactoryToAdapter(
                         videoAdAdapter,
-                        playerViewProvider
+                        playerViewProvider,
                     )
                     videoAdAdapter
                 }

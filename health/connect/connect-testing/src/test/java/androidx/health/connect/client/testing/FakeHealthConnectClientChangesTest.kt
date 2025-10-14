@@ -65,7 +65,7 @@ class FakeHealthConnectClientChangesTest {
         fake.deleteRecords(
             runRecord1::class,
             clientRecordIdsList = listOf(runRecord1.metadata.clientRecordId!!),
-            recordIdsList = emptyList()
+            recordIdsList = emptyList(),
         )
         val changesResponse = fake.getChanges(changesToken)
 
@@ -85,9 +85,9 @@ class FakeHealthConnectClientChangesTest {
                     timeRangeFilter =
                         TimeRangeFilter(
                             startTime = runRecord1.startTime.minusSeconds(1),
-                            endTime = runRecord1.endTime.plusSeconds(1)
+                            endTime = runRecord1.endTime.plusSeconds(1),
                         ),
-                    recordType = runRecord1::class
+                    recordType = runRecord1::class,
                 )
             )
 
@@ -96,7 +96,7 @@ class FakeHealthConnectClientChangesTest {
         fake.deleteRecords(
             runRecord1::class,
             recordIdsList = listOf(recordId),
-            clientRecordIdsList = emptyList()
+            clientRecordIdsList = emptyList(),
         )
         val changesResponse = fake.getChanges(changesToken)
 
@@ -213,7 +213,7 @@ class FakeHealthConnectClientChangesTest {
                 fake.getChangesToken(
                     ChangesTokenRequest(
                         recordTypes = setOf(Record::class),
-                        dataOriginFilters = setOf(DataOrigin("test"))
+                        dataOriginFilters = setOf(DataOrigin("test")),
                     )
                 )
             }

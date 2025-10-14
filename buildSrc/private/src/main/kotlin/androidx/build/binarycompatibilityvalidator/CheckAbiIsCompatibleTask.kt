@@ -27,14 +27,19 @@ import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -43,6 +48,11 @@ import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
+
+class DependenciesForTarget(
+    @get:Input val targetName: String,
+    @get:PathSensitive(PathSensitivity.NONE) @get:InputFiles val files: FileCollection,
+)
 
 @CacheableTask
 abstract class CheckAbiIsCompatibleTask
@@ -72,6 +82,8 @@ constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTas
 
     @get:Classpath abstract val runtimeClasspath: ConfigurableFileCollection
 
+    @get:Nested abstract val dependencies: ListProperty<DependenciesForTarget>
+
     @TaskAction
     fun execute() {
         val (previousApiPath, previousApiDumpText) =
@@ -93,18 +105,22 @@ constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTas
             params.baseline.set(ignoreFile)
             params.shouldFreeze.set(shouldFreeze)
             params.referenceVersion.set(referenceVersion)
+            params.dependencies.set(
+                dependencies.get().associate { it.targetName to it.files.files }
+            )
         }
     }
 }
 
 private interface CheckCompatibilityParameters : WorkParameters {
     val previousApiDumpText: Property<String>
-    val previousApiPath: Property<String?>
+    val previousApiPath: Property<String>
     val currentApiDumpText: Property<String>
-    val currentApiPath: Property<String?>
+    val currentApiPath: Property<String>
     val baseline: RegularFileProperty
     val referenceVersion: Property<String>
     val shouldFreeze: Property<Boolean>
+    val dependencies: MapProperty<String, Set<File>>
 }
 
 private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityParameters> {
@@ -123,7 +139,8 @@ private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityP
                 previousDump,
                 parameters.baseline.get().asFile.takeIf { it.exists() },
                 validate = true,
-                shouldFreeze = parameters.shouldFreeze.get()
+                shouldFreeze = parameters.shouldFreeze.get(),
+                dependencies = parameters.dependencies.get(),
             )
         } catch (e: ValidationException) {
             if (parameters.shouldFreeze.get()) {
@@ -131,7 +148,7 @@ private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityP
                     frozenApiErrorMessage(
                         parameters.referenceVersion.get(),
                         previousApiDump = File(parameters.previousApiPath.get()),
-                        currentApiDump = File(parameters.currentApiPath.get())
+                        currentApiDump = File(parameters.currentApiPath.get()),
                     )
                 )
             }
@@ -148,7 +165,7 @@ private abstract class CheckCompatibilityWorker : WorkAction<CheckCompatibilityP
     private fun frozenApiErrorMessage(
         referenceVersion: String,
         previousApiDump: File,
-        currentApiDump: File
+        currentApiDump: File,
     ) =
         "The API surface was finalized in $referenceVersion. Revert the changes unless you have " +
             "permission from Android API Council. " +

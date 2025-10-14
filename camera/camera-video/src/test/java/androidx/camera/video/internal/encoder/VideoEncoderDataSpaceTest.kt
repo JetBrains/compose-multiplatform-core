@@ -17,12 +17,10 @@
 package androidx.camera.video.internal.encoder
 
 import android.media.MediaFormat
-import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 private const val TEST_COLOR_STANDARD = MediaFormat.COLOR_STANDARD_BT2020
@@ -31,7 +29,6 @@ private const val TEST_COLOR_RANGE = MediaFormat.COLOR_RANGE_LIMITED
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class VideoEncoderDataSpaceTest {
 
     @Test

@@ -16,9 +16,14 @@
 
 package androidx.appfunctions.integration.tests
 
+import android.content.ContentValues
+import android.content.Context
+import android.net.Uri
+import android.os.Bundle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.fail
 
 internal object TestUtil {
     fun doBlocking(block: suspend CoroutineScope.() -> Unit) = runBlocking(block = block)
@@ -42,6 +47,62 @@ internal object TestUtil {
             }
         }
         throw lastError!!
+    }
+
+    /** Asserts that the [Context] having read access to [uri]. */
+    fun Context.assertReadAccessible(uri: Uri) {
+        val contentResolver = getContentResolver()
+        try {
+            contentResolver.openAssetFile(uri, "r", null).use { fd ->
+                if (fd != null) {
+                    return
+                }
+            }
+        } catch (_: Exception) {}
+        fail("Uri $uri is not read accessible from $packageName")
+    }
+
+    /** Asserts that the [Context] not having read access to [uri]. */
+    fun Context.assertReadInaccessible(uri: Uri) {
+        val contentResolver = getContentResolver()
+        try {
+            contentResolver.openAssetFile(uri, "r", null).use { fd -> }
+        } catch (_: SecurityException) {
+            return
+        }
+        fail("Uri $uri is still read accessible from $packageName")
+    }
+
+    /** Asserts that the [Context] having write access to [uri]. */
+    fun Context.assertWriteAccessible(uri: Uri) {
+        val contentResolver = getContentResolver()
+        try {
+            val result =
+                contentResolver.update(
+                    uri,
+                    ContentValues().apply { put("echo_value", 100) },
+                    Bundle.EMPTY,
+                )
+            if (result == 100) {
+                return
+            }
+        } catch (_: Exception) {}
+        fail("Uri $uri is not write accessible from $packageName")
+    }
+
+    /** Asserts that the [Context] not having write access to [uri]. */
+    fun Context.assertWriteInaccessible(uri: Uri) {
+        val contentResolver = getContentResolver()
+        try {
+            contentResolver.update(
+                uri,
+                ContentValues().apply { put("echo_value", 100) },
+                Bundle.EMPTY,
+            )
+        } catch (_: Exception) {
+            return
+        }
+        fail("Uri $uri is still write accessible from $packageName")
     }
 
     private const val RETRY_CHECK_INTERVAL_MILLIS: Long = 500

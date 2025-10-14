@@ -235,9 +235,6 @@ class IntRectTest {
 
     @Test
     fun testRoundRectToIntRect() {
-        assertEquals(
-            IntRect(2, 3, 4, 5),
-            Rect(2.4f, 2.5f, 3.9f, 5.3f).roundToIntRect(),
-        )
+        assertEquals(IntRect(2, 3, 4, 5), Rect(2.4f, 2.5f, 3.9f, 5.3f).roundToIntRect())
     }
 }

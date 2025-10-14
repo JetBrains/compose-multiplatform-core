@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.graph
 
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraGraphId
@@ -35,19 +34,17 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SurfaceGraphTest {
     private val config = FakeGraphConfigs
     private val graphId = CameraGraphId.nextId()
     private val fakeCameraController = FakeCameraController(graphId)
     private val fakeCameraControllerProvider: () -> CameraController = { fakeCameraController }
 
-    private val streamMap = StreamGraphImpl(config.fakeMetadata, config.graphConfig, mock())
+    private val streamMap = StreamGraphImpl(config.fakeMetadata, config.graphConfig, mock(), mock())
 
     private val fakeSurfaceListener: CameraSurfaceManager.SurfaceListener = mock()
     private val cameraSurfaceManager =

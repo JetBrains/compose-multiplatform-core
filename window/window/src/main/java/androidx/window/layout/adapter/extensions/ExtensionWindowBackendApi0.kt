@@ -28,7 +28,7 @@ internal open class ExtensionWindowBackendApi0 : WindowBackend {
     override fun registerLayoutChangeCallback(
         context: Context,
         executor: Executor,
-        callback: Consumer<WindowLayoutInfo>
+        callback: Consumer<WindowLayoutInfo>,
     ) {
         executor.execute { callback.accept(WindowLayoutInfo(emptyList())) }
     }

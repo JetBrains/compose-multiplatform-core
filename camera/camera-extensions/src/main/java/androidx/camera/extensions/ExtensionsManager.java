@@ -32,6 +32,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureCapabilities;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore;
@@ -435,14 +436,32 @@ public final class ExtensionsManager {
     }
 
     /**
-     * Returns true if the particular extension mode is available for the specified
-     * {@link CameraSelector}.
+     * Checks if a specific extension mode is available for a given {@link CameraSelector}.
      *
-     * <p> Note that Extensions are not supported for use with 10-bit capture output (e.g.
-     * setting a dynamic range other than {@link DynamicRange#SDR}).
+     * <p>To use Ultra HDR, you must first check for support and then enable the format. This
+     * feature is available on capable devices starting from API level 34.
+     * <ol>
+     * <li>Obtain a {@link CameraInfo} instance by calling
+     * {@link CameraProvider#getCameraInfo(CameraSelector)} with the extension-enabled
+     * {@code CameraSelector} from
+     * {@link #getExtensionEnabledCameraSelector(CameraSelector, int)}.</li>
+     * <li>Use this {@code CameraInfo} to get the {@link ImageCaptureCapabilities} via
+     * {@link ImageCapture#getImageCaptureCapabilities(CameraInfo)}.</li>
+     * <li>Check the supported formats by calling
+     * {@link ImageCaptureCapabilities#getSupportedOutputFormats()}. The presence of
+     * {@link ImageCapture#OUTPUT_FORMAT_JPEG_ULTRA_HDR} indicates Ultra HDR support.</li>
+     * <li>When Ultra HDR is supported, configure the {@link ImageCapture} to use it by calling
+     * {@link ImageCapture.Builder#setOutputFormat(int)} with
+     * {@link ImageCapture#OUTPUT_FORMAT_JPEG_ULTRA_HDR}.</li>
+     * </ol>
      *
-     * @param baseCameraSelector The base {@link CameraSelector} to find a camera to use.
-     * @param mode               The target extension mode to support.
+     * <p><b>Note:</b> Camera extensions do not support 10-bit preview or video capture. When
+     * using extensions, the dynamic range must be {@link DynamicRange#SDR} (the default).
+     *
+     * @param baseCameraSelector The base {@link CameraSelector} used to select the camera.
+     * @param mode The extension mode to verify.
+     * @return {@code true} if the extension mode is available for the camera selector,
+     * {@code false} otherwise.
      */
     public boolean isExtensionAvailable(@NonNull CameraSelector baseCameraSelector,
             @ExtensionMode.Mode int mode) {

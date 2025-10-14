@@ -92,7 +92,7 @@ private class DpLazyLayoutCacheWindow(val ahead: Dp, val behind: Dp) : LazyLayou
 @ExperimentalFoundationApi
 fun LazyLayoutCacheWindow(
     @FloatRange(from = 0.0) aheadFraction: Float = 0.0f,
-    @FloatRange(from = 0.0) behindFraction: Float = 0.0f
+    @FloatRange(from = 0.0) behindFraction: Float = 0.0f,
 ): LazyLayoutCacheWindow = FractionLazyLayoutCacheWindow(aheadFraction, behindFraction)
 
 @OptIn(ExperimentalFoundationApi::class)

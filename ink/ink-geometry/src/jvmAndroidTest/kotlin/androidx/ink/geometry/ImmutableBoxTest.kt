@@ -239,9 +239,9 @@ class ImmutableBoxTest {
     }
 
     @Test
-    fun asImmutable_returnsSelf() {
+    fun toImmutable_returnsSelf() {
         val box = ImmutableBox.fromTwoPoints(ImmutableVec(10F, 20F), ImmutableVec(30F, 40F))
-        val output = box.asImmutable()
+        val output = box.toImmutable()
 
         assertThat(output).isSameInstanceAs(box)
     }

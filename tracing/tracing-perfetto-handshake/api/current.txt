@@ -26,9 +26,9 @@ package androidx.tracing.perfetto.handshake {
 package androidx.tracing.perfetto.handshake.protocol {
 
   public final class Response {
-    method public String? getMessage();
-    method public String? getRequiredVersion();
-    method public int getResultCode();
+    method @InaccessibleFromKotlin public String? getMessage();
+    method @InaccessibleFromKotlin public String? getRequiredVersion();
+    method @InaccessibleFromKotlin public int getResultCode();
     property public String? message;
     property public String? requiredVersion;
     property public int resultCode;

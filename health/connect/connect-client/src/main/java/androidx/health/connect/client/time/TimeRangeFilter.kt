@@ -80,7 +80,7 @@ constructor(
                 startTime = null,
                 endTime = null,
                 localStartTime = startTime,
-                localEndTime = endTime
+                localEndTime = endTime,
             )
         }
 
@@ -109,7 +109,7 @@ constructor(
                 startTime = null,
                 endTime = null,
                 localStartTime = null,
-                localEndTime = endTime
+                localEndTime = endTime,
             )
 
         /**

@@ -118,37 +118,37 @@ public interface MotionScheme {
                 private val defaultSpatialSpec =
                     spring<Any>(
                         dampingRatio = StandardSpatialDampingRatio,
-                        stiffness = StandardDefaultStiffness
+                        stiffness = StandardDefaultStiffness,
                     )
 
                 private val fastSpatialSpec =
                     spring<Any>(
                         dampingRatio = StandardSpatialDampingRatio,
-                        stiffness = StandardFastStiffness
+                        stiffness = StandardFastStiffness,
                     )
 
                 private val slowSpatialSpec =
                     spring<Any>(
                         dampingRatio = StandardSpatialDampingRatio,
-                        stiffness = StandardSlowStiffness
+                        stiffness = StandardSlowStiffness,
                     )
 
                 private val defaultEffectsSpec =
                     spring<Any>(
                         dampingRatio = EffectsDampingRatio,
-                        stiffness = EffectsDefaultStiffness
+                        stiffness = EffectsDefaultStiffness,
                     )
 
                 private val fastEffectsSpec =
                     spring<Any>(
                         dampingRatio = EffectsDampingRatio,
-                        stiffness = EffectsFastStiffness
+                        stiffness = EffectsFastStiffness,
                     )
 
                 private val slowEffectsSpec =
                     spring<Any>(
                         dampingRatio = EffectsDampingRatio,
-                        stiffness = EffectsSlowStiffness
+                        stiffness = EffectsSlowStiffness,
                     )
 
                 override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> {
@@ -188,37 +188,37 @@ public interface MotionScheme {
                 private val defaultSpatialSpec =
                     spring<Any>(
                         dampingRatio = ExpressiveDefaultDamping,
-                        stiffness = ExpressiveDefaultStiffness
+                        stiffness = ExpressiveDefaultStiffness,
                     )
 
                 private val fastSpatialSpec =
                     spring<Any>(
                         dampingRatio = ExpressiveFastDamping,
-                        stiffness = ExpressiveFastStiffness
+                        stiffness = ExpressiveFastStiffness,
                     )
 
                 private val slowSpatialSpec =
                     spring<Any>(
                         dampingRatio = ExpressiveSlowDamping,
-                        stiffness = ExpressiveSlowStiffness
+                        stiffness = ExpressiveSlowStiffness,
                     )
 
                 private val defaultEffectsSpec =
                     spring<Any>(
                         dampingRatio = EffectsDampingRatio,
-                        stiffness = EffectsDefaultStiffness
+                        stiffness = EffectsDefaultStiffness,
                     )
 
                 private val fastEffectsSpec =
                     spring<Any>(
                         dampingRatio = EffectsDampingRatio,
-                        stiffness = EffectsFastStiffness
+                        stiffness = EffectsFastStiffness,
                     )
 
                 private val slowEffectsSpec =
                     spring<Any>(
                         dampingRatio = EffectsDampingRatio,
-                        stiffness = EffectsSlowStiffness
+                        stiffness = EffectsSlowStiffness,
                     )
 
                 override fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T> {
@@ -257,7 +257,7 @@ public interface MotionScheme {
 internal val LocalMotionScheme = staticCompositionLocalOf { MotionScheme.standard() }
 
 // TODO - These values should come from Tokens.
-private const val StandardSpatialDampingRatio = 0.9f
+private const val StandardSpatialDampingRatio = 1.0f
 private const val EffectsDampingRatio = Spring.DampingRatioNoBouncy
 
 internal const val EffectsDefaultStiffness = 500f

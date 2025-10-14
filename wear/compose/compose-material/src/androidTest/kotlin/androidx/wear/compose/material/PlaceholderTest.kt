@@ -84,7 +84,7 @@ class PlaceholderTest {
         // ShowPlaceholder
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_SHIMMER_GAP_BETWEEN_ANIMATION_LOOPS_MS,
-            PlaceholderStage.ShowPlaceholder
+            PlaceholderStage.ShowPlaceholder,
         )
 
         // Change contentReady and confirm that state is now WipeOff
@@ -94,7 +94,7 @@ class PlaceholderTest {
         // Advance the clock by one cycle and check we have moved to ShowContent
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.ShowContent
+            PlaceholderStage.ShowContent,
         )
     }
 
@@ -112,7 +112,7 @@ class PlaceholderTest {
                 content = {},
                 onClick = {},
                 colors = ChipDefaults.secondaryChipColors(),
-                border = ChipDefaults.chipBorder()
+                border = ChipDefaults.chipBorder(),
             )
         }
 
@@ -130,7 +130,7 @@ class PlaceholderTest {
         // Check that the state is set to ResetContent
         placeholderState.advanceFrameMillisAndCheckState(
             (PLACEHOLDER_RESET_ANIMATION_DURATION * 0.5f).toLong(),
-            PlaceholderStage.ResetContent
+            PlaceholderStage.ResetContent,
         )
     }
 
@@ -169,14 +169,14 @@ class PlaceholderTest {
                             if (placeholderColor != null)
                                 Modifier.placeholder(
                                     placeholderState = placeholderState,
-                                    color = placeholderColor
+                                    color = placeholderColor,
                                 )
                             else Modifier.placeholder(placeholderState = placeholderState)
                         ),
                 content = {},
                 onClick = {},
                 colors = ChipDefaults.primaryChipColors(),
-                border = ChipDefaults.chipBorder()
+                border = ChipDefaults.chipBorder(),
             )
         }
 
@@ -195,7 +195,7 @@ class PlaceholderTest {
         // Advance the clock by one cycle and check we have moved to ShowContent
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.ShowContent
+            PlaceholderStage.ShowContent,
         )
 
         rule
@@ -224,7 +224,7 @@ class PlaceholderTest {
                 content = {},
                 onClick = {},
                 colors = ChipDefaults.secondaryChipColors(),
-                border = ChipDefaults.chipBorder()
+                border = ChipDefaults.chipBorder(),
             )
         }
 
@@ -242,7 +242,7 @@ class PlaceholderTest {
         // clock to show the shimmer.
         placeholderState.advanceFrameMillisAndCheckState(
             (PLACEHOLDER_SHIMMER_DURATION_MS * 0.5f).toLong(),
-            PlaceholderStage.ShowPlaceholder
+            PlaceholderStage.ShowPlaceholder,
         )
 
         // The placeholder shimmer effect is faint and largely transparent gradiant, but it should
@@ -265,7 +265,7 @@ class PlaceholderTest {
         // Advance the clock by one cycle and check we have moved to ShowContent
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.ShowContent
+            PlaceholderStage.ShowContent,
         )
 
         // Check that the shimmer is no longer visible
@@ -305,7 +305,7 @@ class PlaceholderTest {
                         originalChipColors = ChipDefaults.primaryChipColors(),
                         placeholderState = placeholderState,
                     ),
-                border = ChipDefaults.chipBorder()
+                border = ChipDefaults.chipBorder(),
             )
         }
 
@@ -336,7 +336,7 @@ class PlaceholderTest {
         // to our offset
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS / 4,
-            PlaceholderStage.WipeOff
+            PlaceholderStage.WipeOff,
         )
 
         // Check that placeholder background is still visible
@@ -348,7 +348,7 @@ class PlaceholderTest {
         // Now move the end of the wipe-off and confirm that the proper chip background is visible
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.ShowContent
+            PlaceholderStage.ShowContent,
         )
 
         // Check that normal chip background is now visible
@@ -404,7 +404,7 @@ class PlaceholderTest {
 
         placeholderState.value?.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.ShowContent
+            PlaceholderStage.ShowContent,
         )
     }
 
@@ -451,7 +451,7 @@ class PlaceholderTest {
 
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.ShowContent
+            PlaceholderStage.ShowContent,
         )
 
         // Check the placeholder background has gone and that we can see the chips background
@@ -464,7 +464,7 @@ class PlaceholderTest {
     @OptIn(ExperimentalWearMaterialApi::class)
     private fun PlaceholderState.advanceFrameMillisAndCheckState(
         timeToAdd: Long,
-        expectedStage: PlaceholderStage
+        expectedStage: PlaceholderStage,
     ) {
         frameMillis.value += timeToAdd
         rule.waitForIdle()

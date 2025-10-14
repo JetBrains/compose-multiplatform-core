@@ -18,6 +18,7 @@ package androidx.webkit.internal;
 
 import androidx.webkit.Navigation;
 import androidx.webkit.Page;
+import androidx.webkit.WebNavigationClient;
 
 import org.chromium.support_lib_boundary.WebViewNavigationBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewPageBoundaryInterface;
@@ -25,6 +26,7 @@ import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+@WebNavigationClient.ExperimentalNavigationCallback
 public class NavigationAdapter implements Navigation {
     WebViewNavigationBoundaryInterface mImpl;
     PageImpl mPage;
@@ -41,11 +43,16 @@ public class NavigationAdapter implements Navigation {
             WebViewPageBoundaryInterface boundaryInterface =
                     BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                             WebViewPageBoundaryInterface.class, mImpl.getPage());
-            mPage = new PageImpl(boundaryInterface);
+            mPage = (PageImpl) boundaryInterface.getOrCreatePeer(
+                () -> new PageImpl(boundaryInterface));
         }
         return mPage;
     }
 
+    @Override
+    public @NonNull String getUrl() {
+        return mImpl.getUrl();
+    }
 
     @Override
     public boolean wasInitiatedByPage() {

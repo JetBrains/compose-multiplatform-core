@@ -80,6 +80,12 @@ internal value class Strings(@StringRes val value: Int) {
         inline val DatePickerHeading
             get() = Strings(R.string.wear_m3c_date_picker_heading)
 
+        inline val PickerClickToAdjustHint
+            get() = Strings(R.string.wear_m3c_picker_click_to_adjust_hint)
+
+        inline val PickerClickToSelectHint
+            get() = Strings(R.string.wear_m3c_picker_click_to_select_hint)
+
         inline val PickerConfirmButtonContentDescription
             get() = Strings(R.string.wear_m3c_picker_confirm_button_content_description)
 

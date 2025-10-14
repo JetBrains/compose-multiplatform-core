@@ -116,7 +116,7 @@ public fun Dialog(
                 .collectLatest {
                     backgroundAnimatable.animateTo(
                         if (it) BackgroundMinScale else BackgroundMaxScale,
-                        backgroundAnimationSpec
+                        backgroundAnimationSpec,
                     ) {
                         scaffoldState.parentScale.floatValue = value
                     }
@@ -150,7 +150,7 @@ public fun Dialog(
                     onDismissRequest()
                     // Reset state for the next time this dialog is shown.
                     transitionState = MutableTransitionState(DialogVisibility.Hide)
-                }
+                },
             ) { isBackground ->
                 if (!isBackground) {
                     Box(
@@ -193,7 +193,7 @@ private fun animateContentAlpha(transition: Transition<DialogVisibility>): State
                     DialogVisibility.Hide -> standard().fastEffectsSpec()
                 }
         },
-        label = "background-scrim-alpha"
+        label = "background-scrim-alpha",
     ) { stage ->
         when (stage) {
             DialogVisibility.Hide -> 0f
@@ -214,7 +214,7 @@ private fun animateDialogScale(transition: Transition<DialogVisibility>): State<
                     DialogVisibility.Hide -> dialogAnimationSpec
                 }
         },
-        label = "scale"
+        label = "scale",
     ) { stage ->
         when (stage) {
             DialogVisibility.Hide -> 1.25f
@@ -225,7 +225,7 @@ private fun animateDialogScale(transition: Transition<DialogVisibility>): State<
 
 private enum class DialogVisibility {
     Hide,
-    Display
+    Display,
 }
 
 private const val BackgroundMinScale = 0.85f

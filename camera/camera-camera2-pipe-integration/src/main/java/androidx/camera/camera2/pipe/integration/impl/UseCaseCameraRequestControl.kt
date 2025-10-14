@@ -28,9 +28,11 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.interop.configureWithUnchecked
+import androidx.camera.camera2.pipe.integration.interop.getCamera2CaptureRequestConfigurator
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.impl.CaptureConfig
@@ -38,6 +40,7 @@ import androidx.camera.core.impl.CaptureConfig.TEMPLATE_TYPE_NONE
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.MutableTagBundle
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.TagBundle
 import dagger.Binds
 import dagger.Module
@@ -69,7 +72,7 @@ public interface UseCaseCameraRequestControl {
         /** General, default parameters. */
         DEFAULT,
         /** Parameters specifically for interoperability with Camera2. */
-        CAMERA2_CAMERA_CONTROL
+        CAMERA2_CAMERA_CONTROL,
     }
 
     // Repeating Request Parameters
@@ -90,6 +93,24 @@ public interface UseCaseCameraRequestControl {
         type: Type = Type.DEFAULT,
         values: Map<CaptureRequest.Key<*>, Any> = emptyMap(),
         optionPriority: Config.OptionPriority = defaultOptionPriority,
+    ): Deferred<Unit>
+
+    /**
+     * Asynchronously removes parameters for the repeating capture request.
+     *
+     * This method clears the parameters with the specified [CaptureRequest.Key]s if the parameters
+     * with the same keys have been set to this control previously.
+     *
+     * This method doesn't clear the parameters with the specified [CaptureRequest.Key] if the
+     * parameters with the same keys are set by other controls.
+     *
+     * @param type The category of parameters being set (default: [Type.DEFAULT]).
+     * @param keys A list of [CaptureRequest.Key] to be removed.
+     * @return A [Deferred] object representing the asynchronous operation.
+     */
+    public fun removeParametersAsync(
+        type: Type = Type.DEFAULT,
+        keys: List<CaptureRequest.Key<*>> = emptyList(),
     ): Deferred<Unit>
 
     /**
@@ -136,7 +157,7 @@ public interface UseCaseCameraRequestControl {
      * Asynchronously sets the torch (flashlight) state to OFF state.
      *
      * @param aeMode The [AeMode] to set while setting the torch value. See
-     *   [CameraGraph.Session.setTorchOff] for details.
+     *   [androidx.camera.camera2.pipe.CameraControls3A.setTorchOff] for details.
      * @return A [Deferred] representing the asynchronous operation and its result ([Result3A]).
      */
     @AnyThread public fun setTorchOffAsync(aeMode: AeMode): Deferred<Result3A>
@@ -199,7 +220,7 @@ public interface UseCaseCameraRequestControl {
      * Note that camera-pipe may invalidate the CameraGraph and update the repeating request
      * parameters for this operations.
      *
-     * @see [CameraGraph.Session.update3A]
+     * @see [androidx.camera.camera2.pipe.CameraControls3A.update3A]
      */
     @AnyThread
     public fun update3aRegions(
@@ -228,6 +249,7 @@ constructor(
     private val useCaseGraphConfig: UseCaseGraphConfig,
     private val useCaseSurfaceManager: UseCaseSurfaceManager,
     private val threads: UseCaseThreads,
+    private val cameraXConfig: CameraXConfig? = null,
 ) : UseCaseCameraRequestControl {
     private val graph = useCaseGraphConfig.graph
 
@@ -249,7 +271,7 @@ constructor(
     ): Deferred<Unit> =
         runIfNotClosed {
             threads.confineDeferred {
-                debug {
+                Camera2Logger.debug {
                     "UseCaseCameraRequestControlImpl#setParametersAsync: [$type] values = $values" +
                         ", optionPriority = $optionPriority"
                 }
@@ -257,6 +279,23 @@ constructor(
                     .getOrPut(type) { InfoBundle() }
                     .options
                     .addAllCaptureRequestOptionsWithPriority(values, optionPriority)
+                infoBundleMap.merge().updateCameraStateAsync()
+            }
+        } ?: canceledResult
+
+    override fun removeParametersAsync(
+        type: UseCaseCameraRequestControl.Type,
+        keys: List<CaptureRequest.Key<*>>,
+    ): Deferred<Unit> =
+        runIfNotClosed {
+            threads.confineDeferred {
+                Camera2Logger.debug {
+                    "UseCaseCameraRequestControlImpl#removeParametersAsync: [$type] keys = $keys"
+                }
+                infoBundleMap
+                    .getOrPut(type) { InfoBundle() }
+                    .options
+                    .removeCaptureRequestOptions(keys)
                 infoBundleMap.merge().updateCameraStateAsync()
             }
         } ?: canceledResult
@@ -272,30 +311,38 @@ constructor(
     ): Deferred<Unit> =
         runIfNotClosed {
             threads.confineDeferred {
-                debug {
+                Camera2Logger.debug {
                     "UseCaseCameraRequestControlImpl#setConfigAsync:" +
                         " [$type] config params = ${config?.toParameters()}"
                 }
                 infoBundleMap[type] =
                     InfoBundle(
-                        Camera2ImplConfig.Builder().apply { config?.let { insertAllOptions(it) } },
+                        Camera2ImplConfig.Builder().apply {
+                            sessionConfig
+                                ?.expectedFrameRateRange
+                                .takeIf { it != FRAME_RATE_RANGE_UNSPECIFIED }
+                                ?.let { fpsRange ->
+                                    setCaptureRequestOption(
+                                        CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                                        fpsRange,
+                                    )
+                                }
+                            config?.let { insertAllOptions(it) }
+                        },
                         tags.toMutableMap(),
                         listeners.toMutableSet(),
                         template,
                     )
                 infoBundleMap
                     .merge()
-                    .updateCameraStateAsync(
-                        streams = streams,
-                        sessionConfig = sessionConfig,
-                    )
+                    .updateCameraStateAsync(streams = streams, sessionConfig = sessionConfig)
             }
         } ?: canceledResult
 
     override fun setTorchOnAsync(): Deferred<Result3A> =
         runIfNotClosed {
             threads.confineDeferredSuspend {
-                debug { "UseCaseCameraRequestControlImpl#setTorchOnAsync" }
+                Camera2Logger.debug { "UseCaseCameraRequestControlImpl#setTorchOnAsync" }
                 useGraphSessionOrFailed { it.setTorchOn() }
             }
         } ?: submitFailedResult
@@ -303,12 +350,8 @@ constructor(
     override fun setTorchOffAsync(aeMode: AeMode): Deferred<Result3A> =
         runIfNotClosed {
             threads.confineDeferredSuspend {
-                debug { "UseCaseCameraRequestControlImpl#setTorchOffAsync" }
-                useGraphSessionOrFailed {
-                    it.setTorchOff(
-                        aeMode = aeMode,
-                    )
-                }
+                Camera2Logger.debug { "UseCaseCameraRequestControlImpl#setTorchOffAsync" }
+                useGraphSessionOrFailed { it.setTorchOff(aeMode = aeMode) }
             }
         } ?: submitFailedResult
 
@@ -324,7 +367,7 @@ constructor(
     ): Deferred<Result3A> =
         runIfNotClosed {
             threads.confineDeferredSuspend {
-                debug { "UseCaseCameraRequestControlImpl#startFocusAndMeteringAsync" }
+                Camera2Logger.debug { "UseCaseCameraRequestControlImpl#startFocusAndMeteringAsync" }
                 useGraphSessionOrFailed {
                     it.lock3A(
                         aeRegions = aeRegions,
@@ -335,7 +378,7 @@ constructor(
                         awbLockBehavior = awbLockBehavior,
                         afTriggerStartAeMode = afTriggerStartAeMode,
                         convergedTimeLimitNs = timeLimitNs,
-                        lockedTimeLimitNs = timeLimitNs
+                        lockedTimeLimitNs = timeLimitNs,
                     )
                 }
             }
@@ -344,7 +387,9 @@ constructor(
     override fun cancelFocusAndMeteringAsync(): Deferred<Result3A> =
         runIfNotClosed {
             threads.confineDeferredSuspend {
-                debug { "UseCaseCameraRequestControlImpl#cancelFocusAndMeteringAsync" }
+                Camera2Logger.debug {
+                    "UseCaseCameraRequestControlImpl#cancelFocusAndMeteringAsync"
+                }
 
                 useGraphSessionOrFailed { it.unlock3A(ae = true, af = true, awb = true) }.await()
 
@@ -352,7 +397,7 @@ constructor(
                     it.update3A(
                         aeRegions = METERING_REGIONS_DEFAULT.asList(),
                         afRegions = METERING_REGIONS_DEFAULT.asList(),
-                        awbRegions = METERING_REGIONS_DEFAULT.asList()
+                        awbRegions = METERING_REGIONS_DEFAULT.asList(),
                     )
                 }
             }
@@ -366,17 +411,17 @@ constructor(
     ): List<Deferred<Void?>> =
         runIfNotClosed {
             threads.confineDeferredListSuspend(captureSequence.size) {
-                debug { "UseCaseCameraRequestControlImpl#issueSingleCaptureAsync" }
+                Camera2Logger.debug { "UseCaseCameraRequestControlImpl#issueSingleCaptureAsync" }
 
                 if (captureSequence.hasInvalidSurface()) {
                     failedResults(
                         captureSequence.size,
-                        "Capture request failed due to invalid surface"
+                        "Capture request failed due to invalid surface",
                     )
                 }
 
                 infoBundleMap.merge().let { infoBundle ->
-                    debug {
+                    Camera2Logger.debug {
                         "UseCaseCameraRequestControl: Submitting still captures to capture pipeline"
                     }
                     capturePipeline.submitStillCaptures(
@@ -392,22 +437,22 @@ constructor(
         }
             ?: failedResults(
                 captureSequence.size,
-                "Capture request is cancelled on closed CameraGraph"
+                "Capture request is cancelled on closed CameraGraph",
             )
 
     override fun update3aRegions(
         aeRegions: List<MeteringRectangle>?,
         afRegions: List<MeteringRectangle>?,
-        awbRegions: List<MeteringRectangle>?
+        awbRegions: List<MeteringRectangle>?,
     ): Deferred<Result3A> =
         runIfNotClosed {
             threads.confineDeferredSuspend {
-                debug { "UseCaseCameraRequestControlImpl#update3aRegions" }
+                Camera2Logger.debug { "UseCaseCameraRequestControlImpl#update3aRegions" }
                 useGraphSessionOrFailed {
                     it.update3A(
                         aeRegions = aeRegions ?: METERING_REGIONS_DEFAULT.asList(),
                         afRegions = afRegions ?: METERING_REGIONS_DEFAULT.asList(),
-                        awbRegions = awbRegions ?: METERING_REGIONS_DEFAULT.asList()
+                        awbRegions = awbRegions ?: METERING_REGIONS_DEFAULT.asList(),
                     )
                 }
             }
@@ -417,7 +462,7 @@ constructor(
 
     override fun close() {
         closed = true
-        debug { "UseCaseCameraRequestControl: closed" }
+        Camera2Logger.debug { "UseCaseCameraRequestControl: closed" }
     }
 
     private fun failedResults(count: Int, message: String): List<Deferred<Void?>> =
@@ -474,6 +519,10 @@ constructor(
         sessionConfig: SessionConfig? = null,
     ): Deferred<Unit> =
         runIfNotClosed {
+            cameraXConfig
+                ?.getCamera2CaptureRequestConfigurator()
+                ?.configureWithUnchecked(options.build().toParameters().toMap())
+
             capturePipeline.template =
                 if (template != null && template!!.value != TEMPLATE_TYPE_NONE) {
                     template!!.value
@@ -503,7 +552,7 @@ constructor(
         try {
             graph.acquireSession().use { block(it) }
         } catch (e: CancellationException) {
-            debug(e) { "Cannot acquire the CameraGraph.Session" }
+            Camera2Logger.debug(e) { "Cannot acquire the CameraGraph.Session" }
             submitFailedResult
         }
 

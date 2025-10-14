@@ -16,10 +16,8 @@
 
 package androidx.xr.compose.material3
 
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.DefaultSingleRowTopAppBarOverride
 import androidx.compose.material3.DefaultTwoRowsTopAppBarOverride
-import androidx.compose.material3.DefaultTwoRowsTopAppBarOverride.TwoRowsTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.SingleRowTopAppBarOverride
@@ -33,10 +31,9 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.XrSingleRowTopAppBarOverride.SingleRowTopAppBar
-import androidx.xr.compose.spatial.EdgeOffset
-import androidx.xr.compose.spatial.OrbiterDefaults
-import androidx.xr.compose.spatial.OrbiterEdge
-import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
+import androidx.xr.compose.material3.tokens.XrTokens
+import androidx.xr.compose.spatial.ContentEdge
+import androidx.xr.compose.spatial.OrbiterOffsetType
 
 /** [SingleRowTopAppBarOverride] that uses the XR-specific [SingleRowTopAppBar]. */
 @ExperimentalMaterial3XrApi
@@ -57,21 +54,17 @@ internal object XrSingleRowTopAppBarOverride : SingleRowTopAppBarOverride {
  * The default [HorizontalOrbiterProperties] used by XR [TopAppBar] if none is specified in
  * [LocalSingleRowTopAppBarOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultSingleRowTopAppBarOrbiterProperties: HorizontalOrbiterProperties =
     HorizontalOrbiterProperties(
-        position = OrbiterEdge.Horizontal.Top,
-        offset = XrSingleRowTopAppBarTokens.OrbiterEdgeOffset,
+        position = ContentEdge.Horizontal.Top,
+        offset = XrSingleRowTopAppBarTokens.OrbiterOffset,
+        offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterHorizontally,
-        settings = OrbiterDefaults.Settings,
-        shape = SpatialRoundedCornerShape(CornerSize(50)),
+        shape = XrTokens.ContainerShape,
     )
 
 /** The [HorizontalOrbiterProperties] used by XR [TopAppBar]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalSingleRowTopAppBarOrbiterProperties:
     ProvidableCompositionLocal<HorizontalOrbiterProperties> =
@@ -98,21 +91,17 @@ internal object XrTwoRowsTopAppBarOverride : TwoRowsTopAppBarOverride {
  * The default [HorizontalOrbiterProperties] used by XR [TopAppBar] if none is specified in
  * [LocalTwoRowsTopAppBarOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultTwoRowsTopAppBarOrbiterProperties: HorizontalOrbiterProperties =
     HorizontalOrbiterProperties(
-        position = OrbiterEdge.Horizontal.Top,
-        offset = XrTwoRowsTopAppBarTokens.OrbiterEdgeOffset,
+        position = ContentEdge.Horizontal.Top,
+        offset = XrTwoRowsTopAppBarTokens.OrbiterOffset,
+        offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterHorizontally,
-        settings = OrbiterDefaults.Settings,
-        shape = SpatialRoundedCornerShape(CornerSize(50)),
+        shape = XrTokens.ContainerShape,
     )
 
 /** The [HorizontalOrbiterProperties] used by XR [TopAppBar]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalTwoRowsTopAppBarOrbiterProperties:
     ProvidableCompositionLocal<HorizontalOrbiterProperties> =
@@ -121,11 +110,11 @@ public val LocalTwoRowsTopAppBarOrbiterProperties:
     }
 
 private object XrSingleRowTopAppBarTokens {
-    /** The [EdgeOffset] for SingleRowTopAppBar Orbiters in Full Space Mode (FSM). */
-    val OrbiterEdgeOffset = EdgeOffset.inner(24.dp)
+    /** The [OrbiterOffset] for SingleRowTopAppBar Orbiters in Full Space Mode (FSM). */
+    val OrbiterOffset = 24.dp
 }
 
 private object XrTwoRowsTopAppBarTokens {
-    /** The [EdgeOffset] for TwoRowsTopAppBar Orbiters in Full Space Mode (FSM). */
-    val OrbiterEdgeOffset = EdgeOffset.inner(24.dp)
+    /** The [OrbiterOffset] for TwoRowsTopAppBar Orbiters in Full Space Mode (FSM). */
+    val OrbiterOffset = 24.dp
 }

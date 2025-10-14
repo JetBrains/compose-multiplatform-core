@@ -22,15 +22,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SubspaceComposable
-import androidx.xr.compose.subspace.layout.CoreContentlessEntity
+import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
-import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GroupEntity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -39,23 +39,22 @@ import org.junit.runner.RunWith
 /** Tests for [SubspaceLayoutNode]. */
 @RunWith(AndroidJUnit4::class)
 class SubspaceLayoutNodeTest {
+
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun subspaceLayoutNode_shouldParentNodesProperly() {
         var parentEntity: Entity? = null
 
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    val session = checkNotNull(LocalSession.current)
-                    parentEntity = ContentlessEntity.create(session, "ParentEntity")
-                    EntityLayout(entity = parentEntity!!) {
-                        EntityLayout(
-                            entity = ContentlessEntity.create(session, "ChildEntity"),
-                            modifier = SubspaceModifier.testTag("Child"),
-                        )
-                    }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                parentEntity = GroupEntity.create(session, "ParentEntity")
+                EntityLayout(entity = parentEntity) {
+                    EntityLayout(
+                        entity = GroupEntity.create(session, "ChildEntity"),
+                        modifier = SubspaceModifier.testTag("Child"),
+                    )
                 }
             }
         }
@@ -65,7 +64,7 @@ class SubspaceLayoutNodeTest {
                     .onSubspaceNodeWithTag("Child")
                     .fetchSemanticsNode()
                     .semanticsEntity
-                    ?.getParent()
+                    ?.parent
             )
             .isEqualTo(parentEntity)
     }
@@ -80,7 +79,7 @@ class SubspaceLayoutNodeTest {
         SubspaceLayout(
             content = content,
             modifier = modifier,
-            coreEntity = CoreContentlessEntity(entity),
+            coreEntity = CoreGroupEntity(entity),
         ) { _, _ ->
             layout(0, 0, 0) {}
         }

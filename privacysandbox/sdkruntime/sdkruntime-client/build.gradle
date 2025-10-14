@@ -109,7 +109,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(project(":room:room-compiler-processing-testing"))
+    // TODO(b/438455972): Use ToT of compiler-processing-testing
+    testImplementation("androidx.room:room-compiler-processing-testing:2.8.0-rc02")
 
     // TODO(b/249982004): cleanup dependencies
     androidTestImplementation(libs.testCore)
@@ -125,8 +126,8 @@ dependencies {
     androidTestImplementation(libs.dexmakerMockitoInline)
 
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:current"))
-    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v6"))
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v7"))
+    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v8"))
 }
 
 android {
@@ -148,5 +149,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Provides components for SdkRuntime aware Applications"
-    legacyDisableKotlinStrictApiMode = true
 }

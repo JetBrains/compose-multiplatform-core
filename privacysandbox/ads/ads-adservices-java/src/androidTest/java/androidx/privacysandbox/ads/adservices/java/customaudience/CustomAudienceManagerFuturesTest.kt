@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.java.customaudience
 
-import android.adservices.common.AdServicesOutcomeReceiver
 import android.adservices.customaudience.CustomAudienceManager
 import android.content.Context
 import android.net.Uri
@@ -33,6 +32,7 @@ import androidx.privacysandbox.ads.adservices.customaudience.LeaveCustomAudience
 import androidx.privacysandbox.ads.adservices.customaudience.PartialCustomAudience
 import androidx.privacysandbox.ads.adservices.customaudience.ScheduleCustomAudienceUpdateRequest
 import androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData
+import androidx.privacysandbox.ads.adservices.java.TestFixtures
 import androidx.privacysandbox.ads.adservices.java.VersionCompatUtil
 import androidx.privacysandbox.ads.adservices.java.customaudience.CustomAudienceManagerFutures.Companion.from
 import androidx.test.core.app.ApplicationProvider
@@ -46,6 +46,7 @@ import com.google.common.truth.Truth
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ExecutionException
+import kotlin.test.assertFails
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
@@ -64,7 +65,8 @@ import org.mockito.quality.Strictness
 @OptIn(
     ExperimentalFeatures.Ext8OptIn::class,
     ExperimentalFeatures.Ext10OptIn::class,
-    ExperimentalFeatures.Ext14OptIn::class
+    ExperimentalFeatures.Ext14OptIn::class,
+    ExperimentalFeatures.Ext16OptIn::class,
 )
 @SmallTest
 @SuppressWarnings("NewApi")
@@ -102,8 +104,8 @@ class CustomAudienceManagerFuturesTest {
             "maxSdkVersion = API 33 ext 3 or API 31/32 ext 8",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion=*/ 4,
-                /* minExtServicesVersion=*/ 9
-            )
+                /* minExtServicesVersion=*/ 9,
+            ),
         )
         Truth.assertThat(from(mContext)).isEqualTo(null)
     }
@@ -116,8 +118,8 @@ class CustomAudienceManagerFuturesTest {
             "minSdkVersion = API 33 ext 4 or API 31/32 ext 9",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion= */ 4,
-                /* minExtServicesVersion=*/ 9
-            )
+                /* minExtServicesVersion=*/ 9,
+            ),
         )
 
         /* API is not available */
@@ -125,8 +127,8 @@ class CustomAudienceManagerFuturesTest {
             "maxSdkVersion = API 31-34 ext 9",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion=*/ 10,
-                /* minExtServicesVersion=*/ 10
-            )
+                /* minExtServicesVersion=*/ 10,
+            ),
         )
 
         mockCustomAudienceManager(mContext, mValidAdExtServicesSdkExtVersion)
@@ -139,7 +141,7 @@ class CustomAudienceManagerFuturesTest {
                 name,
                 activationTime,
                 expirationTime,
-                userBiddingSignals
+                userBiddingSignals,
             )
 
         // Verify that it throws an exception
@@ -160,8 +162,8 @@ class CustomAudienceManagerFuturesTest {
             "minSdkVersion = API 33 ext 4 or API 31/32 ext 9",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion= */ 4,
-                /* minExtServicesVersion=*/ 9
-            )
+                /* minExtServicesVersion=*/ 9,
+            ),
         )
 
         /* API is not available */
@@ -169,8 +171,8 @@ class CustomAudienceManagerFuturesTest {
             "maxSdkVersion = API 31-34 ext 13",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion=*/ 14,
-                /* minExtServicesVersion=*/ 14
-            )
+                /* minExtServicesVersion=*/ 14,
+            ),
         )
 
         mockCustomAudienceManager(mContext, mValidAdExtServicesSdkExtVersion)
@@ -196,8 +198,8 @@ class CustomAudienceManagerFuturesTest {
             "minSdkVersion = API 33 ext 4 or API 31/32 ext 9",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion= */ 4,
-                /* minExtServicesVersion=*/ 9
-            )
+                /* minExtServicesVersion=*/ 9,
+            ),
         )
 
         val customAudienceManager =
@@ -233,8 +235,8 @@ class CustomAudienceManagerFuturesTest {
             "minSdkVersion = API 33 ext 14 or API 31/32 ext 14",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion= */ 14,
-                /* minExtServicesVersion=*/ 14
-            )
+                /* minExtServicesVersion=*/ 14,
+            ),
         )
 
         val customAudienceManager =
@@ -273,8 +275,8 @@ class CustomAudienceManagerFuturesTest {
             "minSdkVersion = API 33 ext 4 or API 31/32 ext 9",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion= */ 4,
-                /* minExtServicesVersion=*/ 9
-            )
+                /* minExtServicesVersion=*/ 9,
+            ),
         )
 
         /* Make sure priority and auction server flag field is not available. */
@@ -282,8 +284,8 @@ class CustomAudienceManagerFuturesTest {
             "maxSdkVersion = API 31-34 ext 13",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion=*/ 14,
-                /* minExtServicesVersion=*/ 14
-            )
+                /* minExtServicesVersion=*/ 14,
+            ),
         )
 
         val customAudienceManager =
@@ -309,13 +311,101 @@ class CustomAudienceManagerFuturesTest {
     }
 
     @Test
+    fun testJoinCustomAudienceWithComponentAds() {
+        Assume.assumeTrue(
+            "minSdkVersion = API 33 ext 16 or API 31/32 ext 16",
+            VersionCompatUtil.isTestableVersion(
+                /* minAdServicesVersion= */ 16,
+                /* minExtServicesVersion=*/ 16,
+            ),
+        )
+
+        val customAudienceManager =
+            mockCustomAudienceManager(mContext, mValidAdExtServicesSdkExtVersion)
+        setupResponse(customAudienceManager)
+        val managerCompat = from(mContext)
+
+        // Actually invoke the compat code.
+        val customAudience =
+            CustomAudience.Builder(buyer, name, uri, uri, ads)
+                .setActivationTime(Instant.now())
+                .setExpirationTime(Instant.now())
+                .setUserBiddingSignals(userBiddingSignals)
+                .setTrustedBiddingData(trustedBiddingSignals)
+                .setComponentAds(TestFixtures.componentAds)
+                .build()
+        val request = JoinCustomAudienceRequest(customAudience)
+        managerCompat!!.joinCustomAudienceAsync(request).get()
+
+        // Verify that the compat code was invoked correctly.
+        val captor =
+            ArgumentCaptor.forClass(
+                android.adservices.customaudience.JoinCustomAudienceRequest::class.java
+            )
+        verify(customAudienceManager).joinCustomAudience(captor.capture(), any(), any())
+
+        // Verify that the request that the compat code makes to the platform is correct.
+        verifyJoinCustomAudienceRequestWithComponentAds(captor.value)
+    }
+
+    @Test
+    fun testJoinCustomAudienceWithComponentAdsDoesNotThrowExceptionForOlderVersion() {
+        /* Make sure JoinCustomAudience API is available. */
+        Assume.assumeTrue(
+            "minSdkVersion = API 33 ext 4 or API 31/32 ext 9",
+            VersionCompatUtil.isTestableVersion(
+                /* minAdServicesVersion= */ 4,
+                /* minExtServicesVersion=*/ 9,
+            ),
+        )
+
+        /* Make sure Component Ads is not available. */
+        Assume.assumeFalse(
+            "maxSdkVersion = API 31-34 ext 16",
+            VersionCompatUtil.isTestableVersion(
+                /* minAdServicesVersion=*/ 16,
+                /* minExtServicesVersion=*/ 16,
+            ),
+        )
+
+        val customAudienceManager =
+            mockCustomAudienceManager(mContext, mValidAdExtServicesSdkExtVersion)
+        setupResponse(customAudienceManager)
+        val managerCompat = from(mContext)
+
+        // Actually invoke the compat code.
+        val customAudience =
+            CustomAudience.Builder(buyer, name, uri, uri, ads)
+                .setActivationTime(Instant.now())
+                .setExpirationTime(Instant.now())
+                .setUserBiddingSignals(userBiddingSignals)
+                .setTrustedBiddingData(trustedBiddingSignals)
+                .setComponentAds(TestFixtures.componentAds)
+                .build()
+        val request = JoinCustomAudienceRequest(customAudience)
+        managerCompat!!.joinCustomAudienceAsync(request).get()
+
+        // Verifies the request does not have componentAds
+        val captor =
+            ArgumentCaptor.forClass(
+                android.adservices.customaudience.JoinCustomAudienceRequest::class.java
+            )
+        verify(customAudienceManager).joinCustomAudience(captor.capture(), any(), any())
+        assertFails {
+            // asserts the field does not exist
+            captor.value.customAudience::class.java.getDeclaredField("componentAds")
+        }
+        verifyJoinCustomAudienceRequest(captor.value)
+    }
+
+    @Test
     fun testFetchAndJoinCustomAudience() {
         Assume.assumeTrue(
             "minSdkVersion = API 31 ext 10",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion= */ 10,
-                /* minExtServicesVersion=*/ 10
-            )
+                /* minExtServicesVersion=*/ 10,
+            ),
         )
 
         val customAudienceManager =
@@ -330,7 +420,7 @@ class CustomAudienceManagerFuturesTest {
                 name,
                 activationTime,
                 expirationTime,
-                userBiddingSignals
+                userBiddingSignals,
             )
         managerCompat!!.fetchAndJoinCustomAudienceAsync(request).get()
 
@@ -351,8 +441,8 @@ class CustomAudienceManagerFuturesTest {
             "minSdkVersion = API 31 ext 14",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion= */ 14,
-                /* minExtServicesVersion=*/ 14
-            )
+                /* minExtServicesVersion=*/ 14,
+            ),
         )
 
         val customAudienceManager =
@@ -382,8 +472,8 @@ class CustomAudienceManagerFuturesTest {
             "minSdkVersion = API 33 ext 4 or API 31/32 ext 9",
             VersionCompatUtil.isTestableVersion(
                 /* minAdServicesVersion= */ 4,
-                /* minExtServicesVersion=*/ 9
-            )
+                /* minExtServicesVersion=*/ 9,
+            ),
         )
 
         val customAudienceManager =
@@ -424,12 +514,11 @@ class CustomAudienceManagerFuturesTest {
         private val minDelayDuration = Duration.ofMinutes(30)
         private const val PARTIAL_CA_1 = "partialCa1"
         private val priority: Double = 2.0
-
         private val partialCustomAudienceList = listOf(PartialCustomAudience(PARTIAL_CA_1))
 
         private fun mockCustomAudienceManager(
             spyContext: Context,
-            isExtServices: Boolean
+            isExtServices: Boolean,
         ): CustomAudienceManager {
             val customAudienceManager = mock(CustomAudienceManager::class.java)
             // mock the .get() method if using extServices version, otherwise mock getSystemService
@@ -463,11 +552,17 @@ class CustomAudienceManagerFuturesTest {
                 .fetchAndJoinCustomAudience(any(), any(), any())
         }
 
+        @Suppress("deprecation") // suppress warning of deprecated AdServicesOutcomeReceiver in Java
         private fun setupScheduleCustomAudienceUpdateResponse(
             customAudienceManager: CustomAudienceManager
         ) {
             val answer = { args: InvocationOnMock ->
-                val receiver = args.getArgument<AdServicesOutcomeReceiver<Any, Exception>>(2)
+                val receiver =
+                    args.getArgument<
+                        android.adservices.common.AdServicesOutcomeReceiver<Any, Exception>
+                    >(
+                        2
+                    )
                 receiver.onResult(Object())
                 null
             }
@@ -486,6 +581,22 @@ class CustomAudienceManagerFuturesTest {
             Truth.assertWithMessage("Auction server request flag")
                 .that(joinCustomAudienceRequest.customAudience.auctionServerRequestFlags)
                 .isEqualTo(FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS)
+        }
+
+        private fun verifyJoinCustomAudienceRequestWithComponentAds(
+            joinCustomAudienceRequest: android.adservices.customaudience.JoinCustomAudienceRequest
+        ) {
+            verifyJoinCustomAudienceRequest(joinCustomAudienceRequest)
+            for ((index, actual) in
+                joinCustomAudienceRequest.customAudience.componentAds.withIndex()) {
+                val expected = TestFixtures.componentAds[index]
+                Truth.assertWithMessage("Render Uri should equal")
+                    .that(actual.renderUri)
+                    .isEqualTo(expected.renderUri)
+                Truth.assertWithMessage("Ad Render ID should equal")
+                    .that(actual.adRenderId)
+                    .isEqualTo(expected.adRenderId)
+            }
         }
 
         private fun verifyJoinCustomAudienceRequest(
@@ -599,6 +710,7 @@ class CustomAudienceManagerFuturesTest {
             Truth.assertThat(expectedRequest == fetchAndJoinCustomAudienceRequest).isTrue()
         }
 
+        @Suppress("deprecation") // suppress warning of deprecated Builder
         private fun verifyScheduleCustomAudienceUpdateRequest(
             scheduleCustomAudienceUpdateRequest:
                 android.adservices.customaudience.ScheduleCustomAudienceUpdateRequest
@@ -613,7 +725,7 @@ class CustomAudienceManagerFuturesTest {
                 android.adservices.customaudience.ScheduleCustomAudienceUpdateRequest.Builder(
                         uri,
                         minDelayDuration,
-                        partialCustomAudienceList
+                        partialCustomAudienceList,
                     )
                     .build()
 

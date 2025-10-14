@@ -37,9 +37,6 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     namespace = "androidx.wear.remote.interactions.samples"
 }
 

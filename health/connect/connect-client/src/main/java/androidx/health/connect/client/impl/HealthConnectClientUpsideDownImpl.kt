@@ -120,7 +120,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 healthConnectManager.insertRecords(
                     records.map { it.toPlatformRecord() },
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -133,7 +133,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 healthConnectManager.updateRecords(
                     records.map { it.toPlatformRecord() },
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -142,7 +142,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
         recordIdsList: List<String>,
-        clientRecordIdsList: List<String>
+        clientRecordIdsList: List<String>,
     ) {
         wrapPlatformException {
             suspendCancellableCoroutine { continuation ->
@@ -155,13 +155,13 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                             add(
                                 RecordIdFilter.fromClientRecordId(
                                     recordType.toPlatformRecordClass(),
-                                    it
+                                    it,
                                 )
                             )
                         }
                     },
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -169,7 +169,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
 
     override suspend fun deleteRecords(
         recordType: KClass<out Record>,
-        timeRangeFilter: TimeRangeFilter
+        timeRangeFilter: TimeRangeFilter,
     ) {
         wrapPlatformException {
             suspendCancellableCoroutine { continuation ->
@@ -177,7 +177,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                     recordType.toPlatformRecordClass(),
                     timeRangeFilter.toPlatformTimeRangeFilter(),
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -186,7 +186,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     @Suppress("UNCHECKED_CAST") // Safe to cast as the type should match
     override suspend fun <T : Record> readRecord(
         recordType: KClass<T>,
-        recordId: String
+        recordId: String,
     ): ReadRecordResponse<T> {
         val response = wrapPlatformException {
             suspendCancellableCoroutine { continuation ->
@@ -195,7 +195,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                         .addId(recordId)
                         .build(),
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
@@ -218,13 +218,13 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 healthConnectManager.readRecords(
                     request.toPlatformRequest(),
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
         }
         return ReadRecordsResponse(
             response.records.map { it.toSdkRecord() as T },
-            pageToken = response.nextPageToken.takeUnless { it == -1L }?.toString()
+            pageToken = response.nextPageToken.takeUnless { it == -1L }?.toString(),
         )
     }
 
@@ -246,7 +246,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                         healthConnectManager.aggregate(
                             request.toPlatformRequest(),
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -276,7 +276,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                             request.toPlatformRequest(),
                             request.timeRangeSlicer,
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -289,7 +289,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                     result = accumulator.result + element.result,
                     startTime = startTime,
                     endTime = accumulator.endTime,
-                    zoneOffset = accumulator.zoneOffset
+                    zoneOffset = accumulator.zoneOffset,
                 )
             }
             .values
@@ -317,7 +317,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                             request.toPlatformRequest(),
                             request.timeRangeSlicer,
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -343,8 +343,8 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                             bucketEndTime =
                                 minOf(
                                     bucketStartTime + request.timeRangeSlicer,
-                                    requestTimeRangeFilter.endTime!!
-                                )
+                                    requestTimeRangeFilter.endTime!!,
+                                ),
                         )
                     }
                 }
@@ -355,7 +355,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 AggregationResultGroupedByPeriod(
                     result = accumulator.result + element.result,
                     startTime = startTime,
-                    endTime = accumulator.endTime
+                    endTime = accumulator.endTime,
                 )
             }
             .values
@@ -372,7 +372,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                     healthConnectManager.getChangeLogToken(
                         request.toPlatformRequest(),
                         executor,
-                        continuation.asOutcomeReceiver()
+                        continuation.asOutcomeReceiver(),
                     )
                 }
             }
@@ -385,7 +385,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 healthConnectManager.getChangeLogs(
                     ChangeLogsRequest.Builder(changesToken).build(),
                     executor,
-                    continuation.asOutcomeReceiver()
+                    continuation.asOutcomeReceiver(),
                 )
             }
             return ChangesResponse(
@@ -395,7 +395,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                 },
                 response.nextChangesToken,
                 response.hasMorePages(),
-                changesTokenExpired = false
+                changesTokenExpired = false,
             )
         } catch (e: HealthConnectException) {
             // Handle invalid token
@@ -404,7 +404,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                     changes = listOf(),
                     nextChangesToken = "",
                     hasMore = false,
-                    changesTokenExpired = true
+                    changesTokenExpired = true,
                 )
             }
             throw e.toKtException()
@@ -449,14 +449,14 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     ): MedicalDataSource =
         withPhrFeatureCheckSuspend(
             this::class,
-            "createMedicalDataSource(request: CreateMedicalDataSourceRequest)"
+            "createMedicalDataSource(request: CreateMedicalDataSourceRequest)",
         ) {
             wrapPlatformException {
                     suspendCancellableCoroutine { continuation ->
                         healthConnectManager.createMedicalDataSource(
                             request.platformCreateMedicalDataSourceRequest,
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -473,7 +473,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                     healthConnectManager.deleteMedicalDataSourceWithData(
                         id,
                         executor,
-                        continuation.asOutcomeReceiver()
+                        continuation.asOutcomeReceiver(),
                     )
                 }
             }
@@ -487,14 +487,14 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     ): List<MedicalDataSource> =
         withPhrFeatureCheckSuspend(
             this::class,
-            "getMedicalDataSources(request: GetMedicalDataSourcesRequest)"
+            "getMedicalDataSources(request: GetMedicalDataSourcesRequest)",
         ) {
             wrapPlatformException {
                     suspendCancellableCoroutine { continuation ->
                         healthConnectManager.getMedicalDataSources(
                             request.platformGetMedicalDataSourcesRequest,
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -510,7 +510,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                         healthConnectManager.getMedicalDataSources(
                             ids,
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -529,7 +529,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                         healthConnectManager.upsertMedicalResources(
                             requests.map { it.platformUpsertMedicalResourceRequest },
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -543,14 +543,14 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     ): ReadMedicalResourcesResponse =
         withPhrFeatureCheckSuspend(
             this::class,
-            "readMedicalResources(request: ReadMedicalResourcesRequest)"
+            "readMedicalResources(request: ReadMedicalResourcesRequest)",
         ) {
             wrapPlatformException {
                     suspendCancellableCoroutine { continuation ->
                         healthConnectManager.readMedicalResources(
                             request.platformReadMedicalResourcesRequest,
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -558,7 +558,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                     ReadMedicalResourcesResponse(
                         platformResponse.medicalResources.map { it.toSdkMedicalResource() },
                         platformResponse.nextPageToken,
-                        platformResponse.remainingCount
+                        platformResponse.remainingCount,
                     )
                 }
         }
@@ -568,14 +568,14 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     override suspend fun readMedicalResources(ids: List<MedicalResourceId>): List<MedicalResource> =
         withPhrFeatureCheckSuspend(
             this::class,
-            "readMedicalResources(ids: List<MedicalResourceId>)"
+            "readMedicalResources(ids: List<MedicalResourceId>)",
         ) {
             wrapPlatformException {
                     suspendCancellableCoroutine { continuation ->
                         healthConnectManager.readMedicalResources(
                             ids.map { it.platformMedicalResourceId },
                             executor,
-                            continuation.asOutcomeReceiver()
+                            continuation.asOutcomeReceiver(),
                         )
                     }
                 }
@@ -588,14 +588,14 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     override suspend fun deleteMedicalResources(ids: List<MedicalResourceId>) {
         withPhrFeatureCheckSuspend(
             HealthConnectClientUpsideDownImpl::class,
-            "deleteMedicalResources(ids: List<MedicalResourceId>)"
+            "deleteMedicalResources(ids: List<MedicalResourceId>)",
         ) {
             wrapPlatformException {
                 suspendCancellableCoroutine { continuation ->
                     healthConnectManager.deleteMedicalResources(
                         ids.map { it.platformMedicalResourceId },
                         executor,
-                        continuation.asOutcomeReceiver()
+                        continuation.asOutcomeReceiver(),
                     )
                 }
             }
@@ -608,14 +608,14 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
     override suspend fun deleteMedicalResources(request: DeleteMedicalResourcesRequest) {
         withPhrFeatureCheckSuspend(
             HealthConnectClientUpsideDownImpl::class,
-            "deleteMedicalResources(request: DeleteMedicalResourcesRequest)"
+            "deleteMedicalResources(request: DeleteMedicalResourcesRequest)",
         ) {
             wrapPlatformException {
                 suspendCancellableCoroutine { continuation ->
                     healthConnectManager.deleteMedicalResources(
                         request.platformReadMedicalResourcesRequest,
                         executor,
-                        continuation.asOutcomeReceiver()
+                        continuation.asOutcomeReceiver(),
                     )
                 }
             }

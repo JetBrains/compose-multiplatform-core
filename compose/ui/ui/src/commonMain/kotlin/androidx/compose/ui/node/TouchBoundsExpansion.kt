@@ -44,7 +44,7 @@ value class TouchBoundsExpansion internal constructor(private val packedValue: L
             left: Int = 0,
             top: Int = 0,
             right: Int = 0,
-            bottom: Int = 0
+            bottom: Int = 0,
         ): TouchBoundsExpansion {
             requirePrecondition(left in 0..MAX_VALUE) {
                 "Start must be in the range of 0 .. $MAX_VALUE"
@@ -69,7 +69,7 @@ value class TouchBoundsExpansion internal constructor(private val packedValue: L
             top: Int,
             end: Int,
             bottom: Int,
-            isLayoutDirectionAware: Boolean
+            isLayoutDirectionAware: Boolean,
         ): Long {
             return trimAndShift(start, 0) or
                 trimAndShift(top, 1) or
@@ -159,7 +159,7 @@ data class DpTouchBoundsExpansion(
     val top: Dp,
     val end: Dp,
     val bottom: Dp,
-    val isLayoutDirectionAware: Boolean
+    val isLayoutDirectionAware: Boolean,
 ) {
     init {
         requirePrecondition(start.value >= 0) { "Left must be non-negative" }
@@ -177,7 +177,7 @@ data class DpTouchBoundsExpansion(
                         top.roundToPx(),
                         end.roundToPx(),
                         bottom.roundToPx(),
-                        isLayoutDirectionAware
+                        isLayoutDirectionAware,
                     )
             )
         }
@@ -192,7 +192,7 @@ data class DpTouchBoundsExpansion(
             left: Dp = 0.dp,
             top: Dp = 0.dp,
             right: Dp = 0.dp,
-            bottom: Dp = 0.dp
+            bottom: Dp = 0.dp,
         ): DpTouchBoundsExpansion {
             return DpTouchBoundsExpansion(left, top, right, bottom, false)
         }
@@ -211,7 +211,7 @@ fun TouchBoundsExpansion(
     start: Int = 0,
     top: Int = 0,
     end: Int = 0,
-    bottom: Int = 0
+    bottom: Int = 0,
 ): TouchBoundsExpansion {
     requirePrecondition(start in 0..TouchBoundsExpansion.MAX_VALUE) {
         "Start must be in the range of 0 .. ${TouchBoundsExpansion.MAX_VALUE}"
@@ -242,7 +242,7 @@ fun DpTouchBoundsExpansion(
     start: Dp = 0.dp,
     top: Dp = 0.dp,
     end: Dp = 0.dp,
-    bottom: Dp = 0.dp
+    bottom: Dp = 0.dp,
 ): DpTouchBoundsExpansion {
     return DpTouchBoundsExpansion(start, top, end, bottom, true)
 }

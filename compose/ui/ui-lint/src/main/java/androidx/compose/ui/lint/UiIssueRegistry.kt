@@ -32,6 +32,7 @@ class UiIssueRegistry : IssueRegistry() {
             listOf(
                 ComposedModifierDetector.UnnecessaryComposedModifier,
                 LocalContextResourcesConfigurationReadDetector.LocalContextConfigurationRead,
+                LocalContextResourcesConfigurationReadDetector.LocalContextGetResourceValueCall,
                 LocalContextResourcesConfigurationReadDetector.LocalContextResourcesRead,
                 ConfigurationScreenWidthHeightDetector.ConfigurationScreenWidthHeight,
                 ModifierDeclarationDetector.ModifierFactoryExtensionFunction,
@@ -43,13 +44,13 @@ class UiIssueRegistry : IssueRegistry() {
                 ReturnFromAwaitPointerEventScopeDetector.ExitAwaitPointerEventScope,
                 SuspiciousCompositionLocalModifierReadDetector
                     .SuspiciousCompositionLocalModifierRead,
-                SuspiciousModifierThenDetector.SuspiciousModifierThen
+                SuspiciousModifierThenDetector.SuspiciousModifierThen,
             )
 
     override val vendor =
         Vendor(
             vendorName = "Jetpack Compose",
             identifier = "androidx.compose.ui",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128",
         )
 }

@@ -38,7 +38,7 @@ private constructor(
         fun from(options: Map<String, String>): AppFunctionCompilerOptions {
             return AppFunctionCompilerOptions(
                 aggregateAppFunctions = getAggregateAppFunctionsOption(options),
-                generateMetadataFromSchema = getGenerateMetadataFromSchemaOption(options)
+                generateMetadataFromSchema = getGenerateMetadataFromSchemaOption(options),
             )
         }
 

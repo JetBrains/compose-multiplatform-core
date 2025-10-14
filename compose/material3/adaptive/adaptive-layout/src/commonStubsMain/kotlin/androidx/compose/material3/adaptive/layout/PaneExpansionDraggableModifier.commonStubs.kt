@@ -16,6 +16,7 @@
 
 package androidx.compose.material3.adaptive.layout
 
+import androidx.compose.material3.adaptive.layout.internal.implementedInJetBrainsFork
 import androidx.compose.ui.Modifier
 
 internal actual fun Modifier.systemGestureExclusion(): Modifier = implementedInJetBrainsFork()

@@ -16,7 +16,6 @@
 
 package androidx.camera.video.internal.config
 
-import android.os.Build
 import android.util.Range
 import android.util.Rational
 import androidx.camera.video.AudioSpec.CHANNEL_COUNT_MONO
@@ -26,12 +25,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class AudioConfigUtilTest {
 
     @Test
@@ -46,7 +43,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(24000)
@@ -65,7 +62,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(48000)
@@ -84,7 +81,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(24000)
@@ -103,7 +100,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(48000)
@@ -122,7 +119,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(22050)
@@ -141,7 +138,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(44100)

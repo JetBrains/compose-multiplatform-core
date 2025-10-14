@@ -1,16 +1,19 @@
 package com.testdata
 
-import androidx.appfunctions.AppFunction
+import androidx.appfunctions.service.AppFunction
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionSerializable
 
-@AppFunctionSerializable
+/** An example generic AppFunctionSerializable. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
 data class SetField<T>(val value: T)
 
-@AppFunctionSerializable
+/** An attachment for a note entity. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
 data class Attachment(val uri: String)
 
-@AppFunctionSerializable
+/** Parameters to update a note entity. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
 data class UpdateNoteParams(
     val title: SetField<String>? = null,
     val nullableTitle: SetField<String?>? = null,

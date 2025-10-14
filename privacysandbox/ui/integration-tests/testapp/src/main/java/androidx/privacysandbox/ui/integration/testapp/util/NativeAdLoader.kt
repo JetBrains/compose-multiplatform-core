@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.integration.testapp.util
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -37,18 +36,19 @@ import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.C
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.NativeAdAssetProperties
 import androidx.privacysandbox.ui.integration.testapp.R
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
-class NativeAdLoader(context: Context) {
-    val adView: SharedUiContainer = inflate(context, NATIVE_AD_LAYOUT_ID, null) as SharedUiContainer
+class NativeAdLoader(context: Context, layoutId: Int = NATIVE_AD_LAYOUT_ID) {
+    val adView: SharedUiContainer = inflate(context, layoutId, null) as SharedUiContainer
     private val adHeadline: TextView = adView.findViewById(R.id.native_ad_headline)
     private val adBody: TextView = adView.findViewById(R.id.native_ad_body)
-    private val adRemoteOverlayIcon: SandboxedSdkView =
+    private val adRemoteOverlayIcon: SandboxedSdkView? =
         adView.findViewById(R.id.native_ad_remote_overlay_icon)
     private val adMediaView1: SandboxedSdkView = adView.findViewById(R.id.native_ad_media_view_1)
     private val adOverlayIcon: ImageView = adView.findViewById(R.id.native_ad_overlay_icon)
     private val adMediaView2: PlayerView = adView.findViewById(R.id.native_ad_media_view_2)
     private val adCallToAction: Button = adView.findViewById(R.id.native_ad_call_to_action)
+
+    val sandboxedSdkViews = listOfNotNull(adMediaView1, adRemoteOverlayIcon)
 
     fun populateAd(sdkBundle: Bundle) {
         adView.setAdapter(SharedUiAdapterFactory.createFromCoreLibInfo(sdkBundle))
@@ -63,7 +63,7 @@ class NativeAdLoader(context: Context) {
                         Color.parseColor(headlineAssets?.getString(NativeAdAssetProperties.COLOR))
                     )
                 },
-                NativeAdAssetName.HEADLINE
+                NativeAdAssetName.HEADLINE,
             )
         )
 
@@ -76,20 +76,22 @@ class NativeAdLoader(context: Context) {
                         Color.parseColor(bodyAssets?.getString(NativeAdAssetProperties.COLOR))
                     )
                 },
-                NativeAdAssetName.BODY
+                NativeAdAssetName.BODY,
             )
         )
 
-        val adChoicesAssets = assets?.getBundle(NativeAdAssetName.AD_CHOICES)
-        if (adChoicesAssets != null) {
-            adView.registerSharedUiAsset(
-                SharedUiAsset(
-                    adRemoteOverlayIcon,
-                    NativeAdAssetName.AD_CHOICES,
-                    sandboxedUiAdapter =
-                        SandboxedUiAdapterFactory.createFromCoreLibInfo(adChoicesAssets)
+        if (adRemoteOverlayIcon != null) {
+            val adChoicesAssets = assets?.getBundle(NativeAdAssetName.AD_CHOICES)
+            if (adChoicesAssets != null) {
+                adView.registerSharedUiAsset(
+                    SharedUiAsset(
+                        adRemoteOverlayIcon,
+                        NativeAdAssetName.AD_CHOICES,
+                        sandboxedUiAdapter =
+                            SandboxedUiAdapterFactory.createFromCoreLibInfo(adChoicesAssets),
+                    )
                 )
-            )
+            }
         }
 
         val mediaView1Assets = assets?.getBundle(NativeAdAssetName.MEDIA_VIEW_1)
@@ -99,7 +101,7 @@ class NativeAdLoader(context: Context) {
                     adMediaView1,
                     NativeAdAssetName.MEDIA_VIEW_1,
                     sandboxedUiAdapter =
-                        SandboxedUiAdapterFactory.createFromCoreLibInfo(mediaView1Assets)
+                        SandboxedUiAdapterFactory.createFromCoreLibInfo(mediaView1Assets),
                 )
             )
         }
@@ -112,7 +114,7 @@ class NativeAdLoader(context: Context) {
                     val bitmap = BitmapFactory.decodeByteArray(iconByteArray, 0, iconByteArray.size)
                     setImageBitmap(bitmap)
                 },
-                NativeAdAssetName.ICON
+                NativeAdAssetName.ICON,
             )
         )
 
@@ -124,11 +126,11 @@ class NativeAdLoader(context: Context) {
                         PlayerViewProvider()
                             .PlayerWithState(
                                 context,
-                                mediaView2Assets?.getString(NativeAdAssetProperties.URL)!!
+                                mediaView2Assets?.getString(NativeAdAssetProperties.URL)!!,
                             )
                             .initializePlayer()
                 },
-                NativeAdAssetName.MEDIA_VIEW_2
+                NativeAdAssetName.MEDIA_VIEW_2,
             )
         )
 
@@ -143,12 +145,13 @@ class NativeAdLoader(context: Context) {
                         )
                     )
                 },
-                NativeAdAssetName.CALL_TO_ACTION
+                NativeAdAssetName.CALL_TO_ACTION,
             )
         )
     }
 
     companion object {
         val NATIVE_AD_LAYOUT_ID = R.layout.native_ad_layout
+        val NATIVE_AD_LAYOUT_HIDDEN_ID = R.layout.native_ad_layout_hidden
     }
 }

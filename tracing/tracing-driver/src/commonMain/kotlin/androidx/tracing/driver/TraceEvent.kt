@@ -16,11 +16,23 @@
 
 package androidx.tracing.driver
 
-internal const val TRACE_EVENT_TYPE_UNDEFINED: Int = 0
-internal const val TRACE_EVENT_TYPE_BEGIN: Int = 1
-internal const val TRACE_EVENT_TYPE_END: Int = 2
-internal const val TRACE_EVENT_TYPE_INSTANT: Int = 3
-internal const val TRACE_EVENT_TYPE_COUNTER: Int = 4
+import androidx.annotation.RestrictTo
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_UNDEFINED: Int = 0
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_BEGIN: Int = 1
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_END: Int = 2
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_INSTANT: Int = 3
+
+@PublishedApi internal const val TRACE_EVENT_TYPE_COUNTER: Int = 4
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val METADATA_ENTRIES_EXPECTED_SIZE: Int = 4
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val CATEGORIES_EXPECTED_SIZE: Int = 4
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LAST_INDEX_WHEN_EMPTY: Int = -1
 
 /**
  * Mutable in-memory only representation a trace event, such as a slice start, slice end, or counter
@@ -33,7 +45,9 @@ internal const val TRACE_EVENT_TYPE_COUNTER: Int = 4
  * Code outside of tracing-driver implementation should only ever consume these objects, not produce
  * them.
  */
-@Suppress("NOTHING_TO_INLINE")
+// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
+@Suppress("NOTHING_TO_INLINE", "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+@DelicateTracingApi
 public class TraceEvent
 internal constructor(
     /**
@@ -95,17 +109,48 @@ internal constructor(
     @field:Suppress("MutableBareField") // public / mutable to minimize overhead
     @JvmField
     public var trackDescriptor: TrackDescriptor?,
+
+    /** The list of debug annotations associated with a slice */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var metadataEntries: MutableList<MetadataEntry>,
+
+    /**
+     * Keeping track of the index separately, because the MutableList is pre-allocated with sentinel
+     * objects for performance reasons. This `index` can be used to determine the true `size` of the
+     * [metadataEntries] `MutableList`.
+     */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var lastMetadataEntryIndex: Int,
+
+    /** The categories that this Trace Event belongs to. */
+    // public / mutable to minimize overhead
+    @field:Suppress("MutableBareField") @JvmField public var categories: MutableList<String>,
+
+    /**
+     * Keeping track of the index separately for [categories], because the `MutableList` is
+     * pre-allocated with sentinel objects for performance reasons. This `index` can be used to
+     * determine the true `size` of the [categories] `MutableList`.
+     */
+    @field:Suppress("MutableBareField") // public / mutable to minimize overhead
+    @JvmField
+    public var lastCategoryIndex: Int,
 ) {
     public constructor() :
         this(
-            type = INVALID_INT,
-            trackUuid = INVALID_LONG,
-            timestamp = INVALID_LONG,
+            type = DEFAULT_INT,
+            trackUuid = DEFAULT_LONG,
+            timestamp = DEFAULT_LONG,
             name = null,
             counterDoubleValue = null,
             counterLongValue = null,
             flowIds = emptyList(),
-            trackDescriptor = null
+            trackDescriptor = null,
+            metadataEntries = MutableList(METADATA_ENTRIES_EXPECTED_SIZE) { MetadataEntry() },
+            lastMetadataEntryIndex = LAST_INDEX_WHEN_EMPTY,
+            categories = MutableList(size = CATEGORIES_EXPECTED_SIZE) { DEFAULT_STRING },
+            lastCategoryIndex = LAST_INDEX_WHEN_EMPTY,
         )
 
     internal inline fun setPreamble(trackDescriptor: TrackDescriptor) {
@@ -113,6 +158,7 @@ internal constructor(
         this.timestamp = nanoTime()
     }
 
+    @PublishedApi
     internal inline fun setBeginSection(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_BEGIN
         this.trackUuid = trackUuid
@@ -120,10 +166,11 @@ internal constructor(
         this.name = name
     }
 
+    @PublishedApi
     internal inline fun setBeginSectionWithFlows(
         trackUuid: Long,
         name: String,
-        flowIds: List<Long>
+        flowIds: List<Long>,
     ) {
         type = TRACE_EVENT_TYPE_BEGIN
         this.trackUuid = trackUuid
@@ -132,22 +179,22 @@ internal constructor(
         this.name = name
     }
 
+    @PublishedApi
     internal inline fun setEndSection(trackUuid: Long) {
         type = TRACE_EVENT_TYPE_END
         this.trackUuid = trackUuid
         timestamp = nanoTime()
     }
 
-    internal inline fun setInstant(
-        trackUuid: Long,
-        name: String,
-    ) {
+    @PublishedApi
+    internal inline fun setInstant(trackUuid: Long, name: String) {
         type = TRACE_EVENT_TYPE_END
         this.trackUuid = trackUuid
         timestamp = nanoTime()
         this.name = name
     }
 
+    @PublishedApi
     internal inline fun setCounterLong(trackUuid: Long, value: Long) {
         type = TRACE_EVENT_TYPE_COUNTER
         this.trackUuid = trackUuid
@@ -155,6 +202,7 @@ internal constructor(
         counterLongValue = value
     }
 
+    @PublishedApi
     internal inline fun setCounterDouble(trackUuid: Long, value: Double) {
         type = TRACE_EVENT_TYPE_COUNTER
         this.trackUuid = trackUuid
@@ -162,14 +210,35 @@ internal constructor(
         counterDoubleValue = value
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public inline fun forEachMetadataEntry(block: (MetadataEntry) -> Unit) {
+        repeat(lastMetadataEntryIndex + 1) { block(metadataEntries[it]) }
+    }
+
     public fun reset() {
-        type = INVALID_INT
-        trackUuid = INVALID_LONG
-        timestamp = INVALID_LONG
+        type = DEFAULT_INT
+        trackUuid = DEFAULT_LONG
+        timestamp = DEFAULT_LONG
         name = null
         counterDoubleValue = null
         counterLongValue = null
         flowIds = emptyList()
         trackDescriptor = null
+        if (lastMetadataEntryIndex >= 0) {
+            // Reset metadata entries and resize
+            forEachMetadataEntry { it.reset() }
+            if (lastMetadataEntryIndex >= METADATA_ENTRIES_EXPECTED_SIZE) {
+                metadataEntries = metadataEntries.subList(0, METADATA_ENTRIES_EXPECTED_SIZE)
+            }
+            lastMetadataEntryIndex = LAST_INDEX_WHEN_EMPTY
+        }
+        if (lastCategoryIndex >= 0) {
+            // Reset categories and resize
+            repeat(lastCategoryIndex + 1) { categories[it] = DEFAULT_STRING }
+            if (lastCategoryIndex >= CATEGORIES_EXPECTED_SIZE) {
+                categories = categories.subList(0, CATEGORIES_EXPECTED_SIZE)
+            }
+            lastCategoryIndex = LAST_INDEX_WHEN_EMPTY
+        }
     }
 }

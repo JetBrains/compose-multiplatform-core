@@ -16,7 +16,9 @@
 
 package androidx.tracing.benchmark.driver
 
+import androidx.benchmark.BlackHole
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
+import androidx.benchmark.ExperimentalBlackHoleApi
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -25,11 +27,14 @@ import androidx.tracing.benchmark.BASIC_STRING
 import androidx.tracing.benchmark.PROCESS_NAME
 import androidx.tracing.driver.TRACE_PACKET_BUFFER_SIZE
 import androidx.tracing.driver.TraceContext
-import androidx.tracing.driver.TraceSink
-import androidx.tracing.driver.wire.WireTraceSink
+import androidx.tracing.driver.TraceEventScope
+import androidx.tracing.driver.wire.TraceSink
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.assertEquals
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import okio.blackholeSink
 import okio.buffer
 import org.junit.Rule
@@ -42,12 +47,15 @@ import org.junit.runner.RunWith
 class TracingDriverBenchmark {
     @get:Rule val benchmarkRule = BenchmarkRule()
 
-    private fun buildTraceContext(sink: TraceSink, isEnabled: Boolean): TraceContext {
+    private fun buildTraceContext(
+        sink: TraceSink,
+        @Suppress("SameParameterValue") isEnabled: Boolean,
+    ): TraceContext {
         return TraceContext(sink = sink, isEnabled = isEnabled)
     }
 
     fun buildInMemorySink(coroutineContext: CoroutineContext): TraceSink {
-        return WireTraceSink(
+        return TraceSink(
             sequenceId = 1,
             bufferedSink = blackholeSink().buffer(),
             coroutineContext = coroutineContext,
@@ -78,6 +86,55 @@ class TracingDriverBenchmark {
                 // instead, we reset after 8 begin/end pairs so we only measure
                 // producer write cost without sending to sink
                 process.resetFillCount()
+            }
+        }
+    }
+
+    @Test
+    fun beginEnd_basic32_writeOnly_withCategory() {
+        val metadataBlock: TraceEventScope.() -> Unit = { addCategory("category") }
+        benchmarkRule.measureRepeated {
+            repeat(4) {
+                repeat(8) {
+                    process.trace(name = BASIC_STRING, metadataBlock = metadataBlock) {
+                        // does nothing.
+                    }
+                }
+                // 32 total events (or 16 begin/end pairs) will dispatch
+                // instead, we reset after 8 begin/end pairs so we only measure
+                // producer write cost without sending to sink
+                process.resetFillCount()
+            }
+        }
+    }
+
+    @Test
+    fun beginEndCoroutine_writeOnly() = runTest {
+        benchmarkRule.measureRepeated {
+            runBlocking {
+                repeat(4) {
+                    repeat(8) { process.traceCoroutine(name = BASIC_STRING) {} }
+                    // 32 total events (or 16 begin/end pairs) will dispatch
+                    // instead, we reset after 8 begin/end pairs so we only measure
+                    // producer write cost without sending to sink
+                    runWithMeasurementDisabled { process.resetFillCount() }
+                }
+            }
+        }
+    }
+
+    // This benchmark is a reference benchmark for `beginEndCoroutine_writeOnly`. The goal is to
+    // get the numbers for `beginEndCoroutine_writeOnly` to get as close as possible to the
+    // benchmark below.
+    @OptIn(ExperimentalBlackHoleApi::class)
+    @Test
+    fun referenceForBeginEndCoroutine() = runTest {
+        val testThreadContextElement = TestThreadContextElement()
+        benchmarkRule.measureRepeated {
+            runBlocking {
+                withContext(coroutineContext + testThreadContextElement) {
+                    repeat(32) { BlackHole.consume(it) }
+                }
             }
         }
     }
@@ -119,8 +176,8 @@ class TracingDriverBenchmark {
     }
 
     /**
-     * This benchmark runs a subset of basic32 in order to measure just the cost of enqeuing a batch
-     * to the sink
+     * This benchmark runs a subset of basic32 in order to measure just the cost of enqueuing a
+     * batch to the sink
      */
     @Test
     fun beginEnd_enqueue2() {

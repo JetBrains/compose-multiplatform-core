@@ -133,7 +133,7 @@ internal class LinearGradientHelper(
                         endY,
                         colors,
                         colorOffsets,
-                        DEFAULT_TILE_MODE
+                        DEFAULT_TILE_MODE,
                     )
             }
             return field

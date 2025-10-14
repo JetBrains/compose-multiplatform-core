@@ -16,7 +16,6 @@
 package androidx.camera.core.impl
 
 import android.hardware.camera2.CameraDevice
-import android.os.Build
 import android.util.Range
 import androidx.camera.core.impl.Config.Option
 import androidx.camera.core.impl.Config.OptionPriority
@@ -30,12 +29,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class CaptureConfigTest {
     private var mMockSurface0: DeferrableSurface? = null
 

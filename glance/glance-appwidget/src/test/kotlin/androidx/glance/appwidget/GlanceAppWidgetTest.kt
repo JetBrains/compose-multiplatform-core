@@ -79,11 +79,7 @@ class GlanceAppWidgetTest {
                     val size = LocalSize.current
                     Text("${size.width} x ${size.height}")
                 }
-                .compose(
-                    context,
-                    fakeId,
-                    size = DpSize(40.dp, 50.dp),
-                )
+                .compose(context, fakeId, size = DpSize(40.dp, 50.dp))
 
         val view = context.applyRemoteViews(rv)
         assertIs<TextView>(view)
@@ -101,6 +97,7 @@ class GlanceAppWidgetTest {
                 .compose(
                     context,
                     fakeId,
+                    @Suppress("DEPRECATION") // bundleOf is deprecated
                     bundleOf("StringKey" to "FOUND"),
                 )
 
@@ -132,7 +129,7 @@ class GlanceAppWidgetTest {
                 minResizeWidth = 40
                 minResizeHeight = 60
                 resizeMode = AppWidgetProviderInfo.RESIZE_BOTH
-            }
+            },
         )
         val rv =
             TestWidget {
@@ -169,12 +166,7 @@ class GlanceAppWidgetTest {
     @Config(sdk = [30])
     @Test
     fun createUiWithResponsiveModePreS() = runTest {
-        val sizes =
-            setOf(
-                DpSize(60.dp, 80.dp),
-                DpSize(100.dp, 70.dp),
-                DpSize(120.dp, 100.dp),
-            )
+        val sizes = setOf(DpSize(60.dp, 80.dp), DpSize(100.dp, 70.dp), DpSize(120.dp, 100.dp))
         // Note: Landscape fits the 60x80 and 100x70, portrait doesn't fit anything
         val options = optionsBundleOf(listOf(DpSize(125.dp, 90.dp), DpSize(40.0.dp, 120.dp)))
         val rv =
@@ -207,7 +199,7 @@ class GlanceAppWidgetTest {
                 minResizeWidth = 40
                 minResizeHeight = 60
                 resizeMode = AppWidgetProviderInfo.RESIZE_BOTH
-            }
+            },
         )
         val rv =
             TestWidget(SizeMode.Exact) {
@@ -228,12 +220,7 @@ class GlanceAppWidgetTest {
     @Config(sdk = [30])
     @Test
     fun createUiWithResponsiveMode_noSizeUseMinSize() = runTest {
-        val sizes =
-            setOf(
-                DpSize(60.dp, 80.dp),
-                DpSize(100.dp, 70.dp),
-                DpSize(120.dp, 100.dp),
-            )
+        val sizes = setOf(DpSize(60.dp, 80.dp), DpSize(100.dp, 70.dp), DpSize(120.dp, 100.dp))
         val rv =
             TestWidget(SizeMode.Responsive(sizes)) {
                     val size = LocalSize.current
@@ -335,7 +322,7 @@ class GlanceAppWidgetTest {
         assertThat(
                 findBestSize(
                     DpSize(10.dp, 10.dp),
-                    setOf(DpSize(15.dp, 15.dp), DpSize(50.dp, 50.dp))
+                    setOf(DpSize(15.dp, 15.dp), DpSize(50.dp, 50.dp)),
                 )
             )
             .isNull()
@@ -450,7 +437,7 @@ class GlanceAppWidgetTest {
                         minResizeWidth = 40
                         minHeight = 50
                         minResizeHeight = 50
-                    }
+                    },
                 )
 
         val view = context.applyRemoteViews(rv)
@@ -461,12 +448,7 @@ class GlanceAppWidgetTest {
     @Config(minSdk = 31)
     @Test
     fun composeForPreview_sizeModeResponsive() = runTest {
-        val sizes =
-            setOf(
-                DpSize(60.dp, 80.dp),
-                DpSize(100.dp, 70.dp),
-                DpSize(120.dp, 100.dp),
-            )
+        val sizes = setOf(DpSize(60.dp, 80.dp), DpSize(100.dp, 70.dp), DpSize(120.dp, 100.dp))
         val rv =
             TestWidget.forPreview(SizeMode.Responsive(sizes)) {
                     val size = LocalSize.current

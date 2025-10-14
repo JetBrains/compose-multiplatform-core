@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.os.Build;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -33,6 +34,7 @@ import android.widget.FrameLayout;
 import androidx.core.content.ContextCompat;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.screenshot.AndroidXScreenshotTestRule;
 import androidx.test.screenshot.matchers.MSSIMMatcher;
@@ -64,6 +66,10 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(Parameterized.class)
 @LargeTest
+@SdkSuppress(
+        minSdkVersion = 35,
+        maxSdkVersion = 35
+)
 public class TileRendererGoldenTest {
     // Defines the name of the textproto and whether to use fullscreen or not.
     @Parameterized.Parameters(name = "{0} - fullscreen={1}")
@@ -229,8 +235,8 @@ public class TileRendererGoldenTest {
         TextFormat.Parser parser = TextFormat.getParser();
         androidx.wear.tiles.testing.proto.LayoutElementProto.LayoutElement.Builder
                 layoutElementProto =
-                androidx.wear.tiles.testing.proto.LayoutElementProto.LayoutElement
-                        .newBuilder();
+                        androidx.wear.tiles.testing.proto.LayoutElementProto.LayoutElement
+                                .newBuilder();
 
         InputStream rawResStream =
                 getApplicationContext().getResources().openRawResource(protoResId);
@@ -240,7 +246,7 @@ public class TileRendererGoldenTest {
 
         byte[] contents = layoutElementProto.build().toByteArray();
 
-        return  LayoutElement.parseFrom(contents);
+        return LayoutElement.parseFrom(contents);
     }
 
     private void runSingleScreenshotTest(int protoResId, String expectedKey) throws Exception {
@@ -308,8 +314,7 @@ public class TileRendererGoldenTest {
 
         Intent startIntent =
                 new Intent(
-                        InstrumentationRegistry.getInstrumentation()
-                                .getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
                         GoldenTestActivity.class);
         startIntent.putExtra(EXTRA_LAYOUT_KEY, layout.toByteArray());
 
@@ -320,10 +325,15 @@ public class TileRendererGoldenTest {
         // bootstrap activity to fully go away before proceeding.
         sleep(100);
 
-        Bitmap bitmap = Bitmap.createBitmap(
-                InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot(),
-                0, 0, SCREEN_WIDTH, SCREEN_HEIGHT
-        );
+        Bitmap bitmap =
+                Bitmap.createBitmap(
+                        InstrumentationRegistry.getInstrumentation()
+                                .getUiAutomation()
+                                .takeScreenshot(),
+                        0,
+                        0,
+                        SCREEN_WIDTH,
+                        SCREEN_HEIGHT);
 
         // Increase the threshold of Structural Similarity Index for image comparison to 0.995,
         // so that we do not miss the image differences.

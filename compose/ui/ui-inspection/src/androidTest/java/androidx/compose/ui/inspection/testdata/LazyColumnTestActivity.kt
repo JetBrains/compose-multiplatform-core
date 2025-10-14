@@ -33,7 +33,7 @@ class LazyColumnTestActivity : ComponentActivity() {
                     item {
                         Text(
                             modifier = Modifier.fillParentMaxHeight(0.1f),
-                            text = "Hello number: $i"
+                            text = "Hello number: $i",
                         )
                     }
                 }

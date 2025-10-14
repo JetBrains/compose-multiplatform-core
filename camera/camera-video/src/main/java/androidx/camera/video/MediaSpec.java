@@ -19,12 +19,12 @@ package androidx.camera.video;
 import android.annotation.SuppressLint;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
-import android.media.MediaMuxer;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.video.internal.encoder.EncoderConfig;
+import androidx.camera.video.internal.muxer.Muxer;
 import androidx.core.util.Consumer;
 
 import com.google.auto.value.AutoValue;
@@ -104,13 +104,13 @@ public abstract class MediaSpec {
     static int outputFormatToMuxerFormat(@OutputFormat int outputFormat) {
         switch (outputFormat) {
             case MediaSpec.OUTPUT_FORMAT_WEBM:
-                return MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM;
+                return Muxer.MUXER_FORMAT_WEBM;
             case MediaSpec.OUTPUT_FORMAT_MPEG_4:
                 // Fall-through
             case MediaSpec.OUTPUT_FORMAT_AUTO:
                 // Fall-through
             default:
-                return MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
+                return Muxer.MUXER_FORMAT_MPEG_4;
         }
     }
 

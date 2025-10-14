@@ -137,12 +137,12 @@ fun TextButtonWithAnimatedShapeSample() {
 fun ButtonWithIconSample() {
     Button(
         onClick = { /* Do something! */ },
-        contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
     ) {
         Icon(
             Icons.Filled.Favorite,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.IconSize)
+            modifier = Modifier.size(ButtonDefaults.IconSize),
         )
         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
         Text("Like")
@@ -158,12 +158,12 @@ fun XSmallButtonWithIconSample() {
     Button(
         onClick = { /* Do something! */ },
         modifier = Modifier.heightIn(size),
-        contentPadding = ButtonDefaults.contentPaddingFor(size)
+        contentPadding = ButtonDefaults.contentPaddingFor(size),
     ) {
         Icon(
             Icons.Filled.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
         )
         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
         Text("Label")
@@ -179,12 +179,12 @@ fun MediumButtonWithIconSample() {
     Button(
         onClick = { /* Do something! */ },
         modifier = Modifier.heightIn(size),
-        contentPadding = ButtonDefaults.contentPaddingFor(size)
+        contentPadding = ButtonDefaults.contentPaddingFor(size),
     ) {
         Icon(
             Icons.Filled.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
         )
         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
         Text("Label", style = ButtonDefaults.textStyleFor(size))
@@ -200,12 +200,12 @@ fun LargeButtonWithIconSample() {
     Button(
         onClick = { /* Do something! */ },
         modifier = Modifier.heightIn(size),
-        contentPadding = ButtonDefaults.contentPaddingFor(size)
+        contentPadding = ButtonDefaults.contentPaddingFor(size),
     ) {
         Icon(
             Icons.Filled.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
         )
         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
         Text("Label", style = ButtonDefaults.textStyleFor(size))
@@ -221,12 +221,12 @@ fun XLargeButtonWithIconSample() {
     Button(
         onClick = { /* Do something! */ },
         modifier = Modifier.heightIn(size),
-        contentPadding = ButtonDefaults.contentPaddingFor(size)
+        contentPadding = ButtonDefaults.contentPaddingFor(size),
     ) {
         Icon(
             Icons.Filled.Edit,
             contentDescription = "Localized description",
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
         )
         Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
         Text("Label", style = ButtonDefaults.textStyleFor(size))

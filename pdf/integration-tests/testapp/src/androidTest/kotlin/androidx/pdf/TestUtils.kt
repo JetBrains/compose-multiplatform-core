@@ -61,16 +61,16 @@ object TestUtils {
         assertNotNull("Could not extract total pages $value", matchResult.groups[2])
         assertNotNull(
             "Invalid current page number string $value",
-            matchResult.groups[1]!!.value.toIntOrNull()
+            matchResult.groups[1]!!.value.toIntOrNull(),
         )
         assertNotNull(
             "Invalid total pages string $value",
-            matchResult.groups[2]!!.value.toIntOrNull()
+            matchResult.groups[2]!!.value.toIntOrNull(),
         )
 
         onExtractionCompleted(
             matchResult.groups[1]!!.value.toInt(),
-            matchResult.groups[2]!!.value.toInt()
+            matchResult.groups[2]!!.value.toInt(),
         )
     }
 }

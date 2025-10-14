@@ -182,7 +182,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
             assertTrue("Expected all remember observers to be kept alive") {
                 rememberedObject.all { it.isLive }
@@ -272,7 +272,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
             assertTrue("Expected all remember observers to be kept alive") {
                 rememberObservers.all { it.isLive }
@@ -325,7 +325,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
         }
 
@@ -381,7 +381,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
         }
 
@@ -750,8 +750,9 @@ class MovableContentTests {
     }
 
     @Test
+    @Suppress("RememberInComposition") // See note below
     fun compositionLocalsShouldBeAvailable() = compositionTest {
-        var someValue by mutableStateOf(0)
+        var someValue by mutableIntStateOf(0)
         val local = staticCompositionLocalOf<Int> { error("No value provided for local") }
 
         compose {
@@ -1546,7 +1547,6 @@ class MovableContentTests {
 
         condition = true
         expectChanges()
-        println("Done")
         revalidate()
         verifyConsistent()
     }
@@ -1808,6 +1808,53 @@ class MovableContentTests {
         index++
         advance()
     }
+
+    @Test
+    fun moveContentBetweenSubcompositions() = compositionTest {
+        var inSubcompose by mutableStateOf(true)
+        val content = movableContentOf { Text("Some text") }
+        compose {
+            if (inSubcompose) {
+                Subcompose { content() }
+            } else {
+                DeferredSubcompose { content() }
+            }
+        }
+
+        inSubcompose = false
+        advance()
+    }
+
+    @Test
+    fun movableContentReactivated() = compositionTest {
+        var value by mutableStateOf(true)
+        var text by mutableStateOf("text")
+        val movableContent = movableContentOf { Linear { Text(text) } }
+
+        val content =
+            @Composable {
+                if (value) {
+                    movableContent()
+                } else {
+                    movableContent()
+                }
+            }
+
+        compose(content)
+        validate { Linear { Text(text) } }
+
+        val c = composition as ReusableComposition
+        c.deactivate()
+        value = false
+        c.setContentWithReuse(content)
+
+        c.deactivate()
+        value = true
+        text = "new text"
+        c.setContentWithReuse(content)
+
+        revalidate()
+    }
 }
 
 @Composable
@@ -1838,7 +1885,7 @@ private fun MockViewValidator.Column(block: MockViewValidator.() -> Unit) {
 private fun Text(text: String) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Text" } },
-        update = { set(text) { attributes["text"] = it } }
+        update = { set(text) { attributes["text"] = it } },
     )
 }
 
@@ -1860,16 +1907,16 @@ private fun MockViewValidator.Marker() {
 private fun Marker(value: Int) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Marker" } },
-        update = { set(value) { attributes["value"] = it } }
+        update = { set(value) { attributes["value"] = it } },
     )
 }
 
 @Composable
-private fun Stack(isHorizontal: Boolean, block: @Composable () -> Unit) {
+private fun Stack(isHorizontal: Boolean, content: @Composable () -> Unit) {
     if (isHorizontal) {
-        Column(block)
+        Column(content)
     } else {
-        Row(block)
+        Row(content)
     }
 }
 

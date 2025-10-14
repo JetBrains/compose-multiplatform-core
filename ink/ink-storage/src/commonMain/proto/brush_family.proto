@@ -18,18 +18,52 @@ syntax = "proto2";
 
 package androidx.ink.storage.proto;
 
+import "color.proto";
+
 // Specifies a list of `BrushCoat`s that determine the stroke shape and dynamic
 // input response and the shading of the stroke geometry. The `BrushFamily` can
 // optionally be identified by setting a non-empty `client_brush_family_id`.
 message BrushFamily {
+
   // Spring-based input modeler. Stored in the `InputModel` variant below to
   // allow future input models to be added without changing the shape of
   // existing strokes.
   message SpringModel {}
 
+  // Model that attempts to preserve input positions as closely as possible.
+  // This is an experimental configuration which may be adjusted or removed
+  // later. Strokes generated with this input model might change shape if read
+  // with a later version of the code that has removed this feature.
+  message ExperimentalRawPositionModel {}
+
+  // A naive model that passes through raw inputs mostly unchanged.  This is an
+  // experimental configuration which may be adjusted or removed later. Strokes
+  // generated with this input model might change shape if read with a later
+  // version of the code that has removed this feature.
+  message ExperimentalNaiveModel {}
+
+  // Averages nearby inputs together within a sliding time window.
+  message SlidingWindowModel {
+    // The duration over which to average together nearby raw inputs. Typically
+    // this should be somewhere in the 1 ms to 100 ms range. The default value
+    // is 20 ms.
+    optional float window_size_seconds = 1 [default = 0.02];
+    // The maximum duration between modeled inputs; if raw inputs are spaced
+    // more than this far apart in time, then additional modeled inputs will be
+    // inserted between them. Set this to infinity to disable upsampling.  The
+    // default value is 1/180 seconds.
+    //
+    // This is an experimental field which may be removed later.
+    optional float experimental_upsampling_period_seconds = 2
+        [default = 0.00555555555];
+  }
+
   message InputModel {
     oneof input_model {
       SpringModel spring_model = 2;
+      ExperimentalRawPositionModel experimental_raw_position_model = 3;
+      ExperimentalNaiveModel experimental_naive_model = 4;
+      SlidingWindowModel sliding_window_model = 5;
     }
     // Was legacy InputModel type, reserved needs to be outside oneof
     reserved 1;
@@ -61,12 +95,21 @@ message BrushFamily {
   map<string, bytes> texture_id_to_bitmap = 6;
 }
 
-// One coat of paint applied by a brush. It includes a `BrushPaint` and a
-// `BrushTip` used to apply that paint. Multiple `BrushCoats` can be combined
-// within a single brush; see `BrushFamily.coats` for details.
+// A `BrushCoat` represents one coat of ink applied by a brush. It includes a
+// `BrushTip` that describes the structure of that coat, and a non-empty list of
+// possible `BrushPaint` objects - each one describes how to render the coat
+// structure, and the one `BrushPaint` that is actually used is the first one in
+// the list that is compatible with the device and renderer. Multiple
+// `BrushCoat`s can be combined within a single brush; when a stroke drawn by a
+// multi-coat brush is rendered, each coat of ink will be drawn entirely atop
+// the previous coat, even if the stroke crosses over itself, as though each
+// coat were painted in its entirety one at a time.
 message BrushCoat {
   optional BrushTip tip = 1;
-  optional BrushPaint paint = 2;
+  optional BrushPaint paint = 2 [deprecated = true];
+  // If empty, the `paint` field above will be used as the only entry. If that
+  // is also not set, the default `BrushPaint` will be used.
+  repeated BrushPaint paint_preferences = 3;
 }
 
 // Parameters that control how stroke inputs are used to model the tip shape and
@@ -132,11 +175,8 @@ message BrushTip {
   // `scale`, `pinch`, and `slant`.
   optional float rotation_radians = 6;
 
-  // Scales the opacity of the base brush color for this tip, independent of
-  // `brush_behavior`s. A possible example application is a highlighter brush.
-  // The multiplier must be in the range [0, 2] and the value ultimately applied
-  // can be modified by applicable `brush_behavior`s.
-  optional float opacity_multiplier = 8 [default = 1.0];
+  // DEPRECATED: Use brush paint color functions instead.
+  optional float opacity_multiplier = 8 [default = 1.0, deprecated = true];
 
   // Controls emission of particles as a function of distance traveled by the
   // stroke inputs. The value must be finite and non-negative.
@@ -164,43 +204,59 @@ message BrushTip {
 // Parameters that describe how a stroke mesh should be rendered.
 message BrushPaint {
   message TextureLayer {
+
     // Texture wrapping modes for specifying `TextureLayer::wrap_x` and
     // `wrap_y`.
     enum Wrap {
       WRAP_UNSPECIFIED = 0;
+
       // Repeats texture image horizontally/vertically.
       WRAP_REPEAT = 1;
+
       // Repeats texture image horizontally/vertically, alternating mirror
       // images so that adjacent edges always match.
       WRAP_MIRROR = 2;
+
       // Points outside of the texture have the color of the nearest texture
       // edge point. This mode is typically most useful when the edge pixels of
       // the texture image are all the same, e.g. either transparent or a single
       // solid color.
       WRAP_CLAMP = 3;
     }
+
+
     // Units for specifying `TextureLayer::size`.
     enum SizeUnit {
       SIZE_UNIT_UNSPECIFIED = 0;
+
       // In the same units as the provided `StrokeInput` position.
       SIZE_UNIT_STROKE_COORDINATES = 1;
+
       // As multiples of brush size.
       SIZE_UNIT_BRUSH_SIZE = 2;
+
       reserved 3;
     }
+
+
     // Specification of the origin point to use for the texture.
     enum Origin {
       ORIGIN_UNSPECIFIED = 0;
+
       // The texture origin is the origin of stroke space, however that happens
       // to be defined for a given stroke.
       ORIGIN_STROKE_SPACE_ORIGIN = 1;
+
       // The texture origin is the first input position for the stroke.
       ORIGIN_FIRST_STROKE_INPUT = 2;
+
       // The texture origin is the last input position (including predicted
       // inputs) for the stroke. Note that this means that the texture origin
       // for an in-progress stroke will move as more inputs are added.
       ORIGIN_LAST_STROKE_INPUT = 3;
     }
+
+
     // Specification of how the texture should be applied to the stroke.
     enum Mapping {
       MAPPING_UNSPECIFIED = 0;
@@ -210,12 +266,14 @@ message BrushPaint {
       // shape modulo reflections.
       MAPPING_TILING = 1;
 
-      // The texture will morph to "wind along the path of the stroke." The
-      // horizontal axis of texture space will lie along the width of the stroke
-      // and the vertical axis will lie along the direction of travel of the
-      // stroke at each point.
-      MAPPING_WINDING = 2;
+      // This mode is intended for use with particle brush coats (i.e. with a
+      // brush tip with a nonzero particle gap). A copy of the texture (or one
+      // animation frame thereof) will be "stamped" onto each particle of the
+      // stroke, scaled or rotated appropriately to cover the whole particle.
+      MAPPING_STAMPING = 2;
     }
+
+
     // Setting for how an incoming ("source" / "src") color should be combined
     // with the already present ("destination" / "dst") color at a given pixel.
     enum BlendMode {
@@ -376,10 +434,42 @@ message BrushPaint {
     optional Wrap wrap_y = 19 [default = WRAP_REPEAT];
 
     reserved 20;
+    reserved 21;
+    reserved 22;
+    reserved 23;
   }
 
-  // The textures to apply to the stroke
+  // Specifies how parts of the stroke that intersect itself should be treated
+  // during the rendering process. The simplest example of this is with
+  // translucent, solid-color strokes - such as a highlighter - where a later
+  // part of a stroke that overlaps an earlier part of itself may appear with
+  // either double the opacity (self overlap is accumulated) or the same opacity
+  // (self overlap is discarded). More complex examples may involve color or
+  // opacity variations (e.g. with
+  // `BrushBehavior::Target::HUE_OFFSET_IN_RADIANS`), or complex textures (e.g.
+  // with `TextureMapping::kStamping`).
+  enum SelfOverlap {
+    SELF_OVERLAP_UNSPECIFIED = 0;
+    SELF_OVERLAP_ANY = 1;
+    SELF_OVERLAP_ACCUMULATE = 2;
+    SELF_OVERLAP_DISCARD = 3;
+  }
+
+  // Zero or more textures to blend together to affect this coat's appearance.
+  // Each layer is blended into the next one, and finally into the color of the
+  // paint, according to each layer's `blend_mode`.
   repeated TextureLayer texture_layers = 1;
+
+  // Transforms the brush color to be used as an alternative base color for any
+  // effects or textures in a `BrushCoat`. Each function is applied in the order
+  // they are specified.
+  //
+  // If this list is empty, the brush color will be used unchanged.
+  repeated ColorFunction color_functions = 2;
+
+  // How parts of the stroke that intersect itself should be treated during the
+  // rendering process. See `SelfOverlap` for more details.
+  optional SelfOverlap self_overlap = 3 [default = SELF_OVERLAP_ANY];
 }
 
 // A behavior describing how stroke input properties should affect the shape and
@@ -403,15 +493,19 @@ message BrushPaint {
 //   the brush tip. For example, a TargetNode is a terminal node that modifies
 //   a scalar brush tip property like a brush width multiplier.
 //
-// The behavior is specified by a single list of nodes that represents a
-// flattened, post-order traversal of the graph. The simplest form of behavior
-// consists of two nodes:
+// The behavior is specified by a single list of nodes that encode one or more
+// directed trees, where edges point from the leaves (Start nodes) up to the
+// root (a Terminal node). The order of the nodes in the list is given by a
+// post-order traversal of each tree, ignoring edge orientations.
+//
+// The simplest form of behavior consists of two nodes:
 //
 //                     +--------+      +--------+
 //                     | Source | ---> | Target |
 //                     +--------+      +--------+
 //
 // This behavior would be represented by the list {Source, Target}.
+//
 // A more complex behavior could use two source values for a single target:
 //
 //             +----------+      +-----+
@@ -425,31 +519,43 @@ message BrushPaint {
 // This could be represented by the list {Source 1, Source 2, Max, Target}.
 //
 // For each input in a stroke, `BrushTip::behaviors` are applied as follows:
-//   1. A target modifier for each tip
-//   property is accumulated from every `BrushBehavior` present on the current
-//   `BrushTip`:
-//     * Multiple behaviors can affect the same `Target`.
-//     * Depending on the `Target`, modifiers from multiple behaviors will stack
-//     either additively or multiplicatively, according to the descriptions on
-//     that `BrushBehavior::Target`.
-//     * Regardless, the order of specified behaviors does not affect the
-//     result.
+//   1. A target modifier for each tip property is accumulated from every
+//      `BrushBehavior` present on the current `BrushTip`:
+//       * Multiple behaviors can affect the same `Target`.
+//       * Depending on the `Target`, modifiers from multiple behaviors will
+//         stack either additively or multiplicatively, according to the
+//         descriptions on that `BrushBehavior::Target`.
+//       * Regardless, the order of specified behaviors does not affect the
+//         result.
 //   2. The modifiers are applied to the shape and color shift values of the
-//   tip's state according to the descriptions on each `Target`. The resulting
-//   tip property values are then clamped or normalized to within their valid
-//   range of values. E.g. the final value of `BrushTip::corner_rounding` will
-//   be clamped within [0, 1]. Generally:
-//     * The affected shape values are those found in `BrushTip` members.
-//     * The color shift values remain in the range -100% to +100%. Note that
-//     when stored on a vertex, the color shift is encoded such that each
-//     channel is in the range [0, 1], where 0.5 represents a 0% shift.
+//      tip's state according to the descriptions on each `Target`. The
+//      resulting tip property values are then clamped or normalized to within
+//      their valid range of values. E.g. the final value of
+//      `BrushTip::corner_rounding` will be clamped within [0, 1]. Generally:
+//       * The affected shape values are those found in `BrushTip` members.
+//       * The color shift values remain in the range -100% to +100%. Note that
+//         when stored on a vertex, the color shift is encoded such that each
+//         channel is in the range [0, 1], where 0.5 represents a 0% shift.
 //
 // Note that the accumulated tip shape property modifiers may be adjusted by the
 // implementation before being applied: the rates of change of shape properties
 // may be constrained to keep them from changing too rapidly with respect to
 // distance traveled from one input to the next.
 message BrushBehavior {
+
   // A stroke input property, along with its units, that can act as a source for
+  // a `BrushBehavior.SourceNode`.
+  //
+  // Behaviors that consider properties of the stroke input do not consider
+  // alterations to the visible position of that point in the stroke by brush
+  // behaviors that modify that position (e.g.
+  // Target::TARGET_POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE). That is, the
+  // position, velocity, and acceleration of the stroke input may not match the
+  // visible position, velocity, and acceleration of that point in the drawn
+  // stroke. The stroke inputs considered by these behaviors are specifically
+  // the "modeled" inputs used to construct the stroke geometry, which may be
+  // upsampled, denoised, or otherwise transformed from the raw stroke input
+  // (see `BrushFamily::InputModel`).
   enum Source {
     SOURCE_UNSPECIFIED = 0;
 
@@ -477,24 +583,29 @@ message BrushBehavior {
     // Stylus orientation with values reported in the range (-π, π].
     SOURCE_ORIENTATION_ABOUT_ZERO_IN_RADIANS = 6;
 
-    // Pointer speed with values >= 0 in distance units per second, where one
-    // distance unit is equal to the brush size.
+    // Absolute speed of the modeled stroke input in multiples of the brush size
+    // per second. Note that this value doesn't take into account brush
+    // behaviors that offset the position of the visual tip of the stroke.
     SOURCE_SPEED_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND = 7;
 
-    // Signed x component of pointer velocity in distance units per second,
-    // where one distance unit is equal to the brush size.
+    // Signed x component of the velocity of the modeled stroke input in
+    // multiples of the brush size per second. Note that this value doesn't take
+    // into account brush behaviors that offset the visible position of that
+    // point in the stroke.
     SOURCE_VELOCITY_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND = 8;
 
-    // Signed y component of pointer velocity in distance units per second,
-    // where one distance unit is equal to the brush size.
+    // Signed y component of the velocity of the modeled stroke input in
+    // multiples of the brush size per second. Note that this value doesn't take
+    // into account brush behaviors that offset the visible position of that
+    // point in the stroke.
     SOURCE_VELOCITY_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND = 9;
 
-    // Signed x component of the normalized travel direction, with values in the
-    // range [-1, 1].
+    // Signed x component of the modeled stroke input's current direction of
+    // travel in stroke coordinate space, normalized to the range [-1, 1].
     SOURCE_NORMALIZED_DIRECTION_X = 10;
 
-    // Signed y component of the normalized travel direction, with values in the
-    // range [-1, 1].
+    // Signed y component of the modeled stroke input's current direction of
+    // travel in stroke coordinate space, normalized to the range [-1, 1].
     SOURCE_NORMALIZED_DIRECTION_Y = 11;
 
     // Distance traveled by the inputs of the current stroke, starting at 0 at
@@ -512,172 +623,155 @@ message BrushBehavior {
     SOURCE_TIME_OF_INPUT_IN_MILLIS = 14;
 
     // Distance traveled by the inputs of the current prediction, starting at 0
-    // at the last non-predicted input, where one distance unit is equal to the
-    // brush size. For cases where prediction hasn't started yet, we don't
-    // return a negative value, but clamp to a min of 0.
+    // at the last non-predicted input, in multiples of the brush size. Zero for
+    // inputs before the predicted portion of the stroke.
     SOURCE_PREDICTED_DISTANCE_TRAVELED_IN_MULTIPLES_OF_BRUSH_SIZE = 15;
 
     // Elapsed time (in seconds) of the prediction, starting at 0 at the last
-    // non-predicted input. For cases where prediction hasn't started yet, we
-    // don't return a negative value, but clamp to a min of 0.
+    // non-predicted input. Zero for inputs before the predicted portion of the
+    // stroke.
     SOURCE_PREDICTED_TIME_ELAPSED_IN_SECONDS = 16;
 
     // Elapsed time (in milliseconds) of the prediction, starting at 0 at the
-    // last non-predicted input. For cases where prediction hasn't started yet,
-    // we don't return a negative value, but clamp to a min of 0.
+    // last non-predicted input. Zero for inputs before the predicted portion of
+    // the stroke.
     SOURCE_PREDICTED_TIME_ELAPSED_IN_MILLIS = 17;
 
-    // The distance left to be traveled from a given input to the current last
-    // input of the stroke, where one distance unit is equal to the brush size.
+    // The distance left to be traveled from a given modeled input to the
+    // current last modeled input of the stroke in multiples of the brush size.
     // This value changes for each input as the stroke is drawn.
     SOURCE_DISTANCE_REMAINING_IN_MULTIPLES_OF_BRUSH_SIZE = 18;
 
-    // The amount of time (in seconds) that has elapsed since this part of the
-    // stroke was drawn. This continues to increase even after all stroke inputs
-    // have completed, and can be used to drive stroke animations. These
-    // enumerators are only compatible with a `source_out_of_range_behavior` of
-    // `OUT_OF_RANGE_CLAMP`, to ensure that the animation will eventually end.
+    // Time elapsed (in seconds) since the modeled stroke input. This continues
+    // to increase even after all stroke inputs have completed, and can be used
+    // to drive stroke animations. These enumerators are only compatible with a
+    // `source_out_of_range_behavior` of `OUT_OF_RANGE_CLAMP`, to ensure that
+    // the animation will eventually end.
     SOURCE_TIME_SINCE_INPUT_IN_SECONDS = 19;
 
-    // The amount of time (in milliseconds) that has elapsed since this part of
-    // the stroke was drawn. This continues to increase even after all stroke
-    // inputs have completed, and can be used to drive stroke animations. These
-    // enumerators are only compatible with a `source_out_of_range_behavior` of
+    // Time elapsed (in milliseconds) since the modeled stroke input. This
+    // continues to increase even after all stroke inputs have completed, and
+    // can be used to drive stroke animations. These enumerators are only
+    // compatible with a `source_out_of_range_behavior` of
     // `OUT_OF_RANGE_CLAMP`, to ensure that the animation will eventually end.
     SOURCE_TIME_SINCE_INPUT_IN_MILLIS = 20;
 
-    // The angle of the stroke's current direction of travel in stroke space,
-    // normalized to the range [0, 2π). A value of 0 indicates the direction of
-    // the positive X-axis in stroke space; a value of π/2 indicates the
-    // direction of the positive Y-axis in stroke space.
+    // Angle of the modeled stroke input's current direction of travel in stroke
+    // coordinate space, normalized to the range [0, 2π). A value of 0 indicates
+    // the direction of the positive x-axis; a value of π/2 indicates the
+    // direction of the positive y-axis.
     SOURCE_DIRECTION_IN_RADIANS = 21;
 
-    // The angle of the stroke's current direction of travel in stroke space,
-    // normalized to the range (-π, π]. A value of 0 indicates the direction of
-    // the positive X-axis in stroke space; a value of π/2 indicates the
-    // direction of the positive Y-axis in stroke space.
+    // Angle of the modeled stroke input's current direction of travel in stroke
+    // coordinate space, normalized to the range (-π, π]. A value of 0 indicates
+    // the direction of the positive x-axis; a value of π/2 indicates the
+    // direction of the positive y-axis.
     SOURCE_DIRECTION_ABOUT_ZERO_IN_RADIANS = 22;
 
     reserved 23;
 
-    // Directionless pointer acceleration with values >= 0 in distance units per
-    // second squared, where one distance unit is equal to the brush size.
+    // Absolute acceleration of the modeled stroke input in multiples of the
+    // brush size per second squared. Note that this value doesn't take into
+    // account brush behaviors that offset the position of that visible point in
+    // the stroke.
     SOURCE_ACCELERATION_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED = 24;
 
-    // Signed x component of pointer acceleration in distance units per second
-    // squared, where one distance unit is equal to the brush size.
+    // Signed x component of the acceleration of the modeled stroke input
+    // in multiples of the brush size per second squared. Note that this value
+    // doesn't take into account brush behaviors that offset the position of
+    // that visible point in the stroke.
     SOURCE_ACCELERATION_X_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED = 25;
 
-    // Signed y component of pointer acceleration in distance units per second
-    // squared, where one distance unit is equal to the brush size.
+    // Signed y component of the acceleration of the modeled stroke input
+    // in multiples of the brush size per second squared. Note that this value
+    // doesn't take into account brush behaviors that offset the position of
+    // that visible point in the stroke.
     SOURCE_ACCELERATION_Y_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED = 26;
 
-    // Pointer acceleration along the current direction of travel in distance
-    // units per second squared, where one distance unit is equal to the brush
-    // size. A positive value indicates that the pointer is accelerating along
-    // the current direction of travel, while a negative value indicates that
-    // the pointer is decelerating.
+    // Signed component of acceleration of the modeled stroke input in the
+    // direction of its velocity in multiples of the brush size per second
+    // squared. Note that this value doesn't take into account brush behaviors
+    // that offset the position of that visible point in the stroke.
     SOURCE_ACCELERATION_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED =
         27;
 
-    // Pointer acceleration perpendicular to the current direction of travel in
-    // distance units per second squared, where one distance unit is equal to
-    // the brush size. If the X- and Y-axes of stroke space were rotated so that
-    // the positive X-axis points in the direction of stroke travel, then a
-    // positive value for this source indicates acceleration along the positive
-    // Y-axis (and a negative value indicates acceleration along the negative
-    // Y-axis).
+    // Signed component of acceleration of the modeled stroke input
+    // perpendicular to its velocity, rotated 90 degrees in the direction from
+    // the positive x-axis towards the positive y-axis, in multiples of the
+    // brush size per second squared. Note that this value doesn't take into
+    // account brush behaviors that offset the position of that visible point
+    // in the stroke.
     SOURCE_ACCELERATION_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE_PER_SECOND_SQUARED =
         28;
 
-    // The physical speed of the input pointer at the point in question, in
-    // centimeters per second.
+    // Absolute speed of the modeled stroke input pointer in centimeters per
+    // second.
     SOURCE_INPUT_SPEED_IN_CENTIMETERS_PER_SECOND = 29;
 
-    // Signed x component of the physical velocity of the input pointer at the
-    // point in question, in centimeters per second.
+    // Signed x component of the modeled stroke input pointer velocity
+    // in centimeters per second.
     SOURCE_INPUT_VELOCITY_X_IN_CENTIMETERS_PER_SECOND = 30;
 
-    // Signed y component of the physical velocity of the input pointer at the
-    // point in question, in centimeters per second.
+    // Signed y component of the modeled stroke input pointer velocity
+    // in centimeters per second.
     SOURCE_INPUT_VELOCITY_Y_IN_CENTIMETERS_PER_SECOND = 31;
 
-    // The physical distance traveled by the input pointer from the start of the
-    // stroke along the input path to the point in question, in centimeters.
+    // Distance in centimeters traveled by the modeled stroke input pointer
+    // along the input path from the start of the stroke.
     SOURCE_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS = 32;
 
-    // The physical distance that the input pointer would have to travel from
-    // its actual last real position along its predicted path to reach the
-    // predicted point in question, in centimeters. For points on the stroke
-    // before the predicted portion, this has a value of zero.
+    // Distance in centimeters along the input path from the real portion of
+    // the modeled stroke to this input. Zero for inputs before the predicted
+    // portion of the stroke.
     SOURCE_PREDICTED_INPUT_DISTANCE_TRAVELED_IN_CENTIMETERS = 33;
 
-    // The directionless physical acceleration of the input pointer at the point
-    // in question, with values >= 0, in centimeters per second squared.
+    // Absolute acceleration of the modeled stroke input pointer in centimeters
+    // per second squared.
     SOURCE_INPUT_ACCELERATION_IN_CENTIMETERS_PER_SECOND_SQUARED = 34;
 
-    // Signed x component of the physical acceleration of the input pointer, in
-    // centimeters per second squared.
+    // Signed x component of the acceleration of the modeled stroke input
+    // pointer in centimeters per second squared.
     SOURCE_INPUT_ACCELERATION_X_IN_CENTIMETERS_PER_SECOND_SQUARED = 35;
 
-    // Signed y component of the physical acceleration of the input pointer, in
-    // centimeters per second squared.
+    // Signed y component of the acceleration of the modeled stroke input
+    // pointer in centimeters per second squared.
     SOURCE_INPUT_ACCELERATION_Y_IN_CENTIMETERS_PER_SECOND_SQUARED = 36;
 
-    // The physical acceleration of the input pointer along its current
-    // direction of travel at the point in question, in centimeters per second
-    // squared. A positive value indicates that the pointer is accelerating
-    // along the current direction of travel, while a negative value indicates
-    // that the pointer is decelerating.
+    // Signed component of acceleration of the modeled stroke input pointer in
+    // the direction of its velocity in centimeters per second squared.
     SOURCE_INPUT_ACCELERATION_FORWARD_IN_CENTIMETERS_PER_SECOND_SQUARED = 37;
 
-    // The physical acceleration of the input pointer perpendicular to its
-    // current direction of travel at the point in question, in centimeters per
-    // second squared. If the X- and Y-axes of stroke space were rotated so that
-    // the positive X-axis points in the direction of stroke travel, then a
-    // positive value for this source indicates acceleration along the positive
-    // Y-axis (and a negative value indicates acceleration along the negative
-    // Y-axis).
+    // Signed component of acceleration of the modeled stroke input pointer
+    // perpendicular to its velocity, rotated 90 degrees in the direction from
+    // the positive x-axis towards the positive y-axis, in centimeters per
+    // second squared.
     SOURCE_INPUT_ACCELERATION_LATERAL_IN_CENTIMETERS_PER_SECOND_SQUARED = 38;
 
-    // The distance left to be traveled from a given input to the current last
-    // input of the stroke, as a fraction of the current total length of the
-    // stroke. This value changes for each input as the stroke is drawn.
+    // Distance from the current modeled input to the end of the stroke along
+    // the input path, as a fraction of the current total length of the stroke.
+    // This value changes for each input as inputs are added.
     SOURCE_DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH = 39;
   }
+
 
   // `BrushTip` properties that can be modified by a `BrushBehavior`.
   enum Target {
     TARGET_UNSPECIFIED = 0;
 
-    // `TARGET_WIDTH_MULTIPLIER` and `TARGET_HEIGHT_MULTIPLIER` scale the
-    // brush-tip size along one dimension, starting from the values calculated
-    // using `BrushTip::scale`, while `TARGET_SIZE_MULTIPLIER` is a convenience
-    // target that affects both width and height at once. The final brush size
-    // is clamped to a maximum of twice the base size along each dimension. If
-    // multiple behaviors have one of these targets, they stack multiplicatively
-    // (thus allowing one behavior to scale the size down to zero over time,
-    // "winning" over all other size-modifying behaviors).
+    // Scales the brush-tip width, starting from the value calculated using
+    // `BrushTip::scale_x`. The final brush width is clamped to a maximum of
+    // twice the baseline width. If multiple behaviors have this target or
+    // `TARGET_SIZE_MULTIPLIER`, they aggregate multiplicatively. (Therefore, if
+    // one behavior scales the width down to zero over time, it "wins out" over
+    // all other width-modifying behaviors.)
     TARGET_WIDTH_MULTIPLIER = 1;
 
-    // `TARGET_WIDTH_MULTIPLIER` and `TARGET_HEIGHT_MULTIPLIER` scale the
-    // brush-tip size along one dimension, starting from the values calculated
-    // using `BrushTip::scale`, while `TARGET_SIZE_MULTIPLIER` is a convenience
-    // target that affects both width and height at once. The final brush size
-    // is clamped to a maximum of twice the base size along each dimension. If
-    // multiple behaviors have one of these targets, they stack multiplicatively
-    // (thus allowing one behavior to scale the size down to zero over time,
-    // "winning" over all other size-modifying behaviors).
+    // Same as `TARGET_WIDTH_MULTIPLIER` but for height. Clamping and
+    // aggregation work the same way as for width.
     TARGET_HEIGHT_MULTIPLIER = 2;
 
-    // `TARGET_WIDTH_MULTIPLIER` and `TARGET_HEIGHT_MULTIPLIER` scale the
-    // brush-tip size along one dimension, starting from the values calculated
-    // using `BrushTip::scale`, while `TARGET_SIZE_MULTIPLIER` is a convenience
-    // target that affects both width and height at once. The final brush size
-    // is clamped to a maximum of twice the base size along each dimension. If
-    // multiple behaviors have one of these targets, they stack multiplicatively
-    // (thus allowing one behavior to scale the size down to zero over time,
-    // "winning" over all other size-modifying behaviors).
+    // A convenience target that affects both width and height at once, in the
+    // same way that `TARGET_WIDTH_MULTIPLIER` does.
     TARGET_SIZE_MULTIPLIER = 3;
 
     // Adds the target modifier to `BrushTip::slant`. The final brush slant
@@ -737,32 +831,30 @@ message BrushBehavior {
     // each part of the stroke.
     TARGET_OPACITY_MULTIPLIER = 11;
 
-    // Adds the target modifier to the brush tip x/y position, where one
-    // distance unit is equal to the brush size.
+    // Adds the target modifier to the brush tip x position in multiples of
+    // the brush size.
     TARGET_POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE = 12;
 
-    // Adds the target modifier to the brush tip x/y position, where one
-    // distance unit is equal to the brush size.
+    // Adds the target modifier to the brush tip y position in multiples of
+    // the brush size.
     TARGET_POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE = 13;
 
-    // Moves the brush tip center forward (or backward, for negative values)
-    // from the input position, in the current direction of stroke travel, where
-    // one distance unit is equal to the brush size.
+    // Moves the brush tip by the target modifier times the brush size in the
+    // direction of the modeled stroke input's velocity (the opposite direction
+    // if the value is negative).
     TARGET_POSITION_OFFSET_FORWARD_IN_MULTIPLES_OF_BRUSH_SIZE = 14;
 
-    // Moves the brush tip center sideways from the input position, relative to
-    // the direction of stroke travel, where one distance unit is equal to the
-    // brush size. If the X- and Y-axes of stroke space were rotated so that the
-    // positive X-axis points in the direction of stroke travel, then a positive
-    // value for this offset moves the brush tip center towards the positive
-    // Y-axis (and a negative value moves the brush tip center towards the
-    // negative Y-axis).
+    // Moves the brush tip by the target modifier times the brush size
+    // perpendicular to the modeled stroke input's velocity, rotated 90 degrees
+    // in the direction from the positive x-axis to the positive y-axis.
     TARGET_POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE = 15;
 
     reserved 16;
     reserved 17;
   }
 
+
+  // Like `Target`, but for vector values.
   enum PolarTarget {
     POLAR_UNSPECIFIED = 0;
 
@@ -785,6 +877,7 @@ message BrushBehavior {
     // negative Y-axis.
     POLAR_POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE = 2;
   }
+
 
   // The desired behavior when an input value is outside the bounds of
   // `source_value_range`.
@@ -810,6 +903,7 @@ message BrushBehavior {
     OUT_OF_RANGE_MIRROR = 3;
   }
 
+
   // List of input properties that might not be reported by `StrokeInput`.
   enum OptionalInputProperty {
     OPTIONAL_INPUT_UNSPECIFIED = 0;
@@ -821,6 +915,7 @@ message BrushBehavior {
     OPTIONAL_INPUT_TILT_X_AND_Y = 4;
   }
 
+
   // A binary operation for combining two values in a `BinaryOpNode`.
   enum BinaryOp {
     BINARY_OP_UNSPECIFIED = 0;
@@ -831,6 +926,7 @@ message BrushBehavior {
     // A + B, or null if either is null
     BINARY_OP_SUM = 2;
   }
+
 
   // Dimensions/units for measuring the `damping_gap` field of a `DampingNode`.
   enum DampingSource {
@@ -852,6 +948,7 @@ message BrushBehavior {
     // `damping_gap` is measured in multiples of the brush size.
     DAMPING_SOURCE_DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE = 3;
   }
+
 
   // An interpolation function for combining three values in an
   // `InterpolationNode`.
@@ -1087,7 +1184,7 @@ message BrushBehavior {
   // To be valid:
   //   * `target` must be a valid `PolarTarget` enumerator.
   //   * The endpoints of `angle_range` and of `magnitude_range` must be finite
-  //   and distinct.
+  //     and distinct.
   message PolarTargetNode {
     // What aspect of the brush to affect, and how.
     optional PolarTarget target = 1;
@@ -1111,6 +1208,16 @@ message BrushBehavior {
   // Were fields controlling brush behavior, use `nodes` instead.
   reserved 1 to 14;
 }
+
+// Transforms the brush color to be used as an alternative base color for any
+// effects or textures in a `BrushCoat`.
+message ColorFunction {
+  oneof function {
+    float opacity_multiplier = 1;
+    Color replace_color = 2;
+  }
+}
+
 
 // Specifies a predefined easing function.
 enum PredefinedEasingFunction {
@@ -1197,29 +1304,30 @@ message LinearEasingFunction {
   repeated float y = 2 [packed = true];
 }
 
+
 // Setting to determine the desired output value of the first and last
-// step of [0, 1) for the Steps EasingFunction, see below for more context.
+// step of [0, 1) for the Steps EasingFunction. See below for more context.
 enum StepPosition {
   STEP_POSITION_UNSPECIFIED = 0;
 
   // The step function "jumps" at the start of [0, 1):
-  // * for x in [0, 1/step_count)      =>     y = 1/step_count
-  // * for x in [1 - 1/step_count, 1)  =>     y = 1
+  //   * for x in [0, 1/step_count)      =>     y = 1/step_count
+  //   * for x in [1 - 1/step_count, 1)  =>     y = 1
   STEP_POSITION_JUMP_START = 1;
 
   // The step function "jumps" at the end of [0, 1):
-  // * for x in [0, 1/step_count)      =>     y = 0
-  // * for x in [1 - 1/step_count, 1)  =>     y = 1 - 1/step_count
+  //   * for x in [0, 1/step_count)      =>     y = 0
+  //   * for x in [1 - 1/step_count, 1)  =>     y = 1 - 1/step_count
   STEP_POSITION_JUMP_END = 2;
 
   // The step function does not "jump" at either boundary:
-  // * for x in [0, 1/step_count)      =>     y = 0
-  // * for x in [1 - 1/step_count, 1)  =>     y = 1
+  //   * for x in [0, 1/step_count)      =>     y = 0
+  //   * for x in [1 - 1/step_count, 1)  =>     y = 1
   STEP_POSITION_JUMP_NONE = 3;
 
   // The step function "jumps" at both the start and the end:
-  // * for x in [0, 1/step_count)      =>     y = 1/(step_count + 1)
-  // * for x in [1 - 1/step_count, 1)  =>     y = 1 - 1/(step_count + 1)
+  //   * for x in [0, 1/step_count)      =>     y = 1/(step_count + 1)
+  //   * for x in [1 - 1/step_count, 1)  =>     y = 1 - 1/(step_count + 1)
   STEP_POSITION_JUMP_BOTH = 4;
 }
 

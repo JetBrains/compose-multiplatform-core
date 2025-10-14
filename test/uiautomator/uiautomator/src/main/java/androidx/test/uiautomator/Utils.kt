@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // TODO(b/444197999): add a jvmname
+
 package androidx.test.uiautomator
 
 import android.graphics.Bitmap
@@ -32,7 +34,7 @@ import java.io.FileOutputStream
 public fun Bitmap.saveToFile(
     file: File,
     compressFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG,
-    quality: Int = 100
+    quality: Int = 100,
 ): Boolean = compress(compressFormat, quality, file.outputStream())
 
 /**
@@ -46,12 +48,12 @@ public fun Bitmap.saveToFile(
 public fun Bitmap.saveToFile(
     parcelFileDescriptor: ParcelFileDescriptor,
     compressFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG,
-    quality: Int = 100
+    quality: Int = 100,
 ): Boolean =
     compress(compressFormat, quality, FileOutputStream(parcelFileDescriptor.fileDescriptor))
 
 /**
- * Thrown when a view is not found after invoking [androidx.test.uiautomator.onView] or
- * [androidx.test.uiautomator.onViews].
+ * Thrown when an element is not found after invoking [androidx.test.uiautomator.onElement] or
+ * [androidx.test.uiautomator.onElements].
  */
-public class ViewNotFoundException(msg: String? = null) : Exception(msg)
+public class ElementNotFoundException(msg: String? = null) : Exception(msg)

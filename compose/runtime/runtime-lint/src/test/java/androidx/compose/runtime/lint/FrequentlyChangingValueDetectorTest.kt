@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnstableApiUsage")
-
 package androidx.compose.runtime.lint
 
 import androidx.compose.lint.test.Stubs
@@ -32,10 +30,8 @@ import org.junit.runners.Parameterized
 @Suppress("UNUSED_PARAMETER")
 @RunWith(Parameterized::class)
 /** Test for [FrequentlyChangingValueDetector]. */
-class FrequentlyChangingValueDetectorTest(
-    private val definitionsStub: TestFile,
-    testType: String,
-) : LintDetectorTest() {
+class FrequentlyChangingValueDetectorTest(private val definitionsStub: TestFile, testType: String) :
+    LintDetectorTest() {
     override fun getDetector(): Detector = FrequentlyChangingValueDetector()
 
     override fun getIssues(): MutableList<Issue> =
@@ -74,7 +70,7 @@ class FrequentlyChangingValueDetectorTest(
             iuXjhUUaBzeIbE1JIb/40z7DIe0jpGgBacrf7EITyOCWMrdxh0LrAhvIYpMQ
             d+fHe7iPB8rtggk8xCPkkES+i4SBgoEtA4+xTTueGNjBLqFC7GGfqEM8DXHw
             Ax3EAwGzAwAA
-            """
+            """,
         )
 
     companion object {
@@ -231,7 +227,7 @@ class FrequentlyChangingValueDetectorTest(
             RprAv5XZpMcvRWKmOzc/jm2hRDfhfybKMSlgFwVBbWMHBzDswisUhAvcxo7h
             c/Pckrnhd2DFWI5RjrGCimGsxgiw1gFRqGK9Yz4ZGwqbClsLLCk4Cq6C9w3B
             DBSI7QEAAA==
-            """
+            """,
             )
 
         @JvmStatic
@@ -239,7 +235,7 @@ class FrequentlyChangingValueDetectorTest(
         fun initParameters() =
             listOf(
                 arrayOf(Definitions.kotlin, "sourceDefinitions"),
-                arrayOf(Definitions.bytecode, "bytecodeDefinitions")
+                arrayOf(Definitions.bytecode, "bytecodeDefinitions"),
             )
     }
 

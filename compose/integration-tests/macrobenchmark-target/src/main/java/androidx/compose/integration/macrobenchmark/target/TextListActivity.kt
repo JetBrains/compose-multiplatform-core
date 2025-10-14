@@ -61,7 +61,6 @@ class TextListActivity : ComponentActivity() {
         val textCount = intent.getIntExtra(BenchmarkConfig.TextCount, 3)
         val styled = intent.getBooleanExtra(BenchmarkConfig.Styled, false)
         val prefetch = intent.getBooleanExtra(BenchmarkConfig.Prefetch, false)
-
         val randomTextGenerator = RandomTextGenerator()
 
         val items =
@@ -71,13 +70,13 @@ class TextListActivity : ComponentActivity() {
                         length =
                             (wordCount + 1) * wordLength - 1, // count for whitespace between words
                         wordLength = wordLength,
-                        styleCount = wordCount
+                        styleCount = wordCount,
                     )
                 } else {
                     randomTextGenerator.nextParagraph(
                         length =
                             (wordCount + 1) * wordLength - 1, // count for whitespace between words
-                        wordLength = wordLength
+                        wordLength = wordLength,
                     )
                 }
             }
@@ -91,9 +90,7 @@ class TextListActivity : ComponentActivity() {
 
         setContent {
             CompositionLocalProvider(LocalBackgroundTextMeasurementExecutor provides executor) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(ItemCount) { i ->
                         val startIndex = i * textCount
                         FlowRow {
@@ -115,6 +112,8 @@ class TextListActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         executor?.shutdown()
+        @OptIn(ExperimentalComposeUiApi::class)
+        ContentCaptureManager.isEnabled = false
     }
 
     companion object {
@@ -125,7 +124,8 @@ class TextListActivity : ComponentActivity() {
             val WordLength = "word_length" // Integer
             val TextCount = "text_count" // Integer
             val Styled = "styled" // Boolean
-            val Prefetch = "prefetch" // Boolean
+            val Prefetch = "prefetch"
+            val EnableContentCapture = "enableContentCapture" // Boolean
         }
     }
 }
@@ -133,7 +133,7 @@ class TextListActivity : ComponentActivity() {
 // Copied from TextBenchmarkTestRule
 class RandomTextGenerator(
     private val alphabet: Alphabet = Alphabet.Latin,
-    private val random: Random = Random(0)
+    private val random: Random = Random(0),
 ) {
     // a set of predefined TextStyle's to add to styled text
     private val nonMetricAffectingTextStyles =
@@ -141,7 +141,7 @@ class RandomTextGenerator(
             SpanStyle(color = Color.Blue),
             SpanStyle(background = Color.Cyan),
             SpanStyle(textDecoration = TextDecoration.Underline),
-            SpanStyle(shadow = Shadow(Color.Black, Offset(3f, 3f), 2.0f))
+            SpanStyle(shadow = Shadow(Color.Black, Offset(3f, 3f), 2.0f)),
         )
 
     private val metricAffectingTextStyles =
@@ -153,7 +153,7 @@ class RandomTextGenerator(
             SpanStyle(letterSpacing = 0.2.em),
             SpanStyle(baselineShift = BaselineShift.Subscript),
             SpanStyle(textGeometricTransform = TextGeometricTransform(0.5f, 0.5f)),
-            SpanStyle(localeList = LocaleList("it"))
+            SpanStyle(localeList = LocaleList("it")),
         )
 
     private fun getSpanStyleList(hasMetricAffectingStyle: Boolean) =
@@ -201,7 +201,7 @@ class RandomTextGenerator(
     fun createStyles(
         text: String,
         styleCount: Int = text.split(alphabet.space).size,
-        hasMetricAffectingStyle: Boolean = true
+        hasMetricAffectingStyle: Boolean = true,
     ): List<AnnotatedString.Range<SpanStyle>> {
         val spanStyleList = getSpanStyleList(hasMetricAffectingStyle)
 
@@ -223,7 +223,7 @@ class RandomTextGenerator(
                 AnnotatedString.Range(
                     start = start,
                     end = end,
-                    item = spanStyleList[styleIndex++ % spanStyleList.size]
+                    item = spanStyleList[styleIndex++ % spanStyleList.size],
                 )
             }
         }
@@ -239,12 +239,12 @@ class RandomTextGenerator(
         length: Int,
         wordLength: Int = 9,
         styleCount: Int,
-        hasMetricAffectingStyle: Boolean = true
+        hasMetricAffectingStyle: Boolean = true,
     ): AnnotatedString {
         val text = nextParagraph(length, wordLength)
         return AnnotatedString(
             text = text,
-            spanStyles = createStyles(text, styleCount, hasMetricAffectingStyle)
+            spanStyles = createStyles(text, styleCount, hasMetricAffectingStyle),
         )
     }
 }
@@ -261,7 +261,7 @@ class Alphabet(val charRanges: List<IntRange>, val space: Char, val name: String
             Alphabet(
                 charRanges = listOf(IntRange('a'.code, 'z'.code), IntRange('A'.code, 'Z'.code)),
                 space = ' ',
-                name = "Latin"
+                name = "Latin",
             )
     }
 }

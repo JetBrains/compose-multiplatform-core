@@ -94,10 +94,7 @@ class EmbeddingAdapterTest {
         WindowTestUtils.assumeBeforeWindowExtensionVersion(5)
 
         val oemSplitInfo =
-            createTestOEMSplitInfo(
-                OEMSplitAttributes.Builder().build(),
-                testBinder = Binder(),
-            )
+            createTestOEMSplitInfo(OEMSplitAttributes.Builder().build(), testBinder = Binder())
         val expectedSplitInfo =
             SplitInfo(
                 ActivityStack(emptyList(), isEmpty = true),
@@ -210,12 +207,12 @@ class EmbeddingAdapterTest {
                 ActivityStack(
                     ArrayList(),
                     isEmpty = true,
-                    oemSplitInfo.primaryActivityStack.activityStackToken
+                    oemSplitInfo.primaryActivityStack.activityStackToken,
                 ),
                 ActivityStack(
                     ArrayList(),
                     isEmpty = true,
-                    oemSplitInfo.secondaryActivityStack.activityStackToken
+                    oemSplitInfo.secondaryActivityStack.activityStackToken,
                 ),
                 SplitAttributes.Builder()
                     .setSplitType(SplitType.SPLIT_TYPE_EXPAND)
@@ -263,7 +260,7 @@ class EmbeddingAdapterTest {
                 OEMSplitAttributes.Builder()
                     .setSplitType(OEMSplitAttributes.SplitType.HingeSplitType(RatioSplitType(0.5f)))
                     .setLayoutDirection(TOP_TO_BOTTOM)
-                    .build(),
+                    .build()
             )
         val expectedSplitInfo =
             SplitInfo(
@@ -289,7 +286,7 @@ class EmbeddingAdapterTest {
                     .setSplitType(OEMSplitAttributes.SplitType.HingeSplitType(RatioSplitType(0.5f)))
                     .setLayoutDirection(TOP_TO_BOTTOM)
                     .build(),
-                testBinder = Binder()
+                testBinder = Binder(),
             )
         val expectedSplitInfo =
             SplitInfo(
@@ -316,7 +313,7 @@ class EmbeddingAdapterTest {
                     .setSplitType(OEMSplitAttributes.SplitType.HingeSplitType(RatioSplitType(0.5f)))
                     .setLayoutDirection(TOP_TO_BOTTOM)
                     .build(),
-                testToken = OEMSplitInfoToken.createFromBinder(Binder())
+                testToken = OEMSplitInfoToken.createFromBinder(Binder()),
             )
         val expectedSplitInfo =
             SplitInfo(
@@ -377,21 +374,21 @@ class EmbeddingAdapterTest {
         // Translate from Window to Extensions
         assertEquals(
             extensionsSplitAttributesWithColorBackground,
-            adapter.translateSplitAttributes(splitAttributesWithColorBackground)
+            adapter.translateSplitAttributes(splitAttributesWithColorBackground),
         )
         assertEquals(
             extensionsSplitAttributesWithDefaultBackground,
-            adapter.translateSplitAttributes(splitAttributesWithDefaultBackground)
+            adapter.translateSplitAttributes(splitAttributesWithDefaultBackground),
         )
 
         // Translate from Extensions to Window
         assertEquals(
             splitAttributesWithColorBackground,
-            adapter.translate(extensionsSplitAttributesWithColorBackground)
+            adapter.translate(extensionsSplitAttributesWithColorBackground),
         )
         assertEquals(
             splitAttributesWithDefaultBackground,
-            adapter.translate(extensionsSplitAttributesWithDefaultBackground)
+            adapter.translate(extensionsSplitAttributesWithDefaultBackground),
         )
     }
 
@@ -424,21 +421,21 @@ class EmbeddingAdapterTest {
         // Translate from Window to Extensions
         assertEquals(
             extensionsSplitAttributesWithColorBackground,
-            adapter.translateSplitAttributes(splitAttributesWithColorBackground)
+            adapter.translateSplitAttributes(splitAttributesWithColorBackground),
         )
         assertEquals(
             extensionsSplitAttributesWithDefaultBackground,
-            adapter.translateSplitAttributes(splitAttributesWithDefaultBackground)
+            adapter.translateSplitAttributes(splitAttributesWithDefaultBackground),
         )
 
         // Translate from Extensions to Window
         assertEquals(
             splitAttributesWithColorBackground,
-            adapter.translate(extensionsSplitAttributesWithColorBackground)
+            adapter.translate(extensionsSplitAttributesWithColorBackground),
         )
         assertEquals(
             splitAttributesWithDefaultBackground,
-            adapter.translate(extensionsSplitAttributesWithDefaultBackground)
+            adapter.translate(extensionsSplitAttributesWithDefaultBackground),
         )
     }
 
@@ -460,7 +457,7 @@ class EmbeddingAdapterTest {
         // No difference after translate before API level 5
         assertEquals(
             adapter.translateSplitAttributes(splitAttributesWithColorBackground),
-            adapter.translateSplitAttributes(splitAttributesWithDefaultBackground)
+            adapter.translateSplitAttributes(splitAttributesWithDefaultBackground),
         )
     }
 
@@ -497,21 +494,21 @@ class EmbeddingAdapterTest {
         // Translate from Window to Extensions
         assertEquals(
             extensionsSplitAttributesWithJumpCutAnimationParams,
-            adapter.translateSplitAttributes(splitAttributesWithJumpCutAnimationParams)
+            adapter.translateSplitAttributes(splitAttributesWithJumpCutAnimationParams),
         )
         assertEquals(
             extensionsSplitAttributesWithDefaultAnimationParams,
-            adapter.translateSplitAttributes(splitAttributesWithDefaultAnimationParams)
+            adapter.translateSplitAttributes(splitAttributesWithDefaultAnimationParams),
         )
 
         // Translate from Extensions to Window
         assertEquals(
             splitAttributesWithJumpCutAnimationParams,
-            adapter.translate(extensionsSplitAttributesWithJumpCutAnimationParams)
+            adapter.translate(extensionsSplitAttributesWithJumpCutAnimationParams),
         )
         assertEquals(
             splitAttributesWithDefaultAnimationParams,
-            adapter.translate(extensionsSplitAttributesWithDefaultAnimationParams)
+            adapter.translate(extensionsSplitAttributesWithDefaultAnimationParams),
         )
     }
 
@@ -535,7 +532,7 @@ class EmbeddingAdapterTest {
         // No difference after translate before API level 7
         assertEquals(
             adapter.translateSplitAttributes(splitAttributesWithJumpCutAnimationParams),
-            adapter.translateSplitAttributes(splitAttributesWithDefaultAnimationParams)
+            adapter.translateSplitAttributes(splitAttributesWithDefaultAnimationParams),
         )
     }
 
@@ -571,11 +568,11 @@ class EmbeddingAdapterTest {
 
         assertEquals(
             oemDividerAttributes,
-            adapter.translateToOemDividerAttributes(dividerAttributes)
+            adapter.translateToOemDividerAttributes(dividerAttributes),
         )
         assertEquals(
             dividerAttributes,
-            adapter.translateToJetpackDividerAttributes(oemDividerAttributes)
+            adapter.translateToJetpackDividerAttributes(oemDividerAttributes),
         )
     }
 
@@ -614,19 +611,19 @@ class EmbeddingAdapterTest {
 
         assertEquals(
             oemDividerAttributes,
-            adapter.translateToOemDividerAttributes(dividerAttributes)
+            adapter.translateToOemDividerAttributes(dividerAttributes),
         )
         assertEquals(
             dividerAttributes,
-            adapter.translateToJetpackDividerAttributes(oemDividerAttributes)
+            adapter.translateToJetpackDividerAttributes(oemDividerAttributes),
         )
         assertEquals(
             oemDividerAttributes2,
-            adapter.translateToOemDividerAttributes(dividerAttributes2)
+            adapter.translateToOemDividerAttributes(dividerAttributes2),
         )
         assertEquals(
             dividerAttributes2,
-            adapter.translateToJetpackDividerAttributes(oemDividerAttributes2)
+            adapter.translateToJetpackDividerAttributes(oemDividerAttributes2),
         )
     }
 
@@ -643,11 +640,11 @@ class EmbeddingAdapterTest {
 
         assertEquals(
             oemDividerAttributes,
-            adapter.translateToOemDividerAttributes(dividerAttributes)
+            adapter.translateToOemDividerAttributes(dividerAttributes),
         )
         assertEquals(
             dividerAttributes,
-            adapter.translateToJetpackDividerAttributes(oemDividerAttributes)
+            adapter.translateToJetpackDividerAttributes(oemDividerAttributes),
         )
     }
 
@@ -702,11 +699,11 @@ class EmbeddingAdapterTest {
 
         assertEquals(
             oemDividerAttributes,
-            adapter.translateToOemDividerAttributes(dividerAttributes)
+            adapter.translateToOemDividerAttributes(dividerAttributes),
         )
         assertEquals(
             dividerAttributes,
-            adapter.translateToJetpackDividerAttributes(oemDividerAttributes)
+            adapter.translateToJetpackDividerAttributes(oemDividerAttributes),
         )
     }
 
@@ -765,12 +762,7 @@ class EmbeddingAdapterTest {
 
     private fun createTestOEMActivityStack(
         testToken: OEMActivityStackToken? = null
-    ): OEMActivityStack =
-        createTestOEMActivityStack(
-            emptyList(),
-            testIsEmpty = true,
-            testToken,
-        )
+    ): OEMActivityStack = createTestOEMActivityStack(emptyList(), testIsEmpty = true, testToken)
 
     private fun createTestOEMActivityStack(
         testActivities: List<Activity>,

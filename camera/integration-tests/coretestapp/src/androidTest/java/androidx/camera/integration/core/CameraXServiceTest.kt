@@ -87,9 +87,7 @@ class CameraXServiceTest(private val implName: String, private val cameraXConfig
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     companion object {
         @JvmStatic
@@ -97,7 +95,7 @@ class CameraXServiceTest(private val implName: String, private val cameraXConfig
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 
@@ -168,10 +166,7 @@ class CameraXServiceTest(private val implName: String, private val cameraXConfig
 
         // Assert: verify bound UseCases.
         useCaseCallback.verifyAcceptCall(Collection::class.java, false, 3000L, CallTimes(1), captor)
-        assertThat(captor.value!!.map { it.javaClass })
-            .containsExactly(
-                ImageAnalysis::class.java,
-            )
+        assertThat(captor.value!!.map { it.javaClass }).containsExactly(ImageAnalysis::class.java)
     }
 
     @Test

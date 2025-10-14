@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.O)
 internal class ExtrasCallExtensionProcessor(
     private val callScope: CoroutineScope,
-    private val call: Call
+    private val call: Call,
 ) {
     companion object {
         private const val TAG = "ECEP"
@@ -151,7 +151,7 @@ internal class ExtrasCallExtensionProcessor(
      */
     private suspend fun getExtensionsUpdateFromNewExtras(
         details: Call.Details,
-        r: CapabilityExchangeRepository
+        r: CapabilityExchangeRepository,
     ): CapabilityExchangeResult? {
         val extras = details.extras?.takeIf { it.size() > 0 } ?: return null
 
@@ -164,14 +164,14 @@ internal class ExtrasCallExtensionProcessor(
             setOf(
                 getVoipMeetingSummaryCapability(apiVersion),
                 getVoipIconCapability(apiVersion),
-                getVoipLocalCallSilenceCapability(apiVersion)
+                getVoipLocalCallSilenceCapability(apiVersion),
             )
 
         processExtras(extras)
 
         return CapabilityExchangeResult(
             voipCapabilities,
-            CapabilityExchangeListenerRemote(r.listener)
+            CapabilityExchangeListenerRemote(r.listener),
         )
     }
 
@@ -191,7 +191,7 @@ internal class ExtrasCallExtensionProcessor(
             currentKeys = currentKeys,
             getValue = { b -> b.getParcelableCompat(EXTRA_CALL_IMAGE_URI, Uri::class.java) },
             defaultValue = Uri.EMPTY,
-            flow = mUriFlow
+            flow = mUriFlow,
         )
 
         processKey(
@@ -200,7 +200,7 @@ internal class ExtrasCallExtensionProcessor(
             currentKeys = currentKeys,
             getValue = { b -> b.getInt(EXTRA_PARTICIPANT_COUNT) },
             defaultValue = 0,
-            flow = mParticipantCountFlow
+            flow = mParticipantCountFlow,
         )
         processKey(
             key = EXTRA_CURRENT_SPEAKER,
@@ -208,7 +208,7 @@ internal class ExtrasCallExtensionProcessor(
             currentKeys = currentKeys,
             getValue = { b -> b.getString(EXTRA_CURRENT_SPEAKER) },
             defaultValue = "",
-            flow = mSpeakerNameFlow
+            flow = mSpeakerNameFlow,
         )
 
         if (extras?.containsKey(EXTRA_CALL_SILENCE_AVAILABILITY) == true) {
@@ -221,7 +221,7 @@ internal class ExtrasCallExtensionProcessor(
                 currentKeys = currentKeys,
                 getValue = { b -> b.getBoolean(EXTRA_LOCAL_CALL_SILENCE_STATE) },
                 defaultValue = false,
-                flow = mLocalCallSilenceFlow
+                flow = mLocalCallSilenceFlow,
             )
         } else {
             Log.w(TAG, "processExtras: attempted to toggle LCS but global mute is enabled")
@@ -251,7 +251,7 @@ internal class ExtrasCallExtensionProcessor(
         currentKeys: Set<String>,
         getValue: (Bundle) -> T?,
         defaultValue: T,
-        flow: MutableStateFlow<T>
+        flow: MutableStateFlow<T>,
     ) {
         if (currentKeys.contains(key)) {
             mProcessedKeys.add(key)
@@ -297,13 +297,13 @@ internal class ExtrasCallExtensionProcessor(
                 object : ILocalSilenceActions.Stub() {
                     override fun setIsLocallySilenced(
                         isLocallySilenced: Boolean,
-                        cb: IActionsResultCallback?
+                        cb: IActionsResultCallback?,
                     ) {
                         call.sendCallEvent(
                             EVENT_LOCAL_CALL_SILENCE_STATE_CHANGED,
                             Bundle().apply {
                                 putBoolean(EXTRA_LOCAL_CALL_SILENCE_STATE, isLocallySilenced)
-                            }
+                            },
                         )
                         cb?.onSuccess()
                     }

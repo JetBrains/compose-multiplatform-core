@@ -37,7 +37,7 @@ import androidx.compose.ui.util.fastForEach
  */
 internal class SemanticsNodeCopy(
     semanticsNode: SemanticsNode,
-    currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>
+    currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>,
 ) {
     val unmergedConfig = semanticsNode.unmergedConfig
     val children: MutableIntSet = MutableIntSet(semanticsNode.replacedChildren.size)
@@ -91,7 +91,7 @@ internal class ScrollObservationScope(
     var oldXValue: Float?,
     var oldYValue: Float?,
     var horizontalScrollAxisRange: ScrollAxisRange?,
-    var verticalScrollAxisRange: ScrollAxisRange?
+    var verticalScrollAxisRange: ScrollAxisRange?,
 ) : OwnerScope {
     override val isValidOwnerScope
         get() = allScopes.contains(this)

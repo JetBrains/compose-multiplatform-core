@@ -57,5 +57,5 @@ enum class CallState {
      * An unknown or initial state, used when the call's state cannot be determined or does not fit
      * into the other defined categories.
      */
-    UNKNOWN
+    UNKNOWN,
 }

@@ -37,6 +37,7 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 @RunWith(RobolectricTestRunner.class)
 @Config(instrumentedPackages = { "androidx.core.os" })
 @DoNotInstrument
+@SuppressWarnings("deprecation")
 public class CancellationSignalProviderTest {
     @Rule
     public final MockitoRule mocks = MockitoJUnit.rule();

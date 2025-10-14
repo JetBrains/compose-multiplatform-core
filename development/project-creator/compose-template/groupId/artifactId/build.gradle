@@ -28,11 +28,13 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "<PACKAGE>"
+
+    }
     jvmStubs()
     linuxX64Stubs()
 
@@ -73,7 +75,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(libs.testRules)
@@ -95,10 +97,6 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
     }
-}
-
-android {
-    namespace "<PACKAGE>"
 }
 
 androidx {

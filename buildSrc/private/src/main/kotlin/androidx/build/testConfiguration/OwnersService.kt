@@ -19,7 +19,6 @@ package androidx.build.testConfiguration
 import androidx.build.getDistributionDirectory
 import androidx.build.getSupportRootFolder
 import com.google.gson.GsonBuilder
-import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
@@ -68,8 +67,8 @@ internal fun Project.registerOwnersServiceTasks() {
         task.includeEmptyDirs = false
     }
 
-    tasks.register(CREATE_MODULE_INFO, ModuleInfoGenerator::class.java) { task ->
-        task.outputFile.set(File(getDistributionDirectory(), "module-info.json"))
+    tasks.register(CREATE_MODULE_INFO, ModuleInfoGenerator::class.java) {
+        it.outputFile.set(getDistributionDirectory().file("module-info.json"))
     }
 }
 
@@ -80,7 +79,7 @@ internal fun Project.addToModuleInfo(testName: String, projectIsolationEnabled: 
             it.testModules.add(
                 TestModule(
                     name = testName,
-                    path = listOf(projectDir.toRelativeString(getSupportRootFolder()))
+                    path = listOf(projectDir.toRelativeString(getSupportRootFolder())),
                 )
             )
         }

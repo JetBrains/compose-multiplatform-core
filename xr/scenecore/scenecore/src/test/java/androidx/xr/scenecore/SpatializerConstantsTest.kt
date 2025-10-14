@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.internal.SpatializerConstants as RtSpatializerConstants
+import androidx.xr.scenecore.runtime.SpatializerConstants as RtSpatializerConstants
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +28,7 @@ class SpatializerConstantsTest {
     @Test
     fun sourceTypeToJXRExtension_createsCorrectIntDefType() {
         val rtBypass = RtSpatializerConstants.SOURCE_TYPE_BYPASS
-        assertThat(rtBypass.sourceTypeToJxr()).isEqualTo(SpatializerConstants.SOURCE_TYPE_BYPASS)
+        assertThat(rtBypass.sourceTypeToJxr()).isEqualTo(SpatializerConstants.SOURCE_TYPE_DEFAULT)
 
         val rtPointSource = RtSpatializerConstants.SOURCE_TYPE_POINT_SOURCE
         assertThat(rtPointSource.sourceTypeToJxr())

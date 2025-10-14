@@ -56,7 +56,7 @@ val ButtonScreen =
                     IconButtonWithImageSample(
                         painterResource(R.drawable.backgroundimage),
                         enabled = true,
-                        shapes = IconButtonDefaults.animatedShapes()
+                        shapes = IconButtonDefaults.animatedShapes(),
                     )
                 }
             }

@@ -24,7 +24,7 @@ import androidx.ink.nativeloader.UsedByNative
 @Suppress("NotCloseable") // Finalize is only used to free the native peer.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public class MeshFormat
-public constructor(
+private constructor(
     /**
      * Only for use within the ink library. Returns the native address held by this [MeshFormat].
      */
@@ -47,7 +47,17 @@ public constructor(
             MeshFormatNative.isUnpackedEquivalent(this.nativePointer, other.nativePointer)
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun attributeCount(): Int = MeshFormatNative.attributeCount(nativePointer)
+
+    // NOMUTANTS--Not tested post garbage collection.
     protected fun finalize() {
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
         MeshFormatNative.free(nativePointer)
     }
 
@@ -74,10 +84,12 @@ private object MeshFormatNative {
     }
 
     @UsedByNative
-    public external fun isPackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
+    external fun isPackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
 
     @UsedByNative
-    public external fun isUnpackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
+    external fun isUnpackedEquivalent(nativePointer: Long, otherNativePointer: Long): Boolean
 
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun attributeCount(nativePointer: Long): Int
+
+    @UsedByNative external fun free(nativePointer: Long)
 }

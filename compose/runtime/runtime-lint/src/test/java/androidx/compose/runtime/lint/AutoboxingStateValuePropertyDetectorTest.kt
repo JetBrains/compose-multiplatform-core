@@ -51,7 +51,7 @@ class AutoboxingStateValuePropertyDetectorTest : LintDetectorTest() {
                     )
                     .indented(),
                 AutoboxingStateValuePropertyStub,
-                MinimalSnapshotStateStub
+                MinimalSnapshotStateStub,
             )
             .run()
             .expect(
@@ -90,7 +90,7 @@ Fix for src/androidx/compose/runtime/lint/test/test.kt line 7: Replace with `int
                     )
                     .indented(),
                 AutoboxingStateValuePropertyStub,
-                MinimalSnapshotStateStub
+                MinimalSnapshotStateStub,
             )
             .run()
             .expect(
@@ -148,7 +148,7 @@ Fix for src/androidx/compose/runtime/lint/test/test.kt line 7: Replace with `int
             MR5uTSoTSBLSULiyT7BP/gtiWKGalMAt3MYdgukGNIEM9NCsYm2avYt1bISw
             ASZwD/eRJepmA5EKchVsVfAA2wTxsII8dqgqwCPsNhAL8DjAXoDElU3+AfvU
             hgfXAwAA
-            """
+            """,
             )
 
         private val MinimalSnapshotStateStub: TestFile =
@@ -303,7 +303,7 @@ Fix for src/androidx/compose/runtime/lint/test/test.kt line 7: Replace with `int
             T3EzGlLab8ajYUecyYjA6uVXryup5U0kTpWKSSRjpV2ajxwml9G3XNDXsUrI
             ggf7O7JRnvgS1sgfU0WBNH4bdh1TdUzXMYNZCjFXR4BiG0xjHgttuBqLGksa
             yxorOoP5T7cJbagBAgAA
-            """
+            """,
             )
     }
 }

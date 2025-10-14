@@ -76,7 +76,7 @@ class SeriesRecordAggregationExtensionsTest {
             setOf(
                 CyclingPedalingCadenceRecord::class,
                 SpeedRecord::class,
-                StepsCadenceRecord::class
+                StepsCadenceRecord::class,
             )
     }
 
@@ -86,7 +86,7 @@ class SeriesRecordAggregationExtensionsTest {
             *(SERIES_AGGREGATION_FALLBACK_RECORD_TYPES.flatMap {
                     listOf(
                         HealthPermission.getWritePermission(it),
-                        HealthPermission.getReadPermission(it)
+                        HealthPermission.getReadPermission(it),
                     )
                 }
                 .toTypedArray())
@@ -120,13 +120,13 @@ class SeriesRecordAggregationExtensionsTest {
                         listOf(
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 5.minutes,
-                                revolutionsPerMinute = 80.0
+                                revolutionsPerMinute = 80.0,
                             ),
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 15.minutes,
-                                revolutionsPerMinute = 90.0
-                            )
-                        )
+                                revolutionsPerMinute = 90.0,
+                            ),
+                        ),
                 )
             )
         )
@@ -138,9 +138,9 @@ class SeriesRecordAggregationExtensionsTest {
                         setOf(
                             CyclingPedalingCadenceRecord.RPM_AVG,
                             CyclingPedalingCadenceRecord.RPM_MAX,
-                            CyclingPedalingCadenceRecord.RPM_MIN
+                            CyclingPedalingCadenceRecord.RPM_MIN,
                         ),
-                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH)
+                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH),
                 )
             )
 
@@ -163,13 +163,13 @@ class SeriesRecordAggregationExtensionsTest {
                         listOf(
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 5.minutes,
-                                revolutionsPerMinute = 80.0
+                                revolutionsPerMinute = 80.0,
                             ),
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 15.minutes,
-                                revolutionsPerMinute = 90.0
-                            )
-                        )
+                                revolutionsPerMinute = 90.0,
+                            ),
+                        ),
                 ),
                 CyclingPedalingCadenceRecord(
                     startTime = START_TIME,
@@ -181,13 +181,13 @@ class SeriesRecordAggregationExtensionsTest {
                         listOf(
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 10.minutes,
-                                revolutionsPerMinute = 220.0
+                                revolutionsPerMinute = 220.0,
                             ),
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 2.days + 15.minutes,
-                                revolutionsPerMinute = 100.0
-                            )
-                        )
+                                revolutionsPerMinute = 100.0,
+                            ),
+                        ),
                 ),
                 SpeedRecord(
                     startTime = START_TIME,
@@ -199,14 +199,14 @@ class SeriesRecordAggregationExtensionsTest {
                         listOf(
                             SpeedRecord.Sample(
                                 time = START_TIME + 5.minutes,
-                                speed = 2.8.metersPerSecond
+                                speed = 2.8.metersPerSecond,
                             ),
                             SpeedRecord.Sample(
                                 time = START_TIME + 10.minutes,
-                                speed = 2.7.metersPerSecond
-                            )
-                        )
-                )
+                                speed = 2.7.metersPerSecond,
+                            ),
+                        ),
+                ),
             )
         )
 
@@ -224,7 +224,7 @@ class SeriesRecordAggregationExtensionsTest {
                     timeRangeFilter =
                         TimeRangeFilter.after(
                             START_TIME.toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC)
-                        )
+                        ),
                 )
             )
 
@@ -279,13 +279,13 @@ class SeriesRecordAggregationExtensionsTest {
                         listOf(
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 5.minutes,
-                                revolutionsPerMinute = 80.0
+                                revolutionsPerMinute = 80.0,
                             ),
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 15.minutes,
-                                revolutionsPerMinute = 90.0
-                            )
-                        )
+                                revolutionsPerMinute = 90.0,
+                            ),
+                        ),
                 ),
                 CyclingPedalingCadenceRecord(
                     startTime = START_TIME,
@@ -297,13 +297,13 @@ class SeriesRecordAggregationExtensionsTest {
                         listOf(
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 10.minutes,
-                                revolutionsPerMinute = 220.0
+                                revolutionsPerMinute = 220.0,
                             ),
                             CyclingPedalingCadenceRecord.Sample(
                                 time = START_TIME + 2.hours + 15.minutes,
-                                revolutionsPerMinute = 100.0
-                            )
-                        )
+                                revolutionsPerMinute = 100.0,
+                            ),
+                        ),
                 ),
                 SpeedRecord(
                     startTime = START_TIME,
@@ -315,14 +315,14 @@ class SeriesRecordAggregationExtensionsTest {
                         listOf(
                             SpeedRecord.Sample(
                                 time = START_TIME + 5.minutes,
-                                speed = 2.8.metersPerSecond
+                                speed = 2.8.metersPerSecond,
                             ),
                             SpeedRecord.Sample(
                                 time = START_TIME + 10.minutes,
-                                speed = 2.7.metersPerSecond
-                            )
-                        )
-                )
+                                speed = 2.7.metersPerSecond,
+                            ),
+                        ),
+                ),
             )
         )
 
@@ -337,7 +337,7 @@ class SeriesRecordAggregationExtensionsTest {
                             SpeedRecord.SPEED_AVG,
                         ),
                     timeRangeSlicer = 1.hours,
-                    timeRangeFilter = TimeRangeFilter.after(START_TIME)
+                    timeRangeFilter = TimeRangeFilter.after(START_TIME),
                 )
             )
 
@@ -357,8 +357,8 @@ class SeriesRecordAggregationExtensionsTest {
                                     CyclingPedalingCadenceRecord.RPM_MIN.metricKey to 80.0,
                                     SpeedRecord.SPEED_AVG.metricKey to 2.75,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName))
-                        )
+                            dataOrigins = setOf(DataOrigin(context.packageName)),
+                        ),
                 ),
                 AggregationResultGroupedByDuration(
                     startTime = START_TIME + 2.hours,
@@ -373,9 +373,9 @@ class SeriesRecordAggregationExtensionsTest {
                                     CyclingPedalingCadenceRecord.RPM_MAX.metricKey to 100.0,
                                     CyclingPedalingCadenceRecord.RPM_MIN.metricKey to 100.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName))
-                        )
-                )
+                            dataOrigins = setOf(DataOrigin(context.packageName)),
+                        ),
+                ),
             )
     }
 
@@ -393,13 +393,13 @@ class SeriesRecordAggregationExtensionsTest {
                         listOf(
                             SpeedRecord.Sample(
                                 time = START_TIME + 5.minutes,
-                                speed = 2.8.metersPerSecond
+                                speed = 2.8.metersPerSecond,
                             ),
                             SpeedRecord.Sample(
                                 time = START_TIME + 10.minutes,
-                                speed = 2.7.metersPerSecond
-                            )
-                        )
+                                speed = 2.7.metersPerSecond,
+                            ),
+                        ),
                 )
             )
         )
@@ -409,7 +409,7 @@ class SeriesRecordAggregationExtensionsTest {
                 AggregateRequest(
                     metrics =
                         setOf(SpeedRecord.SPEED_AVG, SpeedRecord.SPEED_MAX, SpeedRecord.SPEED_MIN),
-                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH)
+                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH),
                 )
             )
 
@@ -431,8 +431,8 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 3.minutes, rate = 170.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0)
-                        )
+                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0),
+                        ),
                 )
             )
         )
@@ -446,7 +446,7 @@ class SeriesRecordAggregationExtensionsTest {
                             StepsCadenceRecord.RATE_MAX,
                             StepsCadenceRecord.RATE_MIN,
                         ),
-                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH)
+                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH),
                 )
             )
 
@@ -466,7 +466,7 @@ class SeriesRecordAggregationExtensionsTest {
                             StepsCadenceRecord.RATE_MAX,
                             StepsCadenceRecord.RATE_MIN,
                         ),
-                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH)
+                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH),
                 )
             )
 
@@ -489,8 +489,8 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 3.minutes, rate = 170.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0)
-                        )
+                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0),
+                        ),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 11.minutes,
@@ -498,7 +498,7 @@ class SeriesRecordAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 16.minutes,
@@ -509,8 +509,8 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 17.minutes, rate = 181.0)
-                        )
-                )
+                        ),
+                ),
             )
         )
 
@@ -523,7 +523,7 @@ class SeriesRecordAggregationExtensionsTest {
                             StepsCadenceRecord.RATE_MAX,
                             StepsCadenceRecord.RATE_MIN,
                         ),
-                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH)
+                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH),
                 )
             )
 
@@ -546,8 +546,8 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 3.minutes, rate = 170.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0)
-                        )
+                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0),
+                        ),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 11.minutes,
@@ -555,7 +555,7 @@ class SeriesRecordAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 16.minutes,
@@ -566,19 +566,16 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 17.minutes, rate = 181.0)
-                        )
-                )
+                        ),
+                ),
             )
         )
 
         val aggregationResult =
             healthConnectClient.aggregateFallback(
                 AggregateRequest(
-                    metrics =
-                        setOf(
-                            StepsCadenceRecord.RATE_MAX,
-                        ),
-                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH)
+                    metrics = setOf(StepsCadenceRecord.RATE_MAX),
+                    timeRangeFilter = TimeRangeFilter.after(Instant.EPOCH),
                 )
             )
 
@@ -601,8 +598,8 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 3.minutes, rate = 170.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0)
-                        )
+                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0),
+                        ),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 11.minutes,
@@ -610,7 +607,7 @@ class SeriesRecordAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 16.minutes,
@@ -621,9 +618,9 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 17.minutes, rate = 181.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 18.minutes, rate = 182.0)
-                        )
-                )
+                            StepsCadenceRecord.Sample(time = START_TIME + 18.minutes, rate = 182.0),
+                        ),
+                ),
             )
         )
 
@@ -637,7 +634,7 @@ class SeriesRecordAggregationExtensionsTest {
                             StepsCadenceRecord.RATE_MIN,
                         ),
                     timeRangeFilter =
-                        TimeRangeFilter.between(START_TIME + 7.minutes, START_TIME + 18.minutes)
+                        TimeRangeFilter.between(START_TIME + 7.minutes, START_TIME + 18.minutes),
                 )
             )
 
@@ -660,8 +657,8 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 3.minutes, rate = 170.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0)
-                        )
+                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0),
+                        ),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 11.minutes,
@@ -669,7 +666,7 @@ class SeriesRecordAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 16.minutes,
@@ -680,9 +677,9 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 17.minutes, rate = 181.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 18.minutes, rate = 182.0)
-                        )
-                )
+                            StepsCadenceRecord.Sample(time = START_TIME + 18.minutes, rate = 182.0),
+                        ),
+                ),
             )
         )
 
@@ -695,10 +692,7 @@ class SeriesRecordAggregationExtensionsTest {
                             StepsCadenceRecord.RATE_MAX,
                             StepsCadenceRecord.RATE_MIN,
                         ),
-                    timeRangeFilter =
-                        TimeRangeFilter.after(
-                            START_TIME + 19.minutes,
-                        )
+                    timeRangeFilter = TimeRangeFilter.after(START_TIME + 19.minutes),
                 )
             )
 
@@ -721,8 +715,8 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 3.minutes, rate = 170.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0)
-                        )
+                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0),
+                        ),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 11.minutes,
@@ -730,7 +724,7 @@ class SeriesRecordAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 16.minutes,
@@ -741,9 +735,9 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 17.minutes, rate = 181.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 18.minutes, rate = 182.0)
-                        )
-                )
+                            StepsCadenceRecord.Sample(time = START_TIME + 18.minutes, rate = 182.0),
+                        ),
+                ),
             )
         )
 
@@ -760,13 +754,13 @@ class SeriesRecordAggregationExtensionsTest {
                         TimeRangeFilter.between(
                             LocalDateTime.ofInstant(
                                 START_TIME + 7.minutes + 2.hours,
-                                ZoneOffset.ofHours(-2)
+                                ZoneOffset.ofHours(-2),
                             ),
                             LocalDateTime.ofInstant(
                                 START_TIME + 18.minutes + 2.hours,
-                                ZoneOffset.ofHours(-2)
-                            )
-                        )
+                                ZoneOffset.ofHours(-2),
+                            ),
+                        ),
                 )
             )
 
@@ -789,8 +783,8 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 3.minutes, rate = 170.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0)
-                        )
+                            StepsCadenceRecord.Sample(time = START_TIME + 7.minutes, rate = 180.0),
+                        ),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 11.minutes,
@@ -798,7 +792,7 @@ class SeriesRecordAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 ),
                 StepsCadenceRecord(
                     startTime = START_TIME + 16.minutes,
@@ -809,9 +803,9 @@ class SeriesRecordAggregationExtensionsTest {
                     samples =
                         listOf(
                             StepsCadenceRecord.Sample(time = START_TIME + 17.minutes, rate = 181.0),
-                            StepsCadenceRecord.Sample(time = START_TIME + 18.minutes, rate = 182.0)
-                        )
-                )
+                            StepsCadenceRecord.Sample(time = START_TIME + 18.minutes, rate = 182.0),
+                        ),
+                ),
             )
         )
 
@@ -828,9 +822,9 @@ class SeriesRecordAggregationExtensionsTest {
                         TimeRangeFilter.before(
                             LocalDateTime.ofInstant(
                                 START_TIME + 2.minutes + 2.hours,
-                                ZoneOffset.ofHours(-2)
+                                ZoneOffset.ofHours(-2),
                             )
-                        )
+                        ),
                 )
             )
 
@@ -849,10 +843,10 @@ class SeriesRecordAggregationExtensionsTest {
                         setOf(
                             SpeedRecord.SPEED_AVG,
                             StepsCadenceRecord.RATE_MAX,
-                            StepsCadenceRecord.RATE_MIN
+                            StepsCadenceRecord.RATE_MIN,
                         ),
                         TimeRangeFilter.after(Instant.EPOCH),
-                        emptySet()
+                        emptySet(),
                     )
                 )
             }
@@ -868,10 +862,10 @@ class SeriesRecordAggregationExtensionsTest {
                         setOf(
                             HeartRateRecord.BPM_AVG,
                             HeartRateRecord.BPM_MAX,
-                            HeartRateRecord.BPM_MIN
+                            HeartRateRecord.BPM_MIN,
                         ),
                         TimeRangeFilter.after(Instant.EPOCH),
-                        emptySet()
+                        emptySet(),
                     )
                 )
             }

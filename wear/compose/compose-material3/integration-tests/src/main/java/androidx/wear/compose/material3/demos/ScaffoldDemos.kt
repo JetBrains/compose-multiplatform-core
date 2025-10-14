@@ -17,26 +17,39 @@
 package androidx.wear.compose.material3.demos
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberOverscrollEffect
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.foundation.pager.VerticalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.material3.AnimatedPage
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.HorizontalPagerScaffold
 import androidx.wear.compose.material3.PagerScaffoldDefaults
 import androidx.wear.compose.material3.RadioButton
@@ -58,6 +71,7 @@ val ScaffoldDemos =
         ComposableDemo("Screen Scaffold with SLC") { ScaffoldWithSLCEdgeButtonSample() },
         ComposableDemo("Screen Scaffold Loading SLC") { ScaffoldLoadingSLCEdgeButtonSample() },
         ComposableDemo("Screen Scaffold with TLC") { ScaffoldWithTLCEdgeButtonSample() },
+        ComposableDemo("Screen Scaffold with TLC2") { ScaffoldWithTLCNavigationSample() },
         ComposableDemo("Horizontal Pager Scaffold") {
             HorizontalPagerScaffoldSample(it.navigateBack)
         },
@@ -68,6 +82,8 @@ val ScaffoldDemos =
         ComposableDemo("Vertical Pager Scaffold (Fade Out Indicator)") {
             VerticalPagerScaffoldFadeOutIndicatorDemo()
         },
+        ComposableDemo("Complex Horizontal Pager") { ComplexHorizontalPager() },
+        ComposableDemo("Nested Pagers") { NestedPagers() },
     )
 
 @Composable
@@ -76,11 +92,7 @@ fun RandomComponent(page: Int) {
         0 -> Button(onClick = {}) { Text("Button") }
         1 ->
             RadioButton(
-                label = {
-                    Text(
-                        "Radio Button",
-                    )
-                },
+                label = { Text("Radio Button") },
                 selected = true,
                 onSelect = {},
                 enabled = true,
@@ -91,7 +103,7 @@ fun RandomComponent(page: Int) {
                 enabled = true,
                 valueRange = 1f..10f,
                 steps = 10,
-                onValueChange = {}
+                onValueChange = {},
             )
     }
 }
@@ -103,19 +115,19 @@ fun HorizontalPagerScaffoldFadeOutIndicatorDemo(navigateBack: () -> Unit) {
 
         HorizontalPagerScaffold(
             pagerState = pagerState,
-            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
         ) {
             HorizontalPager(
                 state = pagerState,
                 flingBehavior =
-                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {
                     ScreenScaffold {
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text("Page $page")
                             Spacer(modifier = Modifier.height(16.dp))
@@ -139,19 +151,19 @@ fun VerticalPagerScaffoldFadeOutIndicatorDemo() {
 
         VerticalPagerScaffold(
             pagerState = pagerState,
-            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
         ) {
             VerticalPager(
                 state = pagerState,
                 flingBehavior =
-                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                    PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
             ) { page ->
                 AnimatedPage(pageIndex = page, pagerState = pagerState) {
                     ScreenScaffold {
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text("Page $page")
                             Spacer(modifier = Modifier.height(16.dp))
@@ -186,15 +198,94 @@ fun ScaffoldLoadingSLCEdgeButtonSample() {
             contentPadding = contentPadding,
         ) {
             if (loaded.value) {
-                items(10) {
-                    Button(
-                        onClick = {},
-                        label = { Text("Item ${it + 1}") },
-                    )
-                }
+                items(10) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
             } else {
                 item { Text("Loading...") }
             }
+        }
+    }
+}
+
+@Composable
+fun ComplexHorizontalPager() {
+    AppScaffold {
+        val pageCount = 3
+        val pagerState = PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { pageCount }
+
+        HorizontalPagerScaffold(
+            pagerState = pagerState,
+            pageIndicator = {},
+            modifier = Modifier.size(300.dp),
+        ) {
+            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
+                val scrollState = rememberTransformingLazyColumnState()
+                val overscrollEffect = rememberOverscrollEffect()
+
+                ScreenScaffold(
+                    scrollState = scrollState,
+                    overscrollEffect = overscrollEffect,
+                    modifier = Modifier.fillMaxSize(),
+                    edgeButton = { EdgeButton(onClick = {}) { Text("Edge Button") } },
+                ) { paddingValuesFromScaffold ->
+                    TransformingLazyColumn(
+                        state = scrollState,
+                        contentPadding = paddingValuesFromScaffold,
+                        overscrollEffect = overscrollEffect,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(20) { Text("Item #$pageIndex-$it") }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NestedPagers() {
+    val pageCount = 3
+    val horizontalPagerState =
+        PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { pageCount }
+    val verticalPagerStates = remember {
+        Array(pageCount) { PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { 5 } }
+    }
+
+    HorizontalPagerScaffold(pagerState = horizontalPagerState, modifier = Modifier.fillMaxSize()) {
+        HorizontalPager(state = horizontalPagerState) { pageIndex ->
+            VerticalPagerScaffold(pagerState = verticalPagerStates[pageIndex]) {
+                VerticalPager(state = verticalPagerStates[pageIndex]) { innerPage ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Page #$pageIndex-$innerPage")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ScaffoldWithTLCNavigationSample() {
+    var page by remember { mutableIntStateOf(-1) }
+    val listState = rememberTransformingLazyColumnState()
+    if (page < 0) {
+        ScreenScaffold(scrollState = listState, timeText = { TimeText() }) { contentPadding ->
+            TransformingLazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = contentPadding,
+            ) {
+                items(30) { Button(onClick = { page = it }, label = { Text("Item $it") }) }
+            }
+        }
+    } else {
+        Column(
+            Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            BasicText("Page $page", style = TextStyle(color = Color.White))
+            Spacer(Modifier.height(5.dp))
+            Button(onClick = { page = -1 }) { BasicText("Back") }
         }
     }
 }

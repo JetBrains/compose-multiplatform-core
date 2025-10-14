@@ -32,14 +32,6 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.lifecycle.ktx"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)

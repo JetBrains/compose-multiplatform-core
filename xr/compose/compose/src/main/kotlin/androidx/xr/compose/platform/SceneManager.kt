@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.platform
 
+import android.annotation.SuppressLint
 import android.util.CloseGuard
 import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
@@ -27,6 +28,7 @@ import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
  * as well as developer tooling to help semantically identify parts of the compose tree. It is not
  * intended to be used in individual apps.
  */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @Suppress("NotCloseable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object SceneManager : AutoCloseable {
@@ -59,7 +61,7 @@ public object SceneManager : AutoCloseable {
     }
 
     internal fun onSceneCreated(scene: SpatialComposeScene) {
-        if (isRunning) {
+        if (isRunning && scene !in registeredScenes) {
             registeredScenes.add(scene)
         }
     }
@@ -73,12 +75,11 @@ public object SceneManager : AutoCloseable {
     /**
      * Returns all root subspace semantics nodes of all registered scenes.
      *
-     * [SceneManager.start] should be called before attempting to get the root subspace semantics
-     * nodes. This will throw an [IllegalStateException] if the [SceneManager] is not in a running
-     * state.
+     * If the SceneManager is not currently running we assume that we are in a non-XR environment
+     * and an empty list will be returned (e.g. `setContent` was called instead of
+     * `setContentWithCompatibilityForXr`).
      */
     public fun getAllRootSubspaceSemanticsNodes(): List<SubspaceSemanticsInfo> {
-        check(isRunning) { "SceneManager is not started. Call SceneManager.start() first." }
         return registeredScenes.map { it.rootElement.compositionOwner.root.measurableLayout }
     }
 

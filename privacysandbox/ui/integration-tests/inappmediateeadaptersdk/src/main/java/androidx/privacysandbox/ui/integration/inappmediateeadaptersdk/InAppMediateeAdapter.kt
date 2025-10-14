@@ -34,14 +34,14 @@ class InAppMediateeAdapter(private val context: Context) : MediateeAdapterInterf
         adType: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        mediationTestCallbackProxy: Bundle
+        mediationTestCallbackProxy: Bundle,
     ): Bundle {
         return inAppMediateeSdkApi.loadAd(
             adFormat,
             adType,
             waitInsideOnDraw,
             drawViewability,
-            mediationTestCallbackProxy
+            mediationTestCallbackProxy,
         )
     }
 }

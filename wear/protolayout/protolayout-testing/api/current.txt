@@ -28,6 +28,7 @@ package androidx.wear.protolayout.testing {
     method public static androidx.wear.protolayout.testing.LayoutElementMatcher hasWidth(androidx.wear.protolayout.DimensionBuilders.ContainerDimension width);
     method public static androidx.wear.protolayout.testing.LayoutElementMatcher hasWidth(androidx.wear.protolayout.DimensionBuilders.ProportionalDimensionProp width);
     method public static androidx.wear.protolayout.testing.LayoutElementMatcher isClickable();
+    method public static androidx.wear.protolayout.testing.LayoutElementMatcher isSemanticsHeading();
   }
 
   public final class LayoutElementAssertion {
@@ -53,7 +54,7 @@ package androidx.wear.protolayout.testing {
   }
 
   public final class TestContext {
-    method public androidx.wear.protolayout.expression.DynamicDataMap getDynamicData();
+    method @InaccessibleFromKotlin public androidx.wear.protolayout.expression.DynamicDataMap getDynamicData();
     property public androidx.wear.protolayout.expression.DynamicDataMap dynamicData;
   }
 

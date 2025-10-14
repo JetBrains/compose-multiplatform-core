@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/420551535
+
 package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.foundation.AutoTestFrameClock
-import androidx.compose.foundation.ComposeFoundationFlags.isAutomaticNestedPrefetchEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
@@ -51,14 +52,9 @@ class LazyGridNestedPrefetchingTest(val config: Config) :
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun initParameters(): Array<Any> =
-            arrayOf(
-                Config(Orientation.Vertical),
-                Config(Orientation.Horizontal),
-            )
+            arrayOf(Config(Orientation.Vertical), Config(Orientation.Horizontal))
 
-        class Config(
-            val orientation: Orientation,
-        ) {
+        class Config(val orientation: Orientation) {
             override fun toString() = "orientation=$orientation"
         }
     }
@@ -179,7 +175,7 @@ class LazyGridNestedPrefetchingTest(val config: Config) :
             state,
             createNestedLazyGridState = {
                 LazyGridState(prefetchStrategy = LazyGridPrefetchStrategy(1))
-            }
+            },
         )
 
         val prefetchIndex = 2
@@ -220,7 +216,7 @@ class LazyGridNestedPrefetchingTest(val config: Config) :
                 LazyGridState(
                     prefetchStrategy = NestedPrefetchWithConstraintsStrategy(nestedConstraints)
                 )
-            }
+            },
         )
 
         val prefetchIndex = 2
@@ -281,7 +277,6 @@ class LazyGridNestedPrefetchingTest(val config: Config) :
 
     @Test
     fun automaticNestedPrefetchingBasedOnNumberOfVisibleItems() {
-        isAutomaticNestedPrefetchEnabled = true
 
         val state = createState()
         composeGrid(state, createNestedLazyGridState = { LazyGridState(firstVisibleItemIndex = 4) })
@@ -368,13 +363,13 @@ class LazyGridNestedPrefetchingTest(val config: Config) :
      */
     private fun composeGrid(
         lazyGridState: LazyGridState,
-        createNestedLazyGridState: (index: Int) -> LazyGridState = { LazyGridState() }
+        createNestedLazyGridState: (index: Int) -> LazyGridState = { LazyGridState() },
     ) {
         rule.setContent {
             LazyGrid(
                 cells = 1,
                 modifier = Modifier.mainAxisSize(itemsSizeDp * 2.5f).crossAxisSize(itemsSizeDp * 2),
-                state = lazyGridState
+                state = lazyGridState,
             ) {
                 items(100, contentType = { "NESTED_GRID" }) { index ->
                     TrackActiveNodesEffect(index)
@@ -423,7 +418,7 @@ class LazyGridNestedPrefetchingTest(val config: Config) :
     @OptIn(ExperimentalFoundationApi::class)
     private class NestedPrefetchWithConstraintsStrategy(
         private val childConstraints: Constraints,
-        private val initialNestedPrefetchItemCount: Int = 2
+        private val initialNestedPrefetchItemCount: Int = 2,
     ) : LazyGridPrefetchStrategy {
         override fun LazyGridPrefetchScope.onScroll(delta: Float, layoutInfo: LazyGridLayoutInfo) {}
 

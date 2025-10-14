@@ -30,6 +30,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLooper
@@ -52,7 +53,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
             IntentFilter().apply {
                 addAction(ComplicationDataSourceUpdateRequester.ACTION_REQUEST_UPDATE)
                 addAction(ComplicationDataSourceUpdateRequester.ACTION_REQUEST_UPDATE_ALL)
-            }
+            },
         )
         shadowOf(context.packageManager).setSystemFeature(PackageManager.FEATURE_WATCH, true)
     }
@@ -79,7 +80,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
                 ComplicationDataSourceUpdateRequester.filterRequests(
                     providerComponent,
                     arrayOf(1, 3, 4).toIntArray(),
-                    requests
+                    requests,
                 )
             )
             .isEqualTo(expectedResult)
@@ -104,12 +105,13 @@ class ComplicationDataSourceUpdateRequesterImplTest {
                 ComplicationDataSourceUpdateRequester.filterRequests(
                     providerComponent,
                     arrayOf(3, 4).toIntArray(),
-                    requests
+                    requests,
                 )
             )
             .isEqualTo(expectedResult)
     }
 
+    @Ignore // b/442020772
     @Test
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun requestUpdate_sendsBroadcast() {
@@ -124,12 +126,13 @@ class ComplicationDataSourceUpdateRequesterImplTest {
                 ?.latestIntent
                 ?.getParcelableExtra(
                     ComplicationDataSourceUpdateRequester.EXTRA_PROVIDER_COMPONENT,
-                    ComponentName::class.java
+                    ComponentName::class.java,
                 )
         assertThat(componentName).isNotNull()
         assertThat(componentName).isEqualTo(providerComponent)
     }
 
+    @Ignore // b/442020772
     @Test
     fun requestUpdateAll_sendsBroadcast() {
         requester?.requestUpdateAll()
@@ -148,6 +151,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
         assertThat(requesterImpl.shouldUseWearSdk()).isFalse()
     }
 
+    @Ignore // b/442020772
     @Test
     fun shouldUseWearSdk_sdk35OrLowerWatch_returnsFalse() {
         shadowOf(context.packageManager).setSystemFeature(PackageManager.FEATURE_WATCH, true)

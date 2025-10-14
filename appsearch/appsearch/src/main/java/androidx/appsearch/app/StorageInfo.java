@@ -100,7 +100,6 @@ public final class StorageInfo extends AbstractSafeParcelable {
      * along with alive blobs.
      */
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-    @ExperimentalAppSearchApi
     public long getBlobsSizeBytes() {
         return mBlobsSizeBytes;
     }
@@ -113,7 +112,6 @@ public final class StorageInfo extends AbstractSafeParcelable {
      * with alive blobs as well.
      */
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-    @ExperimentalAppSearchApi
     public int getBlobsCount() {
         return mBlobsCount;
     }
@@ -150,7 +148,6 @@ public final class StorageInfo extends AbstractSafeParcelable {
         /** Sets the size of stored blobs in bytes. */
         @CanIgnoreReturnValue
         @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-        @ExperimentalAppSearchApi
         public @NonNull StorageInfo.Builder setBlobsSizeBytes(long blobsSizeBytes) {
             mBlobsSizeBytes = blobsSizeBytes;
             return this;
@@ -159,7 +156,6 @@ public final class StorageInfo extends AbstractSafeParcelable {
         /** Sets the number of stored blobs. */
         @CanIgnoreReturnValue
         @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-        @ExperimentalAppSearchApi
         public @NonNull StorageInfo.Builder setBlobsCount(int blobsCount) {
             mBlobsCount = blobsCount;
             return this;

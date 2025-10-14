@@ -34,6 +34,8 @@ import androidx.camera.core.impl.utils.Exif
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.futures.FutureCallback
 import androidx.camera.core.impl.utils.futures.Futures
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.integration.view.util.takePictureOnDisk
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
@@ -86,26 +88,24 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class CameraControllerFragmentTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val useCameraRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
             testCameraRule,
-            CameraUtil.PreTestCameraIdList(cameraConfig)
+            CameraUtil.PreTestCameraIdList(cameraConfig),
         )
 
     @get:Rule
     val grantPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            android.Manifest.permission.RECORD_AUDIO
+            android.Manifest.permission.RECORD_AUDIO,
         )
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -164,7 +164,11 @@ class CameraControllerFragmentTest(
                     started = true
                     return@observe
                 }
-                if (started) {
+
+                // The FOCUS_FAILED state can occur before FOCUS_STARTED if none of the provided
+                // AF/AE/AWB MeteringPoints are supported by the device. In such cases, we can
+                // consider the focus operation to be finished.
+                if (started || it.focusState == TAP_TO_FOCUS_FAILED) {
                     finalState = it.focusState
                     focused.release()
                 }
@@ -225,7 +229,7 @@ class CameraControllerFragmentTest(
 
                 override fun onFailure(t: Throwable) {}
             },
-            CameraXExecutors.directExecutor()
+            CameraXExecutors.directExecutor(),
         )
         assertThat(semaphore.tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
     }
@@ -304,7 +308,7 @@ class CameraControllerFragmentTest(
         // TODO(b/147448711) Add back in once cuttlefish has correct user cropping functionality.
         Assume.assumeFalse(
             "Cuttlefish does not correctly handle crops. Unable to test.",
-            Build.MODEL.contains("Cuttlefish")
+            Build.MODEL.contains("Cuttlefish"),
         )
 
         // Arrange.
@@ -333,7 +337,7 @@ class CameraControllerFragmentTest(
         transformCapture.postRotate(
             captureToPreviewDegrees.toFloat(),
             width.toFloat() / 2,
-            height.toFloat() / 2
+            height.toFloat() / 2,
         )
         if (captureResult.isFlippedHorizontally) {
             transformCapture.postScale(-1F, 1F, width / 2F, height / 2F)
@@ -351,7 +355,7 @@ class CameraControllerFragmentTest(
         // useful. The test will be skipped.
         assumeTrue(
             "Test skipped. Device most likely in low light environment.",
-            captureLuminance > MIN_LUMINANCE && previewLuminance > MIN_LUMINANCE
+            captureLuminance > MIN_LUMINANCE && previewLuminance > MIN_LUMINANCE,
         )
 
         val captureMoment = getRgbMoments(captureBitmap)
@@ -513,6 +517,41 @@ class CameraControllerFragmentTest(
         fragment.assertCanRecordVideo()
     }
 
+    // b/440374234
+    @Test
+    fun canForceReselectResolutionsWhenMaxResolutionIsSelectedForPreview() {
+        skipVideoRecordingTestIfNotSupportedByEmulator()
+        skipTestWithSurfaceProcessingOnCuttlefishApi30()
+
+        // Act.
+        invertAllUseCaseEnableStatusExceptPreview()
+        instrumentation.runOnMainSync {
+            // Sets ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY to Preview to make it select the
+            // MAXIMUM resolution when possible
+            fragment.setPreviewResolutionSelector(
+                ResolutionSelector.Builder()
+                    .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
+                    .build()
+            )
+        }
+        fragment.assertPreviewIsStreaming()
+
+        // Toggles to the opposite camera
+        instrumentation.runOnMainSync { fragment.toggleCamera() }
+
+        // Disables VideoCapture
+        onView(withId(R.id.video_enabled)).perform(click())
+
+        // Enables ImageCapture
+        onView(withId(R.id.capture_enabled)).perform(click())
+
+        // Assert.
+        // Both Preview and ImageCapture can work normally. Ensures that the ImageCapture can be
+        // bound successfully even the MAXIMUM resolution was originally selected for the Preview.
+        fragment.assertPreviewIsStreaming()
+        fragment.assertCanTakePicture()
+    }
+
     private fun invertAllUseCaseEnableStatusExceptPreview() {
         onView(withId(R.id.capture_enabled)).perform(click())
         onView(withId(R.id.analysis_enabled)).perform(click())
@@ -523,7 +562,7 @@ class CameraControllerFragmentTest(
         // Skip test for b/253211491
         Assume.assumeFalse(
             "Skip tests for Cuttlefish API 30 eglCreateWindowSurface issue",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30,
         )
     }
 
@@ -648,7 +687,7 @@ class CameraControllerFragmentTest(
             bitmap,
             rotationAndFlip.first,
             rotationAndFlip.second,
-            rotationAndFlip.third
+            rotationAndFlip.third,
         )
     }
 
@@ -691,7 +730,7 @@ class CameraControllerFragmentTest(
                 videoRecordingSemaphore.tryAcquire(
                     RECORDING_COUNT,
                     TIMEOUT_SECONDS,
-                    TimeUnit.SECONDS
+                    TimeUnit.SECONDS,
                 )
             )
             .isTrue()
@@ -727,7 +766,7 @@ class CameraControllerFragmentTest(
             CameraControllerFragment::class.java,
             null,
             R.style.AppTheme,
-            null
+            null,
         )
     }
 
@@ -781,7 +820,7 @@ class CameraControllerFragmentTest(
         val bitmap: Bitmap,
         val rotationDegrees: Int,
         val isFlippedHorizontally: Boolean,
-        val isFlippedVertically: Boolean
+        val isFlippedVertically: Boolean,
     )
 
     companion object {
@@ -803,7 +842,7 @@ class CameraControllerFragmentTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 }

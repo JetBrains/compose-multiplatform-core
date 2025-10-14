@@ -17,8 +17,6 @@
 package androidx.compose.foundation.selection
 
 import androidx.compose.foundation.ClickableNode
-import androidx.compose.foundation.ComposeFoundationFlags
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.LocalIndication
@@ -64,13 +62,13 @@ import androidx.compose.ui.semantics.selected
 @Deprecated(
     message =
         "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 fun Modifier.selectable(
     selected: Boolean,
     enabled: Boolean = true,
     role: Role? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) =
     composed(
         inspectorInfo =
@@ -99,7 +97,7 @@ fun Modifier.selectable(
             indication = localIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -142,53 +140,19 @@ fun Modifier.selectable(
     enabled: Boolean = true,
     role: Role? = null,
     interactionSource: MutableInteractionSource? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ): Modifier {
-    @OptIn(ExperimentalFoundationApi::class)
-    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
-        this.then(
-            SelectableElement(
-                selected = selected,
-                interactionSource = interactionSource,
-                indicationNodeFactory = null,
-                useLocalIndication = true,
-                enabled = enabled,
-                role = role,
-                onClick = onClick
-            )
+    return this.then(
+        SelectableElement(
+            selected = selected,
+            interactionSource = interactionSource,
+            indicationNodeFactory = null,
+            useLocalIndication = true,
+            enabled = enabled,
+            role = role,
+            onClick = onClick,
         )
-    } else
-        composed(
-            inspectorInfo =
-                debugInspectorInfo {
-                    name = "selectable"
-                    properties["selected"] = selected
-                    properties["enabled"] = enabled
-                    properties["role"] = role
-                    properties["onClick"] = onClick
-                }
-        ) {
-            val localIndication = LocalIndication.current
-            val intSource =
-                interactionSource
-                    ?: if (localIndication is IndicationNodeFactory) {
-                        // We can fast path here as it will be created inside clickable lazily
-                        null
-                    } else {
-                        // We need an interaction source to pass between the indication modifier and
-                        // clickable, so
-                        // by creating here we avoid another composed down the line
-                        remember { MutableInteractionSource() }
-                    }
-            Modifier.selectable(
-                selected = selected,
-                interactionSource = intSource,
-                indication = localIndication,
-                enabled = enabled,
-                role = role,
-                onClick = onClick
-            )
-        }
+    )
 }
 
 /**
@@ -233,11 +197,11 @@ fun Modifier.selectable(
     indication: Indication?,
     enabled: Boolean = true,
     role: Role? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
-        indication = indication
+        indication = indication,
     ) { intSource, indicationNodeFactory ->
         SelectableElement(
             selected = selected,
@@ -246,7 +210,7 @@ fun Modifier.selectable(
             useLocalIndication = false,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -257,7 +221,7 @@ private class SelectableElement(
     private val useLocalIndication: Boolean,
     private val enabled: Boolean,
     private val role: Role?,
-    private val onClick: () -> Unit
+    private val onClick: () -> Unit,
 ) : ModifierNodeElement<SelectableNode>() {
     override fun create() =
         SelectableNode(
@@ -267,7 +231,7 @@ private class SelectableElement(
             useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
 
     override fun update(node: SelectableNode) {
@@ -278,7 +242,7 @@ private class SelectableElement(
             useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -329,7 +293,7 @@ private class SelectableNode(
     useLocalIndication: Boolean,
     enabled: Boolean,
     role: Role?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) :
     ClickableNode(
         interactionSource = interactionSource,
@@ -338,7 +302,7 @@ private class SelectableNode(
         enabled = enabled,
         onClickLabel = null,
         role = role,
-        onClick = onClick
+        onClick = onClick,
     ) {
     fun update(
         selected: Boolean,
@@ -347,7 +311,7 @@ private class SelectableNode(
         useLocalIndication: Boolean,
         enabled: Boolean,
         role: Role?,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         if (this.selected != selected) {
             this.selected = selected
@@ -360,7 +324,7 @@ private class SelectableNode(
             enabled = enabled,
             onClickLabel = null,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 

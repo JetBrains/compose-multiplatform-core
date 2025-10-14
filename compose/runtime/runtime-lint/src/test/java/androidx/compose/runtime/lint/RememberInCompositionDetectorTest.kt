@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnstableApiUsage")
-
 package androidx.compose.runtime.lint
 
 import androidx.compose.lint.test.Stubs
@@ -32,10 +30,8 @@ import org.junit.runners.Parameterized
 @Suppress("UNUSED_PARAMETER")
 @RunWith(Parameterized::class)
 /** Test for [RememberInCompositionDetector]. */
-class RememberInCompositionDetectorTest(
-    private val definitionsStub: TestFile,
-    testType: String,
-) : LintDetectorTest() {
+class RememberInCompositionDetectorTest(private val definitionsStub: TestFile, testType: String) :
+    LintDetectorTest() {
     override fun getDetector(): Detector = RememberInCompositionDetector()
 
     override fun getIssues(): MutableList<Issue> =
@@ -80,7 +76,7 @@ class RememberInCompositionDetectorTest(
         r2RNZT+4kdvzxPzhojK1gjsktaTGIHv/Fst4SftnZGgBWYrf7SIlkENewT0F
         97FM/hWBAlbxgGhr0+NDPMJjZXahCTxBUUEeJaSxTiIGNgw8NbCJZ7Rjy8A2
         drpgEXbxnFIi7EV48QtSR8AWxQMAAA==
-        """
+        """,
             )
 
         private val Definitions =
@@ -236,7 +232,7 @@ class RememberInCompositionDetectorTest(
             RprAv5XZpMcvRWKmOzc/jm2hRDfhfybKMSlgFwVBbWMHBzDswisUhAvcxo7h
             c/Pckrnhd2DFWI5RjrGCimGsxgiw1gFRqGK9Yz4ZGwqbClsLLCk4Cq6C9w3B
             DBSI7QEAAA==
-            """
+            """,
             )
 
         @JvmStatic
@@ -244,7 +240,7 @@ class RememberInCompositionDetectorTest(
         fun initParameters() =
             listOf(
                 arrayOf(Definitions.kotlin, "sourceDefinitions"),
-                arrayOf(Definitions.bytecode, "bytecodeDefinitions")
+                arrayOf(Definitions.bytecode, "bytecodeDefinitions"),
             )
     }
 
@@ -358,7 +354,7 @@ class RememberInCompositionDetectorTest(
                 Stubs.Composable,
                 RememberInCompositionStub,
                 definitionsStub,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expect(
@@ -552,7 +548,7 @@ src/androidx/compose/runtime/foo/{.kt:98: Error: Calling a @RememberInCompositio
                 Stubs.Composable,
                 RememberInCompositionStub,
                 definitionsStub,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expect(
@@ -751,7 +747,7 @@ src/androidx/compose/runtime/foo/test.kt:14: Error: Calling a @RememberInComposi
                 Stubs.Composable,
                 RememberInCompositionStub,
                 definitionsStub,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expectClean()
@@ -863,7 +859,7 @@ src/androidx/compose/runtime/foo/test.kt:14: Error: Calling a @RememberInComposi
                 Stubs.Composable,
                 RememberInCompositionStub,
                 definitionsStub,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expectClean()

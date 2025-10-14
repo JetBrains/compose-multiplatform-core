@@ -19,17 +19,22 @@ package androidx.xr.scenecore
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 
-@IntDef(Space.PARENT, Space.ACTIVITY, Space.REAL_WORLD)
-@Retention(AnnotationRetention.SOURCE)
-internal annotation class SpaceValue
-
-/** Coordinate spaces in which to apply the transformation values. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Retention(AnnotationRetention.SOURCE)
+@IntDef(Space.PARENT, Space.ACTIVITY, Space.REAL_WORLD)
+public annotation class SpaceValue
+
+/** Coordinate spaces in which to apply transformation values. */
 public object Space {
-    /** The local coordinate space of an [Entity], relative to its parent. */
+    /**
+     * The coordinate space of an [Entity]'s parent, such that the child Entity's pose, scale, etc.,
+     * are expressed relative to the parent.
+     */
     public const val PARENT: Int = 0
     /** The global coordinate space, at the root of the scene graph for the activity. */
     public const val ACTIVITY: Int = 1
     /** The global coordinate space, unscaled, at the root of the scene graph of the activity. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    // TODO - b/415320653: This will be removed, for now restrict it for internal use.
     public const val REAL_WORLD: Int = 2
 }

@@ -30,7 +30,7 @@ import com.google.devtools.ksp.symbol.KSTypeReference
  */
 class AnnotatedParameterizedAppFunctionSerializable(
     private val appFunctionSerializableClass: KSClassDeclaration,
-    private val arguments: List<KSTypeArgument>
+    private val arguments: List<KSTypeArgument>,
 ) : AnnotatedAppFunctionSerializable(appFunctionSerializableClass) {
     /** A map of type parameter name to its parameterized type. */
     val typeParameterMap: Map<String, KSTypeReference> = buildMap {
@@ -40,18 +40,18 @@ class AnnotatedParameterizedAppFunctionSerializable(
                 arguments.getOrNull(index)?.type
                     ?: throw ProcessingException(
                         "Missing type argument for $typeParameterName",
-                        typeParameter
+                        typeParameter,
                     )
             this[typeParameterName] = actualType
         }
     }
 
     /**
-     * The qualified name of the class being annotated with AppFunctionSerializable with the
+     * The JVM qualified name of the class being annotated with AppFunctionSerializable with the
      * parameterized type information included as a suffix.
      */
-    override val qualifiedName: String by lazy {
-        val originalQualifiedName = super.qualifiedName
+    override val jvmQualifiedName: String by lazy {
+        val originalQualifiedName = unparameterizedJvmQualifiedName
         buildString {
             append(originalQualifiedName)
 
@@ -73,28 +73,62 @@ class AnnotatedParameterizedAppFunctionSerializable(
     }
 
     /**
+     * The JVM qualified name of the parametrized class being annotated with
+     * AppFunctionSerializable, without the parameterized type information
+     */
+    private val unparameterizedJvmQualifiedName: String by lazy { super.jvmQualifiedName }
+
+    override val factoryVariableName: String by lazy {
+        val variableName =
+            appFunctionSerializableTypeClassDeclaration.jvmClassName
+                .replace("$", "")
+                .replaceFirstChar { it -> it.lowercase() }
+        val typeArgumentSuffix =
+            typeParameterMap.values.joinToString { typeArgument ->
+                typeArgument
+                    .toTypeName()
+                    .toString()
+                    .replace(Regex("[_<>]"), "_")
+                    .replace("?", "_Nullable")
+                    .toPascalCase()
+            }
+        "${variableName}${typeArgumentSuffix}Factory"
+    }
+
+    override fun getDescription(sharedDataTypeDescriptionMap: Map<String, String>): String {
+        return docString.ifEmpty {
+            sharedDataTypeDescriptionMap[unparameterizedJvmQualifiedName] ?: ""
+        }
+    }
+
+    /**
      * Returns the annotated class's properties as defined in its primary constructor.
      *
      * When the property is generic type, it will try to resolve the actual type reference from
      * [arguments].
      */
-    override fun getProperties(): List<AppFunctionPropertyDeclaration> {
-        return checkNotNull(appFunctionSerializableClass.primaryConstructor).parameters.map {
-            valueParameter ->
-            val valueTypeDeclaration = valueParameter.type.resolve().declaration
+    override fun getProperties(
+        sharedDataTypeDescriptionMap: Map<String, String>
+    ): List<AppFunctionPropertyDeclaration> {
+        return super.getProperties(sharedDataTypeDescriptionMap).map { propertyDeclaration ->
+            val valueTypeDeclaration = propertyDeclaration.type.resolve().declaration
             if (valueTypeDeclaration is KSTypeParameter) {
                 val actualType =
                     typeParameterMap[valueTypeDeclaration.name.asString()]
                         ?: throw ProcessingException(
                             "Unable to resolve actual type",
-                            valueParameter
+                            propertyDeclaration.type,
                         )
                 AppFunctionPropertyDeclaration(
-                    checkNotNull(valueParameter.name).asString(),
-                    actualType
+                    name = propertyDeclaration.name,
+                    type = actualType,
+                    description = propertyDeclaration.description,
+                    isRequired = propertyDeclaration.isRequired,
+                    propertyAnnotations = propertyDeclaration.propertyAnnotations,
+                    qualifiedName = propertyDeclaration.qualifiedName,
                 )
             } else {
-                AppFunctionPropertyDeclaration(valueParameter)
+                propertyDeclaration
             }
         }
     }

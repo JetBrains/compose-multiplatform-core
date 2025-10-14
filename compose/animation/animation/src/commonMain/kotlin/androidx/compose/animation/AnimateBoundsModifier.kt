@@ -115,7 +115,6 @@ import kotlinx.coroutines.launch
  * @see ApproachLayoutModifierNode
  * @see LookaheadScope
  */
-@ExperimentalSharedTransitionApi // Depends on BoundsTransform
 public fun Modifier.animateBounds(
     lookaheadScope: LookaheadScope,
     modifier: Modifier = Modifier,
@@ -145,7 +144,6 @@ public fun Modifier.animateBounds(
             )
         )
 
-@ExperimentalSharedTransitionApi
 internal data class BoundsAnimationElement(
     val lookaheadScope: LookaheadScope,
     val boundsTransform: BoundsTransform,
@@ -189,7 +187,6 @@ internal data class BoundsAnimationElement(
  * @param animateMotionFrameOfReference Whether to include changes under
  *   [LayoutCoordinates.introducesMotionFrameOfReference] to trigger animations.
  */
-@ExperimentalSharedTransitionApi
 internal class BoundsAnimationModifierNode(
     var lookaheadScope: LookaheadScope,
     var boundsTransform: BoundsTransform,
@@ -230,7 +227,7 @@ internal class BoundsAnimationModifierNode(
 
     override fun ApproachMeasureScope.approachMeasure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // The animated value is null on the first frame as we don't get the full bounds
         // information until placement, so we can safely use the current Size.
@@ -260,7 +257,7 @@ internal class BoundsAnimationModifierNode(
                         lookaheadScopeCoordinates.localPositionOf(
                             sourceCoordinates = coordinates,
                             relativeToSource = Offset.Zero,
-                            includeMotionFrameOfReference = animateMotionFrameOfReference
+                            includeMotionFrameOfReference = animateMotionFrameOfReference,
                         )
                     }
                 }
@@ -278,7 +275,6 @@ internal class BoundsAnimationModifierNode(
 }
 
 /** Helper class to keep track of the BoundsAnimation state for [ApproachLayoutModifierNode]. */
-@OptIn(ExperimentalSharedTransitionApi::class)
 internal class BoundsTransformDeferredAnimation {
     private var animatable: Animatable<Rect, AnimationVector4D>? = null
 
@@ -396,7 +392,7 @@ internal class BoundsTransformDeferredAnimation {
                 val targetOffset =
                     lookaheadScopeCoordinates.localLookaheadPositionOf(
                         sourceCoordinates = coordinates,
-                        includeMotionFrameOfReference = includeMotionFrameOfReference
+                        includeMotionFrameOfReference = includeMotionFrameOfReference,
                     )
                 updateTargetOffset(targetOffset + additionalOffset)
 
@@ -407,10 +403,7 @@ internal class BoundsTransformDeferredAnimation {
         }
     }
 
-    private fun animate(
-        coroutineScope: CoroutineScope,
-        boundsTransform: BoundsTransform,
-    ): Rect {
+    private fun animate(coroutineScope: CoroutineScope, boundsTransform: BoundsTransform): Rect {
         if (targetOffset.isSpecified && targetSize.isSpecified) {
             // Initialize Animatable when possible, we might not use it but we need to have it
             // instantiated since at the first pass the lookahead information will become the
@@ -425,7 +418,10 @@ internal class BoundsTransformDeferredAnimation {
                 isPending = false
                 coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     // Dispatch right away to make sure approach callbacks are accurate on `isIdle`
-                    anim.animateTo(target, boundsTransform.transform(currentBounds!!, target))
+                    anim.animateTo(
+                        target,
+                        boundsTransform.createAnimationSpec(currentBounds!!, target),
+                    )
                 }
             }
         }
@@ -433,11 +429,10 @@ internal class BoundsTransformDeferredAnimation {
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 private val DefaultBoundsTransform = BoundsTransform { _, _ ->
     spring(
         dampingRatio = Spring.DampingRatioNoBouncy,
         stiffness = Spring.StiffnessMediumLow,
-        visibilityThreshold = Rect.VisibilityThreshold
+        visibilityThreshold = Rect.VisibilityThreshold,
     )
 }

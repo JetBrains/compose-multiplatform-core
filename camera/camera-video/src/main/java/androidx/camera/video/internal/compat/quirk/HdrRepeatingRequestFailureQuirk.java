@@ -54,6 +54,7 @@ public class HdrRepeatingRequestFailureQuirk implements Quirk {
      * @param dynamicRange The {@link DynamicRange} for video recording.
      * @return {@code true} if surface processing can be used to avoid the issue.
      */
+    @SuppressWarnings("ReferenceEquality") // dynamicRange != DynamicRange.SDR
     public boolean workaroundBySurfaceProcessing(@NonNull DynamicRange dynamicRange) {
         boolean isHdr = dynamicRange != DynamicRange.SDR;
         return isSamsungS25Ultra() && isHdr;

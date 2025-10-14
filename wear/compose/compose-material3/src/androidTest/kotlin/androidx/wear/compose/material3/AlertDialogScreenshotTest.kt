@@ -16,16 +16,13 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
-import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -45,7 +42,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(TestParameterInjector::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class AlertDialogScreenshotTest {
     @get:Rule val rule = createComposeRule()
 
@@ -64,7 +61,7 @@ class AlertDialogScreenshotTest {
             scrollToBottom = false,
             screenSize = screenSize,
             titleText = "Network error",
-            messageText = null
+            messageText = null,
         )
 
     @Test
@@ -78,7 +75,7 @@ class AlertDialogScreenshotTest {
             scrollToBottom = false,
             screenSize = screenSize,
             titleText = "Network error",
-            messageText = null
+            messageText = null,
         )
 
     @Test
@@ -92,7 +89,7 @@ class AlertDialogScreenshotTest {
             scrollToBottom = false,
             screenSize = screenSize,
             titleText = "Network error",
-            messageText = null
+            messageText = null,
         )
 
     @Test
@@ -106,7 +103,7 @@ class AlertDialogScreenshotTest {
             scrollToBottom = false,
             screenSize = screenSize,
             titleText = "Network error",
-            messageText = null
+            messageText = null,
         )
 
     @Test
@@ -132,7 +129,7 @@ class AlertDialogScreenshotTest {
             showTwoButtons = true,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = null
+            messageText = null,
         )
 
     @Test
@@ -145,7 +142,7 @@ class AlertDialogScreenshotTest {
             showTwoButtons = false,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = null
+            messageText = null,
         )
     }
 
@@ -159,7 +156,7 @@ class AlertDialogScreenshotTest {
             showTwoButtons = true,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = null
+            messageText = null,
         )
     }
 
@@ -172,7 +169,7 @@ class AlertDialogScreenshotTest {
             showContent = false,
             showTwoButtons = false,
             scrollToBottom = false,
-            screenSize = screenSize
+            screenSize = screenSize,
         )
     }
 
@@ -187,7 +184,7 @@ class AlertDialogScreenshotTest {
             showContent = true,
             showTwoButtons = false,
             scrollToBottom = false,
-            screenSize = screenSize
+            screenSize = screenSize,
         )
     }
 
@@ -202,7 +199,7 @@ class AlertDialogScreenshotTest {
             showContent = true,
             showTwoButtons = false,
             scrollToBottom = true,
-            screenSize = screenSize
+            screenSize = screenSize,
         )
     }
 
@@ -217,7 +214,7 @@ class AlertDialogScreenshotTest {
             showContent = true,
             showTwoButtons = false,
             scrollToBottom = true,
-            screenSize = screenSize
+            screenSize = screenSize,
         )
     }
 
@@ -232,7 +229,7 @@ class AlertDialogScreenshotTest {
             showContent = true,
             showTwoButtons = true,
             scrollToBottom = true,
-            screenSize = screenSize
+            screenSize = screenSize,
         )
     }
 
@@ -247,7 +244,7 @@ class AlertDialogScreenshotTest {
             showContent = true,
             showTwoButtons = true,
             scrollToBottom = true,
-            screenSize = screenSize
+            screenSize = screenSize,
         )
     }
 
@@ -261,7 +258,7 @@ class AlertDialogScreenshotTest {
             showTwoButtons = false,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = longMessageText
+            messageText = longMessageText,
         )
     }
 
@@ -277,7 +274,7 @@ class AlertDialogScreenshotTest {
             showTwoButtons = true,
             scrollToBottom = false,
             screenSize = screenSize,
-            messageText = longMessageText
+            messageText = longMessageText,
         )
     }
 
@@ -290,7 +287,7 @@ class AlertDialogScreenshotTest {
         scrollToBottom: Boolean,
         screenSize: ScreenSize,
         messageText: String? = MessageText,
-        titleText: String = TitleText
+        titleText: String = TitleText,
     ) {
         setContentWithTheme {
             ScreenConfiguration(screenSize.size, isRound = true) {
@@ -309,16 +306,15 @@ class AlertDialogScreenshotTest {
                     content =
                         if (showContent) {
                             { dialogContent() }
-                        } else null
+                        } else null,
                 )
             }
         }
         if (scrollToBottom) {
             onNodeWithTag(TEST_TAG).performTouchInput { swipeUp() }
         }
-        onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     private fun ComposeContentTestRule.verifyAlertDialogContentScreenshot(
@@ -330,7 +326,7 @@ class AlertDialogScreenshotTest {
         scrollToBottom: Boolean,
         screenSize: ScreenSize,
         messageText: String? = MessageText,
-        titleText: String = TitleText
+        titleText: String = TitleText,
     ) {
         setContentWithTheme {
             ScreenConfiguration(screenSize.size, isRound = true) {
@@ -349,16 +345,15 @@ class AlertDialogScreenshotTest {
                     content =
                         if (showContent) {
                             { dialogContent() }
-                        } else null
+                        } else null,
                 )
             }
         }
         if (scrollToBottom) {
             onNodeWithTag(TEST_TAG).performTouchInput { swipeUp() }
         }
-        onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     @Composable
@@ -368,7 +363,7 @@ class AlertDialogScreenshotTest {
         icon: @Composable (() -> Unit)?,
         text: @Composable (() -> Unit)?,
         showTwoButtons: Boolean,
-        content: (ScalingLazyListScope.() -> Unit)?
+        content: (ScalingLazyListScope.() -> Unit)?,
     ) {
         if (showTwoButtons) {
             AlertDialog(
@@ -380,7 +375,7 @@ class AlertDialogScreenshotTest {
                 text = text,
                 confirmButton = { AlertDialogDefaults.ConfirmButton({}) },
                 dismissButton = { AlertDialogDefaults.DismissButton({}) },
-                content = content
+                content = content,
             )
         } else {
             AlertDialog(
@@ -391,7 +386,7 @@ class AlertDialogScreenshotTest {
                 icon = icon,
                 text = text,
                 edgeButton = { AlertDialogDefaults.EdgeButton({}) },
-                content = content
+                content = content,
             )
         }
     }
@@ -403,7 +398,7 @@ class AlertDialogScreenshotTest {
         icon: @Composable (() -> Unit)?,
         text: @Composable (() -> Unit)?,
         showTwoButtons: Boolean,
-        content: (ScalingLazyListScope.() -> Unit)?
+        content: (ScalingLazyListScope.() -> Unit)?,
     ) {
         if (showTwoButtons) {
             AlertDialogContent(
@@ -413,7 +408,7 @@ class AlertDialogScreenshotTest {
                 text = text,
                 confirmButton = { AlertDialogDefaults.ConfirmButton({}) },
                 dismissButton = { AlertDialogDefaults.DismissButton({}) },
-                content = content
+                content = content,
             )
         } else {
             AlertDialogContent(
@@ -422,7 +417,7 @@ class AlertDialogScreenshotTest {
                 icon = icon,
                 text = text,
                 edgeButton = { AlertDialogDefaults.EdgeButton({}) },
-                content = content
+                content = content,
             )
         }
     }

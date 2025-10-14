@@ -22,7 +22,6 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityEvent;
 
-import androidx.annotation.RequiresApi;
 import androidx.core.R;
 import androidx.core.view.ViewCompat.ScrollAxis;
 
@@ -153,11 +152,7 @@ public final class ViewGroupCompat {
      *                          together.
      */
     public static void setTransitionGroup(@NonNull ViewGroup group, boolean isTransitionGroup) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Api21Impl.setTransitionGroup(group, isTransitionGroup);
-        } else {
-            group.setTag(R.id.tag_transition_group, isTransitionGroup);
-        }
+        group.setTransitionGroup(isTransitionGroup);
     }
 
     /**
@@ -166,13 +161,7 @@ public final class ViewGroupCompat {
      * individually during the transition.
      */
     public static boolean isTransitionGroup(@NonNull ViewGroup group) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.isTransitionGroup(group);
-        }
-        Boolean explicit = (Boolean) group.getTag(R.id.tag_transition_group);
-        return (explicit != null && explicit)
-                || group.getBackground() != null
-                || ViewCompat.getTransitionName(group) != null;
+        return group.isTransitionGroup();
     }
 
     /**
@@ -190,13 +179,7 @@ public final class ViewGroupCompat {
     @ScrollAxis
     @SuppressWarnings("RedundantCast") // Intentionally invoking interface method.
     public static int getNestedScrollAxes(@NonNull ViewGroup group) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Api21Impl.getNestedScrollAxes(group);
-        }
-        if (group instanceof NestedScrollingParent) {
-            return ((NestedScrollingParent) group).getNestedScrollAxes();
-        }
-        return ViewCompat.SCROLL_AXIS_NONE;
+        return group.getNestedScrollAxes();
     }
 
     /**
@@ -270,24 +253,5 @@ public final class ViewGroupCompat {
             }
         }
         return outInsets[0] != null ? outInsets[0] : CONSUMED;
-    }
-
-    @RequiresApi(21)
-    static class Api21Impl {
-        private Api21Impl() {
-            // This class is not instantiable.
-        }
-
-        static void setTransitionGroup(ViewGroup viewGroup, boolean isTransitionGroup) {
-            viewGroup.setTransitionGroup(isTransitionGroup);
-        }
-
-        static boolean isTransitionGroup(ViewGroup viewGroup) {
-            return viewGroup.isTransitionGroup();
-        }
-
-        static int getNestedScrollAxes(ViewGroup viewGroup) {
-            return viewGroup.getNestedScrollAxes();
-        }
     }
 }
