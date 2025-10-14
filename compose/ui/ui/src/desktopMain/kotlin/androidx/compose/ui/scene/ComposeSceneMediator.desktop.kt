@@ -388,7 +388,6 @@ internal class ComposeSceneMediator(
 
         contentComponent.focusTraversalKeysEnabled = false
 
-        updateNavigationEventInput(true)
         subscribeToInputEvents()
     }
 
@@ -404,15 +403,6 @@ internal class ComposeSceneMediator(
         if (contentComponent.isFocusOwner) {
             invisibleComponent.requestFocusTemporary()
             contentComponent.requestFocus()
-        }
-    }
-
-    private fun updateNavigationEventInput(enabled: Boolean) {
-        val dispatcher = architectureComponentsOwner.navigationEventDispatcherOwner.navigationEventDispatcher
-        if (enabled) {
-            dispatcher.addInput(navigationEventInput)
-        } else {
-            dispatcher.removeInput(navigationEventInput)
         }
     }
 
@@ -565,7 +555,6 @@ internal class ComposeSceneMediator(
         isDisposed = true
 
         unsubscribeFromInputEvents()
-        updateNavigationEventInput(false)
 
         container.remove(contentComponent)
         container.remove(invisibleComponent)
@@ -586,12 +575,17 @@ internal class ComposeSceneMediator(
         isComponentAttached = true
         onChangeDensity()
 
+        architectureComponentsOwner.navigationEventDispatcherOwner
+            .navigationEventDispatcher.addInput(navigationEventInput)
+
         _onComponentAttached?.invoke()
         _onComponentAttached = null
     }
 
     fun onComponentDetached() {
         isComponentAttached = false
+        architectureComponentsOwner.navigationEventDispatcherOwner
+            .navigationEventDispatcher.addInput(navigationEventInput)
         scene.focusManager.releaseFocus()
     }
 
