@@ -22,36 +22,49 @@
  * modifying its settings.
  */
 
-import androidx.build.SoftwareType
-import androidx.build.PlatformIdentifier
+import androidx.build.AndroidXComposePlugin
+import androidx.build.LibraryType
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
-androidXMultiplatform {
-    androidLibrary {
-        compileSdk = 36
-        namespace = "androidx.compose.material3.adaptive.navigation3"
-        androidResources.enable = true
-    }
-    jvmStubs()
-    linuxX64Stubs()
+AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
-    defaultPlatform(PlatformIdentifier.ANDROID)
+androidXComposeMultiplatform {
+    android()
+    desktop()
+    darwin()
+    wasm()
+    js()
+}
 
+kotlin {
     sourceSets {
         commonMain {
             dependencies {
                 api(project(":compose:material3:adaptive:adaptive-navigation"))
                 api(project(":navigation3:navigation3-ui"))
                 implementation(project(":navigationevent:navigationevent-compose"))
+                implementation(project(":collection:collection"))
             }
         }
 
         commonTest {
             dependencies {
+            }
+        }
+
+        jvmMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlib)
             }
         }
 
@@ -63,8 +76,24 @@ androidXMultiplatform {
             }
         }
 
-        androidDeviceTest {
+        desktopMain {
+            dependsOn(jvmMain)
+            dependencies {
+            }
+        }
+
+        jvmTest {
             dependsOn(commonTest)
+            dependencies {
+            }
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+        }
+
+        androidInstrumentedTest {
+            dependsOn(jvmTest)
             dependencies {
                 implementation(project(":compose:material3:material3"))
                 implementation(project(":compose:test-utils"))
@@ -75,24 +104,44 @@ androidXMultiplatform {
             }
         }
 
-        nonAndroidMain {
-            dependsOn(commonMain)
-        }
+        skikoMain.dependsOn(commonMain)
+        desktopMain.dependsOn(skikoMain)
+        nonJvmMain.dependsOn(skikoMain)
+        webMain.dependsOn(nonJvmMain)
+        jsMain.dependsOn(webMain)
+        wasmJsMain.dependsOn(webMain)
+        nativeMain.dependsOn(nonJvmMain)
 
-        jvmStubsMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(nonAndroidMain)
-        }
+        skikoTest.dependsOn(commonTest)
+        desktopTest.dependsOn(skikoTest)
+        nonJvmTest.dependsOn(skikoTest)
+        webTest.dependsOn(nonJvmTest)
+        jsTest.dependsOn(webTest)
+        wasmJsTest.dependsOn(webTest)
+        nativeTest.dependsOn(nonJvmTest)
     }
+}
+
+android {
+    namespace "androidx.compose.material3.adaptive.navigation3"
 }
 
 androidx {
     name = "Material Adaptive"
-    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Compose Material Design Adaptive Library"
-    addGoldenImageAssets()
+    //addGoldenImageAssets()
 }
+
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
+}
+
+// Screenshot tests related setup
+android {
+    sourceSets.androidTest.assets.srcDirs +=
+            project.rootDir.absolutePath + "/../../golden/compose/material3/adaptive"
+    namespace "androidx.compose.material3.adaptive.navigation3"
+}
+
