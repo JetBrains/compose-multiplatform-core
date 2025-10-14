@@ -51,10 +51,10 @@ class CfWA11YTest : OnCanvasTests {
     private suspend fun awaitA11YChanges() {
         val a11yContainer = getA11YContainer() ?: return
 
-        fun Continuation<Unit>.skipFramesUntil(skipCondition: () -> Boolean) {
+        fun Continuation<Unit>.waitUntil(waitUntilCondition: () -> Boolean) {
             window.requestAnimationFrame {
-                if (skipCondition()) {
-                    skipFramesUntil(skipCondition)
+                if (!waitUntilCondition()) {
+                    waitUntil(waitUntilCondition)
                 } else {
                     resumeWith(Result.success(Unit))
                 }
@@ -63,8 +63,8 @@ class CfWA11YTest : OnCanvasTests {
 
         suspendCoroutine { continuation ->
             val initialContent = a11yContainer.innerHTML
-            continuation.skipFramesUntil {
-                a11yContainer.innerHTML == initialContent
+            continuation.waitUntil {
+                a11yContainer.innerHTML != initialContent
             }
         }
     }
