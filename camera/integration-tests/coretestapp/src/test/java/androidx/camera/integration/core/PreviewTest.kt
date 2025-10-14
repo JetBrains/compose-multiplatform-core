@@ -17,7 +17,6 @@
 package androidx.camera.integration.core
 
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.view.Surface
@@ -34,15 +33,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
-class PreviewTest(
-    @CameraSelector.LensFacing private val lensFacing: Int,
-) {
+class PreviewTest(@CameraSelector.LensFacing private val lensFacing: Int) {
     @get:Rule val fakeCameraRule = FakeCameraTestRule(ApplicationProvider.getApplicationContext())
 
     private lateinit var preview: Preview
@@ -78,7 +73,7 @@ class PreviewTest(
 
             surfaceTexture.setOnFrameAvailableListener(
                 { countDownLatch.countDown() },
-                Handler(frameUpdateThread.getLooper())
+                Handler(frameUpdateThread.getLooper()),
             )
 
             val surface = Surface(surfaceTexture)

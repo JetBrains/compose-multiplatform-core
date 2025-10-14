@@ -71,9 +71,9 @@ abstract class ReportDependencyAnalysisAdviceTask : AbstractPostProcessingTask()
 
         val baselineAdvice =
             Gson()
-                .fromJson<AndroidxProjectAdvice>(
+                .fromJson(
                     getDependencyAnalysisBaseline()?.readText(),
-                    AndroidxProjectAdvice::class.java
+                    AndroidxProjectAdvice::class.java,
                 )
 
         val advice =
@@ -189,7 +189,7 @@ internal fun Project.configureDependencyAnalysisPlugin() {
     val updateDependencyAnalysisBaselineTask =
         tasks.register(
             "updateDependencyAnalysisBaseline",
-            UpdateDependencyAnalysisBaseLineTask::class.java
+            UpdateDependencyAnalysisBaseLineTask::class.java,
         ) { task ->
             task.outputFile.set(layout.projectDirectory.file("dependencyAnalysis-baseline.json"))
             task.cacheEvenIfNoOutputs()
@@ -200,10 +200,9 @@ internal fun Project.configureDependencyAnalysisPlugin() {
     val reportDependencyAnalysisAdviceTask =
         tasks.register(
             "reportDependencyAnalysisAdvice",
-            ReportDependencyAnalysisAdviceTask::class.java
+            ReportDependencyAnalysisAdviceTask::class.java,
         ) { task ->
-            var baselineFile = layout.projectDirectory.file("dependencyAnalysis-baseline.json")
-            task.baseLineFile.set(baselineFile)
+            task.baseLineFile.set(layout.projectDirectory.file("dependencyAnalysis-baseline.json"))
             task.cacheEvenIfNoOutputs()
             // DAGP currently doesn't support KMP, enable KMP projects when b/394970486 is resolved
             task.onlyIf { !(task.isKMP) && task.isPublishedLibrary }
@@ -234,19 +233,19 @@ internal fun Project.configureDependencyAnalysisPlugin() {
  */
 internal data class AndroidxProjectAdvice(
     val projectPath: String,
-    val dependencyAdvice: List<DependencyAdvice>
+    val dependencyAdvice: List<DependencyAdvice>,
 )
 
 internal data class DependencyAdvice(
     val coordinates: Coordinates,
     val fromConfiguration: String?,
-    val toConfiguration: String?
+    val toConfiguration: String?,
 )
 
 internal data class Coordinates(
     val type: String,
     val identifier: String,
-    val resolvedVersion: String?
+    val resolvedVersion: String?,
 )
 
 /** Convert advice reported by DAGP into format suitable for storing in baselines. */
@@ -272,11 +271,11 @@ internal fun ProjectAdvice.toAndroidxProjectAdvice(): AndroidxProjectAdvice {
                         Coordinates(
                             identifier = it.coordinates.identifier,
                             resolvedVersion = resolvedVersion,
-                            type = type
+                            type = type,
                         ),
                     fromConfiguration = it.fromConfiguration,
-                    toConfiguration = it.toConfiguration
+                    toConfiguration = it.toConfiguration,
                 )
-            }
+            },
     )
 }

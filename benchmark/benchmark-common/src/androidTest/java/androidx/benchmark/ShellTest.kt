@@ -59,7 +59,7 @@ class ShellTest {
         // skip test on devices that can't read scaling_min_freq, like emulators
         assumeTrue(
             "cpufreq dirs don't have scaling_min_freq, bypassing test",
-            onlineCores.all { File(it.scalingMinFreqPath()).exists() }
+            onlineCores.all { File(it.scalingMinFreqPath()).exists() },
         )
 
         onlineCores.forEach {
@@ -73,22 +73,19 @@ class ShellTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdout_trivial() {
         Assert.assertEquals("foo\n", Shell.executeScriptCaptureStdout("echo foo"))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_trivial() {
         Assert.assertEquals(
             Shell.Output("foo\n", ""),
-            Shell.executeScriptCaptureStdoutStderr("echo foo")
+            Shell.executeScriptCaptureStdoutStderr("echo foo"),
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_stderrFirstLine() {
         Assert.assertEquals(
@@ -99,11 +96,10 @@ class ShellTest {
                 echo bar
                 """
                     .trimIndent()
-            )
+            ),
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_invalidCommand() {
         val shellOutput = Shell.executeScriptCaptureStdoutStderr("invalidCommand")
@@ -117,11 +113,10 @@ class ShellTest {
         // API 30: "invalidCommand: inaccessible or not found"
         Assert.assertTrue(
             "unexpected stderr \"$stderr\"",
-            stderr.contains("invalidCommand") && stderr.contains("not found")
+            stderr.contains("invalidCommand") && stderr.contains("not found"),
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_pipe_xargs() {
         // validate piping works with xargs
@@ -134,17 +129,16 @@ class ShellTest {
         // validate piping works
         Assert.assertEquals(
             "foo\n",
-            Shell.executeScriptCaptureStdout("echo foo | echo $(</dev/stdin)")
+            Shell.executeScriptCaptureStdout("echo foo | echo $(</dev/stdin)"),
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_stdinArg_xargs() {
         // validate stdin to first command in script
         Assert.assertEquals(
             "foo\n",
-            Shell.executeScriptCaptureStdout("xargs echo $1", stdin = "foo")
+            Shell.executeScriptCaptureStdout("xargs echo $1", stdin = "foo"),
         )
     }
 
@@ -154,11 +148,10 @@ class ShellTest {
         // validate stdin to first command in script
         Assert.assertEquals(
             "foo\n",
-            Shell.executeScriptCaptureStdout("echo $(</dev/stdin)", stdin = "foo")
+            Shell.executeScriptCaptureStdout("echo $(</dev/stdin)", stdin = "foo"),
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdout_multilineRedirect() {
         Assert.assertEquals(
@@ -169,11 +162,10 @@ class ShellTest {
                     cat /data/local/tmp/foofile
                 """
                     .trimIndent()
-            )
+            ),
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_multilineRedirectStdin_xargs() {
         Assert.assertEquals(
@@ -184,8 +176,8 @@ class ShellTest {
                     cat /data/local/tmp/foofile
                 """
                     .trimIndent(),
-                stdin = "foo"
-            )
+                stdin = "foo",
+            ),
         )
     }
 
@@ -200,18 +192,17 @@ class ShellTest {
                     cat /data/local/tmp/foofile
                 """
                     .trimIndent(),
-                stdin = "foo"
-            )
+                stdin = "foo",
+            ),
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun createRunnableExecutable_simpleScript() {
         val path =
             Shell.createRunnableExecutable(
                 name = "myScript.sh",
-                inputStream = "echo foo".byteInputStream()
+                inputStream = "echo foo".byteInputStream(),
             )
         try {
             Assert.assertEquals("foo\n", Shell.executeScriptCaptureStdout(path))
@@ -220,7 +211,6 @@ class ShellTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun isPackageAlive() {
         // this package is certainly alive...
@@ -230,14 +220,12 @@ class ShellTest {
         assertNotNull(Shell.isPackageAlive(Packages.FAKE))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun pidof() {
         assertNotNull(pidof(Packages.TEST))
         assertNull(pidof(Packages.FAKE))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun isPidAlive() {
         val pid = pidof(Packages.TEST)!!
@@ -248,7 +236,6 @@ class ShellTest {
         assertFalse(Shell.isProcessAlive(pid + 1, Packages.TEST))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait() {
         // validate that killTermProcessesAndWait kills bg process
@@ -258,16 +245,14 @@ class ShellTest {
         assertFalse(backgroundProcess.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_nonExistentProcess() {
         Shell.killProcessesAndWait(
             processName = Packages.FAKE,
-            processKiller = { fail("shouldn't execute process killer, no process of this name") }
+            processKiller = { fail("shouldn't execute process killer, no process of this name") },
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_failure() {
         // validate that killTermProcessesAndWait kills bg process
@@ -283,7 +268,7 @@ class ShellTest {
         Shell.killProcessesAndWait(
             listOf(backgroundProcess),
             waitPollMaxCount = 5,
-            onFailure = { error -> failureMessage = error }
+            onFailure = { error -> failureMessage = error },
         ) {
             // noop, process not killed!
         }
@@ -291,7 +276,6 @@ class ShellTest {
         assertTrue(backgroundProcess.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_allowBackground() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -313,7 +297,6 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_multi() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -329,7 +312,6 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_processName() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -344,14 +326,12 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun getRunningSubPackages() {
         assertEquals(emptyList(), Shell.getRunningProcessesForPackage("not.a.real.packagename"))
         assertEquals(listOf(Packages.TEST), Shell.getRunningProcessesForPackage(Packages.TEST))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun checkRootStatus() {
         if (Shell.isSessionRooted()) {
@@ -359,12 +339,11 @@ class ShellTest {
         } else {
             assertFalse(
                 Shell.executeScriptCaptureStdout("id").contains("uid=0(root)"),
-                "Shell.isSessionRooted() is false so user should not be root"
+                "Shell.isSessionRooted() is false so user should not be root",
             )
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun shellReuse() {
         val script = Shell.createShellScript("xargs echo $1", stdin = "foo")
@@ -376,7 +355,6 @@ class ShellTest {
         script.cleanUp()
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun getChecksum() {
         val emptyPaths = listOf("/data/local/tmp/emptyfile1", "/data/local/tmp/emptyfile2")
@@ -415,7 +393,7 @@ class ShellTest {
                         // Api 26-27
                         "quicken",
                         // Api 28 and above
-                        "run-from-apk"
+                        "run-from-apk",
                     ),
             message = "Unexpected status value: $status",
         )
@@ -437,8 +415,8 @@ class ShellTest {
                               status: /data/app/androidx.benchmark.test-C3VDUG1iLystEGyQTxcspA==/oat/x86/base.odex[status=kOatUpToDate, compilat
                               ion_filter=quicken]
         """
-                        .trimIndent()
-                )
+                        .trimIndent(),
+                ),
         )
 
         // Captured on API 26 sailfish
@@ -453,8 +431,8 @@ class ShellTest {
                         path: /data/app/androidx.compose.foundation.layout.benchmark.test-pBhSh_spHfjDL-5jgzu_Jg==/base.apk
                           arm64: /data/app/androidx.compose.foundation.layout.benchmark.test-pBhSh_spHfjDL-5jgzu_Jg==/oat/arm64/base.odex[status=kOatUpToDate, compilation_filter=speed]
         """
-                        .trimIndent()
-                )
+                        .trimIndent(),
+                ),
         )
 
         // Captured on API 28 or higher device, duplicated from comment, specifics not known
@@ -473,8 +451,8 @@ class ShellTest {
                 ## These lines added for test purposes
                 ## status=0 []
         """
-                        .trimIndent()
-                )
+                        .trimIndent(),
+                ),
         )
 
         // Captured on API 32 emulator
@@ -489,8 +467,8 @@ class ShellTest {
                     path: /data/app/~~coMYW_NCkevOuZyH32n5Ag==/androidx.benchmark.test-kcNBMDGJ58lezaNWmNyTzQ==/base.apk
                       x86_64: [status=run-from-apk] [reason=unknown]
                 """
-                        .trimIndent()
-                )
+                        .trimIndent(),
+                ),
         )
     }
 
@@ -549,18 +527,28 @@ class ShellTest {
         val processPids = Shell.pgrepLF(Packages.TEST)
         assertTrue(
             processPids.any { it.processName == Packages.TEST },
-            "expected package name to be contained in output:\n${processPids.joinToString("\n")}"
+            "expected package name to be contained in output:\n${processPids.joinToString("\n")}",
         )
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 35)
+    @SdkSuppress(maxSdkVersion = 35)
     fun pgrepLFBelowApi36() {
         val processPids = Shell.pgrepLF(Packages.TEST)
         assertTrue(
             processPids.any { it.processName == Packages.TEST },
-            "expected package name to be contained in output:\n${processPids.joinToString("\n")}"
+            "expected package name to be contained in output:\n${processPids.joinToString("\n")}",
         )
+    }
+
+    @Test
+    fun enablePackages() {
+        Shell.enablePackages(listOf(Packages.FAKE, Packages.FAKE + "1"))
+    }
+
+    @Test
+    fun disablePackages() {
+        Shell.disablePackages(listOf(Packages.FAKE, Packages.FAKE + "1"))
     }
 
     private fun pidof(packageName: String): Int? {

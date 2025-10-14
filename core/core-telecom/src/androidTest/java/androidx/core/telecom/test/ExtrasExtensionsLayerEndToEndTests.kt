@@ -65,7 +65,7 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
                 DEFAULT_ADDRESS,
                 CallAttributesCompat.DIRECTION_OUTGOING,
                 CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
-                ALL_CALL_CAPABILITIES
+                ALL_CALL_CAPABILITIES,
             )
     }
 
@@ -242,13 +242,13 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
      */
     private suspend fun addVoipCall(
         callAttributes: CallAttributesCompat,
-        deferredConnection: CompletableDeferred<AutoVoipConnection>
+        deferredConnection: CompletableDeferred<AutoVoipConnection>,
     ): AutoVoipConnection {
         val request = VoipPendingConnectionRequest(callAttributes, deferredConnection)
         mAutoConnectionService.createConnectionRequest(
             mTelecomManager,
             SINGLETON_PHONE_ACCOUNT_HANDLE,
-            request
+            request,
         )
         deferredConnection.await()
         val connection = deferredConnection.getCompleted()
@@ -276,7 +276,7 @@ class ExtrasExtensionsLayerEndToEndTests : BaseTelecomTest() {
         val extension =
             scope.addMeetingSummaryExtension(
                 onCurrentSpeakerChanged = activeParticipantState::emit,
-                onParticipantCountChanged = participantState::emit
+                onParticipantCountChanged = participantState::emit,
             )
 
         suspend fun waitForParticipantCount(expected: Int) {

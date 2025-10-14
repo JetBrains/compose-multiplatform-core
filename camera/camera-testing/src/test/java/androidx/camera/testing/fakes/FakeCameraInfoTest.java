@@ -23,10 +23,11 @@ import static android.graphics.ImageFormat.JPEG_R;
 import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P;
 import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_480P;
 import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_720P;
+import static androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager.MAX_OUTPUT_SIZE;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.os.Build;
+import android.graphics.Rect;
 import android.util.Range;
 import android.util.Size;
 
@@ -37,7 +38,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.ArrayList;
@@ -48,7 +48,6 @@ import java.util.Set;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class FakeCameraInfoTest {
 
     private static final int SENSOR_ROTATION_DEGREES = 90;
@@ -150,5 +149,11 @@ public final class FakeCameraInfoTest {
                 .containsExactly(fps240);
         assertThat(mFakeCameraInfo.getSupportedHighSpeedFrameRateRangesFor(RESOLUTION_1080P))
                 .containsExactly(fps120);
+    }
+
+    @Test
+    public void providesSensorRectAccordingToMaxOutputSize() {
+        assertThat(mFakeCameraInfo.getSensorRect()).isEqualTo(
+                new Rect(0, 0, MAX_OUTPUT_SIZE.getWidth(), MAX_OUTPUT_SIZE.getHeight()));
     }
 }

@@ -48,19 +48,13 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-core:2.6.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
 
-    testRuntimeOnly(libs.testCore)
-    testRuntimeOnly(libs.testRunner)
-    testRuntimeOnly(libs.robolectric)
-
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":internal-testutils-runtime"), {
-        exclude group: "androidx.fragment", module: "fragment"
-    })
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 android {

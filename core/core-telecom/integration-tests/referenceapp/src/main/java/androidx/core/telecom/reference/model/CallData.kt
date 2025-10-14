@@ -19,6 +19,9 @@ package androidx.core.telecom.reference.model
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallException
+import androidx.core.telecom.extensions.CallIconExtension
+import androidx.core.telecom.extensions.LocalCallSilenceExtension
+import androidx.core.telecom.util.ExperimentalAppActions
 
 /**
  * Represents the complete state and attributes of a single ongoing or recently completed call.
@@ -26,31 +29,32 @@ import androidx.core.telecom.CallException
  * This data class holds both the static information defined when the call was initiated (like
  * attributes) and the dynamic, mutable state that changes during the call's lifecycle (like call
  * state, mute status, endpoints, and potential errors).
- *
- * @property callId A unique identifier for this specific call instance.
- * @property attributes The immutable attributes of the call, such as display name, address (URI),
- *   direction (incoming/outgoing), and call type (audio/video). Defined using
- *   [CallAttributesCompat].
- * @property callState The current dynamic state of the call (e.g., [CallState.DIALING],
- *   [CallState.ACTIVE], [CallState.DISCONNECTED]). This property is mutable (`var`) as the state
- *   changes.
- * @property isMuted Indicates whether the microphone associated with the call is currently muted.
- * @property currentEndpoint The currently active audio endpoint for the call (e.g., speakerphone,
- *   earpiece, Bluetooth device). Nullable if no specific endpoint is active or known. Represented
- *   by [CallEndpointCompat].
- * @property availableEndpoints A list of audio endpoints that are currently available for selection
- *   for this call. Nullable if the information is not available. Represented by a List of
- *   [CallEndpointCompat].
- * @property callException Holds any exception that might have occurred, often indicating the reason
- *   for disconnection or failure. Nullable if no error has occurred. Represented by
- *   [CallException].
  */
-data class CallData(
+data class CallData
+@OptIn(ExperimentalAppActions::class)
+constructor(
     val callId: String,
     val attributes: CallAttributesCompat,
     var callState: CallState,
-    val isMuted: Boolean,
+    val isGloballyMuted: Boolean,
     val currentEndpoint: CallEndpointCompat?,
     val availableEndpoints: List<CallEndpointCompat>?,
     val callException: CallException?,
+    /* Participant Extension - This data is all optional and provides info on participants
+     * in a call or meeting with the optional ability to raise hands or kick them */
+    val isParticipantExtensionEnabled: Boolean = false,
+    val participants: List<ParticipantState> = emptyList(),
+    val participantExtension: ParticipantControl? = null,
+    /* Local Call Silence Extension - This data is all optional and provides info on a per call
+     * local silence that can silence the call at the app level instead of the platform level.
+     * This allows apps to process audio data to do stuff like inform the user they are talking
+     * into the mic when it is muted. */
+    val isLocalCallSilenceEnabled: Boolean = false,
+    val isLocallyMuted: Boolean = false,
+    val localCallSilenceExtension: LocalCallSilenceExtension? = null,
+    /* Call Icon Extension - This data is all optional and allows voip apps to share a call
+     * icon with remote surfaces (e.g. watch face, auto, etc.) */
+    val isCallIconExtensionEnabled: Boolean = false,
+    val iconData: IconData? = null,
+    val callIconExtension: CallIconExtension? = null,
 )

@@ -20,7 +20,6 @@ import android.view.Surface
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
@@ -28,6 +27,7 @@ import com.google.common.truth.TruthJUnit.assume
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
@@ -42,7 +42,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
 
     companion object {
@@ -60,7 +59,7 @@ class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
                 width = ANY_WIDTH,
                 height = ANY_HEIGHT,
                 implementationMode = implementationMode,
-                requestId = "${testName.methodName}[${requestNum.andIncrement}]"
+                requestId = "${testName.methodName}[${requestNum.andIncrement}]",
             )
 
     @Test
@@ -113,7 +112,7 @@ class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
             }
             .use { session ->
                 // Ensure session has an initially valid Surface
-                assertThat(session.surface.isValid)
+                assertThat(session.surface.isValid).isTrue()
 
                 detachViewfinder()
                 InstrumentationRegistry.getInstrumentation().waitForIdleSync()
@@ -136,7 +135,7 @@ class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
             }
             .use { session ->
                 // Ensure session has an initially valid Surface
-                assertThat(session.surface.isValid)
+                assertThat(session.surface.isValid).isTrue()
                 surface = session.surface
             }
         // After session is closed, surface should still be valid since view is still attached
@@ -150,7 +149,7 @@ class ViewfinderViewTest(private val implementationMode: ImplementationMode) {
     }
 
     @Test
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
     fun oldSurfaceRequestCancelled_whenNewSurfaceRequestSent() =
         runViewfinderTest(viewfinderInitiallyAttached = false) {
             val mainContext: CoroutineContext = Dispatchers.Main

@@ -36,11 +36,6 @@ androidXMultiplatform {
     jvm()
     androidLibrary {
         namespace = "androidx.benchmark.traceprocessor"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
     }
 
     defaultPlatform(PlatformIdentifier.JVM)
@@ -73,13 +68,6 @@ tasks.withType(KotlinCompile).configureEach {
 // See https://github.com/square/wire/issues/3199
 tasks.named("multiplatformSourceJar").configure {
     dependsOn(tasks.named("generateCommonMainProtos"))
-}
-afterEvaluate {
-    if (!ProjectLayoutType.isPlayground(project)) {
-        tasks.named("generateJavaKzip").configure {
-            dependsOn(tasks.named("generateCommonMainProtos"))
-        }
-    }
 }
 
 wire {
@@ -137,6 +125,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "AndroidX Benchmark TraceProcessor"
-    metalavaK2UastEnabled = false
     samples(project(":benchmark:benchmark-samples"))
 }

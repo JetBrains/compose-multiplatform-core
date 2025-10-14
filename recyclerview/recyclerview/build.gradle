@@ -16,7 +16,7 @@ plugins {
 dependencies {
     api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
-    implementation("androidx.core:core:1.16.0-alpha02")
+    implementation("androidx.core:core:1.16.0")
     implementation("androidx.collection:collection:1.4.2")
     api("androidx.customview:customview:1.0.0")
     implementation("androidx.customview:customview-poolingcontainer:1.0.0")
@@ -48,13 +48,12 @@ dependencies {
 }
 
 android {
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
     defaultConfig {
         compileSdk = 35
         testInstrumentationRunner "androidx.recyclerview.test.TestRunner"
+        consumerProguardFiles("proguard-rules.pro")
     }
+    testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.recyclerview"
 }
 

@@ -20,8 +20,10 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.annotation.RequiresApi
 import androidx.benchmark.DeviceInfo
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.Shell
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -80,7 +82,7 @@ class MacrobenchmarkScopeTest {
         val scope =
             MacrobenchmarkScope(
                 "com.google.android.googlequicksearchbox",
-                launchWithClearTask = true
+                launchWithClearTask = true,
             )
 
         // test only useful if package is alive
@@ -103,7 +105,7 @@ class MacrobenchmarkScopeTest {
         val compilation =
             CompilationMode.Partial(
                 baselineProfileMode = BaselineProfileMode.Disable,
-                warmupIterations = iterations
+                warmupIterations = iterations,
             )
         compilation.resetAndCompile(scope) {
             executions += 1
@@ -133,7 +135,7 @@ class MacrobenchmarkScopeTest {
         val compilation =
             CompilationMode.Partial(
                 baselineProfileMode = BaselineProfileMode.Disable,
-                warmupIterations = warmupIterations
+                warmupIterations = warmupIterations,
             )
         assertEquals(MacrobenchmarkScope.KillMode.None, scope.killMode)
         compilation.resetAndCompile(scope) {
@@ -145,7 +147,7 @@ class MacrobenchmarkScopeTest {
             assertEquals(
                 executions != 1,
                 scope.hasFlushedArtProfiles,
-                "execution nr $executions, flushed = ${scope.hasFlushedArtProfiles}"
+                "execution nr $executions, flushed = ${scope.hasFlushedArtProfiles}",
             )
 
             scope.pressHome()
@@ -181,7 +183,7 @@ class MacrobenchmarkScopeTest {
         val compilation =
             CompilationMode.Partial(
                 baselineProfileMode = BaselineProfileMode.Disable,
-                warmupIterations = 2
+                warmupIterations = 2,
             )
         assertEquals(MacrobenchmarkScope.KillMode.None, scope.killMode)
         assertContains(
@@ -194,7 +196,7 @@ class MacrobenchmarkScopeTest {
                     }
                 }
                 .message!!,
-            "never flushed profiles in any process"
+            "never flushed profiles in any process",
         )
         assertEquals(MacrobenchmarkScope.KillMode.None, scope.killMode)
         assertEquals(2, executions)
@@ -264,7 +266,7 @@ class MacrobenchmarkScopeTest {
         val scope =
             MacrobenchmarkScope(
                 Packages.TEST, // self-instrumenting macrobench, so don't kill the process!
-                launchWithClearTask = true
+                launchWithClearTask = true,
             )
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -284,6 +286,8 @@ class MacrobenchmarkScopeTest {
 
     @Test
     fun measureBlock_methodTracing() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         val scope =
             MacrobenchmarkScope(
                 Packages.TEST, // self-instrumenting macrobench, so don't kill the process!
@@ -307,6 +311,8 @@ class MacrobenchmarkScopeTest {
 
     @Test
     fun multipleMethodTraces_onProcessStartStop() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         val scope = MacrobenchmarkScope(Packages.TARGET, launchWithClearTask = true)
         scope.fileLabel = "TEST-UNIQUE-NAME"
         scope.startMethodTracing()
@@ -328,7 +334,7 @@ class MacrobenchmarkScopeTest {
         val scope =
             MacrobenchmarkScope(
                 Packages.TEST, // self-instrumenting macrobench, so don't kill the process!
-                launchWithClearTask = false
+                launchWithClearTask = false,
             )
         // check that initial launch (home -> activity) is detected
         scope.pressHome()

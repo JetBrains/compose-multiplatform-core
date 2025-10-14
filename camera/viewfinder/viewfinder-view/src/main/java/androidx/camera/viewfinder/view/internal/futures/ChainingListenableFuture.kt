@@ -42,7 +42,7 @@ import kotlin.math.max
  */
 internal class ChainingListenableFuture<I, O>(
     function: AsyncFunction<in I, out O>,
-    inputFuture: ListenableFuture<out I>
+    inputFuture: ListenableFuture<out I>,
 ) : FutureChain<O>(), Runnable {
     private var mFunction: AsyncFunction<in I, out O>?
     private val mMayInterruptIfRunningChannel: BlockingQueue<Boolean> = LinkedBlockingQueue(1)
@@ -202,7 +202,7 @@ internal class ChainingListenableFuture<I, O>(
                         mOutputFuture = null
                     }
                 },
-                Runnable::run
+                Runnable::run,
             )
         } catch (e: UndeclaredThrowableException) {
             // Set the cause of the exception as this future's exception

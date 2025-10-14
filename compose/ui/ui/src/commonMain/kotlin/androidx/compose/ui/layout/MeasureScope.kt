@@ -48,7 +48,7 @@ interface MeasureScope : IntrinsicMeasureScope {
         width: Int,
         height: Int,
         alignmentLines: Map<AlignmentLine, Int> = emptyMap(),
-        placementBlock: Placeable.PlacementScope.() -> Unit
+        placementBlock: Placeable.PlacementScope.() -> Unit,
     ) = layout(width, height, alignmentLines, null, placementBlock)
 
     /**
@@ -71,7 +71,7 @@ interface MeasureScope : IntrinsicMeasureScope {
         height: Int,
         alignmentLines: Map<AlignmentLine, Int> = emptyMap(),
         rulers: (RulerScope.() -> Unit)? = null,
-        placementBlock: Placeable.PlacementScope.() -> Unit
+        placementBlock: Placeable.PlacementScope.() -> Unit,
     ): MeasureResult {
         checkMeasuredSize(width, height)
         return object : MeasureResult {

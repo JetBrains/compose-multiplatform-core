@@ -19,13 +19,26 @@ package androidx.appfunctions.compiler.core
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_ARRAY
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_SINGULAR
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_INTERFACE_LIST
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_INTERFACE_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.squareup.kotlinpoet.BOOLEAN
+import com.squareup.kotlinpoet.BOOLEAN_ARRAY
+import com.squareup.kotlinpoet.BYTE_ARRAY
+import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.DOUBLE_ARRAY
+import com.squareup.kotlinpoet.FLOAT
+import com.squareup.kotlinpoet.FLOAT_ARRAY
+import com.squareup.kotlinpoet.INT
+import com.squareup.kotlinpoet.INT_ARRAY
 import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.LONG_ARRAY
 import com.squareup.kotlinpoet.TypeName
 import java.time.Instant
 import java.time.LocalDateTime
@@ -51,6 +64,10 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
             isAppFunctionSerializableProxyListType(selfTypeReference) -> SERIALIZABLE_PROXY_LIST
             isAppFunctionSerializableListType(selfTypeReference) -> SERIALIZABLE_LIST
             isAppFunctionSerializableType(selfTypeReference) -> SERIALIZABLE_SINGULAR
+            isAppFunctionSerializableInterfaceType(selfTypeReference) ->
+                SERIALIZABLE_INTERFACE_SINGULAR
+            isAppFunctionSerializableInterfaceListType(selfTypeReference) ->
+                SERIALIZABLE_INTERFACE_LIST
             else ->
                 throw ProcessingException(
                     "Unsupported type reference ${selfTypeReference.ensureQualifiedTypeName().asString()}",
@@ -101,6 +118,25 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
     }
 
     /**
+     * Gets the default value when the value is missing for the given type.
+     *
+     * This method returns the default value for the type when it is non-null, since the nullable
+     * type can always default to null.
+     *
+     * @throws ProcessingException if the current type cannot be optional
+     */
+    fun getTypeDefaultValueAsString(): String {
+        val typeQualifiedName = selfTypeReference.ensureQualifiedTypeName().asString()
+        val defaultValue =
+            TYPE_TO_DEFAULT_VALUE_MAP[typeQualifiedName]
+                ?: throw ProcessingException(
+                    "Type ${selfTypeReference.toTypeName()} is not allowed to be optional",
+                    selfTypeReference,
+                )
+        return defaultValue
+    }
+
+    /**
      * The category of types that are supported by app functions.
      *
      * The category of a type is determined by its underlying type. For example, a type reference to
@@ -113,17 +149,45 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         SERIALIZABLE_SINGULAR,
         SERIALIZABLE_LIST,
         SERIALIZABLE_PROXY_SINGULAR,
-        SERIALIZABLE_PROXY_LIST
+        SERIALIZABLE_PROXY_LIST,
+        SERIALIZABLE_INTERFACE_SINGULAR,
+        SERIALIZABLE_INTERFACE_LIST,
     }
 
     companion object {
+        /** Checks if [typeReference] is allowed to be an optional value in AppFunction. */
+        fun isAllowToBeOptional(typeReference: KSTypeReference): Boolean {
+            if (typeReference.resolve().isMarkedNullable) {
+                // Nullable types are always allowed to be optional
+                return true
+            }
+            return TYPE_TO_DEFAULT_VALUE_MAP.keys.contains(
+                typeReference.ensureQualifiedTypeName().asString()
+            )
+        }
+
         /**
          * Checks if the type reference is a supported type.
          *
          * A supported type is a primitive type, a type annotated as @AppFunctionSerializable, or a
          * list of a supported type.
+         *
+         * @param allowSerializableInterfaceTypes Indicates if @AppFunctionSerializableInterface is
+         *   also supported. The @AppFunctionSerializableInterface should only be considered as a
+         *   supported type when processing schema definitions.
          */
-        fun isSupportedType(typeReferenceArgument: KSTypeReference): Boolean {
+        fun isSupportedType(
+            typeReferenceArgument: KSTypeReference,
+            allowSerializableInterfaceTypes: Boolean = false,
+        ): Boolean {
+            if (allowSerializableInterfaceTypes) {
+                if (
+                    isAppFunctionSerializableInterfaceType(typeReferenceArgument) ||
+                        isAppFunctionSerializableInterfaceListType(typeReferenceArgument)
+                ) {
+                    return true
+                }
+            }
             return typeReferenceArgument.asStringWithoutNullQualifier() in SUPPORTED_TYPES ||
                 isSupportedPrimitiveListType(typeReferenceArgument) ||
                 isAppFunctionSerializableType(typeReferenceArgument) ||
@@ -139,26 +203,24 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
          */
         fun KSTypeReference.toAppFunctionDatatype(): Int {
             return when (this.toTypeName().ignoreNullable().toString()) {
-                String::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_STRING
-                Int::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_INT
-                Long::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_LONG
-                Float::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_FLOAT
-                Double::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_DOUBLE
-                Boolean::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_BOOLEAN
-                Unit::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_UNIT
-                Byte::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_BYTES
-                IntArray::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_INT
-                LongArray::class.ensureQualifiedName() -> AppFunctionPrimitiveTypeMetadata.TYPE_LONG
-                FloatArray::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_FLOAT
-                DoubleArray::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_DOUBLE
+                String::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_STRING
+                Int::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_INT
+                Long::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_LONG
+                Float::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_FLOAT
+                Double::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_DOUBLE
+                Boolean::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_BOOLEAN
+
+                Unit::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_UNIT
+                Byte::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_BYTES
+                IntArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_INT
+                LongArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_LONG
+                FloatArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_FLOAT
+                DoubleArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_DOUBLE
                 BooleanArray::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_BOOLEAN
-                ByteArray::class.ensureQualifiedName() ->
-                    AppFunctionPrimitiveTypeMetadata.TYPE_BYTES
-                ANDROID_PENDING_INTENT -> AppFunctionPrimitiveTypeMetadata.TYPE_PENDING_INTENT
+                    AppFunctionDataTypeMetadata.TYPE_BOOLEAN
+                ByteArray::class.ensureQualifiedName() -> AppFunctionDataTypeMetadata.TYPE_BYTES
+
+                ANDROID_PENDING_INTENT -> AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT
                 else ->
                     throw ProcessingException(
                         "Unsupported type reference " + this.ensureQualifiedTypeName().asString(),
@@ -212,6 +274,27 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                     ) != null
         }
 
+        private fun isAppFunctionSerializableInterfaceType(
+            typeReferenceArgument: KSTypeReference
+        ): Boolean {
+            return typeReferenceArgument
+                .resolve()
+                .declaration
+                .annotations
+                .findAnnotation(
+                    IntrospectionHelper.AppFunctionSerializableInterfaceAnnotation.CLASS_NAME
+                ) != null
+        }
+
+        private fun isAppFunctionSerializableInterfaceListType(
+            typeReferenceArgument: KSTypeReference
+        ): Boolean {
+            return typeReferenceArgument.isOfType(LIST) &&
+                isAppFunctionSerializableInterfaceType(
+                    typeReferenceArgument.resolveListParameterizedType()
+                )
+        }
+
         private fun TypeName.ignoreNullable(): TypeName {
             return copy(nullable = false)
         }
@@ -242,7 +325,7 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 Boolean::class.ensureQualifiedName(),
                 String::class.ensureQualifiedName(),
                 Unit::class.ensureQualifiedName(),
-                ANDROID_PENDING_INTENT
+                ANDROID_PENDING_INTENT,
             )
 
         private val SUPPORTED_SINGLE_SERIALIZABLE_PROXY_TYPES =
@@ -250,10 +333,11 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 LocalDateTime::class.ensureQualifiedName(),
                 ANDROID_URI,
                 ZoneId::class.ensureQualifiedName(),
-                Instant::class.ensureQualifiedName()
+                Instant::class.ensureQualifiedName(),
             )
 
-        private val SUPPORTED_PRIMITIVE_TYPES_IN_LIST = setOf(String::class.ensureQualifiedName())
+        private val SUPPORTED_PRIMITIVE_TYPES_IN_LIST =
+            setOf(String::class.ensureQualifiedName(), ANDROID_PENDING_INTENT)
 
         private val SUPPORTED_TYPES =
             SUPPORTED_SINGLE_PRIMITIVE_TYPES +
@@ -263,5 +347,22 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         val SUPPORTED_TYPES_STRING: String =
             SUPPORTED_TYPES.joinToString(",\n") +
                 "\nLists of ${SUPPORTED_PRIMITIVE_TYPES_IN_LIST.joinToString(", ")}"
+
+        /** Maps of AppFunction's supported optional types to its default value. */
+        private val TYPE_TO_DEFAULT_VALUE_MAP =
+            mapOf<String, String>(
+                INT.canonicalName to "0",
+                LONG.canonicalName to "0L",
+                DOUBLE.canonicalName to "0.0",
+                FLOAT.canonicalName to "0.0f",
+                BOOLEAN.canonicalName to "false",
+                INT_ARRAY.canonicalName to "intArrayOf()",
+                LONG_ARRAY.canonicalName to "longArrayOf()",
+                BYTE_ARRAY.canonicalName to "byteArrayOf()",
+                DOUBLE_ARRAY.canonicalName to "doubleArrayOf()",
+                FLOAT_ARRAY.canonicalName to "floatArrayOf()",
+                BOOLEAN_ARRAY.canonicalName to "booleanArrayOf()",
+                LIST.canonicalName to "emptyList()",
+            )
     }
 }

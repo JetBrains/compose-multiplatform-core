@@ -31,13 +31,12 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("androidx.benchmark")
     id("androidx.benchmark.darwin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    // HACK: We consume the artifacts from this target in :collection:collection-benchmark-android
+    jvm()
 
     // XCFrameworkConfig must always be called AndroidXDarwinBenchmarks
     def xcf = new XCFrameworkConfig(project, "AndroidXDarwinBenchmarks")
@@ -64,18 +63,6 @@ androidXMultiplatform {
             dependencies {
                 implementation(project(":collection:collection"))
                 implementation(libs.kotlinStdlib)
-            }
-        }
-
-        androidInstrumentedTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))
-                implementation(libs.junit)
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation(libs.testRules)
             }
         }
 
@@ -111,10 +98,10 @@ androidXMultiplatform {
 }
 
 androidx {
-    name = "Collections Benchmarks (Android / iOS)"
+    name = "Collections Benchmarks (iOS)"
     type = SoftwareType.BENCHMARK
     inceptionYear = "2022"
-    description = "AndroidX Collections Benchmarks (Android / iOS)"
+    description = "AndroidX Collections Benchmarks (iOS)"
 }
 
 darwinBenchmark {
@@ -125,11 +112,4 @@ darwinBenchmark {
     // To run locally switch to iOS 17.0 simulators
     destination = "platform=iOS Simulator,name=iPhone 13,OS=15.2"
     referenceSha.set(androidx.getReferenceSha())
-}
-
-android {
-    namespace = "androidx.collection.benchmark"
-    defaultConfig {
-        minSdk = 22 // b/294570164
-    }
 }

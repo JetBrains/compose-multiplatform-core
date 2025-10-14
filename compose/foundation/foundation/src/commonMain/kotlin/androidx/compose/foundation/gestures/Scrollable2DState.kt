@@ -18,7 +18,6 @@ package androidx.compose.foundation.gestures
 
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
-import androidx.compose.foundation.internal.JvmDefaultWithCompatibility
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,8 +25,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.coroutineScope
 
-@JvmDefaultWithCompatibility
-internal interface Scrollable2DState {
+interface Scrollable2DState {
     /**
      * Call this function to take control of scrolling and gain the ability to send scroll events
      * via [Scroll2DScope.scrollBy]. All actions that change the logical scroll position must be
@@ -39,7 +37,7 @@ internal interface Scrollable2DState {
      */
     suspend fun scroll(
         scrollPriority: MutatePriority = MutatePriority.Default,
-        block: suspend Scroll2DScope.() -> Unit
+        block: suspend Scroll2DScope.() -> Unit,
     )
 
     /**
@@ -66,17 +64,21 @@ internal interface Scrollable2DState {
     val isScrollInProgress: Boolean
 
     /**
-     * Whether this [Scrollable2DState] can scroll at a given vector [angle] in rads.
+     * Whether this [Scrollable2DState] can scroll using [offset]. This means that this state has
+     * enough space to apply offsets on the direction represented by [offset]. Inferring
+     * directionality from [offset] can be achieved using the angle offered by atan(offset.y,
+     * offset.x). Note that returning `true` here does not imply that offset *will* be consumed. The
+     * Scrollable2DState may decide not to handle the incoming offset (such as if it is already
+     * being scrolled separately).
      *
-     * Note that `true` here does not imply that delta *will* be consumed - the Scrollable2DState
-     * may decide not to handle the incoming delta (such as if it is already being scrolled
-     * separately).
+     * @param offset An offset in pixels representing the 2D vector to check against.
+     * @return Whether this state can scroll in the direction given by [offset].
      */
-    fun canScroll(angle: Float): Boolean
+    fun canScroll(offset: Offset): Boolean
 }
 
 /** Scope used for suspending scroll blocks */
-internal interface Scroll2DScope {
+interface Scroll2DScope {
     /**
      * Attempts to scroll forward by [delta] px.
      *
@@ -99,7 +101,7 @@ internal interface Scroll2DScope {
  *   receives the delta in pixels. Callers should update their state in this lambda and return the
  *   amount of delta consumed
  */
-internal fun Scrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
+fun Scrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
     return DefaultScrollable2DState(consumeScrollDelta)
 }
 
@@ -118,7 +120,7 @@ internal fun Scrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollab
  *   amount of delta consumed
  */
 @Composable
-internal fun rememberScrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
+fun rememberScrollable2DState(consumeScrollDelta: (Offset) -> Offset): Scrollable2DState {
     val lambdaState = rememberUpdatedState(consumeScrollDelta)
     return remember { Scrollable2DState { lambdaState.value.invoke(it) } }
 }
@@ -139,7 +141,7 @@ private class DefaultScrollable2DState(val onDelta: (Offset) -> Offset) : Scroll
 
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend Scroll2DScope.() -> Unit
+        block: suspend Scroll2DScope.() -> Unit,
     ): Unit = coroutineScope {
         scrollMutex.mutateWith(scrollScope, scrollPriority) {
             isScrollingState.value = true
@@ -158,5 +160,5 @@ private class DefaultScrollable2DState(val onDelta: (Offset) -> Offset) : Scroll
     override val isScrollInProgress: Boolean
         get() = isScrollingState.value
 
-    override fun canScroll(angle: Float): Boolean = true
+    override fun canScroll(offset: Offset): Boolean = true
 }

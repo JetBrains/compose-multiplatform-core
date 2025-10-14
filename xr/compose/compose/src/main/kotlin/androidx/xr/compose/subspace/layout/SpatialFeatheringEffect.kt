@@ -17,19 +17,16 @@
 package androidx.xr.compose.subspace.layout
 
 import androidx.annotation.IntRange
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.unit.Dp
 
 /** Base class for feathering effects. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public abstract class SpatialFeatheringEffect internal constructor()
 
 /**
  * A feathering effect that applies an alpha gradient to the edges of the canvas to give a fade out
  * effect.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class SpatialSmoothFeatheringEffect(internal val size: SpatialSmoothFeatheringSize) :
+internal class SpatialSmoothFeatheringEffect(internal val size: SpatialSmoothFeatheringSize) :
     SpatialFeatheringEffect()
 
 /**
@@ -37,14 +34,13 @@ public class SpatialSmoothFeatheringEffect(internal val size: SpatialSmoothFeath
  *
  * @param percentHorizontal Value to feather horizontal edges. A value of 5 represents 5% of the
  *   width of the visible canvas. Accepted value range is 0 - 50 percent.
- * @param percentVertical Value to feather vertical edges. A value of 5 represents 5% of the width
+ * @param percentVertical Value to feather vertical edges. A value of 5 represents 5% of the height
  *   the visible canvas. Accepted value range is 0 - 50 percent.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialSmoothFeatheringEffect(
     @IntRange(from = 0, to = 50) percentHorizontal: Int,
     @IntRange(from = 0, to = 50) percentVertical: Int,
-): SpatialSmoothFeatheringEffect =
+): SpatialFeatheringEffect =
     SpatialSmoothFeatheringEffect(spatialSmoothFeatheringSize(percentHorizontal, percentVertical))
 
 /**
@@ -55,11 +51,7 @@ public fun SpatialSmoothFeatheringEffect(
  * @param vertical Non-negative [Dp] value to feather vertical edges. Value will be capped at 50% of
  *   canvas height if it is too large.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SpatialSmoothFeatheringEffect(
-    horizontal: Dp,
-    vertical: Dp,
-): SpatialSmoothFeatheringEffect =
+public fun SpatialSmoothFeatheringEffect(horizontal: Dp, vertical: Dp): SpatialFeatheringEffect =
     SpatialSmoothFeatheringEffect(spatialSmoothFeatheringSize(horizontal, vertical))
 
 /**
@@ -70,9 +62,11 @@ public fun SpatialSmoothFeatheringEffect(
  * @param vertical Non-negative pixels value to feather vertical edges. Value will be capped at 50%
  *   of canvas height if it is too large.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialSmoothFeatheringEffect(
     horizontal: Float,
     vertical: Float,
-): SpatialSmoothFeatheringEffect =
+): SpatialFeatheringEffect =
     SpatialSmoothFeatheringEffect(spatialSmoothFeatheringSize(horizontal, vertical))
+
+/** An effect representing no feathering. */
+public val ZeroFeatheringEffect: SpatialFeatheringEffect = SpatialSmoothFeatheringEffect(0, 0)

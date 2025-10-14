@@ -101,7 +101,7 @@ class LayoutElementAssertionsProviderTest {
             LayoutElementAssertionsProvider(TEST_LAYOUT)
                 .withDynamicData(
                     intAppKey mapTo intAppValue,
-                    PlatformHealthSources.Keys.DAILY_STEPS mapTo dailySteps
+                    PlatformHealthSources.Keys.DAILY_STEPS mapTo dailySteps,
                 )
                 .withDynamicData(PlatformEventSources.Keys.LAYOUT_VISIBILITY mapTo visibility)
 
@@ -123,6 +123,7 @@ class LayoutElementAssertionsProviderTest {
         provider.onRoot().assert(platformEventMatcher)
     }
 
+    @Suppress("deprecation")
     companion object {
         val isImage = LayoutElementMatcher("Element type is Image") { element -> element is Image }
         val isText = LayoutElementMatcher("Element type is Text") { element -> element is Text }

@@ -17,10 +17,9 @@
 package androidx.compose.ui.viewinterop
 
 import android.content.Context
-import android.graphics.Rect
+import android.graphics.Rect as AndroidRect
 import android.graphics.Region
 import android.os.Build
-import android.os.Build.VERSION.SDK_INT
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewParent
@@ -32,9 +31,10 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -51,12 +51,15 @@ import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.node.OwnerScope
 import androidx.compose.ui.node.OwnerSnapshotObserver
 import androidx.compose.ui.platform.AndroidComposeView
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.composeToViewOffset
 import androidx.compose.ui.platform.compositionContext
+import androidx.compose.ui.relocation.bringIntoView
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -115,14 +118,14 @@ internal open class AndroidViewHolder(
             object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
                 override fun onStart(
                     animation: WindowInsetsAnimationCompat,
-                    bounds: WindowInsetsAnimationCompat.BoundsCompat
+                    bounds: WindowInsetsAnimationCompat.BoundsCompat,
                 ): WindowInsetsAnimationCompat.BoundsCompat = insetBounds(bounds)
 
                 override fun onProgress(
                     insets: WindowInsetsCompat,
-                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>,
                 ): WindowInsetsCompat = insetToLayoutPosition(insets)
-            }
+            },
         )
         ViewCompat.setOnApplyWindowInsetsListener(this, this)
     }
@@ -189,6 +192,7 @@ internal open class AndroidViewHolder(
     private val position = IntArray(2)
     private var size = IntSize.Zero
     private var insets: WindowInsetsCompat? = null
+    private var bringIntoViewRequester: BringIntoViewRequester? = null
 
     /**
      * The [OwnerSnapshotObserver] of this holder's [Owner]. Will be null when this view is not
@@ -246,17 +250,6 @@ internal open class AndroidViewHolder(
 
     override fun onDeactivate() {
         reset()
-        if (
-            @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isRemoveFocusedViewFixEnabled &&
-                hasFocus() &&
-                isInTouchMode &&
-                SDK_INT > 28
-        ) {
-            // Removing a view that is focused results in focus being re-assigned to an existing
-            // view on screen. We don't want this behavior in touch mode.
-            // https://developer.android.com/about/versions/pie/android-9.0-changes-28#focus
-            findFocus().clearFocus()
-        }
         removeAllViewsInLayout()
     }
 
@@ -268,7 +261,7 @@ internal open class AndroidViewHolder(
         if (view.parent !== this) {
             setMeasuredDimension(
                 MeasureSpec.getSize(widthMeasureSpec),
-                MeasureSpec.getSize(heightMeasureSpec)
+                MeasureSpec.getSize(heightMeasureSpec),
             )
             return
         }
@@ -321,7 +314,7 @@ internal open class AndroidViewHolder(
     // otherwise using onDescendantInvalidated. Return null to avoid invalidating the
     // AndroidComposeView or the handler.
     @Suppress("OVERRIDE_DEPRECATION", "Deprecation")
-    override fun invalidateChildInParent(location: IntArray?, dirty: Rect?): ViewParent? {
+    override fun invalidateChildInParent(location: IntArray?, dirty: AndroidRect?): ViewParent? {
         super.invalidateChildInParent(location, dirty)
         invalidateOrDefer()
         return null
@@ -331,6 +324,16 @@ internal open class AndroidViewHolder(
         // We need to call super here in order to correctly update the dirty flags of the holder.
         super.onDescendantInvalidated(child, target)
         invalidateOrDefer()
+    }
+
+    override fun requestChildRectangleOnScreen(
+        child: View,
+        rectangle: AndroidRect?,
+        immediate: Boolean,
+    ): Boolean {
+        bringIntoViewRequester?.invoke(rectangle?.toComposeRect())
+        // Compose doesn't tell us whether this request caused a scroll. Return true in any case.
+        return true
     }
 
     fun invalidateOrDefer() {
@@ -366,7 +369,7 @@ internal open class AndroidViewHolder(
             location[1],
             location[0] + width,
             location[1] + height,
-            Region.Op.DIFFERENCE
+            Region.Op.DIFFERENCE,
         )
         return true
     }
@@ -378,14 +381,6 @@ internal open class AndroidViewHolder(
     val layoutNode: LayoutNode = run {
         // Prepare layout node that proxies measure and layout passes to the View.
         val layoutNode = LayoutNode()
-
-        // there is an issue in how SurfaceViews being drawn into the new layers. this flag is
-        // a workaround until we find a better solution. it allows us to create an extra rendernode
-        // wrapping android views using the old implementation of layers, where we don't do
-        // layer persistence logic, as it causes SurfaceView flickering.
-        // we should find a better fix as part of b/348144529
-        layoutNode.forceUseOldLayers = true
-
         @OptIn(InternalComposeUiApi::class)
         layoutNode.interopViewFactoryHolder = this@AndroidViewHolder
 
@@ -393,15 +388,13 @@ internal open class AndroidViewHolder(
             Modifier.nestedScroll(NoOpScrollConnection, dispatcher)
                 .semantics(true) {}
                 .pointerInteropFilter(this)
-                // we don't normally need an extra layer here, it is a workaround for b/348144529
-                .graphicsLayer()
                 .drawBehind {
                     drawIntoCanvas { canvas ->
                         if (view.visibility != GONE) {
                             isDrawing = true
                             (layoutNode.owner as? AndroidComposeView)?.drawAndroidView(
                                 this@AndroidViewHolder,
-                                canvas.nativeCanvas
+                                canvas.nativeCanvas,
                             )
                             isDrawing = false
                         }
@@ -440,6 +433,7 @@ internal open class AndroidViewHolder(
                         }
                     }
                 }
+                .then(BringIntoViewElement { bringIntoViewRequester = it })
         layoutNode.compositeKeyHash = compositeKeyHash
         layoutNode.modifier = modifier.then(coreModifier)
         onModifierChanged = { layoutNode.modifier = it.then(coreModifier) }
@@ -464,7 +458,7 @@ internal open class AndroidViewHolder(
             object : MeasurePolicy {
                 override fun MeasureScope.measure(
                     measurables: List<Measurable>,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     if (childCount == 0) {
                         return layout(constraints.minWidth, constraints.minHeight) {}
@@ -481,49 +475,49 @@ internal open class AndroidViewHolder(
                         obtainMeasureSpec(
                             constraints.minWidth,
                             constraints.maxWidth,
-                            layoutParams!!.width
+                            layoutParams!!.width,
                         ),
                         obtainMeasureSpec(
                             constraints.minHeight,
                             constraints.maxHeight,
-                            layoutParams!!.height
-                        )
+                            layoutParams!!.height,
+                        ),
                     )
                     return layout(measuredWidth, measuredHeight) { layoutAccordingTo(layoutNode) }
                 }
 
                 override fun IntrinsicMeasureScope.minIntrinsicWidth(
                     measurables: List<IntrinsicMeasurable>,
-                    height: Int
+                    height: Int,
                 ) = intrinsicWidth(height)
 
                 override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                     measurables: List<IntrinsicMeasurable>,
-                    height: Int
+                    height: Int,
                 ) = intrinsicWidth(height)
 
                 private fun intrinsicWidth(height: Int): Int {
                     measure(
                         MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
-                        obtainMeasureSpec(0, height, layoutParams!!.height)
+                        obtainMeasureSpec(0, height, layoutParams!!.height),
                     )
                     return measuredWidth
                 }
 
                 override fun IntrinsicMeasureScope.minIntrinsicHeight(
                     measurables: List<IntrinsicMeasurable>,
-                    width: Int
+                    width: Int,
                 ) = intrinsicHeight(width)
 
                 override fun IntrinsicMeasureScope.maxIntrinsicHeight(
                     measurables: List<IntrinsicMeasurable>,
-                    width: Int
+                    width: Int,
                 ) = intrinsicHeight(width)
 
                 private fun intrinsicHeight(width: Int): Int {
                     measure(
                         obtainMeasureSpec(0, width, layoutParams!!.width),
-                        MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+                        MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
                     )
                     return measuredHeight
                 }
@@ -586,14 +580,14 @@ internal open class AndroidViewHolder(
         dxUnconsumed: Int,
         dyUnconsumed: Int,
         type: Int,
-        consumed: IntArray
+        consumed: IntArray,
     ) {
         if (!isNestedScrollingEnabled) return
         val consumedByParent =
             dispatcher.dispatchPostScroll(
                 consumed = Offset(dxConsumed.toComposeOffset(), dyConsumed.toComposeOffset()),
                 available = Offset(dxUnconsumed.toComposeOffset(), dyUnconsumed.toComposeOffset()),
-                source = toNestedScrollSource(type)
+                source = toNestedScrollSource(type),
             )
         consumed[0] = composeToViewOffset(consumedByParent.x)
         consumed[1] = composeToViewOffset(consumedByParent.y)
@@ -605,13 +599,13 @@ internal open class AndroidViewHolder(
         dyConsumed: Int,
         dxUnconsumed: Int,
         dyUnconsumed: Int,
-        type: Int
+        type: Int,
     ) {
         if (!isNestedScrollingEnabled) return
         dispatcher.dispatchPostScroll(
             consumed = Offset(dxConsumed.toComposeOffset(), dyConsumed.toComposeOffset()),
             available = Offset(dxUnconsumed.toComposeOffset(), dyUnconsumed.toComposeOffset()),
-            source = toNestedScrollSource(type)
+            source = toNestedScrollSource(type),
         )
     }
 
@@ -620,7 +614,7 @@ internal open class AndroidViewHolder(
         val consumedByParent =
             dispatcher.dispatchPreScroll(
                 available = Offset(dx.toComposeOffset(), dy.toComposeOffset()),
-                source = toNestedScrollSource(type)
+                source = toNestedScrollSource(type),
             )
         consumed[0] = composeToViewOffset(consumedByParent.x)
         consumed[1] = composeToViewOffset(consumedByParent.y)
@@ -630,7 +624,7 @@ internal open class AndroidViewHolder(
         target: View,
         velocityX: Float,
         velocityY: Float,
-        consumed: Boolean
+        consumed: Boolean,
     ): Boolean {
         if (!isNestedScrollingEnabled) return false
         val viewVelocity = Velocity(velocityX.toComposeVelocity(), velocityY.toComposeVelocity())
@@ -699,7 +693,7 @@ internal open class AndroidViewHolder(
             (this.left - left).fastCoerceAtLeast(0),
             (this.top - top).fastCoerceAtLeast(0),
             (this.right - right).fastCoerceAtLeast(0),
-            (this.bottom - bottom).fastCoerceAtLeast(0)
+            (this.bottom - bottom).fastCoerceAtLeast(0),
         )
     }
 
@@ -734,3 +728,54 @@ private fun toNestedScrollSource(type: Int): NestedScrollSource =
         ViewCompat.TYPE_TOUCH -> NestedScrollSource.UserInput
         else -> NestedScrollSource.SideEffect
     }
+
+private typealias BringIntoViewRequester = (Rect?) -> Unit
+
+private typealias OnRequesterReady = (BringIntoViewRequester?) -> Unit
+
+private class BringIntoViewElement(val onRequesterReady: OnRequesterReady) :
+    ModifierNodeElement<BringIntoViewNode>() {
+    override fun create(): BringIntoViewNode {
+        return BringIntoViewNode(onRequesterReady)
+    }
+
+    override fun update(node: BringIntoViewNode) {
+        node.update(onRequesterReady)
+    }
+
+    override fun hashCode(): Int {
+        return onRequesterReady.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return (this === other) ||
+            (other is BringIntoViewElement) && (onRequesterReady === other.onRequesterReady)
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "requestRectangleBringIntoViewBridge"
+    }
+}
+
+private class BringIntoViewNode(var onRequesterReady: OnRequesterReady) : Modifier.Node() {
+    val requester: BringIntoViewRequester = { rect ->
+        if (isAttached) {
+            coroutineScope.launch { bringIntoView { rect } }
+        }
+    }
+
+    override fun onAttach() {
+        onRequesterReady(requester)
+    }
+
+    override fun onDetach() {
+        onRequesterReady.invoke(null)
+    }
+
+    fun update(onRequesterReady: OnRequesterReady) {
+        this.onRequesterReady = onRequesterReady
+        if (isAttached) {
+            onRequesterReady(requester)
+        }
+    }
+}

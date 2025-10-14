@@ -35,6 +35,12 @@ internal typealias PlatformActiveCaloriesBurnedRecord =
 internal typealias PlatformActiveCaloriesBurnedRecordBuilder =
     android.health.connect.datatypes.ActiveCaloriesBurnedRecord.Builder
 
+internal typealias PlatformActivityIntensityRecord =
+    android.health.connect.datatypes.ActivityIntensityRecord
+
+internal typealias PlatformActivityIntensityRecordBuilder =
+    android.health.connect.datatypes.ActivityIntensityRecord.Builder
+
 internal typealias PlatformBasalBodyTemperatureRecord =
     android.health.connect.datatypes.BasalBodyTemperatureRecord
 

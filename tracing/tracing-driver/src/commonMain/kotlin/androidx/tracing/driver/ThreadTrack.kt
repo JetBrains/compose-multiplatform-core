@@ -19,25 +19,26 @@ package androidx.tracing.driver
 /** [Track] representing a `Thread` in the specified [ProcessTrack]. */
 public open class ThreadTrack(
     /** The thread id. */
-    internal val id: Int,
+    public val id: Int,
     /** The name of the thread. */
-    internal val name: String,
+    public val name: String,
     /** The process track that the thread belongs to. */
-    internal val process: ProcessTrack,
+    public val process: ProcessTrack,
 ) : SliceTrack(context = process.context, uuid = monotonicId()) {
 
     init {
-        emitTraceEvent(immediateDispatch = true) { packet ->
+        conditionalEmitTraceEvent(immediateDispatch = true) { packet ->
             packet.setPreamble(
                 TrackDescriptor(
                     name = name,
                     uuid = uuid,
-                    parentUuid = INVALID_LONG,
+                    parentUuid = DEFAULT_LONG,
                     pid = process.id,
                     tid = id,
-                    type = TRACK_DESCRIPTOR_TYPE_THREAD
+                    type = TRACK_DESCRIPTOR_TYPE_THREAD,
                 )
             )
+            true
         }
     }
 }

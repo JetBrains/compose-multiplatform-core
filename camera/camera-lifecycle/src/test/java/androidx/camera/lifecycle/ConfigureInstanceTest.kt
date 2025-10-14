@@ -17,7 +17,6 @@
 package androidx.camera.lifecycle
 
 import android.content.Context
-import android.os.Build
 import androidx.annotation.OptIn
 import androidx.camera.core.CameraXConfig
 import androidx.camera.testing.fakes.FakeAppConfig
@@ -37,7 +36,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ConfigureInstanceTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
     private lateinit var provider: ProcessCameraProvider

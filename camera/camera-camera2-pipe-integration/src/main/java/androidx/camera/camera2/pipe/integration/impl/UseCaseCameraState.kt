@@ -32,14 +32,10 @@ import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
-import androidx.camera.core.Preview
 import androidx.camera.core.impl.SessionConfig
-import androidx.camera.core.impl.TagBundle
-import androidx.camera.core.streamsharing.StreamSharing
 import javax.inject.Inject
 import kotlin.collections.removeFirst as removeFirstKt
 import kotlinx.atomicfu.atomic
@@ -64,7 +60,6 @@ public class UseCaseCameraState
 constructor(
     useCaseGraphConfig: UseCaseGraphConfig,
     private val threads: UseCaseThreads,
-    private val sessionProcessorManager: SessionProcessorManager?,
     private val templateParamsOverride: TemplateParamsOverride,
 ) {
     private val lock = Any()
@@ -142,7 +137,7 @@ constructor(
                 streams,
                 template,
                 listeners,
-                sessionConfig
+                sessionConfig,
             )
 
             if (updateSignal == null) {
@@ -168,7 +163,7 @@ constructor(
         appendInternalParameters: Boolean = true,
         streams: Set<StreamId>? = null,
         template: RequestTemplate? = null,
-        listeners: Set<Request.Listener>? = null
+        listeners: Set<Request.Listener>? = null,
     ) {
         synchronized(lock) {
             // See updateAsync for details.
@@ -179,7 +174,7 @@ constructor(
                 appendInternalParameters,
                 streams,
                 template,
-                listeners
+                listeners,
             )
             if (updating) {
                 return
@@ -208,7 +203,7 @@ constructor(
     ) {
         // TODO: Consider if this should detect changes and only invoke an update if state has
         //  actually changed.
-        debug {
+        Camera2Logger.debug {
             "UseCaseCameraState#updateState: parameters = $parameters, internalParameters = " +
                 "$internalParameters, streams = $streams, template = $template"
         }
@@ -248,11 +243,6 @@ constructor(
     public fun tryStartRepeating(): Unit = submitLatest()
 
     private fun submitLatest() {
-        if (sessionProcessorManager != null) {
-            submitLatestWithSessionProcessor()
-            return
-        }
-
         // Update the cameraGraph with the most recent set of values.
         // Since acquireSession is a suspending function, it's possible that subsequent updates
         // can occur while waiting for the acquireSession call to complete. If this happens,
@@ -266,7 +256,9 @@ constructor(
             try {
                     cameraGraph.acquireSession()
                 } catch (e: CancellationException) {
-                    debug(e) { "Cannot acquire session at ${this@UseCaseCameraState}" }
+                    Camera2Logger.debug(e) {
+                        "Cannot acquire session at ${this@UseCaseCameraState}"
+                    }
                     null
                 }
                 .let { session ->
@@ -290,7 +282,7 @@ constructor(
                                     listeners =
                                         currentListeners.toMutableList().also { listeners ->
                                             listeners.add(requestListener)
-                                        }
+                                        },
                                 )
                             }
                         result = updateSignal
@@ -308,7 +300,7 @@ constructor(
                                     )
                                 }
                             }
-                            debug { "Update RepeatingRequest: $request" }
+                            Camera2Logger.debug { "Update RepeatingRequest: $request" }
                             it.startRepeating(request)
                             // TODO: Invoke update3A only if required e.g. a 3A value has changed
                             it.update3A(request.parameters)
@@ -323,66 +315,6 @@ constructor(
                 // calls.
                 result?.complete(Unit)
             }
-        }
-    }
-
-    private fun submitLatestWithSessionProcessor() {
-        checkNotNull(sessionProcessorManager)
-        synchronized(lock) {
-            updating = false
-            val signal = updateSignal
-            updateSignal = null
-
-            if (currentSessionConfig == null) {
-                signal?.complete(Unit)
-                return
-            }
-
-            // Here we're intentionally building a new SessionConfig. Various request parameters,
-            // such as zoom or 3A are directly translated to corresponding CameraPipe types and
-            // APIs. As such, we need to build a new, "combined" SessionConfig that has these
-            // updated request parameters set. Otherwise, certain settings like zoom would be
-            // disregarded.
-            SessionConfig.Builder()
-                .apply {
-                    currentTemplate?.let { setTemplateType(it.value) }
-                    setImplementationOptions(
-                        Camera2ImplConfig.Builder()
-                            .apply {
-                                for ((key, value) in currentParameters) {
-                                    setCaptureRequestOptionWithType(key, value)
-                                }
-                            }
-                            .build()
-                    )
-                    currentInternalParameters[CAMERAX_TAG_BUNDLE]?.let {
-                        val tagBundleMap = (it as TagBundle).toMap()
-                        for ((tag, value) in tagBundleMap) {
-                            addTag(tag, value)
-                        }
-                    }
-                    currentSessionConfig?.let {
-                        addAllCameraCaptureCallbacks(
-                            it.repeatingCaptureConfig.cameraCaptureCallbacks
-                        )
-                    }
-                }
-                .build()
-                .also { sessionConfig -> sessionProcessorManager.sessionConfig = sessionConfig }
-
-            if (
-                currentSessionConfig!!.repeatingCaptureConfig.surfaces.any {
-                    it.containerClass == Preview::class.java ||
-                        it.containerClass == StreamSharing::class.java
-                }
-            ) {
-                sessionProcessorManager.startRepeating(
-                    currentSessionConfig!!.repeatingCaptureConfig.tagBundle
-                )
-            } else {
-                sessionProcessorManager.stopRepeating()
-            }
-            signal?.complete(Unit)
         }
     }
 
@@ -411,7 +343,7 @@ constructor(
     @Suppress("UNCHECKED_CAST")
     private fun <T> Camera2ImplConfig.Builder.setCaptureRequestOptionWithType(
         key: CaptureRequest.Key<T>,
-        value: Any
+        value: Any,
     ) {
         setCaptureRequestOption(key, value as T)
     }
@@ -441,7 +373,7 @@ constructor(
 
         private fun completeExceptionally(
             requestMetadata: RequestMetadata,
-            requestFailure: RequestFailure? = null
+            requestFailure: RequestFailure? = null,
         ) {
             threads.scope.launch(start = CoroutineStart.UNDISPATCHED) {
                 requestMetadata[USE_CASE_CAMERA_STATE_CUSTOM_TAG]?.let { requestNo ->
@@ -453,7 +385,7 @@ constructor(
                                     (requestFailure?.reason?.let {
                                         " with CaptureFailure.reason = $it"
                                     } ?: "")
-                            )
+                            ),
                         )
                     }
                 }
@@ -469,7 +401,7 @@ constructor(
 
         private fun ArrayDeque<RequestSignal>.completeExceptionally(
             requestNo: Int,
-            throwable: Throwable
+            throwable: Throwable,
         ) {
             while (isNotEmpty() && first().requestNo <= requestNo) {
                 first().signal.completeExceptionally(throwable)

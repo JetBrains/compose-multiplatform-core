@@ -27,12 +27,16 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.ui.test"
+        androidResources.enable = true
+        lint.disable += "ComposeTestRuleDispatcher"
+    }
     jvmStubs()
     linuxX64Stubs()
 
@@ -98,7 +102,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependsOn(androidCommonTest)
             dependencies {
@@ -115,17 +119,17 @@ androidXMultiplatform {
                 implementation(libs.kotlinTest)
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
+                implementation(libs.espressoCore)
                 implementation(libs.truth)
 
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependsOn(androidCommonTest)
             dependencies {
                 implementation(libs.truth)
-                implementation(libs.robolectric)
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.byteBuddy)
@@ -139,19 +143,12 @@ androidXMultiplatform {
     }
 }
 
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.ui.test"
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
-}
-
 androidx {
     name = "Compose Testing"
     type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
     inceptionYear = "2019"
     description = "Compose testing library"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-test:ui-test-samples"))
+    enableRobolectric()
 }

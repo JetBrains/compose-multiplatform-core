@@ -65,7 +65,7 @@ androidx {
     type = SoftwareType.SAMPLES
     inceptionYear = "2020"
     description = "Samples for Compose integration with Navigation"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }
 
 android {

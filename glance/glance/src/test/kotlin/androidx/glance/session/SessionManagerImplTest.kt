@@ -43,6 +43,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -61,20 +62,20 @@ class SessionManagerImplTest {
                 context: Context,
                 uniqueWorkName: String,
                 existingWorkPolicy: ExistingWorkPolicy,
-                workRequest: OneTimeWorkRequest
+                workRequest: OneTimeWorkRequest,
             ) {
                 enqueueCalls.add(uniqueWorkName to workRequest)
                 WorkManagerProxy.Default.enqueueUniqueWork(
                     context,
                     uniqueWorkName,
                     existingWorkPolicy,
-                    workRequest
+                    workRequest,
                 )
             }
 
             override suspend fun workerIsRunningOrEnqueued(
                 context: Context,
-                uniqueWorkName: String
+                uniqueWorkName: String,
             ): Boolean {
                 isRunningCalls.add(uniqueWorkName)
                 return WorkManagerProxy.Default.workerIsRunningOrEnqueued(context, uniqueWorkName)
@@ -187,6 +188,7 @@ class SessionManagerImplTest {
         }
     }
 
+    @Ignore // b/433588403
     @Test
     fun usesWorkerClass() = runTest {
         sessionManager.runWithLock {
@@ -246,12 +248,16 @@ class SessionManagerImplTest {
 
                 override suspend fun processEmittableTree(
                     context: Context,
-                    root: EmittableWithChildren
+                    root: EmittableWithChildren,
                 ): Boolean {
                     TODO("Not yet implemented")
                 }
 
                 override suspend fun processEvent(context: Context, event: Any) {
+                    TODO("Not yet implemented")
+                }
+
+                override suspend fun recreateWithEvents(events: List<Any>): Session {
                     TODO("Not yet implemented")
                 }
             }

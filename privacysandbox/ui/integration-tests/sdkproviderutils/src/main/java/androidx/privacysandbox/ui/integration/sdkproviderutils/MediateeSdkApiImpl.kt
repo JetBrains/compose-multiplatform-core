@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.integration.sdkproviderutils
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
@@ -28,7 +27,6 @@ import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.C
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.privacysandbox.ui.provider.toCoreLibInfo
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class MediateeSdkApiImpl() {
     companion object {
@@ -38,7 +36,7 @@ class MediateeSdkApiImpl() {
             withSlowDraw: Boolean,
             drawViewability: Boolean,
             sdkContext: Context,
-            automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+            automatedTestCallbackBundle: Bundle,
         ): Bundle =
             when (adFormat) {
                 AdFormat.BANNER_AD ->
@@ -47,7 +45,7 @@ class MediateeSdkApiImpl() {
                         withSlowDraw,
                         drawViewability,
                         sdkContext,
-                        automatedTestCallbackProxy
+                        AutomatedTestCallback.fromBundle(automatedTestCallbackBundle),
                     )
                 AdFormat.NATIVE_AD -> loadNativeAdUtil(adType, sdkContext)
                 else -> Bundle()
@@ -58,7 +56,7 @@ class MediateeSdkApiImpl() {
             waitInsideOnDraw: Boolean,
             drawViewability: Boolean,
             sdkContext: Context,
-            automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+            automatedTestCallback: AutomatedTestCallback?,
         ): Bundle {
             val testAdapters = TestAdapters(sdkContext)
             val mediationDescription =
@@ -71,12 +69,19 @@ class MediateeSdkApiImpl() {
                     AdType.WEBVIEW_FROM_LOCAL_ASSETS ->
                         loadWebViewBannerAdFromLocalAssets(testAdapters)
                     AdType.NON_WEBVIEW_VIDEO -> loadVideoAd(testAdapters)
+                    AdType.SCROLL_VIEW -> loadScrollView(testAdapters, automatedTestCallback)
+                    AdType.SCROLL_VIEW_APP_CAN_NOT_SCROLL ->
+                        loadScrollView(
+                            testAdapters,
+                            automatedTestCallback, /* appCanScroll */
+                            false,
+                        )
                     else ->
                         loadNonWebViewBannerAd(
                             testAdapters,
                             mediationDescription,
                             waitInsideOnDraw,
-                            automatedTestCallbackProxy
+                            automatedTestCallback,
                         )
                 }
             ViewabilityHandler.addObserverFactoryToAdapter(adapter, drawViewability)
@@ -88,7 +93,7 @@ class MediateeSdkApiImpl() {
                 NativeAdGenerator(
                     sdkContext,
                     if (CompatImpl.isAppOwnedMediatee()) MediationOption.IN_APP_MEDIATEE
-                    else MediationOption.SDK_RUNTIME_MEDIATEE
+                    else MediationOption.SDK_RUNTIME_MEDIATEE,
                 )
             return nativeAdGenerator.generateAdBundleWithAssets(adType)
         }
@@ -114,9 +119,17 @@ class MediateeSdkApiImpl() {
             testAdapters: TestAdapters,
             text: String,
             waitInsideOnDraw: Boolean,
-            automatedTestCallbackProxy: IAutomatedTestCallbackProxy?
+            automatedTestCallback: AutomatedTestCallback?,
         ): AbstractSandboxedUiAdapter {
-            return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallbackProxy)
+            return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallback)
+        }
+
+        private fun loadScrollView(
+            testAdapters: TestAdapters,
+            automatedTestCallback: AutomatedTestCallback?,
+            appCanScroll: Boolean = true,
+        ): AbstractSandboxedUiAdapter {
+            return testAdapters.ScrollViewAd(automatedTestCallback, appCanScroll)
         }
     }
 

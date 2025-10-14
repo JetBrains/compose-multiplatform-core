@@ -16,29 +16,39 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeNode
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisallowComposableCalls
 import androidx.compose.runtime.currentComposer
+import androidx.compose.runtime.remember
 import androidx.xr.compose.platform.LocalOpaqueEntity
+import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.SubspaceComposable
-import androidx.xr.compose.subspace.entityName
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCompositionLocalMap
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCoreEntity
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasurePolicy
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
-import androidx.xr.compose.subspace.rememberCoreContentlessEntity
-import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.runtime.Session
+import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GroupEntity
 
 /**
- * [SubspaceLayout] is the main core component for layout for "leaf" nodes. It can be used to
- * measure and position zero children.
+ * [SubspaceLayout] is the main component for laying out leaf nodes with zero children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
- * the [measurePolicy] instance. See [MeasurePolicy] for more details.
+ * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
+ *
+ * Example:
+ * ```kotlin
+ * fun ExactSizeSpacer(size: IntVolumeSize) {
+ *   SubspaceLayout(SubspaceModifier.testTag("exactSizeSpacer")) {
+ *     _, _ -> layout(size.width, size.height, size.depth) {}
+ *   }
+ * }
+ * ```
  *
  * @param modifier SubspaceModifier to apply during layout.
  * @param measurePolicy a policy defining the measurement and positioning of the layout.
@@ -46,11 +56,15 @@ import androidx.xr.scenecore.ContentlessEntity
 @Suppress("NOTHING_TO_INLINE")
 @SubspaceComposable
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public inline fun SubspaceLayout(
     modifier: SubspaceModifier = SubspaceModifier,
-    measurePolicy: MeasurePolicy,
+    measurePolicy: SubspaceMeasurePolicy,
 ) {
+    check(currentComposer.applier.current is ComposeSubspaceNode) {
+        "SubspaceComposable functions are expected to be used within the context of a " +
+            "Subspace composition. Please ensure that this component is in a Subspace or " +
+            " is a child of another SubspaceComposable."
+    }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = ComposeSubspaceNode.Constructor,
@@ -67,24 +81,42 @@ public inline fun SubspaceLayout(
  * zero or more layout children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
- * the [measurePolicy] instance. See [MeasurePolicy] for more details.
+ * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
+ *
+ * Example:
+ * ```kotlin
+ * fun MyLayout(
+ *     modifier: SubspaceModifier = SubspaceModifier,
+ *     content: @SubspaceComposable @Composable () -> Unit) {
+ *   SubspaceLayout(content = content, modifier = modifier) {
+ *     measurables, constraints ->
+ *     val placeables = measurables.map { it.measure(constraints) }
+ *     layout(constraints.maxWidth, constraints.maxHeight, constraints.maxDepth) {
+ *       placeables.forEach { it.place(Pose.Identity) }
+ *     }
+ *   }
+ * }
+ * ```
  *
  * @param modifier SubspaceModifier to apply during layout
- * @param content the children composable to be laid out.
+ * @param content the child composables to be laid out.
  * @param measurePolicy a policy defining the measurement and positioning of the layout.
  */
 @Suppress("ComposableLambdaParameterPosition", "NOTHING_TO_INLINE")
 @SubspaceComposable
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public inline fun SubspaceLayout(
     crossinline content: @Composable @SubspaceComposable () -> Unit,
     modifier: SubspaceModifier = SubspaceModifier,
-    measurePolicy: MeasurePolicy,
+    measurePolicy: SubspaceMeasurePolicy,
 ) {
-    val coreEntity = rememberCoreContentlessEntity {
-        ContentlessEntity.create(session = this, name = entityName("Entity"))
+    check(currentComposer.applier.current is ComposeSubspaceNode) {
+        "SubspaceComposable functions are expected to be used within the context of a " +
+            "Subspace composition. Please ensure that this component is in a Subspace or " +
+            " is a child of another SubspaceComposable."
     }
+
+    val coreEntity = rememberOpaqueEntity { GroupEntity.create(session = this, name = "Entity") }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = ComposeSubspaceNode.Constructor,
@@ -92,12 +124,20 @@ public inline fun SubspaceLayout(
             set(compositionLocalMap, SetCompositionLocalMap)
             set(measurePolicy, SetMeasurePolicy)
             set(coreEntity, SetCoreEntity)
-            // TODO(b/390674036) Remove call-order dependency between SetCoreEntity and SetModifier
-            // Execute SetModifier after SetCoreEntity, it depends on CoreEntity.
             set(modifier, SetModifier)
         },
         content = { CompositionLocalProvider(LocalOpaqueEntity provides coreEntity) { content() } },
     )
+}
+
+/** Creates a [CoreGroupEntity] that is automatically disposed of when it leaves the composition. */
+@Composable
+@PublishedApi
+internal fun rememberOpaqueEntity(
+    entityFactory: @DisallowComposableCalls Session.() -> Entity
+): OpaqueEntity {
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    return remember { CoreGroupEntity(session.entityFactory()) }
 }
 
 /**
@@ -105,7 +145,7 @@ public inline fun SubspaceLayout(
  * measure and position zero children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
- * the [measurePolicy] instance. See [MeasurePolicy] for more details.
+ * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
  * @param modifier SubspaceModifier to apply during layout.
  * @param coreEntity SceneCore Entity being placed in this layout. This parameter is generally not
@@ -120,8 +160,13 @@ public inline fun SubspaceLayout(
 internal inline fun SubspaceLayout(
     modifier: SubspaceModifier = SubspaceModifier,
     coreEntity: CoreEntity? = null,
-    measurePolicy: MeasurePolicy,
+    measurePolicy: SubspaceMeasurePolicy,
 ) {
+    check(currentComposer.applier.current is ComposeSubspaceNode) {
+        "SubspaceComposable functions are expected to be used within the context of a " +
+            "Subspace composition. Please ensure that this component is in a Subspace or " +
+            " is a child of another SubspaceComposable."
+    }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = ComposeSubspaceNode.Constructor,
@@ -129,8 +174,6 @@ internal inline fun SubspaceLayout(
             set(compositionLocalMap, SetCompositionLocalMap)
             set(measurePolicy, SetMeasurePolicy)
             set(coreEntity, SetCoreEntity)
-            // TODO(b/390674036) Remove call-order dependency between SetCoreEntity and SetModifier
-            // Execute SetModifier after SetCoreEntity, it depends on CoreEntity.
             set(modifier, SetModifier)
         },
     )
@@ -141,7 +184,7 @@ internal inline fun SubspaceLayout(
  * zero or more layout children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
- * the [measurePolicy] instance. See [MeasurePolicy] for more details.
+ * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
  * @param modifier SubspaceModifier to apply during layout
  * @param coreEntity SceneCore Entity being placed in this layout. This parameter is generally not
@@ -157,20 +200,27 @@ internal inline fun SubspaceLayout(
 internal inline fun SubspaceLayout(
     crossinline content: @Composable @SubspaceComposable () -> Unit,
     modifier: SubspaceModifier = SubspaceModifier,
-    coreEntity: CoreEntity = rememberCoreContentlessEntity {
-        ContentlessEntity.create(session = this, name = entityName("Entity"))
-    },
-    measurePolicy: MeasurePolicy,
+    coreEntity: CoreEntity? = null,
+    measurePolicy: SubspaceMeasurePolicy,
 ) {
+
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val coreGroupEntity =
+        coreEntity ?: remember { CoreGroupEntity(GroupEntity.create(session, name = "Entity")) }
+
+    check(currentComposer.applier.current is ComposeSubspaceNode) {
+        "SubspaceComposable functions are expected to be used within the context of a " +
+            "Subspace composition. Please ensure that this component is in a Subspace or " +
+            " is a child of another SubspaceComposable."
+    }
+
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = ComposeSubspaceNode.Constructor,
         update = {
             set(compositionLocalMap, SetCompositionLocalMap)
             set(measurePolicy, SetMeasurePolicy)
-            set(coreEntity, SetCoreEntity)
-            // TODO(b/390674036) Remove call-order dependency between SetCoreEntity and SetModifier
-            // Execute SetModifier after SetCoreEntity, it depends on CoreEntity.
+            set(coreGroupEntity, SetCoreEntity)
             set(modifier, SetModifier)
         },
         content = { CompositionLocalProvider(LocalOpaqueEntity provides coreEntity) { content() } },

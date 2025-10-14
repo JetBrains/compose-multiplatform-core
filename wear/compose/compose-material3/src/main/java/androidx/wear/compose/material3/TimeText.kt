@@ -24,8 +24,8 @@ import android.text.format.DateFormat
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -59,6 +59,8 @@ import androidx.wear.compose.materialcore.currentTimeMillis
 import androidx.wear.compose.materialcore.is24HourFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 
 /**
  * Layout to show the current time and a label, they will be drawn in a curve, following the top
@@ -102,7 +104,7 @@ public fun TimeText(
     backgroundColor: Color = TimeTextDefaults.backgroundColor(),
     timeSource: TimeSource = TimeTextDefaults.rememberTimeSource(timeFormat()),
     contentPadding: PaddingValues = TimeTextDefaults.ContentPadding,
-    content: CurvedScope.(String) -> Unit = { time -> timeTextCurvedText(time) }
+    content: CurvedScope.(String) -> Unit = { time -> timeTextCurvedText(time) },
 ) {
     val currentTime = timeSource.currentTime()
 
@@ -113,7 +115,7 @@ public fun TimeText(
                     .sizeIn(maxSweepDegrees = maxSweepAngle)
                     .padding(contentPadding.toArcPadding())
                     .background(backgroundColor, StrokeCap.Round),
-            radialAlignment = CurvedAlignment.Radial.Center
+            radialAlignment = CurvedAlignment.Radial.Center,
         ) {
             content(currentTime)
         }
@@ -216,13 +218,13 @@ public fun CurvedScope.timeTextCurvedText(time: String, style: CurvedTextStyle? 
  */
 public fun CurvedScope.timeTextSeparator(
     curvedTextStyle: CurvedTextStyle? = null,
-    contentArcPadding: ArcPaddingValues = ArcPaddingValues(angular = 4.dp)
+    contentArcPadding: ArcPaddingValues = ArcPaddingValues(angular = 4.dp),
 ) {
     // TimeText is intended to be hidden from TalkBack, so we clear semantics.
     curvedText(
         text = "·",
         style = curvedTextStyle,
-        modifier = CurvedModifier.padding(contentArcPadding).clearAndSetSemantics {}
+        modifier = CurvedModifier.padding(contentArcPadding).clearAndSetSemantics {},
     )
 }
 
@@ -255,15 +257,18 @@ internal fun currentTime(time: () -> Long, timeFormat: String): State<String> {
     val context = LocalContext.current
     val updatedTimeLambda by rememberUpdatedState(time)
 
-    DisposableEffect(context, updatedTimeLambda) {
-        val receiver =
-            TimeBroadcastReceiver(
-                onTimeChanged = { currentTime = updatedTimeLambda() },
-                onTimeZoneChanged = { calendar = Calendar.getInstance() }
-            )
-        receiver.register(context)
-        onDispose { receiver.unregister(context) }
-    }
+    remember(context, updatedTimeLambda) {
+            callbackFlow<Unit> {
+                val receiver =
+                    TimeBroadcastReceiver(
+                        onTimeChanged = { currentTime = updatedTimeLambda() },
+                        onTimeZoneChanged = { calendar = Calendar.getInstance() },
+                    )
+                receiver.register(context)
+                awaitClose { receiver.unregister(context) }
+            }
+        }
+        .collectAsState(Unit)
     return timeText
 }
 
@@ -278,19 +283,19 @@ private fun PaddingValues.toArcPadding() =
 
         override fun calculateAfterPadding(
             layoutDirection: LayoutDirection,
-            angularDirection: CurvedDirection.Angular
+            angularDirection: CurvedDirection.Angular,
         ) = calculateRightPadding(layoutDirection)
 
         override fun calculateBeforePadding(
             layoutDirection: LayoutDirection,
-            angularDirection: CurvedDirection.Angular
+            angularDirection: CurvedDirection.Angular,
         ) = calculateLeftPadding(layoutDirection)
     }
 
 /** A [BroadcastReceiver] to receive time tick, time change, and time zone change events. */
 private class TimeBroadcastReceiver(
     val onTimeChanged: () -> Unit,
-    val onTimeZoneChanged: () -> Unit
+    val onTimeZoneChanged: () -> Unit,
 ) : BroadcastReceiver() {
     private var registered = false
 

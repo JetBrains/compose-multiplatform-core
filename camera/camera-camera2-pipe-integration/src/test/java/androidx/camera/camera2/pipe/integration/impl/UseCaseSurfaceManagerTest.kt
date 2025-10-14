@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraDevice
-import android.os.Build
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraPipe
@@ -56,11 +55,9 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @DoNotInstrument
 class UseCaseSurfaceManagerTest {
 
@@ -93,7 +90,7 @@ class UseCaseSurfaceManagerTest {
 
                 override fun onError(
                     sessionConfig: SessionConfig,
-                    error: SessionConfig.SessionError
+                    error: SessionConfig.SessionError,
                 ) {
                     results.add(Pair(sessionConfig, error))
                 }
@@ -111,7 +108,7 @@ class UseCaseSurfaceManagerTest {
                 surfaceToStreamMap =
                     mapOf(
                         testDeferrableSurface1 to StreamId(0),
-                        testDeferrableSurface2 to StreamId(1)
+                        testDeferrableSurface2 to StreamId(1),
                     ),
             )
             .await()
@@ -164,7 +161,7 @@ class UseCaseSurfaceManagerTest {
 
                 override fun onError(
                     sessionConfig: SessionConfig,
-                    error: SessionConfig.SessionError
+                    error: SessionConfig.SessionError,
                 ) {
                     results.add(Pair(sessionConfig, error))
                 }
@@ -173,9 +170,7 @@ class UseCaseSurfaceManagerTest {
 
         val fakeGraph = FakeCameraGraph()
         val deferrableSurfaceToStreamId: Map<DeferrableSurface, StreamId> =
-            mapOf(
-                neverCompleteDeferrableSurface to StreamId(0),
-            )
+            mapOf(neverCompleteDeferrableSurface to StreamId(0))
 
         // Act
         createUseCaseSurfaceManagerAndSetupAsync(
@@ -200,7 +195,7 @@ class UseCaseSurfaceManagerTest {
 
                 override fun onError(
                     sessionConfig: SessionConfig,
-                    error: SessionConfig.SessionError
+                    error: SessionConfig.SessionError,
                 ) {
                     results.add(Pair(sessionConfig, error))
                 }
@@ -209,16 +204,14 @@ class UseCaseSurfaceManagerTest {
 
         val fakeGraph = FakeCameraGraph()
         val deferrableSurfaceToStreamId: Map<DeferrableSurface, StreamId> =
-            mapOf(
-                neverCompleteDeferrableSurface to StreamId(0),
-            )
+            mapOf(neverCompleteDeferrableSurface to StreamId(0))
         val useCaseSurfaceManager = createUseCaseSurfaceManager(listOf(fakeTestUseCase))
         val deferred =
             useCaseSurfaceManager.setupAsync(
                 graph = fakeGraph,
                 sessionConfigAdapter = SessionConfigAdapter(useCases = listOf(fakeTestUseCase)),
                 surfaceToStreamMap = deferrableSurfaceToStreamId,
-                timeoutMillis = TimeUnit.SECONDS.toMillis(60)
+                timeoutMillis = TimeUnit.SECONDS.toMillis(60),
             )
         neverCompleteDeferrableSurface.provideSurfaceIsCalledDeferred.await()
 
@@ -249,7 +242,7 @@ class UseCaseSurfaceManagerTest {
                         sessionConfigAdapter =
                             SessionConfigAdapter(useCases = listOf(fakeTestUseCase)),
                         surfaceToStreamMap = deferrableSurfaceToStreamId,
-                        timeoutMillis = TimeUnit.SECONDS.toMillis(1)
+                        timeoutMillis = TimeUnit.SECONDS.toMillis(1),
                     )
                     .await()
             }
@@ -283,7 +276,7 @@ class UseCaseSurfaceManagerTest {
                         sessionConfigAdapter =
                             SessionConfigAdapter(useCases = listOf(fakeTestUseCase)),
                         surfaceToStreamMap = deferrableSurfaceToStreamId,
-                        timeoutMillis = TimeUnit.SECONDS.toMillis(1)
+                        timeoutMillis = TimeUnit.SECONDS.toMillis(1),
                     )
                     .await()
             }
@@ -308,7 +301,7 @@ class UseCaseSurfaceManagerTest {
                         sessionConfigAdapter =
                             SessionConfigAdapter(useCases = listOf(fakeTestUseCase)),
                         surfaceToStreamMap = deferrableSurfaceToStreamId,
-                        timeoutMillis = TimeUnit.SECONDS.toMillis(1)
+                        timeoutMillis = TimeUnit.SECONDS.toMillis(1),
                     )
                     .await()
             }
@@ -333,7 +326,7 @@ class UseCaseSurfaceManagerTest {
                         sessionConfigAdapter =
                             SessionConfigAdapter(useCases = listOf(fakeTestUseCase)),
                         surfaceToStreamMap = deferrableSurfaceToStreamId,
-                        timeoutMillis = TimeUnit.SECONDS.toMillis(1)
+                        timeoutMillis = TimeUnit.SECONDS.toMillis(1),
                     )
                     .await()
             }
@@ -358,7 +351,7 @@ class UseCaseSurfaceManagerTest {
                     graph = fakeGraph,
                     sessionConfigAdapter = SessionConfigAdapter(useCases = listOf(fakeTestUseCase)),
                     surfaceToStreamMap = deferrableSurfaceToStreamId,
-                    timeoutMillis = TimeUnit.SECONDS.toMillis(1)
+                    timeoutMillis = TimeUnit.SECONDS.toMillis(1),
                 )
             }
         useCaseSurfaceManager.stopAsync().await()
@@ -384,7 +377,7 @@ class UseCaseSurfaceManagerTest {
                         sessionConfigAdapter =
                             SessionConfigAdapter(useCases = listOf(fakeTestUseCase)),
                         surfaceToStreamMap = deferrableSurfaceToStreamId,
-                        timeoutMillis = TimeUnit.SECONDS.toMillis(1)
+                        timeoutMillis = TimeUnit.SECONDS.toMillis(1),
                     )
                 }
             val isSetupCompleted = async { useCaseSurfaceManager.awaitSetupCompletion() }
@@ -403,16 +396,14 @@ class UseCaseSurfaceManagerTest {
 
         val fakeGraph = FakeCameraGraph()
         val deferrableSurfaceToStreamId: Map<DeferrableSurface, StreamId> =
-            mapOf(
-                neverCompleteDeferrableSurface to StreamId(0),
-            )
+            mapOf(neverCompleteDeferrableSurface to StreamId(0))
         val useCaseSurfaceManager =
             createUseCaseSurfaceManager(listOf(fakeTestUseCase)).apply {
                 setupAsync(
                     graph = fakeGraph,
                     sessionConfigAdapter = SessionConfigAdapter(useCases = listOf(fakeTestUseCase)),
                     surfaceToStreamMap = deferrableSurfaceToStreamId,
-                    timeoutMillis = TimeUnit.SECONDS.toMillis(1)
+                    timeoutMillis = TimeUnit.SECONDS.toMillis(1),
                 )
             }
 

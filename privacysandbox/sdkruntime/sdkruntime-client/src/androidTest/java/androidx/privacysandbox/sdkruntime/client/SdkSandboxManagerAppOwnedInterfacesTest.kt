@@ -90,7 +90,7 @@ class SdkSandboxManagerAppOwnedInterfacesTest {
     fun registerAppOwnedSdkSandboxInterface_whenApiAvailable_registerInPlatform() {
         assumeTrue(
             "Requires AppOwnedInterfacesApi API available",
-            isAppOwnedInterfacesApiAvailable()
+            isAppOwnedInterfacesApiAvailable(),
         )
 
         val appOwnedInterface =
@@ -121,7 +121,7 @@ class SdkSandboxManagerAppOwnedInterfacesTest {
     fun unregisterAppOwnedSdkSandboxInterface_whenApiAvailable_unregisterFromPlatform() {
         assumeTrue(
             "Requires AppOwnedInterfacesApi API available",
-            isAppOwnedInterfacesApiAvailable()
+            isAppOwnedInterfacesApiAvailable(),
         )
 
         val appOwnedInterface =
@@ -168,7 +168,7 @@ class SdkSandboxManagerAppOwnedInterfacesTest {
         @DoNotInline
         fun unregisterInterfaces(
             context: Context,
-            appOwnedInterfaces: List<AppOwnedSdkSandboxInterfaceCompat>
+            appOwnedInterfaces: List<AppOwnedSdkSandboxInterfaceCompat>,
         ) {
             val sandboxManager = context.getSystemService<SdkSandboxManager>()!!
             appOwnedInterfaces.forEach {

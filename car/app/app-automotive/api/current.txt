@@ -58,7 +58,7 @@ package androidx.car.app.hardware.common {
     field public static final int AREA_ID_GLOBAL = 0; // 0x0
   }
 
-  public static final class CarZoneAreaIdConstants.VehicleAreaSeat {
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class CarZoneAreaIdConstants.VehicleAreaSeat {
     field public static final int COL_ALL = 1911; // 0x777
     field public static final int COL_CENTER = 546; // 0x222
     field public static final int COL_LEFT = 273; // 0x111

@@ -421,9 +421,9 @@ final class <#A: kotlin/Any?> androidx.collection/MutableScatterSet : androidx.c
     final fun retainAll(androidx.collection/OrderedScatterSet<#A>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(androidx.collection.OrderedScatterSet<1:0>){}[0]
     final fun retainAll(androidx.collection/ScatterSet<#A>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(androidx.collection.ScatterSet<1:0>){}[0]
     final fun retainAll(kotlin.collections/Collection<#A>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(kotlin.collections.Collection<1:0>){}[0]
-    final fun retainAll(kotlin/Function1<#A, kotlin/Boolean>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
     final fun trim(): kotlin/Int // androidx.collection/MutableScatterSet.trim|trim(){}[0]
     final inline fun removeIf(kotlin/Function1<#A, kotlin/Boolean>) // androidx.collection/MutableScatterSet.removeIf|removeIf(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
+    final inline fun retainAll(kotlin/Function1<#A, kotlin/Boolean>): kotlin/Boolean // androidx.collection/MutableScatterSet.retainAll|retainAll(kotlin.Function1<1:0,kotlin.Boolean>){}[0]
 }
 
 final class androidx.collection/CircularIntArray { // androidx.collection/CircularIntArray|null[0]

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,23 @@
 
 package androidx.xr.arcore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import androidx.xr.arcore.runtime.HitResult as RuntimeHitResult
+import androidx.xr.arcore.testing.FakeLifecycleManager
+import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.CoreState
-import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.internal.HitResult as RuntimeHitResult
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakePerceptionManager
-import androidx.xr.runtime.testing.FakeRuntime
-import androidx.xr.runtime.testing.FakeRuntimePlane
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlin.time.TestTimeSource
@@ -46,7 +46,6 @@ import org.junit.runner.RunWith
 class InteractionTest {
 
     private lateinit var session: Session
-    private lateinit var activity: Activity
     private lateinit var timeSource: TestTimeSource
     private lateinit var perceptionStateExtender: PerceptionStateExtender
     private lateinit var perceptionManager: FakePerceptionManager
@@ -61,7 +60,8 @@ class InteractionTest {
     @Test
     fun hitTest_successWithOneHitResult() = createTestSessionAndRunTest {
         runTest {
-            timeSource = (session.runtime as FakeRuntime).lifecycleManager.timeSource
+            timeSource =
+                (session.perceptionRuntime.lifecycleManager as FakeLifecycleManager).timeSource
             perceptionStateExtender =
                 session.stateExtenders.filterIsInstance<PerceptionStateExtender>().first()
             perceptionManager = perceptionStateExtender.perceptionManager as FakePerceptionManager
@@ -93,14 +93,14 @@ class InteractionTest {
     @Test
     fun hitTest_planeTrackingDisabled_throwsIllegalStateException() = createTestSessionAndRunTest {
         runTest {
-            session.configure(Config(planeTracking = PlaneTrackingMode.Disabled))
+            session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
 
             assertFailsWith<IllegalStateException> { hitTest(session, Ray()) }
         }
     }
 
     private fun createTestSessionAndRunTest(testBody: () -> Unit) {
-        ActivityScenario.launch(Activity::class.java).use {
+        ActivityScenario.launch(ComponentActivity::class.java).use {
             it.onActivity { activity ->
                 session =
                     (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)

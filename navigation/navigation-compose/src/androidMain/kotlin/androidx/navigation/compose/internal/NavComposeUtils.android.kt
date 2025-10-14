@@ -27,7 +27,7 @@ internal actual typealias BackEventCompat = androidx.activity.BackEventCompat
 @Composable
 internal actual fun PredictiveBackHandler(
     enabled: Boolean,
-    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
+    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit,
 ) {
     PredictiveBackHandler(enabled, onBack)
 }

@@ -116,8 +116,7 @@
             android:name=".services.WrapperMediaRouteProviderService"
             android:label="@string/wrapper_media_route_provider_service"
             android:exported="false"
-            android:enabled="false"
-            tools:ignore="MissingServiceExportedEqualsTrue">
+            android:enabled="false">
             <intent-filter>
                 <action android:name="android.media.MediaRouteProviderService" />
                 <action android:name="android.media.MediaRoute2ProviderService" />

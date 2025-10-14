@@ -30,11 +30,12 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.lifecycle.viewmodel.testing"
+    }
     desktop()
     mac()
     linux()
@@ -80,15 +81,14 @@ androidXMultiplatform {
             dependsOn(jvmMain)
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependsOn(jvmTest)
             dependencies {
-                implementation(libs.robolectric)
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependsOn(jvmTest)
             dependencies {
@@ -163,36 +163,6 @@ androidXMultiplatform {
             }
         }
 
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family.appleFamily) {
@@ -221,8 +191,5 @@ androidx {
     type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2024"
     description = "Testing utilities for 'lifecycle-viewmodel' artifact"
-}
-
-android {
-    namespace "androidx.lifecycle.viewmodel.testing"
+    enableRobolectric()
 }

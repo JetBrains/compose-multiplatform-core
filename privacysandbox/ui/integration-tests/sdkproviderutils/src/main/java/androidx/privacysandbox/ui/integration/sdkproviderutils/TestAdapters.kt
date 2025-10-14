@@ -26,9 +26,11 @@ import android.graphics.Color.BLACK
 import android.graphics.Color.WHITE
 import android.graphics.Paint
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
@@ -41,6 +43,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
@@ -51,13 +54,16 @@ import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
 import java.util.concurrent.Executor
+import kotlin.random.Random
 
 class TestAdapters(private val sdkContext: Context) {
-    abstract class BannerAd() : AbstractSandboxedUiAdapter() {
+    abstract class BannerAd(val automatedTestCallback: AutomatedTestCallback? = null) :
+        AbstractSandboxedUiAdapter() {
         lateinit var sessionClientExecutor: Executor
         lateinit var sessionClient: SandboxedUiAdapter.SessionClient
         lateinit var adViewWithConsumeScrollOverlay: AdViewWithConsumeScrollOverlay
         val mainLooperHandler = Handler(Looper.getMainLooper())
+        var shouldAddAllowAppToScrollOverlay = true
 
         abstract fun buildAdView(sessionContext: Context, width: Int, height: Int): View?
 
@@ -77,13 +83,28 @@ class TestAdapters(private val sdkContext: Context) {
                     Log.d(TAG, "Session requested")
                     var adView: View =
                         buildAdView(context, initialWidth, initialHeight) ?: return@lambda
-                    adViewWithConsumeScrollOverlay =
-                        AdViewWithConsumeScrollOverlay(context, initialWidth, initialHeight, adView)
-                    if (isZOrderOnTop) {
-                        adViewWithConsumeScrollOverlay.hideOverlay()
+                    adView.layoutParams = ViewGroup.LayoutParams(initialWidth, initialHeight)
+                    if (shouldAddAllowAppToScrollOverlay) {
+                        adViewWithConsumeScrollOverlay =
+                            AdViewWithConsumeScrollOverlay(
+                                context,
+                                initialWidth,
+                                initialHeight,
+                                adView,
+                            )
+                        if (isZOrderOnTop) {
+                            adViewWithConsumeScrollOverlay.hideOverlay()
+                        }
+                        adView = adViewWithConsumeScrollOverlay
                     }
                     clientExecutor.execute {
-                        client.onSessionOpened(BannerAdSession(adViewWithConsumeScrollOverlay))
+                        if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                Process.isSdkSandbox()
+                        ) {
+                            automatedTestCallback?.onRemoteSession()
+                        }
+                        client.onSessionOpened(BannerAdSession(adView))
                     }
                 }
             )
@@ -110,6 +131,7 @@ class TestAdapters(private val sdkContext: Context) {
 
             override fun notifyConfigurationChanged(configuration: Configuration) {
                 Log.i(TAG, "Configuration change")
+                automatedTestCallback?.onConfigurationChanged(configuration)
             }
 
             override fun close() {
@@ -121,7 +143,7 @@ class TestAdapters(private val sdkContext: Context) {
             context: Context,
             initialWidth: Int,
             initialHeight: Int,
-            adView: View
+            adView: View,
         ) : FrameLayout(context) {
             private val consumeScrollOverlay: ViewGroup
             private var allowAppToScroll = true
@@ -150,7 +172,7 @@ class TestAdapters(private val sdkContext: Context) {
                     LayoutParams(
                         LayoutParams.WRAP_CONTENT,
                         LayoutParams.WRAP_CONTENT,
-                        Gravity.BOTTOM or Gravity.RIGHT
+                        Gravity.BOTTOM or Gravity.RIGHT,
                     )
                 linearLayout.orientation = LinearLayout.HORIZONTAL
                 linearLayout.setPadding(10, 10, 10, 10)
@@ -188,10 +210,10 @@ class TestAdapters(private val sdkContext: Context) {
     inner class TestBannerAd(
         private val text: String,
         private val withSlowDraw: Boolean,
-        private val automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
-    ) : BannerAd() {
+        automatedTestCallback: AutomatedTestCallback? = null,
+    ) : BannerAd(automatedTestCallback) {
         override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
-            return TestView(sessionContext, withSlowDraw, text, automatedTestCallbackProxy)
+            return TestView(sessionContext, withSlowDraw, text, automatedTestCallback)
         }
     }
 
@@ -200,7 +222,7 @@ class TestAdapters(private val sdkContext: Context) {
             return Settings.Global.getInt(
                 sdkContext.contentResolver,
                 Settings.Global.AIRPLANE_MODE_ON,
-                0
+                0,
             ) != 0
         }
 
@@ -223,7 +245,7 @@ class TestAdapters(private val sdkContext: Context) {
         override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
             return playerViewProvider.createPlayerView(
                 sessionContext,
-                "https://html5demos.com/assets/dizzy.mp4"
+                "https://html5demos.com/assets/dizzy.mp4",
             )
         }
     }
@@ -272,20 +294,93 @@ class TestAdapters(private val sdkContext: Context) {
         }
     }
 
+    inner class ScrollViewAd(
+        automatedTestCallback: AutomatedTestCallback?,
+        private val appCanScroll: Boolean = true,
+    ) : BannerAd(automatedTestCallback) {
+        override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
+            shouldAddAllowAppToScrollOverlay = false
+            val scrollView =
+                ScrollView(sessionContext).apply {
+                    layoutParams =
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        )
+                }
+            var initialScrollPositionX = 0f
+            var initialScrollPositionY = 0f
+
+            scrollView.setOnTouchListener { _, motionEvent ->
+                if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+                    initialScrollPositionX = scrollView.scrollX.toFloat()
+                    initialScrollPositionY = scrollView.scrollY.toFloat()
+                    scrollView.requestDisallowInterceptTouchEvent(!appCanScroll)
+                }
+                if (motionEvent.action == MotionEvent.ACTION_UP) {
+                    val scrollX = scrollView.scrollX.toFloat() - initialScrollPositionX
+                    val scrollY = scrollView.scrollY.toFloat() - initialScrollPositionY
+                    automatedTestCallback?.onGestureFinished(scrollX, scrollY)
+                }
+                false
+            }
+
+            val linearLayout =
+                LinearLayout(sessionContext).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams =
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        )
+                }
+
+            for (i in 1..20) {
+                val randomColor =
+                    Color.rgb(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
+
+                val textView =
+                    TextView(sessionContext).apply {
+                        text = "RemoteItem $i"
+                        setBackgroundColor(randomColor)
+                        setTextColor(WHITE)
+                        textSize = 18f
+                        setPadding(50, 50, 50, 50)
+
+                        layoutParams =
+                            LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                )
+                                .apply { setMargins(20, 20, 20, 20) }
+                    }
+
+                linearLayout.addView(textView)
+            }
+            scrollView.addView(linearLayout)
+
+            return scrollView
+        }
+    }
+
     private inner class TestView(
         context: Context,
         private val withSlowDraw: Boolean,
         private val text: String,
-        private val automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+        private val automatedTestCallback: AutomatedTestCallback? = null,
     ) : View(context) {
 
         init {
             setOnClickListener {
-                Log.i(TAG, "Click on ad detected")
-                val visitUrl = Intent(Intent.ACTION_VIEW)
-                visitUrl.data = Uri.parse(GOOGLE_URL)
-                visitUrl.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(visitUrl)
+                if (automatedTestCallback != null) {
+                    automatedTestCallback.onClick()
+                } else {
+                    Log.i(TAG, "Click on ad detected")
+                    val visitUrl = Intent(Intent.ACTION_VIEW)
+                    visitUrl.data = Uri.parse(GOOGLE_URL)
+                    visitUrl.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(visitUrl)
+                }
             }
         }
 
@@ -311,7 +406,7 @@ class TestAdapters(private val sdkContext: Context) {
             if (isFirstLayout) {
                 isFirstLayout = false
             } else {
-                automatedTestCallbackProxy?.onResizeOccurred(right - left, bottom - top)
+                automatedTestCallback?.onResizeOccurred(right - left, bottom - top)
             }
         }
     }
@@ -320,7 +415,7 @@ class TestAdapters(private val sdkContext: Context) {
         WebViewClientCompat() {
         override fun shouldInterceptRequest(
             view: WebView,
-            request: WebResourceRequest
+            request: WebResourceRequest,
         ): WebResourceResponse? {
             return assetLoader.shouldInterceptRequest(request.url)
         }

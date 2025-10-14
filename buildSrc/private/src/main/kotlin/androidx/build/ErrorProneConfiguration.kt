@@ -69,7 +69,7 @@ fun Project.configureErrorProneForAndroid() {
                 .extendsFrom(errorProneConfiguration)
 
             log.info("Configuring error-prone for ${variant.name}'s java compile")
-            androidComponents.finalizeDsl {
+            afterEvaluate {
                 makeErrorProneTask(
                     compileTaskProvider =
                         tasks
@@ -102,7 +102,6 @@ class CommandLineArgumentProviderAdapter(@get:Input val arguments: Provider<Map<
 private fun Project.createErrorProneConfiguration(): Configuration =
     configurations.findByName(ERROR_PRONE_CONFIGURATION)
         ?: configurations.create(ERROR_PRONE_CONFIGURATION).apply {
-            isVisible = false
             isCanBeConsumed = false
             isCanBeResolved = true
             exclude(group = "com.google.errorprone", module = "javac")
@@ -123,7 +122,7 @@ private fun JavaCompile.configureWithErrorProne() {
             "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
             "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
             "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-            "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED"
+            "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
         )
     )
     val compilerArgs = this.options.compilerArgs
@@ -267,9 +266,9 @@ private fun JavaCompile.configureWithErrorProne() {
                     // Nullaway
                     "-XepIgnoreUnknownCheckNames", // https://github.com/uber/NullAway/issues/25
                     "-Xep:NullAway:ERROR",
-                    "-XepOpt:NullAway:AnnotatedPackages=android.arch,android.support,androidx"
+                    "-XepOpt:NullAway:AnnotatedPackages=android.arch,android.support,androidx",
                 )
-                .joinToString(" ")
+                .joinToString(" "),
         )
 }
 
@@ -283,13 +282,15 @@ private fun JavaCompile.configureWithErrorProne() {
 private fun Project.makeErrorProneTask(
     compileTaskProvider: TaskProvider<out JavaCompile>?,
     taskSuffix: String = "",
-    onConfigure: (errorProneTask: JavaCompile) -> Unit = {}
+    onConfigure: (errorProneTask: JavaCompile) -> Unit = {},
 ) = afterEvaluate {
     val compileTaskProviderExists = provider { compileTaskProvider != null }
     val errorProneTaskProvider =
         tasks.register("$ERROR_PRONE_TASK$taskSuffix", JavaCompile::class.java) {
             it.onlyIf { compileTaskProviderExists.get() }
             val compileTask = compileTaskProvider?.get() ?: return@register
+            it.group = "Build"
+            it.description = "Compile this project's Java code with Error-prone compiler"
             it.classpath = compileTask.classpath
             it.source = compileTask.source
             it.destinationDirectory.set(layout.buildDirectory.dir("errorProne/$taskSuffix"))

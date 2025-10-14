@@ -38,7 +38,7 @@ public class WebViewGarbageCollectionTest {
     @Test
     @MediumTest
     public void testOneWebViewGc() throws Exception {
-        WebkitUtils.checkFeature(WebViewFeature.CACHE_PROVIDER);
+        WebkitUtils.checkFeature(WebViewFeature.PROVIDER_WEAKLY_REF_WEBVIEW);
         runGcTest(() -> {
             WebView wv = WebViewOnUiThread.createWebView();
             // This triggers the call to WebViewCompat.getProvider(..) and is expected to add an
@@ -56,7 +56,7 @@ public class WebViewGarbageCollectionTest {
     @Test
     @MediumTest
     public void testManyWebViewGc() throws Exception {
-        WebkitUtils.checkFeature(WebViewFeature.CACHE_PROVIDER);
+        WebkitUtils.checkFeature(WebViewFeature.PROVIDER_WEAKLY_REF_WEBVIEW);
         runGcTest(() -> {
             final int instancesCount = 32;
             List<WebView> webViews = new ArrayList<>();

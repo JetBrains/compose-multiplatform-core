@@ -54,6 +54,6 @@ public actual object DataStoreFactory {
             storage = storage,
             corruptionHandler = corruptionHandler ?: NoOpCorruptionHandler(),
             initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
-            scope = scope
+            scope = scope,
         )
 }

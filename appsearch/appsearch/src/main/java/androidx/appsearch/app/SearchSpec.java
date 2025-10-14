@@ -149,7 +149,8 @@ public final class SearchSpec extends AbstractSafeParcelable {
     @Field(id = 20, getter = "getEmbeddingParameters")
     private final @NonNull List<EmbeddingVector> mEmbeddingParameters;
 
-    @Field(id = 21, getter = "getDefaultEmbeddingSearchMetricType")
+    @Field(id = 21, getter = "getDefaultEmbeddingSearchMetricType",
+            defaultValue = "1") // EMBEDDING_SEARCH_METRIC_TYPE_COSINE
     private final int mDefaultEmbeddingSearchMetricType;
 
     @Field(id = 22, getter = "getInformationalRankingExpressions")

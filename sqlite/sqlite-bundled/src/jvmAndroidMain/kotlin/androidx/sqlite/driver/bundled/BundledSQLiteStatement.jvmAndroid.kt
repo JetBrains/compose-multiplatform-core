@@ -25,7 +25,7 @@ import androidx.sqlite.throwSQLiteException
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public actual class BundledSQLiteStatement(
     private val connectionPointer: Long,
-    private val statementPointer: Long
+    private val statementPointer: Long,
 ) : SQLiteStatement {
 
     @OptIn(ExperimentalStdlibApi::class) @Volatile private var isClosed = false

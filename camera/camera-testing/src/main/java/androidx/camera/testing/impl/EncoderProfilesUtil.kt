@@ -150,13 +150,13 @@ public object EncoderProfilesUtil {
         videoProfiles: List<VideoProfileProxy>,
         audioProfiles: List<AudioProfileProxy> = listOf(createFakeAudioProfileProxy()),
         defaultDurationSeconds: Int = DEFAULT_DURATION,
-        recommendedFileFormat: Int = DEFAULT_OUTPUT_FORMAT
+        recommendedFileFormat: Int = DEFAULT_OUTPUT_FORMAT,
     ): EncoderProfilesProxy {
         return ImmutableEncoderProfilesProxy.create(
             defaultDurationSeconds,
             recommendedFileFormat,
             audioProfiles,
-            videoProfiles
+            videoProfiles,
         )
     }
 
@@ -171,9 +171,9 @@ public object EncoderProfilesUtil {
                     frameRate = frameRate,
                     videoResolution = resolution,
                     videoBitDepth = bitDepth,
-                    videoHdrFormat = hdrFormat
+                    videoHdrFormat = hdrFormat,
                 )
-            }
+            },
     ): EncoderProfilesProxy {
         val videoProfiles =
             dynamicRanges.map { dynamicRange ->
@@ -188,7 +188,7 @@ public object EncoderProfilesUtil {
     public fun createFakeHighSpeedEncoderProfilesProxy(
         videoResolution: Size,
         videoFrameRate: Int = DEFAULT_VIDEO_HIGH_SPEED_FRAME_RATE,
-        dynamicRanges: Set<DynamicRange> = setOf(SDR)
+        dynamicRanges: Set<DynamicRange> = setOf(SDR),
     ): EncoderProfilesProxy {
         return createFakeEncoderProfilesProxy(
             videoResolution,
@@ -199,9 +199,9 @@ public object EncoderProfilesUtil {
                     videoResolution = resolution,
                     frameRate = frameRate,
                     videoBitDepth = bitDepth,
-                    videoHdrFormat = hdrFormat
+                    videoHdrFormat = hdrFormat,
                 )
-            }
+            },
         )
     }
 
@@ -213,7 +213,7 @@ public object EncoderProfilesUtil {
         frameRate: Int = DEFAULT_VIDEO_FRAME_RATE,
         bitrate: Int = DEFAULT_VIDEO_BITRATE,
         videoBitDepth: Int = DEFAULT_VIDEO_BIT_DEPTH,
-        videoHdrFormat: Int = DEFAULT_VIDEO_HDR_FORMAT
+        videoHdrFormat: Int = DEFAULT_VIDEO_HDR_FORMAT,
     ): VideoProfileProxy {
         return VideoProfileProxy.create(
             videoCodec,
@@ -225,7 +225,7 @@ public object EncoderProfilesUtil {
             DEFAULT_VIDEO_PROFILE,
             videoBitDepth,
             DEFAULT_VIDEO_CHROMA_SUBSAMPLING,
-            videoHdrFormat
+            videoHdrFormat,
         )
     }
 
@@ -237,7 +237,7 @@ public object EncoderProfilesUtil {
         frameRate: Int = DEFAULT_VIDEO_HIGH_SPEED_FRAME_RATE,
         bitrate: Int = DEFAULT_VIDEO_HIGH_SPEED_BITRATE,
         videoBitDepth: Int = DEFAULT_VIDEO_BIT_DEPTH,
-        videoHdrFormat: Int = DEFAULT_VIDEO_HDR_FORMAT
+        videoHdrFormat: Int = DEFAULT_VIDEO_HDR_FORMAT,
     ): VideoProfileProxy =
         createFakeVideoProfileProxy(
             videoResolution,
@@ -246,7 +246,7 @@ public object EncoderProfilesUtil {
             frameRate = frameRate,
             bitrate = bitrate,
             videoBitDepth = videoBitDepth,
-            videoHdrFormat = videoHdrFormat
+            videoHdrFormat = videoHdrFormat,
         )
 
     /** A utility method to create an AudioProfileProxy with some default values. */
@@ -257,7 +257,7 @@ public object EncoderProfilesUtil {
             DEFAULT_AUDIO_BITRATE,
             DEFAULT_AUDIO_SAMPLE_RATE,
             DEFAULT_AUDIO_CHANNELS,
-            DEFAULT_AUDIO_PROFILE
+            DEFAULT_AUDIO_PROFILE,
         )
     }
 }

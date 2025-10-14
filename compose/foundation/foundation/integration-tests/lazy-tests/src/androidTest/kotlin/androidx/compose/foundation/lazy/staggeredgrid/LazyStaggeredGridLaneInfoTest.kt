@@ -27,7 +27,7 @@ class LazyStaggeredGridLaneInfoTest {
 
     @Test
     fun emptySpan_unset() {
-        assertEquals(LazyStaggeredGridLaneInfo.Unset, laneInfo.getLane(0))
+        assertEquals(LazyStaggeredGridLaneInfo.LaneUnset, laneInfo.getLane(0))
     }
 
     @Test

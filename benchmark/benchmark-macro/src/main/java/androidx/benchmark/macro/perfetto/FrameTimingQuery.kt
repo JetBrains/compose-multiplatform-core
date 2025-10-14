@@ -83,7 +83,7 @@ internal object FrameTimingQuery {
         Expected,
         Actual,
         UiThread,
-        RenderThread
+        RenderThread,
     }
 
     /**
@@ -95,7 +95,7 @@ internal object FrameTimingQuery {
         val uiSlice: Slice,
         val rtSlice: Slice,
         val expectedSlice: Slice?,
-        val actualSlice: Slice?
+        val actualSlice: Slice?,
     ) {
         fun get(subMetric: SubMetric): Long {
             return when (subMetric) {
@@ -230,7 +230,7 @@ internal object FrameTimingQuery {
                         uiSlice = uiSlice,
                         rtSlice = rtSlice,
                         expectedSlice = expectedSlice,
-                        actualSlice = actualSlice
+                        actualSlice = actualSlice,
                     )
                 } else {
                     null
@@ -242,7 +242,7 @@ internal object FrameTimingQuery {
             rtSlices.mapNotNull { rtSlice ->
                 FrameData.tryCreateBasic(
                     uiSlice = uiSlices.firstOrNull { it.contains(rtSlice.ts) },
-                    rtSlice = rtSlice
+                    rtSlice = rtSlice,
                 )
             }
         }

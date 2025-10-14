@@ -16,6 +16,8 @@
 
 package androidx.benchmark.macro
 
+import android.os.Build.VERSION.SDK_INT
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.InsightSummary
 import androidx.benchmark.createInsightSummaries
 import androidx.benchmark.traceprocessor.Insight
@@ -24,6 +26,7 @@ import androidx.benchmark.traceprocessor.StartupInsights
 import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class StartupInsightsTest {
@@ -43,8 +46,8 @@ class StartupInsightsTest {
             urlParamMap =
                 mapOf(
                     "dev.perfetto.AndroidStartup:packageName" to targetPackage,
-                    "dev.perfetto.AndroidStartup:slowStartReason" to reasonId
-                )
+                    "dev.perfetto.AndroidStartup:slowStartReason" to reasonId,
+                ),
         )
 
     private val canonicalTraceInsights =
@@ -58,8 +61,8 @@ class StartupInsightsTest {
                         titleUrl =
                             "https://d.android.com/test#POTENTIAL_CPU_CONTENTION_WITH_ANOTHER_PROCESS",
                         title = "Potential CPU contention with another process",
-                        postTitleLabel = " (expected: < 100000000ns)"
-                    )
+                        postTitleLabel = " (expected: < 100000000ns)",
+                    ),
             ),
             Insight(
                 observedLabel = "328462261ns",
@@ -68,8 +71,8 @@ class StartupInsightsTest {
                     Insight.Category(
                         titleUrl = "https://d.android.com/test#JIT_ACTIVITY",
                         title = "JIT Activity",
-                        postTitleLabel = " (expected: < 100000000ns)"
-                    )
+                        postTitleLabel = " (expected: < 100000000ns)",
+                    ),
             ),
             Insight(
                 observedLabel = "150 count",
@@ -78,9 +81,9 @@ class StartupInsightsTest {
                     Insight.Category(
                         titleUrl = "https://d.android.com/test#JIT_COMPILED_METHODS",
                         title = "JIT compiled methods",
-                        postTitleLabel = " (expected: < 65 count)"
-                    )
-            )
+                        postTitleLabel = " (expected: < 65 count)",
+                    ),
+            ),
         )
 
     private val canonicalTraceInsightSummary =
@@ -91,7 +94,7 @@ class StartupInsightsTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(123305107ns)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=POTENTIAL_CPU_CONTENTION_WITH_ANOTHER_PROCESS)(123305107ns)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=POTENTIAL_CPU_CONTENTION_WITH_ANOTHER_PROCESS)(123305107ns)",
             ),
             InsightSummary(
                 category =
@@ -99,7 +102,7 @@ class StartupInsightsTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(328462261ns)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=JIT_ACTIVITY)(328462261ns)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=JIT_ACTIVITY)(328462261ns)",
             ),
             InsightSummary(
                 category =
@@ -107,31 +110,32 @@ class StartupInsightsTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(150 count)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=JIT_COMPILED_METHODS)(150 count)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=JIT_COMPILED_METHODS)(150 count)",
             ),
         )
 
     @MediumTest
     @Test
     fun queryInsights() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         TraceProcessor.runSingleSessionServer(api35ColdStart) {
             assertThat(
-                insights
-                    .queryInsights(
+                    insights.queryInsights(
                         session = this,
                         packageName = Packages.MISSING,
                         traceLinkTitle = "6",
-                        traceLinkPath = "/fake/output/relative/path.perfetto-trace"
+                        traceLinkPath = "/fake/output/relative/path.perfetto-trace",
                     )
-                    .isEmpty()
-            )
+                )
+                .isEmpty()
 
             assertThat(
                     insights.queryInsights(
                         session = this,
                         packageName = targetPackage,
                         traceLinkTitle = "6",
-                        traceLinkPath = "/fake/output/relative/path.perfetto-trace"
+                        traceLinkPath = "/fake/output/relative/path.perfetto-trace",
                     )
                 )
                 .isEqualTo(canonicalTraceInsights)
@@ -141,6 +145,8 @@ class StartupInsightsTest {
     @MediumTest
     @Test
     fun createInsightSummaries_v2() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assertThat(canonicalTraceInsights.createInsightSummaries().map { it.observedV2 })
             .isEqualTo(canonicalTraceInsightSummary.map { it.observedV2 })
     }
@@ -148,6 +154,8 @@ class StartupInsightsTest {
     @MediumTest
     @Test
     fun createInsightSummaries_v3() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assertThat(canonicalTraceInsights.createInsightSummaries().map { it.observedV3 })
             .isEqualTo(canonicalTraceInsightSummary.map { it.observedV3 })
     }

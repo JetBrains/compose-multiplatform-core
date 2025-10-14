@@ -125,7 +125,7 @@ inline fun debugInspectorInfo(
 )
 inline fun Modifier.inspectable(
     noinline inspectorInfo: InspectorInfo.() -> Unit,
-    factory: Modifier.() -> Modifier
+    factory: Modifier.() -> Modifier,
 ): Modifier = inspectableWrapper(inspectorInfo, factory(Modifier))
 
 /** Do not use this explicitly. Instead use [Modifier.inspectable]. */
@@ -133,7 +133,7 @@ inline fun Modifier.inspectable(
 @PublishedApi
 internal fun Modifier.inspectableWrapper(
     inspectorInfo: InspectorInfo.() -> Unit,
-    wrapped: Modifier
+    wrapped: Modifier,
 ): Modifier {
     val begin = InspectableModifier(inspectorInfo)
     return then(begin).then(wrapped).then(begin.end)

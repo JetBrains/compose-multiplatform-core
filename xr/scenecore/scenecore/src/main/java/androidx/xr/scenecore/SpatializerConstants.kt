@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.SpatializerConstants as RtSpatializerConstants
+import androidx.xr.scenecore.runtime.SpatializerConstants as RtSpatializerConstants
 
 /** Constants for spatialized audio. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatializerConstants {
 
     public companion object {
@@ -32,8 +31,8 @@ public interface SpatializerConstants {
         /** Specifies spatial rendering using Third Order Ambisonics */
         public const val AMBISONICS_ORDER_THIRD_ORDER: Int = 2
 
-        /** The sound source has not been spatialized with the Spatial Audio SDK. */
-        public const val SOURCE_TYPE_BYPASS: Int = 0
+        /** The sound source has not been spatialized with SceneCore APIs. */
+        public const val SOURCE_TYPE_DEFAULT: Int = 0
         /** The sound source has been spatialized as a 3D point source. */
         public const val SOURCE_TYPE_POINT_SOURCE: Int = 1
         /** The sound source is an ambisonics sound field. */
@@ -48,7 +47,7 @@ public interface SpatializerConstants {
             [
                 AMBISONICS_ORDER_FIRST_ORDER,
                 AMBISONICS_ORDER_SECOND_ORDER,
-                AMBISONICS_ORDER_THIRD_ORDER
+                AMBISONICS_ORDER_THIRD_ORDER,
             ]
     )
     public annotation class AmbisonicsOrder
@@ -56,27 +55,27 @@ public interface SpatializerConstants {
     /** Represents the type of spatialization for an audio source. */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
-    @IntDef(value = [SOURCE_TYPE_BYPASS, SOURCE_TYPE_POINT_SOURCE, SOURCE_TYPE_SOUND_FIELD])
+    @IntDef(value = [SOURCE_TYPE_DEFAULT, SOURCE_TYPE_POINT_SOURCE, SOURCE_TYPE_SOUND_FIELD])
     public annotation class SourceType
 }
 
-/** Converts the [JxrPlatformAdapter] SourceType IntDef to the SceneCore API. */
+/** Converts the [SceneRuntime] SourceType IntDef to the SceneCore API. */
 @SpatializerConstants.SourceType
 internal fun @receiver:RtSpatializerConstants.SourceType Int.sourceTypeToJxr(): Int {
     return when (this) {
-        RtSpatializerConstants.SOURCE_TYPE_BYPASS -> SpatializerConstants.SOURCE_TYPE_BYPASS
+        RtSpatializerConstants.SOURCE_TYPE_BYPASS -> SpatializerConstants.SOURCE_TYPE_DEFAULT
         RtSpatializerConstants.SOURCE_TYPE_POINT_SOURCE ->
             SpatializerConstants.SOURCE_TYPE_POINT_SOURCE
         RtSpatializerConstants.SOURCE_TYPE_SOUND_FIELD ->
             SpatializerConstants.SOURCE_TYPE_SOUND_FIELD
         else -> {
             // Unknown source type, returning bypass.
-            SpatializerConstants.SOURCE_TYPE_BYPASS
+            SpatializerConstants.SOURCE_TYPE_DEFAULT
         }
     }
 }
 
-/** Converts the [JxrPlatformAdapter] SourceType IntDef to the SceneCore API. */
+/** Converts the [SceneRuntime] SourceType IntDef to the SceneCore API. */
 @SpatializerConstants.AmbisonicsOrder
 internal fun @receiver:RtSpatializerConstants.AmbisonicsOrder Int.ambisonicsOrderToJxr(): Int {
     return when (this) {

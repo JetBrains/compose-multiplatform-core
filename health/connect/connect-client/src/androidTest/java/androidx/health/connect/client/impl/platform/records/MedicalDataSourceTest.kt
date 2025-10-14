@@ -40,7 +40,7 @@ class MedicalDataSourceTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
@@ -53,7 +53,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI,
                 displayName = DISPLAY_NAME,
                 fhirVersion = FHIR_VERSION,
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
         val medicalDataSource2 =
             MedicalDataSource(
@@ -62,7 +62,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI,
                 displayName = DISPLAY_NAME,
                 fhirVersion = FHIR_VERSION,
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
         val medicalDataSource3 =
             MedicalDataSource(
@@ -71,7 +71,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI,
                 displayName = DISPLAY_NAME,
                 fhirVersion = FHIR_VERSION,
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
         val medicalDataSource4 =
             MedicalDataSource(
@@ -80,7 +80,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI,
                 displayName = DISPLAY_NAME,
                 fhirVersion = FHIR_VERSION,
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
         val medicalDataSource5 =
             MedicalDataSource(
@@ -89,7 +89,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI.buildUpon().appendPath("2/").build(),
                 displayName = DISPLAY_NAME,
                 fhirVersion = FHIR_VERSION,
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
         val medicalDataSource6 =
             MedicalDataSource(
@@ -98,7 +98,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI,
                 displayName = "$DISPLAY_NAME Two",
                 fhirVersion = FHIR_VERSION,
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
         val medicalDataSource7 =
             MedicalDataSource(
@@ -107,7 +107,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI,
                 displayName = DISPLAY_NAME,
                 fhirVersion = FhirVersion(4, 3, 0),
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
         val medicalDataSource8 =
             MedicalDataSource(
@@ -117,7 +117,7 @@ class MedicalDataSourceTest {
                 displayName = DISPLAY_NAME,
                 fhirVersion = FHIR_VERSION,
                 lastDataUpdateTime =
-                    Instant.parse(LAST_DATA_UPDATE_TIMESTAMP.replace("2025-01-27", "2025-01-28"))
+                    Instant.parse(LAST_DATA_UPDATE_TIMESTAMP.replace("2025-01-27", "2025-01-28")),
             )
 
         assertThat(medicalDataSource1).isEqualTo(medicalDataSource2)
@@ -140,7 +140,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI,
                 displayName = DISPLAY_NAME,
                 fhirVersion = FHIR_VERSION,
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
 
         val toString = medicalDataSource.toString()
@@ -164,7 +164,7 @@ class MedicalDataSourceTest {
                 fhirBaseUri = FHIR_BASE_URI,
                 displayName = DISPLAY_NAME,
                 fhirVersion = FHIR_VERSION,
-                lastDataUpdateTime = LAST_UPDATED_TIME
+                lastDataUpdateTime = LAST_UPDATED_TIME,
             )
 
         val platformMedicalDataSource = medicalDataSource.platformMedicalDataSource
@@ -176,7 +176,7 @@ class MedicalDataSourceTest {
                         PACKAGE_NAME,
                         FHIR_BASE_URI,
                         DISPLAY_NAME,
-                        FHIR_VERSION.platformFhirVersion
+                        FHIR_VERSION.platformFhirVersion,
                     )
                     .setLastDataUpdateTime(LAST_UPDATED_TIME)
                     .build()

@@ -16,10 +16,7 @@
 
 package androidx.camera.video;
 
-import static java.util.Collections.emptySet;
-
 import android.hardware.camera2.CaptureRequest;
-import android.util.Range;
 import android.util.Size;
 
 import androidx.annotation.RestrictTo;
@@ -113,15 +110,6 @@ public interface VideoCapabilities {
      * @see #getSupportedQualities(DynamicRange)
      */
     boolean isQualitySupported(@NonNull Quality quality, @NonNull DynamicRange dynamicRange);
-
-
-    /**
-     * Gets all supported frame ranges for the input quality and dynamic range.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO(b/404096374): High-speed public API
-    @NonNull
-    Set<Range<Integer>> getSupportedFrameRateRanges(@NonNull Quality quality,
-            @NonNull DynamicRange dynamicRange);
 
     /**
      * Returns if video stabilization is supported on the device. Video stabilization can be
@@ -219,12 +207,6 @@ public interface VideoCapabilities {
         public boolean isQualitySupported(@NonNull Quality quality,
                 @NonNull DynamicRange dynamicRange) {
             return false;
-        }
-
-        @Override
-        public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(@NonNull Quality quality,
-                @NonNull DynamicRange dynamicRange) {
-            return emptySet();
         }
     };
 }

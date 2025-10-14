@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.lifecycle
 
 import androidx.annotation.MainThread
@@ -328,7 +331,7 @@ public expect abstract class LifecycleCoroutineScope internal constructor() : Co
 
 internal class LifecycleCoroutineScopeImpl(
     override val lifecycle: Lifecycle,
-    override val coroutineContext: CoroutineContext
+    override val coroutineContext: CoroutineContext,
 ) : LifecycleCoroutineScope(), LifecycleEventObserver {
     init {
         // in case we are initialized on a non-main thread, make a best effort check before

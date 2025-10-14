@@ -26,7 +26,7 @@ package androidx.tracing.driver
 internal class Pool<T>(
     private val size: Int,
     private val isDebug: Boolean,
-    private val factory: (owner: Pool<T>) -> T
+    private val factory: (owner: Pool<T>) -> T,
 ) {
     private var counter: AtomicLong? = null
 
@@ -46,12 +46,13 @@ internal class Pool<T>(
         repeat(size) { scrapPool.addLast(factory(this)) }
     }
 
-    /** Obtain an instance of the object from the pool. */
-    internal fun obtain(): T {
-        if (isDebug) {
+    /** Obtain an instance of the object from the pool if possible. */
+    internal fun obtain(): T? {
+        val element = scrapPool.removeFirstOrNull()
+        if (isDebug && element != null) {
             counter?.incrementAndGet()
         }
-        return scrapPool.removeFirstOrNull() ?: factory(this)
+        return element
     }
 
     internal fun release(element: T) {

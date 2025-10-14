@@ -61,14 +61,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.robolectric)
-            }
-        }
-
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testExtJunit)
@@ -110,36 +103,6 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
         }
 
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestWasm)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
@@ -158,5 +121,4 @@ androidx {
     samples(project(":savedstate:savedstate-compose"))
     inceptionYear = "2024"
     description = "Compose integration with Saved State"
-    metalavaK2UastEnabled = false
 }

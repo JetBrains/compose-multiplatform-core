@@ -43,7 +43,7 @@ internal object DataCardDefaults {
         secondaryText: LayoutElement? = null,
         secondaryIcon: LayoutElement? = null,
         // Bottom, because when there's no secondaryIcon, label should be on top
-        titleContentPlacement: TitleContentPlacementInDataCard = Bottom
+        titleContentPlacement: TitleContentPlacementInDataCard = Bottom,
     ): LayoutElement {
         val verticalElementBuilder: Column.Builder = Column.Builder()
 
@@ -53,7 +53,7 @@ internal object DataCardDefaults {
             Top ->
                 ContainerWithSpacersBuilder<LayoutElement>(
                         { element: LayoutElement? -> verticalElementBuilder.addContent(element!!) },
-                        title
+                        title,
                     )
                     .addElement(content, horizontalSpacer(style.titleToContentSpaceDp))
                     .addElement(
@@ -64,7 +64,7 @@ internal object DataCardDefaults {
                             } else {
                                 style.secondaryLabelToTextSpaceDp
                             }
-                        )
+                        ),
                     )
             Bottom ->
                 ContainerWithSpacersBuilder<LayoutElement>(
@@ -79,7 +79,7 @@ internal object DataCardDefaults {
                             } else {
                                 style.secondaryLabelToTextSpaceDp
                             }
-                        )
+                        ),
                     )
                     .addElement(content, horizontalSpacer(style.titleToContentSpaceDp))
         }
@@ -118,7 +118,7 @@ internal constructor(
     @TypographyToken internal val secondaryLabelTypography: Int,
     @Dimension(unit = DP) internal val iconSize: Int,
     @Dimension(unit = DP) internal val iconToTextSpaceDp: Int = 6,
-    @Dimension(unit = DP) internal val secondaryLabelToTextSpaceDp: Int = 8
+    @Dimension(unit = DP) internal val secondaryLabelToTextSpaceDp: Int = 8,
 ) {
     public companion object {
         /** The default spacer width or height that should be between different elements. */
@@ -153,7 +153,7 @@ internal constructor(
                 titleTypography = Typography.LABEL_MEDIUM,
                 contentTypography = Typography.BODY_SMALL,
                 secondaryLabelTypography = Typography.BODY_MEDIUM,
-                iconSize = ICON_SIZE_SMALL_DP
+                iconSize = ICON_SIZE_SMALL_DP,
             )
 
         /**
@@ -167,7 +167,7 @@ internal constructor(
                 titleTypography = Typography.LABEL_LARGE,
                 contentTypography = Typography.BODY_SMALL,
                 secondaryLabelTypography = Typography.BODY_MEDIUM,
-                iconSize = ICON_SIZE_LARGE_DP
+                iconSize = ICON_SIZE_LARGE_DP,
             )
 
         /**
@@ -181,7 +181,7 @@ internal constructor(
                 titleTypography = Typography.DISPLAY_SMALL,
                 contentTypography = Typography.BODY_SMALL,
                 secondaryLabelTypography = Typography.BODY_MEDIUM,
-                iconSize = ICON_SIZE_LARGE_DP
+                iconSize = ICON_SIZE_LARGE_DP,
             )
 
         /**
@@ -198,7 +198,7 @@ internal constructor(
                 secondaryLabelTypography = Typography.BODY_MEDIUM,
                 iconSize = ICON_SIZE_LARGE_DP,
                 iconToTextSpaceDp = DEFAULT_SPACE_DP,
-                secondaryLabelToTextSpaceDp = DEFAULT_SPACE_DP
+                secondaryLabelToTextSpaceDp = DEFAULT_SPACE_DP,
             )
 
         /**
@@ -213,7 +213,7 @@ internal constructor(
                 titleTypography = Typography.NUMERAL_MEDIUM,
                 contentTypography = Typography.LABEL_MEDIUM,
                 secondaryLabelTypography = Typography.BODY_MEDIUM,
-                iconSize = EMPTY_SPACE_DP
+                iconSize = EMPTY_SPACE_DP,
             )
 
         /**
@@ -228,7 +228,7 @@ internal constructor(
                 titleTypography = Typography.NUMERAL_LARGE,
                 contentTypography = Typography.LABEL_LARGE,
                 secondaryLabelTypography = Typography.BODY_MEDIUM,
-                iconSize = EMPTY_SPACE_DP
+                iconSize = EMPTY_SPACE_DP,
             )
 
         /**
@@ -243,7 +243,7 @@ internal constructor(
                 titleTypography = Typography.NUMERAL_EXTRA_LARGE,
                 contentTypography = Typography.LABEL_LARGE,
                 secondaryLabelTypography = Typography.BODY_MEDIUM,
-                iconSize = EMPTY_SPACE_DP
+                iconSize = EMPTY_SPACE_DP,
             )
     }
 }

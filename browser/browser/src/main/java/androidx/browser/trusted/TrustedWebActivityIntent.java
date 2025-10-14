@@ -19,6 +19,7 @@ package androidx.browser.trusted;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.content.IntentCompat;
@@ -26,6 +27,7 @@ import androidx.core.content.IntentCompat;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -79,6 +81,27 @@ public final class TrustedWebActivityIntent {
         return getIntent().getIntExtra(
                 TrustedWebActivityIntentBuilder.EXTRA_LAUNCH_HANDLER_CLIENT_MODE,
                 LaunchHandlerClientMode.AUTO);
+    }
+
+    /**
+     * Used by the web app manifest to specify the fallback order for display modes.
+     *
+     * This can be changed using {@link TrustedWebActivityIntentBuilder#setDisplayOverrideList}.
+     *
+     * @return A list of {@link TrustedWebActivityDisplayMode} that represents the
+     * fallback order of display modes.
+     */
+    public @NonNull List<TrustedWebActivityDisplayMode> getDisplayOverrideList() {
+        ArrayList<Bundle> bundles = IntentCompat.getParcelableArrayListExtra(getIntent(),
+                TrustedWebActivityIntentBuilder.EXTRA_DISPLAY_OVERRIDE, Bundle.class);
+        if (bundles == null) return new ArrayList<>();
+
+        ArrayList<TrustedWebActivityDisplayMode> displayOverrideList = new ArrayList<>();
+        for (Bundle bundle : bundles) {
+            displayOverrideList.add(TrustedWebActivityDisplayMode.fromBundle(bundle));
+        }
+
+        return displayOverrideList;
     }
 
     /**

@@ -23,7 +23,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchResult;
-import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
@@ -62,7 +61,6 @@ import java.util.Set;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@ExperimentalAppSearchApi
 public abstract class RevocableFileDescriptorStore {
 
     private final Object mLock  = new Object();

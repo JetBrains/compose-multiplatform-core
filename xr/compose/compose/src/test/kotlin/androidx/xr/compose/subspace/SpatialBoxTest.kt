@@ -26,11 +26,11 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertPositionInRootIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,20 +38,19 @@ import org.junit.runner.RunWith
 /** Tests for [SpatialBox]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialBoxTest {
+
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun spatialBox_elementsAreCenteredByDefault() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialBox(SubspaceModifier.size(100.dp)) {
-                        SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                            Text(text = "Panel 1")
-                        }
-                        SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                            Text(text = "Panel 2")
-                        }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp)) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
                     }
                 }
             }
@@ -72,19 +71,14 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithBoxSpatialAlignment_topLeft() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialBox(
-                        SubspaceModifier.size(100.dp),
-                        alignment = SpatialAlignment.TopLeft
-                    ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                            Text(text = "Panel 1")
-                        }
-                        SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                            Text(text = "Panel 2")
-                        }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp), alignment = SpatialAlignment.TopStart) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
                     }
                 }
             }
@@ -105,19 +99,14 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithBoxSpatialAlignment_bottomRight() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialBox(
-                        SubspaceModifier.size(100.dp),
-                        alignment = SpatialAlignment.BottomRight
-                    ) {
-                        SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                            Text(text = "Panel 1")
-                        }
-                        SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                            Text(text = "Panel 2")
-                        }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp), alignment = SpatialAlignment.BottomEnd) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
                     }
                 }
             }
@@ -138,24 +127,22 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsAreAlignedWithModifier() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialBox(SubspaceModifier.size(100.dp)) {
-                        SpatialPanel(
-                            SubspaceModifier.testTag("panel1")
-                                .size(50.dp)
-                                .align(SpatialAlignment.BottomLeft)
-                        ) {
-                            Text(text = "Panel 1")
-                        }
-                        SpatialPanel(
-                            SubspaceModifier.testTag("panel2")
-                                .size(50.dp)
-                                .align(SpatialAlignment.TopRight)
-                        ) {
-                            Text(text = "Panel 2")
-                        }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp)) {
+                    SpatialPanel(
+                        SubspaceModifier.testTag("panel1")
+                            .size(50.dp)
+                            .align(SpatialAlignment.BottomStart)
+                    ) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(
+                        SubspaceModifier.testTag("panel2")
+                            .size(50.dp)
+                            .align(SpatialAlignment.TopEnd)
+                    ) {
+                        Text(text = "Panel 2")
                     }
                 }
             }
@@ -176,16 +163,14 @@ class SpatialBoxTest {
 
     @Test
     fun spatialBox_elementsHonorPropagatedMinConstraints() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialBox(SubspaceModifier.size(100.dp), propagateMinConstraints = true) {
-                        SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                            Text(text = "Panel 1")
-                        }
-                        SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                            Text(text = "Panel 2")
-                        }
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(100.dp), propagateMinConstraints = true) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
                     }
                 }
             }
@@ -202,5 +187,33 @@ class SpatialBoxTest {
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
             .assertWidthIsEqualTo(100.dp)
             .assertHeightIsEqualTo(100.dp)
+    }
+
+    @Test
+    fun spatialBox_elementsHonorWithoutPropagatedMinConstraints() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            Subspace {
+                SpatialBox(SubspaceModifier.size(300.dp), propagateMinConstraints = false) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(150.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(150.dp)) {
+                        Text(text = "Panel 2")
+                    }
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel1")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(150.dp)
+            .assertHeightIsEqualTo(150.dp)
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel2")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(150.dp)
+            .assertHeightIsEqualTo(150.dp)
     }
 }

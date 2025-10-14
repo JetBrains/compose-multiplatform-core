@@ -34,7 +34,7 @@ internal fun PlatformMetadata.toSdkMetadata(): Metadata {
         clientRecordId = clientRecordId,
         clientRecordVersion = clientRecordVersion,
         recordingMethod = recordingMethod.toSdkRecordingMethod(),
-        device = device.toSdkDevice()
+        device = device.toSdkDevice(),
     )
 }
 
@@ -43,8 +43,7 @@ internal fun PlatformDevice.toSdkDevice(): Device? {
     if (this == PlatformDeviceBuilder().build()) {
         return null
     }
-    @Suppress("WrongConstant") // Platform intdef and jetpack intdef match in value.
-    return Device(manufacturer = manufacturer, model = model, type = type)
+    return Device(manufacturer = manufacturer, model = model, type = type.toSdkDevice())
 }
 
 internal fun PlatformDataOrigin.toSdkDataOrigin(): DataOrigin {
@@ -70,12 +69,15 @@ internal fun DataOrigin.toPlatformDataOrigin(): PlatformDataOrigin {
 }
 
 internal fun Device.toPlatformDevice(): PlatformDevice {
-    @Suppress("WrongConstant") // Platform intdef and jetpack intdef match in value.
-    return PlatformDeviceBuilder()
-        .apply {
-            setType(type)
+    val platformDeviceBuilder =
+        PlatformDeviceBuilder().apply {
             manufacturer?.let { setManufacturer(it) }
             model?.let { setModel(it) }
         }
-        .build()
+
+    return try {
+        platformDeviceBuilder.setType(type.toPlatformDevice()).build()
+    } catch (_: IllegalArgumentException) {
+        platformDeviceBuilder.setType(Device.TYPE_UNKNOWN.toPlatformDevice()).build()
+    }
 }

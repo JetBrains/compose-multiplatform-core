@@ -31,7 +31,8 @@ import androidx.privacysandbox.ui.core.SessionObserverFactory
  *
  * UI providers should use this class rather than implementing [SandboxedUiAdapter] directly.
  */
-abstract class AbstractSandboxedUiAdapter : SandboxedUiAdapter, SessionObserverFactoryRegistry {
+public abstract class AbstractSandboxedUiAdapter :
+    SandboxedUiAdapter, SessionObserverFactoryRegistry {
     private val registryProvider = SessionObserverFactoryRegistryProvider()
 
     private val delegateMap:
@@ -96,7 +97,7 @@ abstract class AbstractSandboxedUiAdapter : SandboxedUiAdapter, SessionObserverF
      *
      * UI providers should use this class rather than implementing [SandboxedUiAdapter.Session].
      */
-    abstract class AbstractSession : SandboxedUiAdapter.Session {
+    public abstract class AbstractSession : SandboxedUiAdapter.Session {
 
         final override val signalOptions: Set<String>
             get() = setOf()

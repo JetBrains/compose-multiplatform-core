@@ -19,6 +19,7 @@
 package androidx.health.connect.client.samples
 
 import android.net.Uri
+import androidx.annotation.RequiresPermission
 import androidx.annotation.Sampled
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures.Companion.FEATURE_PERSONAL_HEALTH_RECORD
@@ -29,6 +30,7 @@ import androidx.health.connect.client.records.MedicalDataSource
 import androidx.health.connect.client.request.CreateMedicalDataSourceRequest
 import androidx.health.connect.client.request.GetMedicalDataSourcesRequest
 
+@RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
 @OptIn(ExperimentalPersonalHealthRecordApi::class)
 @Sampled
 suspend fun CreateMedicalDataSourceSample(healthConnectClient: HealthConnectClient) {
@@ -47,11 +49,12 @@ suspend fun CreateMedicalDataSourceSample(healthConnectClient: HealthConnectClie
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 }
 
+@RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
 @OptIn(ExperimentalPersonalHealthRecordApi::class)
 @Sampled
 suspend fun DeleteMedicalDataSourceWithDataSample(healthConnectClient: HealthConnectClient) {
@@ -70,7 +73,7 @@ suspend fun DeleteMedicalDataSourceWithDataSample(healthConnectClient: HealthCon
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -78,11 +81,12 @@ suspend fun DeleteMedicalDataSourceWithDataSample(healthConnectClient: HealthCon
     healthConnectClient.deleteMedicalDataSourceWithData(medicalDataSource.id)
 }
 
+@RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
 @OptIn(ExperimentalPersonalHealthRecordApi::class)
 @Sampled
 suspend fun GetMedicalDataSourcesByRequestSample(
     healthConnectClient: HealthConnectClient,
-    anotherPackageName: String
+    anotherPackageName: String,
 ) {
     // Ensure `FEATURE_PERSONAL_HEALTH_RECORD` is available before calling PHR apis
     if (
@@ -99,7 +103,7 @@ suspend fun GetMedicalDataSourcesByRequestSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -111,6 +115,7 @@ suspend fun GetMedicalDataSourcesByRequestSample(
         )
 }
 
+@RequiresPermission("android.permission.health.WRITE_MEDICAL_DATA")
 @OptIn(ExperimentalPersonalHealthRecordApi::class)
 @Sampled
 suspend fun GetMedicalDataSourcesByIdsSample(
@@ -132,7 +137,7 @@ suspend fun GetMedicalDataSourcesByIdsSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 

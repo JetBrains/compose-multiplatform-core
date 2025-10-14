@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/420551535
+
 package androidx.compose.foundation.lazy.layout
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -37,6 +39,11 @@ internal expect fun rememberDefaultPrefetchScheduler(): PrefetchScheduler
  * when it still has more to do but doesn't think it can complete it within
  * [PrefetchRequestScope.availableTimeNanos].
  */
+@Deprecated(
+    "Customization of PrefetchScheduler is no longer supported. LazyLayout will attach " +
+        "an appropriate scheduler internally. If you needed to customize it please file a Feature " +
+        "Request."
+)
 @ExperimentalFoundationApi
 interface PrefetchScheduler {
 
@@ -51,6 +58,11 @@ interface PrefetchScheduler {
  * A request for prefetch which can be submitted to a [PrefetchScheduler] to execute during idle
  * time.
  */
+@Deprecated(
+    "Customization of PrefetchScheduler is no longer supported. LazyLayout will attach " +
+        "an appropriate scheduler internally. If you needed to customize it please file a Feature " +
+        "Request."
+)
 @ExperimentalFoundationApi
 sealed interface PrefetchRequest {
 
@@ -69,6 +81,11 @@ sealed interface PrefetchRequest {
  * Scope for [PrefetchRequest.execute], supplying info about how much time it has to execute
  * requests and the type of execution mode.
  */
+@Deprecated(
+    "Customization of PrefetchScheduler is no longer supported. LazyLayout will attach " +
+        "an appropriate scheduler internally. If you needed to customize it please file a Feature " +
+        "Request."
+)
 @ExperimentalFoundationApi
 interface PrefetchRequestScope {
     /**
@@ -84,18 +101,6 @@ interface PrefetchRequestScope {
  */
 @ExperimentalFoundationApi
 internal interface PriorityPrefetchScheduler : PrefetchScheduler {
-
-    /**
-     * If the [PrefetchRequest] execution can do "overtime". Overtime here means more time than what
-     * is expressed in
-     * [androidx.compose.foundation.lazy.layout.PrefetchRequestScope.availableTimeNanos].
-     * Implementation of [PrefetchRequest] should consider this when deciding when to execute the
-     * requests since this means that the UI Thread is idle and we don't expect drawing to happening
-     * in the next frame (i.e. we can use more than
-     * [androidx.compose.foundation.lazy.layout.PrefetchRequestScope.availableTimeNanos] to execute
-     * the requests).
-     */
-    val isFrameIdle: Boolean
 
     override fun schedulePrefetch(prefetchRequest: PrefetchRequest) =
         scheduleHighPriorityPrefetch(prefetchRequest)

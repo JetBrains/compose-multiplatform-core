@@ -44,7 +44,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
 import androidx.browser.customtabs.CustomTabsIntent;
-import androidx.browser.customtabs.ExperimentalEphemeralBrowsing;
 import androidx.browser.customtabs.ExperimentalPendingSession;
 import androidx.core.content.IntentCompat;
 import androidx.core.os.BundleCompat;
@@ -195,7 +194,6 @@ public class AuthTabIntent {
     /**
      * Returns whether ephemeral browsing is enabled.
      */
-    @ExperimentalEphemeralBrowsing
     public boolean isEphemeralBrowsingEnabled() {
         return intent.getBooleanExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, false);
     }
@@ -316,7 +314,6 @@ public class AuthTabIntent {
          * @param enabled Whether ephemeral browsing is enabled.
          * @see CustomTabsIntent#EXTRA_ENABLE_EPHEMERAL_BROWSING
          */
-        @ExperimentalEphemeralBrowsing
         public AuthTabIntent.@NonNull Builder setEphemeralBrowsingEnabled(boolean enabled) {
             mIntent.putExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, enabled);
             return this;
@@ -493,12 +490,34 @@ public class AuthTabIntent {
         }
     }
 
-    static class AuthenticateUserResultContract extends ActivityResultContract<Intent, AuthResult> {
+    /**
+     * An {@link ActivityResultContract} for launching an Auth Tab and receiving the result.
+     * This contract takes the launch {@link Intent} as input and produces an {@link AuthResult}
+     * as output.
+     */
+    public static class AuthenticateUserResultContract extends
+            ActivityResultContract<Intent, AuthResult> {
+        /**
+         * Creates the {@link Intent} to be used to launch the Auth Tab activity.
+         *
+         * @param context The context from which the activity is being launched.
+         * @param input   The {@link Intent} built by {@link AuthTabIntent.Builder}.
+         * @return The same {@link Intent} that was passed as input, which will be used to start the
+         * activity.
+         */
         @Override
         public @NonNull Intent createIntent(@NonNull Context context, @NonNull Intent input) {
             return input;
         }
 
+        /**
+         * Parses the result from the Auth Tab into an {@link AuthResult}.
+         *
+         * @param resultCode The result code returned by the activity.
+         * @param intent     The {@link Intent} returned by the activity, which may contain
+         *                   result data.
+         * @return An {@link AuthResult} representing the outcome of the authentication flow.
+         */
         @Override
         public @NonNull AuthResult parseResult(int resultCode, @Nullable Intent intent) {
             Uri resultUri = null;

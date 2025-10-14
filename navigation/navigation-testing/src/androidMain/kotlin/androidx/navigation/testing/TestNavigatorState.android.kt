@@ -48,7 +48,7 @@ public class TestNavigatorState
 @JvmOverloads
 constructor(
     private val context: Context? = null,
-    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
+    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
 ) : NavigatorState() {
     internal val navContext = NavContext(context)
 
@@ -65,14 +65,14 @@ constructor(
 
     override fun createBackStackEntry(
         destination: NavDestination,
-        arguments: SavedState?
+        arguments: SavedState?,
     ): NavBackStackEntry =
         NavBackStackEntry.create(
             navContext,
             destination,
             arguments,
             Lifecycle.State.RESUMED,
-            viewModelStoreProvider
+            viewModelStoreProvider,
         )
 
     /**
@@ -92,7 +92,7 @@ constructor(
             Lifecycle.State.RESUMED,
             viewModelStoreProvider,
             previouslySavedEntry.id,
-            savedState
+            savedState,
         )
     }
 
@@ -136,7 +136,7 @@ constructor(
 
     private fun updateMaxLifecycle(
         poppedList: List<NavBackStackEntry> = emptyList(),
-        saveState: Boolean = false
+        saveState: Boolean = false,
     ) {
         runBlocking(coroutineDispatcher) {
             // NavBackStackEntry Lifecycles must be updated on the main thread

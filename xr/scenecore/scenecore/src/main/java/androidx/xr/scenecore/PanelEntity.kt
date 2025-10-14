@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,157 +18,161 @@ package androidx.xr.scenecore
 
 import android.content.Context
 import android.view.View
-import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
+import androidx.xr.runtime.internal.LifecycleManager
+import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
 
-/** Provides implementations for common Panel functionality. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public sealed class BasePanelEntity<out RtPanelEntityType : RtPanelEntity>(
-    private val rtPanelEntity: RtPanelEntityType,
-    entityManager: EntityManager,
-) : BaseEntity<RtPanelEntity>(rtPanelEntity, entityManager) {
-
-    /**
-     * Sets the corner radius of the PanelEntity.
-     *
-     * @param radius The radius of the corners, in meters.
-     * @throws IllegalArgumentException if radius is <= 0.0f.
-     */
-    public fun setCornerRadius(radius: Float) {
-        rtPanelEntity.cornerRadius = radius
-    }
-
-    /** Gets the corner radius of this PanelEntity in meters. Has a default value of 0. */
-    public fun getCornerRadius(): Float {
-        return rtPanelEntity.cornerRadius
-    }
-
-    /**
-     * Returns the dimensions in local space, in unscaled meters for this panel entity.
-     *
-     * <p>
-     * Users of this api can convert this entity's local space dimensions to real world meters by
-     * multiplying the local space dimensions with relative scale of this entity in unscaled world
-     * space i.e. real meters = local space dimensions getScale(Space.REAL_WORLD) and vice versa.
-     * For example a panel entity 1x1 dimensions in local space will look 2x2 meters in real world
-     * if the relative scale applied to this entity in the world space is 2.
-     */
-    public fun getSize(): Dimensions {
-        return rtPanelEntity.size.toDimensions()
-    }
-
-    /** Returns the dimensions in Pixels for this panel entity. */
-    public fun getSizeInPixels(): PixelDimensions {
-        return rtPanelEntity.sizeInPixels.toPixelDimensions()
-    }
-
-    /**
-     * Gets the number of pixels per meter for this panel. This value reflects changes to scale,
-     * including parent scale.
-     *
-     * @return Vector3 scale applied to pixels within the Panel. (Z will be 0)
-     */
-    @Deprecated("This api will be removed in a future release.")
-    public fun getPixelDensity(): Vector3 {
-        return rtPanelEntity.pixelDensity
-    }
-
-    /**
-     * Sets the size in meters for the surface on which the View is laid out. The dimensions
-     * provided are unscaled meters in the local space.
-     *
-     * <p>
-     * Users of this api can convert this entity's local space dimensions to real world meters by
-     * multiplying the local space dimensions with relative scale of this entity in unscaled world
-     * space i.e. real meters = local space dimensions * getScale(Space.REAL_WORLD) and vice versa.
-     * For example a panel entity 1x1 dimensions in local space will look 2x2 meters in real world
-     * if the relative scale applied to this entity in the world space is 2.
-     *
-     * @param dimensions Dimensions in meters in local space.
-     */
-    public fun setSize(dimensions: Dimensions) {
-        rtPanelEntity.size = dimensions.toRtDimensions()
-    }
-
-    /**
-     * Sets the size in pixels for the surface on which the view is laid out. This essentially sets
-     * the resolution of underlying surface. The dimensions provided are in pixels.
-     *
-     * <p>
-     * This API doesn't do any scale compensation to pixel dimensions provided.
-     *
-     * @param pixelDimensions Dimensions in pixels.
-     */
-    public fun setSizeInPixels(pixelDimensions: PixelDimensions) {
-        rtPanelEntity.sizeInPixels = pixelDimensions.toRtPixelDimensions()
-    }
-}
-
-/** PanelEntity creates a spatial panel in Android XR. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * PanelEntity contains an arbitrary 2D Android [View], within a spatialized XR scene.
+ *
+ * @param isMainPanelEntity True if this panel is the
+ *   [MainPanelEntity](https://developer.android.com/develop/xr/jetpack-xr-sdk/work-with-entities),
+ *   false otherwise.
+ */
+// TODO(ricknels): move isMainPanelEntity check to SceneRuntime and provide better kdocs
+// for mainPanelEntity
 public open class PanelEntity
 internal constructor(
+    private val lifecycleManager: LifecycleManager,
     rtEntity: RtPanelEntity,
     entityManager: EntityManager,
-    // TODO(ricknels): move isMainPanelEntity check to JxrPlatformAdapter.
-    public val isMainPanelEntity: Boolean = false,
-) : BasePanelEntity<RtPanelEntity>(rtEntity, entityManager) {
+    @get:JvmName("isMainPanelEntity") public val isMainPanelEntity: Boolean = false,
+) : BaseEntity<RtPanelEntity>(rtEntity, entityManager) {
+
+    /** The corner radius of the PanelEntity, in meters. */
+    public var cornerRadius: Float
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.cornerRadius
+        }
+        set(value) {
+            checkNotDisposed()
+            rtEntity!!.cornerRadius = value
+        }
+
+    /**
+     * The dimensions of this PanelEntity in local space, in units relative to the scale of this
+     * Entity's parent.
+     */
+    public var size: FloatSize2d
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.size.toFloatSize2d()
+        }
+        set(value) {
+            checkNotDisposed()
+            rtEntity!!.size = value.toRtDimensions()
+        }
+
+    /**
+     * The dimensions of this PanelEntity, in pixels, which is the resolution of the underlying
+     * surface.
+     *
+     * This API doesn't do any scale compensation to the pixel dimensions.
+     */
+    public var sizeInPixels: IntSize2d
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.sizeInPixels.toIntSize2d()
+        }
+        set(value) {
+            checkNotDisposed()
+            rtEntity!!.sizeInPixels = value.toRtPixelDimensions()
+        }
+
+    /**
+     * Gets the perceived resolution of this Entity in the [CameraView].
+     *
+     * This API is only intended for use in Full Space Mode and will return
+     * [PerceivedResolutionResult.InvalidCameraView] in Home Space Mode. For applications requiring
+     * perceived resolution in Home Space Mode, see [MainPanelEntity.getPerceivedResolution].
+     *
+     * This value represents the dimensions of the Entity on the camera view if its largest surface
+     * was facing the camera without changing the distance of the Entity to the camera. This can be
+     * used by clients to dynamically optimize the resolution of assets within the PanelEntity, for
+     * example by using lower-resolution assets within panels that are further from the viewer. The
+     * Entity's own rotation and the camera's viewing direction are disregarded.
+     *
+     * @return A [PerceivedResolutionResult] which encapsulates the outcome:
+     *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
+     *       is successful.
+     *     - [PerceivedResolutionResult.EntityTooClose] if the Entity is too close to the camera.
+     *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
+     *       the calculation is invalid or unavailable.
+     *
+     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     *   [Config.DeviceTrackingMode.LAST_KNOWN].
+     * @see PerceivedResolutionResult
+     */
+    public fun getPerceivedResolution(): PerceivedResolutionResult {
+        checkNotDisposed()
+        check(lifecycleManager.config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN) {
+            "Config.DeviceTrackingMode is not set to LastKnown."
+        }
+        return rtEntity!!.getPerceivedResolution().toPerceivedResolutionResult()
+    }
 
     public companion object {
         internal fun create(
+            lifecycleManager: LifecycleManager,
             context: Context,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             view: View,
-            dimensions: Dimensions,
+            dimensions: FloatSize2d,
             name: String,
             pose: Pose = Pose.Identity,
         ): PanelEntity =
             PanelEntity(
-                adapter.createPanelEntity(
+                lifecycleManager,
+                sceneRuntime.createPanelEntity(
                     context,
                     pose,
                     view,
                     dimensions.toRtDimensions(),
                     name,
-                    adapter.activitySpaceRootImpl,
+                    sceneRuntime.activitySpace,
                 ),
                 entityManager,
             )
 
         internal fun create(
+            lifecycleManager: LifecycleManager,
             context: Context,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             view: View,
-            pixelDimensions: PixelDimensions,
+            pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
         ): PanelEntity =
             PanelEntity(
-                adapter.createPanelEntity(
+                lifecycleManager,
+                sceneRuntime.createPanelEntity(
                     context,
                     pose,
                     view,
                     pixelDimensions.toRtPixelDimensions(),
                     name,
-                    adapter.activitySpaceRootImpl,
+                    sceneRuntime.activitySpace,
                 ),
                 entityManager,
             )
 
         /**
-         * Public factory function for a spatialized PanelEntity.
+         * Factory method for a spatialized PanelEntity.
          *
-         * @param session Session to create the PanelEntity in.
-         * @param view View to embed in this panel entity.
-         * @param dimensions Dimensions for the underlying surface for the given view in meters.
-         * @param name Name of the panel.
-         * @param pose Pose of this entity relative to its parent, default value is Identity.
+         * @param session XR [Session] in which to create the PanelEntity.
+         * @param view [View] to embed in this panel entity.
+         * @param dimensions Spatialized dimensions for the underlying surface for the given view,
+         *   in meters.
+         * @param name Name of this PanelEntity.
+         * @param pose [Pose] of this entity relative to its parent, default value is Identity.
          * @return a PanelEntity instance.
          */
         @JvmOverloads
@@ -176,13 +180,14 @@ internal constructor(
         public fun create(
             session: Session,
             view: View,
-            dimensions: Dimensions,
+            dimensions: FloatSize2d,
             name: String,
             pose: Pose = Pose.Identity,
         ): PanelEntity =
             PanelEntity.create(
+                session.perceptionRuntime.lifecycleManager,
                 session.activity,
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 view,
                 dimensions,
@@ -191,14 +196,14 @@ internal constructor(
             )
 
         /**
-         * Public factory function for a spatialized PanelEntity.
+         * Factory method for a spatialized PanelEntity.
          *
-         * @param session Session to create the PanelEntity in.
-         * @param view View to embed in this panel entity.
-         * @param pixelDimensions Dimensions for the underlying surface for the given view in
+         * @param session XR [Session] in which to create the PanelEntity.
+         * @param view [View] to embed in this panel entity.
+         * @param pixelDimensions Dimensions for the underlying surface for the given view, in
          *   pixels.
          * @param name Name of the panel.
-         * @param pose Pose of this entity relative to its parent, default value is Identity.
+         * @param pose [Pose] of this PanelEntity relative to its parent, default value is Identity.
          * @return a PanelEntity instance.
          */
         @JvmOverloads
@@ -206,13 +211,14 @@ internal constructor(
         public fun create(
             session: Session,
             view: View,
-            pixelDimensions: PixelDimensions,
+            pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
         ): PanelEntity =
             PanelEntity.create(
+                session.perceptionRuntime.lifecycleManager,
                 session.activity,
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 view,
                 pixelDimensions,
@@ -222,9 +228,15 @@ internal constructor(
 
         /** Returns the PanelEntity backed by the main window for the Activity. */
         internal fun createMainPanelEntity(
-            adapter: JxrPlatformAdapter,
+            lifecycleManager: LifecycleManager,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
         ): PanelEntity =
-            PanelEntity(adapter.mainPanelEntity, entityManager, isMainPanelEntity = true)
+            PanelEntity(
+                lifecycleManager,
+                sceneRuntime.mainPanelEntity,
+                entityManager,
+                isMainPanelEntity = true,
+            )
     }
 }

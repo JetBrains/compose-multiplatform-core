@@ -188,6 +188,60 @@ public class UiDevice implements Searchable {
         return ret;
     }
 
+    // Window searches
+
+    /** Returns whether there is a window match for the given {@code selector} criteria. */
+    public boolean hasWindow(@NonNull ByWindowSelector selector) {
+        waitForIdle();
+        AccessibilityWindowInfo window =
+                ByWindowMatcher.findMatch(
+                        this, selector,
+                        getWindows(getUiAutomation()).toArray(new AccessibilityWindowInfo[0]));
+        if (window != null) {
+            window.recycle();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the first top-level window that matches the {@code selector} criteria, or null if no
+     * matching windows are found.
+     */
+    public @Nullable UiWindow findWindow(@NonNull ByWindowSelector selector) {
+        waitForIdle();
+        AccessibilityWindowInfo window =
+                ByWindowMatcher.findMatch(
+                        this, selector,
+                        getWindows(getUiAutomation()).toArray(new AccessibilityWindowInfo[0]));
+        if (window == null) {
+            return null;
+        }
+        return UiWindow.create(this, window);
+    }
+
+    /**
+     * Returns all windows that match the {@code selector} criteria. For convenience the returned
+     * list
+     * is sorted in descending layer Z-order, ensuring the root of the topmost interactable
+     * window is
+     * reported first.
+     */
+    public @NonNull List<UiWindow> findWindows(@NonNull ByWindowSelector selector) {
+        waitForIdle();
+        List<UiWindow> ret = new ArrayList<>();
+        for (AccessibilityWindowInfo window :
+                ByWindowMatcher.findMatches(
+                        this,
+                        selector,
+                        getWindows(getUiAutomation()).toArray(new AccessibilityWindowInfo[0]))) {
+            UiWindow instance = UiWindow.create(this, window);
+            if (instance != null) {
+                ret.add(instance);
+            }
+        }
+        return ret;
+    }
 
     /**
      * Waits for given the {@code condition} to be met.

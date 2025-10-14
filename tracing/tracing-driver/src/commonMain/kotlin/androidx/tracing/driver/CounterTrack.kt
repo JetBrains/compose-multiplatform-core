@@ -19,25 +19,26 @@ package androidx.tracing.driver
 /** [Track] representing a numerical value that can change over the duration of the trace. */
 public open class CounterTrack(
     /** The name of the counter track */
-    private val name: String,
+    public val name: String,
     /** The parent track the counter belongs to. */
-    private val parent: Track
+    public val parent: Track,
 ) : Track(context = parent.context, uuid = monotonicId()) {
     internal val packetLock = Any()
 
     init {
         synchronized(packetLock) {
-            emitTraceEvent(immediateDispatch = true) { event ->
+            conditionalEmitTraceEvent(immediateDispatch = true) { event ->
                 event.setPreamble(
                     TrackDescriptor(
                         name = name,
                         uuid = uuid,
                         parentUuid = parent.uuid,
                         type = TRACK_DESCRIPTOR_TYPE_COUNTER,
-                        pid = INVALID_INT,
-                        tid = INVALID_INT
+                        pid = DEFAULT_INT,
+                        tid = DEFAULT_INT,
                     )
                 )
+                true
             }
         }
     }
@@ -45,7 +46,10 @@ public open class CounterTrack(
     public fun setCounter(value: Long) {
         if (context.isEnabled) {
             synchronized(packetLock) {
-                emitTraceEvent { packet -> packet.setCounterLong(uuid, value) }
+                conditionalEmitTraceEvent { packet ->
+                    packet.setCounterLong(uuid, value)
+                    true
+                }
             }
         }
     }
@@ -53,7 +57,10 @@ public open class CounterTrack(
     public fun setCounter(value: Double) {
         if (context.isEnabled) {
             synchronized(packetLock) {
-                emitTraceEvent { packet -> packet.setCounterDouble(uuid, value) }
+                conditionalEmitTraceEvent { packet ->
+                    packet.setCounterDouble(uuid, value)
+                    true
+                }
             }
         }
     }

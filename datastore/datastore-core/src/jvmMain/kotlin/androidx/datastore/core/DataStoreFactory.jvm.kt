@@ -57,13 +57,13 @@ public actual object DataStoreFactory {
         corruptionHandler: ReplaceFileCorruptionHandler<T>? = null,
         migrations: List<DataMigration<T>> = listOf(),
         scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-        produceFile: () -> File
+        produceFile: () -> File,
     ): DataStore<T> =
         create(
             storage = FileStorage(serializer = serializer, produceFile = produceFile),
             corruptionHandler = corruptionHandler,
             migrations = migrations,
-            scope = scope
+            scope = scope,
         )
 
     /**
@@ -99,6 +99,6 @@ public actual object DataStoreFactory {
             storage = storage,
             corruptionHandler = corruptionHandler ?: NoOpCorruptionHandler(),
             initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
-            scope = scope
+            scope = scope,
         )
 }

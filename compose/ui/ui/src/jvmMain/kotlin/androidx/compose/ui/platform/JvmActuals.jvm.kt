@@ -38,7 +38,7 @@ internal actual fun Any.nativeClass(): Any = this.javaClass
 @JvmName("synchronized")
 @Deprecated(
     level = HIDDEN,
-    message = "not expected to be referenced directly as the old version had to be inlined"
+    message = "not expected to be referenced directly as the old version had to be inlined",
 )
 internal inline fun <R> oldSynchronized(lock: SynchronizedObject, block: () -> R): R =
     kotlin.synchronized(lock, block)

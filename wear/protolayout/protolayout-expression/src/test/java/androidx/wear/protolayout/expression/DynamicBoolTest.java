@@ -61,13 +61,6 @@ public final class DynamicBoolTest {
     }
 
     @Test
-    public void platformLayoutUpdatePendingBool() {
-        DynamicBool bool = PlatformEventSources.isLayoutUpdatePending();
-        assertThat(bool.toDynamicBoolProto().getStateSource().getSourceKey())
-                .isEqualTo(PlatformEventSources.Keys.LAYOUT_UPDATE_PENDING.getKey());
-    }
-
-    @Test
     public void stateEntryValueBool() {
         DynamicBool stateBool = DynamicBool.from(new AppDataKey<>(STATE_KEY));
 
@@ -244,5 +237,13 @@ public final class DynamicBoolTest {
 
         assertThat(toProto.getFixed().getValue()).isTrue();
         assertThat(toProto.getFingerprint()).isEqualTo(from.getFingerprint().toProto());
+    }
+
+    @Test
+    public void isInAmbientMode_hasTheCorrectKey() {
+        DynamicBool isInAmbientMode = PlatformEventSources.isInAmbientMode();
+
+        assertThat(isInAmbientMode.toDynamicBoolProto().getStateSource().getSourceKey())
+                .isEqualTo(PlatformEventSources.Keys.AMBIENT_MODE_STATUS.getKey());
     }
 }

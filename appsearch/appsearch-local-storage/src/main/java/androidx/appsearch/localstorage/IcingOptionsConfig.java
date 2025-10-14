@@ -89,6 +89,8 @@ public interface IcingOptionsConfig {
 
     int DEFAULT_COMPRESSION_THRESHOLD_BYTES = 600;
 
+    int DEFAULT_EMBEDDING_INDEX_NUM_SHARDS = 32;
+
     /**
      * The maximum allowable token length. All tokens in excess of this size will be truncated to
      * max_token_length before being indexed.
@@ -200,6 +202,17 @@ public interface IcingOptionsConfig {
     int getMaxPageBytesLimit();
 
     /**
+     * Flag for {@link com.google.android.icing.proto.ResultSpecProto}.
+     *
+     * <p>The maximum byte size to allow in a single page, when icing is running in a pVM. This
+     * limit is only loosely binding. AppSearch will add results to the page until either
+     * 1) AppSearch has retrieved {@link SearchSpec#getResultCountPerPage()} results or 2) total
+     * size of the page exceeds this value. Therefore, AppSearch will always retrieve at least a
+     * single result, even if that result exceeds this limit.
+     */
+    int getMaxPageBytesLimitForVm();
+
+    /**
      * Flag for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
      *
      * <p>Threshold for integer index bucket split. Integer index stores hits in several buckets,
@@ -274,6 +287,9 @@ public interface IcingOptionsConfig {
      */
     int getCompressionThresholdBytes();
 
+    /** The number of shards to use for the embedding index. 1 means no sharding. */
+    int getEmbeddingIndexNumShards();
+
     /**
      * Converts to an {@link IcingSearchEngineOptions} instance.
      *
@@ -332,6 +348,24 @@ public interface IcingOptionsConfig {
                 .setCompressionMemLevel(
                         (Flags.enableCompressionMemLevelOne() || isVMEnabled) ? 1
                                 : getCompressionMemLevel())
+                .setEnableSchemaDatabase(
+                        Flags.enableDatabaseScopedSchemaOperations() || isVMEnabled)
+                .setEnableSmallerDecompressionBufferSize(
+                        Flags.enableSmallerDecompressionBufferSize() || isVMEnabled)
+                .setEnableEigenEmbeddingScoring(Flags.enableEigenEmbeddingScoring() || isVMEnabled)
+                .setEnablePassingFilterToChildren(
+                        Flags.enablePassingFilterToChildren() || isVMEnabled)
+                .setEnableProtoLogNewHeaderFormat(
+                        Flags.enableProtoLogNewHeaderFormat() || isVMEnabled)
+                .setEnableEmbeddingIteratorV2(
+                        Flags.enableEmbeddingIteratorV2() || isVMEnabled)
+                .setEnableReusableDecompressionBuffer(
+                        Flags.enableReusableDecompressionBuffer() || isVMEnabled)
+                .setEmbeddingIndexNumShards(
+                        Flags.enableShardedEmbeddingStorage()
+                                ? Math.max(1, getEmbeddingIndexNumShards()) : 1)
+                .setEnableSchemaTypeIdOptimization(
+                        Flags.enableSchemaTypeIdOptimization())
                 .build();
     }
 }

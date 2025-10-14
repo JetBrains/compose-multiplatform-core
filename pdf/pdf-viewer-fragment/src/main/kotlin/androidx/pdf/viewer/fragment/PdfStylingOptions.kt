@@ -21,6 +21,9 @@ import androidx.annotation.StyleRes
 /**
  * Represents styling configurations for views integrated by [PdfViewerFragment].
  *
+ * <p><b>Note:</b> Custom drawables within the style resource must define their width and height for
+ * proper rendering.
+ *
  * @property containerStyleResId The style identifier to apply to the PDF view.
  */
 public class PdfStylingOptions(@StyleRes public val containerStyleResId: Int)

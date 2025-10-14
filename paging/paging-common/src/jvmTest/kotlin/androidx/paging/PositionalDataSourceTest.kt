@@ -35,14 +35,14 @@ class PositionalDataSourceTest {
         requestedStartPosition: Int,
         requestedLoadSize: Int,
         pageSize: Int,
-        totalCount: Int
+        totalCount: Int,
     ): Int {
         val params =
             PositionalDataSource.LoadInitialParams(
                 requestedStartPosition,
                 requestedLoadSize,
                 pageSize,
-                true
+                true,
             )
         return PositionalDataSource.computeInitialLoadPosition(params, totalCount)
     }
@@ -55,8 +55,8 @@ class PositionalDataSourceTest {
                 requestedStartPosition = 0,
                 requestedLoadSize = 30,
                 pageSize = 10,
-                totalCount = 100
-            )
+                totalCount = 100,
+            ),
         )
     }
 
@@ -68,8 +68,8 @@ class PositionalDataSourceTest {
                 requestedStartPosition = 10,
                 requestedLoadSize = 10,
                 pageSize = 10,
-                totalCount = 100
-            )
+                totalCount = 100,
+            ),
         )
     }
 
@@ -81,8 +81,8 @@ class PositionalDataSourceTest {
                 requestedStartPosition = 13,
                 requestedLoadSize = 30,
                 pageSize = 10,
-                totalCount = 100
-            )
+                totalCount = 100,
+            ),
         )
     }
 
@@ -94,8 +94,8 @@ class PositionalDataSourceTest {
                 requestedStartPosition = 99,
                 requestedLoadSize = 30,
                 pageSize = 10,
-                totalCount = 100
-            )
+                totalCount = 100,
+            ),
         )
     }
 
@@ -107,8 +107,8 @@ class PositionalDataSourceTest {
                 requestedStartPosition = 99,
                 requestedLoadSize = 35,
                 pageSize = 10,
-                totalCount = 100
-            )
+                totalCount = 100,
+            ),
         )
     }
 
@@ -125,7 +125,7 @@ class PositionalDataSourceTest {
                 object : PositionalDataSource<String>() {
                     override fun loadInitial(
                         params: LoadInitialParams,
-                        callback: LoadInitialCallback<String>
+                        callback: LoadInitialCallback<String>,
                     ) {
                         if (enablePlaceholders) {
                             // 36 - ((10 * 3) / 2) = 21, round down to 20
@@ -141,7 +141,7 @@ class PositionalDataSourceTest {
 
                     override fun loadRange(
                         params: LoadRangeParams,
-                        callback: LoadRangeCallback<String>
+                        callback: LoadRangeCallback<String>,
                     ) {
                         fail("loadRange not expected")
                     }
@@ -170,14 +170,14 @@ class PositionalDataSourceTest {
     private fun performLoadInitial(
         enablePlaceholders: Boolean = true,
         invalidateDataSource: Boolean = false,
-        callbackInvoker: (callback: PositionalDataSource.LoadInitialCallback<String>) -> Unit
+        callbackInvoker: (callback: PositionalDataSource.LoadInitialCallback<String>) -> Unit,
     ) =
         testScope.runTest {
             val dataSource =
                 object : PositionalDataSource<String>() {
                     override fun loadInitial(
                         params: LoadInitialParams,
-                        callback: LoadInitialCallback<String>
+                        callback: LoadInitialCallback<String>,
                     ) {
                         if (invalidateDataSource) {
                             // invalidate data source so it's invalid when onResult() called
@@ -188,7 +188,7 @@ class PositionalDataSourceTest {
 
                     override fun loadRange(
                         params: LoadRangeParams,
-                        callback: LoadRangeCallback<String>
+                        callback: LoadRangeCallback<String>,
                     ) {
                         fail("loadRange not expected")
                     }
@@ -205,7 +205,7 @@ class PositionalDataSourceTest {
                     0,
                     config.initialLoadSizeHint,
                     config.pageSize,
-                    config.enablePlaceholders
+                    config.enablePlaceholders,
                 )
 
             dataSource.loadInitial(params)
@@ -317,7 +317,7 @@ class PositionalDataSourceTest {
                     override fun onResult(data: List<A>, position: Int) {
                         callback.onResult(convert(data), position)
                     }
-                }
+                },
             )
         }
 
@@ -328,7 +328,7 @@ class PositionalDataSourceTest {
                     override fun onResult(data: List<A>) {
                         callback.onResult(convert(data))
                     }
-                }
+                },
             )
         }
 
@@ -482,7 +482,7 @@ class PositionalDataSourceTest {
                         key = 0,
                         initialLoadSize = 3,
                         placeholdersEnabled = false,
-                        pageSize = 1
+                        pageSize = 1,
                     )
                 )
                 .apply {
@@ -500,7 +500,7 @@ class PositionalDataSourceTest {
                         key = 1,
                         initialLoadSize = 3,
                         placeholdersEnabled = false,
-                        pageSize = 1
+                        pageSize = 1,
                     )
                 )
                 .apply {

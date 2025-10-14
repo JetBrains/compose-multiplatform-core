@@ -12,11 +12,24 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("androidx.baselineprofile")
 }
+
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.lifecycle.runtime"
+        withJava()
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+        // Needed for api tasks and docs generation
+        sourceSets {
+            androidMain {
+                kotlin.srcDirs += 'src/androidMain/java'
+            }
+        }
+    }
     desktop()
     mac()
     linux()
@@ -74,13 +87,14 @@ androidXMultiplatform {
             dependsOn(jvmMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
+                api(libs.jspecify)
                 implementation("androidx.core:core-viewtree:1.0.0")
                 implementation("androidx.arch.core:core-runtime:2.2.0")
                 implementation("androidx.profileinstaller:profileinstaller:1.4.0")
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(libs.junit)
@@ -88,7 +102,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation("androidx.core:core-viewtree:1.0.0")
@@ -132,36 +146,6 @@ androidXMultiplatform {
             }
         }
 
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
@@ -182,21 +166,17 @@ androidXMultiplatform {
 }
 
 dependencies {
-    api(libs.jspecify)
     lintPublish(project(":lifecycle:lifecycle-runtime-lint"))
-}
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 2.9.2, this module is published as empty artifact with dependency
+        // to this androidx module.
+        // TODO: update this constrain to 2.9.3 once out due to https://youtrack.jetbrains.com/issue/CMP-8765
+        commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime:2.9.2") {
+            because "prevents symbols duplication"
+        }
     }
-
-    // Include `*.java` files into the build
-    sourceSets["main"].java.srcDir("src/androidMain/java")
-    sourceSets["test"].java.srcDir("src/androidUnitTest/kotlin")
-    namespace = "androidx.lifecycle.runtime"
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidx {

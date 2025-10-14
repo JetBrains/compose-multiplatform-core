@@ -23,56 +23,28 @@ public open class ProcessTrack(
     /** The tracing context. */
     context: TraceContext,
     /** The process id */
-    internal val id: Int,
+    public val id: Int,
     /** The name of the process. */
-    internal val name: String,
+    public val name: String,
 ) : SliceTrack(context = context, uuid = monotonicId()) {
-    internal val packetLock = Any()
     internal val threads = mutableScatterMapOf<String, ThreadTrack>()
     internal val counters = mutableScatterMapOf<String, CounterTrack>()
 
     init {
-        synchronized(packetLock) {
-            emitTraceEvent(immediateDispatch = true) { event ->
+        synchronized(traceEventScope) {
+            conditionalEmitTraceEvent(immediateDispatch = true) { event ->
                 event.setPreamble(
                     TrackDescriptor(
                         name,
                         uuid,
-                        parentUuid = INVALID_LONG,
+                        parentUuid = DEFAULT_LONG,
                         type = TRACK_DESCRIPTOR_TYPE_PROCESS,
                         pid = id,
-                        tid = INVALID_INT,
+                        tid = DEFAULT_INT,
                     )
                 )
+                true
             }
-        }
-    }
-
-    public override fun beginSection(name: String, flowIds: List<Long>) {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitTraceEvent { event -> event.setBeginSectionWithFlows(uuid, name, flowIds) }
-            }
-        }
-    }
-
-    public override fun beginSection(name: String) {
-        if (context.isEnabled) {
-            synchronized(packetLock) {
-                emitTraceEvent { event -> event.setBeginSection(uuid, name) }
-            }
-        }
-    }
-
-    public override fun endSection() {
-        if (context.isEnabled) {
-            synchronized(packetLock) { emitTraceEvent { event -> event.setEndSection(uuid) } }
-        }
-    }
-
-    public override fun instant(name: String) {
-        if (context.isEnabled) {
-            synchronized(packetLock) { emitTraceEvent { event -> event.setInstant(uuid, name) } }
         }
     }
 
@@ -84,21 +56,18 @@ public open class ProcessTrack(
         // Thread ids are only unique for lifetime of the thread and can be potentially reused.
         // Therefore we end up combining the `name` of the thread and its `id` as a key.
         val key = "$id/$name"
-        return threads[key]
-            ?: synchronized(threads) {
-                val track =
-                    threads.getOrPut(key) { ThreadTrack(id = id, name = name, process = this) }
-                check(track.name == name)
-                track
-            }
+        return synchronized(threads) {
+            val track = threads.getOrPut(key) { ThreadTrack(id = id, name = name, process = this) }
+            check(track.name == name)
+            track
+        }
     }
 
     /** @return A [CounterTrack] for a given [ProcessTrack] and the provided counter [name]. */
     public open fun getOrCreateCounterTrack(name: String): CounterTrack {
-        return counters[name]
-            ?: synchronized(counters) {
-                counters.getOrPut(name) { CounterTrack(name = name, parent = this) }
-            }
+        return synchronized(counters) {
+            counters.getOrPut(name) { CounterTrack(name = name, parent = this) }
+        }
     }
 }
 
@@ -108,11 +77,7 @@ private const val EMPTY_PROCESS_ID = -1
 private const val EMPTY_PROCESS_NAME = "Empty Process"
 
 internal class EmptyProcessTrack(context: EmptyTraceContext) :
-    ProcessTrack(
-        context = context,
-        id = EMPTY_PROCESS_ID,
-        name = EMPTY_PROCESS_NAME,
-    ) {
+    ProcessTrack(context = context, id = EMPTY_PROCESS_ID, name = EMPTY_PROCESS_NAME) {
 
     private val emptyContext: EmptyTraceContext = context
 

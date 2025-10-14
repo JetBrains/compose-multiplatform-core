@@ -31,7 +31,7 @@ internal class TextActionModeCallback(
     var onPasteRequested: (() -> Unit)? = null,
     var onCutRequested: (() -> Unit)? = null,
     var onSelectAllRequested: (() -> Unit)? = null,
-    var onAutofillRequested: (() -> Unit)? = null
+    var onAutofillRequested: (() -> Unit)? = null,
 ) {
     fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         requireNotNull(menu) { "onCreateActionMode requires a non-null menu" }
@@ -111,7 +111,7 @@ internal enum class MenuItemOption(val id: Int) {
                 SelectAll -> android.R.string.selectAll
                 Autofill ->
                     if (Build.VERSION.SDK_INT <= 26) {
-                        R.string.autofill
+                        R.string.androidx_compose_ui_autofill
                     } else {
                         android.R.string.autofill
                     }

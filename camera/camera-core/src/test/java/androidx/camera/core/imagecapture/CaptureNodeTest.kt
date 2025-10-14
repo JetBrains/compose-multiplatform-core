@@ -19,7 +19,6 @@ package androidx.camera.core.imagecapture
 import android.graphics.ImageFormat.JPEG
 import android.graphics.ImageFormat.RAW_SENSOR
 import android.graphics.ImageFormat.YUV_420_888
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Pair
 import android.util.Size
@@ -40,13 +39,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [CaptureNode]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class CaptureNodeTest {
 
     private val imagePropagated = mutableListOf<ImageProxy>()
@@ -153,7 +150,7 @@ class CaptureNodeTest {
                 JPEG,
                 listOf(JPEG),
                 /* isVirtualCamera */ true,
-                { _, _, _, _, _ -> imageReaderProxy }
+                { _, _, _, _, _ -> imageReaderProxy },
             )
         captureNodeOut = captureNode.transform(captureNodeIn)
         captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
@@ -214,7 +211,7 @@ class CaptureNodeTest {
                 JPEG,
                 listOf(JPEG),
                 /* isVirtualCamera */ true,
-                { _, _, _, _, _ -> imageReaderProxy }
+                { _, _, _, _, _ -> imageReaderProxy },
             )
         captureNodeOut = captureNode.transform(captureNodeIn)
         captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
@@ -246,7 +243,7 @@ class CaptureNodeTest {
                 JPEG,
                 listOf(JPEG),
                 /* isVirtualCamera */ true,
-                { _, _, _, _, _ -> imageReaderProxy }
+                { _, _, _, _, _ -> imageReaderProxy },
             )
         captureNodeOut = captureNode.transform(captureNodeIn)
         captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
@@ -283,7 +280,7 @@ class CaptureNodeTest {
                 JPEG,
                 listOf(JPEG),
                 /* isVirtualCamera */ true,
-                { _, _, _, _, _ -> imageReaderProxy }
+                { _, _, _, _, _ -> imageReaderProxy },
             )
         captureNodeOut = captureNode.transform(captureNodeIn)
         captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
@@ -307,7 +304,7 @@ class CaptureNodeTest {
     }
 
     private fun FakeImageReaderProxy.triggerImageAvailableSync(
-        tagBundle: TagBundle,
+        tagBundle: TagBundle
     ): FakeImageProxy {
         val image = triggerImageAvailable(tagBundle, 100L)
         shadowOf(getMainLooper()).idle()

@@ -16,7 +16,6 @@
 
 package androidx.tv.material3
 
-import android.os.Build
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.testutils.assertAgainstGolden
@@ -34,7 +33,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalTvMaterial3Api::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class WideButtonScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -168,7 +167,7 @@ class WideButtonScreenshotTest {
                     title = { Text("Settings") },
                     icon = {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
-                    }
+                    },
                 )
             }
         }
@@ -188,7 +187,7 @@ class WideButtonScreenshotTest {
                     title = { Text("Settings") },
                     icon = {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
-                    }
+                    },
                 )
             }
         }
@@ -209,7 +208,7 @@ class WideButtonScreenshotTest {
                     title = { Text("Settings") },
                     icon = {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
-                    }
+                    },
                 )
             }
         }
@@ -230,7 +229,7 @@ class WideButtonScreenshotTest {
                     title = { Text("Settings") },
                     icon = {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
-                    }
+                    },
                 )
             }
         }
@@ -251,7 +250,7 @@ class WideButtonScreenshotTest {
                     subtitle = { Text(text = "Update device preferences") },
                     icon = {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
-                    }
+                    },
                 )
             }
         }
@@ -272,7 +271,7 @@ class WideButtonScreenshotTest {
                     subtitle = { Text(text = "Update device preferences") },
                     icon = {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
-                    }
+                    },
                 )
             }
         }
@@ -294,7 +293,7 @@ class WideButtonScreenshotTest {
                     subtitle = { Text(text = "Update device preferences") },
                     icon = {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
-                    }
+                    },
                 )
             }
         }
@@ -304,7 +303,7 @@ class WideButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "disabled_wide_button_with_subtitle_and_icon_light_theme"
+                "disabled_wide_button_with_subtitle_and_icon_light_theme",
             )
     }
 
@@ -319,7 +318,7 @@ class WideButtonScreenshotTest {
                     subtitle = { Text(text = "Update device preferences") },
                     icon = {
                         Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
-                    }
+                    },
                 )
             }
         }
@@ -329,7 +328,7 @@ class WideButtonScreenshotTest {
             .captureToImage()
             .assertAgainstGolden(
                 screenshotRule,
-                "disabled_wide_button_with_subtitle_and_icon_dark_theme"
+                "disabled_wide_button_with_subtitle_and_icon_dark_theme",
             )
     }
 }

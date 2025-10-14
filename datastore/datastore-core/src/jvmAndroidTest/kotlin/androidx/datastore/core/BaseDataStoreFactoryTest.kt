@@ -42,7 +42,7 @@ abstract class BaseDataStoreFactoryTest {
         corruptionHandler: ReplaceFileCorruptionHandler<T>? = null,
         migrations: List<DataMigration<T>> = listOf(),
         scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-        produceFile: () -> File
+        produceFile: () -> File,
     ): DataStore<T>
 
     @get:Rule val timeout = Timeout(10, TimeUnit.SECONDS)
@@ -80,7 +80,7 @@ abstract class BaseDataStoreFactoryTest {
                         TestingSerializerConfig(failReadWithCorruptionException = true)
                     ),
                 corruptionHandler = ReplaceFileCorruptionHandler<Byte> { valueToReplace },
-                scope = dataStoreScope
+                scope = dataStoreScope,
             ) {
                 testFile
             }
@@ -113,7 +113,7 @@ abstract class BaseDataStoreFactoryTest {
             createDataStore(
                 serializer = TestingSerializer(),
                 migrations = listOf(migratePlus2, migrateMinus1),
-                scope = dataStoreScope
+                scope = dataStoreScope,
             ) {
                 testFile
             }

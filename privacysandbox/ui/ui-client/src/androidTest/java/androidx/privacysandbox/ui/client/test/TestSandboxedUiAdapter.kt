@@ -59,7 +59,7 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf()) :
         initialHeight: Int,
         isZOrderOnTop: Boolean,
         clientExecutor: Executor,
-        client: SandboxedUiAdapter.SessionClient
+        client: SandboxedUiAdapter.SessionClient,
     ) {
         internalClient = client
         testSession = TestSession(context, signalOptions)
@@ -93,7 +93,7 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf()) :
     internal fun wasOnConfigChangedCalled(): Boolean {
         return configChangedLatch.await(
             SandboxedSdkViewTest.UI_INTENSIVE_TIMEOUT,
-            TimeUnit.MILLISECONDS
+            TimeUnit.MILLISECONDS,
         )
     }
 
@@ -145,7 +145,7 @@ class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf()) :
                 shortestGapBetweenUiChangeEvents =
                     java.lang.Long.min(
                         shortestGapBetweenUiChangeEvents,
-                        SystemClock.elapsedRealtime() - timeReceivedLastUiChange
+                        SystemClock.elapsedRealtime() - timeReceivedLastUiChange,
                     )
             }
             hasReceivedFirstUiChange = true

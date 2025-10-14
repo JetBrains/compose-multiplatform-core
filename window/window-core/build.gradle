@@ -33,17 +33,15 @@ androidXMultiplatform {
     jvm()
     androidLibrary {
         namespace = "androidx.window.core"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
     }
     mac()
     linux()
     ios()
     watchos()
     tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -63,14 +61,12 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(libs.testRunner)
             }
         }
     }
-
-    enableBinaryCompatibilityValidator = false
 }
 
 androidx {
@@ -78,6 +74,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "WindowManager Core Library."
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":window:window-core-samples"))
 }

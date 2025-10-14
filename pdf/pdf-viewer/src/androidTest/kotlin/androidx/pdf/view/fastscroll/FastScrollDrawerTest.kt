@@ -45,7 +45,6 @@ class FastScrollDrawerTest {
 
     private lateinit var pdfDocument: PdfDocument
     private lateinit var thumbDrawable: Drawable
-    private lateinit var trackDrawable: Drawable
     private lateinit var pageIndicatorBackgroundDrawable: Drawable
     private lateinit var spyCanvas: Canvas
     private lateinit var fastScrollDrawer: FastScrollDrawer
@@ -55,9 +54,11 @@ class FastScrollDrawerTest {
         context = ApplicationProvider.getApplicationContext()
         pdfDocument = FakePdfDocument.newInstance()
         thumbDrawable = spy(ContextCompat.getDrawable(context, R.drawable.fastscroll_background)!!)
-        trackDrawable = ContextCompat.getDrawable(context, R.drawable.drag_indicator)!!
         pageIndicatorBackgroundDrawable =
             ContextCompat.getDrawable(context, R.drawable.page_indicator_background)!!
+        val fastScrollVerticalThumbMarginEnd = 0
+        val fastScrollPageIndicatorMarginEnd =
+            context.getDimensions(R.dimen.page_indicator_right_margin).toInt()
         spyCanvas = spy(Canvas())
 
         fastScrollDrawer =
@@ -65,8 +66,9 @@ class FastScrollDrawerTest {
                 context,
                 pdfDocument,
                 thumbDrawable,
-                trackDrawable,
-                pageIndicatorBackgroundDrawable
+                pageIndicatorBackgroundDrawable,
+                fastScrollVerticalThumbMarginEnd,
+                fastScrollPageIndicatorMarginEnd,
             )
     }
 
@@ -87,7 +89,7 @@ class FastScrollDrawerTest {
                 leftCaptor.capture(),
                 topCaptor.capture(),
                 rightCaptor.capture(),
-                bottomCaptor.capture()
+                bottomCaptor.capture(),
             )
         verify(thumbDrawable).draw(spyCanvas)
 
@@ -114,7 +116,7 @@ class FastScrollDrawerTest {
         val expectedTotalPages = 10
         assertEquals(expectedLowerPageRange, pageRange[0].toString().toInt())
         assertEquals(expectedUpperPageRange, pageRange[2].toString().toInt())
-        assertEquals(expectedTotalPages, totalPages.toString().toInt())
+        assertEquals(expectedTotalPages, totalPages.toInt())
     }
 
     @Test

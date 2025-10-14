@@ -217,6 +217,7 @@ internal class TextFieldKeyInput(
                 KeyCommand.CHARACTER_PALETTE -> {
                     showCharacterPalette()
                 }
+                KeyCommand.CENTER -> {} // No-op, this is handled by TextFieldFocusModifier.
             }
         }
         undoManager?.forceNextSnapshot()
@@ -229,7 +230,7 @@ internal class TextFieldKeyInput(
                 currentValue = value,
                 offsetMapping = offsetMapping,
                 layoutResultProxy = state.layoutResult,
-                state = preparedSelectionState
+                state = preparedSelectionState,
             )
         block(preparedSelection)
         if (

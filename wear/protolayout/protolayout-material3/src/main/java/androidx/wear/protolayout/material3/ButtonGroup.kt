@@ -71,7 +71,7 @@ public fun MaterialScope.buttonGroup(
     width: ContainerDimension = expand(),
     height: ContainerDimension = expand(),
     @Dimension(unit = DP) spacing: Float = DEFAULT_SPACER_SIZE_DP,
-    content: ButtonGroupScope.() -> Unit
+    content: ButtonGroupScope.() -> Unit,
 ): LayoutElement {
     val row =
         Row.Builder()

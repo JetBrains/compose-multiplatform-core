@@ -19,6 +19,7 @@ package androidx.privacysandbox.ui.core;
 import androidx.privacysandbox.ui.core.IRemoteSessionController;
 import android.view.SurfaceControlViewHost.SurfacePackage;
 
+// Any api change in this interface should also be made to [androidx.privacysandbox.ui.provider.IRemoteSessionClient]
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 oneway interface IRemoteSessionClient {
     void onRemoteSessionOpened(in SurfacePackage surfacePackage,

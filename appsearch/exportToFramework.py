@@ -408,10 +408,12 @@ class ExportToFramework:
 
     def FormatCommitMessage(self, old_sha, new_sha):
         print('\nCommand to diff old version to new version:')
-        print('  git log --pretty=format:"* %h %s" {}..{} -- appsearch/'.format(old_sha, new_sha))
+        print('  git log --no-merges --pretty=format:"* %h %s" {}..{} -- appsearch/'.format(
+                old_sha, new_sha))
         pretty_log = subprocess.check_output([
             'git',
             'log',
+            '--no-merges',
             '--pretty=format:* %h %s',
             '{}..{}'.format(old_sha, new_sha),
             '--',
@@ -429,8 +431,9 @@ class ExportToFramework:
         print()
         for line in bug_output.splitlines():
             print(line.strip())
-        print('Test: Presubmit\n')
-        print('--------------------------------------------------\n')
+        print('Test: Presubmit')
+        print('UpstreamCL: EXEMPT sync')
+        print('\n--------------------------------------------------\n')
 
 
 if __name__ == '__main__':

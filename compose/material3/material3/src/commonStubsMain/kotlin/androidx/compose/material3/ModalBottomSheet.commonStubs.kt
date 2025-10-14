@@ -27,11 +27,12 @@ import androidx.compose.ui.graphics.Color
 actual class ModalBottomSheetProperties
 actual constructor(
     actual val shouldDismissOnBackPress: Boolean,
+    actual val shouldDismissOnClickOutside: Boolean,
 ) {
     @Deprecated(
         level = DeprecationLevel.HIDDEN,
         message = "Android-specific parameters have been removed",
-        replaceWith = ReplaceWith("ModalBottomSheetProperties(shouldDismissOnBackPress)")
+        replaceWith = ReplaceWith("ModalBottomSheetProperties(shouldDismissOnBackPress)"),
     )
     @Suppress("UNUSED_PARAMETER")
     constructor(
@@ -39,6 +40,12 @@ actual constructor(
         isAppearanceLightStatusBars: Boolean,
         isAppearanceLightNavigationBars: Boolean,
     ) : this(shouldDismissOnBackPress)
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "Replaced with additional shouldDismissOnClickOutside param constructor.",
+    )
+    actual constructor(shouldDismissOnBackPress: Boolean) : this(shouldDismissOnBackPress, true)
 }
 
 @Immutable

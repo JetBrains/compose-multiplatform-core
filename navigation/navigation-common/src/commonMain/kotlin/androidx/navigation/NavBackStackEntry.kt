@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.navigation
 
 import androidx.annotation.MainThread
@@ -66,7 +69,7 @@ public expect class NavBackStackEntry :
             hostLifecycleState: Lifecycle.State = Lifecycle.State.CREATED,
             viewModelStoreProvider: NavViewModelStoreProvider? = null,
             id: String = randomUUID(),
-            savedState: SavedState? = null
+            savedState: SavedState? = null,
         ): NavBackStackEntry
 
         internal fun randomUUID(): String

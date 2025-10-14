@@ -53,7 +53,7 @@ class GestureRecordingProcessorTest {
                 prevVisiblePages,
                 initialPosition,
                 initialPosition.zoom,
-                true
+                true,
             )
         val zoomPositionState = PositionState(EventState.NO_EVENT, visiblePages)
         val gestureRecordingProcessor =
@@ -160,7 +160,7 @@ class GestureRecordingProcessorTest {
             prevVisiblePages: Range,
             initialPosition: ZoomScroll,
             stableZoom: Float,
-            isInitialDocumentLoad: Boolean
+            isInitialDocumentLoad: Boolean,
         ): PositionState {
             val newlyVisiblePages =
                 if (isInitialDocumentLoad) {
@@ -170,7 +170,7 @@ class GestureRecordingProcessorTest {
                 loadingNewAssetsOnScroll(newlyVisiblePages, initialPosition, stableZoom)
             return PositionState(
                 if (loadingNewAssetsOnScroll) EventState.NEW_ASSETS_LOADED else EventState.NO_EVENT,
-                newlyVisiblePages
+                newlyVisiblePages,
             )
         }
     }

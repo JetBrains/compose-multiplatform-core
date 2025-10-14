@@ -21,6 +21,9 @@ import androidx.compose.foundation.text.TextFieldDelegate
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.tapToFocus
 import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.autofill.FillableData
+import androidx.compose.ui.autofill.createFromText
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
@@ -30,16 +33,18 @@ import androidx.compose.ui.node.requestAutofill
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.contentDataType
+import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.copyText
 import androidx.compose.ui.semantics.cutText
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.editableText
+import androidx.compose.ui.semantics.fillableData
 import androidx.compose.ui.semantics.getTextLayoutResult
 import androidx.compose.ui.semantics.inputText
 import androidx.compose.ui.semantics.insertTextAtCursor
 import androidx.compose.ui.semantics.isEditable
-import androidx.compose.ui.semantics.onAutofillText
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onFillData
 import androidx.compose.ui.semantics.onImeAction
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.password
@@ -52,6 +57,7 @@ import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.DeleteAllCommand
 import androidx.compose.ui.text.input.FinishComposingTextCommand
 import androidx.compose.ui.text.input.ImeOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
@@ -66,7 +72,7 @@ internal data class CoreTextFieldSemanticsModifier(
     val offsetMapping: OffsetMapping,
     val manager: TextFieldSelectionManager,
     val imeOptions: ImeOptions,
-    val focusRequester: FocusRequester
+    val focusRequester: FocusRequester,
 ) : ModifierNodeElement<CoreTextFieldSemanticsModifierNode>() {
     override fun create(): CoreTextFieldSemanticsModifierNode =
         CoreTextFieldSemanticsModifierNode(
@@ -79,7 +85,7 @@ internal data class CoreTextFieldSemanticsModifier(
             offsetMapping = offsetMapping,
             manager = manager,
             imeOptions = imeOptions,
-            focusRequester = focusRequester
+            focusRequester = focusRequester,
         )
 
     override fun update(node: CoreTextFieldSemanticsModifierNode) {
@@ -93,7 +99,7 @@ internal data class CoreTextFieldSemanticsModifier(
             offsetMapping = offsetMapping,
             manager = manager,
             imeOptions = imeOptions,
-            focusRequester = focusRequester
+            focusRequester = focusRequester,
         )
     }
 
@@ -112,7 +118,7 @@ internal class CoreTextFieldSemanticsModifierNode(
     var offsetMapping: OffsetMapping,
     var manager: TextFieldSelectionManager,
     var imeOptions: ImeOptions,
-    var focusRequester: FocusRequester
+    var focusRequester: FocusRequester,
 ) : DelegatingNode(), SemanticsModifierNode {
     init {
         manager.requestAutofillAction = { requestAutofill() }
@@ -129,11 +135,30 @@ internal class CoreTextFieldSemanticsModifierNode(
         // The developer will set `contentType`. CTF populates the other autofill-related
         // semantics. And since we're in a TextField, set the `contentDataType` to be "Text".
         this.contentDataType = ContentDataType.Text
-        onAutofillText { text ->
+        FillableData.createFromText(value.annotatedString)?.let { this.fillableData = it }
+        onFillData { fillableData ->
             state.justAutofilled = true
             state.autofillHighlightOn = true
-            handleTextUpdateFromSemantics(state, text.text, readOnly, enabled)
+            handleTextUpdateFromSemantics(
+                state,
+                fillableData.textValue as String,
+                readOnly,
+                enabled,
+            )
             true
+        }
+
+        when (imeOptions.keyboardType) {
+            KeyboardType.Email -> {
+                contentType = ContentType.EmailAddress
+            }
+            KeyboardType.Password,
+            KeyboardType.NumberPassword -> {
+                contentType = ContentType.Password
+            }
+            KeyboardType.Phone -> {
+                contentType = ContentType.PhoneNumber
+            }
         }
 
         if (!enabled) this.disabled()
@@ -170,7 +195,7 @@ internal class CoreTextFieldSemanticsModifierNode(
                         ops = listOf(FinishComposingTextCommand(), CommitTextCommand(text, 1)),
                         editProcessor = state.processor,
                         state.onValueChange,
-                        session
+                        session,
                     )
                 }
                     ?: run {
@@ -178,7 +203,7 @@ internal class CoreTextFieldSemanticsModifierNode(
                             value.text.replaceRange(
                                 value.selection.start,
                                 value.selection.end,
-                                text
+                                text,
                             )
                         val newCursor = TextRange(value.selection.start + text.length)
                         state.onValueChange(TextFieldValue(newText, newCursor))
@@ -274,7 +299,7 @@ internal class CoreTextFieldSemanticsModifierNode(
         offsetMapping: OffsetMapping,
         manager: TextFieldSelectionManager,
         imeOptions: ImeOptions,
-        focusRequester: FocusRequester
+        focusRequester: FocusRequester,
     ) {
         // Find the diff: current previous and new values before updating current.
         val previousEditable = this.enabled && !this.readOnly
@@ -318,7 +343,7 @@ internal class CoreTextFieldSemanticsModifierNode(
         state: LegacyTextFieldState,
         text: String,
         readOnly: Boolean,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         if (readOnly || !enabled) return
 
@@ -329,7 +354,7 @@ internal class CoreTextFieldSemanticsModifierNode(
                 ops = listOf(DeleteAllCommand(), CommitTextCommand(text, 1)),
                 editProcessor = state.processor,
                 state.onValueChange,
-                session
+                session,
             )
         } ?: run { state.onValueChange(TextFieldValue(text, TextRange(text.length))) }
     }

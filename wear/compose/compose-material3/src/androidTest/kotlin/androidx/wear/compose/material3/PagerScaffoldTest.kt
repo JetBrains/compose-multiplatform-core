@@ -19,11 +19,20 @@ package androidx.wear.compose.material3
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberOverscrollEffect
+import androidx.compose.foundation.withoutVisualEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.Alignment
@@ -36,10 +45,17 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.foundation.pager.VerticalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 
@@ -68,12 +84,12 @@ class PagerScaffoldTest {
         create_pager_scaffold_and_swipe_one_page(
             orientation = Orientation.Horizontal,
             pageIndicatorColor = pageIndicatorColor,
-            pageIndicatorAnimationSpec = null
+            pageIndicatorAnimationSpec = null,
         )
 
         wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
             pageIndicatorColor = pageIndicatorColor,
-            assertVisible = true
+            assertVisible = true,
         )
     }
 
@@ -85,12 +101,12 @@ class PagerScaffoldTest {
         create_pager_scaffold_and_swipe_one_page(
             orientation = Orientation.Vertical,
             pageIndicatorColor = pageIndicatorColor,
-            pageIndicatorAnimationSpec = null
+            pageIndicatorAnimationSpec = null,
         )
 
         wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
             pageIndicatorColor = pageIndicatorColor,
-            assertVisible = true
+            assertVisible = true,
         )
     }
 
@@ -102,12 +118,12 @@ class PagerScaffoldTest {
         create_pager_scaffold_and_swipe_one_page(
             orientation = Orientation.Horizontal,
             pageIndicatorColor = pageIndicatorColor,
-            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
         )
 
         wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
             pageIndicatorColor = pageIndicatorColor,
-            assertVisible = false
+            assertVisible = false,
         )
     }
 
@@ -119,32 +135,131 @@ class PagerScaffoldTest {
         create_pager_scaffold_and_swipe_one_page(
             orientation = Orientation.Vertical,
             pageIndicatorColor = pageIndicatorColor,
-            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec
+            pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimationSpec,
         )
 
         wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
             pageIndicatorColor = pageIndicatorColor,
-            assertVisible = false
+            assertVisible = false,
         )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun edge_button_doesnt_disappear() {
+        val TLC_TAG = "TLC_TAG"
+        val EHB_TAG = "EHB_TAG"
+        val EHB_COLOR = Color.Red
+        val pageCount = 3
+        val pagerState = PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { pageCount }
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            HorizontalPagerScaffold(
+                pagerState = pagerState,
+                pageIndicator = {},
+                modifier = Modifier.size(300.dp),
+            ) {
+                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex
+                    ->
+                    val scrollState = rememberTransformingLazyColumnState()
+                    val overscrollEffect = rememberOverscrollEffect()
+
+                    ScreenScaffold(
+                        scrollState = scrollState,
+                        overscrollEffect = overscrollEffect,
+                        modifier = Modifier.fillMaxSize(),
+                        edgeButton = {
+                            EdgeButton(
+                                onClick = {},
+                                modifier = Modifier.testTag(EHB_TAG + pageIndex.toString()),
+                                colors = ButtonDefaults.buttonColors(containerColor = EHB_COLOR),
+                            ) {
+                                Text("Edge Button")
+                            }
+                        },
+                    ) { paddingValuesFromScaffold ->
+                        TransformingLazyColumn(
+                            state = scrollState,
+                            contentPadding = paddingValuesFromScaffold,
+                            overscrollEffect = overscrollEffect?.withoutVisualEffect(),
+                            modifier =
+                                Modifier.fillMaxSize().testTag(TLC_TAG + pageIndex.toString()),
+                        ) {
+                            items(20) { Text("Item #$it") }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TLC_TAG + "0").performTouchInput { repeat(10) { swipeUp() } }
+
+        // Edge Button should be visible after scroll
+        rule.onNodeWithTag(EHB_TAG + "0").captureToImage().assertContainsColor(EHB_COLOR)
+
+        // Go to the second page and back
+        rule.runOnIdle { scope.launch { pagerState.scrollToPage(1) } }
+        rule.runOnIdle { scope.launch { pagerState.scrollToPage(0) } }
+
+        // Edge Button should be visible again
+        rule.onNodeWithTag(EHB_TAG + "0").captureToImage().assertContainsColor(EHB_COLOR)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun modifier_on_scaffold_works() {
+        val indicatorColor = Color.Red
+        val backgroundColor = Color.Green
+        val horizontalPagerState = PagerState { 5 }
+        rule.setContentWithTheme {
+            Box(Modifier.size(150.dp).testTag(TEST_TAG)) {
+                HorizontalPagerScaffold(
+                    pagerState = horizontalPagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    pageIndicator = {
+                        HorizontalPageIndicator(
+                            pagerState = horizontalPagerState,
+                            backgroundColor = indicatorColor,
+                        )
+                    },
+                ) {
+                    Box(Modifier.fillMaxSize().background(backgroundColor))
+                }
+
+                // Obscure the top part of the screen, to avoid detecting the indicator when it is
+                // in the wrong position (top left)
+                Box(
+                    Modifier.align(Alignment.TopCenter)
+                        .size(150.dp, 75.dp)
+                        .background(backgroundColor)
+                )
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(indicatorColor)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun create_pager_scaffold_and_swipe_one_page(
         orientation: Orientation,
         pageIndicatorColor: Color,
-        pageIndicatorAnimationSpec: AnimationSpec<Float>?
+        pageIndicatorAnimationSpec: AnimationSpec<Float>?,
     ) {
         rule.setContentWithTheme {
-            if (orientation == Orientation.Horizontal) {
-                TestHorizontalPagerScaffold(
-                    pageIndicatorColor = pageIndicatorColor,
-                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec
-                )
-            } else {
-                TestVerticalPagerScaffold(
-                    pageIndicatorColor = pageIndicatorColor,
-                    pageIndicatorAnimationSpec = pageIndicatorAnimationSpec
-                )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                if (orientation == Orientation.Horizontal) {
+                    TestHorizontalPagerScaffold(
+                        pageIndicatorColor = pageIndicatorColor,
+                        pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
+                    )
+                } else {
+                    TestVerticalPagerScaffold(
+                        pageIndicatorColor = pageIndicatorColor,
+                        pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
+                    )
+                }
             }
         }
 
@@ -170,7 +285,7 @@ class PagerScaffoldTest {
     @RequiresApi(Build.VERSION_CODES.O)
     fun wait_for_page_indicator_timeout_and_assert_page_indicator_visibility(
         pageIndicatorColor: Color,
-        assertVisible: Boolean
+        assertVisible: Boolean,
     ) {
         // After a 2500 delay, the scroll indicator is animated away. Allow a little longer for the
         // animation to complete.
@@ -204,7 +319,7 @@ class PagerScaffoldTest {
                 pageIndicator = {
                     HorizontalPageIndicator(
                         pagerState = pagerState,
-                        backgroundColor = pageIndicatorColor
+                        backgroundColor = pageIndicatorColor,
                     )
                 },
                 pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
@@ -212,14 +327,14 @@ class PagerScaffoldTest {
                 HorizontalPager(
                     state = pagerState,
                     flingBehavior =
-                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
                 ) { page ->
                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                         ScreenScaffold {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text("Page $page")
                             }
@@ -244,7 +359,7 @@ class PagerScaffoldTest {
                 pageIndicator = {
                     VerticalPageIndicator(
                         pagerState = pagerState,
-                        backgroundColor = pageIndicatorColor
+                        backgroundColor = pageIndicatorColor,
                     )
                 },
                 pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
@@ -252,14 +367,14 @@ class PagerScaffoldTest {
                 VerticalPager(
                     state = pagerState,
                     flingBehavior =
-                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                        PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState),
                 ) { page ->
                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                         ScreenScaffold {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text("Page $page")
                             }

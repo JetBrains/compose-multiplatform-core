@@ -33,17 +33,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.tooling.data"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
-
         compileSdk = 35
-        aarMetadata.minCompileSdk = 35
     }
     jvmStubs()
 
@@ -85,7 +75,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))
@@ -103,7 +93,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.truth)

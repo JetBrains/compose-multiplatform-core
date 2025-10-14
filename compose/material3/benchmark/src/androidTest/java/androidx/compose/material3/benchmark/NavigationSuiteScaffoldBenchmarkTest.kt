@@ -94,13 +94,13 @@ internal class NavigationSuiteScaffoldExpressiveTestCase :
                     selected = selectedIndexState.value == 0,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
-                    label = null
+                    label = null,
                 )
                 NavigationSuiteItem(
                     selected = selectedIndexState.value == 1,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
-                    label = null
+                    label = null,
                 )
             }
         ) {}
@@ -129,12 +129,12 @@ internal class NavigationSuiteScaffoldTestCase : LayeredComposeTestCase(), Toggl
                 item(
                     selected = selectedIndexState.value == 0,
                     onClick = {},
-                    icon = { Spacer(Modifier.size(24.dp)) }
+                    icon = { Spacer(Modifier.size(24.dp)) },
                 )
                 item(
                     selected = selectedIndexState.value == 1,
                     onClick = {},
-                    icon = { Spacer(Modifier.size(24.dp)) }
+                    icon = { Spacer(Modifier.size(24.dp)) },
                 )
             }
         )

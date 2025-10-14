@@ -26,23 +26,30 @@ import androidx.annotation.DoNotInline;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBatchResult;
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchSession;
+import androidx.appsearch.app.CommitBlobResponse;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.GetSchemaResponse;
+import androidx.appsearch.app.OpenBlobForReadResponse;
+import androidx.appsearch.app.OpenBlobForWriteResponse;
 import androidx.appsearch.app.PutDocumentsRequest;
+import androidx.appsearch.app.RemoveBlobResponse;
 import androidx.appsearch.app.RemoveByDocumentIdRequest;
 import androidx.appsearch.app.ReportUsageRequest;
 import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.app.SearchSpec;
 import androidx.appsearch.app.SearchSuggestionResult;
 import androidx.appsearch.app.SearchSuggestionSpec;
+import androidx.appsearch.app.SetBlobVisibilityRequest;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.appsearch.app.StorageInfo;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.exceptions.IllegalSchemaException;
+import androidx.appsearch.platformstorage.converter.AppSearchBlobHandleToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.AppSearchResultToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.GenericDocumentToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.GetSchemaResponseToPlatformConverter;
@@ -54,6 +61,7 @@ import androidx.appsearch.platformstorage.converter.SearchSuggestionSpecToPlatfo
 import androidx.appsearch.platformstorage.converter.SetSchemaRequestToPlatformConverter;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.appsearch.platformstorage.util.BatchResultCallbackAdapter;
+import androidx.collection.ArraySet;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Preconditions;
 
@@ -148,6 +156,132 @@ class SearchSessionImpl implements AppSearchSession {
                 RequestToPlatformConverter.toPlatformPutDocumentsRequest(request),
                 mExecutor,
                 BatchResultCallbackAdapter.forSameValueType(future));
+        return future;
+    }
+
+    @Override
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    public @NonNull ListenableFuture<OpenBlobForWriteResponse>
+    openBlobForWriteAsync(@NonNull Set<AppSearchBlobHandle> handles) {
+        if (!AppSearchVersionUtil.isAtLeastB()) {
+            throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                    + " is not available on this AppSearch implementation.");
+        }
+        Preconditions.checkNotNull(handles);
+        ResolvableFuture<OpenBlobForWriteResponse> future = ResolvableFuture.create();
+        Set<android.app.appsearch.AppSearchBlobHandle> platformBlobHandles =
+                new ArraySet<>(handles.size());
+        for (AppSearchBlobHandle jetpackHandle : handles) {
+            platformBlobHandles.add(AppSearchBlobHandleToPlatformConverter
+                    .toPlatformBlobHandle(jetpackHandle));
+        }
+        mPlatformSession.openBlobForWrite(
+                platformBlobHandles,
+                mExecutor,
+                result ->
+                        AppSearchResultToPlatformConverter.platformAppSearchResultToFuture(
+                                result,
+                                future,
+                                ResponseToPlatformConverter::toJetpackOpenBlobForWriteResponse));
+        return future;
+    }
+
+    @Override
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    public @NonNull ListenableFuture<RemoveBlobResponse> removeBlobAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        if (!AppSearchVersionUtil.isAtLeastB()) {
+            throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                    + " is not available on this AppSearch implementation.");
+        }
+        Preconditions.checkNotNull(handles);
+        ResolvableFuture<RemoveBlobResponse> future = ResolvableFuture.create();
+        Set<android.app.appsearch.AppSearchBlobHandle> platformBlobHandles =
+                new ArraySet<>(handles.size());
+        for (AppSearchBlobHandle jetpackHandle : handles) {
+            platformBlobHandles.add(AppSearchBlobHandleToPlatformConverter
+                    .toPlatformBlobHandle(jetpackHandle));
+        }
+        mPlatformSession.removeBlob(
+                platformBlobHandles,
+                mExecutor,
+                result ->
+                        AppSearchResultToPlatformConverter.platformAppSearchResultToFuture(
+                                result,
+                                future,
+                                ResponseToPlatformConverter::toJetpackRemoveBlobResponse));
+        return future;
+    }
+
+    @Override
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    public @NonNull ListenableFuture<CommitBlobResponse> commitBlobAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        if (!AppSearchVersionUtil.isAtLeastB()) {
+            throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                    + " is not available on this AppSearch implementation.");
+        }
+        Preconditions.checkNotNull(handles);
+        ResolvableFuture<CommitBlobResponse> future = ResolvableFuture.create();
+        Set<android.app.appsearch.AppSearchBlobHandle> platformBlobHandles =
+                new ArraySet<>(handles.size());
+        for (AppSearchBlobHandle jetpackHandle : handles) {
+            platformBlobHandles.add(AppSearchBlobHandleToPlatformConverter
+                    .toPlatformBlobHandle(jetpackHandle));
+        }
+        mPlatformSession.commitBlob(
+                platformBlobHandles,
+                mExecutor,
+                result ->
+                        AppSearchResultToPlatformConverter.platformAppSearchResultToFuture(
+                                result,
+                                future,
+                                ResponseToPlatformConverter::toJetpackCommitBlobResponse));
+        return future;
+    }
+
+    @Override
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    public @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        if (!AppSearchVersionUtil.isAtLeastB()) {
+            throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                    + " is not available on this AppSearch implementation.");
+        }
+        Preconditions.checkNotNull(handles);
+        ResolvableFuture<OpenBlobForReadResponse> future = ResolvableFuture.create();
+        Set<android.app.appsearch.AppSearchBlobHandle> platformBlobHandles =
+                new ArraySet<>(handles.size());
+        for (AppSearchBlobHandle jetpackHandle : handles) {
+            platformBlobHandles.add(AppSearchBlobHandleToPlatformConverter
+                    .toPlatformBlobHandle(jetpackHandle));
+        }
+        mPlatformSession.openBlobForRead(
+                platformBlobHandles,
+                mExecutor,
+                result ->
+                        AppSearchResultToPlatformConverter.platformAppSearchResultToFuture(
+                                result,
+                                future,
+                                ResponseToPlatformConverter::toJetpackOpenBlobForReadResponse));
+        return future;
+    }
+
+    @Override
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    public @NonNull ListenableFuture<Void> setBlobVisibilityAsync(
+            @NonNull SetBlobVisibilityRequest request) {
+        if (!AppSearchVersionUtil.isAtLeastB()) {
+            throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                    + " is not available on this AppSearch implementation.");
+        }
+        Preconditions.checkNotNull(request);
+        ResolvableFuture<Void> future = ResolvableFuture.create();
+        mPlatformSession.setBlobVisibility(
+                SetSchemaRequestToPlatformConverter.toPlatformSetBlobVisibilityRequest(request),
+                mExecutor,
+                result -> AppSearchResultToPlatformConverter
+                        .platformAppSearchResultToFuture(result, future));
         return future;
     }
 

@@ -16,6 +16,8 @@
 
 package androidx.camera.viewfinder.core
 
+import androidx.camera.viewfinder.core.TransformationInfo.Companion.CROP_NONE
+
 /**
  * Transformation information associated with the preview output.
  *
@@ -93,7 +95,7 @@ constructor(
      * If not set, this value will default to [CROP_NONE], which is equivalent to an offset of the
      * height of the surface.
      */
-    val cropRectBottom: Float = CROP_NONE
+    val cropRectBottom: Float = CROP_NONE,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -119,6 +121,18 @@ constructor(
         result = 31 * result + cropRectRight.hashCode()
         result = 31 * result + cropRectBottom.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "TransformationInfo(" +
+            "sourceRotation=$sourceRotation, " +
+            "isSourceMirroredHorizontally=$isSourceMirroredHorizontally, " +
+            "isSourceMirroredVertically=$isSourceMirroredVertically, " +
+            "cropRectLeft=$cropRectLeft, " +
+            "cropRectTop=$cropRectTop, " +
+            "cropRectRight=$cropRectRight, " +
+            "cropRectBottom=$cropRectBottom" +
+            ")"
     }
 
     companion object {

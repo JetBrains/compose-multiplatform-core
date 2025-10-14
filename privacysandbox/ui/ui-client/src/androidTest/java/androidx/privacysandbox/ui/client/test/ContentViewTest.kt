@@ -21,11 +21,12 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.MotionEvent
+import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.widget.FrameLayout
 import androidx.privacysandbox.ui.client.ContentView
+import androidx.privacysandbox.ui.client.IRemoteSessionController
 import androidx.privacysandbox.ui.core.IMotionEventTransferCallback
-import androidx.privacysandbox.ui.core.IRemoteSessionController
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -49,21 +50,19 @@ class ContentViewTest {
 
     private lateinit var contentView: ContentView
     private lateinit var requestDisallowInterceptTracker: RequestDisallowInterceptTracker
-    private var lastTransferredMotionEvent: MotionEvent? = null
-    private var lastTransferredEventTargetFrameTime: Long = 0L
-    private var lastTransferredEventCallback: IMotionEventTransferCallback? = null
+    private var lastTransferredTouchEvent: MotionEvent? = null
+    private var lastTransferredTouchEventTargetTime: Long = 0L
+    private var lastTransferredTouchEventCallback: IMotionEventTransferCallback? = null
+    private var lastTransferredHoverEvent: MotionEvent? = null
+    private var lastTransferredHoverEventTargetTime: Long = 0L
 
     @Before
     fun setup() {
-        lastTransferredMotionEvent = null
-        lastTransferredEventTargetFrameTime = 0L
-        lastTransferredEventCallback = null
-
         val remoteController =
-            object : IRemoteSessionController.Stub() {
+            object : IRemoteSessionController {
                 override fun close() {}
 
-                override fun notifyConfigurationChanged(configuration: Configuration?) {}
+                override fun notifyConfigurationChanged(configuration: Configuration) {}
 
                 override fun notifyResized(width: Int, height: Int) {}
 
@@ -71,18 +70,23 @@ class ContentViewTest {
 
                 override fun notifyFetchUiForSession() {}
 
-                override fun notifyUiChanged(uiContainerInfo: Bundle?) {}
+                override fun notifyUiChanged(uiContainerInfo: Bundle) {}
 
-                override fun notifySessionRendered(supportedSignalOptions: List<String?>?) {}
+                override fun notifySessionRendered(supportedSignalOptions: List<String>) {}
 
                 override fun notifyMotionEvent(
                     motionEvent: MotionEvent,
-                    eventTargetFrameTime: Long,
-                    eventTransferCallback: IMotionEventTransferCallback?
+                    eventTargetTime: Long,
+                    eventTransferCallback: IMotionEventTransferCallback?,
                 ) {
-                    lastTransferredMotionEvent = motionEvent
-                    lastTransferredEventTargetFrameTime = eventTargetFrameTime
-                    lastTransferredEventCallback = eventTransferCallback
+                    lastTransferredTouchEvent = motionEvent
+                    lastTransferredTouchEventTargetTime = eventTargetTime
+                    lastTransferredTouchEventCallback = eventTransferCallback
+                }
+
+                override fun notifyHoverEvent(hoverEvent: MotionEvent, eventTargetTime: Long) {
+                    lastTransferredHoverEvent = hoverEvent
+                    lastTransferredHoverEventTargetTime = eventTargetTime
                 }
             }
 
@@ -96,72 +100,92 @@ class ContentViewTest {
     }
 
     @Test
-    fun transferEventsWithTargetTimeOnTouchEventTest() {
+    fun transferTouchEventsWithTargetTimeOnTouchEventTest() {
         val downEvent = createMotionEvent(MotionEvent.ACTION_DOWN)
         val timeNow = AnimationUtils.currentAnimationTimeMillis()
         contentView.onTouchEvent(downEvent)
 
-        assertThat(lastTransferredMotionEvent).isEqualTo(downEvent)
-        assertThat(lastTransferredEventTargetFrameTime).isAtLeast(timeNow)
-        assertThat(lastTransferredEventCallback).isNotNull()
+        assertThat(lastTransferredTouchEvent).isEqualTo(downEvent)
+        assertThat(lastTransferredTouchEventTargetTime).isAtLeast(timeNow)
+        assertThat(lastTransferredTouchEventCallback).isNotNull()
+    }
+
+    @Test
+    fun transferHoverEventsWithTargetTimeOnTouchEventTest() {
+        val hoverEvent = createMotionEvent(MotionEvent.ACTION_HOVER_ENTER)
+        val timeNow = AnimationUtils.currentAnimationTimeMillis()
+        activityScenarioRule.scenario.onActivity { activity ->
+            contentView.onHoverEvent(hoverEvent)
+        }
+
+        assertThat(lastTransferredHoverEvent).isEqualTo(hoverEvent)
+        assertThat(lastTransferredHoverEventTargetTime).isAtLeast(timeNow)
     }
 
     @Test
     fun requestDisallowInterceptShouldNotCallParentIfContentViewIsDetachedTest() {
-        // Closing the activity, detaching the View.
-        activityScenarioRule.scenario.close()
+        // Detaching the view by removing from parent.
+        activityScenarioRule.scenario.onActivity { activity ->
+            (contentView.parent as ViewGroup).removeView(contentView)
+        }
 
         val downEvent = createMotionEvent(MotionEvent.ACTION_DOWN)
-        contentView.onTouchEvent(downEvent)
-        assertThat(lastTransferredEventCallback).isNotNull()
+        activityScenarioRule.scenario.onActivity { activity -> contentView.onTouchEvent(downEvent) }
+        assertThat(lastTransferredTouchEventCallback).isNotNull()
 
         requestDisallowInterceptTracker.resetCountDownLatch()
-        lastTransferredEventCallback!!.requestDisallowIntercept(true)
+        lastTransferredTouchEventCallback!!.requestDisallowIntercept(true)
         requestDisallowInterceptTracker.assertRequestDisallowInterceptIsNotCalled()
     }
 
     @Test
     fun requestDisallowInterceptShouldBeOnlyApplicableOnRunningGestureTest() {
         val downEvent1 = createMotionEvent(MotionEvent.ACTION_DOWN)
-        contentView.onTouchEvent(downEvent1)
-        assertThat(lastTransferredEventCallback).isNotNull()
-        val previousGestureCallback = lastTransferredEventCallback
+        activityScenarioRule.scenario.onActivity { activity ->
+            contentView.onTouchEvent(downEvent1)
+        }
+        assertThat(lastTransferredTouchEventCallback).isNotNull()
+        val previousGestureCallback = lastTransferredTouchEventCallback
 
         val downEvent2 = createMotionEvent(MotionEvent.ACTION_DOWN)
-        contentView.onTouchEvent(downEvent2)
+        activityScenarioRule.scenario.onActivity { activity ->
+            contentView.onTouchEvent(downEvent2)
+        }
 
         requestDisallowInterceptTracker.resetCountDownLatch()
         previousGestureCallback!!.requestDisallowIntercept(true)
         requestDisallowInterceptTracker.assertRequestDisallowInterceptIsNotCalled()
 
-        lastTransferredEventCallback!!.requestDisallowIntercept(true)
+        lastTransferredTouchEventCallback!!.requestDisallowIntercept(true)
         requestDisallowInterceptTracker.assertRequestDisallowInterceptIsCalled()
     }
 
     @Test
     fun passMotionEventTransferCallbackAsNullOnUp() {
-        assertThat(lastTransferredEventCallback).isNull()
+        assertThat(lastTransferredTouchEventCallback).isNull()
 
         val downEvent = createMotionEvent(MotionEvent.ACTION_DOWN)
-        contentView.onTouchEvent(downEvent)
-        assertThat(lastTransferredEventCallback).isNotNull()
+        activityScenarioRule.scenario.onActivity { activity -> contentView.onTouchEvent(downEvent) }
+        assertThat(lastTransferredTouchEventCallback).isNotNull()
 
-        val cancelEvent = createMotionEvent(MotionEvent.ACTION_UP)
-        contentView.onTouchEvent(cancelEvent)
-        assertThat(lastTransferredEventCallback).isNull()
+        val upEvent = createMotionEvent(MotionEvent.ACTION_UP)
+        activityScenarioRule.scenario.onActivity { activity -> contentView.onTouchEvent(upEvent) }
+        assertThat(lastTransferredTouchEventCallback).isNull()
     }
 
     @Test
     fun passMotionEventTransferCallbackAsNullOnCancel() {
-        assertThat(lastTransferredEventCallback).isNull()
+        assertThat(lastTransferredTouchEventCallback).isNull()
 
         val downEvent = createMotionEvent(MotionEvent.ACTION_DOWN)
-        contentView.onTouchEvent(downEvent)
-        assertThat(lastTransferredEventCallback).isNotNull()
+        activityScenarioRule.scenario.onActivity { activity -> contentView.onTouchEvent(downEvent) }
+        assertThat(lastTransferredTouchEventCallback).isNotNull()
 
         val cancelEvent = createMotionEvent(MotionEvent.ACTION_CANCEL)
-        contentView.onTouchEvent(cancelEvent)
-        assertThat(lastTransferredEventCallback).isNull()
+        activityScenarioRule.scenario.onActivity { activity ->
+            contentView.onTouchEvent(cancelEvent)
+        }
+        assertThat(lastTransferredTouchEventCallback).isNull()
     }
 
     private class RequestDisallowInterceptTracker(context: Context) : FrameLayout(context) {
@@ -192,7 +216,7 @@ class ContentViewTest {
             motionEventAction,
             0f,
             0f,
-            /* metaState = */ 0
+            /* metaState = */ 0,
         )
     }
 }

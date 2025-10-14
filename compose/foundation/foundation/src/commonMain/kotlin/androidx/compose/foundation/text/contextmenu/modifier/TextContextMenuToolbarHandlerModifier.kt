@@ -16,7 +16,7 @@
 
 package androidx.compose.foundation.text.contextmenu.modifier
 
-import androidx.compose.foundation.internal.checkPreconditionNotNull
+import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuToolbarProvider
 import androidx.compose.foundation.text.contextmenu.provider.TextContextMenuDataProvider
@@ -46,15 +46,26 @@ private const val ToolbarRequesterNotInitialized = "ToolbarRequester is not init
  */
 internal abstract class ToolbarRequester {
     internal var toolbarHandlerNode: TextContextMenuToolbarHandlerNode? = null
+    internal var toolbarHandlerState: ToolbarHandlerState = ToolbarHandlerState.Uninitialized
 
-    internal fun requireNode(): TextContextMenuToolbarHandlerNode =
-        checkPreconditionNotNull(toolbarHandlerNode) { ToolbarRequesterNotInitialized }
+    internal fun requireInitialized(): TextContextMenuToolbarHandlerNode? {
+        checkPrecondition(toolbarHandlerState != ToolbarHandlerState.Uninitialized) {
+            ToolbarRequesterNotInitialized
+        }
+        return toolbarHandlerNode
+    }
 
     /** Shows the toolbar. */
     abstract fun show()
 
     /** Hides the toolbar. */
     abstract fun hide()
+}
+
+internal enum class ToolbarHandlerState {
+    Uninitialized,
+    Detached,
+    Attached,
 }
 
 /**
@@ -65,7 +76,7 @@ internal abstract class ToolbarRequester {
 internal class ToolbarRequesterImpl : ToolbarRequester() {
 
     override fun show() {
-        requireNode().show()
+        requireInitialized()?.show()
     }
 
     override fun hide() {
@@ -78,7 +89,7 @@ internal class ToolbarRequesterImpl : ToolbarRequester() {
  * [requester]. `suspend` [onShow]/[onHide] callbacks are available if you need to run any
  * setup/cleanup before showing the toolbar. The modifier will use this point in the hierarchy to
  * visit ancestors in search for
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] and
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] and
  * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents] and then provide the
  * results to the [LocalTextContextMenuToolbarProvider]'s [currentValueOf]'s
  * [showTextContextMenu][TextContextMenuProvider.showTextContextMenu].
@@ -109,9 +120,7 @@ private class TextContextMenuToolbarHandlerElement(
         TextContextMenuToolbarHandlerNode(requester, onShow, onHide, computeContentBounds)
 
     override fun update(node: TextContextMenuToolbarHandlerNode) {
-        node.requester.toolbarHandlerNode = null
-        node.requester = requester
-        node.requester.toolbarHandlerNode = node
+        node.update(requester)
 
         node.onShow = onShow
         node.onHide = onHide
@@ -162,12 +171,26 @@ internal class TextContextMenuToolbarHandlerNode(
 
     private var previousContentBounds: Rect = Rect.Zero
 
+    fun update(toolbarRequester: ToolbarRequester) {
+        requester.toolbarHandlerNode = null
+        requester = toolbarRequester
+        requester.toolbarHandlerNode = this
+        requester.toolbarHandlerState =
+            if (isAttached) {
+                ToolbarHandlerState.Attached
+            } else {
+                ToolbarHandlerState.Detached
+            }
+    }
+
     override fun onAttach() {
         super.onAttach()
+        requester.toolbarHandlerState = ToolbarHandlerState.Attached
         requester.toolbarHandlerNode = this
     }
 
     override fun onDetach() {
+        requester.toolbarHandlerState = ToolbarHandlerState.Detached
         requester.toolbarHandlerNode = null
         super.onDetach()
     }
@@ -218,7 +241,7 @@ internal class TextContextMenuToolbarHandlerNode(
 internal fun translateRootToDestination(
     rootContentBounds: Rect,
     localCoordinates: LayoutCoordinates,
-    destinationCoordinates: LayoutCoordinates
+    destinationCoordinates: LayoutCoordinates,
 ): Rect {
     if (!localCoordinates.isAttached || !destinationCoordinates.isAttached) return Rect.Zero
     val rootContentPosition = rootContentBounds.topLeft
@@ -226,7 +249,7 @@ internal fun translateRootToDestination(
     val destinationContentPosition =
         destinationCoordinates.localPositionOf(
             sourceCoordinates = rootCoordinates,
-            relativeToSource = rootContentPosition
+            relativeToSource = rootContentPosition,
         )
     return Rect(destinationContentPosition, rootContentBounds.size)
 }

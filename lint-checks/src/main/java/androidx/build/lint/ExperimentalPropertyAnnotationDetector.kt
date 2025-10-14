@@ -176,8 +176,8 @@ class ExperimentalPropertyAnnotationDetector : Detector(), Detector.UastScanner 
                 Severity.ERROR,
                 Implementation(
                     ExperimentalPropertyAnnotationDetector::class.java,
-                    Scope.JAVA_FILE_SCOPE
-                )
+                    Scope.JAVA_FILE_SCOPE,
+                ),
             )
     }
 }

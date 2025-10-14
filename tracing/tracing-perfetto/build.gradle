@@ -69,15 +69,12 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "AndroidX Tracing: Perfetto SDK"
-    legacyDisableKotlinStrictApiMode = true
     deviceTests {
         enableAlsoRunningOnPhysicalDevices = true
     }
 }
 
 android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.tracing.perfetto"
 }

@@ -56,6 +56,7 @@ import androidx.camera.core.CameraInfoUnavailableException;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.ExperimentalLensFacing;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageAnalysis;
@@ -75,6 +76,7 @@ import androidx.camera.core.ViewPort;
 import androidx.camera.core.ZoomState;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.utils.AspectRatioUtil;
 import androidx.camera.core.impl.utils.CameraOrientationUtil;
 import androidx.camera.core.impl.utils.ContextUtil;
 import androidx.camera.core.impl.utils.LiveDataUtil;
@@ -322,6 +324,8 @@ public abstract class CameraController {
     @VisibleForTesting
     final RotationProvider.@NonNull Listener mDeviceRotationListener;
 
+    private int mLastKnownRotation = ImageOutputConfig.INVALID_ROTATION;
+
     private boolean mPinchToZoomEnabled = true;
     private boolean mTapToFocusEnabled = true;
     private FocusMeteringResultCallback mFocusMeteringResultCallback;
@@ -379,6 +383,7 @@ public abstract class CameraController {
         // mode.
         mRotationProvider = new RotationProvider(mAppContext);
         mDeviceRotationListener = rotation -> {
+            mLastKnownRotation = rotation;
             mImageAnalysis.setTargetRotation(rotation);
             mImageCapture.setTargetRotation(rotation);
             mVideoCapture.setTargetRotation(rotation);
@@ -595,8 +600,9 @@ public abstract class CameraController {
     }
 
     private void startListeningToRotationEvents() {
-        mRotationProvider.addListener(mainThreadExecutor(),
-                mDeviceRotationListener);
+        if (!mRotationProvider.addListener(mainThreadExecutor(), mDeviceRotationListener)) {
+            Logger.w(TAG, "The device cannot detect rotation changes.");
+        }
     }
 
     private void stopListeningToRotationEvents() {
@@ -782,15 +788,15 @@ public abstract class CameraController {
      *
      * <p>If {@link ImageCapture#FLASH_MODE_SCREEN} is set, a valid {@link android.view.Window}
      * instance must be set to a {@link PreviewView} or {@link ScreenFlashView} which this
-     * controller is set to. Trying to use {@link ImageCapture#FLASH_MODE_SCREEN} with a
-     * non-front camera or without setting a non-null window will be no-op. While switching the
+     * controller is set to. Trying to use {@link ImageCapture#FLASH_MODE_SCREEN} with a non-front
+     * camera or without setting a non-null window will throw an exception. While switching the
      * camera, it is the application's responsibility to change flash mode to the desired one if
      * it leads to a no-op case (e.g. switching to rear camera while {@code FLASH_MODE_SCREEN} is
      * still set). Otherwise, {@code FLASH_MODE_OFF} will be set.
      *
      * @param flashMode the flash mode for {@link ImageCapture}.
      * @throws IllegalArgumentException If flash mode is invalid or
-     * {@link ImageCapture#FLASH_MODE_SCREEN} is used without a front camera.
+     * {@link ImageCapture#FLASH_MODE_SCREEN} is used without a front camera or a non-null window.
      * @see PreviewView#setScreenFlashWindow(Window)
      * @see ScreenFlashView#setScreenFlashWindow(Window)
      */
@@ -1118,6 +1124,7 @@ public abstract class CameraController {
         setImageCaptureFlashMode(flashMode);
     }
 
+    @SuppressLint("WrongConstant")
     private ImageCapture createImageCapture(Integer imageCaptureMode) {
         ImageCapture.Builder builder = new ImageCapture.Builder();
         if (imageCaptureMode != null) {
@@ -1126,6 +1133,9 @@ public abstract class CameraController {
         configureResolution(builder, mImageCaptureResolutionSelector, mImageCaptureTargetSize);
         if (mImageCaptureIoExecutor != null) {
             builder.setIoExecutor(mImageCaptureIoExecutor);
+        }
+        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
+            builder.setTargetRotation(mLastKnownRotation);
         }
 
         return builder.build();
@@ -1491,6 +1501,7 @@ public abstract class CameraController {
         }
     }
 
+    @SuppressLint("WrongConstant")
     private ImageAnalysis createImageAnalysis(Integer strategy, Integer imageQueueDepth,
             Integer outputFormat) {
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
@@ -1506,6 +1517,9 @@ public abstract class CameraController {
         configureResolution(builder, mImageAnalysisResolutionSelector, mImageAnalysisTargetSize);
         if (mAnalysisBackgroundExecutor != null) {
             builder.setBackgroundExecutor(mAnalysisBackgroundExecutor);
+        }
+        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
+            builder.setTargetRotation(mLastKnownRotation);
         }
 
         return builder.build();
@@ -1930,6 +1944,7 @@ public abstract class CameraController {
         mVideoCapture = createVideoCapture();
     }
 
+    @SuppressLint("WrongConstant")
     private VideoCapture<Recorder> createVideoCapture() {
         Recorder.Builder videoRecorderBuilder = new Recorder.Builder().setQualitySelector(
                 mVideoCaptureQualitySelector);
@@ -1941,11 +1956,15 @@ public abstract class CameraController {
             }
         }
 
-        return new VideoCapture.Builder<>(videoRecorderBuilder.build())
+        VideoCapture.Builder<Recorder> builder = new VideoCapture.Builder<>(
+                videoRecorderBuilder.build())
                 .setTargetFrameRate(mVideoCaptureTargetFrameRate)
                 .setMirrorMode(mVideoCaptureMirrorMode)
-                .setDynamicRange(mVideoCaptureDynamicRange)
-                .build();
+                .setDynamicRange(mVideoCaptureDynamicRange);
+        if (mLastKnownRotation != ImageOutputConfig.INVALID_ROTATION) {
+            builder.setTargetRotation(mLastKnownRotation);
+        }
+        return builder.build();
     }
 
     private @Nullable AspectRatioStrategy getViewportAspectRatioStrategy(
@@ -1967,12 +1986,18 @@ public abstract class CameraController {
         int surfaceRotationDegrees =
                 viewPort == null ? 0 : CameraOrientationUtil.surfaceRotationToDegrees(
                         viewPort.getRotation());
-        int sensorRotationDegrees =
-                mCameraProvider == null ? 0 : mCameraProvider.getCameraInfo(
-                        mCameraSelector).getSensorRotationDegrees();
-        boolean isOppositeFacing =
-                mCameraProvider == null ? true : mCameraProvider.getCameraInfo(
-                        mCameraSelector).getLensFacing() == CameraSelector.LENS_FACING_BACK;
+        int sensorRotationDegrees = 0;
+        boolean isOppositeFacing = true;
+        try {
+            if (mCameraProvider != null) {
+                CameraInfo cameraInfo = mCameraProvider.getCameraInfo(mCameraSelector);
+                sensorRotationDegrees = cameraInfo.getSensorRotationDegrees();
+                isOppositeFacing = cameraInfo.getLensFacing() == CameraSelector.LENS_FACING_BACK;
+            }
+        } catch (IllegalArgumentException e) {
+            String readableSelector = getReadableSelectorString(mCameraSelector);
+            Logger.w(TAG, "Failed to retrieve CameraInfo for selector: " + readableSelector, e);
+        }
         int relativeRotation = CameraOrientationUtil.getRelativeImageRotation(
                 surfaceRotationDegrees, sensorRotationDegrees, isOppositeFacing);
         Rational aspectRatio = viewPort.getAspectRatio();
@@ -1981,13 +2006,58 @@ public abstract class CameraController {
                     /* denominator= */ aspectRatio.getNumerator());
         }
 
-        if (aspectRatio.equals(new Rational(4, 3))) {
+        if (aspectRatio.equals(AspectRatioUtil.ASPECT_RATIO_4_3)) {
             return AspectRatio.RATIO_4_3;
-        } else if (aspectRatio.equals(new Rational(16, 9))) {
+        } else if (aspectRatio.equals(AspectRatioUtil.ASPECT_RATIO_16_9)) {
             return AspectRatio.RATIO_16_9;
         } else {
             return AspectRatio.RATIO_DEFAULT;
         }
+    }
+
+    /**
+     * Creates a human-readable string from a CameraSelector for logging purposes.
+     */
+    @OptIn(markerClass = ExperimentalLensFacing.class)
+    private String getReadableSelectorString(CameraSelector selector) {
+        if (selector == null) {
+            return "null";
+        }
+        StringBuilder description = new StringBuilder("CameraSelector{");
+        // Get the lens facing, as it's the most common and useful identifier.
+        Integer lensFacing = selector.getLensFacing();
+        if (lensFacing != null) {
+            switch (lensFacing) {
+                case CameraSelector.LENS_FACING_BACK:
+                    description.append("lensFacing=BACK");
+                    break;
+                case CameraSelector.LENS_FACING_FRONT:
+                    description.append("lensFacing=FRONT");
+                    break;
+                case CameraSelector.LENS_FACING_EXTERNAL:
+                    description.append("lensFacing=EXTERNAL");
+                    break;
+                default:
+                    description.append("lensFacing=UNKNOWN(").append(lensFacing).append(")");
+                    break;
+            }
+        } else {
+            description.append("lensFacing=NOT_SPECIFIED");
+        }
+        // In the future, you could add other filters here if needed.
+        description.append("}");
+        return description.toString();
+    }
+
+    @MainThread
+    private void unbindAllUseCases() {
+        if (!isCameraInitialized()) {
+            return;
+        }
+
+        // Invokes the unbind() method to unbind all use cases created by the CameraController.
+        // This can avoid to unbind the UseCases bound with the other lifecycle owner unexpectedly.
+        mCameraProvider.unbind(mPreview, mImageCapture, mImageAnalysis, mVideoCapture);
     }
 
     /**
@@ -2672,24 +2742,22 @@ public abstract class CameraController {
             return null;
         }
 
+        // Always unbinds all UseCases to allow the resolution selection logic to re-select a
+        // workable resolutions set for the new UseCases combination.
+        unbindAllUseCases();
+
         UseCaseGroup.Builder builder = new UseCaseGroup.Builder().addUseCase(mPreview);
 
         if (isImageCaptureEnabled()) {
             builder.addUseCase(mImageCapture);
-        } else {
-            mCameraProvider.unbind(mImageCapture);
         }
 
         if (isImageAnalysisEnabled()) {
             builder.addUseCase(mImageAnalysis);
-        } else {
-            mCameraProvider.unbind(mImageAnalysis);
         }
 
         if (isVideoCaptureEnabled()) {
             builder.addUseCase(mVideoCapture);
-        } else {
-            mCameraProvider.unbind(mVideoCapture);
         }
 
         builder.setViewPort(mViewPort);

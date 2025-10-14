@@ -21,7 +21,6 @@ import androidx.compose.ui.inspection.inspector.InspectorNode
 import androidx.compose.ui.inspection.inspector.MutableInspectorNode
 import androidx.compose.ui.unit.IntRect
 import java.util.NoSuchElementException
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Command
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetAllParametersCommand
@@ -30,20 +29,21 @@ import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComp
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetParameterDetailsCommand
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetParametersCommand
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetParametersResponse
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetRecompositionStateReadCommand
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ParameterReference
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateReadSettings
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.UpdateSettingsCommand
 
-internal fun List<LayoutInspectorComposeProtocol.StringEntry>.toMap() = associate {
-    it.id to it.str
-}
+internal fun List<StringEntry>.toMap() = associate { it.id to it.str }
 
 internal fun GetParametersCommand(
     rootViewId: Long,
     node: ComposableNode,
     useDelayedParameterExtraction: Boolean,
     generation: Int = 1,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
 ): Command =
     if (useDelayedParameterExtraction) {
         GetParametersByAnchorIdCommand(
@@ -51,7 +51,7 @@ internal fun GetParametersCommand(
             node.anchorHash,
             node.id,
             generation,
-            skipSystemComposables
+            skipSystemComposables,
         )
     } else {
         GetParametersByIdCommand(rootViewId, node.id, skipSystemComposables)
@@ -60,7 +60,7 @@ internal fun GetParametersCommand(
 internal fun GetParametersByIdCommand(
     rootViewId: Long,
     composableId: Long,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -80,7 +80,7 @@ internal fun GetParametersByAnchorIdCommand(
     anchorId: Int,
     composableId: Long,
     generation: Int = 1,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -145,7 +145,7 @@ internal fun GetParameterDetailsCommand(
     reference: ParameterReference,
     startIndex: Int,
     maxElements: Int,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -170,7 +170,7 @@ internal fun GetComposablesCommand(
     rootViewId: Long,
     skipSystemComposables: Boolean = true,
     generation: Int = 1,
-    extractAllParameters: Boolean = false
+    extractAllParameters: Boolean = false,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -205,7 +205,7 @@ internal fun GetComposablesResponse.roots(): List<InspectorNode> {
 
 internal fun ComposableNode.isAncestorOf(
     ancestor: ComposableNode,
-    tree: GetComposablesResponse
+    tree: GetComposablesResponse,
 ): Boolean {
     val pending = mutableListOf<ComposableNode>()
     val map = MutableLongLongMap()
@@ -234,7 +234,7 @@ private fun List<ComposableNode>.convert(strings: Map<Int, String>): List<Inspec
             it.bounds.layout.x,
             it.bounds.layout.y,
             it.bounds.layout.x + it.bounds.layout.w,
-            it.bounds.layout.y + it.bounds.layout.h
+            it.bounds.layout.y + it.bounds.layout.h,
         )
     node.children.addAll(it.childrenList.convert(strings))
     node.inlined = (it.flags and ComposableNode.Flags.INLINED_VALUE) != 0
@@ -245,7 +245,10 @@ internal fun GetUpdateSettingsCommand(
     includeRecomposeCounts: Boolean = false,
     keepRecomposeCounts: Boolean = false,
     delayParameterExtractions: Boolean = false,
-    reduceChildNesting: Boolean = false
+    reduceChildNesting: Boolean = false,
+    stateReadKind: StateReadSettings.Kind = StateReadSettings.Kind.NONE,
+    composableToObserve: List<Int> = emptyList(),
+    maxStateReads: Int = 0,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -256,6 +259,49 @@ internal fun GetUpdateSettingsCommand(
                         this.keepRecomposeCounts = keepRecomposeCounts
                         this.delayParameterExtractions = delayParameterExtractions
                         this.reduceChildNesting = reduceChildNesting
+                        this.stateReadSettings =
+                            StateReadSettings.newBuilder()
+                                .apply {
+                                    when (stateReadKind) {
+                                        StateReadSettings.Kind.ALL ->
+                                            all =
+                                                StateReadSettings.All.newBuilder()
+                                                    .apply { this.maxStateReads = maxStateReads }
+                                                    .build()
+                                        StateReadSettings.Kind.BY_ID ->
+                                            byId =
+                                                StateReadSettings.ById.newBuilder()
+                                                    .apply {
+                                                        addAllComposableToObserve(
+                                                            composableToObserve
+                                                        )
+                                                        this.maxStateReads = maxStateReads
+                                                    }
+                                                    .build()
+                                        else -> none = StateReadSettings.None.getDefaultInstance()
+                                    }
+                                }
+                                .build()
+                    }
+                    .build()
+        }
+        .build()
+
+internal fun GetRecompositionStateReadCommand(
+    anchorHash: Int,
+    recompositionNumberStart: Int,
+    recompositionNumberEnd: Int,
+    includeExtra: Boolean,
+): Command =
+    Command.newBuilder()
+        .apply {
+            getRecompositionStateReadCommand =
+                GetRecompositionStateReadCommand.newBuilder()
+                    .apply {
+                        this.anchorHash = anchorHash
+                        this.recompositionNumberStart = recompositionNumberStart
+                        this.recompositionNumberEnd = recompositionNumberEnd
+                        this.includeExtra = includeExtra
                     }
                     .build()
         }

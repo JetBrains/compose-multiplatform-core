@@ -34,6 +34,13 @@ public abstract class TraceSink : AutoCloseable {
     public abstract fun enqueue(pooledPacketArray: PooledTracePacketArray)
 
     /**
+     * Called when the [TraceSink] cannot keep up with incoming trace events from [Track]s.
+     *
+     * This function may be called from any thread.
+     */
+    public abstract fun onDroppedTraceEvent()
+
+    /**
      * Flush any enqueued trace events to the [TraceSink].
      *
      * This function may be called from any thread.
@@ -52,6 +59,10 @@ public abstract class TraceSink : AutoCloseable {
 internal class EmptyTraceSink : TraceSink() {
     override fun enqueue(pooledPacketArray: PooledTracePacketArray) {
         pooledPacketArray.recycle()
+    }
+
+    override fun onDroppedTraceEvent() {
+        // Does nothing
     }
 
     override fun flush() {

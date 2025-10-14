@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger
 public class Camera2ExtensionsSessionProcessor(
     private val availableCaptureRequestKeys: List<CaptureRequest.Key<*>>,
     @ExtensionMode.Mode private val mode: Int,
-    private val vendorExtender: VendorExtender
+    private val vendorExtender: VendorExtender,
 ) : SessionProcessor, CameraExtensionsInfo, CameraExtensionsControl {
 
     private val camera2ExtensionMode = convertCameraXModeToCamera2Mode(mode)
@@ -85,7 +85,7 @@ public class Camera2ExtensionsSessionProcessor(
 
     override fun initSession(
         cameraInfo: CameraInfo,
-        outputSurfaceConfig: OutputSurfaceConfiguration?
+        outputSurfaceConfig: OutputSurfaceConfiguration?,
     ): SessionConfig? {
         cameraInfoInternal = cameraInfo as CameraInfoInternal
         // Sets up the CameraCaptureCallback to receive the extensions related info
@@ -93,7 +93,7 @@ public class Camera2ExtensionsSessionProcessor(
             object : CameraCaptureCallback() {
                 override fun onCaptureCompleted(
                     captureConfigId: Int,
-                    cameraCaptureResult: CameraCaptureResult
+                    cameraCaptureResult: CameraCaptureResult,
                 ) {
                     if (
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
@@ -126,7 +126,7 @@ public class Camera2ExtensionsSessionProcessor(
 
         cameraInfoInternal!!.addSessionCaptureCallback(
             CameraXExecutors.directExecutor(),
-            cameraCaptureCallback!!
+            cameraCaptureCallback!!,
         )
 
         return null
@@ -179,7 +179,7 @@ public class Camera2ExtensionsSessionProcessor(
 
     override fun startRepeating(
         tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback
+        callback: SessionProcessor.CaptureCallback,
     ): Int {
         throw UnsupportedOperationException(
             "Camera2ExtensionsSessionProcessor#startRepeating should not be invoked!"
@@ -195,7 +195,7 @@ public class Camera2ExtensionsSessionProcessor(
     override fun startCapture(
         postviewEnabled: Boolean,
         tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback
+        callback: SessionProcessor.CaptureCallback,
     ): Int {
         throw UnsupportedOperationException(
             "Camera2ExtensionsSessionProcessor#startCapture should not be invoked!"

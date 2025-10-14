@@ -19,14 +19,40 @@ package androidx.pdf.viewer.fragment
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresExtension
+import androidx.pdf.content.ExternalLink
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+class TestPdfViewerFragment : PdfViewerFragment() {
+
+    // Expose the protected onLinkClicked method for testing purpose
+    fun testOnLinkClicked(externalLink: ExternalLink): Boolean {
+        return onLinkClicked(externalLink)
+    }
+}
+
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+class CustomTestPdfViewerFragment : PdfViewerFragment() {
+
+    // Expose the protected onLinkClicked method for testing purpose
+    fun testOnLinkClicked(externalLink: ExternalLink): Boolean {
+        return onLinkClicked(externalLink)
+    }
+
+    // Override the onLinkClicked method to provide custom behavior for testing
+    override fun onLinkClicked(externalLink: ExternalLink): Boolean {
+        return externalLink.uri.toString().contains("example.com")
+    }
+}
+
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 @RunWith(RobolectricTestRunner::class)
 class PdfViewerFragmentTest {
+
     @Test
     fun test_setDocumentUri_withInvalidUri_throwsIllegalArgumentException() {
         val fragment = PdfViewerFragment()
@@ -34,5 +60,29 @@ class PdfViewerFragmentTest {
         val customUri: Uri = Uri.parse(customUriString)
 
         assertThrows(IllegalArgumentException::class.java) { fragment.documentUri = customUri }
+    }
+
+    @Test
+    fun test_onLinkClicked_withDefaultBehavior() {
+        val fragment = TestPdfViewerFragment()
+        val externalLink = ExternalLink(Uri.parse("http://example.com"))
+        val result = fragment.testOnLinkClicked(externalLink)
+        assertEquals("Link should trigger default behavior", false, result)
+    }
+
+    @Test
+    fun test_onLinkClicked_withCustomImplementation() {
+        val fragment = CustomTestPdfViewerFragment()
+        val externalLink = ExternalLink(Uri.parse("http://example.com"))
+        val result = fragment.testOnLinkClicked(externalLink)
+        assertEquals("Link should be handled by custom logic", true, result)
+    }
+
+    @Test
+    fun test_onLinkClicked_withCustomImplementation_Fails() {
+        val fragment = CustomTestPdfViewerFragment()
+        val externalLink = ExternalLink(Uri.parse("http://example.org"))
+        val result = fragment.testOnLinkClicked(externalLink)
+        assertEquals("Link should fall back to default behavior", false, result)
     }
 }

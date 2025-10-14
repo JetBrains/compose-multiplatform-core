@@ -89,7 +89,7 @@ class LazyListBeyondBoundsItemCountTest(config: Config) :
                 modifier = Modifier.size(60.dp),
                 state = state,
                 content = { items(ItemCount) { ListItem(index = it) } },
-                beyondBoundsItemCount = dynamicBeyondBoundsItemCount
+                beyondBoundsItemCount = dynamicBeyondBoundsItemCount,
             )
         }
 
@@ -129,7 +129,7 @@ class LazyListBeyondBoundsItemCountTest(config: Config) :
 
     private fun setLazyListContent(
         state: LazyListState? = null,
-        content: LazyListScope.() -> Unit
+        content: LazyListScope.() -> Unit,
     ) {
         val lazyListState = state ?: LazyListState()
         rule.setContent {
@@ -137,7 +137,7 @@ class LazyListBeyondBoundsItemCountTest(config: Config) :
                 modifier = Modifier.size(60.dp),
                 state = lazyListState,
                 content = content,
-                beyondBoundsItemCount = beyondBoundsItemCount
+                beyondBoundsItemCount = beyondBoundsItemCount,
             )
         }
     }
@@ -163,7 +163,7 @@ class LazyListBeyondBoundsItemCountTest(config: Config) :
         class Config(
             val orientation: Orientation,
             val beyondBoundsItemCount: Int,
-            val firstVisibleItem: Int
+            val firstVisibleItem: Int,
         ) {
             override fun toString(): String {
                 return "orientation=$orientation " +

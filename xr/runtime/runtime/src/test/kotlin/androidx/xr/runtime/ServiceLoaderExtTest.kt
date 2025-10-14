@@ -19,14 +19,16 @@ package androidx.xr.runtime
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.testing.AnotherFakeStateExtender
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeStateExtender
 import androidx.xr.runtime.internal.Feature
-import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
-import androidx.xr.runtime.internal.RuntimeFactory
+import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import androidx.xr.runtime.internal.Service
-import androidx.xr.runtime.testing.AnotherFakeStateExtender
-import androidx.xr.runtime.testing.FakeJxrPlatformAdapterFactory
-import androidx.xr.runtime.testing.FakeRuntimeFactory
-import androidx.xr.runtime.testing.FakeStateExtender
+import androidx.xr.runtime.manifest.FEATURE_XR_API_OPENXR
+import androidx.xr.runtime.manifest.FEATURE_XR_API_SPATIAL
+import androidx.xr.scenecore.testing.FakeRenderingRuntimeFactory
+import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,23 +39,32 @@ import org.robolectric.shadows.ShadowBuild
 class ServiceLoaderExtTest {
 
     @Test
+    // TODO(b/440615454) - Move this test to scenecore-testing/arcore-testing.
     fun loadProviders_loadsProviders() {
         assertThat(
                 loadProviders(
-                        RuntimeFactory::class.java,
-                        listOf(FakeRuntimeFactory::class.java.name)
+                        PerceptionRuntimeFactory::class.java,
+                        listOf(FakePerceptionRuntimeFactory::class.java.name),
                     )
                     .single()
             )
-            .isInstanceOf(FakeRuntimeFactory::class.java)
+            .isInstanceOf(FakePerceptionRuntimeFactory::class.java)
         assertThat(
                 loadProviders(
-                        JxrPlatformAdapterFactory::class.java,
-                        listOf(FakeJxrPlatformAdapterFactory::class.java.name),
+                        FakeSceneRuntimeFactory::class.java,
+                        listOf(FakeSceneRuntimeFactory::class.java.name),
                     )
                     .single()
             )
-            .isInstanceOf(FakeJxrPlatformAdapterFactory::class.java)
+            .isInstanceOf(FakeSceneRuntimeFactory::class.java)
+        assertThat(
+                loadProviders(
+                        FakeRenderingRuntimeFactory::class.java,
+                        listOf(FakeRenderingRuntimeFactory::class.java.name),
+                    )
+                    .single()
+            )
+            .isInstanceOf(FakeRenderingRuntimeFactory::class.java)
         assertThat(
                 loadProviders(StateExtender::class.java, listOf(FakeStateExtender::class.java.name))
                     .iterator()
@@ -67,10 +78,12 @@ class ServiceLoaderExtTest {
         val stateExtenders =
             loadProviders(StateExtender::class.java, listOf(FakeStateExtender::class.java.name))
 
-        assertThat(stateExtenders.size).isEqualTo(1)
-        for (stateExtender in stateExtenders) {
-            assert(stateExtender is FakeStateExtender || stateExtender is AnotherFakeStateExtender)
-        }
+        assertThat(stateExtenders.size).isEqualTo(2)
+
+        // TODO(b/436933956) - temp. dependency on arcore package is pulling in
+        // PerceptionStateExtender
+        assertThat(stateExtenders.any { it is FakeStateExtender || it is AnotherFakeStateExtender })
+            .isTrue()
     }
 
     @Test
@@ -83,7 +96,7 @@ class ServiceLoaderExtTest {
         ShadowBuild.setFingerprint("a_real_device")
 
         assertThat(getDeviceFeatures(ApplicationProvider.getApplicationContext()))
-            .containsExactly(Feature.FullStack)
+            .containsExactly(Feature.FULLSTACK)
     }
 
     @Test
@@ -93,7 +106,7 @@ class ServiceLoaderExtTest {
         shadowOf(context.packageManager)
             .setSystemFeature(FEATURE_XR_API_OPENXR, /* supported= */ true)
 
-        assertThat(getDeviceFeatures(context)).contains(Feature.OpenXr)
+        assertThat(getDeviceFeatures(context)).contains(Feature.OPEN_XR)
     }
 
     @Test
@@ -103,24 +116,24 @@ class ServiceLoaderExtTest {
         shadowOf(context.packageManager)
             .setSystemFeature(FEATURE_XR_API_SPATIAL, /* supported= */ true)
 
-        assertThat(getDeviceFeatures(context)).contains(Feature.Spatial)
+        assertThat(getDeviceFeatures(context)).contains(Feature.SPATIAL)
     }
 
     @Test
     fun selectProvider_selectsSupportedProvider() {
         val supportedProvider =
             object : Service {
-                override val requirements: Set<Feature> = setOf(Feature.FullStack)
+                override val requirements: Set<Feature> = setOf(Feature.FULLSTACK)
             }
         val unsupportedProvider =
             object : Service {
-                override val requirements: Set<Feature> = setOf(Feature.FullStack, Feature.OpenXr)
+                override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.OPEN_XR)
             }
 
         assertThat(
                 selectProvider(
                     listOf(unsupportedProvider, supportedProvider),
-                    setOf(Feature.FullStack)
+                    setOf(Feature.FULLSTACK),
                 )
             )
             .isEqualTo(supportedProvider)
@@ -130,7 +143,7 @@ class ServiceLoaderExtTest {
     fun selectProvider_noSupportedProvider_returnsNull() {
         val unsupportedProvider =
             object : Service {
-                override val requirements: Set<Feature> = setOf(Feature.FullStack, Feature.OpenXr)
+                override val requirements: Set<Feature> = setOf(Feature.FULLSTACK, Feature.OPEN_XR)
             }
 
         assertThat(selectProvider(listOf(unsupportedProvider), emptySet())).isNull()

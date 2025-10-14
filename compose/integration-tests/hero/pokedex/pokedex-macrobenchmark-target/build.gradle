@@ -19,6 +19,7 @@ plugins {
     id("AndroidXComposePlugin")
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -29,8 +30,15 @@ android {
         release {
             minifyEnabled = true
             shrinkResources = true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
+            proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "pokedex-macrobenchmark-target-rules.pro"
+            )
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 }
 
@@ -38,6 +46,12 @@ dependencies {
     implementation(libs.kotlinStdlib)
     implementation(libs.androidx.activity.compose)
     implementation("androidx.appcompat:appcompat:1.4.1")
-
     implementation(project(":compose-hero-benchmarks:poxedex-compose:app"))
+    implementation(project(":compose-hero-benchmarks:pokedex-views:app"))
+    implementation(project(":compose:ui:ui-util"))
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    ksp("com.github.bumptech.glide:ksp:4.16.0")
+
+    // We add a test runner dependency because buildConfig generates a test source set. b/435711074
+    androidTestImplementation(libs.testRunner)
 }

@@ -1,0 +1,12 @@
+// Signature format: 4.0
+package androidx.room3.testing {
+
+  public class MigrationTestHelper extends org.junit.rules.TestWatcher {
+    ctor public MigrationTestHelper(android.app.Instrumentation instrumentation, java.io.File file, androidx.sqlite.SQLiteDriver driver, kotlin.reflect.KClass<? extends androidx.room3.RoomDatabase> databaseClass, optional kotlin.jvm.functions.Function0<? extends androidx.room3.RoomDatabase> databaseFactory, optional java.util.List<? extends androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs);
+    method public void closeWhenFinished(androidx.room3.RoomDatabase db);
+    method public final androidx.sqlite.SQLiteConnection createDatabase(int version);
+    method public final androidx.sqlite.SQLiteConnection runMigrationsAndValidate(int version, optional java.util.List<? extends androidx.room3.migration.Migration> migrations);
+  }
+
+}
+

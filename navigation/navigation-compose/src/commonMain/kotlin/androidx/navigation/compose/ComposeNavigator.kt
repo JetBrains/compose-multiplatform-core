@@ -52,7 +52,7 @@ public class ComposeNavigator constructor() : Navigator<Destination>(NAME) {
     override fun navigate(
         entries: List<NavBackStackEntry>,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?
+        navigatorExtras: Extras?,
     ) {
         entries.forEach { entry -> state.pushWithTransition(entry) }
         isPop.value = false
@@ -97,7 +97,7 @@ public class ComposeNavigator constructor() : Navigator<Destination>(NAME) {
         navigator: ComposeNavigator,
         internal val content:
             @Composable
-            AnimatedContentScope.(@JvmSuppressWildcards NavBackStackEntry) -> Unit
+            AnimatedContentScope.(@JvmSuppressWildcards NavBackStackEntry) -> Unit,
     ) : NavDestination(navigator) {
 
         @Deprecated(
@@ -106,7 +106,7 @@ public class ComposeNavigator constructor() : Navigator<Destination>(NAME) {
         )
         public constructor(
             navigator: ComposeNavigator,
-            content: @Composable (NavBackStackEntry) -> @JvmSuppressWildcards Unit
+            content: @Composable (NavBackStackEntry) -> @JvmSuppressWildcards Unit,
         ) : this(navigator, content = { entry -> content(entry) })
 
         internal var enterTransition:

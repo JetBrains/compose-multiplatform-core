@@ -93,7 +93,7 @@ public interface ComplicationDataSourceUpdateRequester {
         ): ComplicationDataSourceUpdateRequester =
             ComplicationDataSourceUpdateRequesterImpl(
                 context.applicationContext,
-                complicationDataSourceComponent
+                complicationDataSourceComponent,
             )
 
         /**
@@ -261,7 +261,8 @@ internal class ComplicationDataSourceUpdateRequesterImpl(
                             WearSdkComplicationDataRequester.Impl(
                                 binder as ComplicationDataRequester
                             ) to this
-                        ) {}
+                        ) { cause, _, _ ->
+                        }
 
                     override fun onServiceDisconnected(name: ComponentName?) {
                         continuation.cancel()

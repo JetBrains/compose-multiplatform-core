@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 @OptIn(ExperimentalAppActions::class)
 internal class KickParticipantState(
     val participants: StateFlow<List<Participant>>,
-    private val onKickParticipant: suspend (Participant) -> Unit
+    private val onKickParticipant: suspend (Participant) -> Unit,
 ) {
     companion object {
         const val LOG_TAG = Extensions.LOG_TAG + "(KPAR)"

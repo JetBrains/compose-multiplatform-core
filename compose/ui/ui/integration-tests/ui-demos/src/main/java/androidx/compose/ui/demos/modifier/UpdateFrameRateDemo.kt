@@ -43,7 +43,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.ui.requestedFrameRate
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -70,19 +70,19 @@ fun UpdateFrameRateDemo() {
     val animatedBox1Color by
         animateColorAsState(
             targetValue = box1Color,
-            animationSpec = tween(5000) // 5 seconds animation
+            animationSpec = tween(5000), // 5 seconds animation
         )
 
     val animatedBox2Color by
         animateColorAsState(
             targetValue = box2Color,
-            animationSpec = tween(5000) // 5 seconds animation
+            animationSpec = tween(5000), // 5 seconds animation
         )
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Button(
@@ -91,7 +91,7 @@ fun UpdateFrameRateDemo() {
                     box1FrameRate = if (box1FrameRate == 120f) 60f else 120f
                     box1Color = if (box1Color == Color.Blue) Color.Red else Color.Blue
                 },
-                modifier = Modifier.testTag("button1")
+                modifier = Modifier.testTag("button1"),
             ) {
                 Text("Box 1")
             }
@@ -101,7 +101,7 @@ fun UpdateFrameRateDemo() {
                     isBox2frameRateEnabled = if (isBox2frameRateEnabled) false else true
                     box2Color = if (box2Color == Color.Blue) Color.Red else Color.Blue
                 },
-                modifier = Modifier.testTag("button2")
+                modifier = Modifier.testTag("button2"),
             ) {
                 Text("Box 2")
             }
@@ -112,7 +112,7 @@ fun UpdateFrameRateDemo() {
         Box(
             modifier =
                 Modifier.alpha(box1Alpha) // Use the state variable for alpha
-                    .requestedFrameRate(box1FrameRate) // Use the state variable for frame rate
+                    .preferredFrameRate(box1FrameRate) // Use the state variable for frame rate
                     .width(250.dp)
                     .height(200.dp)
                     .background(animatedBox1Color)
@@ -126,7 +126,7 @@ fun UpdateFrameRateDemo() {
             modifier =
                 Modifier.alpha(box2Alpha) // Use the state variable for alpha
                     .then(
-                        if (isBox2frameRateEnabled) Modifier.requestedFrameRate(120f) else Modifier
+                        if (isBox2frameRateEnabled) Modifier.preferredFrameRate(120f) else Modifier
                     )
                     .width(250.dp)
                     .height(220.dp)
@@ -135,7 +135,7 @@ fun UpdateFrameRateDemo() {
             Text(
                 "frame rate: ${if (isBox2frameRateEnabled) 120f else 60f}",
                 fontSize = 30.sp,
-                color = Color.White
+                color = Color.White,
             )
         }
     }

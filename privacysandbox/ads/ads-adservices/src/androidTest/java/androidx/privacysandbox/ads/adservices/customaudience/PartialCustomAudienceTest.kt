@@ -68,7 +68,7 @@ class PartialCustomAudienceTest {
         /* API is not available */
         Assume.assumeTrue(
             "minSdkVersion = API 31 ext 14",
-            AdServicesInfo.adServicesVersion() >= 14 || AdServicesInfo.extServicesVersionS() >= 14
+            AdServicesInfo.adServicesVersion() >= 14 || AdServicesInfo.extServicesVersionS() >= 14,
         )
 
         val partialCustomAudience =
