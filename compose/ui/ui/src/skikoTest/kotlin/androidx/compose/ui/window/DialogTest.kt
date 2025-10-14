@@ -265,7 +265,7 @@ class DialogTest {
     }
 
     @Test
-    fun checkUpdatedDismissCallbackInbDialog() = runSkikoComposeUiTest(
+    fun checkUpdatedDismissCallbackInDialog() = runSkikoComposeUiTest(
         size = Size(100f, 100f)
     ) {
         val eventList = mutableListOf<Int>()
