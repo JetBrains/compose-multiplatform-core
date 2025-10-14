@@ -17,7 +17,6 @@
 package androidx.compose.ui.uikit
 
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
