@@ -17,8 +17,16 @@
 package androidx.compose.ui.platform
 
 import androidx.lifecycle.Lifecycle.State
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelStoreOwner
 
-internal class UIKitArchitectureComponentsOwner : DefaultArchitectureComponentsOwner() {
+internal class UIKitArchitectureComponentsOwner(
+    lifecycleOwner: LifecycleOwner,
+    viewModelStoreOwner: ViewModelStoreOwner
+) : DefaultArchitectureComponentsOwner(
+    lifecycleOwner = lifecycleOwner,
+    viewModelStoreOwner = viewModelStoreOwner
+) {
     var isViewAppeared = false
         set(value) {
             field = value

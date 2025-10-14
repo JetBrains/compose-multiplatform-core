@@ -19,6 +19,10 @@ package androidx.compose.ui.window
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.ViewModelStore
 import platform.UIKit.UIViewController
 
 fun ComposeUIViewController(content: @Composable () -> Unit): UIViewController =
@@ -29,5 +33,23 @@ fun ComposeUIViewController(
     content: @Composable () -> Unit
 ): UIViewController = ComposeHostingViewController(
     configuration = ComposeUIViewControllerConfiguration().apply(configure),
+    lifecycleOwner = object : LifecycleOwner {
+        override val lifecycle = LifecycleRegistry(this)
+    },
+    viewModelStoreOwner = object : ViewModelStoreOwner {
+        override val viewModelStore = ViewModelStore()
+    },
+    content = content,
+)
+
+fun ComposeUIViewController(
+    configure: ComposeUIViewControllerConfiguration.() -> Unit = {},
+    lifecycleOwner: LifecycleOwner,
+    viewModelStoreOwner: ViewModelStoreOwner,
+    content: @Composable () -> Unit
+): UIViewController = ComposeHostingViewController(
+    configuration = ComposeUIViewControllerConfiguration().apply(configure),
+    lifecycleOwner = lifecycleOwner,
+    viewModelStoreOwner = viewModelStoreOwner,
     content = content,
 )

@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
@@ -42,18 +43,24 @@ interface PlatformArchitectureComponentsOwner {
 @InternalComposeUiApi
 open class DefaultArchitectureComponentsOwner(
     enforceMainThread: Boolean = true,
+    lifecycleOwner: LifecycleOwner = object : LifecycleOwner {
+        override val lifecycle = if (enforceMainThread) {
+            LifecycleRegistry(this)
+        } else {
+            LifecycleRegistry.createUnsafe(this)
+        }
+    },
+    viewModelStoreOwner: ViewModelStoreOwner = object : ViewModelStoreOwner {
+        override val viewModelStore = ViewModelStore()
+    }
 ) : PlatformArchitectureComponentsOwner,
-    LifecycleOwner,
-    ViewModelStoreOwner,
-    NavigationEventDispatcherOwner {
+    NavigationEventDispatcherOwner,
+    LifecycleOwner by lifecycleOwner,
+    ViewModelStoreOwner by viewModelStoreOwner {
     override val lifecycleOwner get() = this
     override val navigationEventDispatcherOwner get() = this
     override val viewModelStoreOwner get() = this
-    override val lifecycle = if (enforceMainThread) {
-        LifecycleRegistry(this)
-    } else {
-        LifecycleRegistry.createUnsafe(this)
-    }
-    override val viewModelStore = ViewModelStore()
+    override val lifecycle: LifecycleRegistry get() = lifecycleOwner.lifecycle
+    override val viewModelStore: ViewModelStore get() = viewModelStoreOwner.viewModelStore
     override val navigationEventDispatcher = NavigationEventDispatcher()
 }

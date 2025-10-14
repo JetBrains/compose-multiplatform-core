@@ -56,6 +56,8 @@ import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelStoreOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
@@ -95,7 +97,9 @@ import platform.darwin.dispatch_get_main_queue
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
-    private val architectureComponentsOwner: UIKitArchitectureComponentsOwner = UIKitArchitectureComponentsOwner(),
+    lifecycleOwner: LifecycleOwner,
+    viewModelStoreOwner: ViewModelStoreOwner,
+    private val architectureComponentsOwner: UIKitArchitectureComponentsOwner = UIKitArchitectureComponentsOwner(lifecycleOwner, viewModelStoreOwner),
     coroutineContext: CoroutineContext = Dispatchers.Main,
     private val lifecycleDelegate: ViewControllerLifecycleDelegate = ViewControllerLifecycleDelegate(architectureComponentsOwner)
 ) : CMPViewController(lifecycleDelegate = lifecycleDelegate) {
