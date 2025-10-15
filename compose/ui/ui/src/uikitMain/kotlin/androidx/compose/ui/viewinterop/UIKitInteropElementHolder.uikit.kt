@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.asCGRect
@@ -47,15 +46,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     factory = factory,
     interopContainer = interopContainer,
     group = interopWrappingView,
-    compositeKeyHashCode = compositeKeyHashCode,
-    measurePolicy = MeasurePolicy { _, constraints ->
-        layout(constraints.minWidth, constraints.minHeight) {
-            // No-op, no children are expected
-            // TODO: attempt to calculate the size of the wrapped view using constraints
-            //  and autolayout system if possible
-            //  https://youtrack.jetbrains.com/issue/CMP-5873/iOS-investigate-intrinsic-sizing-of-interop-elements
-        }
-    }
+    compositeKeyHashCode = compositeKeyHashCode
 ) {
     constructor(
         factory: () -> T,
