@@ -665,6 +665,7 @@ class ComposePanelTest {
     // https://youtrack.jetbrains.com/issue/CMP-8131/ComposePanel-doesnt-receive-initial-focus-in-JBR
     @Test
     fun `ComposePanel content receives initial focus`() = runApplicationTest {
+        println(System.getProperty("java.vendor") + " "  + System.getProperty("java.version"))
         val composePanel = ComposePanel()
         var isTextFieldFocused = false
         composePanel.setContent {
