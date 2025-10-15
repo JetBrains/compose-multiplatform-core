@@ -1,11 +1,33 @@
 // Use `xcodegen` first, then `open ./SkikoSample.xcodeproj` and then Run button in XCode.
 package androidx.compose.mpp.demo
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
 import androidx.compose.mpp.demo.bugs.IosBugs
 import androidx.compose.mpp.demo.bugs.StartRecompositionCheck
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.UIKitView
+import androidx.compose.ui.viewinterop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.autoreleasepool
@@ -17,6 +39,8 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDelegateProtocol
 import platform.UIKit.UIApplicationDelegateProtocolMeta
 import platform.UIKit.UIApplicationMain
+import platform.UIKit.UIColor
+import platform.UIKit.UILabel
 import platform.UIKit.UIResponder
 import platform.UIKit.UIResponderMeta
 import platform.UIKit.UIScene
@@ -48,7 +72,40 @@ fun main(vararg args: String) {
                 parallelRendering = true
             }
         ) {
-            IosDemo(arg)
+            var widthProgress by remember { mutableStateOf(0.5f) }
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                Slider(widthProgress, onValueChange = {
+                    widthProgress = it
+                    println("widthProgress: $widthProgress")
+                }, modifier = Modifier.fillMaxWidth())
+
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    // IosDemo(arg)
+                    Column {
+                        Row {
+                            Box(
+                                modifier = Modifier.width((400 * widthProgress).dp).height(30.dp)
+                                    .border(2.dp, Color.Blue)
+                            )
+                            UIKitView({
+                                val label = UILabel()
+                                label.text =
+                                    "Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text Hello text"
+                                label.numberOfLines = 0
+                                label.backgroundColor = UIColor.redColor
+                                label
+                            }, modifier = Modifier.border(2.dp, Color.Red))
+
+                        }
+                        UIKitViewController({
+                            val vc = UIViewController()
+                            vc.view.backgroundColor = UIColor.greenColor
+                            vc
+                        }, modifier = Modifier.size(40.dp).border(2.dp, Color.Green))
+
+                    }
+                }
+            }
         }
     }
 }

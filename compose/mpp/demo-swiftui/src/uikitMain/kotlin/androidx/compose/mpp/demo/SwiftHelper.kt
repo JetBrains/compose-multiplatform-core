@@ -19,5 +19,15 @@ package androidx.compose.mpp.demo
 import platform.UIKit.UIViewController
 
 class SwiftHelper {
-    fun getViewController(makeHostingViewController: (Int) -> UIViewController): UIViewController = getViewControllerWithCompose(makeHostingViewController)
+    fun getViewController(
+        testSimpleConstrains: () -> UIViewController,
+        testComplexConstrains: () -> UIViewController,
+        testSimpleSwiftUI: () -> UIViewController,
+        testComplexSwiftUI: () -> UIViewController
+    ): UIViewController = getViewControllerWithCompose(
+        testSimpleConstrains = testSimpleConstrains,
+        testComplexConstrains = testComplexConstrains,
+        testSimpleSwiftUI = testSimpleSwiftUI,
+        testComplexSwiftUI = testComplexSwiftUI,
+    )
 }
