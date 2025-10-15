@@ -27,7 +27,9 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.DpRectZero
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.size
@@ -38,11 +40,101 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import platform.UIKit.UILabel
 
 class InteropUIKitViewSizingWithUILabelTest {
     private val SHORT_TEXT: String = "TEXT"
     private val LONG_TEXT: String = List(100) { "TEXT" }.joinToString(" ")
+
+    @Test
+    @OptIn(ExperimentalForeignApi::class)
+    fun testUILabelFrameMatchesInteropBoundsShortTextSingleLine() = runUIKitInstrumentedTest {
+        var interopRect = DpRectZero()
+        var uiLabelRect: () -> DpRect = { DpRectZero() }
+
+        setContent {
+            UIKitView(
+                factory = {
+                    UILabel().apply {
+                        numberOfLines = 1
+                        text = SHORT_TEXT
+                        uiLabelRect = { frame.useContents { asDpRect() } }
+                    }
+                },
+                modifier = Modifier.onGloballyPositioned { interopRect = it.boundsInRoot().toDpRect(density) }
+            )
+        }
+
+        assertEquals(interopRect, uiLabelRect())
+    }
+
+    @Test
+    @OptIn(ExperimentalForeignApi::class)
+    fun testUILabelFrameMatchesInteropBoundsShortTextMultiLine() = runUIKitInstrumentedTest {
+        var interopRect = DpRectZero()
+        var uiLabelRect: () -> DpRect = { DpRectZero() }
+
+        setContent {
+            UIKitView(
+                factory = {
+                    UILabel().apply {
+                        numberOfLines = 0
+                        text = SHORT_TEXT
+                        uiLabelRect = { frame.useContents { asDpRect() } }
+                    }
+                },
+                modifier = Modifier.onGloballyPositioned { interopRect = it.boundsInRoot().toDpRect(density) }
+            )
+        }
+
+        assertEquals(interopRect, uiLabelRect())
+    }
+
+    @Test
+    @OptIn(ExperimentalForeignApi::class)
+    fun testUILabelFrameMatchesInteropBoundsLongTextSingleLine() = runUIKitInstrumentedTest {
+        var interopRect = DpRectZero()
+        var uiLabelRect: () -> DpRect = { DpRectZero() }
+
+        setContent {
+            UIKitView(
+                factory = {
+                    UILabel().apply {
+                        numberOfLines = 1
+                        text = LONG_TEXT
+                        uiLabelRect = { frame.useContents { asDpRect() } }
+                    }
+                },
+                modifier = Modifier.onGloballyPositioned { interopRect = it.boundsInRoot().toDpRect(density) }
+            )
+        }
+
+        assertEquals(interopRect, uiLabelRect())
+    }
+
+    @Test
+    @OptIn(ExperimentalForeignApi::class)
+    fun testUILabelFrameMatchesInteropBoundsLongTextMultiLine() = runUIKitInstrumentedTest {
+        var interopRect = DpRectZero()
+        var uiLabelRect: () -> DpRect = { DpRectZero() }
+
+        setContent {
+            UIKitView(
+                factory = {
+                    UILabel().apply {
+                        numberOfLines = 0
+                        text = LONG_TEXT
+                        uiLabelRect = { frame.useContents { asDpRect() } }
+                    }
+                },
+                modifier = Modifier.onGloballyPositioned { interopRect = it.boundsInRoot().toDpRect(density) }
+            )
+        }
+
+        assertEquals(interopRect, uiLabelRect())
+    }
 
     @Test
     fun testUILabelShortText() = runUIKitInstrumentedTest {
