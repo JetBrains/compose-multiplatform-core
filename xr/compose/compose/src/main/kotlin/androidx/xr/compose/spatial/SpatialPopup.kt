@@ -17,10 +17,18 @@
 package androidx.xr.compose.spatial
 
 import android.graphics.Rect
+import android.view.View
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
@@ -34,6 +42,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
@@ -45,7 +54,17 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.xr.compose.platform.LocalCoreEntity
+import androidx.xr.compose.platform.LocalCoreMainPanelEntity
+import androidx.xr.compose.platform.LocalOpaqueEntity
+import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.subspace.layout.CorePanelEntity
+import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
+import androidx.xr.compose.subspace.rememberComposeView
+import androidx.xr.compose.unit.IntVolumeSize
+import androidx.xr.runtime.math.IntSize2d
+import androidx.xr.scenecore.PanelEntity
 
 /**
  * A composable that creates a panel in 3D space to hoist Popup based composables.
@@ -142,12 +161,17 @@ private fun LayoutSpatialPopup(
     properties: PopupProperties = PopupProperties(),
     content: @Composable () -> Unit,
 ) {
-    val restingLevel by remember { mutableStateOf(elevation) }
     var contentSize: IntSize by remember { mutableStateOf(IntSize.Zero) }
     var parentLayoutDirection = LocalLayoutDirection.current
     var anchorBounds by remember { mutableStateOf(IntRect.Zero) }
     val fullScreenRect = getWindowVisibleDisplayFrame()
     val windowSize = IntSize(fullScreenRect.width(), fullScreenRect.height())
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
+    val view = rememberComposeView()
+    val density = LocalDensity.current
+    val parentView = LocalView.current
+    val transition = updateTransition(targetState = elevation, label = "restingLevelTransition")
 
     val popupOffset by remember {
         derivedStateOf {
@@ -181,29 +205,75 @@ private fun LayoutSpatialPopup(
         layout(0, 0) {}
     }
 
-    ElevatedPanel(
-        elevation = restingLevel,
-        contentSize = contentSize,
-        contentOffset = Offset(popupOffset.x.toFloat(), popupOffset.y.toFloat()),
-    ) {
-        Box(
-            Modifier.onClickOutside(
-                    enabled = properties.dismissOnClickOutside,
-                    onClickOutside = { onDismissRequest?.invoke() },
+    val zDepth by
+        transition.animateDp(transitionSpec = { spring() }, label = "zDepth") { state -> state }
+
+    var parentViewSize by remember { mutableStateOf(parentView.size) }
+    DisposableEffect(parentView) {
+        val listener =
+            View.OnLayoutChangeListener { _, _, _, right, bottom, _, _, _, _ ->
+                parentViewSize = IntSize(right, bottom)
+            }
+        parentView.addOnLayoutChangeListener(listener)
+        onDispose { parentView.removeOnLayoutChangeListener(listener) }
+    }
+
+    val panelEntity: CorePanelEntity = remember {
+        CorePanelEntity(
+                PanelEntity.create(
+                    session = session,
+                    view = view,
+                    pixelDimensions = contentSize.run { IntSize2d(width, height) },
+                    name = "ElevatedPanel:${view.id}",
                 )
-                .constrainTo(
-                    Constraints(
-                        minWidth = 0,
-                        maxWidth = Constraints.Infinity,
-                        minHeight = 0,
-                        maxHeight = Constraints.Infinity,
+            )
+            .also { it.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density) }
+    }
+
+    LaunchedEffect(density) {
+        panelEntity.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density)
+    }
+
+    view.setContent {
+        CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
+            Box(
+                Modifier.onClickOutside(
+                        enabled = properties.dismissOnClickOutside,
+                        onClickOutside = { onDismissRequest?.invoke() },
                     )
-                )
-                .onSizeChanged { contentSize = it }
-        ) {
-            content()
+                    .constrainTo(
+                        Constraints(
+                            minWidth = 0,
+                            maxWidth = Constraints.Infinity,
+                            minHeight = 0,
+                            maxHeight = Constraints.Infinity,
+                        )
+                    )
+                    .onSizeChanged { contentSize = it }
+            ) {
+                content()
+            }
         }
     }
+
+    DisposableEffect(panelEntity) { onDispose { panelEntity.dispose() } }
+
+    panelEntity.poseInMeters =
+        rememberCalculatePose(
+            Offset(popupOffset.x.toFloat(), popupOffset.y.toFloat()),
+            parentViewSize,
+            contentSize,
+            zDepth,
+        )
+
+    LaunchedEffect(contentSize) {
+        val width = contentSize.width
+        val height = contentSize.height
+
+        panelEntity.size = IntVolumeSize(width = width, height = height, depth = 0)
+    }
+
+    LaunchedEffect(parentEntity) { panelEntity.parent = parentEntity }
 }
 
 // Get the visible display Rect for the current window of the device

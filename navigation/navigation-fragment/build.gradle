@@ -36,7 +36,6 @@ dependencies {
     api("androidx.slidingpanelayout:slidingpanelayout:1.2.0")
     api(project(":navigation:navigation-common"))
     api(project(":navigation:navigation-runtime"))
-    api(libs.kotlinStdlib)
 
     implementation(libs.kotlinSerializationCore)
     implementation(libs.kotlinCoroutinesCore)

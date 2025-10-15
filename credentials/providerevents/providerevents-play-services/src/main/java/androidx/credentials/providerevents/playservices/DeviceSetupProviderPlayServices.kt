@@ -27,6 +27,7 @@ import androidx.core.os.OutcomeReceiverCompat
 import androidx.credentials.provider.CallingAppInfo
 import androidx.credentials.providerevents.DeviceSetupProvider
 import androidx.credentials.providerevents.exception.ExportCredentialsException
+import androidx.credentials.providerevents.exception.ExportCredentialsInvalidJsonException
 import androidx.credentials.providerevents.exception.ExportCredentialsSystemErrorException
 import androidx.credentials.providerevents.exception.ExportCredentialsUnknownErrorException
 import androidx.credentials.providerevents.exception.GetCredentialTransferCapabilitiesException
@@ -36,9 +37,11 @@ import androidx.credentials.providerevents.exception.GetCredentialTransferCapabi
 import androidx.credentials.providerevents.exception.ImportCredentialsException
 import androidx.credentials.providerevents.exception.ImportCredentialsSystemErrorException
 import androidx.credentials.providerevents.exception.ImportCredentialsUnknownErrorException
+import androidx.credentials.providerevents.internal.UriUtils.Companion.writeToUri
 import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToJetpackRequest
 import androidx.credentials.providerevents.service.DeviceSetupService
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilities
+import androidx.credentials.providerevents.transfer.CredentialTransferCapabilitiesRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsResponse
 import androidx.credentials.providerevents.transfer.ImportCredentialsResponse
@@ -106,6 +109,12 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
                     ExportCredentialsSystemErrorException(
                         "Error while reading the response from the file"
                     )
+                callback.onFailure(exception.type, exception.message!!)
+                return
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Exception thrown while passing in the requestJson", e)
+                val exception =
+                    ExportCredentialsInvalidJsonException("The credentials json format is invalid")
                 callback.onFailure(exception.type, exception.message!!)
                 return
             }
@@ -178,11 +187,16 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
 
             // TODO(b/385394695): Fix being able to create CallingAppInfo with GMS
             //  CallingAppInfoParcelable
-            val jetpackRequest = convertToJetpackRequest(request)
+            var jetpackRequest: CredentialTransferCapabilitiesRequest? = null
+            try {
+                jetpackRequest = convertToJetpackRequest(request)
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Exception thrown while constructing the request", e)
+            }
             if (jetpackRequest == null) {
                 val exception =
                     GetCredentialTransferCapabilitiesInvalidJsonException(
-                        "The request did not contain the requestJson."
+                        "The requestJson is invalid."
                     )
                 callback.onFailure(exception.type, exception.message!!)
                 return
@@ -259,7 +273,7 @@ public class DeviceSetupProviderPlayServices : DeviceSetupProvider {
                         > {
                         override fun onResult(result: ImportCredentialsResponse) {
                             try {
-                                UriUtils.writeToUri(request.uri, result.responseJson, context)
+                                writeToUri(request.uri, result.responseJson, context)
                                 callback.onSuccess(
                                     ImportCredentialsForDeviceSetupResponse(
                                         ImportCredentialsResponse.toBundle(result)

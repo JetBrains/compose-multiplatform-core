@@ -46,7 +46,7 @@ internal class AnnotationEditsHistoryManager() {
      * @param id The unique identifier for this edit operation.
      * @param annotation The [PdfAnnotation] that was removed.
      */
-    fun recordRemote(id: EditId, annotation: PdfAnnotation) =
+    fun recordRemove(id: EditId, annotation: PdfAnnotation) =
         recordOperation(EditOperation.Remove, id, annotation)
 
     /**

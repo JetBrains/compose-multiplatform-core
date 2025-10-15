@@ -24,7 +24,6 @@ plugins {
 
 dependencies {
     implementation("androidx.core:core:1.1.0")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesGuava)
     // Add dependencies here
     compileOnly files("../../wear_sdk/wear-sdk.jar")
@@ -39,6 +38,7 @@ android {
     namespace = "androidx.wear.watchfacepush"
     defaultConfig {
         minSdk = 36
+        targetSdk = 36
     }
 }
 

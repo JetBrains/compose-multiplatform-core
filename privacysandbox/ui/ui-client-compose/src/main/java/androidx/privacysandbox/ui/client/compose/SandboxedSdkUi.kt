@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // TODO(b/444198856): add a jvmname
+
 package androidx.privacysandbox.ui.client.compose
 
 import android.annotation.SuppressLint

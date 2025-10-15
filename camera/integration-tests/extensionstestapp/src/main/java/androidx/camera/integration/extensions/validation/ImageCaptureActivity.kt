@@ -69,6 +69,7 @@ import androidx.camera.integration.extensions.utils.ExtensionModeUtil.getExtensi
 import androidx.camera.integration.extensions.utils.FileUtil
 import androidx.camera.integration.extensions.validation.CameraValidationResultActivity.Companion.getLensFacingStringFromInt
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil
 import androidx.camera.view.PreviewView
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
@@ -118,6 +119,17 @@ class ImageCaptureActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.image_capture_activity)
+
+        EdgeToEdgeUtil.enableEdgeToEdge(
+            activity = this,
+            viewIdsTopPaddingRequired =
+                listOf(
+                    R.id.flash_toggle,
+                    R.id.plus_ev_button,
+                    R.id.dec_ev_button,
+                    R.id.extension_toggle,
+                ),
+        )
 
         cameraId = intent?.getStringExtra(INTENT_EXTRA_KEY_CAMERA_ID)!!
         lensFacing = intent.getIntExtra(INTENT_EXTRA_KEY_LENS_FACING, INVALID_LENS_FACING)

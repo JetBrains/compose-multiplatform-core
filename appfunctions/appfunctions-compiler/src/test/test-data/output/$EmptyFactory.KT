@@ -9,6 +9,7 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$EmptyFactory` : AppFunctionSerializableFactory<Empty> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): Empty {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.Empty")
 
 
     val resultEmpty = Empty()
@@ -18,7 +19,7 @@ public class `$EmptyFactory` : AppFunctionSerializableFactory<Empty> {
   override fun toAppFunctionData(appFunctionSerializable: Empty): AppFunctionData {
     val empty_appFunctionSerializable = appFunctionSerializable
 
-    val builder = AppFunctionData.Builder("com.testdata.Empty")
+    val builder = getAppFunctionDataBuilder("com.testdata.Empty")
 
     return builder.build()
   }

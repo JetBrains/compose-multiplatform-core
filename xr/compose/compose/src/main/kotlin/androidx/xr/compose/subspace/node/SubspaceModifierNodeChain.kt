@@ -20,6 +20,7 @@ import androidx.xr.compose.subspace.layout.CombinedSubspaceModifier
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.subspace.layout.findInstance
+import androidx.xr.compose.subspace.layout.requireCoordinator
 import androidx.xr.compose.subspace.layout.traverseSelfThenAncestors
 import androidx.xr.compose.subspace.layout.traverseSelfThenDescendants
 import androidx.xr.compose.unit.VolumeConstraints
@@ -109,7 +110,8 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
     }
 
     /**
-     * Marks all nodes in the chain as attached to a [SubspaceLayout].
+     * Marks all nodes in the chain as attached to a
+     * [androidx.xr.compose.subspace.layout.SubspaceLayout].
      *
      * This should be called *before* [runOnAttach] is called. We check that the node is not already
      * attached as this method may be called more than necessary to ensure proper state.
@@ -119,7 +121,8 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
     internal fun runOnAttach() = headToTail { if (it.isAttached) it.onAttach() }
 
     /**
-     * Marks all nodes in the chain as detached from a [SubspaceLayout].
+     * Marks all nodes in the chain as detached from a
+     * [androidx.xr.compose.subspace.layout.SubspaceLayout].
      *
      * This should be called *after* [runOnDetach] is called. We check that the node is attached as
      * this method may be called more than necessary to ensure proper state.

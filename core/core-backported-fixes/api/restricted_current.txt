@@ -9,8 +9,8 @@ package androidx.core.backported.fixes {
   }
 
   public final class KnownIssue {
-    method public long getId();
-    method public String getUrl();
+    method @InaccessibleFromKotlin public long getId();
+    method @InaccessibleFromKotlin public String getUrl();
     property public long id;
     property public String url;
   }

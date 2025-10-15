@@ -83,12 +83,11 @@ public interface GlobalSearchSession extends Closeable {
      */
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
-            name = Features.BLOB_STORAGE)
+            name = Features.SCHEMA_BLOB_HANDLE)
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-    @ExperimentalAppSearchApi
     default @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
-        throw new UnsupportedOperationException(Features.BLOB_STORAGE
+        throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                 + " is not available on this AppSearch implementation.");
     }
 

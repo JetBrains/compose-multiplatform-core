@@ -45,6 +45,7 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 35
         namespace = "androidx.paging.compose"
+        lint.disable += "ComposeTestRuleDispatcher"
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -52,7 +53,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":paging:paging-common"))
                 api("androidx.compose.runtime:runtime:1.9.0")
             }
@@ -75,7 +75,7 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-tooling"))

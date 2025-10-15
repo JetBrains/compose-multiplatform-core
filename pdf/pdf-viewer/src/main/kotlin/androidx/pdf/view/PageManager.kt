@@ -219,6 +219,10 @@ internal class PageManager(
 
     /** Adds [newHighlights]s to this manager to be drawn along with the pages they belong to */
     fun setHighlights(newHighlights: List<Highlight>) {
+        // Prevent extra invalidation of Pdfview on new pdf load by setting empty highlights
+        if (highlights.isEmpty() && newHighlights.isEmpty()) {
+            return
+        }
         highlights.clear()
         for (highlight in newHighlights) {
             highlights.getOrPut(highlight.area.pageNum) { mutableListOf() }.add(highlight)
@@ -242,8 +246,8 @@ internal class PageManager(
         }
     }
 
-    fun getLinkAtTapPoint(pdfPoint: PdfPoint): PdfDocument.PdfPageLinks? {
-        return pages[pdfPoint.pageNum]?.links
+    fun getPageLinks(pageNum: Int): PdfDocument.PdfPageLinks? {
+        return pages[pageNum]?.links
     }
 
     fun getWidgetAtTapPoint(pdfPoint: PdfPoint): List<FormWidgetInfo>? {

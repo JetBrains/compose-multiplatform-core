@@ -24,6 +24,7 @@ import androidx.camera.camera2.pipe.AudioRestrictionMode.Companion.AUDIO_RESTRIC
 import androidx.camera.camera2.pipe.AudioRestrictionMode.Companion.AUDIO_RESTRICTION_VIBRATION
 import androidx.camera.camera2.pipe.AudioRestrictionMode.Companion.AUDIO_RESTRICTION_VIBRATION_SOUND
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.config.CameraPipeJob
 import androidx.camera.camera2.pipe.core.CoroutineMutex
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.core.withLockLaunch
@@ -33,6 +34,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 
 /**
@@ -41,7 +44,7 @@ import kotlinx.coroutines.cancel
  */
 public interface AudioRestrictionController {
     /** Public global audio restriction mode across all CameraGraph instances. */
-    public var globalAudioRestrictionMode: AudioRestrictionMode
+    public var globalAudioRestrictionMode: AudioRestrictionMode?
 
     /** Update the audio restriction mode of the given CameraGraph. */
     public fun updateCameraGraphAudioRestrictionMode(
@@ -71,18 +74,25 @@ public interface AudioRestrictionController {
 @Singleton
 internal class AudioRestrictionControllerImpl
 @Inject
-internal constructor(threads: Threads, cameraPipeLifetime: CameraPipeLifetime) :
-    AudioRestrictionController {
+internal constructor(
+    threads: Threads,
+    cameraPipeLifetime: CameraPipeLifetime,
+    @CameraPipeJob cameraPipeJob: Job,
+) : AudioRestrictionController {
 
     private val scope =
         CoroutineScope(
-            threads.lightweightDispatcher.plus(CoroutineName("CXCP-AudioRestrictionControllerImpl"))
+            SupervisorJob(cameraPipeJob) +
+                threads.lightweightDispatcher.plus(
+                    CoroutineName("CXCP-AudioRestrictionControllerImpl")
+                )
         )
     private val coroutineMutex = CoroutineMutex()
     private val lock = Any()
-    override var globalAudioRestrictionMode: AudioRestrictionMode = AUDIO_RESTRICTION_NONE
+    override var globalAudioRestrictionMode: AudioRestrictionMode? = null
         get() = synchronized(lock) { field }
-        set(value: AudioRestrictionMode) {
+        set(value: AudioRestrictionMode?) {
+            requireNotNull(value) { "Unsupported setting AudioRestrictionMode to null." }
             synchronized(lock) {
                 val previousMode = computeAudioRestrictionMode()
                 field = value
@@ -120,7 +130,7 @@ internal constructor(threads: Threads, cameraPipeLifetime: CameraPipeLifetime) :
     }
 
     @GuardedBy("lock")
-    private fun computeAudioRestrictionMode(): AudioRestrictionMode {
+    private fun computeAudioRestrictionMode(): AudioRestrictionMode? {
         if (
             audioRestrictionModeMap.containsValue(AUDIO_RESTRICTION_VIBRATION_SOUND) ||
                 globalAudioRestrictionMode == AUDIO_RESTRICTION_VIBRATION_SOUND
@@ -133,7 +143,13 @@ internal constructor(threads: Threads, cameraPipeLifetime: CameraPipeLifetime) :
         ) {
             return AUDIO_RESTRICTION_VIBRATION
         }
-        return AUDIO_RESTRICTION_NONE
+        if (
+            audioRestrictionModeMap.containsValue(AUDIO_RESTRICTION_NONE) ||
+                globalAudioRestrictionMode == AUDIO_RESTRICTION_NONE
+        ) {
+            return AUDIO_RESTRICTION_NONE
+        }
+        return null
     }
 
     override fun addListener(listener: AudioRestrictionController.Listener) {
@@ -143,7 +159,11 @@ internal constructor(threads: Threads, cameraPipeLifetime: CameraPipeLifetime) :
         synchronized(lock) {
             activeListeners.add(listener)
             val mode = computeAudioRestrictionMode()
-            coroutineMutex.withLockLaunch(scope) { listener.onCameraAudioRestrictionUpdated(mode) }
+            if (mode != null) {
+                coroutineMutex.withLockLaunch(scope) {
+                    listener.onCameraAudioRestrictionUpdated(mode)
+                }
+            }
         }
     }
 
@@ -155,9 +175,9 @@ internal constructor(threads: Threads, cameraPipeLifetime: CameraPipeLifetime) :
     }
 
     @GuardedBy("lock")
-    private fun updateListenersMode(previousMode: AudioRestrictionMode? = null) {
+    private fun updateListenersMode(previousMode: AudioRestrictionMode?) {
         val mode = computeAudioRestrictionMode()
-        if (previousMode != null && mode != previousMode) {
+        if (mode != null && mode != previousMode) {
             coroutineMutex.withLockLaunch(scope) {
                 for (listener in activeListeners) {
                     listener.onCameraAudioRestrictionUpdated(mode)

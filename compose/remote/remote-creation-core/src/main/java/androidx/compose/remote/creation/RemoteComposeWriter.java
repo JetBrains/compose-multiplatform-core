@@ -15,6 +15,9 @@
  */
 package androidx.compose.remote.creation;
 
+import static androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation.TYPE_MEASURE;
+import static androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation.TYPE_POSITION;
+import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.A_DEREF;
 import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.MUL;
 import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.toMathName;
 import static androidx.compose.remote.core.operations.utilities.IntegerExpressionEvaluator.I_ABS;
@@ -43,6 +46,7 @@ import static androidx.compose.remote.core.operations.utilities.IntegerExpressio
 import static androidx.compose.remote.core.operations.utilities.IntegerExpressionEvaluator.I_VAR2;
 import static androidx.compose.remote.core.operations.utilities.IntegerExpressionEvaluator.I_XOR;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Platform;
 import androidx.compose.remote.core.RemoteComposeBuffer;
@@ -68,6 +72,8 @@ import androidx.compose.remote.core.operations.utilities.NanMap;
 import androidx.compose.remote.core.types.IntegerConstant;
 import androidx.compose.remote.core.types.LongConstant;
 import androidx.compose.remote.creation.actions.Action;
+import androidx.compose.remote.creation.modifiers.ComponentLayoutChanges;
+import androidx.compose.remote.creation.modifiers.ComponentLayoutChangesWriter;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
 import androidx.compose.remote.creation.profile.Profile;
 
@@ -77,6 +83,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeWriter {
     protected @NonNull RemoteComposeBuffer mBuffer;
     protected @NonNull RemoteComposeState mState = new RemoteComposeState();
@@ -503,6 +510,15 @@ public class RemoteComposeWriter {
                 count,
                 Rc.PathExpression.POLAR_PATH | flags);
         return id;
+    }
+
+    /**
+     * Get a byte array with the current buffer contents.
+     * The array is a copy, so further changes to the buffer don't affect the array.
+     * @return a byte array with the current buffer contents.
+     */
+    public byte @NonNull [] encodeToByteArray() {
+        return mBuffer.getBuffer().cloneBytes();
     }
 
     /** Used to create the tag values in the header */
@@ -1678,6 +1694,17 @@ public class RemoteComposeWriter {
         int id = storeBitmap(initialValue);
         mBuffer.setNamedVariable(id, name, NamedVariable.IMAGE_TYPE);
         mState.updateObject(id, initialValue);
+        return id;
+    }
+
+    /**
+     * @param name The String representing the name of the url.
+     * @param url the initial url
+     * @return the id of the RemoteBitmap
+     */
+    public int addNamedBitmapUrl(@NonNull String name, @NonNull String url) {
+        int id = addBitmapUrl(url);
+        mBuffer.setNamedVariable(id, name, NamedVariable.IMAGE_TYPE);
         return id;
     }
 
@@ -3024,13 +3051,13 @@ public class RemoteComposeWriter {
      * Start a text component
      *
      * @param modifier
-     * @param textId
-     * @param color
-     * @param fontSize
-     * @param fontStyle
-     * @param fontWeight
-     * @param fontFamily
-     * @param textAlign
+     * @param textId id of the text
+     * @param color color of the text
+     * @param fontSize font size
+     * @param fontStyle font style (0 : Normal, 1 : Italic)
+     * @param fontWeight font weight (1 to 1000, normal is 400)
+     * @param fontFamily font family or null
+     * @param textAlign text alignment (0 : Center, 1 : Left, 2 : Right)
      * @param overflow
      * @param maxLines
      */
@@ -3058,6 +3085,57 @@ public class RemoteComposeWriter {
                 fontStyle,
                 fontWeight,
                 fontFamilyId,
+                (short) 0,
+                (short) textAlign,
+                overflow,
+                maxLines);
+        for (RecordingModifier.Element m : modifier.getList()) {
+            m.write(this);
+        }
+        addContentStart();
+    }
+
+    /**
+     * Start a text component
+     *
+     * @param modifier
+     * @param textId id of the text
+     * @param color color of the text
+     * @param fontSize font size
+     * @param fontStyle font style (0 : Normal, 1 : Italic)
+     * @param fontWeight font weight (1 to 1000, normal is 400)
+     * @param fontFamily font family or null
+     * @param flags flags for configuration, only use by color (0: Static color, 1: Color Id)
+     * @param textAlign text alignment (0 : Center, 1 : Left, 2 : Right)
+     * @param overflow
+     * @param maxLines
+     */
+    public void startTextComponent(
+            @NonNull RecordingModifier modifier,
+            int textId,
+            int color,
+            float fontSize,
+            int fontStyle,
+            float fontWeight,
+            @Nullable String fontFamily,
+            short flags,
+            short textAlign,
+            int overflow,
+            int maxLines) {
+        int fontFamilyId = -1;
+        if (fontFamily != null) {
+            fontFamilyId = addText(fontFamily);
+        }
+        mBuffer.addTextComponentStart(
+                modifier.getComponentId(),
+                -1,
+                textId,
+                color,
+                fontSize,
+                fontStyle,
+                fontWeight,
+                fontFamilyId,
+                flags,
                 textAlign,
                 overflow,
                 maxLines);
@@ -3147,6 +3225,54 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * add an array of float
+     * @param size
+     * @return
+     */
+    public float addFloatArray(float size) {
+        // TODO: add resolution if size is NaN
+        float[] values = new float[(int) size];
+        int id = mState.cacheData(values, NanMap.TYPE_ARRAY);
+        mBuffer.addDynamicFloatArray(id, size);
+        return Utils.asNan(id);
+    }
+
+    /**
+     * Add an array of float with the given size
+     * @param id
+     * @param size
+     * @return
+     */
+    public float addFloatArray(int id, float size) {
+        float[] values = new float[(int) size];
+        mState.cacheData(id, values);
+        mBuffer.addFloatArray(id, values);
+        return Utils.asNan(id);
+    }
+
+    /**
+     * Set a new value at the given index in the array
+     * @param id the array id
+     * @param index the index
+     * @param value the new value
+     */
+    public void setArrayValue(int id, float index, float value) {
+        mBuffer.setArrayValue(id, index, value);
+    }
+
+    /**
+     * Add a dynamic array
+     *
+     * @param id
+     * @param size
+     * @return
+     */
+    public float addDynamicFloatArray(int id, float size) {
+        mBuffer.addDynamicFloatArray(id, size);
+        return Utils.asNan(id);
+    }
+
+    /**
      * Add a list of float
      *
      * @param values
@@ -3200,6 +3326,21 @@ public class RemoteComposeWriter {
             } else {
                 mBuffer.storeBitmap(imageId, imageWidth, imageHeight, data);
             }
+        }
+        return imageId;
+    }
+
+    /**
+     * Ensures the bitmap is stored.
+     *
+     * @param url the bitbap to store
+     * @return the id of the bitmap
+     */
+    public int addBitmapUrl(@NonNull String url) {
+        int imageId = mState.dataGetId(url);
+        if (imageId == -1) {
+            imageId = mState.cacheData(url);
+            mBuffer.storeBitmapUrl(imageId, url);
         }
         return imageId;
     }
@@ -3356,6 +3497,59 @@ public class RemoteComposeWriter {
         r.run();
         mBuffer.addParticleLoopEnd();
     }
+
+    /**
+     * Add a particle - particle comparison.
+     * such as 2 particles collision detection
+     * @param id the id of the particle system
+     * @param flags configuration flags
+     * @param min minimum index to process
+     * @param max maximum index to process
+     * @param condition run if > 0
+     * @param then1 apply to the first particle
+     * @param then2 apply to the second particle
+     * @param r the code to run
+     */
+    public void particlesComparison(
+            float id,
+            short flags,
+            float min,
+            float max,
+            float @Nullable [] condition,
+            float @Nullable [][] then1,
+            float @Nullable [][] then2,
+            @Nullable Runnable r) {
+        mBuffer.addParticlesComparison(Utils.idFromNan(id),
+                flags, min, max, condition, then1, then2);
+        if (r != null) r.run();
+        mBuffer.addParticleLoopEnd();
+    }
+
+    /**
+     * Add a particle test.
+     * such as collision with walls etc.
+     * @param id the id of the particle system
+     * @param flags configuration flags
+     * @param min minimum index to process
+     * @param max maximum index to process
+     * @param condition run if > 0
+     * @param then modify the particle values
+     * @param r the code to run
+     */
+    public void particlesComparison(
+            float id,
+            short flags,
+            float min,
+            float max,
+            float @Nullable [] condition,
+            float @Nullable [][] then,
+            @Nullable Runnable r) {
+        mBuffer.addParticlesComparison(Utils.idFromNan(id),
+                flags, min, max, condition, then, null);
+        if (r != null) r.run();
+        mBuffer.addParticleLoopEnd();
+    }
+
 
     /**
      * Define a function to be called later
@@ -3638,6 +3832,13 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Add an align modifier
+     */
+    public void addAlignByModifier(float line) {
+        mBuffer.addModifierAlignBy(line);
+    }
+
+    /**
      * Add a clip rect modifier
      */
     public void addClipRectModifier() {
@@ -3686,6 +3887,22 @@ public class RemoteComposeWriter {
      */
     public void addDrawContentOperation() {
         mBuffer.addDrawContentOperation();
+    }
+
+    /**
+     * Add a component modifier able to change position and dimension of the component
+     * via expressions.
+     *
+     * @param type TYPE_MEASURE or TYPE_POSITION
+     * @param commands functional interface to capture changes to the component x,y,width,height
+     */
+    public void addLayoutCompute(int type, @NonNull ComponentLayoutChangesWriter commands) {
+        int boundsId = createID(NanMap.TYPE_ARRAY);
+        ComponentLayoutChanges c = new InternalComponentLayoutChanges(type, boundsId, this);
+        mBuffer.startLayoutCompute(type, boundsId, false);
+        addDynamicFloatArray(boundsId, 6f);
+        commands.run(c);
+        mBuffer.endLayoutCompute();
     }
 
     /**
@@ -3823,5 +4040,98 @@ public class RemoteComposeWriter {
      */
     public void addValueFloatExpressionChangeActionOperation(int mValueId, int mValue) {
         mBuffer.addValueFloatExpressionChangeActionOperation(mValueId, mValue);
+    }
+
+    /**
+     * Internal implementation of the ComponentLayoutChanges
+     */
+    private static class InternalComponentLayoutChanges implements ComponentLayoutChanges {
+        private final RemoteComposeWriter mWriter;
+        int mType;
+        float mBounds;
+
+        InternalComponentLayoutChanges(int type, int boundsId,
+                @NonNull RemoteComposeWriter writer) {
+            mType = type;
+            mBounds = Utils.asNan(boundsId);
+            mWriter = writer;
+        }
+
+        private void set(int index, @NonNull Number value) {
+            if (mType == TYPE_MEASURE && index < 2) {
+                throw new RuntimeException("Trying to set position value in a compute measure");
+            }
+            if (mType == TYPE_POSITION && index > 1) {
+                throw new RuntimeException("Trying to set measure value in a compute position");
+            }
+            if (value instanceof RFloat) {
+                RFloat rFloat = (RFloat) value;
+                rFloat.setWriter(mWriter);
+                mWriter.setArrayValue(Utils.idFromNan(mBounds), index, rFloat.floatValue());
+            } else {
+                mWriter.setArrayValue(Utils.idFromNan(mBounds), index, value.floatValue());
+            }
+        }
+
+        private @NonNull RFloat get(Float index) {
+            return new RFloat(mWriter, new float[]{mBounds, index, A_DEREF});
+        }
+
+        @Override
+        public void setX(@NonNull Number value) {
+            set(0, value);
+        }
+
+        @Override
+        public void setY(@NonNull Number value) {
+            set(1, value);
+        }
+
+        @Override
+        public void setWidth(@NonNull Number value) {
+            set(2, value);
+        }
+
+        @Override
+        public void setHeight(@NonNull Number value) {
+            set(3, value);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getX() {
+            return get(0f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getY() {
+            return get(1f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getWidth() {
+            return get(2f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getHeight() {
+            return get(3f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getParentWidth() {
+            return get(4f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getParentHeight() {
+            return get(5f);
+        }
+
     }
 }

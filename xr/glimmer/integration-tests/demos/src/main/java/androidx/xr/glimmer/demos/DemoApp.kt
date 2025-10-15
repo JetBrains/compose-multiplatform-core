@@ -71,8 +71,8 @@ class DemoAppState(initialBackstack: List<Demo>) {
         _backstack.add(demo)
     }
 
-    fun popBackstack(numberToPop: Int) {
-        repeat(numberToPop) { _backstack.removeLastOrNull() }
+    fun popBackstack() {
+        _backstack.removeLastOrNull()
     }
 
     companion object {

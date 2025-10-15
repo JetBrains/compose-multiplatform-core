@@ -34,10 +34,12 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_CAPTURE_CONFIG;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_SESSION_CONFIG;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_HIGH_RESOLUTION_DISABLED;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_RESOLUTION_TO_MAX_FRAME_RATES;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_CONFIG_UNPACKER;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_STREAM_USE_CASE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SURFACE_OCCUPANCY_PRIORITY;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_IS_VIDEO_QUALITY_SELECTOR_DEFAULT;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_VIDEO_STABILIZATION_MODE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_ZSL_DISABLED;
 import static androidx.camera.core.impl.utils.Threads.isMainThread;
@@ -75,12 +77,14 @@ import android.view.Display;
 import android.view.Surface;
 
 import androidx.annotation.MainThread;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Logger;
 import androidx.camera.core.MirrorMode;
@@ -90,6 +94,7 @@ import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.SurfaceRequest.TransformationInfo;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ViewPort;
+import androidx.camera.core.featuregroup.GroupableFeature;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.CameraControlInternal;
@@ -127,6 +132,7 @@ import androidx.camera.core.processing.SurfaceProcessorNode;
 import androidx.camera.core.processing.util.OutConfig;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 import androidx.camera.video.StreamInfo.StreamState;
+import androidx.camera.video.featuregroup.RecordingQualityFeature;
 import androidx.camera.video.impl.VideoCaptureConfig;
 import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy;
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
@@ -148,6 +154,7 @@ import org.jspecify.annotations.Nullable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -701,8 +708,9 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         Runnable onSurfaceInvalidated = this::notifyReset;
         Range<Integer> expectedFrameRate = resolveFrameRate(streamSpec);
         MediaSpec mediaSpec = requireNonNull(getMediaSpec());
+        int sessionType = streamSpec.getSessionType();
         VideoCapabilities videoCapabilities = getVideoCapabilities(camera.getCameraInfo(),
-                streamSpec.getSessionType());
+                sessionType);
         DynamicRange dynamicRange = streamSpec.getDynamicRange();
         VideoValidatedEncoderProfilesProxy encoderProfiles =
                 videoCapabilities.findNearestHigherSupportedEncoderProfilesFor(resolution,
@@ -722,10 +730,12 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         mCropRect = adjustCropRectByQuirk(
                 mCropRect,
                 mRotationDegrees,
-                isCreateNodeNeeded(camera, config, mCropRect, resolution, dynamicRange),
+                isCreateNodeNeeded(camera, config, sessionType, mCropRect, resolution,
+                        dynamicRange),
                 videoEncoderInfo
         );
-        mNode = createNodeIfNeeded(camera, config, mCropRect, resolution, dynamicRange);
+        mNode = createNodeIfNeeded(camera, config, sessionType, mCropRect, resolution,
+                dynamicRange);
         boolean hasGlProcessing = !camera.getHasTransform() || mNode != null;
         Timebase timebase = resolveTimebase(camera, mNode);
         Logger.d(TAG, "camera timebase = " + camera.getCameraInfoInternal().getTimebase()
@@ -781,7 +791,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
         SessionConfig.Builder sessionConfigBuilder = SessionConfig.Builder.createFrom(config,
                 streamSpec.getResolution());
-        sessionConfigBuilder.setSessionType(streamSpec.getSessionType());
+        sessionConfigBuilder.setSessionType(sessionType);
         // Use the frame rate range directly from the StreamSpec here (don't resolve it to the
         // default if unresolved).
         // Applies the AE fps range to the session config builder according to the stream spec and
@@ -1081,10 +1091,16 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     private boolean isCreateNodeNeeded(@NonNull CameraInternal camera,
             @NonNull VideoCaptureConfig<?> config,
+            int sessionType,
             @NonNull Rect cropRect,
             @NonNull Size resolution,
             @NonNull DynamicRange dynamicRange
     ) {
+        if (sessionType == SESSION_TYPE_HIGH_SPEED) {
+            // High-Speed capture on preview surface (ex: SurfaceTexture Surface) is not
+            // supported by framework.
+            return false;
+        }
         return getEffect() != null
                 || shouldEnableSurfaceProcessingByConfig(camera, config)
                 || shouldEnableSurfaceProcessingByQuirk(camera)
@@ -1096,10 +1112,11 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     private @Nullable SurfaceProcessorNode createNodeIfNeeded(@NonNull CameraInternal camera,
             @NonNull VideoCaptureConfig<T> config,
+            int sessionType,
             @NonNull Rect cropRect,
             @NonNull Size resolution,
             @NonNull DynamicRange dynamicRange) {
-        if (isCreateNodeNeeded(camera, config, cropRect, resolution, dynamicRange)) {
+        if (isCreateNodeNeeded(camera, config, sessionType, cropRect, resolution, dynamicRange)) {
             Logger.d(TAG, "Surface processing is enabled.");
             return new SurfaceProcessorNode(requireNonNull(getCamera()),
                     getEffect() != null ? getEffect().createSurfaceProcessorInternal() :
@@ -1490,13 +1507,21 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     private void updateCustomOrderedResolutionsByQuality(@NonNull CameraInfoInternal cameraInfo,
             UseCaseConfig.@NonNull Builder<?, ?, ?> builder) throws IllegalArgumentException {
         MediaSpec mediaSpec = getMediaSpecOrThrow();
-        QualitySelector qualitySelector = mediaSpec.getVideoSpec().getQualitySelector();
+
+        QualitySelector qualitySelector = getQualitySelector(mediaSpec);
+
         VideoCaptureConfig<T> config = (VideoCaptureConfig<T>) builder.getUseCaseConfig();
         if (config.containsOption(OPTION_CUSTOM_ORDERED_RESOLUTIONS)) {
-            checkArgument(qualitySelector == VideoSpec.QUALITY_SELECTOR_AUTO,
+            checkArgument(getOutput().isQualitySelectorDefault(),
                     "Custom ordered resolutions and QualitySelector can't both be set");
-            // If custom ordered resolutions is set and QualitySelector is not set, the default
-            // QualitySelector is skipped to avoid overwriting the custom ordered resolutions.
+
+            checkArgument(getFeatureGroupQualitySelector() == null,
+                    "Can't set both custom ordered resolutions and QualitySelector  through"
+                            + " a groupable feature (e.g. GroupableFeatures.UHD_RECORDING)");
+
+            // If custom ordered resolutions is set and QualitySelector is not set by user or
+            // feature groups, the default QualitySelector is skipped to avoid overwriting the
+            // custom ordered resolutions.
             return;
         }
 
@@ -1534,8 +1559,47 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                         videoCapabilities, sessionType, targetFrameRate,
                         config.getVideoEncoderInfoFinder(), selectedQualities);
 
+        if (sessionType == SESSION_TYPE_HIGH_SPEED) {
+            // Sets custom maximum frame rates for high-speed sessions to match the
+            // CamcorderProfile frame rate. This is to ensure CTS compliance (See
+            // cts/RecordingTest.java), as CTS tests for high-speed frame rates are only verified
+            // up to the rate advertised by the CamcorderProfile.
+            builder.getMutableConfig().insertOption(OPTION_RESOLUTION_TO_MAX_FRAME_RATES,
+                    createSizeToMaxFrameRateMap(supportedQualityToSizeMap, videoCapabilities,
+                            requestedDynamicRange));
+        }
+
         // set to custom ordered resolutions
         setCustomOrderedResolutions(builder, supportedQualityToSizeMap);
+    }
+
+    @NonNull
+    private QualitySelector getQualitySelector(@NonNull MediaSpec mediaSpec) {
+        QualitySelector qualitySelector = getFeatureGroupQualitySelector();
+        if (qualitySelector == null) {
+            qualitySelector = mediaSpec.getVideoSpec().getQualitySelector();
+        }
+        return qualitySelector;
+    }
+
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
+    @Nullable
+    private QualitySelector getFeatureGroupQualitySelector() {
+        Set<@NonNull GroupableFeature> featureGroup = getFeatureGroup();
+
+        if (featureGroup == null) {
+            return null;
+        }
+
+        List<Quality> qualities = new ArrayList<>();
+
+        for (GroupableFeature feature : featureGroup) {
+            if (feature instanceof RecordingQualityFeature) {
+                qualities.add(((RecordingQualityFeature) feature).getQuality());
+            }
+        }
+
+        return qualities.isEmpty() ? null : QualitySelector.fromOrderedList(qualities);
     }
 
     @NonNull
@@ -1601,6 +1665,23 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         return filterOutEncoderUnsupportedResolutions(videoEncoderInfoFinder, mediaSpec,
                         requestedDynamicRange, videoCapabilities, orderedQualityToSizesMap,
                         supportedQualityToSizeMap);
+    }
+
+    @NonNull
+    private static Map<Size, Integer> createSizeToMaxFrameRateMap(
+            @NonNull Map<Quality, List<Size>> supportedQualityToSizeMap,
+            @NonNull VideoCapabilities videoCapabilities,
+            @NonNull DynamicRange requestedDynamicRange) {
+        Map<Size, Integer> sizeToMaxFps = new HashMap<>();
+        for (Map.Entry<Quality, List<Size>> entry : supportedQualityToSizeMap.entrySet()) {
+            Quality quality = entry.getKey();
+            int profileFrameRate = requireNonNull(videoCapabilities.getProfiles(quality,
+                    requestedDynamicRange)).getDefaultVideoProfile().getFrameRate();
+            for (Size size : entry.getValue()) {
+                sizeToMaxFps.put(size, profileFrameRate);
+            }
+        }
+        return sizeToMaxFps;
     }
 
     private void setCustomOrderedResolutions(
@@ -1893,6 +1974,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                 @NonNull T videoOutput) {
             MutableOptionsBundle bundle = MutableOptionsBundle.create();
             bundle.insertOption(OPTION_VIDEO_OUTPUT, videoOutput);
+            bundle.insertOption(OPTION_IS_VIDEO_QUALITY_SELECTOR_DEFAULT,
+                    videoOutput.isQualitySelectorDefault());
             return bundle;
         }
 

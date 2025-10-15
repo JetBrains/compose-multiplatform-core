@@ -26,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.SubspaceComposable
-import androidx.xr.compose.subspace.entityName
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCompositionLocalMap
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCoreEntity
@@ -116,9 +115,8 @@ public inline fun SubspaceLayout(
             "Subspace composition. Please ensure that this component is in a Subspace or " +
             " is a child of another SubspaceComposable."
     }
-    val coreEntity = rememberOpaqueEntity {
-        GroupEntity.create(session = this, name = entityName("Entity"))
-    }
+
+    val coreEntity = rememberOpaqueEntity { GroupEntity.create(session = this, name = "Entity") }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = ComposeSubspaceNode.Constructor,
@@ -208,10 +206,7 @@ internal inline fun SubspaceLayout(
 
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val coreGroupEntity =
-        coreEntity
-            ?: remember {
-                CoreGroupEntity(GroupEntity.create(session, name = entityName("Entity")))
-            }
+        coreEntity ?: remember { CoreGroupEntity(GroupEntity.create(session, name = "Entity")) }
 
     check(currentComposer.applier.current is ComposeSubspaceNode) {
         "SubspaceComposable functions are expected to be used within the context of a " +

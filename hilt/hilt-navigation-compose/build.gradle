@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -43,7 +44,6 @@ android {
 
 dependencies {
 
-    implementation(libs.kotlinStdlib)
     api(project(":hilt:hilt-lifecycle-viewmodel-compose"))
     api("androidx.compose.runtime:runtime:1.8.2")
     api("androidx.compose.ui:ui:1.8.2")
@@ -82,5 +82,6 @@ androidx {
     description = "Navigation Compose Hilt Integration"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":hilt:hilt-navigation-compose-samples"))
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 

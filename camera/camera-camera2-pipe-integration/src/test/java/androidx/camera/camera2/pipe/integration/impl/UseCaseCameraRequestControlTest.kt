@@ -25,10 +25,10 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.interop.setCamera2CaptureRequestConfigurator
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraGraph
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraProperties
 import androidx.camera.camera2.pipe.integration.testing.FakeCapturePipeline
@@ -36,6 +36,7 @@ import androidx.camera.camera2.pipe.integration.testing.FakeSurface
 import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseSurfaceManager
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraCaptureCallback
 import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.DeferrableSurface
@@ -70,11 +71,7 @@ class UseCaseCameraRequestControlTest {
     private val fakeCameraProperties = FakeCameraProperties()
     private val fakeCameraGraph = FakeCameraGraph()
     private val fakeUseCaseGraphConfig =
-        UseCaseGraphConfig(
-            graph = fakeCameraGraph,
-            surfaceToStreamMap = surfaceToStreamMap,
-            cameraStateAdapter = CameraStateAdapter(),
-        )
+        UseCaseGraphConfig(graph = fakeCameraGraph, surfaceToStreamMap = surfaceToStreamMap)
     private val fakeUseCaseCameraState =
         UseCaseCameraState(
             useCaseGraphConfig = fakeUseCaseGraphConfig,
@@ -367,6 +364,81 @@ class UseCaseCameraRequestControlTest {
         val lastRequest = fakeCameraGraph.fakeCameraGraphSession.repeatingRequests.last()
         assertThat(lastRequest[CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE])
             .isEqualTo(expectedFrameRateRange)
+    }
+
+    @Test
+    fun cameraXConfig_setParametersAsync_camera2CaptureRequestConfiguratorCalled() = runBlocking {
+        // Arrange.
+        val fpsRange = Range(15, 15)
+        lateinit var resultFpsRange: Range<Int>
+        val cameraXConfig =
+            CameraXConfig.Builder()
+                .setCamera2CaptureRequestConfigurator { parameters ->
+                    parameters.forEach { (key, value) ->
+                        if (key == CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE) {
+                            @Suppress("UNCHECKED_CAST")
+                            resultFpsRange = value as Range<Int>
+                        }
+                    }
+                }
+                .build()
+        val requestControl =
+            UseCaseCameraRequestControlImpl(
+                capturePipeline = FakeCapturePipeline(),
+                state = fakeUseCaseCameraState,
+                useCaseGraphConfig = fakeUseCaseGraphConfig,
+                useCaseSurfaceManager = FakeUseCaseSurfaceManager(threads = useCaseThreads),
+                threads = useCaseThreads,
+                cameraXConfig = cameraXConfig,
+            )
+
+        // Act.
+        requestControl
+            .setParametersAsync(
+                values = mapOf(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE to fpsRange)
+            )
+            .await()
+
+        // Assert.
+        assertThat(resultFpsRange).isEqualTo(fpsRange)
+    }
+
+    @Test
+    fun cameraXConfig_setConfigAsync_camera2CaptureRequestConfiguratorCalled() = runBlocking {
+        // Arrange.
+        val fpsRange = Range(15, 15)
+        lateinit var resultFpsRange: Range<Int>
+        val cameraXConfig =
+            CameraXConfig.Builder()
+                .setCamera2CaptureRequestConfigurator { parameters ->
+                    parameters.forEach { (key, value) ->
+                        if (key == CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE) {
+                            @Suppress("UNCHECKED_CAST")
+                            resultFpsRange = value as Range<Int>
+                        }
+                    }
+                }
+                .build()
+        val requestControl =
+            UseCaseCameraRequestControlImpl(
+                capturePipeline = FakeCapturePipeline(),
+                state = fakeUseCaseCameraState,
+                useCaseGraphConfig = fakeUseCaseGraphConfig,
+                useCaseSurfaceManager = FakeUseCaseSurfaceManager(threads = useCaseThreads),
+                threads = useCaseThreads,
+                cameraXConfig = cameraXConfig,
+            )
+
+        val sessionConfigBuilder =
+            SessionConfig.Builder().also { sessionConfigBuilder ->
+                sessionConfigBuilder.setExpectedFrameRateRange(fpsRange)
+            }
+
+        // Act.
+        requestControl.setSessionConfigAsync(sessionConfigBuilder.build()).await()
+
+        // Assert.
+        assertThat(resultFpsRange).isEqualTo(fpsRange)
     }
 
     private fun UseCaseCameraRequestControl.setSessionConfigAsync(

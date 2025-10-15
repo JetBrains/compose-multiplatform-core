@@ -151,7 +151,7 @@ public object Debug {
         graphConfig: CameraGraph.Config,
         cameraGraph: CameraGraph,
     ): String {
-        val sharedCameraIds = graphConfig.sharedCameraIds.joinToString()
+        val allCameraIds = graphConfig.concurrentCameraGraphs?.cameraIds
 
         val lensFacing =
             when (metadata[LENS_FACING]) {
@@ -183,8 +183,8 @@ public object Debug {
         return StringBuilder()
             .apply {
                 append("$cameraGraph (Camera ${graphConfig.camera.value})\n")
-                if (sharedCameraIds.isNotEmpty()) {
-                    append("  Shared:    $sharedCameraIds\n")
+                if (allCameraIds != null) {
+                    append("  Concurrent: $allCameraIds\n")
                 }
                 append("  Facing:    $lensFacing ($cameraType)\n")
                 append("  Mode:      $operatingMode\n")

@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3.macrobenchmark.common
 
-import android.os.SystemClock
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
@@ -27,20 +26,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.util.trace
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
+import androidx.test.uiautomator.waitForStable
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import org.junit.Assert.assertNotNull
 
 val SwipeDismissableNavHostBenchmark =
     object : MacrobenchmarkScreen {
         override val content: @Composable (BoxScope.() -> Unit)
             get() = {
                 val navController = rememberSwipeDismissableNavController()
-                SwipeDismissableNavHost(navController = navController, startDestination = "off") {
+                SwipeDismissableNavHost(
+                    navController = navController,
+                    startDestination = "off",
+                    modifier = Modifier.semantics { contentDescription = CONTENT_DESCRIPTION_HOST },
+                ) {
                     composable("off") {
                         Column(
                             modifier = Modifier.fillMaxSize(),
@@ -70,16 +76,31 @@ val SwipeDismissableNavHostBenchmark =
 
         override val exercise: MacrobenchmarkScope.() -> Unit
             get() = {
+                val startX = 0
+                val endX = device.displayWidth / 2
+                val y = device.displayHeight / 2
+                val navHost =
+                    device.wait(
+                        Until.findObject(By.desc(CONTENT_DESCRIPTION_HOST)),
+                        FIND_OBJECT_TIMEOUT_MS,
+                    )
+                assertNotNull(navHost)
                 repeat(5) {
-                    device
-                        .wait(
-                            Until.findObject(By.desc(CONTENT_DESCRIPTION)),
-                            FIND_OBJECT_TIMEOUT_MS,
-                        )
-                        .click()
-                    device.waitForIdle()
-                    SystemClock.sleep(250)
-                    device.pressBack()
+                    trace(TRACE_NAVIGATE_TO) {
+                        device
+                            .wait(
+                                Until.findObject(By.desc(CONTENT_DESCRIPTION)),
+                                FIND_OBJECT_TIMEOUT_MS,
+                            )
+                            .click()
+                    }
+                    navHost.waitForStable(FIND_OBJECT_TIMEOUT_MS, requireStableScreenshot = false)
+                    trace(TRACE_SWIPE_BACK) { device.swipe(startX, y, endX, y, 20) }
+                    navHost.waitForStable(FIND_OBJECT_TIMEOUT_MS, requireStableScreenshot = false)
                 }
             }
     }
+
+internal const val CONTENT_DESCRIPTION_HOST = "host"
+internal const val TRACE_NAVIGATE_TO = "navigate_to"
+internal const val TRACE_SWIPE_BACK = "swipe_back"

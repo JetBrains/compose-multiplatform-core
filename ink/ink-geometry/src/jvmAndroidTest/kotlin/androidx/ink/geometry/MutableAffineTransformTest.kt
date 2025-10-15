@@ -213,7 +213,7 @@ class MutableAffineTransformTest {
     fun populateFromTranslate_correctlyPopulatesAffineTransform() {
         val transform = MutableAffineTransform(A, B, C, D, E, F)
 
-        transform.populateFromTranslate(ImmutableVec(x = 0.1f, y = 0.2f))
+        transform.populateFromTranslation(ImmutableVec(x = 0.1f, y = 0.2f))
 
         assertThat(transform.equals(MutableAffineTransform(1f, 0f, 0.1f, 0f, 1f, 0.2f))).isTrue()
     }
@@ -277,9 +277,9 @@ class MutableAffineTransformTest {
     @Test
     fun rotate_returnsCorrectTransform() {
         val transform = MutableAffineTransform(A, B, C, D, E, F)
-        transform.populateFromRotation(Angle.ZERO)
+        transform.populateFromRotationDegrees(Angle.ZERO_DEGREES)
         assertThat(transform.equals(AffineTransform.IDENTITY)).isTrue()
-        transform.populateFromRotation(Angle.HALF_TURN_RADIANS)
+        transform.populateFromRotationDegrees(Angle.HALF_TURN_DEGREES)
         assertThat(
                 transform.isAlmostEqual(
                     MutableAffineTransform(-1f, 0f, 0f, 0f, -1f, 0.0f),
@@ -287,7 +287,7 @@ class MutableAffineTransformTest {
                 )
             )
             .isTrue()
-        transform.populateFromRotation(Angle.QUARTER_TURN_RADIANS)
+        transform.populateFromRotationDegrees(Angle.QUARTER_TURN_DEGREES)
         assertThat(
                 transform.isAlmostEqual(
                     MutableAffineTransform(0f, -1f, 0f, 1f, 0f, 0.0f),

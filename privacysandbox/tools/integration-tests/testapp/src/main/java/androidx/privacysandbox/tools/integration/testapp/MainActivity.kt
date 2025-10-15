@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.tools.integration.testapp
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -35,7 +34,6 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.idling.CountingIdlingResource
 import kotlinx.coroutines.launch
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class MainActivity : AppCompatActivity() {
     internal var sdk: MySdk? = null

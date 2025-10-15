@@ -24,7 +24,6 @@ plugins {
 
 dependencies {
 
-    implementation(libs.kotlinStdlib)
     implementation(project(":glance:glance"))
     implementation(project(":glance:glance-appwidget"))
     implementation(project(":glance:glance-material"))

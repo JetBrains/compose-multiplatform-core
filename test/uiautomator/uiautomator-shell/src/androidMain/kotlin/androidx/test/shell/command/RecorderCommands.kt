@@ -16,6 +16,7 @@
 
 package androidx.test.shell.command
 
+import android.graphics.Point
 import android.util.Log
 import androidx.annotation.IntRange
 import androidx.test.shell.Shell
@@ -33,7 +34,7 @@ public class RecorderCommands internal constructor(private val shell: Shell) {
      * Starts the recording.
      *
      * @param outputFile the output file where to write the recording.
-     * @param screenSizePixel the size of the screen in format <width>x<height>, ex: 1200x800.
+     * @param screenSizeInPixel the size of the screen in pixel.
      * @param bitRateMb the bitrate of the recording in Mb.
      * @param timeLimitSeconds the number of seconds to record.
      * @return a running [Recording].
@@ -42,13 +43,13 @@ public class RecorderCommands internal constructor(private val shell: Shell) {
     @SuppressWarnings("StreamFiles")
     public fun start(
         outputFile: File,
-        screenSizePixel: String? = null,
+        screenSizeInPixel: Point? = null,
         @IntRange(from = 0) bitRateMb: Int = 0,
         @IntRange(from = 0) timeLimitSeconds: Long = 0,
     ): Recording {
         val cmd =
             listOfNotNull(
-                    screenSizePixel?.let { "--size $it" },
+                    screenSizeInPixel?.let { "--size ${it.x}x${it.y}." },
                     if (bitRateMb > 0) "--bit-rate ${bitRateMb}M" else null,
                     if (timeLimitSeconds > 0) "--time-limit $timeLimitSeconds" else null,
                 )

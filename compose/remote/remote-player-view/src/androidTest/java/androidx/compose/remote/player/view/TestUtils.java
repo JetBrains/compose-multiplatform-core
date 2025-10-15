@@ -32,6 +32,8 @@ import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.creation.RemoteComposeContextAndroid;
 import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
+import androidx.compose.remote.creation.profile.Profile;
+import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 
 import java.io.ByteArrayInputStream;
@@ -273,7 +275,7 @@ public class TestUtils {
         }
         name = toCamelCase(name);
         String fileName = name + ".rcd";
-        System.out.println("saveing " + fileName);
+        System.out.println("saving " + fileName);
         TestUtils.saveDoc(fileName, doc, appContext);
         RemoteComposeDocument fileDoc = TestUtils.getDoc(fileName, appContext);
         Bitmap fromFileBitmap = docToBitmap(600, 600, appContext, fileDoc);
@@ -349,6 +351,29 @@ public class TestUtils {
         return recreatedDocument;
     }
 
+    static RemoteComposeDocument createDocument(RemoteContext context,
+            Profile profile, final Callback cb) {
+        RemoteComposeContextAndroid doc =
+                new RemoteComposeContextAndroid(
+                        600,
+                        600,
+                        "Demo",
+                        profile,
+                        doc1 -> {
+                            if (cb != null) {
+                                cb.run(doc1);
+                            }
+
+                            return null;
+                        });
+
+        byte[] buffer = doc.buffer();
+        int bufferSize = doc.bufferSize();
+        System.out.println("size of doc " + memSize(bufferSize));
+        RemoteComposeDocument recreatedDocument =
+                new RemoteComposeDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
+        return recreatedDocument;
+    }
     private static String memSize(int size) {
         DecimalFormat df = new DecimalFormat("#.0##");
         if (size > 1024 * 1024) {

@@ -21,15 +21,16 @@ import android.app.appsearch.GenericDocument
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.os.ext.SdkExtensions
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
-import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.appfunctions.internal.AppFunctionSerializableFactory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
@@ -71,20 +72,22 @@ import java.time.LocalDateTime
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 public class AppFunctionData
 internal constructor(
-    // TODO: Make it non-null once the constructor that takes qualifiedName has removed
+    // TODO(b/447302747): Make it non-null once the constructor that takes qualifiedName has removed
     internal val spec: AppFunctionDataSpec?,
-    @get:VisibleForTesting
-    @get:RestrictTo(LIBRARY_GROUP)
-    public val genericDocument: GenericDocument,
+    internal val genericDocument: GenericDocument,
     internal val extras: Bundle,
 ) {
-
-    // TODO: Remove this constructor
-    @RestrictTo(LIBRARY_GROUP)
-    public constructor(
+    // TODO(b/447302747): Remove this constructor
+    internal constructor(
         genericDocument: GenericDocument,
         extras: Bundle,
     ) : this(null, genericDocument, extras)
+
+    init {
+        // This will set the Bundle's classLoader to be the classLoader from the App using this
+        // AppFunctionData class.
+        extras.classLoader = AppFunctionData::class.java.classLoader
+    }
 
     /** Qualified name of the underlying object */
     public val qualifiedName: String
@@ -108,7 +111,8 @@ internal constructor(
         }
         return key == LEGACY_ID_FIELD_KEY ||
             genericDocument.getProperty(key) != null ||
-            extras.containsKey(key)
+            extras.containsKey(key) || // Check direct key in extras
+            extras.containsKey(extrasKey(key)) // Check prefixed key in extras
     }
 
     /**
@@ -456,7 +460,7 @@ internal constructor(
                 null
             } else {
                 AppFunctionData(
-                    spec?.getPropertyObjectSpec(key),
+                    spec?.getPropertyObjectSpec(key, array[0].schemaType),
                     array[0],
                     extras.getBundle(extrasKey(key)) ?: Bundle.EMPTY,
                 )
@@ -504,6 +508,71 @@ internal constructor(
             targetValue = pendingIntentValue,
         )
         return pendingIntentValue
+    }
+
+    /**
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
+     *
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [clazz].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param key The key to retrieve the value for.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
+     * @return The value associated with the [key], or null if the associated value is not found or
+     *   is not of type [T].
+     */
+    public fun <T : Parcelable> getParcelable(key: String, clazz: Class<T>): T? {
+        return getParcelableOrNull(key, clazz)
+    }
+
+    /**
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
+     *
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [T].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param T The type of the [Parcelable] object to retrieve.
+     * @param key The key to retrieve the value for.
+     * @return The value associated with the [key], or null if the associated value is not found or
+     *   is not of type [T].
+     */
+    public inline fun <reified T : Parcelable> getParcelable(key: String): T? {
+        return getParcelable(key, T::class.java)
+    }
+
+    /**
+     * Retrieves a [Parcelable] value of type [T] associated with the specified [key].
+     *
+     * Returns null or fails with an exception if:
+     * - No value exists for the given [key].
+     * - The object is not of type [clazz].
+     * - The [Parcelable] of type [T] cannot be loaded by the app's `classLoader`.
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param key The key to retrieve the value for.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
+     * @return The value associated with the [key], or null if the associated value is not found.
+     */
+    @RestrictTo(LIBRARY_GROUP)
+    public fun <T : Parcelable> getParcelableOrNull(key: String, clazz: Class<T>): T? {
+        val parcelable = extras.getParcelable(extrasKey(key), clazz)
+        // TODO: b/447530985 - Implement spec validation
+        return parcelable
     }
 
     /**
@@ -685,12 +754,11 @@ internal constructor(
      */
     @Suppress("NullableCollection")
     public fun getAppFunctionDataList(key: String): List<AppFunctionData>? {
-        val propertySpec = spec?.getPropertyObjectSpec(key)
         val dataArrayValue =
             unsafeGetProperty(key, Array<GenericDocument>::class.java)?.mapIndexed { index, element
                 ->
                 AppFunctionData(
-                    propertySpec,
+                    spec?.getPropertyObjectSpec(key, element.schemaType),
                     element,
                     extras.getBundle(extrasKey(key, index)) ?: Bundle.EMPTY,
                 )
@@ -723,6 +791,48 @@ internal constructor(
             targetValue = pendingIntentListValue,
         )
         return pendingIntentListValue
+    }
+
+    /**
+     * Retrieves a [List] of [Parcelable] values of type [T] associated with the specified [key].
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param key The key to retrieve the list for.
+     * @param clazz The [Class] of the [Parcelable] object to retrieve, of type [T].
+     * @return The [List] associated with the [key], or null if the value is not found or if any
+     *   list item is not of type [T].
+     */
+    @Suppress("NullableCollection")
+    public fun <T : Parcelable> getParcelableList(key: String, clazz: Class<T>): List<T>? {
+        extras.classLoader = clazz.classLoader
+        val parcelableList = extras.getParcelableArrayList(extrasKey(key), clazz)
+        // TODO: b/447530985 - Implement spec validation
+        if (parcelableList?.all { clazz.isInstance(it) } != true) {
+            // For some reason Bundle.getParcelableArrayList doesn't return null even when type is
+            // wrong.
+            return null
+        }
+        return parcelableList
+    }
+
+    /**
+     * Retrieves a [List] of [Parcelable] values of type [T] associated with the specified [key].
+     *
+     * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+     * between agents and apps), forward and backward compatibility is **not guaranteed** by this
+     * library. Implementers are responsible for managing any compatibility and versioning concerns.
+     *
+     * @param T The type of the [Parcelable] object to retrieve.
+     * @param key The key to retrieve the list for.
+     * @return The [List] associated with the [key], or null if the value is not found or if any
+     *   list item is not of type [T].
+     */
+    @Suppress("NullableCollection")
+    public inline fun <reified T : Parcelable> getParcelableList(key: String): List<T>? {
+        return getParcelableList(key, T::class.java)
     }
 
     override fun toString(): String {
@@ -821,6 +931,43 @@ internal constructor(
         )
     }
 
+    /**
+     * Creates a new [AppFunctionData] instance with a new [AppFunctionDataSpec] based on the
+     * provided [objectTypeMetadata] and [componentMetadata].
+     *
+     * This should only used by the AppFunction infrastructure when recreating the [AppFunctionData]
+     * from remote response. So that the [AppFunctionData] exposed in the public API surface will
+     * have the same read validation.
+     */
+    internal fun replaceSpecWith(
+        objectTypeMetadata: AppFunctionObjectTypeMetadata,
+        componentMetadata: AppFunctionComponentsMetadata,
+    ): AppFunctionData {
+        return AppFunctionData(
+            AppFunctionDataSpec.create(objectTypeMetadata, componentMetadata),
+            genericDocument,
+            extras,
+        )
+    }
+
+    /**
+     * Creates a new [AppFunctionData] instance with a new [AppFunctionDataSpec] based on the
+     * provided [parameterMetadata] and [componentMetadata].
+     *
+     * This should only used by the AppFunction infrastructure when recreating the [AppFunctionData]
+     * from remote response. So that the [AppFunctionData] exposed in the public API surface will
+     * have the same read validation.
+     */
+    internal fun replaceSpecWith(
+        parameterMetadata: List<AppFunctionParameterMetadata>,
+        componentMetadata: AppFunctionComponentsMetadata,
+    ): AppFunctionData =
+        AppFunctionData(
+            AppFunctionDataSpec.create(parameterMetadata, componentMetadata),
+            genericDocument,
+            extras,
+        )
+
     /** Visits all [AppFunctionUriGrant] under the [AppFunctionData]. */
     @WorkerThread
     @RestrictTo(LIBRARY_GROUP)
@@ -884,21 +1031,20 @@ internal constructor(
      */
     public class Builder {
 
-        // TODO(b/399823985): Remove this once the constructor that takes qualifiedName has removed
+        // TODO(b/447302747): Remove this once the constructor that takes qualifiedName has removed
         private val qualifiedName: String
-        // TODO(b/399823985): Make it non-null once the constructor that takes qualifiedName has
+        // TODO(b/447302747): Make it non-null once the constructor that takes qualifiedName has
         // removed
         private val spec: AppFunctionDataSpec?
         private var genericDocumentBuilder: GenericDocument.Builder<*>
         private val extrasBuilder = Bundle()
 
-        // TODO(b/399823985): Clean up the usage without providing metadata.
+        // TODO(b/447302747): Clean up the usage without providing metadata.
         /**
          * @param id: Only set this when creating a document for the legacy schema. In the legacy
          *   schema, ID is stored as [GenericDocument.id]. In Jetpack, ID is just a normal property.
          */
-        @RestrictTo(LIBRARY_GROUP)
-        public constructor(qualifiedName: String, id: String = "") {
+        internal constructor(qualifiedName: String, id: String = "") {
             this.qualifiedName = qualifiedName
             spec = null
             genericDocumentBuilder =
@@ -908,9 +1054,8 @@ internal constructor(
         /**
          * Constructs a [Builder] to create input data for an AppFunction execution call.
          *
-         * This constructor is used when you need to write data that will be passed as input when
-         * executing an AppFunction. The [parameterMetadataList] defines the expected input
-         * parameters for that function.
+         * The caller can use this to construct the [AppFunctionData] for
+         * [ExecuteAppFunctionRequest.functionParameters].
          *
          * @param parameterMetadataList List of [AppFunctionParameterMetadata] defining the input
          *   parameters.
@@ -926,10 +1071,8 @@ internal constructor(
         /**
          * Constructs a [Builder] to create [AppFunctionData] representing an object.
          *
-         * This constructor is used when you need to create [AppFunctionData] that represents an
-         * object used as either function parameters or return values, as defined by an
-         * [AppFunctionObjectTypeMetadata]. This metadata specifies the properties and their types
-         * for the object.
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [objectTypeMetadata].
          *
          * @param objectTypeMetadata [AppFunctionObjectTypeMetadata] defining the object structure.
          * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
@@ -942,11 +1085,31 @@ internal constructor(
         ) : this(AppFunctionDataSpec.create(objectTypeMetadata, componentMetadata))
 
         /**
+         * Constructs a [Builder] to create [AppFunctionData] representing an all-of object.
+         *
+         * The caller can use this to construct the [AppFunctionData] that conforms with the
+         * provided [allOfTypeMetadata].
+         *
+         * @param allOfTypeMetadata [AppFunctionAllOfTypeMetadata] defining the object structure.
+         * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
+         * @see [AppFunctionAllOfTypeMetadata]
+         * @see [AppFunctionComponentsMetadata]
+         */
+        public constructor(
+            allOfTypeMetadata: AppFunctionAllOfTypeMetadata,
+            componentMetadata: AppFunctionComponentsMetadata,
+        ) : this(
+            AppFunctionDataSpec.create(
+                allOfTypeMetadata.getPseudoObjectTypeMetadata(componentMetadata),
+                componentMetadata,
+            )
+        )
+
+        /**
          * Constructs a [Builder] to create [AppFunctionData] representing a response.
          *
-         * This constructor is used when you need to create [AppFunctionData] that represents a
-         * response, as defined by an [AppFunctionResponseMetadata]. This metadata specifies the
-         * properties and their types for the response.
+         * The caller can use this to construct the [AppFunctionData] for
+         * [ExecuteAppFunctionResponse.Success.returnValue].
          *
          * @param responseMetadata [AppFunctionResponseMetadata] defining the response structure.
          * @param componentMetadata [AppFunctionComponentsMetadata] that has the shared data types.
@@ -1114,7 +1277,7 @@ internal constructor(
                 isCollection = false,
                 targetValue = value,
             )
-            spec?.getPropertyObjectSpec(key)?.validateDataSpecMatches(value)
+            spec?.getPropertyObjectSpec(key, value.qualifiedName)?.validateDataSpecMatches(value)
 
             genericDocumentBuilder.setPropertyDocument(key, value.genericDocument)
             if (!value.extras.isEmpty()) {
@@ -1138,6 +1301,23 @@ internal constructor(
                 isCollection = false,
                 targetValue = value,
             )
+            extrasBuilder.putParcelable(extrasKey(key), value)
+            return this
+        }
+
+        /**
+         * Sets a [Parcelable] value of type [T] for the given [key].
+         *
+         * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+         * between agents and apps), forward and backward compatibility is **not guaranteed** by
+         * this library. The sender and receiver of the `Parcelable` are responsible for managing
+         * any compatibility and versioning concerns.
+         *
+         * @param key The key to set the value for.
+         * @param value The [Parcelable] value of type [T] to set.
+         */
+        public fun <T : Parcelable> setParcelable(key: String, value: T): Builder {
+            // TODO: b/447530985 - Implement spec validation
             extrasBuilder.putParcelable(extrasKey(key), value)
             return this
         }
@@ -1273,7 +1453,8 @@ internal constructor(
         public fun setStringList(key: String, value: List<String>): Builder {
             spec?.validateWriteRequest(
                 key,
-                String()::class.java,
+                String()::class
+                    .java, // Note: String()::class.java is equivalent to String::class.java
                 isCollection = true,
                 targetValue = value,
             )
@@ -1301,7 +1482,9 @@ internal constructor(
                 *value.map { it.genericDocument }.toTypedArray(),
             )
             value.forEachIndexed { index, element ->
-                spec?.getPropertyObjectSpec(key)?.validateDataSpecMatches(element)
+                spec
+                    ?.getPropertyObjectSpec(key, element.qualifiedName)
+                    ?.validateDataSpecMatches(element)
                 if (!element.extras.isEmpty()) {
                     extrasBuilder.putBundle(extrasKey(key, index), element.extras)
                 }
@@ -1328,10 +1511,42 @@ internal constructor(
             return this
         }
 
-        /** Builds [AppFunctionData] */
+        /**
+         * Sets a [List] of [Parcelable] values of type [T] for the given [key].
+         *
+         * For `Parcelable` types not defined by the Android platform (e.g., custom classes shared
+         * between agents and apps), forward and backward compatibility is **not guaranteed** by
+         * this framework. The sender and receiver of the `Parcelable` are responsible for managing
+         * any compatibility and versioning concerns.
+         *
+         * @param key The key to set the list for.
+         * @param value The [List] of [Parcelable] values of type [T] to set.
+         */
+        public fun <T : Parcelable> setParcelableList(key: String, value: List<T>): Builder {
+            // TODO: b/447530985 - Implement spec validation
+            extrasBuilder.putParcelableArrayList(extrasKey(key), ArrayList(value))
+            return this
+        }
+
+        /**
+         * Builds [AppFunctionData]
+         *
+         * @throws IllegalArgumentException if any required property, as defined by the metadata
+         *   specification, is missing.
+         */
         public fun build(): AppFunctionData {
-            // TODO(b/399823985): validate required fields.
-            return AppFunctionData(spec, genericDocumentBuilder.build(), extrasBuilder)
+            val builtGenericDocument = genericDocumentBuilder.build()
+            val appFunctionData = AppFunctionData(spec, builtGenericDocument, extrasBuilder)
+            spec?.getAllPropertyKeys()?.forEach { propertyKey ->
+                if (spec.isRequired(propertyKey)) {
+                    if (!appFunctionData.containsKey(propertyKey)) {
+                        throw IllegalArgumentException(
+                            "Missing required property: '$propertyKey' for object '$qualifiedName'"
+                        )
+                    }
+                }
+            }
+            return appFunctionData
         }
     }
 

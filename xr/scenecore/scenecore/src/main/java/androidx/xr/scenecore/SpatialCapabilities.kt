@@ -17,7 +17,9 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @Retention(AnnotationRetention.SOURCE)
 @IntDef(
     flag = true,
@@ -31,7 +33,7 @@ import androidx.annotation.IntDef
             SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY,
         ],
 )
-internal annotation class SpatialCapability
+public annotation class SpatialCapability
 
 /**
  * Representation of the spatial capabilities of the current [Scene].

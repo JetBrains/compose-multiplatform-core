@@ -35,7 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.testutils.assertShape
-import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
+import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component1
@@ -44,8 +44,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.input.indirect.IndirectTouchEvent
-import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryDirectionalMotionAxis
+import androidx.compose.ui.input.indirect.IndirectPointerEvent
+import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -58,7 +58,6 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isFocusable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performIndirectTouchEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -71,6 +70,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,10 +80,11 @@ import org.junit.runner.RunWith
 // The expected min sdk is 35, but we test on 33 for wider device coverage (some APIs are not
 // available below 33)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
+@OptIn(ExperimentalIndirectPointerApi::class)
 class ListItemTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule val inputModeRule = nonTouchInputModeRule()
+    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
 
     @Test
     fun semantics() {
@@ -289,7 +290,6 @@ class ListItemTest {
         }
     }
 
-    @OptIn(ExperimentalIndirectTouchTypeApi::class)
     @Test
     fun emitsPressInteractions_clickable() {
         val interactionSource = MutableInteractionSource()
@@ -332,11 +332,13 @@ class ListItemTest {
         down.source = SOURCE_TOUCH_NAVIGATION
         rule
             .onNodeWithTag("listItem")
-            .performIndirectTouchEvent(
-                IndirectTouchEvent(
+            .performIndirectPointerEvent(
+                rule,
+                IndirectPointerEvent(
                     down,
-                    primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-                )
+                    primaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                ),
             )
 
         rule.runOnIdle {
@@ -356,11 +358,14 @@ class ListItemTest {
         up.source = SOURCE_TOUCH_NAVIGATION
         rule
             .onNodeWithTag("listItem")
-            .performIndirectTouchEvent(
-                IndirectTouchEvent(
+            .performIndirectPointerEvent(
+                rule,
+                IndirectPointerEvent(
                     up,
-                    primaryDirectionalMotionAxis = IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-                )
+                    primaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                    down,
+                ),
             )
 
         rule.runOnIdle {

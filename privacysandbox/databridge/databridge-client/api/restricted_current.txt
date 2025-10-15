@@ -21,10 +21,10 @@ package androidx.privacysandbox.databridge.client {
 
   public abstract class DataSynchronizationManager {
     method public abstract void addKeys(java.util.Map<androidx.privacysandbox.databridge.core.Key,? extends java.lang.Object?> keyValueMap);
-    method public abstract void addSyncCallback(java.util.concurrent.Executor executor, androidx.privacysandbox.databridge.client.SyncCallback syncCallback);
+    method public abstract void addSyncFailureCallback(java.util.concurrent.Executor executor, androidx.privacysandbox.databridge.client.SyncFailureCallback syncFailureCallback);
     method public static final androidx.privacysandbox.databridge.client.DataSynchronizationManager getInstance(android.content.Context context);
     method public abstract java.util.Set<androidx.privacysandbox.databridge.core.Key> getKeys();
-    method public abstract void removeSyncCallback(androidx.privacysandbox.databridge.client.SyncCallback syncCallback);
+    method public abstract void removeSyncFailureCallback(androidx.privacysandbox.databridge.client.SyncFailureCallback syncFailureCallback);
     field public static final androidx.privacysandbox.databridge.client.DataSynchronizationManager.Companion Companion;
   }
 
@@ -32,15 +32,15 @@ package androidx.privacysandbox.databridge.client {
     method public androidx.privacysandbox.databridge.client.DataSynchronizationManager getInstance(android.content.Context context);
   }
 
-  public interface SyncCallback {
+  public interface SyncFailureCallback {
     method public default void onSyncFailure(java.util.Map<androidx.privacysandbox.databridge.core.Key,? extends java.lang.Object?> keyValueMap, int errorCode, String errorMessage);
-    field public static final androidx.privacysandbox.databridge.client.SyncCallback.Companion Companion;
+    field public static final androidx.privacysandbox.databridge.client.SyncFailureCallback.Companion Companion;
     field public static final int ERROR_ADDING_KEYS = 3; // 0x3
     field public static final int ERROR_SYNCING_UPDATES_FROM_DATABRIDGE = 1; // 0x1
     field public static final int ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES = 2; // 0x2
   }
 
-  public static final class SyncCallback.Companion {
+  public static final class SyncFailureCallback.Companion {
     property public static int ERROR_ADDING_KEYS;
     property public static int ERROR_SYNCING_UPDATES_FROM_DATABRIDGE;
     property public static int ERROR_SYNCING_UPDATES_FROM_SHARED_PREFERENCES;

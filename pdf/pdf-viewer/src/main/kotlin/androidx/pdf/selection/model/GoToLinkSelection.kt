@@ -18,7 +18,6 @@ package androidx.pdf.selection.model
 
 import android.os.Parcel
 import android.text.TextUtils
-import androidx.annotation.RestrictTo
 import androidx.pdf.PdfRect
 import androidx.pdf.selection.LinkSelection
 import androidx.pdf.view.pdfRectFromParcel
@@ -34,7 +33,6 @@ import androidx.pdf.view.writeToParcel
  * @property linkText The text that is displayed as a goto link.
  * @property bounds The list of bounding boxes for the text.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class GoToLinkSelection(
     public val destination: Destination,
     override val linkText: CharSequence,
@@ -59,9 +57,6 @@ public class GoToLinkSelection(
         public val yCoordinate: Float,
         public val zoom: Float,
     )
-
-    /** Returns [linkText] as a [String] */
-    public fun textAsString(): String = linkText.toString()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -921,6 +921,7 @@ public class AppSearchStatsTest {
         assertThat(oStats.getJavaLockAcquisitionLatencyMillis()).isEqualTo(10);
     }
 
+    @Test
     public void testAppSearchStats_PersistToDiskStats() {
         int triggerCallType = 1;
         PersistType.Code persistType = PersistType.Code.FULL;

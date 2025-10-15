@@ -41,7 +41,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.9.1")
                 implementation("androidx.lifecycle:lifecycle-common:2.9.2")
                 api(libs.kotlinCoroutinesCore)
@@ -78,13 +77,13 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependencies {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation("androidx.lifecycle:lifecycle-runtime:2.9.2")
@@ -187,6 +186,18 @@ androidXMultiplatform {
                 target.compilations["main"].defaultSourceSet.dependsOn(webMain)
                 target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
+        }
+    }
+}
+
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.3.2, this module is published as empty artifact with dependency
+        // to this androidx module.
+        // TODO: update this constrain to 1.3.3 once out due to https://youtrack.jetbrains.com/issue/CMP-8765
+        commonMainImplementation("org.jetbrains.androidx.savedstate:savedstate:1.3.2") {
+            because "prevents symbols duplication"
         }
     }
 }

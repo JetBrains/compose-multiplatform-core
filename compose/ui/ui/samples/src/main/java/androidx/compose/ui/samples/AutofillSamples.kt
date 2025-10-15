@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.autofill.FillableData
 import androidx.compose.ui.autofill.contentType
+import androidx.compose.ui.autofill.createFromText
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.fillableData
 import androidx.compose.ui.semantics.onFillData
@@ -64,12 +65,10 @@ fun AutofillableTextFieldWithFillableDataSemantics() {
             Modifier.semantics {
                 contentType = ContentType.Username
                 // Set the fillable data with semantics.
-                FillableData(state.text)?.let { fillableData = it }
+                FillableData.createFromText(state.text)?.let { fillableData = it }
                 // Replace the state value with data from the autofill provider.
                 onFillData { savedAutofillValue ->
-                    savedAutofillValue.getCharSequence()?.let {
-                        state.edit { replace(0, length, it) }
-                    }
+                    savedAutofillValue.textValue?.let { state.edit { replace(0, length, it) } }
                     true
                 }
             },

@@ -34,6 +34,7 @@ import androidx.camera.core.UseCase
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.DeferrableSurface
+import androidx.camera.core.impl.FrameRates.FRAME_RATE_UNLIMITED
 import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
@@ -708,6 +709,7 @@ class StreamUseCaseUtilTest {
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
         TestCase.assertTrue(
             StreamUseCaseUtil.areCaptureTypesEligible(
@@ -747,6 +749,7 @@ class StreamUseCaseUtilTest {
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
                 /*isStrictFrameRateRequired=*/ false,
+                FRAME_RATE_UNLIMITED,
             )
         TestCase.assertFalse(
             StreamUseCaseUtil.areCaptureTypesEligible(
@@ -907,6 +910,7 @@ class StreamUseCaseUtilTest {
             SESSION_TYPE_REGULAR,
             FRAME_RATE_RANGE_UNSPECIFIED,
             /*isStrictFrameRateRequired=*/ false,
+            FRAME_RATE_UNLIMITED,
         )
     }
 

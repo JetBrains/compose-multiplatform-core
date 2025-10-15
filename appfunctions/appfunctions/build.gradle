@@ -33,7 +33,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     // Public dependencies
     implementation(libs.kotlinCoroutinesAndroid)
@@ -72,6 +71,7 @@ dependencies {
     androidTestImplementation(libs.testParameterInjector)
     androidTestCompileOnly(project(":appfunctions:appfunctions-stubs"))
     androidTestImplementation(libs.kotlinTest)
+    androidTestImplementation(libs.testMonitor)
 }
 
 // Restricts AppSearch generated code to library to avoid it surfacing in public API.
@@ -83,9 +83,7 @@ kapt {
 
 android {
     compileSdk = 36
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.appfunctions"
 }
 

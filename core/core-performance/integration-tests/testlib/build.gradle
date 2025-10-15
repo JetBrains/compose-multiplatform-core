@@ -21,7 +21,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":core:core-performance"))
     implementation libs.constraintLayout
 }

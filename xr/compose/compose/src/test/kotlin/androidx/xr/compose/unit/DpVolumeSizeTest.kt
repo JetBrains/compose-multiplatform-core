@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.unit
 
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.math.FloatSize3d
@@ -83,5 +84,24 @@ class DpVolumeSizeTest {
 
         assertThat(fromMetersDpVolumeSize)
             .isEqualTo(DpVolumeSize(1111.11f.dp, 1111.11f.dp, 1111.11f.dp))
+    }
+
+    @Test
+    fun toDimensionsInMetersAndFromMeters_whenInfinite_returnsCorrectDpVolumeSize() {
+        val testDpVolumeSize = DpVolumeSize(Dp.Infinity, Dp.Infinity, Dp.Infinity)
+
+        val floatSize3d = testDpVolumeSize.toDimensionsInMeters()
+        val fromMetersDpVolumeSize = floatSize3d.toDpVolumeSize()
+
+        assertThat(floatSize3d)
+            .isEqualTo(
+                FloatSize3d(
+                    Float.POSITIVE_INFINITY,
+                    Float.POSITIVE_INFINITY,
+                    Float.POSITIVE_INFINITY,
+                )
+            )
+        assertThat(fromMetersDpVolumeSize)
+            .isEqualTo(DpVolumeSize(Dp.Infinity, Dp.Infinity, Dp.Infinity))
     }
 }

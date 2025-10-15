@@ -22,10 +22,16 @@ class FakePdfDocumentRenderer(
     override val isLinearized: Boolean,
     override val pageCount: Int,
     override val formType: Int,
-    private val pdfPageProvider: (Int) -> PdfPage,
 ) : PdfDocumentRenderer {
-    override fun openPage(pageNum: Int, useCache: Boolean): PdfPage =
-        pdfPageProvider.invoke(pageNum)
+    private val fakePagesMap = mutableMapOf<Int, PdfPage>()
+
+    init {
+        for (pageNum in 0 until pageCount) fakePagesMap[pageNum] = FakePdfPage(pageNum, 100, 100)
+    }
+
+    override fun openPage(pageNum: Int, useCache: Boolean): PdfPage {
+        return fakePagesMap[pageNum] ?: throw IndexOutOfBoundsException()
+    }
 
     override fun releasePage(page: PdfPage?, pageNum: Int) {}
 

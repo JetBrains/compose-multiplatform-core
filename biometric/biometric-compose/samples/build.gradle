@@ -28,7 +28,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
 

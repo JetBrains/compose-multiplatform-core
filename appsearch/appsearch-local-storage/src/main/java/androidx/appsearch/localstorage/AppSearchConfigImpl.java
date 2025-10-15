@@ -200,4 +200,9 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     public int getCompressionThresholdBytes() {
         return mIcingOptionsConfig.getCompressionThresholdBytes();
     }
+
+    @Override
+    public int getEmbeddingIndexNumShards() {
+        return mIcingOptionsConfig.getEmbeddingIndexNumShards();
+    }
 }

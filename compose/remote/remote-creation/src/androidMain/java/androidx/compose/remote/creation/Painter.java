@@ -22,12 +22,15 @@ import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.os.Build;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
+import androidx.compose.remote.core.operations.paint.PaintPathEffects;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /** Support RemoteCompose Paint creation */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Painter {
     @NonNull PaintBundle mPaint = new PaintBundle();
     @NonNull RemoteComposeWriter mBuilder;
@@ -608,4 +611,17 @@ public class Painter {
         mPaint.setTextureShader(texture, tileModeX, tileModeY, filterMode, maxAnisotropy);
         return this;
     }
+
+    /**
+     * Set the path effect
+     *
+     * @param pathEffectData path effect data
+     * @return the painter object
+     * @see PaintPathEffects
+     */
+    public @NonNull Painter setPathEffect(float @Nullable [] pathEffectData) {
+        mPaint.setPathEffect(pathEffectData);
+        return this;
+    }
+
 }

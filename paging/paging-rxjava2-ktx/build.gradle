@@ -34,7 +34,6 @@ dependencies {
     api(project(":paging:paging-rxjava2"))
     // Ensure that the -ktx dependency graph mirrors the Java dependency graph
     api(project(":paging:paging-common-ktx"))
-    implementation(libs.kotlinStdlib)
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)

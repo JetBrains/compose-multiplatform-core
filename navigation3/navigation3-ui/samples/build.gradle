@@ -36,12 +36,12 @@ plugins {
 dependencies {
     compileOnly(project(":annotation:annotation-sampled"))
 
-    implementation(libs.kotlinStdlib)
     implementation("androidx.activity:activity-compose:1.10.0")
     implementation(project(":compose:animation:animation"))
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:material:material"))
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation(project(":compose:material3:material3"))
     implementation(project(":compose:material3:material3-window-size-class"))
     implementation(project(":compose:material3:material3-adaptive-navigation-suite"))

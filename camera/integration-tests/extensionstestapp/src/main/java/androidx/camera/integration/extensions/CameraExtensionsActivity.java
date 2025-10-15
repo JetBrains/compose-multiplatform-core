@@ -103,6 +103,7 @@ import androidx.camera.integration.extensions.utils.ExtensionModeUtil;
 import androidx.camera.integration.extensions.utils.FpsRecorder;
 import androidx.camera.integration.extensions.validation.CameraValidationResultActivity;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil;
 import androidx.camera.video.MediaStoreOutputOptions;
 import androidx.camera.video.PendingRecording;
 import androidx.camera.video.Recorder;
@@ -131,6 +132,7 @@ import java.io.File;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -590,6 +592,13 @@ public class CameraExtensionsActivity extends AppCompatActivity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_extensions);
+
+        EdgeToEdgeUtil.enableEdgeToEdge(
+                this,
+                R.id.root_layout,
+                Arrays.asList(R.id.PhotoToggle, R.id.ExtensionToggle, R.id.videoStabilizationToggle)
+        );
+
         setTitle(R.string.camerax_extensions);
 
         mInitializationIdlingResource.increment();

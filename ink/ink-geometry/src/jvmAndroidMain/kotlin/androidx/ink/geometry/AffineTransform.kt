@@ -44,7 +44,7 @@ import kotlin.math.abs
  * B*A), and the left-hand transformation is composed "after" the right hand transformation. E.g.,
  * if you have:
  * ```
- * val rotate = ImmutableAffineTransform.rotate(Angle.degreesToRadians(45))
+ * val rotate = ImmutableAffineTransform.rotateDegrees(45f)
  * val translate = ImmutableAffineTransform.translate(Vec(10, 0))
  * ```
  *
@@ -243,7 +243,7 @@ public abstract class AffineTransform internal constructor() {
             parallelogramCenterY = box.yMin / 2 + box.yMax / 2,
             parallelogramWidth = box.width,
             parallelogramHeight = box.height,
-            parallelogramRotation = 0f,
+            parallelogramRotationDegrees = 0f,
             parallelogramShearFactor = 0f,
         )
     }
@@ -268,7 +268,7 @@ public abstract class AffineTransform internal constructor() {
             parallelogramCenterY = box.yMin / 2 + box.yMax / 2,
             parallelogramWidth = box.width,
             parallelogramHeight = box.height,
-            parallelogramRotation = 0f,
+            parallelogramRotationDegrees = 0f,
             parallelogramShearFactor = 0f,
             out = outParallelogram,
         )
@@ -295,7 +295,7 @@ public abstract class AffineTransform internal constructor() {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramRotation = parallelogram.rotation,
+            parallelogramRotationDegrees = parallelogram.rotationDegrees,
             parallelogramShearFactor = parallelogram.skew,
         )
     }
@@ -320,7 +320,7 @@ public abstract class AffineTransform internal constructor() {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramRotation = parallelogram.rotation,
+            parallelogramRotationDegrees = parallelogram.rotationDegrees,
             parallelogramShearFactor = parallelogram.skew,
             out = outParallelogram,
         )
@@ -454,7 +454,7 @@ private object AffineTransformNative {
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
         parallelogramHeight: Float,
-        parallelogramRotation: Float,
+        parallelogramRotationDegrees: Float,
         parallelogramShearFactor: Float,
         out: MutableParallelogram,
     )
@@ -471,7 +471,7 @@ private object AffineTransformNative {
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
         parallelogramHeight: Float,
-        parallelogramRotation: Float,
+        parallelogramRotationDegrees: Float,
         parallelogramShearFactor: Float,
     ): ImmutableParallelogram
 }

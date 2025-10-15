@@ -33,6 +33,8 @@ public object Device {
 
     public fun isMotorolaDevice(): Boolean = isDeviceFrom("Motorola")
 
+    public fun isNokiaDevice(): Boolean = isDeviceFrom("Nokia")
+
     public fun isOnePlusDevice(): Boolean = isDeviceFrom("OnePlus")
 
     public fun isOppoDevice(): Boolean = isDeviceFrom("Oppo")
@@ -44,6 +46,8 @@ public object Device {
     public fun isRedmiDevice(): Boolean = isDeviceFrom("Redmi")
 
     public fun isSamsungDevice(): Boolean = isDeviceFrom("Samsung")
+
+    public fun isSonyDevice(): Boolean = isDeviceFrom("Sony")
 
     public fun isTecnoDevice(): Boolean = isDeviceFrom("Tecno") || isDeviceFrom("Tecno-mobile")
 

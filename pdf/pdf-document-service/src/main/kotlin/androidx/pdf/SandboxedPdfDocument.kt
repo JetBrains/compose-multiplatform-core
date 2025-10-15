@@ -59,6 +59,9 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -99,8 +102,8 @@ public class SandboxedPdfDocument(
     private val annotationsProcessor: PdfAnnotationsProcessor,
 ) : EditablePdfDocument() {
 
-    // TODO: b/437827008 - Implement management of PdfEdits in EditablePdfDocument
-    private val annotationsManager = InMemoryAnnotationsManager(::getAnnotationsForPage)
+    private val annotationsManager =
+        InMemoryAnnotationsManager(::getAnnotationsForPage, annotationsProcessor)
 
     public override val formEditRecords: List<FormEditRecord>
         get() = _formEditRecords.toList()
@@ -415,6 +418,14 @@ public class SandboxedPdfDocument(
         return AnnotationResult(listOf(), listOf())
     }
 
+    override fun <T : PdfEdit> addPdfEditEntry(entry: PdfEditEntry<T>) {
+        when (entry) {
+            is PdfAnnotationData -> annotationsManager.addAnnotationById(entry.id, entry.annotation)
+            else ->
+                throw UnsupportedOperationException("Unsupported edit type: ${entry.edit::class}")
+        }
+    }
+
     override fun addEdit(edit: PdfEdit): EditId {
         return when (edit) {
             is PdfAnnotation -> annotationsManager.addAnnotation(edit)
@@ -422,15 +433,17 @@ public class SandboxedPdfDocument(
         }
     }
 
-    override fun removeEdit(editId: EditId) {
-        annotationsManager.removeAnnotation(editId)
-    }
+    override fun removeEdit(editId: EditId): PdfEdit = annotationsManager.removeAnnotation(editId)
 
-    override fun updateEdit(editId: EditId, edit: PdfEdit) {
-        when (edit) {
+    override fun updateEdit(editId: EditId, edit: PdfEdit): PdfEdit {
+        return when (edit) {
             is PdfAnnotation -> annotationsManager.updateAnnotation(editId, edit)
             else -> throw UnsupportedOperationException("Unsupported edit type: ${edit::class}")
         }
+    }
+
+    override fun clearUncommittedEdits() {
+        return annotationsManager.clearUncommittedEdits()
     }
 
     // TODO: b/438309514 - Remove GetAnnotationsFromDraftState from SandboxPdfDocument
@@ -438,17 +451,35 @@ public class SandboxedPdfDocument(
         return annotationsManager.getAnnotationsForPage(pageNum)
     }
 
-    override fun commitEdits(): EditsResult {
-        // TODO: b/437827008 - Implementation of managing PdfEdits in EditablePdfDocument
-        return EditsResult(listOf(), listOf())
+    override suspend fun commitEdits(): EditsResult {
+        return annotationsManager.commitEdits()
     }
 
     override fun getAllEdits(): PdfEdits = annotationsManager.getSnapshot()
 
-    private suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> =
-        withDocument { pdfDocumentRemote ->
-            pdfDocumentRemote.getPageAnnotations(pageNum)
+    private suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> {
+        val firstBatch = withDocument { it.getAllPageAnnotations(pageNum) } ?: return emptyList()
+        if (firstBatch.totalBatchCount <= 1) {
+            return firstBatch.annotations.map { it.annotation }
         }
+
+        return coroutineScope {
+            val firstAnnotations = firstBatch.annotations.map { it.annotation }
+            val deferredRemainingBatches =
+                (1 until firstBatch.totalBatchCount).map { batchIndex ->
+                    async {
+                        withDocument { remote ->
+                            remote.getBatchedPageAnnotations(pageNum, batchIndex).annotations.map {
+                                it.annotation
+                            }
+                        }
+                    }
+                }
+
+            val remainingAnnotations = deferredRemainingBatches.awaitAll().flatten()
+            firstAnnotations + remainingAnnotations
+        }
+    }
 
     private companion object {
         private const val DEFAULT_PAGE = 400

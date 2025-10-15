@@ -9,10 +9,11 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$NestedBaseSerializableFactory` : AppFunctionSerializableFactory<NestedBaseSerializable> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): NestedBaseSerializable {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.NestedBaseSerializable")
     val nestedBaseSerializableFactory = `$NestedBaseSerializableFactory`()
 
-    val stringBaseName = checkNotNull(appFunctionData.getStringOrNull("stringBaseName"))
-    val nestedBaseData = appFunctionData.getAppFunctionData("nestedBase")
+    val stringBaseName = checkNotNull(appFunctionDataWithSpec.getStringOrNull("stringBaseName"))
+    val nestedBaseData = appFunctionDataWithSpec.getAppFunctionData("nestedBase")
     var nestedBase: NestedBaseSerializable? = null
     if (nestedBaseData != null) {
       nestedBase = nestedBaseSerializableFactory.fromAppFunctionData(nestedBaseData)
@@ -26,7 +27,7 @@ public class `$NestedBaseSerializableFactory` : AppFunctionSerializableFactory<N
     val nestedBaseSerializable_appFunctionSerializable = appFunctionSerializable
     val nestedBaseSerializableFactory = `$NestedBaseSerializableFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.NestedBaseSerializable")
+    val builder = getAppFunctionDataBuilder("com.testdata.NestedBaseSerializable")
     val stringBaseName = nestedBaseSerializable_appFunctionSerializable.stringBaseName
     builder.setString("stringBaseName", stringBaseName)
     val nestedBase = nestedBaseSerializable_appFunctionSerializable.nestedBase

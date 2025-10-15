@@ -66,7 +66,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-tasks:18.2.0")
 
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesGuava)
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.appcompat:appcompat:1.7.0")
@@ -79,8 +78,7 @@ dependencies {
     implementation("com.google.ar:core:1.49.0")
     implementation("de.javagl:obj:0.4.0")
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project),
-            "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
 }
 
 // Making this APK available via Android Build so the QA team can

@@ -28,10 +28,10 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("AndroidXComposePlugin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":navigationevent:navigationevent"))
     implementation(project(":navigationevent:navigationevent-compose"))
     implementation(project(":navigationevent:navigationevent-testing"))

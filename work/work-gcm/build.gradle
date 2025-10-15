@@ -32,9 +32,7 @@ plugins {
 
 android {
     compileSdk = 35
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.work.impl.background.gcm"
 }
 

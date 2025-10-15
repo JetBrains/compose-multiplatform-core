@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":xr:runtime:runtime"))
     api(project(":xr:scenecore:scenecore"))
     implementation("androidx.concurrent:concurrent-futures:1.2.0")
@@ -39,6 +38,7 @@ dependencies {
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(project(":xr:scenecore:scenecore-testing"))
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)

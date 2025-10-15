@@ -235,8 +235,8 @@ public final class CameraUseCaseAdapter implements Camera {
         mSecondaryCompositionSettings = secondaryCompositionSettings;
         mCameraCoordinator = cameraCoordinator;
         mUseCaseConfigFactory = useCaseConfigFactory;
-        mCameraIdentifier =
-                CameraIdentifier.fromAdapterInfos(adapterCameraInfo, secondaryAdapterCameraInfo);
+        mCameraIdentifier = CameraIdentifier.Factory.fromAdapterInfos(adapterCameraInfo,
+                secondaryAdapterCameraInfo);
         mStreamSpecsCalculator = streamSpecsCalculator;
     }
 
@@ -401,10 +401,10 @@ public final class CameraUseCaseAdapter implements Camera {
      * combination of newly added UseCases and the currently active UseCases is supported by the
      * camera. If the combination is not supported, a [CameraException] will be thrown.
      *
-     * @param appUseCasesToAdd The use cases an application wants to add.
-     * @param featureGroup     A {@link ResolvedFeatureGroup} to use for all the use cases
-     *                         after adding these use cases. A null value represents that the
-     *                         feature combination API is not being used.
+     * @param appUseCasesToAdd          The use cases an application wants to add.
+     * @param featureGroup              A {@link ResolvedFeatureGroup} to use for all the use cases
+     *                                  after adding these use cases. A null value represents
+     *                                  that the feature combination API is not being used.
      * @param findMaxSupportedFrameRate whether to find the maximum supported frame rates. If true,
      *                                  the {@link StreamSpecQueryResult#maxSupportedFrameRate} in
      *                                  returned {@link CalculatedUseCaseInfo} will contain the
@@ -727,15 +727,14 @@ public final class CameraUseCaseAdapter implements Camera {
      * <p>StreamSharing is only allowed when the following conditions are met:
      * <ul>
      * <li>When extension is not enabled.</li>
-     * <li>When concurrent camera is not enabled.</li>
+     * <li>When concurrent camera v2(Same Preview/VideoCapture) is not enabled.</li>
      * <li>When high-speed session is not enabled.</li>
      * </ul>
      */
     @GuardedBy("mLock")
     private boolean isStreamSharingAllowed() {
         return !hasExtension()
-                && mCameraCoordinator.getCameraOperatingMode()
-                != CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT
+                && mSecondaryCameraInternal == null
                 && mSessionType != SESSION_TYPE_HIGH_SPEED;
     }
 
@@ -1464,6 +1463,16 @@ public final class CameraUseCaseAdapter implements Camera {
         });
 
         return preview;
+    }
+
+    /**
+     * Checks if the underlying camera(s) are still valid.
+     *
+     * @return true if any of the CameraInternal instances has been removed.
+     */
+    public boolean isRemoved() {
+        return mCameraInternal.isRemoved()
+                || (mSecondaryCameraInternal != null && mSecondaryCameraInternal.isRemoved());
     }
 
     private ImageCapture createExtraImageCapture() {

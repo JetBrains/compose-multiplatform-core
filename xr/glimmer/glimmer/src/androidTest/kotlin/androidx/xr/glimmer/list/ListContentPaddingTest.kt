@@ -18,7 +18,6 @@ package androidx.xr.glimmer.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -49,7 +48,6 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
 
     private val ListTag = "List"
     private val ItemTag = "item"
-    private val ContainerTag = "container"
 
     private var itemSize: Dp = Dp.Infinity
     private var smallPaddingSize: Dp = Dp.Infinity
@@ -90,7 +88,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
             .assertMainAxisSizeIsEqualTo(itemSize)
 
         rule.runOnIdle {
-            scope.launch { state.scrollBy(with(rule.density) { largePaddingSize.toPx() }) }
+            scope.launch { state.scrollContentBy(with(rule.density) { largePaddingSize.toPx() }) }
         }
 
         rule
@@ -115,7 +113,10 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
 
         state.assertScrollPosition(0, 0.dp)
 
-        rule.runOnIdle { scope.launch { state.scrollBy(with(rule.density) { itemSize.toPx() }) } }
+        rule.runOnIdle {
+            scope.launch { state.scrollContentBy(with(rule.density) { itemSize.toPx() }) }
+        }
+        rule.waitForIdle()
 
         state.assertScrollPosition(0, itemSize)
     }
@@ -139,7 +140,10 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         rule.onNodeWithTag("1").assertStartPositionInRootIsEqualTo(itemSize + padding)
         rule.onNodeWithTag("2").assertStartPositionInRootIsEqualTo(itemSize * 2 + padding)
 
-        rule.runOnIdle { scope.launch { state.scrollBy(with(rule.density) { padding.toPx() }) } }
+        rule.runOnIdle {
+            scope.launch { state.scrollContentBy(with(rule.density) { padding.toPx() }) }
+        }
+        rule.waitForIdle()
 
         state.assertScrollPosition(1, padding - itemSize)
 
@@ -165,9 +169,10 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         }
 
         rule.runOnIdle {
-            scope.launch { state.scrollBy(with(rule.density) { (itemSize * 3).toPx() }) }
-            scope.launch { state.scrollBy(with(rule.density) { (-itemSize * 1.5f).toPx() }) }
+            scope.launch { state.scrollContentBy(with(rule.density) { (itemSize * 3).toPx() }) }
+            scope.launch { state.scrollContentBy(with(rule.density) { (-itemSize * 1.5f).toPx() }) }
         }
+        rule.waitForIdle()
 
         state.assertScrollPosition(1, itemSize * 0.5f)
 
@@ -193,8 +198,9 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         }
 
         rule.runOnIdle {
-            scope.launch { state.scrollBy(with(rule.density) { (itemSize * 3).toPx() }) }
+            scope.launch { state.scrollContentBy(with(rule.density) { (itemSize * 4).toPx() }) }
         }
+        rule.waitForIdle()
 
         state.assertScrollPosition(3, 0.dp)
 
@@ -203,7 +209,9 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         rule.onNodeWithTag("3").assertStartPositionInRootIsEqualTo(itemSize * 3 - padding)
 
         // there are no space to scroll anymore, so it should change nothing
-        rule.runOnIdle { scope.launch { state.scrollBy(with(rule.density) { 10.dp.toPx() }) } }
+        rule.runOnIdle {
+            scope.launch { state.scrollContentBy(with(rule.density) { 10.dp.toPx() }) }
+        }
 
         state.assertScrollPosition(3, 0.dp)
 
@@ -252,7 +260,7 @@ class ListContentPaddingTest(orientation: Orientation) : BaseListTestWithOrienta
         }
 
         rule.runOnIdle {
-            scope.launch { state.scrollBy(with(rule.density) { (itemSize * 4).toPx() }) }
+            scope.launch { state.scrollContentBy(with(rule.density) { (itemSize * 4).toPx() }) }
         }
 
         if (vertical) {

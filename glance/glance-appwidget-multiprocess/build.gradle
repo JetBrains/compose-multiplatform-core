@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":glance:glance-appwidget"))
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.work:work-multiprocess:2.9.1")

@@ -35,7 +35,6 @@ android {
     compileSdk = 35
     defaultConfig {
         applicationId = "androidx.window.demo"
-        minSdk = 23
     }
     buildFeatures {
         viewBinding = true

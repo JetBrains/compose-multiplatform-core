@@ -18,7 +18,7 @@ package androidx.build.buildInfo
 
 import androidx.build.AGGREGATE_BUILD_INFO_FILE_NAME
 import androidx.build.buildInfo.CreateAggregateLibraryBuildInfoFileTask.Companion.CREATE_AGGREGATE_BUILD_INFO_FILES_TASK
-import androidx.build.getDistributionDirectoryProperty
+import androidx.build.getDistributionDirectory
 import androidx.build.jetpad.LibraryBuildInfoFile
 import com.google.gson.Gson
 import java.io.File
@@ -109,7 +109,7 @@ fun Project.addTaskToAggregateBuildInfoFileTask(task: Provider<CreateLibraryBuil
             task.flatMap { task -> task.outputFile.asFile }
         )
         aggregateLibraryBuildInfoFileTask.outputFileProvider.set(
-            project.getDistributionDirectoryProperty().file(AGGREGATE_BUILD_INFO_FILE_NAME)
+            project.getDistributionDirectory().file(AGGREGATE_BUILD_INFO_FILE_NAME)
         )
     }
 }

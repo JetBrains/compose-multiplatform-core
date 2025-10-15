@@ -81,6 +81,10 @@ private fun <Key, Value : Any> MapEntrySaver(
 @Composable
 internal fun <T> rememberRef(initialValue: T): RefHolder<T> = remember { RefHolder(initialValue) }
 
+@Composable
+internal fun <T> rememberUpdatedRef(value: T): RefHolder<T> =
+    rememberRef(value).apply { this.value = value }
+
 internal class RefHolder<T>(var value: T)
 
 @Suppress("NOTHING_TO_INLINE")

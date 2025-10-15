@@ -37,7 +37,6 @@ dependencies {
     compileOnly(project(":inspection:inspection"))
 
     androidTestImplementation(project(":inspection:inspection-testing"))
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.truth)

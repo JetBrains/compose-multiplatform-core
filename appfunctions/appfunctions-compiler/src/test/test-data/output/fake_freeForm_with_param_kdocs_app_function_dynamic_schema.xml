@@ -143,7 +143,4 @@
         </response>
         <functionId>com.testdata.FakeFreeFormFunctions#fakeFreeFormFunction_onlyKnownTagsSkipped</functionId>
     </appfunction>
-    <AppFunctionComponentMetadataDocument>
-        <id>unused</id>
-    </AppFunctionComponentMetadataDocument>
 </appfunctions>

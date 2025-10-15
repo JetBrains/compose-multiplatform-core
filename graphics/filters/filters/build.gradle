@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.media3:media3-effect:1.0.0")

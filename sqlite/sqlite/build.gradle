@@ -48,7 +48,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.9.1")
             }
         }
@@ -60,7 +59,7 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonMain)
         }
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)

@@ -33,7 +33,6 @@ dependencies {
     api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
 
-    api(libs.kotlinStdlib)
 
     testImplementation(libs.testExtJunit)
     testImplementation(libs.mockitoCore4)

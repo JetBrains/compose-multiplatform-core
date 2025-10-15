@@ -32,7 +32,6 @@ plugins {
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    implementation(libs.kotlinStdlib)
     implementation(project(":camera:camera-compose"))
     implementation(project(":camera:camera-core"))
     implementation("androidx.compose.foundation:foundation:1.6.8")
@@ -47,7 +46,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.camera.compose.samples"
 }
 

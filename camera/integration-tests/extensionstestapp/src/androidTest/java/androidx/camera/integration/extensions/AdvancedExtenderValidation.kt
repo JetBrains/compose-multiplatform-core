@@ -24,6 +24,7 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.params.DynamicRangeProfiles
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
 import android.media.ImageReader
@@ -43,6 +44,8 @@ import androidx.camera.extensions.impl.advanced.ImageReaderOutputConfigImpl
 import androidx.camera.extensions.impl.advanced.MultiResolutionImageReaderOutputConfigImpl
 import androidx.camera.extensions.impl.advanced.OutputSurfaceConfigurationImpl
 import androidx.camera.extensions.impl.advanced.OutputSurfaceImpl
+import androidx.camera.extensions.impl.advanced.OutputSurfaceImpl.DATASPACE_UNSPECIFIED
+import androidx.camera.extensions.impl.advanced.OutputSurfaceImpl.USAGE_UNSPECIFIED
 import androidx.camera.extensions.impl.advanced.SurfaceOutputConfigImpl
 import androidx.camera.extensions.internal.ExtensionVersion
 import androidx.camera.extensions.internal.ExtensionsUtils
@@ -480,6 +483,18 @@ class AdvancedExtenderValidation(
         override fun getSize() = size
 
         override fun getImageFormat() = imageFormat
+
+        override fun getDataspace(): Int {
+            return DATASPACE_UNSPECIFIED
+        }
+
+        override fun getUsage(): Long {
+            return USAGE_UNSPECIFIED
+        }
+
+        override fun getDynamicRangeProfile(): Long {
+            return DynamicRangeProfiles.STANDARD
+        }
     }
 
     private fun getOutputConfiguration(

@@ -17,6 +17,7 @@
 package androidx.pdf.annotation.processor
 
 import androidx.pdf.annotation.createPdfAnnotationDataList
+import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor.Companion.unflatten
 import androidx.pdf.service.FakePdfDocumentRemote
 import com.google.common.truth.Truth.assertThat
@@ -90,6 +91,105 @@ class BatchPdfAnnotationsProcessorTest {
         assertThat(result.failures.size).isEqualTo(2)
         assertThat(result.failures[0]).isEqualTo(annotations[0].annotation)
         assertThat(result.failures[1]).isEqualTo(annotations[1].annotation)
+    }
+
+    @Test
+    fun test_processAddEdit_multipleBatchesWithSingleFailure_returnsAnnotationResult() {
+        // Arrange
+        val remoteDocument = FakePdfDocumentRemote()
+        val processor = BatchPdfAnnotationsProcessor(remoteDocument)
+
+        val annotations =
+            createPdfAnnotationDataList(numAnnots = 2, pathLength = 10000, invalidRatio = 0.5f)
+
+        // Act
+        val result = processor.processAddEdits(annotations)
+
+        // Assert
+        assertThat(result.success.size).isEqualTo(1)
+        assertThat(result.failures.size).isEqualTo(1)
+        assertThat(result.failures[0]).isEqualTo(annotations[0].editId)
+        assertThat(result.success[0].jetpackId).isEqualTo(annotations[1].editId)
+    }
+
+    @Test
+    fun test_processAddEdits_multipleBatchesWithAllFailures_returnsAddEditResult() {
+        // Arrange
+        val remoteDocument = FakePdfDocumentRemote()
+        val processor = BatchPdfAnnotationsProcessor(remoteDocument)
+        val annotations =
+            createPdfAnnotationDataList(numAnnots = 2, pathLength = 10000, invalidRatio = 1f)
+
+        // Act
+        val result = processor.processAddEdits(annotations)
+
+        // Assert
+        assertThat(result.failures.size).isEqualTo(2)
+        assertThat(result.failures[0]).isEqualTo(annotations[0].editId)
+        assertThat(result.failures[1]).isEqualTo(annotations[1].editId)
+    }
+
+    @Test
+    fun test_processUpdateEdits_multipleBatchesWithSingleFailure_returnsModifyEditResult() {
+        // Arrange
+        val remoteDocument = FakePdfDocumentRemote()
+        val processor = BatchPdfAnnotationsProcessor(remoteDocument)
+
+        val annotations =
+            createPdfAnnotationDataList(numAnnots = 2, pathLength = 10000, invalidRatio = 0.5f)
+
+        // Act
+        val result = processor.processAddEdits(annotations)
+
+        // Assert
+        assertThat(result.success.size).isEqualTo(1)
+        assertThat(result.failures.size).isEqualTo(1)
+        assertThat(result.failures[0]).isEqualTo(annotations[0].editId)
+        assertThat(result.success[0].jetpackId).isEqualTo(annotations[1].editId)
+    }
+
+    @Test
+    fun test_processUpdateEdits_multipleBatchesWithAllFailures_returnsModifyEditResult() {
+        // Arrange
+        val remoteDocument = FakePdfDocumentRemote()
+        val processor = BatchPdfAnnotationsProcessor(remoteDocument)
+        val annotations =
+            createPdfAnnotationDataList(numAnnots = 2, pathLength = 10000, invalidRatio = 1f)
+
+        // Act
+        val result = processor.processUpdateEdits(annotations)
+
+        // Assert
+        assertThat(result.failures.size).isEqualTo(2)
+        assertThat(result.failures[0]).isEqualTo(annotations[0].editId)
+        assertThat(result.failures[1]).isEqualTo(annotations[1].editId)
+    }
+
+    @Test
+    fun test_processRemoveEdits_multipleBatchesWithSingleFailure_returnsModifyEditResult() {
+        // Arrange
+        val remoteDocument = FakePdfDocumentRemote()
+        val processor = BatchPdfAnnotationsProcessor(remoteDocument)
+
+        val editIds =
+            listOf(
+                EditId(-1, "invalid-edit"),
+                EditId(1, "editId1"),
+                EditId(2, "editId1"),
+                EditId(3, "editId1"),
+            )
+        createPdfAnnotationDataList(numAnnots = 2, pathLength = 10000, invalidRatio = 0.5f)
+
+        // Act
+        val result = processor.processRemoveEdits(editIds)
+
+        // Assert
+        assertThat(result.success.size).isEqualTo(3)
+        assertThat(result.failures.size).isEqualTo(1)
+        assertThat(result.failures[0]).isEqualTo(editIds[0])
+        assertThat(result.success[0]).isEqualTo(editIds[1])
+        assertThat(result.success[1]).isEqualTo(editIds[2])
+        assertThat(result.success[2]).isEqualTo(editIds[3])
     }
 
     @Test

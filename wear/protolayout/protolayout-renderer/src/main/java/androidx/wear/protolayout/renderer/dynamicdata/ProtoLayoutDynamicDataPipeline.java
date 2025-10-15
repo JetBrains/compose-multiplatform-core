@@ -112,6 +112,8 @@ public class ProtoLayoutDynamicDataPipeline {
     private final @NonNull
             DynamicTypePlatformDataProvider<Integer, PlatformEventSources.DynamicLayoutUpdateStatus>
             mLayoutUpdateStatusDataProvider;
+    private final @NonNull DynamicTypePlatformDataProvider<Boolean, DynamicBuilders.DynamicBool>
+            mAmbientModeStatusDataProvider;
 
     /** Creates a {@link ProtoLayoutDynamicDataPipeline} without animation support. */
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -183,6 +185,14 @@ public class ProtoLayoutDynamicDataPipeline {
         evaluatorConfigBuilder.addPlatformDataProvider(
                 mLayoutUpdateStatusDataProvider,
                 ImmutableSet.of(PlatformEventSources.Keys.LAYOUT_UPDATE_STATUS));
+
+        // Add an additional provider for ambient mode status.
+        mAmbientModeStatusDataProvider =
+                DynamicTypePlatformDataProvider.forDynamicBool(
+                        PlatformEventSources.Keys.AMBIENT_MODE_STATUS, false);
+        evaluatorConfigBuilder.addPlatformDataProvider(
+                mAmbientModeStatusDataProvider,
+                ImmutableSet.of(PlatformEventSources.Keys.AMBIENT_MODE_STATUS));
 
         // Time data.
         this.mTimeNotifier = new PlatformTimeUpdateNotifierImpl();
@@ -1102,6 +1112,13 @@ public class ProtoLayoutDynamicDataPipeline {
     public void setLayoutUpdateStatus(
             @PlatformEventSources.LayoutUpdateStatus int layoutUpdateStatus) {
         this.mLayoutUpdateStatusDataProvider.setValue(layoutUpdateStatus);
+    }
+
+    /** Sets the state of interactive vs ambient display update. */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @UiThread
+    public void setAmbientModeStatus(boolean isInAmbientMode) {
+        this.mAmbientModeStatusDataProvider.setValue(isInAmbientMode);
     }
 
     /**

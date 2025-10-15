@@ -43,7 +43,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
                 implementation(project(":compose:runtime:runtime"))
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)

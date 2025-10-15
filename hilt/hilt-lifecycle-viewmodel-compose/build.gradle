@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -34,7 +35,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     api(project(":hilt:hilt-lifecycle-viewmodel"))
     api("androidx.compose.runtime:runtime:1.8.2")
     api("androidx.compose.ui:ui:1.8.2")
@@ -58,6 +58,7 @@ androidx {
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2025"
     description = "ViewModel Compose Hilt Extension"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {

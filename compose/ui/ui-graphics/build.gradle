@@ -41,6 +41,7 @@ androidXMultiplatform {
             it.consumerKeepRules.publish = true
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
         }
+        lint.disable += "ComposeTestRuleDispatcher"
     }
     jvmStubs()
     linuxX64Stubs()
@@ -50,7 +51,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(libs.androidx.annotation)
 
                 api(project(":compose:ui:ui-unit"))
@@ -88,7 +88,7 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
                 implementation(project(":compose:ui:ui-test-junit4"))
@@ -101,7 +101,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)

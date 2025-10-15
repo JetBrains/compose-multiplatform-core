@@ -148,7 +148,17 @@ public interface CameraPipe {
         val cameraBackendConfig: CameraBackendConfig = CameraBackendConfig(),
         val cameraInteropConfig: CameraInteropConfig = CameraInteropConfig(),
         val imageSources: ImageSources? = null,
+        val flags: Flags = Flags(),
     )
+
+    /**
+     * Boolean Flags for controlling [CameraPipe] behaviours.
+     *
+     * @param strictModeEnabled disable all special treatment in
+     *   [androidx.camera.camera2.pipe.compat.Camera2Quirks]
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public data class Flags(val strictModeEnabled: Boolean = false)
 
     /**
      * Application level configuration for Camera2Interop callbacks. If set, these callbacks will be
@@ -255,21 +265,33 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
     override fun createCameraGraph(config: CameraGraph.Config): CameraGraph =
         synchronized(lock) {
             check(!shutdown)
-            createCameraGraphLocked(config)
+            createCameraGraphLocked(config, CameraGraphId.nextId())
         }
 
     override fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph> =
         synchronized(lock) {
             check(!shutdown)
-            config.graphConfigs.map { createCameraGraphLocked(it) }
+            val cameraGraphIdMap = buildMap {
+                for (graphConfig in config.graphConfigs) {
+                    put(graphConfig, CameraGraphId.nextId())
+                }
+            }
+            val cameraIds = config.graphConfigs.map { it.camera }.toSet()
+            val concurrentCameraGraphs =
+                ConcurrentCameraGraphs(cameraGraphIdMap.values.toSet(), cameraIds)
+
+            config.graphConfigs.map {
+                it.concurrentCameraGraphs = concurrentCameraGraphs
+                createCameraGraphLocked(it, checkNotNull(cameraGraphIdMap[it]))
+            }
         }
 
     @GuardedBy("lock")
-    private fun createCameraGraphLocked(config: CameraGraph.Config) =
+    private fun createCameraGraphLocked(config: CameraGraph.Config, cameraGraphId: CameraGraphId) =
         Debug.trace("CXCP#CameraGraph-${config.camera}") {
             component
                 .cameraGraphComponentBuilder()
-                .cameraGraphConfigModule(CameraGraphConfigModule(config))
+                .cameraGraphConfigModule(CameraGraphConfigModule(config, cameraGraphId))
                 .build()
                 .cameraGraph()
         }
@@ -277,7 +299,7 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
     override fun createFrameGraph(frameGraphConfig: FrameGraph.Config): FrameGraph =
         synchronized(lock) {
             check(!shutdown)
-            createFrameGraphLocked(frameGraphConfig)
+            createFrameGraphLocked(frameGraphConfig, CameraGraphId.nextId())
         }
 
     override fun createFrameGraphs(
@@ -285,17 +307,33 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
     ): List<FrameGraph> =
         synchronized(lock) {
             check(!shutdown)
-            frameGraphConfigs.frameGraphConfigs.map { createFrameGraphLocked(it) }
+            val cameraGraphIdMap = buildMap {
+                for (graphConfig in frameGraphConfigs.frameGraphConfigs) {
+                    put(graphConfig, CameraGraphId.nextId())
+                }
+            }
+            val cameraIds =
+                frameGraphConfigs.frameGraphConfigs.map { it.cameraGraphConfig.camera }.toSet()
+            val concurrentCameraGraphs =
+                ConcurrentCameraGraphs(cameraGraphIdMap.values.toSet(), cameraIds)
+
+            frameGraphConfigs.frameGraphConfigs.map {
+                it.cameraGraphConfig.concurrentCameraGraphs = concurrentCameraGraphs
+                createFrameGraphLocked(it, checkNotNull(cameraGraphIdMap[it]))
+            }
         }
 
     @GuardedBy("lock")
-    private fun createFrameGraphLocked(frameGraphConfig: FrameGraph.Config) =
+    private fun createFrameGraphLocked(
+        frameGraphConfig: FrameGraph.Config,
+        cameraGraphId: CameraGraphId,
+    ) =
         Debug.trace("CXCP#CreateFrameGraph-${frameGraphConfig.cameraGraphConfig.camera}") {
             val cameraGraphComponent =
                 component
                     .cameraGraphComponentBuilder()
                     .cameraGraphConfigModule(
-                        CameraGraphConfigModule(frameGraphConfig.cameraGraphConfig)
+                        CameraGraphConfigModule(frameGraphConfig.cameraGraphConfig, cameraGraphId)
                     )
                     .build()
             component
@@ -376,7 +414,8 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
                     Log.warn { "Trying to get audio restriction after shutdown! Returning NONE" }
                     return AudioRestrictionMode.AUDIO_RESTRICTION_NONE
                 }
-                component.cameraAudioRestrictionController().globalAudioRestrictionMode
+                return component.cameraAudioRestrictionController().globalAudioRestrictionMode
+                    ?: AudioRestrictionMode.AUDIO_RESTRICTION_NONE
             }
         set(value) =
             synchronized(lock) {

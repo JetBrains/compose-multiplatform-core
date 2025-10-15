@@ -43,7 +43,6 @@ dependencies {
     api("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
     api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
     api("androidx.recyclerview:recyclerview:1.2.1")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     implementation("androidx.core:core-ktx:1.7.0")
 

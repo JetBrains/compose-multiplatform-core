@@ -17,7 +17,6 @@
 package androidx.compose.material3
 
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.MutatePriority
@@ -40,11 +39,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.CacheDrawScope
 import androidx.compose.ui.draw.DrawResult
 import androidx.compose.ui.draw.drawWithCache
@@ -64,9 +64,9 @@ import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -317,9 +317,71 @@ fun TooltipBox(
         Box(modifier = Modifier.onGloballyPositioned { anchorBounds.value = it }) { content() }
     }
 
+    val tooltipPosition = remember { mutableStateOf<Offset?>(null) }
+    val tooltipSide by
+        remember(tooltipPosition, anchorBounds) {
+            derivedStateOf {
+                if (anchorBounds.value != null && tooltipPosition.value != null) {
+                    val anchorPosition = anchorBounds.value!!.positionOnScreen()
+                    val popupPosition = tooltipPosition.value!!
+                    if (popupPosition.x <= anchorPosition.x) {
+                        if (popupPosition.y < anchorPosition.y) {
+                            1 // Top Left
+                        } else {
+                            3 // Bottom Left
+                        }
+                    } else {
+                        if (popupPosition.y < anchorPosition.y) {
+                            2 // Top Right
+                        } else {
+                            4 // Bottom Right
+                        }
+                    }
+                } else {
+                    0 // Default
+                }
+            }
+        }
+
+    // Define the animation specifications from the motion tokens.
+    val scaleSpec = MotionSchemeKeyTokens.FastSpatial.value<Float>()
+    val alphaSpec = MotionSchemeKeyTokens.FastEffects.value<Float>()
+
+    // Animate scale based on the target visibility state.
+    val scale by
+        transition.animateFloat(
+            transitionSpec = { scaleSpec },
+            label = "tooltip transition: scaling",
+        ) {
+            if (it) 1f else 0.8f
+        }
+
+    // Animate alpha (transparency) based on the target visibility state.
+    val alpha by
+        transition.animateFloat(
+            transitionSpec = { alphaSpec },
+            label = "tooltip transition: alpha",
+        ) {
+            if (it) 1f else 0f
+        }
+
     BasicTooltipBox(
         positionProvider = positionProvider,
-        tooltip = { Box(Modifier.animateTooltip(transition)) { scope.tooltip() } },
+        tooltip = {
+            Box(Modifier.onGloballyPositioned { tooltipPosition.value = it.positionOnScreen() }) {
+                key(tooltipSide) {
+                    Box(
+                        Modifier.graphicsLayer {
+                            this.scaleX = scale
+                            this.scaleY = scale
+                            this.alpha = alpha
+                        }
+                    ) {
+                        scope.tooltip()
+                    }
+                }
+            }
+        },
         focusable = focusable,
         enableUserInput = enableUserInput,
         onDismissRequest = onDismissRequest,
@@ -850,8 +912,9 @@ object TooltipDefaults {
     ): PopupPositionProvider {
         val tooltipAnchorSpacing =
             with(LocalDensity.current) { spacingBetweenTooltipAndAnchor.roundToPx() }
-        return remember(tooltipAnchorSpacing, positioning) {
-            TooltipPositionProviderImpl(positioning, tooltipAnchorSpacing)
+        val windowContainerSize = LocalWindowInfo.current.containerSize
+        return remember(tooltipAnchorSpacing, positioning, windowContainerSize) {
+            TooltipPositionProviderImpl(positioning, tooltipAnchorSpacing, windowContainerSize)
         }
     }
 
@@ -996,6 +1059,7 @@ fun TooltipState(
 private class TooltipPositionProviderImpl(
     val type: TooltipAnchorPosition,
     val tooltipAnchorSpacing: Int,
+    val windowContainerSize: IntSize,
 ) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
@@ -1004,22 +1068,32 @@ private class TooltipPositionProviderImpl(
         popupContentSize: IntSize,
     ): IntOffset {
         return when (type) {
-            TooltipAnchorPosition.Left -> leftPositioning(anchorBounds, popupContentSize)
+            TooltipAnchorPosition.Left ->
+                leftPositioning(anchorBounds, popupContentSize, windowContainerSize)
             TooltipAnchorPosition.Right ->
-                rightPositioning(anchorBounds, popupContentSize, windowSize)
+                rightPositioning(anchorBounds, popupContentSize, windowContainerSize)
             TooltipAnchorPosition.Above ->
-                abovePositioning(anchorBounds, popupContentSize, windowSize)
+                abovePositioning(anchorBounds, popupContentSize, windowContainerSize)
             TooltipAnchorPosition.Below ->
-                belowPositioning(anchorBounds, popupContentSize, windowSize)
+                belowPositioning(anchorBounds, popupContentSize, windowContainerSize)
             TooltipAnchorPosition.Start ->
-                startPositioning(layoutDirection, anchorBounds, popupContentSize, windowSize)
+                startPositioning(
+                    layoutDirection,
+                    anchorBounds,
+                    popupContentSize,
+                    windowContainerSize,
+                )
             TooltipAnchorPosition.End ->
-                endPositioning(layoutDirection, anchorBounds, popupContentSize, windowSize)
-            else -> abovePositioning(anchorBounds, popupContentSize, windowSize)
+                endPositioning(layoutDirection, anchorBounds, popupContentSize, windowContainerSize)
+            else -> abovePositioning(anchorBounds, popupContentSize, windowContainerSize)
         }
     }
 
-    fun leftPositioning(anchorBounds: IntRect, popupContentSize: IntSize): IntOffset {
+    fun leftPositioning(
+        anchorBounds: IntRect,
+        popupContentSize: IntSize,
+        windowSize: IntSize,
+    ): IntOffset {
         // Horizontal alignment preference: left -> right
         // Vertical preference: center
 
@@ -1029,7 +1103,11 @@ private class TooltipPositionProviderImpl(
         if (x < 0) {
             // Flip the tooltip to be on the right if
             // it collides with the left side of the screen
-            x = anchorBounds.right + tooltipAnchorSpacing
+            val xCorrection =
+                (anchorBounds.right + tooltipAnchorSpacing + popupContentSize.width -
+                        windowSize.width)
+                    .coerceAtLeast(0)
+            x = anchorBounds.right + tooltipAnchorSpacing - xCorrection
         }
 
         // We vertically center the tooltip with the anchor
@@ -1051,7 +1129,10 @@ private class TooltipPositionProviderImpl(
         if (x + popupContentSize.width > windowSize.width) {
             // Flip the tooltip to be on the left if
             // it collides with the right side of the screen
-            x = anchorBounds.left - (popupContentSize.width + tooltipAnchorSpacing)
+            x =
+                (anchorBounds.left - (popupContentSize.width + tooltipAnchorSpacing)).coerceAtLeast(
+                    0
+                )
         }
 
         // We vertically center the tooltip with the anchor
@@ -1073,11 +1154,13 @@ private class TooltipPositionProviderImpl(
         if (x < 0) {
             // Make tooltip start aligned if colliding with the
             // left side of the screen
-            x = anchorBounds.left
+            val xCorrection =
+                (anchorBounds.left + popupContentSize.width - windowSize.width).coerceAtLeast(0)
+            x = anchorBounds.left - xCorrection
         } else if (x + popupContentSize.width > windowSize.width) {
             // Make tooltip end aligned if colliding with the
             // right side of the screen
-            x = anchorBounds.right - popupContentSize.width
+            x = (anchorBounds.right - popupContentSize.width).coerceAtLeast(0)
         }
 
         // Tooltip prefers to be above the anchor,
@@ -1102,11 +1185,13 @@ private class TooltipPositionProviderImpl(
         if (x < 0) {
             // Make tooltip start aligned if colliding with the
             // left side of the screen
-            x = anchorBounds.left
+            val xCorrection =
+                (anchorBounds.left + popupContentSize.width - windowSize.width).coerceAtLeast(0)
+            x = anchorBounds.left - xCorrection
         } else if (x + popupContentSize.width > windowSize.width) {
             // Make tooltip end aligned if colliding with the
             // right side of the screen
-            x = anchorBounds.right - popupContentSize.width
+            x = (anchorBounds.right - popupContentSize.width).coerceAtLeast(0)
         }
 
         // Tooltip prefers to be below the anchor,
@@ -1126,7 +1211,7 @@ private class TooltipPositionProviderImpl(
         windowSize: IntSize,
     ): IntOffset {
         return if (layoutDirection == LayoutDirection.Ltr) {
-            leftPositioning(anchorBounds, popupContentSize)
+            leftPositioning(anchorBounds, popupContentSize, windowSize)
         } else {
             rightPositioning(anchorBounds, popupContentSize, windowSize)
         }
@@ -1141,7 +1226,7 @@ private class TooltipPositionProviderImpl(
         return if (layoutDirection == LayoutDirection.Ltr) {
             rightPositioning(anchorBounds, popupContentSize, windowSize)
         } else {
-            leftPositioning(anchorBounds, popupContentSize)
+            leftPositioning(anchorBounds, popupContentSize, windowSize)
         }
     }
 }
@@ -1180,7 +1265,7 @@ private class TooltipStateImpl(
         // or until tooltip is explicitly dismissed depending on [isPersistent].
         mutatorMutex.mutate(mutatePriority) {
             try {
-                if (isPersistent) {
+                if (isPersistent || mutatePriority == MutatePriority.UserInput) {
                     cancellableShow()
                 } else {
                     withTimeout(BasicTooltipDefaults.TooltipDuration) { cancellableShow() }
@@ -1256,36 +1341,6 @@ internal fun Modifier.textVerticalPadding(subheadExists: Boolean, actionExists: 
             .padding(bottom = TextBottomPadding)
     }
 }
-
-internal fun Modifier.animateTooltip(transition: Transition<Boolean>): Modifier =
-    composed(
-        inspectorInfo =
-            debugInspectorInfo {
-                name = "animateTooltip"
-                properties["transition"] = transition
-            }
-    ) {
-        // TODO Load the motionScheme tokens from the component tokens file
-        val inOutScaleAnimationSpec = MotionSchemeKeyTokens.FastSpatial.value<Float>()
-        val inOutAlphaAnimationSpec = MotionSchemeKeyTokens.FastEffects.value<Float>()
-        val scale by
-            transition.animateFloat(
-                transitionSpec = { inOutScaleAnimationSpec },
-                label = "tooltip transition: scaling",
-            ) {
-                if (it) 1f else 0.8f
-            }
-
-        val alpha by
-            transition.animateFloat(
-                transitionSpec = { inOutAlphaAnimationSpec },
-                label = "tooltip transition: alpha",
-            ) {
-                if (it) 1f else 0f
-            }
-
-        this.graphicsLayer(scaleX = scale, scaleY = scale, alpha = alpha)
-    }
 
 internal fun caretX(tooltipWidth: Float, screenWidthPx: Int, anchorBounds: Rect): Float {
     val anchorLeft = anchorBounds.left

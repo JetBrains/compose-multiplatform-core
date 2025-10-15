@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":health:connect:connect-client"))
     implementation(project(":health:connect:connect-client-proto"))
 

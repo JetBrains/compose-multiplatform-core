@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
     api("androidx.core:core:1.9.0")
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(libs.kotlinCoroutinesGuava)
     implementation("androidx.appcompat:appcompat:1.6.1")

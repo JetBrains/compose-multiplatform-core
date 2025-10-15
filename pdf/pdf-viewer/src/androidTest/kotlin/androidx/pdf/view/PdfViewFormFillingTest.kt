@@ -19,7 +19,9 @@ package androidx.pdf.view
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
+import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.R
@@ -28,7 +30,10 @@ import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
+import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.pressImeActionButton
+import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -197,6 +202,64 @@ class PdfViewFormFillingTest {
             .isEqualTo(
                 FormEditRecord(pageNumber = 0, widgetIndex = 0, selectedIndices = intArrayOf(0, 2))
             )
+    }
+
+    @Test
+    fun testInteractionWithTextTypeFormWidget_actionDoneAppliesEdit() = runTest {
+        val fakePdfDocument =
+            FakePdfDocument(
+                pages = List(2) { Point(500, 500) },
+                formType = PdfDocument.PDF_FORM_TYPE_ACRO_FORM,
+                pageFormWidgetInfos =
+                    mapOf(
+                        0 to
+                            listOf(
+                                FormWidgetInfo(
+                                    widgetType = FormWidgetInfo.WIDGET_TYPE_TEXTFIELD,
+                                    widgetIndex = 0,
+                                    widgetRect = Rect(10, 10, 200, 200),
+                                    textValue = "Hello",
+                                    accessibilityLabel = "Hello",
+                                    multiLineText = false,
+                                    fontSize = 10.0f,
+                                )
+                            )
+                    ),
+            )
+        val textValue = fakePdfDocument.getFormWidgetInfos(0)[0].textValue
+        val textToAppend = " World"
+        val finalText = textValue + textToAppend
+        setupPdfView(fakePdfDocument = fakePdfDocument, enableFormFilling = true)
+        var pdfView: PdfView? = null
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            fakePdfDocument.waitForRender(untilPage = 0)
+            fakePdfDocument.waitForLayout(untilPage = 0)
+            Espresso.onView(withId(PDF_VIEW_ID)).check { view, noViewFoundException ->
+                view ?: throw noViewFoundException
+                pdfView = view as PdfView
+            }
+            Espresso.onView(withId(PDF_VIEW_ID)).perform(performSingleTapOnCoords(50f, 50f))
+            val editTextMatcher: (View) -> Boolean = { view ->
+                view is EditText && view.text.toString() == textValue && view.isShown
+            }
+            val childAddedIdlingResource = ChildViewAddedIdlingResource(pdfView!!, editTextMatcher)
+            try {
+                IdlingRegistry.getInstance().register(childAddedIdlingResource)
+                Espresso.onView(withText(textValue)).check(ViewAssertions.matches(isDisplayed()))
+                Espresso.onView(withText(textValue)).perform(typeText(textToAppend))
+                Espresso.onView(withText(finalText)).check(ViewAssertions.matches(isDisplayed()))
+                Espresso.onView(withText(finalText)).perform(pressImeActionButton())
+            } finally {
+                IdlingRegistry.getInstance().unregister(childAddedIdlingResource)
+            }
+
+            // assert that a edit text is visible with the text "TextField"
+            // Type "World" into the edit text
+            fakePdfDocument.waitForApplyEdit(1)
+            close()
+        }
+        assertThat(fakePdfDocument.editHistory).hasSize(1)
+        assertThat(fakePdfDocument.editHistory[0]).isEqualTo(FormEditRecord(0, 0, finalText))
     }
 
     @Test

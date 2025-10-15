@@ -65,9 +65,11 @@ public class StockTextureBitmapStore(private val resources: Resources) : Texture
     @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun preloadStockBrushesTextures(brushFamily: BrushFamily) {
         for (coat in brushFamily.coats) {
-            for (layer in coat.paint.textureLayers) {
-                if (layer.clientTextureId.isNotEmpty()) {
-                    @Suppress("CheckReturnValue") get(layer.clientTextureId)
+            for (paint in coat.paintPreferences) {
+                for (layer in paint.textureLayers) {
+                    if (layer.clientTextureId.isNotEmpty()) {
+                        @Suppress("CheckReturnValue") get(layer.clientTextureId)
+                    }
                 }
             }
         }

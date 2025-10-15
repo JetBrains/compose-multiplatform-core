@@ -25,10 +25,12 @@ import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.config.CameraPipeContext
+import androidx.camera.camera2.pipe.config.CameraPipeJob
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import javax.inject.Inject
@@ -37,6 +39,8 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.ProducerScope
@@ -60,9 +64,15 @@ constructor(
     packageManager: PackageManager,
     private val cameraErrorListener: CameraErrorListener,
     private val cameraDeviceSetupCompatFactoryProvider: Provider<CameraDeviceSetupCompatFactory>,
+    cameraPipeLifetime: CameraPipeLifetime,
+    @CameraPipeJob cameraPipeJob: Job,
 ) {
     private val scope =
-        CoroutineScope(threads.lightweightDispatcher + CoroutineName("Camera2DeviceCache"))
+        CoroutineScope(
+            SupervisorJob(cameraPipeJob) +
+                threads.lightweightDispatcher +
+                CoroutineName("Camera2DeviceCache")
+        )
     private val lock = Any()
 
     @GuardedBy("lock") private var openableCameras: List<CameraId>? = null
@@ -81,6 +91,10 @@ constructor(
 
     init {
         Log.debug { "Camera2DeviceCache: Expected minimum camera count = $minimumCameraCount" }
+
+        cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.SCOPE) {
+            scope.cancel()
+        }
     }
 
     val cameraIds: Flow<List<CameraId>> =
@@ -282,8 +296,23 @@ constructor(
             } catch (e: CameraAccessException) {
                 Log.warn(e) { "Failed to query CameraManager#getCameraIdList!" }
                 return null
+            } catch (e: ArrayIndexOutOfBoundsException) {
+                // getCameraIdList() can throw ArrayIndexOutOfBoundsException: b/443332525
+                Log.warn(e) {
+                    "Failed to query CameraManager#getCameraIdList!" +
+                        "Unexpected ArrayIndexOutOfBoundsException thrown by framework."
+                }
+                return null
+            } catch (e: NullPointerException) {
+                // getCameraIdList() can return null on problematic problems, which then ran afoul
+                // with kotlin intrinsics: b/450641047
+                Log.warn(e) {
+                    "Failed to query CameraManager#getCameraIdList!" +
+                        "Null was returned by framework."
+                }
+                return null
             }
-        val cameraIds = cameraIdArray.map { CameraId(it) }
+        val cameraIds = cameraIdArray.mapNotNull { CameraId(it) }
         if (isValidCameraIds(cameraIds)) {
             // Only update the cached camera IDs if the list is valid.
             synchronized(lock) { openableCameras = cameraIds }

@@ -48,6 +48,20 @@ public class MutableVec(
         return this
     }
 
+    /**
+     * Fills this [MutableVec] to have the given magnitude and direction in degrees rotated from the
+     * positive x-axis in the direction of positive y-axis.
+     */
+    public fun populateFromDirectionInDegreesAndMagnitude(
+        @AngleDegreesFloat directionDegrees: Float,
+        magnitude: Float,
+    ): MutableVec {
+        val directionRadians = Angle.degreesToRadians(directionDegrees)
+        x = magnitude * cos(directionRadians)
+        y = magnitude * sin(directionRadians)
+        return this
+    }
+
     override fun equals(other: Any?): Boolean =
         other === this || (other is Vec && areEquivalent(this, other))
 
@@ -56,13 +70,6 @@ public class MutableVec(
 
     override fun toString(): String = "Mutable${string(this)}"
 
-    public companion object {
-        @JvmStatic
-        public fun fromDirectionAndMagnitude(
-            @AngleRadiansFloat direction: Float,
-            magnitude: Float,
-        ): MutableVec {
-            return MutableVec(magnitude * cos(direction), magnitude * sin(direction))
-        }
-    }
+    // Allows for extension methods.
+    public companion object
 }

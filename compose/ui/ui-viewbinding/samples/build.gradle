@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -33,7 +34,6 @@ plugins {
 
 dependencies {
 
-    implementation(libs.kotlinStdlib)
     compileOnly(project(":annotation:annotation-sampled"))
     implementation("androidx.compose.runtime:runtime:1.2.1")
     implementation(project(":compose:ui:ui"))
@@ -56,6 +56,7 @@ androidx {
     type = SoftwareType.SAMPLES
     inceptionYear = "2019"
     description = "Contains the sample code for the Androidx Compose UI Simple Unit Classes"
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }
 
 android {

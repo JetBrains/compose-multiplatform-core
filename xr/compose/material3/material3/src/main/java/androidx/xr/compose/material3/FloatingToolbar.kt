@@ -18,7 +18,6 @@ package androidx.xr.compose.material3
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -57,18 +57,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
-import androidx.xr.compose.material3.XrVerticalFloatingToolbarOverride.VerticalFloatingToolbar
-import androidx.xr.compose.material3.XrVerticalFloatingToolbarTokens.ContainerWidth
 import androidx.xr.compose.material3.tokens.XrTokens
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 
 /**
  * A horizontal floating toolbar displays navigation and key actions in a [Row]. It can be
@@ -106,7 +103,6 @@ public fun HorizontalFloatingToolbar(
     trailingContent: @Composable (RowScope.() -> Unit)? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val expandedState by rememberUpdatedState(expanded)
     HorizontalOrbiter(LocalHorizontalFloatingToolbarOrbiterProperties.current) {
         Row(
             modifier =
@@ -114,12 +110,13 @@ public fun HorizontalFloatingToolbar(
                         scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
                             ?: Modifier
                     )
-                    .heightIn(min = XrHorizontalFloatingToolbarTokens.ContainerHeight)
+                    .heightIn(min = XrFloatingToolbarTokens.HorizontalToolbarContainerHeight)
                     .background(color = colors.toolbarContainerColor)
                     .padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
+            val expandedState by rememberUpdatedState(expanded)
             CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
                 leadingContent?.let {
                     AnimatedVisibility(
@@ -179,6 +176,9 @@ public fun HorizontalFloatingToolbar(
  *   [FloatingToolbarDefaults.vibrantFloatingToolbarColors] which you can use or modify. See also
  *   [floatingActionButton] for more information on the right FAB to use for proper styling.
  * @param contentPadding the padding applied to the content of this floating toolbar.
+ * @param scrollBehavior a [FloatingToolbarScrollBehavior]. If provided, this FloatingToolbar will
+ *   automatically react to scrolling.
+ * @param shape the shape used for this floating toolbar content.
  * @param floatingActionButtonPosition the position of the floating toolbar's floating action
  *   button. By default, the FAB is placed at the end of the toolbar (i.e. aligned to the right in
  *   left-to-right layout, or to the left in right-to-left layout).
@@ -194,25 +194,70 @@ public fun HorizontalFloatingToolbar(
     modifier: Modifier = Modifier,
     colors: FloatingToolbarColors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
     contentPadding: PaddingValues = FloatingToolbarDefaults.ContentPadding,
+    scrollBehavior: FloatingToolbarScrollBehavior? = null,
+    shape: Shape = FloatingToolbarDefaults.ContainerShape,
     floatingActionButtonPosition: FloatingToolbarHorizontalFabPosition =
         FloatingToolbarHorizontalFabPosition.End,
     content: @Composable RowScope.() -> Unit,
 ) {
-    HorizontalOrbiter(LocalHorizontalFloatingToolbarOrbiterProperties.current) {
+    HorizontalOrbiter(
+        LocalHorizontalFloatingToolbarOrbiterProperties.current.copy(
+            shape = SpatialRoundedCornerShape(CornerSize(percent = 0))
+        )
+    ) {
         Row(
             modifier =
-                Modifier.background(colors.toolbarContainerColor)
-                    .padding(contentPadding)
-                    .horizontalScroll(rememberScrollState()),
-            verticalAlignment = Alignment.CenterVertically,
+                Modifier.heightIn(XrFloatingToolbarTokens.HorizontalToolbarContainerHeight)
+                    .then(
+                        scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
+                            ?: Modifier
+                    ),
+            horizontalArrangement = Arrangement.spacedBy(XrFloatingToolbarTokens.ToolbarToFabGap),
         ) {
+            val expandedState by rememberUpdatedState(expanded)
             CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
-                if (floatingActionButtonPosition == FloatingToolbarHorizontalFabPosition.Start) {
-                    Box(Modifier.size(ContainerWidth)) { floatingActionButton() }
-                }
-                content()
                 if (floatingActionButtonPosition == FloatingToolbarHorizontalFabPosition.End) {
-                    Box(Modifier.size(ContainerWidth)) { floatingActionButton() }
+                    AnimatedVisibility(
+                        visible = expandedState,
+                        enter = horizontalEnterTransition(Alignment.End),
+                        exit = horizontalExitTransition(Alignment.End),
+                    ) {
+                        Row(
+                            modifier =
+                                Modifier.background(
+                                        color = colors.toolbarContainerColor,
+                                        shape = shape,
+                                    )
+                                    .padding(contentPadding)
+                                    .verticalScroll(rememberScrollState()),
+                            verticalAlignment = Alignment.CenterVertically,
+                            content = content,
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier.size(XrFloatingToolbarTokens.VerticalToolbarContainerWidth)
+                ) {
+                    floatingActionButton()
+                }
+                if (floatingActionButtonPosition == FloatingToolbarHorizontalFabPosition.Start) {
+                    AnimatedVisibility(
+                        visible = expandedState,
+                        enter = horizontalEnterTransition(Alignment.Start),
+                        exit = horizontalExitTransition(Alignment.Start),
+                    ) {
+                        Row(
+                            modifier =
+                                Modifier.background(
+                                        color = colors.toolbarContainerColor,
+                                        shape = shape,
+                                    )
+                                    .padding(contentPadding)
+                                    .verticalScroll(rememberScrollState()),
+                            verticalAlignment = Alignment.CenterVertically,
+                            content = content,
+                        )
+                    }
                 }
             }
         }
@@ -257,9 +302,6 @@ public fun VerticalFloatingToolbar(
     trailingContent: @Composable (ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    var forceCollapse by rememberSaveable { mutableStateOf(false) }
-    val expandedState by rememberUpdatedState(!forceCollapse && expanded)
-
     val orbiterProperties = LocalVerticalFloatingToolbarOrbiterProperties.current
     VerticalOrbiter(properties = orbiterProperties) {
         Column(
@@ -268,12 +310,13 @@ public fun VerticalFloatingToolbar(
                         scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
                             ?: Modifier
                     )
-                    .widthIn(min = XrVerticalFloatingToolbarTokens.ContainerWidth)
+                    .widthIn(min = XrFloatingToolbarTokens.VerticalToolbarContainerWidth)
                     .background(color = colors.toolbarContainerColor)
                     .padding(contentPadding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val expandedState by rememberUpdatedState(expanded)
             CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
                 leadingContent?.let {
                     AnimatedVisibility(
@@ -321,6 +364,9 @@ public fun VerticalFloatingToolbar(
  *   [FloatingToolbarDefaults.vibrantFloatingToolbarColors] which you can use or modify. See also
  *   [floatingActionButton] for more information on the right FAB to use for proper styling.
  * @param contentPadding the padding applied to the content of this floating toolbar.
+ * @param scrollBehavior a [FloatingToolbarScrollBehavior]. If provided, this FloatingToolbar will
+ *   automatically react to scrolling.
+ * @param shape the shape used for this floating toolbar content.
  * @param floatingActionButtonPosition the position of the floating toolbar's floating action
  *   button. By default, the FAB is placed at the bottom of the toolbar (i.e. aligned to the
  *   bottom).
@@ -336,42 +382,83 @@ public fun VerticalFloatingToolbar(
     modifier: Modifier = Modifier,
     colors: FloatingToolbarColors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
     contentPadding: PaddingValues = FloatingToolbarDefaults.ContentPadding,
+    scrollBehavior: FloatingToolbarScrollBehavior? = null,
+    shape: Shape = FloatingToolbarDefaults.ContainerShape,
     floatingActionButtonPosition: FloatingToolbarVerticalFabPosition =
         FloatingToolbarVerticalFabPosition.Bottom,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val orbiterProperties = LocalVerticalFloatingToolbarOrbiterProperties.current
-    VerticalOrbiter(properties = orbiterProperties) {
+    VerticalOrbiter(
+        LocalVerticalFloatingToolbarOrbiterProperties.current.copy(
+            shape = SpatialRoundedCornerShape(CornerSize(percent = 0))
+        )
+    ) {
         Column(
             modifier =
-                Modifier.background(colors.toolbarContainerColor)
-                    .padding(contentPadding)
-                    .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                Modifier.widthIn(XrFloatingToolbarTokens.VerticalToolbarContainerWidth)
+                    .then(
+                        scrollBehavior?.let { with(it) { Modifier.floatingScrollBehavior() } }
+                            ?: Modifier
+                    ),
+            verticalArrangement = Arrangement.spacedBy(XrFloatingToolbarTokens.ToolbarToFabGap),
         ) {
+            val expandedState by rememberUpdatedState(expanded)
             CompositionLocalProvider(LocalContentColor provides colors.toolbarContentColor) {
-                if (floatingActionButtonPosition == FloatingToolbarVerticalFabPosition.Top) {
-                    Box(Modifier.size(ContainerWidth)) { floatingActionButton() }
-                }
-                content()
                 if (floatingActionButtonPosition == FloatingToolbarVerticalFabPosition.Bottom) {
-                    Box(Modifier.size(ContainerWidth)) { floatingActionButton() }
+                    AnimatedVisibility(
+                        visible = expandedState,
+                        enter = verticalEnterTransition(Alignment.Bottom),
+                        exit = verticalExitTransition(Alignment.Bottom),
+                    ) {
+                        Column(
+                            modifier =
+                                Modifier.background(
+                                        color = colors.toolbarContainerColor,
+                                        shape = shape,
+                                    )
+                                    .padding(contentPadding)
+                                    .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            content = content,
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier.size(XrFloatingToolbarTokens.VerticalToolbarContainerWidth)
+                ) {
+                    floatingActionButton()
+                }
+                if (floatingActionButtonPosition == FloatingToolbarVerticalFabPosition.Top) {
+                    AnimatedVisibility(
+                        visible = expandedState,
+                        enter = verticalEnterTransition(Alignment.Top),
+                        exit = verticalExitTransition(Alignment.Top),
+                    ) {
+                        Column(
+                            modifier =
+                                Modifier.background(
+                                        color = colors.toolbarContainerColor,
+                                        shape = shape,
+                                    )
+                                    .padding(contentPadding)
+                                    .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            content = content,
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-private object XrHorizontalFloatingToolbarTokens {
+private object XrFloatingToolbarTokens {
     val OrbiterOffset = 24.dp
 
-    val ContainerHeight = 64.dp
-}
+    val VerticalToolbarContainerWidth = 64.dp
+    val HorizontalToolbarContainerHeight = 64.dp
 
-private object XrVerticalFloatingToolbarTokens {
-    val OrbiterOffset = 24.dp
-
-    val ContainerWidth = 64.dp
+    val ToolbarToFabGap = 8.dp
 }
 
 /** [HorizontalFloatingToolbarOverride] that uses the XR-specific [HorizontalFloatingToolbar]. */
@@ -415,6 +502,8 @@ internal object XrHorizontalFloatingToolbarWithFabOverride :
             modifier = modifier,
             colors = colors,
             contentPadding = contentPadding,
+            scrollBehavior = scrollBehavior,
+            shape = shape,
             floatingActionButtonPosition = floatingActionButtonPosition,
             content = content,
         )
@@ -460,6 +549,8 @@ internal object XrVerticalFloatingToolbarWithFabOverride : VerticalFloatingToolb
             modifier = modifier,
             colors = colors,
             contentPadding = contentPadding,
+            scrollBehavior = scrollBehavior,
+            shape = shape,
             floatingActionButtonPosition = floatingActionButtonPosition,
             content = content,
         )
@@ -474,7 +565,7 @@ internal object XrVerticalFloatingToolbarWithFabOverride : VerticalFloatingToolb
 public val DefaultHorizontalFloatingToolbarOrbiterProperties: HorizontalOrbiterProperties =
     HorizontalOrbiterProperties(
         position = ContentEdge.Horizontal.Bottom,
-        offset = XrHorizontalFloatingToolbarTokens.OrbiterOffset,
+        offset = XrFloatingToolbarTokens.OrbiterOffset,
         offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterHorizontally,
         shape = XrTokens.ContainerShape,
@@ -496,7 +587,7 @@ public val LocalHorizontalFloatingToolbarOrbiterProperties:
 public val DefaultVerticalFloatingToolbarOrbiterProperties: VerticalOrbiterProperties =
     VerticalOrbiterProperties(
         position = ContentEdge.Vertical.End,
-        offset = XrVerticalFloatingToolbarTokens.OrbiterOffset,
+        offset = XrFloatingToolbarTokens.OrbiterOffset,
         offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterVertically,
         shape = XrTokens.ContainerShape,

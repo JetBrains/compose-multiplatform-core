@@ -59,7 +59,6 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.truth)
@@ -84,12 +83,8 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
-
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-
+    compileSdk = 36
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     lint {
         enable.add("CameraXQuirksClassDetector")
     }

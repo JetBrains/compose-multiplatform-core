@@ -18,14 +18,14 @@ package androidx.xr.scenecore.spatial.core
 
 import android.app.Activity
 import androidx.xr.runtime.internal.Feature
-import androidx.xr.runtime.internal.SceneRuntime
 import androidx.xr.runtime.internal.SceneRuntimeFactory
+import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 
 /**
- * Factory for creating instances of [SceneRuntime] for devices that support the [Feature.SPATIAL]
- * feature.
+ * Factory for creating instances of [androidx.xr.scenecore.runtime.SceneRuntime] for devices that
+ * support the [Feature.SPATIAL] feature.
  */
 internal class SpatialSceneRuntimeFactory() : SceneRuntimeFactory {
     override val requirements: Set<Feature> =

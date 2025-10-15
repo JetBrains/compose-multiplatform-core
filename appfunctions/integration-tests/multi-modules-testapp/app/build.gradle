@@ -46,7 +46,6 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation(project(":appfunctions:appfunctions"))
     androidTestImplementation(project(":appfunctions:appfunctions-service"))

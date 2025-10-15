@@ -31,14 +31,14 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":xr:runtime:runtime"))
     api(project(":xr:arcore:arcore"))
+
     implementation("androidx.concurrent:concurrent-futures:1.2.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
 
     testImplementation(libs.kotlinCoroutinesTest)
-    testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(project(":xr:arcore:arcore-testing"))
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
@@ -46,10 +46,6 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
-
     namespace = "androidx.xr.arcore.guava"
 }
 

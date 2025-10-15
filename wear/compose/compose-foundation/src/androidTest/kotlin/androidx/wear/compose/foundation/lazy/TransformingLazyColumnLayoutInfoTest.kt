@@ -264,6 +264,28 @@ class TransformingLazyColumnLayoutInfoTest {
         }
     }
 
+    @Test
+    fun reverseLayout_isReportedCorrectly() {
+        lateinit var state: TransformingLazyColumnState
+        var reverseLayout by mutableStateOf(false)
+
+        rule.setContent {
+            TransformingLazyColumn(
+                state = rememberTransformingLazyColumnState().also { state = it },
+                reverseLayout = reverseLayout,
+            ) {
+                items(5) { Box(Modifier.requiredSize(itemSizeDp)) }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.reverseLayout).isFalse()
+            reverseLayout = true
+        }
+
+        rule.runOnIdle { assertThat(state.layoutInfo.reverseLayout).isTrue() }
+    }
+
     private fun TransformingLazyColumnLayoutInfo.assertVisibleItems(
         count: Int,
         startIndex: Int = 0,

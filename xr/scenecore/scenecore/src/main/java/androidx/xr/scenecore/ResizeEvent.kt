@@ -58,7 +58,7 @@ public class ResizeEvent(
         ResizeState.RESIZE_STATE_ONGOING,
         ResizeState.RESIZE_STATE_END,
     )
-    internal annotation class ResizeStateValue
+    public annotation class ResizeStateValue
 
     public object ResizeState {
         /** The resize state is unknown. */

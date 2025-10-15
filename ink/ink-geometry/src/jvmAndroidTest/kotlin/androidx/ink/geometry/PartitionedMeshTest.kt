@@ -206,11 +206,11 @@ class PartitionedMeshTest {
                 height = 9f,
             )
         val externalParallelogram =
-            ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
+            ImmutableParallelogram.fromCenterDimensionsRotationInDegreesAndSkew(
                 center = ImmutableVec(100f, 200f),
                 width = 3f,
                 height = 4f,
-                rotation = Angle.QUARTER_TURN_RADIANS,
+                rotationDegrees = Angle.QUARTER_TURN_DEGREES,
                 skew = 2f,
             )
 
@@ -311,11 +311,11 @@ class PartitionedMeshTest {
                 height = 9f,
             )
         val externalParallelogram =
-            ImmutableParallelogram.fromCenterDimensionsRotationAndSkew(
+            ImmutableParallelogram.fromCenterDimensionsRotationInDegreesAndSkew(
                 center = ImmutableVec(100f, 200f),
                 width = 3f,
                 height = 4f,
-                rotation = Angle.QUARTER_TURN_RADIANS,
+                rotationDegrees = Angle.QUARTER_TURN_DEGREES,
                 skew = 2f,
             )
 
@@ -403,7 +403,6 @@ class PartitionedMeshTest {
     companion object {
         private val SCALE_TRANSFORM = ImmutableAffineTransform(1.2f, 0f, 0f, 0f, 0.4f, 0f)
 
-        private val TEST_BRUSH =
-            Brush(family = StockBrushes.markerLatest, size = 10f, epsilon = 0.1f)
+        private val TEST_BRUSH = Brush(family = StockBrushes.marker(), size = 10f, epsilon = 0.1f)
     }
 }

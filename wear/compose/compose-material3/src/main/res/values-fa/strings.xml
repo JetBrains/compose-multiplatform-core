@@ -45,7 +45,7 @@
     <string name="wear_m3c_slider_decrease_content_description" msgid="8242572466064289486">"کاهش دادن"</string>
     <string name="wear_m3c_slider_increase_content_description" msgid="3329631766954416834">"افزایش دادن"</string>
     <string name="wear_m3c_alert_dialog_content_description_confirm_button" msgid="7776845597891182382">"تأیید کردن"</string>
-    <string name="wear_m3c_alert_dialog_content_description_dismiss_button" msgid="3572467833850785688">"بستن پنجره"</string>
+    <string name="wear_m3c_alert_dialog_content_description_dismiss_button" msgid="3572467833850785688">"بستن"</string>
     <string name="wear_m3c_open_on_phone" msgid="3200727397161392122">"تلفن را بررسی کنید"</string>
     <string name="wear_m3c_open_on_phone_icon_content_description" msgid="5953380527505012363">"نماد بررسی تلفن"</string>
 </resources>

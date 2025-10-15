@@ -35,7 +35,6 @@ android {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.appcompat:appcompat-resources:1.7.0")

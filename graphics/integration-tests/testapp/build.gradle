@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":graphics:graphics-shapes"))
     implementation("androidx.core:core-ktx:1.9.0")
 }

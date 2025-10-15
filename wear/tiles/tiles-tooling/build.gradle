@@ -24,7 +24,6 @@ dependencies {
     implementation("androidx.core:core:1.1.0")
     implementation(libs.androidx.annotation)
     implementation(libs.jspecify)
-    implementation(libs.kotlinStdlib)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)

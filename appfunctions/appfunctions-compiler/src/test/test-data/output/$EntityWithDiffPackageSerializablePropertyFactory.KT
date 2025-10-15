@@ -10,11 +10,12 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$EntityWithDiffPackageSerializablePropertyFactory` : AppFunctionSerializableFactory<EntityWithDiffPackageSerializableProperty> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): EntityWithDiffPackageSerializableProperty {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.EntityWithDiffPackageSerializableProperty")
     val diffPackageSerializableFactory = `$DiffPackageSerializableFactory`()
 
-    val inputSerializableData = checkNotNull(appFunctionData.getAppFunctionData("inputSerializable"))
+    val inputSerializableData = checkNotNull(appFunctionDataWithSpec.getAppFunctionData("inputSerializable"))
     val inputSerializable = diffPackageSerializableFactory.fromAppFunctionData(inputSerializableData)
-    val serializableListData = checkNotNull(appFunctionData.getAppFunctionDataList("serializableList"))
+    val serializableListData = checkNotNull(appFunctionDataWithSpec.getAppFunctionDataList("serializableList"))
     val serializableList = serializableListData.map { data ->
       diffPackageSerializableFactory.fromAppFunctionData(data)
     }
@@ -27,7 +28,7 @@ public class `$EntityWithDiffPackageSerializablePropertyFactory` : AppFunctionSe
     val entityWithDiffPackageSerializableProperty_appFunctionSerializable = appFunctionSerializable
     val diffPackageSerializableFactory = `$DiffPackageSerializableFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.EntityWithDiffPackageSerializableProperty")
+    val builder = getAppFunctionDataBuilder("com.testdata.EntityWithDiffPackageSerializableProperty")
     val inputSerializable = entityWithDiffPackageSerializableProperty_appFunctionSerializable.inputSerializable
     builder.setAppFunctionData("inputSerializable", diffPackageSerializableFactory.toAppFunctionData(inputSerializable))
     val serializableList = entityWithDiffPackageSerializableProperty_appFunctionSerializable.serializableList

@@ -10,7 +10,7 @@ package androidx.privacysandbox.databridge.core {
     method public static androidx.privacysandbox.databridge.core.Key createLongKey(String name);
     method public static androidx.privacysandbox.databridge.core.Key createStringKey(String name);
     method public static androidx.privacysandbox.databridge.core.Key createStringSetKey(String name);
-    method public String getName();
+    method @InaccessibleFromKotlin public String getName();
     property public String name;
     field public static final androidx.privacysandbox.databridge.core.Key.Companion Companion;
   }

@@ -318,7 +318,7 @@ private fun boundsOfLayoutNode(node: LayoutInfo): IntRect {
 private class CompositionCallStack<T, R>(
     private val createNode: (CompositionGroup, SourceContext, List<T>, List<R>) -> T?,
     private val contexts: MutableMap<String, Any?>,
-    private val childrenToAdd: MutableMap<Any?, MutableList<R>>? = null,
+    private val childrenToAdd: MutableMap<CompositionGroup, MutableList<R>>? = null,
 ) : SourceContext {
     private val stack = ArrayDeque<CompositionGroup>()
     private var currentCallIndex = 0
@@ -338,8 +338,7 @@ private class CompositionCallStack<T, R>(
         currentCallIndex = callIndex
         bounds = box
 
-        val childrenToStitchToGroup =
-            childrenToAdd?.takeIf { it.isNotEmpty() }?.remove(group.identity)
+        val childrenToStitchToGroup = childrenToAdd?.takeIf { it.isNotEmpty() }?.remove(group)
 
         createNode(group, this, children, childrenToStitchToGroup ?: emptyList())?.let {
             out.add(it)
@@ -500,7 +499,7 @@ fun <T> CompositionData.mapTree(
 internal fun <T, R> CompositionData.mapTreeWithStitching(
     createNode: (CompositionGroup, SourceContext, List<T>, List<R>) -> T?,
     cache: ContextCache = ContextCache(),
-    childrenToAdd: MutableMap<Any?, MutableList<R>> = mutableMapOf(),
+    childrenToAdd: MutableMap<CompositionGroup, MutableList<R>> = mutableMapOf(),
 ): T? {
     val group = compositionGroups.firstOrNull() ?: return null
     val callStack = CompositionCallStack(createNode, cache.contexts, childrenToAdd)
@@ -548,6 +547,9 @@ private fun keyPosition(key: Any?): String? =
         else -> null
     }
 
+private val indyLambdaRegex = Regex("^f\\$\\d+$")
+// matches $testString or $$v$c$inline-type-Name$-testString$0 (after Kotlin 2.2.20)
+private val legacyLambdaRegex = Regex("^\\$([^$]+)$|\\$\\$.*?\\$-([^$]+)\\$\\d+$")
 private const val parameterPrefix = "${'$'}"
 private const val internalFieldPrefix = parameterPrefix + parameterPrefix
 private const val defaultFieldName = "${internalFieldPrefix}default"
@@ -640,12 +642,29 @@ private fun extractFromLegacyFields(
             metadata
         }
 
-    return fields.mapIndexedNotNull { index, _ ->
-        val paramMeta = sorted.getOrNull(index) ?: ParameterSourceInformation(index)
+    fun Field.extractedName(): String? {
+        val extractedGroups = legacyLambdaRegex.find(name)?.groups
+        // The legacyLambdaRegex captures two variants of the name.
+        // Check both capturing groups here to find the correct one.
+        return (extractedGroups?.get(1) ?: extractedGroups?.get(2))?.value
+    }
+
+    val sortedFields = fields.sortedBy { it.extractedName() }
+    return sortedFields.mapIndexedNotNull { index, _ ->
+        var paramMeta = sorted.getOrNull(index) ?: ParameterSourceInformation(index)
         val sortedIndex = paramMeta.sortedIndex
         if (sortedIndex >= fields.size) return@mapIndexedNotNull null
 
-        val field = fields[sortedIndex]
+        val field = sortedFields[sortedIndex]
+        if (paramMeta.name == null) {
+            paramMeta =
+                ParameterSourceInformation(
+                    sortedIndex,
+                    field.extractedName(),
+                    paramMeta.inlineClass,
+                )
+        }
+
         buildParameterInfo(field, block, index, defaults, changed, paramMeta)
     }
 }
@@ -685,13 +704,14 @@ private fun buildParameterInfo(
 private fun filterParameterFields(fields: Array<Field>, isIndyLambda: Boolean): List<Field> {
     return fields.filter { field ->
         val name = field.name
-        val matchesInlinePattern = name.matches(Regex("^f\\$\\d+$"))
-        val matchesLegacyPattern = name.startsWith(parameterPrefix)
-
         val validPrefix =
-            isIndyLambda && matchesInlinePattern || !isIndyLambda && matchesLegacyPattern
+            if (isIndyLambda) {
+                name.matches(indyLambdaRegex)
+            } else {
+                name.matches(legacyLambdaRegex)
+            }
 
-        validPrefix && !name.startsWith(internalFieldPrefix) && !name.startsWith(jacocoDataField)
+        validPrefix && !name.startsWith(jacocoDataField)
     }
 }
 

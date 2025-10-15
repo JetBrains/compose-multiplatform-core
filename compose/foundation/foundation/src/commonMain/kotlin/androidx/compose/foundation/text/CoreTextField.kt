@@ -312,6 +312,13 @@ internal fun CoreTextField(
             rememberPlatformSelectionBehaviors(SelectedTextType.EditableText, textStyle.localeList)
     }
 
+    rememberClipboardEventsHandler(
+        isEnabled = state.hasFocus,
+        onCopy = { manager.copyWithResult() },
+        onCut = { manager.cutWithResult() },
+        onPaste = { manager.paste(it) },
+    )
+
     // Focus
     val focusModifier =
         Modifier.textFieldFocusModifier(

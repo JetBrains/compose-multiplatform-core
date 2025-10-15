@@ -336,7 +336,8 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                 Instant::class.ensureQualifiedName(),
             )
 
-        private val SUPPORTED_PRIMITIVE_TYPES_IN_LIST = setOf(String::class.ensureQualifiedName())
+        private val SUPPORTED_PRIMITIVE_TYPES_IN_LIST =
+            setOf(String::class.ensureQualifiedName(), ANDROID_PENDING_INTENT)
 
         private val SUPPORTED_TYPES =
             SUPPORTED_SINGLE_PRIMITIVE_TYPES +

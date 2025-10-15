@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":lifecycle:lifecycle-runtime"))
 
     androidTestImplementation(libs.testExtJunit)

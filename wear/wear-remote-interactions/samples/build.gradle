@@ -30,16 +30,12 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":wear:wear-remote-interactions"))
 
     compileOnly(project(":annotation:annotation-sampled"))
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     namespace = "androidx.wear.remote.interactions.samples"
 }
 

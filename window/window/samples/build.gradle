@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":window:window"))
 
     compileOnly(project(":annotation:annotation-sampled"))

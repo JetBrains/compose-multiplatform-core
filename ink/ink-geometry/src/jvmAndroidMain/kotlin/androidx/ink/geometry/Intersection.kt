@@ -151,7 +151,7 @@ public object Intersection {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramAngleInRadian = parallelogram.rotation,
+            parallelogramAngleInRadian = parallelogram.rotationDegrees,
             parallelogramShearFactor = parallelogram.skew,
         )
     }
@@ -243,7 +243,7 @@ public object Intersection {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramAngleInRadian = parallelogram.rotation,
+            parallelogramAngleInRadian = parallelogram.rotationDegrees,
             parallelogramShearFactor = parallelogram.skew,
         )
     }
@@ -313,7 +313,7 @@ public object Intersection {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramAngleInRadian = parallelogram.rotation,
+            parallelogramAngleInRadian = parallelogram.rotationDegrees,
             parallelogramShearFactor = parallelogram.skew,
         )
     }
@@ -358,13 +358,13 @@ public object Intersection {
             parallelogram1CenterY = this.center.y,
             parallelogram1Width = this.width,
             parallelogram1Height = this.height,
-            parallelogram1AngleInRadian = this.rotation,
+            parallelogram1AngleInRadian = this.rotationDegrees,
             parallelogram1ShearFactor = this.skew,
             parallelogram2CenterX = other.center.x,
             parallelogram2CenterY = other.center.y,
             parallelogram2Width = other.width,
             parallelogram2Height = other.height,
-            parallelogram2AngleInRadian = other.rotation,
+            parallelogram2AngleInRadian = other.rotationDegrees,
             parallelogram2ShearFactor = other.skew,
         )
     }
@@ -388,7 +388,7 @@ public object Intersection {
             parallelogramCenterY = this.center.y,
             parallelogramWidth = this.width,
             parallelogramHeight = this.height,
-            parallelogramAngleInRadian = this.rotation,
+            parallelogramAngleInRadian = this.rotationDegrees,
             parallelogramShearFactor = this.skew,
             meshToParallelogramA = meshToParallelogram.m00,
             meshToParallelogramB = meshToParallelogram.m10,
@@ -505,7 +505,7 @@ public object Intersection {
             parallelogramCenterY = center.y,
             parallelogramWidth = width,
             parallelogramHeight = height,
-            parallelogramAngleInRadian = rotation,
+            parallelogramAngleInRadian = rotationDegrees,
             parallelogramShearFactor = skew,
         )
 

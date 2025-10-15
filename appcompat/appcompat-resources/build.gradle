@@ -37,7 +37,6 @@ dependencies {
     api("androidx.vectordrawable:vectordrawable:1.1.0")
     api("androidx.vectordrawable:vectordrawable-animated:1.1.0")
 
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)

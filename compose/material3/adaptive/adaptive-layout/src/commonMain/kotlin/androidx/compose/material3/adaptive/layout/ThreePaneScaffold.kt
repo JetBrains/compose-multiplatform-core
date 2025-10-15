@@ -29,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Layout
@@ -152,8 +153,18 @@ internal fun ThreePaneScaffold(
     LookaheadScope {
         val scaffoldScope =
             remember(currentTransition, this) {
-                ThreePaneScaffoldScopeImpl(transitionScope, this, stateHolder)
+                ThreePaneScaffoldScopeImpl(
+                    transitionScope,
+                    this,
+                    stateHolder,
+                    mapOf(
+                        ThreePaneScaffoldRole.Primary to FocusRequester(),
+                        ThreePaneScaffoldRole.Secondary to FocusRequester(),
+                        ThreePaneScaffoldRole.Tertiary to FocusRequester(),
+                    ),
+                )
             }
+        val scaffoldValue = scaffoldState.targetState
         with(LocalThreePaneScaffoldOverride.current) {
             ThreePaneScaffoldOverrideScope(
                     modifier = modifier,
@@ -165,6 +176,7 @@ internal fun ThreePaneScaffold(
                                 ThreePaneScaffoldRole.Primary,
                                 scaffoldScope,
                                 paneMotions[ThreePaneScaffoldRole.Primary],
+                                scaffoldValue.isInteractable(ThreePaneScaffoldRole.Primary),
                             )
                             .primaryPane()
                     },
@@ -173,6 +185,7 @@ internal fun ThreePaneScaffold(
                                 ThreePaneScaffoldRole.Secondary,
                                 scaffoldScope,
                                 paneMotions[ThreePaneScaffoldRole.Secondary],
+                                scaffoldValue.isInteractable(ThreePaneScaffoldRole.Secondary),
                             )
                             .secondaryPane()
                     },
@@ -184,6 +197,7 @@ internal fun ThreePaneScaffold(
                                         ThreePaneScaffoldRole.Tertiary,
                                         scaffoldScope,
                                         paneMotions[ThreePaneScaffoldRole.Tertiary],
+                                        scaffoldValue.isInteractable(ThreePaneScaffoldRole.Tertiary),
                                     )
                                     .tertiaryPane()
                             }
@@ -199,6 +213,10 @@ internal fun ThreePaneScaffold(
                     motionDataProvider = motionDataProvider,
                 )
                 .ThreePaneScaffold()
+
+            LaunchedEffect(scaffoldValue.currentDestination) {
+                scaffoldScope.focusRequesters[scaffoldValue.currentDestination]?.requestFocus()
+            }
         }
     }
 }
@@ -599,14 +617,14 @@ private class ThreePaneContentMeasurePolicy(
             // absolute position values.
             placeHiddenPanes(hiddenPanes)
 
-            expandedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
-            reflowedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
+            expandedPanes.fastForEach { with(it) { doMeasureAndPlace(outerBounds) } }
+            reflowedPanes.fastForEach { with(it) { doMeasureAndPlace(outerBounds) } }
             dragHandle?.apply { doMeasureAndPlace() }
             scrimMeasurable?.apply {
                 measure(Constraints.fixed(outerBounds.width, outerBounds.height)).place(0, 0)
             }
-            levitatedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
-            hiddenPanes.fastForEach { with(it) { doMeasureAndPlace() } }
+            levitatedPanes.fastForEach { with(it) { doMeasureAndPlace(outerBounds) } }
+            hiddenPanes.fastForEach { with(it) { doMeasureAndPlace(outerBounds) } }
         }
     }
 
@@ -975,13 +993,12 @@ private class PaneMeasurable(
         if (data.preferredHeight.isSpecified) {
             with(density) { data.preferredHeight.roundToPx() }
         } else if (data.preferredHeightInProportion.isFinite()) {
-            (scaffoldSize.width * data.preferredHeightInProportion).toInt()
+            (scaffoldSize.height * data.preferredHeightInProportion).toInt()
         } else {
             defaultPreferredHeight
         }
 
-    // TODO(conradchen): uncomment it when we can expose PaneMargins
-    // val margins: PaneMargins = data.paneMargins
+    val margins: PaneMargins = data.paneMargins
 
     val isAnimatedPane = data.isAnimatedPane
 
@@ -1004,17 +1021,29 @@ private class PaneMeasurable(
         }
 
     val dragToResizeState
-        get() = data.dragToResizeState
+        get() = (value as? PaneAdaptedValue.Levitated)?.dragToResizeState
 
     val measuredAndPlaced
         get() = measuredBounds != null
 
     var measuredBounds: IntRect? = null
 
-    fun Placeable.PlacementScope.doMeasureAndPlace() =
+    fun Placeable.PlacementScope.doMeasureAndPlace(scaffoldBounds: IntRect) {
+        measuredBounds?.apply {
+            with(margins) {
+                measuredBounds =
+                    copy(
+                        left = getPaneLeft(left),
+                        top = getPaneTop(top),
+                        right = getPaneRight(right, scaffoldBounds.width),
+                        bottom = getPaneBottom(bottom, scaffoldBounds.height),
+                    )
+            }
+        }
         measurable
             .measure(Constraints.fixed(measuredWidth, measuredHeight))
             .place(placedPositionX, placedPositionY, zIndex)
+    }
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

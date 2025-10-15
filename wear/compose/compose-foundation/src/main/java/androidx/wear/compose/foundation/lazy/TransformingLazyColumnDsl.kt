@@ -20,6 +20,8 @@ import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent
+import androidx.compose.foundation.lazy.layout.MutableIntervalList
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsLayerScope
@@ -30,8 +32,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.util.trace
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutAnimateItemElement
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutAnimationSpecsNode
-import androidx.wear.compose.foundation.lazy.layout.LazyLayoutIntervalContent
-import androidx.wear.compose.foundation.lazy.layout.MutableIntervalList
 
 /** Receiver scope being used by the item content parameter of [TransformingLazyColumn]. */
 @TransformingLazyColumnScopeMarker

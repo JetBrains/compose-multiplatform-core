@@ -708,6 +708,24 @@ class SandboxedPdfDocumentTest {
         assertThat(page1EditIds).containsExactly(editId2, editId3)
     }
 
+    @Test
+    fun clearUncommittedEdits_removesDraftAnnotations() = runTest {
+        if (!isRequiredSdkExtensionAvailable()) return@runTest
+
+        val document = openDocument(PDF_DOCUMENT) as SandboxedPdfDocument
+        val annotation = createStampAnnotationWithPath(0, 10)
+        val editId = document.addEdit(annotation)
+
+        val draftAnnotations = document.getAnnotationsFromDraftState(0)
+        assertThat(draftAnnotations.size).isEqualTo(1)
+        assertThat(draftAnnotations[0].editId).isEqualTo(editId)
+
+        document.clearUncommittedEdits()
+
+        val annotationsAfterClear = document.getAnnotationsFromDraftState(0)
+        assertThat(annotationsAfterClear.size).isEqualTo(0)
+    }
+
     companion object {
         private const val PDF_DOCUMENT = "sample.pdf"
         private const val PDF_ANNOTATION_DOCUMENT = "annotation_sample.json"

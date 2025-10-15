@@ -515,6 +515,33 @@
     </issue>
 
     <issue
+        id="WrongConstant"
+        message="Must be one or more of: "
+        errorLine1="            mInsetsController.show(types &amp; ~WindowInsetsCompat.Type.IME);"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/WindowInsetsControllerCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: "
+        errorLine1="            mInsetsController.hide(types &amp; ~WindowInsetsCompat.Type.IME);"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/WindowInsetsControllerCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: "
+        errorLine1="            mInsetsController.controlWindowInsetsAnimation(types,"
+        errorLine2="                                                           ~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/WindowInsetsControllerCompat.java"/>
+    </issue>
+
+    <issue
         id="BanThreadSleep"
         message="Uses Thread.sleep()"
         errorLine1="                Thread.sleep(timeSliceMs);"

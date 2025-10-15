@@ -52,7 +52,7 @@
         errorLine1="    private fun gridComposableTest("
         errorLine2="                ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/constraintlayout/compose/GridDslTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/constraintlayout/compose/GridDslTest.kt"/>
     </issue>
 
     <issue
@@ -61,7 +61,7 @@
         errorLine1="    private fun gridComposableGapTest(modifier: Modifier = Modifier, vGap: Int, hGap: Int) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/constraintlayout/compose/GridDslTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/constraintlayout/compose/GridDslTest.kt"/>
     </issue>
 
     <issue
@@ -70,7 +70,7 @@
         errorLine1="    private fun gridComposableTest("
         errorLine2="                ~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/constraintlayout/compose/GridTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/constraintlayout/compose/GridTest.kt"/>
     </issue>
 
     <issue
@@ -79,7 +79,7 @@
         errorLine1="    private fun gridComposableGapTest("
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/constraintlayout/compose/GridTest.kt"/>
+            file="src/androidDeviceTest/kotlin/androidx/constraintlayout/compose/GridTest.kt"/>
     </issue>
 
     <issue

@@ -38,6 +38,7 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UResolvable
 import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.getContainingUVariable
+import org.jetbrains.uast.sourceAnnotations
 
 // TODO: b/308552481 - Add support for empty Builder construction (right now only setters are
 // annotated).
@@ -98,7 +99,9 @@ class ProtoLayoutMinSchemaDetector : Detector(), Detector.UastScanner {
         context: JavaContext
     ): SchemaAnnotation? {
         return if (this is UAnnotated) {
-            findAnnotation(REQUIRES_SCHEMA_ANNOTATION)?.asSchemaAnnotation(context)
+            sourceAnnotations()
+                .find { it.qualifiedName == REQUIRES_SCHEMA_ANNOTATION }
+                ?.asSchemaAnnotation(context)
         } else {
             context.evaluator
                 .getAnnotationInHierarchy(this, REQUIRES_SCHEMA_ANNOTATION)

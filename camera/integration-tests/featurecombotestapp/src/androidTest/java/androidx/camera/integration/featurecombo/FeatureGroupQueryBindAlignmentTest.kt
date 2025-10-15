@@ -16,6 +16,8 @@
 
 package androidx.camera.integration.featurecombo
 
+import android.util.Log
+import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
@@ -24,6 +26,8 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.featuregroup.GroupableFeature
+import androidx.camera.integration.featurecombo.FeatureGroupQueryBindAlignmentTest.VerificationScenario.PREFERRED_FEATURES
+import androidx.camera.integration.featurecombo.FeatureGroupQueryBindAlignmentTest.VerificationScenario.REQUIRED_FEATURES
 import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase
 import androidx.camera.testing.impl.CameraUtil
 import androidx.test.filters.LargeTest
@@ -47,18 +51,46 @@ class FeatureGroupQueryBindAlignmentTest(
     private val useCasesToTest: List<SupportedUseCase>,
 ) : FeatureGroupTestBase(cameraSelector, implName, cameraXConfig) {
     @Test
-    fun testIfBindAndQueryResultsMatch(): Unit = runBlocking {
+    fun testFeatureBindingAsRequiredOrPreferred_alignsWithIsSupportedQuery(): Unit = runBlocking {
         val useCases = useCasesToTest.toUseCases()
         val sessionConfig = SessionConfig(useCases = useCases, requiredFeatureGroup = featureGroup)
 
+        // Query if the FULL feature group is supported when set as REQUIRED. This will be the
+        // single source of truth for this test. We will verify that the binding behavior aligns
+        // with this initial query result for both when all these features are set as required and
+        // when all these features are set as preferred features.
         val isSupported =
             cameraProvider.getCameraInfo(cameraSelector).isFeatureGroupSupported(sessionConfig)
 
-        val camera = bindAndVerify(sessionConfig, isSupported)
+        // Scenario 1: Verify binding when all the features are required.
+        // Binding should succeed if and only if the full feature group is supported and no
+        // exception is thrown during the binding then.
+
+        val camera =
+            bindAndVerify(
+                sessionConfig,
+                isExpectedToBeSupported = isSupported,
+                verificationScenario = REQUIRED_FEATURES,
+            )
 
         if (isSupported) {
             featureGroup.verifyFeatures(useCases, requireNotNull(camera?.cameraInfo))
         }
+
+        // Scenario 2: Verify binding when all the features are preferred.
+        // The binding itself should always succeed and no exception should be thrown.
+        // - If the full group IS supported, we expect ALL preferred features to be selected.
+        // - If the full group IS NOT supported, we expect a SUBSET of features (potentially none)
+        //   to be selected.
+
+        val preferredFeatureConfig =
+            SessionConfig(useCases = useCases, preferredFeatureGroup = featureGroup.toList())
+
+        bindAndVerify(
+            preferredFeatureConfig,
+            isExpectedToBeSupported = isSupported,
+            verificationScenario = PREFERRED_FEATURES,
+        )
     }
 
     // TODO: b/419766630 - Add tests where FCQ provides extra support compared to non-FCQ bind flow,
@@ -70,7 +102,15 @@ class FeatureGroupQueryBindAlignmentTest(
     private suspend fun bindAndVerify(
         sessionConfig: SessionConfig,
         isExpectedToBeSupported: Boolean,
+        verificationScenario: VerificationScenario,
     ): Camera? {
+        Log.d(
+            TAG,
+            "bindAndVerify: sessionConfig = $sessionConfig, " +
+                "isExpectedToBeSupported = $isExpectedToBeSupported, " +
+                "verificationScenario = $verificationScenario",
+        )
+
         var caughtException: Exception? = null
         val camera =
             try {
@@ -78,7 +118,22 @@ class FeatureGroupQueryBindAlignmentTest(
                     cameraProvider.bindToLifecycle(
                         fakeLifecycleOwner,
                         cameraSelector,
-                        sessionConfig,
+                        sessionConfig.apply {
+                            if (verificationScenario == PREFERRED_FEATURES) {
+                                setFeatureSelectionListener { selectedFeatures ->
+                                    if (isExpectedToBeSupported) {
+                                        // All features should be selected if query result was true
+                                        assertThat(selectedFeatures)
+                                            .containsExactlyElementsIn(featureGroup)
+                                    } else {
+                                        // Not all features should be selected if query result was
+                                        // false
+                                        VerifiableCollection.assertThat(selectedFeatures)
+                                            .doesNotContainAllIn(featureGroup)
+                                    }
+                                }
+                            }
+                        },
                     )
                 }
             } catch (e: IllegalArgumentException) {
@@ -86,13 +141,46 @@ class FeatureGroupQueryBindAlignmentTest(
                 null
             }
 
-        // If binding is expected to be supported, there should be no exception
-        assertThat(caughtException == null).isEqualTo(isExpectedToBeSupported)
+        if (verificationScenario == REQUIRED_FEATURES) {
+            // If binding is expected to be supported, there should be no exception
+            assertThat(caughtException == null).isEqualTo(isExpectedToBeSupported)
+        }
 
         return camera
     }
 
+    enum class VerificationScenario {
+        REQUIRED_FEATURES,
+        PREFERRED_FEATURES,
+    }
+
+    class VerifiableCollection<out E>(
+        private val base: Collection<E>,
+        override val size: Int = base.size,
+    ) : Collection<E> {
+        fun doesNotContainAllIn(fullCollection: Collection<@UnsafeVariance E>) {
+            val intersection = base.intersect(fullCollection.toSet())
+            assertThat(intersection.size).isLessThan(fullCollection.size)
+        }
+
+        override fun contains(element: @UnsafeVariance E): Boolean = base.contains(element)
+
+        override fun containsAll(elements: Collection<@UnsafeVariance E>): Boolean =
+            base.containsAll(elements)
+
+        override fun isEmpty(): Boolean = base.isEmpty()
+
+        override fun iterator(): Iterator<E> = base.iterator()
+
+        companion object {
+            /** Alignment with Truth library. */
+            fun <E> assertThat(c: Collection<E>): VerifiableCollection<E> = VerifiableCollection(c)
+        }
+    }
+
     companion object {
+        private const val TAG = "FeatureGroupQueryBindAlignmentTest"
+
         @OptIn(ExperimentalSessionConfig::class)
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
@@ -101,9 +189,45 @@ class FeatureGroupQueryBindAlignmentTest(
                 CameraUtil.getAvailableCameraSelectors().forEach { selector ->
                     val lens = selector.lensFacing
 
+                    for (featureGroup in
                     // Generates all non-empty subsets of the features to test all combinations
-                    for (featureGroup in allFeatures.toPowerSet().filter { it.isNotEmpty() }) {
+                    allHighQualityFeatures.toPowerSet().filter {
+                            // Do not test more than 3 features at once to save time
+                            Range(1, 3).contains(it.size)
+                        }) {
                         useCaseCombinationsToTest.forEach { useCases ->
+                            add(
+                                arrayOf(
+                                    "config=${Camera2Config::class.simpleName} lensFacing={$lens}" +
+                                        " featureGroup={$featureGroup} useCases = {$useCases}",
+                                    selector,
+                                    Camera2Config::class.simpleName,
+                                    Camera2Config.defaultConfig(),
+                                    featureGroup,
+                                    useCases,
+                                )
+                            )
+
+                            add(
+                                arrayOf(
+                                    "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}" +
+                                        " featureGroup={$featureGroup} useCases = {$useCases}",
+                                    selector,
+                                    CameraPipeConfig::class.simpleName,
+                                    CameraPipeConfig.defaultConfig(),
+                                    featureGroup,
+                                    useCases,
+                                )
+                            )
+                        }
+                    }
+
+                    // Generate combinations of each use case matched with each feature
+                    for (feature in allFeatures) {
+                        SupportedUseCase.entries.forEach { useCase ->
+                            val featureGroup = setOf(feature)
+                            val useCases = listOf(useCase)
+
                             add(
                                 arrayOf(
                                     "config=${Camera2Config::class.simpleName} lensFacing={$lens}" +

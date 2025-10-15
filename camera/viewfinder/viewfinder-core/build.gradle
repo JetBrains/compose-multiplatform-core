@@ -39,7 +39,6 @@ dependencies {
     implementation("androidx.tracing:tracing-ktx:1.2.0")
 
     testImplementation(libs.testRunner)
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.truth)
     testImplementation(libs.testRules)
     testImplementation(libs.testCore)

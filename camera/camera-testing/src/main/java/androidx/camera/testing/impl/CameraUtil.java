@@ -604,7 +604,6 @@ public final class CameraUtil {
      * @param cameraCoordinator The camera coordinator for concurrent cameras.
      * @param cameraSelector The selector to select cameras with.
      */
-    @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = ExperimentalRetryPolicy.class)
     @VisibleForTesting
     public static @NonNull CameraUseCaseAdapter createCameraUseCaseAdapter(

@@ -30,11 +30,9 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.androidx.annotation)
 
     testImplementation(libs.testCore)
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinReflect)

@@ -43,6 +43,7 @@ import androidx.camera.testing.impl.FileUtil.canDeviceWriteToMediaStore
 import androidx.camera.testing.impl.FileUtil.generateVideoFileOutputOptions
 import androidx.camera.testing.impl.FileUtil.generateVideoMediaStoreOptions
 import androidx.camera.testing.impl.FileUtil.writeTextToExternalFile
+import androidx.camera.testing.impl.util.EdgeToEdgeUtil
 import androidx.camera.video.PendingRecording
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
@@ -106,6 +107,11 @@ class StreamSharingActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_stream_sharing)
+
+        EdgeToEdgeUtil.enableEdgeToEdge(
+            activity = this,
+            applyWindowInsetsListenerViewId = R.id.layout_camera,
+        )
 
         // Apply settings from intent.
         val bundle = intent.extras
@@ -180,7 +186,6 @@ class StreamSharingActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("NullAnnotationGroup")
     @OptIn(ExperimentalCameraProviderConfiguration::class)
     private fun configureCameraProvider() {
         ProcessCameraProvider.configureInstance(cameraXConfig)

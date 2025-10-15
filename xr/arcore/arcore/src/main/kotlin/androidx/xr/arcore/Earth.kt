@@ -17,13 +17,16 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.Earth.State.Companion.ERROR_APP_PREEMPTED
+import androidx.xr.arcore.Earth.State.Companion.RUNNING
+import androidx.xr.arcore.runtime.AnchorNotAuthorizedException
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException
+import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.internal.AnchorNotAuthorizedException
-import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
-import androidx.xr.runtime.internal.AnchorUnsupportedLocationException
-import androidx.xr.runtime.internal.Earth as RuntimeEarth
-import androidx.xr.runtime.internal.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -87,7 +90,10 @@ internal constructor(
             latitude: Double,
             longitude: Double,
         ): VpsAvailabilityResult {
-            return session.runtime.perceptionManager.checkVpsAvailability(latitude, longitude)
+            return session.perceptionRuntime.perceptionManager.checkVpsAvailability(
+                latitude,
+                longitude,
+            )
         }
     }
 
@@ -170,6 +176,7 @@ internal constructor(
     public fun createPoseFromGeospatialPose(
         geospatialPose: GeospatialPose
     ): CreatePoseFromGeospatialPoseResult {
+        checkGeospatialModeEnabled()
         return try {
             CreatePoseFromGeospatialPoseSuccess(
                 runtimeEarth.createPoseFromGeospatialPose(geospatialPose)
@@ -190,6 +197,7 @@ internal constructor(
      * @param pose the [Pose] to be converted into a [GeospatialPose].
      */
     public fun createGeospatialPoseFromPose(pose: Pose): CreateGeospatialPoseFromPoseResult {
+        checkGeospatialModeEnabled()
         return try {
             val runtimeResult = runtimeEarth.createGeospatialPoseFromPose(pose)
             CreateGeospatialPoseFromPoseSuccess(
@@ -217,6 +225,7 @@ internal constructor(
      * currently tracking.
      */
     public fun createGeospatialPoseFromDevicePose(): CreateGeospatialPoseFromPoseResult {
+        checkGeospatialModeEnabled()
         return try {
             val runtimeResult = runtimeEarth.createGeospatialPoseFromDevicePose()
             CreateGeospatialPoseFromPoseSuccess(
@@ -275,6 +284,7 @@ internal constructor(
         altitude: Double,
         eastUpSouthQuaternion: Quaternion,
     ): AnchorCreateResult {
+        checkGeospatialModeEnabled()
         return try {
             val runtimeAnchor =
                 runtimeEarth.createAnchor(latitude, longitude, altitude, eastUpSouthQuaternion)
@@ -336,6 +346,7 @@ internal constructor(
         eastUpSouthQuaternion: Quaternion,
         surface: Surface,
     ): AnchorCreateResult {
+        checkGeospatialModeEnabled()
         return try {
             val runtimeAnchor =
                 runtimeEarth.createAnchorOnSurface(
@@ -360,6 +371,7 @@ internal constructor(
         }
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(runtimeStateToState(runtimeEarth.state))
     }
@@ -368,6 +380,14 @@ internal constructor(
         if (this === other) return true
         if (other !is Earth) return false
         return runtimeEarth == other.runtimeEarth
+    }
+
+    private fun checkGeospatialModeEnabled() {
+        check(
+            xrResourcesManager.lifecycleManager.config.geospatial == Config.GeospatialMode.EARTH
+        ) {
+            "To use this function, Config.GeospatialMode must be set to EARTH."
+        }
     }
 
     private fun runtimeStateToState(runtimeState: RuntimeEarth.State): State {

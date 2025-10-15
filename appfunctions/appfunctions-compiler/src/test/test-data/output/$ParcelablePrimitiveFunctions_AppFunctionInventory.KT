@@ -1,5 +1,7 @@
 package com.testdata
 
+import androidx.appfunctions.`internal`.AppFunctionInventory
+import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
@@ -8,7 +10,6 @@ import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
-import androidx.appfunctions.service.`internal`.AppFunctionInventory
 import javax.`annotation`.processing.Generated
 import kotlin.String
 import kotlin.collections.List
@@ -22,8 +23,17 @@ import kotlin.collections.Map
 public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionInventory {
   override val functionIdToMetadataMap: Map<String, CompileTimeAppFunctionMetadata> = mapOf(
     "com.testdata.ParcelablePrimitiveFunctions#pendingIntentInput" to ComTestdataParcelablePrimitiveFunctionsPendingIntentInputMetadataObject.APP_FUNCTION_METADATA,
+    "com.testdata.ParcelablePrimitiveFunctions#listPendingIntentInput" to ComTestdataParcelablePrimitiveFunctionsListPendingIntentInputMetadataObject.APP_FUNCTION_METADATA,
     "com.testdata.ParcelablePrimitiveFunctions#pendingIntentOutput" to ComTestdataParcelablePrimitiveFunctionsPendingIntentOutputMetadataObject.APP_FUNCTION_METADATA,
+    "com.testdata.ParcelablePrimitiveFunctions#listPendingIntentOutput" to ComTestdataParcelablePrimitiveFunctionsListPendingIntentOutputMetadataObject.APP_FUNCTION_METADATA,
   )
+
+  private val componentsMetadataDataTypesMap: Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    )
+
+  override val componentsMetadata: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
+          dataTypes = componentsMetadataDataTypesMap
+      )
 
   private object ComTestdataParcelablePrimitiveFunctionsPendingIntentInputMetadataObject {
     private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
@@ -57,14 +67,6 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
             description = ""
         )
 
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.ParcelablePrimitiveFunctions#pendingIntentInput",
@@ -72,7 +74,55 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
+        )
+  }
+
+  private object ComTestdataParcelablePrimitiveFunctionsListPendingIntentInputMetadataObject {
+    private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
+
+    private val PARAMETER_METADATA_LISTPENDINGINTENT_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE:
+        AppFunctionPendingIntentTypeMetadata = AppFunctionPendingIntentTypeMetadata(
+            isNullable = false,
+            description = ""
+        )
+
+    private val PARAMETER_METADATA_LISTPENDINGINTENT_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
+        AppFunctionArrayTypeMetadata(
+            itemType = PARAMETER_METADATA_LISTPENDINGINTENT_ARRAY_DATA_TYPE_PRIMITIVE_ITEM_TYPE,
+            isNullable = false,
+            description = ""
+        )
+
+    private val LISTPENDINGINTENT_PARAMETER_METADATA: AppFunctionParameterMetadata =
+        AppFunctionParameterMetadata(
+            name = "listPendingIntent",
+            isRequired = true,
+            dataType = PARAMETER_METADATA_LISTPENDINGINTENT_ARRAY_DATA_TYPE,
+            description = "",
+        )
+
+    private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
+      LISTPENDINGINTENT_PARAMETER_METADATA,
+    )
+
+    private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionUnitTypeMetadata =
+        AppFunctionUnitTypeMetadata(
+            isNullable = false,
+            description = ""
+        )
+
+    private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
+            valueType = PRIMITIVE_RESPONSE_VALUE_TYPE,
+            description = ""
+        )
+
+    public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
+        CompileTimeAppFunctionMetadata(
+            id = "com.testdata.ParcelablePrimitiveFunctions#listPendingIntentInput",
+            isEnabledByDefault = true,
+            schema =  SCHEMA_METADATA,
+            parameters = PARAMETER_METADATA_LIST,
+            response = RESPONSE_METADATA,
         )
   }
 
@@ -93,14 +143,6 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
             description = ""
         )
 
-    private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
-        mapOf(
-      )
-
-    private val COMPONENTS_METADATA: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(
-            dataTypes = COMPONENTS_METADATA_DATA_TYPES_MAP
-        )
-
     public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
         CompileTimeAppFunctionMetadata(
             id = "com.testdata.ParcelablePrimitiveFunctions#pendingIntentOutput",
@@ -108,7 +150,40 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
             schema =  SCHEMA_METADATA,
             parameters = PARAMETER_METADATA_LIST,
             response = RESPONSE_METADATA,
-            components = COMPONENTS_METADATA
+        )
+  }
+
+  private object ComTestdataParcelablePrimitiveFunctionsListPendingIntentOutputMetadataObject {
+    private val SCHEMA_METADATA: AppFunctionSchemaMetadata? = null
+
+    private val PARAMETER_METADATA_LIST: List<AppFunctionParameterMetadata> = listOf(
+    )
+
+    private val ARRAY_RESPONSE_VALUE_TYPE_PRIMITIVE_ITEM_TYPE: AppFunctionPendingIntentTypeMetadata
+        = AppFunctionPendingIntentTypeMetadata(
+            isNullable = false,
+            description = ""
+        )
+
+    private val ARRAY_RESPONSE_VALUE_TYPE: AppFunctionArrayTypeMetadata =
+        AppFunctionArrayTypeMetadata(
+            itemType = ARRAY_RESPONSE_VALUE_TYPE_PRIMITIVE_ITEM_TYPE,
+            isNullable = false,
+            description = ""
+        )
+
+    private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
+            valueType = ARRAY_RESPONSE_VALUE_TYPE,
+            description = ""
+        )
+
+    public val APP_FUNCTION_METADATA: CompileTimeAppFunctionMetadata =
+        CompileTimeAppFunctionMetadata(
+            id = "com.testdata.ParcelablePrimitiveFunctions#listPendingIntentOutput",
+            isEnabledByDefault = true,
+            schema =  SCHEMA_METADATA,
+            parameters = PARAMETER_METADATA_LIST,
+            response = RESPONSE_METADATA,
         )
   }
 }

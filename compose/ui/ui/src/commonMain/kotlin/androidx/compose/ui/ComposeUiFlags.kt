@@ -55,16 +55,6 @@ import kotlin.jvm.JvmName
 @ExperimentalComposeUiApi
 object ComposeUiFlags {
     /**
-     * With this flag on, during layout we will do some additional work to store the minimum
-     * bounding rectangles for all Layout Nodes. This introduces some additional maintenance burden,
-     * but will be used in the future to enable certain features that are not possible to do
-     * efficiently at this point, as well as speed up some other areas of the system such as
-     * semantics, focus, pointer input, etc. If significant performance overhead is noticed during
-     * layout phases, it is possible that the addition of this tracking is the culprit.
-     */
-    @Suppress("MutableBareField") @JvmField var isRectTrackingEnabled: Boolean = true
-
-    /**
      * With this flag on, the new semantic version of Autofill APIs will be enabled. Turning this
      * flag off will disable the new Semantic Autofill APIs, and the new refactored semantics.
      */
@@ -141,13 +131,6 @@ object ComposeUiFlags {
     @JvmField
     var isNoPinningInFocusRestorationEnabled: Boolean = false
 
-    /**
-     * With this flag on, SubcomposeLayout will deactivate not used content slots outside of the
-     * frame, not as part of a regular recomposition phase. It allows to not block the drawing
-     * phase, improving the scrolling performance for lazy layouts.
-     */
-    @Suppress("MutableBareField") @JvmField var isOutOfFrameDeactivationEnabled: Boolean = true
-
     /** Enable clearing focus when a focused item is removed from a lazyList. */
     @Deprecated("This flag is no longer needed.")
     @Suppress("MutableBareField", "unused")
@@ -158,26 +141,30 @@ object ComposeUiFlags {
     @Suppress("MutableBareField") @JvmField var isInitialFocusOnFocusableAvailable: Boolean = false
 
     /**
+     * With this flag on, requesting focus on a non-focusable focus target will request focus for
+     * one of its children, which makes
+     * [FocusTargetModifierNode.requestFocus][androidx.compose.ui.focus.FocusTargetModifierNode.requestFocus]
+     * consistent with
+     * [FocusRequester.requestFocus][androidx.compose.ui.focus.FocusRequester.requestFocus] and
+     * [FocusRequesterModifierNode.requestFocus][androidx.compose.ui.focus.requestFocus]
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isRequestFocusOnNonFocusableFocusTargetEnabled: Boolean = true
+
+    /**
      * With this flag on, the adaptive refresh rate (ARR) feature will be enabled. A preferred frame
      * rate can be set on a Composable through frame rate modifier: [Modifier.preferredFrameRate]
      */
     @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
 
-    /** Flag for enabling the fix for using the correct node for nested scroll operations. */
+    /** Flag for enabling indirect pointer event navigation gestures in Compose. */
     @Suppress("MutableBareField")
     @JvmField
-    var isNestedScrollDispatcherNodeFixEnabled: Boolean = true
-
-    /** Flag for enabling indirect touch event navigation gestures in Compose. */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isIndirectTouchNavigationGestureDetectorEnabled: Boolean = true
+    var isIndirectPointerNavigationGestureDetectorEnabled: Boolean = true
 
     /** This flag enables setting the shape semantics property in the graphicsLayer modifiers. */
     @Suppress("MutableBareField") @JvmField var isGraphicsLayerShapeSemanticsEnabled: Boolean = true
-
-    /** Flag for enabling the performance optimization for content capture. */
-    @Suppress("MutableBareField") @JvmField var isContentCaptureOptimizationEnabled: Boolean = true
 
     /**
      * Flag for enabling nested scroll interop fix for propagating integers, this fixes an issue
@@ -188,6 +175,31 @@ object ComposeUiFlags {
     @JvmField
     var isNestedScrollInteropIntegerPropagationEnabled: Boolean = true
 
-    /** This flag enables clearing focus on pointer down by default. */
-    @Suppress("MutableBareField") @JvmField var isClearFocusOnPointerDownEnabled: Boolean = false
+    /**
+     * Enable fix for `[ComposeView.canScrollHorizontally]` and `[ComposeView.canScrollVertically]`
+     * methods. Previously, these methods would sometimes use the last MOVE event's position to
+     * determine if scrolling was possible, even if the gesture started with a DOWN event at a
+     * different location. This could lead to incorrect scrollability checks, especially when a
+     * scrollable container was touched and then moved. With this flag enabled, the methods
+     * correctly use the position of the initial DOWN event to establish the pointer position for an
+     * event that started on a scrollable container, ensuring accurate scroll checks.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isCanScrollUsingLastDownEventFixEnabled: Boolean = true
+
+    /**
+     * Enable fix to scroll target rect to the center when performing scroll capture, thus generally
+     * avoiding floating content at the top and bottom of the UI.
+     */
+    @Suppress("MutableBareField") @JvmField var isScrollCaptureCenteringEnabled: Boolean = true
+
+    /**
+     * Enable performance optimization where coordinates calculations like
+     * [androidx.compose.ui.layout.LayoutCoordinates.localToRoot] are using the cached offsets we
+     * already have in RectManager, instead of traversing the whole tree on each call.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isRectManagerOffsetUsageFromLayoutCoordinatesEnabled: Boolean = true
 }

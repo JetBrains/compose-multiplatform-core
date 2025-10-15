@@ -23,7 +23,6 @@ import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraInterop
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.impl.SessionConfig
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
@@ -144,7 +143,7 @@ public class CameraInteropStateCallbackRepository {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Api26CompatImpl.onCaptureQueueEmpty(placeholderSession, callbacks)
             } else {
-                Log.error { "onCaptureQueueEmpty called for unsupported OS version." }
+                Camera2Logger.error { "onCaptureQueueEmpty called for unsupported OS version." }
             }
         }
 

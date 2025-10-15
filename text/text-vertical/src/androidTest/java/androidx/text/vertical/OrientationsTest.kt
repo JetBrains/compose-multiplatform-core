@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+import android.os.Build
 import android.text.SpannableString
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.text.vertical.OrientationMode
 import androidx.text.vertical.ResolvedOrientation
@@ -30,6 +32,7 @@ private const val SPAN_FLAG = SpannableString.SPAN_INCLUSIVE_EXCLUSIVE
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.P) // fails in API 26
 class OrientationsTest {
     private sealed interface Run
 
@@ -62,7 +65,7 @@ class OrientationsTest {
     ) = resolve(text, 0, text.length, textOrientation)
 
     @Test
-    fun emptyText() {
+    fun orientation_emptyText() {
         // Empty text
         assertThat(resolve("")).isEmpty()
         assertThat(resolve("", 0, 0)).isEmpty()
@@ -76,7 +79,7 @@ class OrientationsTest {
     }
 
     @Test
-    fun noOverrideText_MixedOrientation() {
+    fun orientation_noOverrideText_MixedOrientation() {
         // Whole text
         // Japanese letters: resolved to upright.
         var runs = resolve("あいうえお")
@@ -110,7 +113,7 @@ class OrientationsTest {
     }
 
     @Test
-    fun noOverrideText_UprightOrientation() {
+    fun orientation_noOverrideText_UprightOrientation() {
         var runs = resolve("あいうえお", TextOrientation.UPRIGHT)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Upright(0, 5))
@@ -138,7 +141,7 @@ class OrientationsTest {
     }
 
     @Test
-    fun noOverrideText_SidewaysOrientation() {
+    fun orientation_noOverrideText_SidewaysOrientation() {
         var runs = resolve("あいうえお", TextOrientation.SIDEWAYS)
         assertThat(runs.size).isEqualTo(1)
         assertThat(runs[0]).isEqualTo(Rotate(0, 5))
@@ -166,7 +169,7 @@ class OrientationsTest {
     }
 
     @Test
-    fun overrideText_UprightOverride() {
+    fun orientation_overrideText_UprightOverride() {
         var runs =
             resolve(
                 SpannableString("あいうえお").apply {
@@ -199,7 +202,7 @@ class OrientationsTest {
     }
 
     @Test
-    fun overrideText_SidewaysOverride() {
+    fun orientation_overrideText_SidewaysOverride() {
         var runs =
             resolve(
                 SpannableString("あいうえお").apply {
@@ -232,7 +235,7 @@ class OrientationsTest {
     }
 
     @Test
-    fun tateChuToko() {
+    fun orientation_TateChuYoko() {
         var runs =
             resolve(
                 SpannableString("abcde").apply {

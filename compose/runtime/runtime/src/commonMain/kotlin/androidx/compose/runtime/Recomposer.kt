@@ -50,6 +50,7 @@ import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastGroupBy
 import androidx.compose.runtime.snapshots.fastMap
 import androidx.compose.runtime.snapshots.fastMapNotNull
+import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.CompositionObserverHandle
 import androidx.compose.runtime.tooling.CompositionRegistrationObserver
@@ -79,9 +80,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
+internal const val recomposerKey = 1000
+
 // TODO: Can we use rootKey for this since all compositions will have an eventual Recomposer parent?
 private inline val RecomposerCompoundHashKey
-    get() = CompositeKeyHashCode(1000)
+    get() = CompositeKeyHashCode(recomposerKey)
 
 /**
  * Runs [block] with a new, active [Recomposer] applying changes in the calling [CoroutineContext].
@@ -804,6 +807,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             // composeInitial will throw because of corrupted composition while original exception
             // won't be recorded.
             synchronized(stateLock) {
+                logError("Error was captured in composition.", e)
                 val errorState = errorState
                 if (errorState == null) {
                     // Record exception if current error state is empty.
@@ -1221,10 +1225,12 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     }
 
     /**
-     * Schedules an [action] to be invoked when this recomposer finishes the next execution of a
-     * frame. If a frame is currently in-progress, [action] will be invoked when the current frame
-     * finishes. If a frame isn't currently in-progress, a new frame will be scheduled (if one
-     * hasn't been already) and [action] will execute at the completion of the next frame.
+     * Schedules an [action] to be invoked when the recomposer finishes the next composition of a
+     * frame (including the completion of subcompositions). If a frame is currently in-progress,
+     * [action] will be invoked when the current frame fully finishes composing. If a frame isn't
+     * currently in-progress, a new frame will be scheduled (if one hasn't been already) and
+     * [action] will execute at the completion of the next frame's composition. If a new frame is
+     * scheduled and there is no other work to execute, [action] will still execute.
      *
      * [action] will always execute on the applier thread.
      *
@@ -1646,7 +1652,10 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         get() = false
 
     internal override val collectingSourceInformation: Boolean
-        get() = composeStackTraceEnabled
+        get() = composeStackTraceMode == ComposeStackTraceMode.SourceInformation
+
+    internal override val stackTraceEnabled: Boolean
+        get() = composeStackTraceMode != ComposeStackTraceMode.None
 
     internal override fun recordInspectionTable(table: MutableSet<CompositionData>) {
         // TODO: The root recomposer might be a better place to set up inspection
@@ -1721,7 +1730,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             movableContentStatesAvailable[reference] = data
             val extractions = movableContentNestedExtractionsPending[reference]
             if (extractions.isNotEmpty()) {
-                val states = data.slotStorage.extractNestedStates(applier, extractions)
+                val states = data.extractNestedStates(applier, extractions)
                 states.forEach { reference, state ->
                     movableContentStatesAvailable[reference] = state
                 }

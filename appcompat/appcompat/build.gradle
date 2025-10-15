@@ -22,7 +22,6 @@ dependencies {
 
     // Required to make activity 1.5.0-rc01 dependencies resolve.
     implementation("androidx.core:core-ktx:1.13.0")
-    implementation(libs.kotlinStdlib)
 
     implementation("androidx.emoji2:emoji2:1.3.0")
     implementation("androidx.emoji2:emoji2-views-helper:1.2.0")
@@ -40,7 +39,6 @@ dependencies {
 
     kapt("androidx.resourceinspection:resourceinspection-processor:1.0.1")
 
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -57,7 +55,6 @@ dependencies {
     androidTestImplementation(project(":internal-testutils-appcompat"))
     androidTestImplementation(project(":internal-testutils-fonts"))
 
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.testCore)
     testImplementation(libs.junit)
 
@@ -68,6 +65,7 @@ android {
     defaultConfig {
         // This disables the builds tools automatic vector -> PNG generation
         generatedDensities = []
+        consumerProguardFiles("proguard-rules.pro")
     }
     aaptOptions {
         additionalParameters "--no-version-vectors"
@@ -76,10 +74,6 @@ android {
 
     testOptions {
         animationsDisabled = true
-    }
-
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
     }
 
     useLibrary "android.test.runner"

@@ -206,6 +206,21 @@ class InMemoryAnnotationEditsDraftStateTest {
         )
     }
 
+    @Test
+    fun clear_removesAllEditsFromAllPages() {
+        draftState.addEdit(getSampleStampAnnotation(0))
+        draftState.addEdit(getSampleStampAnnotation(0))
+        draftState.addEdit(getSampleStampAnnotation(1))
+
+        assertThat(draftState.getEdits(0)).hasSize(2)
+        assertThat(draftState.getEdits(1)).hasSize(1)
+
+        draftState.clear()
+
+        assertThat(draftState.getEdits(0)).isEmpty()
+        assertThat(draftState.getEdits(1)).isEmpty()
+    }
+
     private fun assertStampAnnotationEquals(
         expectedAnnotation: StampAnnotation,
         actualAnnotation: StampAnnotation,

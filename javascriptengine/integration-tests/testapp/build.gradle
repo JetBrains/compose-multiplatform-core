@@ -53,7 +53,6 @@ android {
         }
     }
     namespace = "com.example.androidx.javascriptengine"
-    compileSdk = 35
 }
 
 androidx {

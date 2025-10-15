@@ -20,17 +20,18 @@ import android.content.Context
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.DurationNs
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.SystemTimeSource
 import androidx.camera.camera2.pipe.core.Timestamps
 import androidx.camera.camera2.pipe.core.Timestamps.formatMs
 import androidx.camera.camera2.pipe.core.Timestamps.measureNow
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.utils.ContextUtil
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.StreamSpecsCalculator
 
 /**
@@ -55,12 +56,12 @@ public class CameraFactoryProvider(
     ): CameraFactory {
 
         val openRetryMaxTimeout =
-            if (cameraOpenRetryMaxTimeoutInMs != -1L) null
+            if (cameraOpenRetryMaxTimeoutInMs == -1L) null
             else DurationNs(cameraOpenRetryMaxTimeoutInMs)
 
         val lazyCameraPipe = lazy {
             if (sharedCameraPipe != null) {
-                Log.debug { "Using shared a $sharedCameraPipe instance." }
+                Camera2Logger.debug { "Using shared a $sharedCameraPipe instance." }
                 sharedCameraPipe
             } else {
                 createCameraPipe(context, threadConfig, openRetryMaxTimeout)
@@ -93,7 +94,13 @@ public class CameraFactoryProvider(
                         appContext = ContextUtil.getApplicationContext(context),
                         threadConfig =
                             CameraPipe.ThreadConfig(
-                                defaultCameraExecutor = threadConfig.cameraExecutor
+                                // This executor should be single-threaded or a sequential executor
+                                // to avoid bugs on various API levels (29 ~ 34). See b/446771606
+                                // fore more details.
+                                defaultCameraExecutor =
+                                    CameraXExecutors.newSequentialExecutor(
+                                        threadConfig.cameraExecutor
+                                    )
                             ),
                         cameraInteropConfig =
                             CameraPipe.CameraInteropConfig(
@@ -103,7 +110,9 @@ public class CameraFactoryProvider(
                             ),
                     )
                 )
-            Log.debug { "Created CameraPipe in ${start.measureNow(timeSource).formatMs()}" }
+            Camera2Logger.debug {
+                "Created CameraPipe in ${start.measureNow(timeSource).formatMs()}"
+            }
             cameraPipe
         }
 }

@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
   api(project(":lifecycle:lifecycle-reactivestreams"))
-  api(libs.kotlinStdlib)
 
   testImplementation(libs.junit)
   testImplementation(libs.rxjava2)

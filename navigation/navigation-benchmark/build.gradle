@@ -40,7 +40,6 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.kotlinStdlib)
 
     // TODO: Workaround for "R8: Type is defined multiple times" due to the ongoing migration of
     //  Navigation libraries to KMP. `-ktx` are empty in ToT but old versions still have classes.

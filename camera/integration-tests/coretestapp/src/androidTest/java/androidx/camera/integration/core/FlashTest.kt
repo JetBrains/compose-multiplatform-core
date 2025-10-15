@@ -30,10 +30,10 @@ import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.internal.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk
-import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks
-import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailWithAutoFlashQuirk
-import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFlashNotFireQuirk
+import androidx.camera.camera2.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk
+import androidx.camera.camera2.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.compat.quirk.ImageCaptureFailWithAutoFlashQuirk
+import androidx.camera.camera2.compat.quirk.ImageCaptureFlashNotFireQuirk
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
@@ -367,7 +367,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
             ImageCapture.FLASH_MODE_AUTO -> {
                 val cameraInfo: CameraInfo = camera.cameraInfo
                 if (cameraInfo is CameraInfoInternal) {
-                    val deviceQuirks = DeviceQuirks.getAll()
+                    val deviceQuirks = DeviceQuirks.all
                     val cameraQuirks = cameraInfo.cameraQuirks
                     if (
                         deviceQuirks.contains(

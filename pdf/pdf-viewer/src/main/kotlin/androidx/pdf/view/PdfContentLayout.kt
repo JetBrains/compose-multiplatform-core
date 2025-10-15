@@ -17,9 +17,11 @@
 package androidx.pdf.view
 
 import android.content.Context
+import android.graphics.Canvas
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.RestrictTo
@@ -43,10 +45,30 @@ public class PdfContentLayout(context: Context, attrs: AttributeSet? = null) :
         _pdfView = findViewById(R.id.pdfView)
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        _pdfView.enableDefaultFastScrollerRendering = true
+    }
+
+    override fun dispatchDraw(canvas: Canvas) {
+        super.dispatchDraw(canvas)
+        _pdfView.drawFastScroller(canvas)
+    }
+
+    override fun onDescendantInvalidated(child: View, target: View) {
+        super.onDescendantInvalidated(child, target)
+        invalidate()
+    }
+
     override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
         if (ev == null) {
             return super.onInterceptTouchEvent(ev)
         }
         return PdfFeatureFlags.isMultiTouchScrollEnabled
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        pdfView.enableDefaultFastScrollerRendering = false
     }
 }

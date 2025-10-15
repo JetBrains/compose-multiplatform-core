@@ -43,7 +43,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(libs.testExtJunit)
                 implementation(libs.testRules)

@@ -15,6 +15,7 @@
  */
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.google.devtools.ksp.gradle.KspAATask
 
 plugins {
     id("AndroidXPlugin")
@@ -43,7 +44,6 @@ dependencies {
     // privacysandboxplugin.
     implementation(project(":privacysandbox:tools:tools"))
 
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":privacysandbox:databridge:databridge-core"))
     api(project(":privacysandbox:databridge:databridge-sdkprovider"))
@@ -55,4 +55,7 @@ dependencies {
 // TODO(b/430983364): Fix when incremental doesn't break compileReleaseKotlin
 tasks.withType(KotlinCompile).configureEach {
     incremental = false
+}
+tasks.withType(KspAATask).configureEach {
+    it.kspConfig.incremental.set(false)
 }

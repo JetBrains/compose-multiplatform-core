@@ -52,8 +52,11 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.mockitoCore4)
+    testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.truth)
+    testImplementation('androidx.test.espresso:espresso-intents:3.6.1')
     testImplementation("androidx.fragment:fragment-testing:1.4.1")
 
     androidTestImplementation(libs.guavaAndroid)
@@ -73,10 +76,7 @@ android {
     aaptOptions {
         noCompress "ttf"
     }
-
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.biometric"
     compileSdk = 35
 }
@@ -85,7 +85,7 @@ androidx {
     name = "Biometric"
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
-    description = "The Biometric library is a static library that you can add to your Android application. It invokes BiometricPrompt on devices running P and greater, and on older devices will show a compat dialog. Compatible on devices running API 14 or later."
+    description = "The Biometric library is a static library that you can add to your Android application. It invokes BiometricPrompt on devices running P and greater, and on older devices will show a compat dialog."
     samples(project(":biometric:biometric-samples"))
     enableRobolectric()
 }

@@ -28,7 +28,6 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
 }
 
 android {

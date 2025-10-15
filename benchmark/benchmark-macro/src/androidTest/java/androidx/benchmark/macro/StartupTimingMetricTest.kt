@@ -19,8 +19,10 @@ package androidx.benchmark.macro
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.annotation.RequiresApi
 import androidx.benchmark.DeviceInfo
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.Outputs
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig.InitialProcessState
@@ -52,6 +54,8 @@ class StartupTimingMetricTest {
     @Test
     @Ignore("b/258335082")
     fun noResults() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(isAbiSupported())
         val packageName = "fake.package.fiction.nostartups"
         val measurements =
@@ -68,6 +72,8 @@ class StartupTimingMetricTest {
     // reflection to force reportFullyDrawn() to be traced. See b/182386956
     @SdkSuppress(minSdkVersion = 29)
     fun startup() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(isAbiSupported())
         val packageName = "androidx.benchmark.integration.macrobenchmark.target"
         val intent =
@@ -95,6 +101,8 @@ class StartupTimingMetricTest {
                 .wait(Until.findObject(By.text(expectedText)), 3000)!!
         }
         assumeTrue(isAbiSupported())
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
 
         val scope = MacrobenchmarkScope(packageName = Packages.TEST, launchWithClearTask = true)
         val launchIntent =
@@ -201,6 +209,8 @@ class StartupTimingMetricTest {
 
     private fun getApi32WarmMeasurements(metric: Metric): List<Metric.Measurement> {
         assumeTrue(isAbiSupported())
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         val traceFile = createTempFileFromAsset("api32_startup_warm", ".perfetto-trace")
         val captureInfo =
             Metric.CaptureInfo(
@@ -219,6 +229,8 @@ class StartupTimingMetricTest {
     @MediumTest
     @Test
     fun fixedStartupTraceMetricsReport_fullyDrawnBeforeFirstFrame() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(isAbiSupported())
         val traceFile =
             createTempFileFromAsset(

@@ -35,7 +35,6 @@ dependencies {
     api("androidx.lifecycle:lifecycle-livedata:2.1.0")
     api(libs.guavaListenableFuture)
     api("androidx.annotation:annotation-experimental:1.4.1")
-    api(libs.kotlinStdlib) // Added for annotation-experimental
     api("androidx.core:core:1.1.0")
     api("androidx.arch.core:core-common:2.1.0")
     api("androidx.lifecycle:lifecycle-livedata-core:2.3.1")
@@ -54,7 +53,6 @@ dependencies {
 
     testImplementation(libs.kotlinCoroutinesAndroid)
     testImplementation(libs.kotlinCoroutinesTest)
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
@@ -81,7 +79,6 @@ dependencies {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")
     }
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     androidTestImplementation(project(":internal-testutils-truth"))
@@ -92,7 +89,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         externalNativeBuild {
@@ -106,12 +103,8 @@ android {
                                 "-Wl,--undefined-version"
             }
         }
-    }
-
-    buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
-
     buildFeatures.prefab = true
 
     externalNativeBuild {

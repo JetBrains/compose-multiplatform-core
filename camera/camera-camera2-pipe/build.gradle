@@ -33,7 +33,6 @@ plugins {
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 
     implementation(libs.atomicFu)
@@ -63,7 +62,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     lint {
         enable.add("CameraXQuirksClassDetector")

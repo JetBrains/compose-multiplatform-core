@@ -175,6 +175,38 @@ class HighSpeedVideoSessionConfigTest {
         assertThat(config.useCases).containsExactly(defaultVideoCapture, defaultPreview)
     }
 
+    @Test
+    fun toString_containsAllPropertiesCorrectly() {
+        // Test with all properties
+        val config1 =
+            HighSpeedVideoSessionConfig(
+                defaultVideoCapture,
+                defaultPreview,
+                FPS_120_120,
+                isSlowMotionEnabled = true,
+            )
+        assertThat(config1.toString()).apply {
+            contains("videoCapture=$defaultVideoCapture")
+            contains("preview=$defaultPreview")
+            contains("frameRateRange=$FPS_120_120")
+            contains("isSlowMotionEnabled=true")
+        }
+
+        // Test with null preview and default slow motion
+        val config2 =
+            HighSpeedVideoSessionConfig(
+                defaultVideoCapture,
+                preview = null,
+                frameRateRange = FPS_120_120,
+            )
+        assertThat(config2.toString()).apply {
+            contains("videoCapture=$defaultVideoCapture")
+            contains("preview=null")
+            contains("frameRateRange=$FPS_120_120")
+            contains("isSlowMotionEnabled=false")
+        }
+    }
+
     private fun createRecorder() = Recorder.Builder().build()
 
     private fun createVideoCapture(

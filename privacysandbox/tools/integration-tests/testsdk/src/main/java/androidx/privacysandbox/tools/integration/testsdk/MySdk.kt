@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.tools.integration.testsdk
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
@@ -44,7 +43,6 @@ interface MySdk {
 
 @PrivacySandboxInterface interface TextViewAd : SandboxedUiAdapter
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 @PrivacySandboxInterface
 interface NativeAd : SharedUiAdapter
@@ -115,7 +113,6 @@ class TextViewAdImpl : TextViewAd {
     }
 }
 
-@SuppressLint("NullAnnotationGroup")
 @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class NativeAdImpl : NativeAd {
     override fun openSession(clientExecutor: Executor, client: SharedUiAdapter.SessionClient) {

@@ -70,7 +70,7 @@ private constructor(
     val shrinkingEnabled: Boolean,
     val shrinkingDisabledPercent: Float,
     val optimizedResourceShrinkingEnabled: Boolean?,
-    val isProGuardCompatibilityModeEnabled: Boolean,
+    val fullMode: Boolean,
 ) {
     companion object {
         const val BUNDLE_LOCATION_R8 = "BUNDLE-METADATA/com.android.tools/r8.json"
@@ -92,7 +92,7 @@ private constructor(
                 shrinkingEnabled = false,
                 shrinkingDisabledPercent = 100.0f,
                 optimizedResourceShrinkingEnabled = false,
-                isProGuardCompatibilityModeEnabled = false,
+                fullMode = false,
                 startupDexShas = setOf(),
             )
         }
@@ -120,8 +120,7 @@ private constructor(
                 shrinkingDisabledPercent = metadata.statsMetadata.noShrinkingPercentage,
                 optimizedResourceShrinkingEnabled =
                     metadata.resourceOptimizationMetadata?.isOptimizedShrinkingEnabled,
-                isProGuardCompatibilityModeEnabled =
-                    metadata.optionsMetadata.isProGuardCompatibilityModeEnabled,
+                fullMode = !metadata.optionsMetadata.isProGuardCompatibilityModeEnabled,
                 startupDexShas =
                     metadata.dexFilesMetadata.filter { it.isStartup }.map { it.checksum }.toSet(),
             )
@@ -132,15 +131,13 @@ private constructor(
                 "r8json_optimizationEnabled",
                 "r8json_obfuscationEnabled",
                 "r8json_shrinkingEnabled",
-                "r8json_compatMode",
+                "r8json_fullMode",
+                "r8json_optimizationDisablePercent",
+                "r8json_obfuscationDisablePercent",
+                "r8json_shrinkingDisablePercent",
             ) +
                 if (VERBOSE) {
-                    listOf(
-                        "r8json_optimizationDisablePercent",
-                        "r8json_obfuscationDisablePercent",
-                        "r8json_shrinkingDisablePercent",
-                        "r8json_sortedDexChecksumsSha256",
-                    )
+                    listOf("r8json_sortedDexChecksumsSha256")
                 } else {
                     emptyList()
                 }
@@ -150,15 +147,15 @@ private constructor(
                 this?.optimizationEnabled.toString(),
                 this?.obfuscationEnabled.toString(),
                 this?.shrinkingEnabled.toString(),
-                this?.isProGuardCompatibilityModeEnabled.toString(),
+                this?.fullMode.toString(),
+                this?.optimizationDisablePercent.toString(),
+                this?.obfuscationDisabledPercent.toString(),
+                this?.shrinkingDisabledPercent.toString(),
             ) +
                 if (VERBOSE) {
                     listOf(
-                        this?.optimizationDisablePercent.toString(),
-                        this?.obfuscationDisabledPercent.toString(),
-                        this?.shrinkingDisabledPercent.toString(),
                         this?.dexShas?.sorted()?.joinToString(separator = INTERNAL_CSV_SEPARATOR)
-                            ?: "null",
+                            ?: "null"
                     )
                 } else {
                     emptyList()

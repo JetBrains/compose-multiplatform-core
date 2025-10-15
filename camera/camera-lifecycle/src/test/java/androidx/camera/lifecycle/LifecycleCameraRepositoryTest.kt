@@ -408,7 +408,7 @@ class LifecycleCameraRepositoryTest {
         val retrieved =
             repository.getLifecycleCamera(
                 lifecycleOwner,
-                CameraIdentifier.create(
+                CameraIdentifier.Factory.create(
                     camera.getCameraInfoInternal().getCameraId(),
                     null,
                     CameraConfigs.defaultConfig().getCompatibilityId(),
@@ -467,7 +467,7 @@ class LifecycleCameraRepositoryTest {
         val key1 =
             LifecycleCameraRepository.Key.create(
                 lifecycleOwner,
-                CameraIdentifier.create(
+                CameraIdentifier.Factory.create(
                     camera.getCameraInfoInternal().getCameraId(),
                     null,
                     CameraConfigs.defaultConfig().getCompatibilityId(),

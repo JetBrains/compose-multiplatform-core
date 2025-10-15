@@ -139,7 +139,7 @@ abstract class MergeBaselineProfileTask : DefaultTask() {
             mergeAwareTaskName: String,
             library: Boolean,
             sourceDir: Provider<Directory>,
-            outputDir: Provider<Directory>,
+            outputDir: Directory,
             isLastTask: Boolean,
             hasDependencies: Boolean,
             warnings: Warnings,

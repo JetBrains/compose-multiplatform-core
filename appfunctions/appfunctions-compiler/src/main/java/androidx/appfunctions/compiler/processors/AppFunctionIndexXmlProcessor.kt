@@ -71,9 +71,6 @@ class AppFunctionIndexXmlProcessor(private val codeGenerator: CodeGenerator) : S
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
         appFunctionSerializablesDescriptionMap: Map<String, String>,
     ) {
-        if (appFunctionsByClass.isEmpty()) {
-            return
-        }
         writeXmlFile(
             appFunctionsByClass,
             resolvedAnnotatedSerializableProxies,
@@ -121,11 +118,13 @@ class AppFunctionIndexXmlProcessor(private val codeGenerator: CodeGenerator) : S
             appFunctionsElement.appendChild(appFunctionElement)
         }
 
-        val componentElement =
-            AppFunctionComponentsMetadata(aggregatedDataTypes)
-                .toAppFunctionComponentsMetadataDocument()
-                .toXmlElement(doc = xmlDocument, COMPONENT_ITEM_TAG)
-        appFunctionsElement.appendChild(componentElement)
+        if (aggregatedDataTypes.isNotEmpty()) {
+            val componentElement =
+                AppFunctionComponentsMetadata(aggregatedDataTypes)
+                    .toAppFunctionComponentsMetadataDocument()
+                    .toXmlElement(doc = xmlDocument, COMPONENT_ITEM_TAG)
+            appFunctionsElement.appendChild(componentElement)
+        }
 
         val transformer =
             TransformerFactory.newInstance().newTransformer().apply {

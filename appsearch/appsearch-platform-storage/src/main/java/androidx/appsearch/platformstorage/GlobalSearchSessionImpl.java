@@ -25,11 +25,13 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBatchResult;
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.GetSchemaResponse;
 import androidx.appsearch.app.GlobalSearchSession;
+import androidx.appsearch.app.OpenBlobForReadResponse;
 import androidx.appsearch.app.ReportSystemUsageRequest;
 import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.app.SearchSpec;
@@ -38,14 +40,18 @@ import androidx.appsearch.observer.DocumentChangeInfo;
 import androidx.appsearch.observer.ObserverCallback;
 import androidx.appsearch.observer.ObserverSpec;
 import androidx.appsearch.observer.SchemaChangeInfo;
+import androidx.appsearch.platformstorage.converter.AppSearchBlobHandleToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.AppSearchResultToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.GenericDocumentToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.GetSchemaResponseToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.ObserverSpecToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.RequestToPlatformConverter;
+import androidx.appsearch.platformstorage.converter.ResponseToPlatformConverter;
 import androidx.appsearch.platformstorage.converter.SearchSpecToPlatformConverter;
+import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.appsearch.platformstorage.util.BatchResultCallbackAdapter;
 import androidx.collection.ArrayMap;
+import androidx.collection.ArraySet;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Preconditions;
 
@@ -54,6 +60,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -105,6 +112,32 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
                 RequestToPlatformConverter.toPlatformGetByDocumentIdRequest(request), mExecutor,
                 new BatchResultCallbackAdapter<>(
                         future, GenericDocumentToPlatformConverter::toJetpackGenericDocument));
+        return future;
+    }
+
+    @Override
+    public @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        if (!AppSearchVersionUtil.isAtLeastB()) {
+            throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                    + " is not available on this AppSearch implementation.");
+        }
+        Preconditions.checkNotNull(handles);
+        ResolvableFuture<OpenBlobForReadResponse> future = ResolvableFuture.create();
+        Set<android.app.appsearch.AppSearchBlobHandle> platformBlobHandles =
+                new ArraySet<>(handles.size());
+        for (AppSearchBlobHandle jetpackHandle : handles) {
+            platformBlobHandles.add(AppSearchBlobHandleToPlatformConverter
+                    .toPlatformBlobHandle(jetpackHandle));
+        }
+        mPlatformSession.openBlobForRead(
+                platformBlobHandles,
+                mExecutor,
+                result ->
+                        AppSearchResultToPlatformConverter.platformAppSearchResultToFuture(
+                                result,
+                                future,
+                                ResponseToPlatformConverter::toJetpackOpenBlobForReadResponse));
         return future;
     }
 

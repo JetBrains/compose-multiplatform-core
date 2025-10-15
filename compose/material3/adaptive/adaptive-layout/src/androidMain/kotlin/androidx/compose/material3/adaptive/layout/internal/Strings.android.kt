@@ -33,6 +33,15 @@ import java.util.Locale
 @Immutable
 internal actual value class Strings(@StringRes val value: Int) {
     actual companion object {
+        actual inline val defaultPaneTitlePrimary
+            get() = Strings(R.string.m3_adaptive_default_pane_title_primary)
+
+        actual inline val defaultPaneTitleSecondary
+            get() = Strings(R.string.m3_adaptive_default_pane_title_secondary)
+
+        actual inline val defaultPaneTitleTertiary
+            get() = Strings(R.string.m3_adaptive_default_pane_title_tertiary)
+
         actual inline val defaultPaneExpansionDragHandleContentDescription
             get() =
                 Strings(R.string.m3_adaptive_default_pane_expansion_drag_handle_content_description)
@@ -56,6 +65,26 @@ internal actual value class Strings(@StringRes val value: Int) {
         actual inline val defaultPaneExpansionEndOffsetAnchorDescription
             get() =
                 Strings(R.string.m3_adaptive_default_pane_expansion_end_offset_anchor_description)
+
+        actual val dragToResizeClickToExpandDescription: Strings
+            get() = Strings(R.string.m3_adaptive_drag_to_resize_click_to_expand_description)
+
+        actual val dragToResizeClickToCollapseDescription: Strings
+            get() = Strings(R.string.m3_adaptive_drag_to_resize_click_to_collapse_description)
+
+        actual val dragToResizeClickToPartiallyExpandDescription: Strings
+            get() =
+                Strings(R.string.m3_adaptive_drag_to_resize_click_to_partially_expand_description)
+
+        actual val dragToResizeExpandedStateDescription: Strings
+            get() = Strings(R.string.m3_adaptive_drag_to_resize_expanded_state_description)
+
+        actual val dragToResizeCollapsedStateDescription: Strings
+            get() = Strings(R.string.m3_adaptive_drag_to_resize_collapsed_state_description)
+
+        actual val dragToResizePartiallyExpandedStateDescription: Strings
+            get() =
+                Strings(R.string.m3_adaptive_drag_to_resize_partially_expanded_state_description)
     }
 }
 

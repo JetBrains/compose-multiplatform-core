@@ -21,7 +21,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":startup:startup-runtime"))
     implementation(project(":work:work-runtime-ktx"))
 

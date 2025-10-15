@@ -31,22 +31,23 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.util.Size;
 
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
-import androidx.xr.runtime.internal.ActivitySpace;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.SceneRuntime;
-import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.BoundingBox;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.runtime.testing.FakeSpatialModeChangeListener;
-import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.runtime.ActivitySpace;
+import androidx.xr.scenecore.runtime.Dimensions;
+import androidx.xr.scenecore.runtime.HitTestResult;
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilter;
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue;
+import androidx.xr.scenecore.runtime.SceneRuntime;
+import androidx.xr.scenecore.runtime.Space;
+import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
+import androidx.xr.scenecore.testing.FakeSpatialModeChangeListener;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;
@@ -116,8 +117,8 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
 
     @After
     public void tearDown() {
-        // Dispose the runtime between test cases to clean up lingering references.
-        mTestRuntime.dispose();
+        // Destroy the runtime between test cases to clean up lingering references.
+        mTestRuntime.destroy();
     }
 
     @Override
@@ -163,7 +164,33 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
                 /* sceneParentTransform= */ null);
     }
 
-    // TODO: b/430219226 Remove getBounds and addBoundsChangedListener
+    @Test
+    public void getBounds_returnsBounds() {
+        assertThat(mActivitySpace.getBounds().width).isPositiveInfinity();
+        assertThat(mActivitySpace.getBounds().height).isPositiveInfinity();
+        assertThat(mActivitySpace.getBounds().depth).isPositiveInfinity();
+
+        SpatialState spatialState =
+                createSpatialState(/* bounds= */ new Bounds(100.0f, 200.0f, 300.0f));
+        ShadowXrExtensions.extract(mXrExtensions).sendSpatialState(mActivity, spatialState);
+
+        assertThat(mActivitySpace.getBounds().width).isEqualTo(100f);
+        assertThat(mActivitySpace.getBounds().height).isEqualTo(200f);
+        assertThat(mActivitySpace.getBounds().depth).isEqualTo(300f);
+    }
+
+    @Test
+    public void addBoundsChangedListener_happyPath() {
+        ActivitySpace.OnBoundsChangedListener listener =
+                Mockito.mock(ActivitySpace.OnBoundsChangedListener.class);
+
+        SpatialState spatialState =
+                createSpatialState(/* bounds= */ new Bounds(100.0f, 200.0f, 300.0f));
+        mActivitySpace.addOnBoundsChangedListener(listener);
+        ShadowXrExtensions.extract(mXrExtensions).sendSpatialState(mActivity, spatialState);
+
+        verify(listener).onBoundsChanged(Mockito.refEq(new Dimensions(100.0f, 200.0f, 300.0f)));
+    }
 
     @Test
     public void removeOnBoundsChangedListener_happyPath() {
@@ -323,7 +350,7 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
 
         assertThat(resultBox).isNotNull();
         BoundingBox expectedBox =
-                new BoundingBox(
+                BoundingBox.fromMinMax(
                         new Vector3(-1.73f / 2, -1.61f / 2, -0.5f / 2),
                         new Vector3(1.73f / 2, 1.61f / 2, 0.5f / 2));
         assertThat(resultBox).isEqualTo(expectedBox);
@@ -344,25 +371,44 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
 
     @Test
     public void getPoseRelativeToActivitySpace_returnsIdentity() {
-        assertPose(mActivitySpace.getPose(Space.ACTIVITY), mActivitySpace.getPoseInActivitySpace());
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
+        assertPose(
+                activitySpaceImpl.getPose(Space.ACTIVITY),
+                activitySpaceImpl.getPoseInActivitySpace());
     }
 
-    // TODO: b/434230591 getPoseRelativeToRealWorldSpace_returnsPerceptionSpacePose is removed.
+    @Test
+    public void getPoseRelativeToRealWorldSpace_returnsPerceptionSpacePose() {
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
+        assertPose(
+                activitySpaceImpl.getPose(Space.REAL_WORLD),
+                activitySpaceImpl.getPoseInPerceptionSpace());
+    }
 
     @Test
     public void getScaleRelativeToParentSpace_throwsException() throws Exception {
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
         assertThrows(
-                UnsupportedOperationException.class, () -> mActivitySpace.getScale(Space.PARENT));
+                UnsupportedOperationException.class,
+                () -> activitySpaceImpl.getScale(Space.PARENT));
     }
 
     @Test
     public void getScaleRelativeToActivitySpace_returnsActivitySpaceScale() {
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
         assertVector3(
-                mActivitySpace.getScale(Space.ACTIVITY), mActivitySpace.getActivitySpaceScale());
+                activitySpaceImpl.getScale(Space.ACTIVITY),
+                activitySpaceImpl.getActivitySpaceScale());
     }
 
     @Test
     public void getScaleRelativeToRealWorldSpace_returnsVector3One() {
-        assertVector3(mActivitySpace.getScale(Space.REAL_WORLD), new Vector3(1f, 1f, 1f));
+        ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
+
+        assertVector3(activitySpaceImpl.getScale(Space.REAL_WORLD), new Vector3(1f, 1f, 1f));
     }
 }

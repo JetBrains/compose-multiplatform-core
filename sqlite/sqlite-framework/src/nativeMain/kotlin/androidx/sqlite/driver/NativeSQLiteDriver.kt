@@ -30,6 +30,7 @@ import sqlite3.SQLITE_OK
 import sqlite3.SQLITE_OPEN_CREATE
 import sqlite3.SQLITE_OPEN_READWRITE
 import sqlite3.sqlite3_db_config
+import sqlite3.sqlite3_extended_result_codes
 import sqlite3.sqlite3_open_v2
 import sqlite3.sqlite3_threadsafe
 
@@ -73,6 +74,12 @@ public class NativeSQLiteDriver : SQLiteDriver {
         val dbPointer = allocPointerTo<sqlite3>()
         var resultCode =
             sqlite3_open_v2(filename = fileName, ppDb = dbPointer.ptr, flags = flags, zVfs = null)
+        if (resultCode != SQLITE_OK) {
+            throwSQLiteException(resultCode, null)
+        }
+
+        // Enable extended error codes
+        resultCode = sqlite3_extended_result_codes(dbPointer.value!!, 1)
         if (resultCode != SQLITE_OK) {
             throwSQLiteException(resultCode, null)
         }

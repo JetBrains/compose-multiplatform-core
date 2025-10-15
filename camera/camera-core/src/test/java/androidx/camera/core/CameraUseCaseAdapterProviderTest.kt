@@ -125,7 +125,7 @@ class CameraUseCaseAdapterProviderTest {
 
         // Assert.
         val expectedCameraId =
-            CameraIdentifier.fromAdapterInfos(adapterCameraInfo0, adapterCameraInfo1)
+            CameraIdentifier.Factory.fromAdapterInfos(adapterCameraInfo0, adapterCameraInfo1)
         assertThat(adapter.adapterIdentifier).isEqualTo(expectedCameraId)
     }
 }

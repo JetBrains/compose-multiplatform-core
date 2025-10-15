@@ -18,8 +18,8 @@ import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("java-library")
+    id("org.jetbrains.kotlin.jvm")
 }
 
 androidx {
@@ -27,11 +27,6 @@ androidx {
     type = SoftwareType.INTERNAL_TEST_LIBRARY
     inceptionYear = "2024"
     description = "Remote Compose internal test utils"
-}
-
-android {
-    namespace = "androidx.compose.remote.serialization"
-    compileSdk = 35
 }
 
 dependencies {

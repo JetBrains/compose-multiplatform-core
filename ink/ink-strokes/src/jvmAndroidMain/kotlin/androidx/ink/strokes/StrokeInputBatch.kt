@@ -99,7 +99,7 @@ public abstract class StrokeInputBatch internal constructor(nativePointer: Long)
     public fun getNoiseSeed(): Int = StrokeInputBatchNative.getNoiseSeed(nativePointer)
 
     /**
-     * Gets the value of the i-th input. Requires that [index] is positive and less than [size].
+     * Gets the value of the i-th input. Requires that [index] is non-negative and less than [size].
      *
      * In performance-sensitive code, prefer to use [populate] to pass in a pre-allocated instance
      * and reuse that instance across multiple calls to this function.
@@ -108,7 +108,7 @@ public abstract class StrokeInputBatch internal constructor(nativePointer: Long)
 
     /**
      * Gets the value of the i-th input and overwrites [outStrokeInput], which it then returns.
-     * Requires that [index] is positive and less than [size].
+     * Requires that [index] is non-negative and less than [size].
      */
     public fun populate(index: Int, outStrokeInput: StrokeInput): StrokeInput {
         require(index < size && index >= 0) { "index ($index) must be in [0, size=$size)" }

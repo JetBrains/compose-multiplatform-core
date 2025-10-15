@@ -17,11 +17,16 @@
 package androidx.pdf.annotation.processor
 
 import android.os.Parcel
+import android.os.Parcelable
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.pdf.PdfDocumentRemote
+import androidx.pdf.annotation.models.AddEditResult
 import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.ModifyEditResult
 import androidx.pdf.annotation.models.PdfAnnotationData
+import androidx.pdf.annotation.models.PdfEditResult
 
 /**
  * A processor for handling a list of [PdfAnnotationData] objects by batching them and applying the
@@ -46,21 +51,59 @@ public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumen
      *   annotations and the list of failed annotations.
      */
     override fun process(annotations: List<PdfAnnotationData>): AnnotationResult {
-        val emptyAnnotationResult = AnnotationResult(success = emptyList(), failures = emptyList())
-        if (annotations.isEmpty()) {
-            return emptyAnnotationResult
+        return processInBatches(
+            annotations,
+            remoteDocument::applyEdits,
+            { success, failures -> AnnotationResult(success, failures) },
+        )
+    }
+
+    override fun processAddEdits(annotations: List<PdfAnnotationData>): AddEditResult {
+        return processInBatches(
+            annotations,
+            remoteDocument::addEdit,
+            { success, failures -> AddEditResult(success, failures) },
+        )
+    }
+
+    override fun processUpdateEdits(annotations: List<PdfAnnotationData>): ModifyEditResult {
+        return processInBatches(
+            annotations,
+            remoteDocument::updateEdit,
+            { success, failures -> ModifyEditResult(success, failures) },
+        )
+    }
+
+    override fun processRemoveEdits(editIds: List<EditId>): ModifyEditResult {
+        return processInBatches(
+            editIds,
+            remoteDocument::removeEdit,
+            { success, failures -> ModifyEditResult(success, failures) },
+        )
+    }
+
+    private fun <T : Parcelable, S, F, R> processInBatches(
+        items: List<T>,
+        compute: (List<T>) -> R,
+        resultFactory: (success: List<S>, failures: List<F>) -> R,
+    ): R where R : PdfEditResult<S, F> {
+
+        val emptyResult = resultFactory(emptyList(), emptyList())
+        if (items.isEmpty()) {
+            return emptyResult
         }
 
-        val batches = annotations.unflatten(MAX_BATCH_SIZE_IN_BYTES)
+        val batches = items.unflatten(MAX_BATCH_SIZE_IN_BYTES)
 
         // The operation here applies each annotation batch and the result of each operation is
         // folded into a single [AnnotationResult].
-        return batches.fold(emptyAnnotationResult) { prevResult, annotationsBatch ->
-            val result = remoteDocument.applyEdits(annotationsBatch)
-            AnnotationResult(
-                success = prevResult.success + result.success,
-                failures = prevResult.failures + result.failures,
-            )
+        return batches.fold(emptyResult) { accumulator, batch ->
+            val newResult = compute(batch)
+
+            // Combine the previous results with the new results.
+            val combinedSuccesses = accumulator.success + newResult.success
+            val combinedFailures = accumulator.failures + newResult.failures
+            resultFactory(combinedSuccesses, combinedFailures)
         }
     }
 
@@ -68,44 +111,61 @@ public class BatchPdfAnnotationsProcessor(private val remoteDocument: PdfDocumen
         public const val MAX_BATCH_SIZE_IN_BYTES: Int = 1000000
 
         /**
-         * Used to expand a 1D list to a 2D list of annotations based on [maxSizeInBytes].
+         * Splits this list of [Parcelable] items into multiple sublists (batches), where the total
+         * parcel size of the items in each batch does not exceed a specified maximum.
          *
-         * If the accumulated size if greater or equal to the [maxSizeInBytes] then the item is
-         * added to a new sublist else it is added to the existing one.
+         * Note: Any single item whose individual parcel size is larger than [maxSizeInBytes] will
+         * be ignored and will not be included in any of the resulting batches.
          *
-         * @param maxSizeInBytes max size limit for each sublist
-         * @return 2D list divided into list of sublists
+         * @param T The type of [Parcelable] items in the list.
+         * @param maxSizeInBytes The maximum permitted size in bytes for the parcelled content of
+         *   each batch.
+         * @return A `List<List<T>>` where each inner list represents a batch.
          */
-        @VisibleForTesting
-        internal fun List<PdfAnnotationData>.unflatten(
-            maxSizeInBytes: Int
-        ): List<List<PdfAnnotationData>> {
-            return this.fold(emptyList()) { acc, annotationData ->
-                val lastSublist = acc.lastOrNull() ?: listOf()
-                val annotationSize = annotationData.parcelSizeInBytes()
-
-                val newListSizeInBytes =
-                    lastSublist.sumOf { it.parcelSizeInBytes() } + annotationSize
-
-                if (newListSizeInBytes <= maxSizeInBytes) {
-                    // Add the item to the last sublist
-                    val newLastSublist = lastSublist + annotationData
-                    acc.dropLast(1) + listOf(newLastSublist)
-                } else if (annotationSize > maxSizeInBytes) {
-                    acc
-                } else {
-                    acc + listOf(listOf(annotationData))
-                }
+        public fun <T : Parcelable> List<T>.unflatten(maxSizeInBytes: Int): List<List<T>> {
+            if (isEmpty()) {
+                return emptyList()
             }
+
+            val batches = mutableListOf<List<T>>()
+            var currentBatch = mutableListOf<T>()
+            var currentBatchSize = 0
+
+            for (item in this) {
+                val itemSize = item.parcelSizeInBytes()
+
+                // Ignore items that are individually larger than the max size.
+                if (itemSize > maxSizeInBytes) {
+                    continue
+                }
+
+                // If adding the new item would exceed the max size,
+                // finalize the current batch and start a new one.
+                if (currentBatch.isNotEmpty() && currentBatchSize + itemSize > maxSizeInBytes) {
+                    batches.add(currentBatch)
+                    currentBatch = mutableListOf()
+                    currentBatchSize = 0
+                }
+
+                currentBatch.add(item)
+                currentBatchSize += itemSize
+            }
+
+            // Add the last batch if it has any items.
+            if (currentBatch.isNotEmpty()) {
+                batches.add(currentBatch)
+            }
+
+            return batches
         }
 
         /**
-         * Calculates the size of a [PdfAnnotationData] object when flattened into a [Parcel].
+         * Calculates the size of a [Parcelable] object when flattened into a [Parcel].
          *
-         * @return The size in bytes of the `PdfAnnotationData` object when written to a [Parcel].
+         * @return The size in bytes of the `Parcelable` object when written to a [Parcel].
          */
         @VisibleForTesting
-        internal fun PdfAnnotationData.parcelSizeInBytes(): Int {
+        internal fun Parcelable.parcelSizeInBytes(): Int {
             val parcel = Parcel.obtain()
             this.writeToParcel(parcel, 0)
             val size = parcel.dataSize()

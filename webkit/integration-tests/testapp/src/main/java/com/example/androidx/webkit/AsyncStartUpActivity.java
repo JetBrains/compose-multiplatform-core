@@ -26,7 +26,7 @@ import android.widget.TextView;
 
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.webkit.BlockingStartUpLocation;
+import androidx.webkit.StartUpLocation;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewStartUpConfig;
 
@@ -66,13 +66,23 @@ public class AsyncStartUpActivity extends AppCompatActivity {
                     + result.getTotalTimeInUiThreadMillis() + "\n");
             tv.append("getMaxTimePerTaskInUiThreadMillis: "
                     + result.getMaxTimePerTaskInUiThreadMillis() + "\n");
-            tv.append("getBlockingStartUpLocations: \n");
-            if (result.getBlockingStartUpLocations() == null) {
+            tv.append("getUiThreadBlockingStartUpLocations: \n");
+            if (result.getUiThreadBlockingStartUpLocations() == null) {
                 tv.append("null \n");
-            } else if (result.getBlockingStartUpLocations().isEmpty()) {
+            } else if (result.getUiThreadBlockingStartUpLocations().isEmpty()) {
                 tv.append("empty list \n");
             } else {
-                for (BlockingStartUpLocation location : result.getBlockingStartUpLocations()) {
+                for (StartUpLocation location : result.getUiThreadBlockingStartUpLocations()) {
+                    tv.append(location.getStackInformation() + "\n");
+                }
+            }
+            tv.append("getNonUiThreadBlockingStartUpLocations: \n");
+            if (result.getNonUiThreadBlockingStartUpLocations() == null) {
+                tv.append("null \n");
+            } else if (result.getNonUiThreadBlockingStartUpLocations().isEmpty()) {
+                tv.append("empty list \n");
+            } else {
+                for (StartUpLocation location : result.getNonUiThreadBlockingStartUpLocations()) {
                     tv.append(location.getStackInformation() + "\n");
                 }
             }

@@ -39,15 +39,22 @@ class AnalyzedBundleInfo(val bundleInfo: BundleInfo) {
 
     fun toCsvLine(): String {
         val entries =
-            (profileAnalysis.csvEntries() + r8Analysis.csvEntries() + bundleInfo.csvEntries())
+            (profileAnalysis.csvEntries() +
+                r8Analysis.csvEntries() +
+                libraryAnalysis.csvEntries() +
+                bundleInfo.csvEntries())
         check(entries.size == CSV_TITLES.size) {
-            "CSV Entry count (${entries.size}) didn't match header count ${CSV_TITLES.size}"
+            "CSV Entry count (${entries.size}) didn't match header count ${CSV_TITLES.size}, entries = $entries, path ${bundleInfo.path}"
         }
         return entries.joinToString(", ")
     }
 
     companion object {
-        val CSV_TITLES = ProfileAnalysis.CSV_TITLES + R8Analysis.CSV_TITLES + BundleInfo.CSV_TITLES
+        val CSV_TITLES =
+            ProfileAnalysis.CSV_TITLES +
+                R8Analysis.CSV_TITLES +
+                LibraryAnalysis.CSV_TITLES +
+                BundleInfo.CSV_TITLES
         val CSV_HEADER = CSV_TITLES.joinToString(", ")
     }
 }

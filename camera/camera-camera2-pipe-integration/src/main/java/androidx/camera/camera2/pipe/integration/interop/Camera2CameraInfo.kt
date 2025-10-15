@@ -40,7 +40,7 @@ private constructor(
      * The characteristic value is the same as the value in the [CameraCharacteristics] that would
      * be obtained from [android.hardware.camera2.CameraManager.getCameraCharacteristics].
      *
-     * @param <T> The type of the characteristic value.
+     * @param T The type of the characteristic value.
      * @param key The [CameraCharacteristics.Key] of the characteristic.
      * @return the value of the characteristic. </T>
      */

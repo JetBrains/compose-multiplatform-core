@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.integration.impl
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES
-import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW
 import android.hardware.camera2.CameraDevice.TEMPLATE_RECORD
 import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
@@ -34,14 +33,12 @@ import android.util.Size
 import androidx.camera.camera2.pipe.CameraGraph.OperatingMode.Companion.HIGH_SPEED
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
-import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.OutputStream.DynamicRangeProfile
 import androidx.camera.camera2.pipe.RequestTemplate
-import androidx.camera.camera2.pipe.integration.adapter.BlockingTestDeferrableSurface
 import androidx.camera.camera2.pipe.integration.adapter.CameraCoordinatorAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraUseCaseAdapter
-import androidx.camera.camera2.pipe.integration.adapter.FakeTestUseCase
+import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.TestDeferrableSurface
@@ -57,6 +54,7 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParams
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraControl
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
+import androidx.camera.camera2.pipe.integration.interop.setCamera2CaptureRequestConfigurator
 import androidx.camera.camera2.pipe.integration.testing.FakeCamera2CameraControlCompat
 import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCameraComponentBuilder
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
@@ -68,7 +66,6 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
-import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.StreamSpec
@@ -77,7 +74,6 @@ import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
 import androidx.camera.testing.impl.fakes.FakeUseCase
-import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import androidx.test.core.app.ApplicationProvider
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
@@ -94,6 +90,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 import org.robolectric.shadows.ShadowCameraManager
+import org.robolectric.shadows.ShadowLooper
 import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -114,6 +111,9 @@ class UseCaseManagerTest {
         useCaseManagerList.forEach { it.close() }
         useCaseList.forEach { it.onUnbind() }
         DisplayInfoManager.releaseInstance()
+
+        // Drains the main looper's queue to ensure all CameraStateAdapter updates are processed.
+        ShadowLooper.idleMainLooper()
     }
 
     @Test
@@ -433,11 +433,15 @@ class UseCaseManagerTest {
                 )
             }
         val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
-        val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager
+                .createCameraGraphConfig(
+                    sessionConfigAdapter,
+                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
+                )
+                .config
 
         // Assert
         assertThat(graphConfig.sessionMode).isEqualTo(HIGH_SPEED)
@@ -467,11 +471,15 @@ class UseCaseManagerTest {
                 )
             }
         val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
-        val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager
+                .createCameraGraphConfig(
+                    sessionConfigAdapter,
+                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
+                )
+                .config
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -502,11 +510,15 @@ class UseCaseManagerTest {
                 )
             }
         val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
-        val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager
+                .createCameraGraphConfig(
+                    sessionConfigAdapter,
+                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
+                )
+                .config
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -554,11 +566,15 @@ class UseCaseManagerTest {
                 )
             }
         val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
-        val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager
+                .createCameraGraphConfig(
+                    sessionConfigAdapter,
+                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
+                )
+                .config
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -583,11 +599,15 @@ class UseCaseManagerTest {
                 )
             }
         val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
-        val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager
+                .createCameraGraphConfig(
+                    sessionConfigAdapter,
+                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
+                )
+                .config
 
         // Assert
         assertThat(graphConfig.sessionTemplate).isEqualTo(RequestTemplate(TEMPLATE_PREVIEW))
@@ -617,11 +637,15 @@ class UseCaseManagerTest {
                 )
             }
         val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
-        val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
 
         // Act.
         val cameraGraphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager
+                .createCameraGraphConfig(
+                    sessionConfigAdapter,
+                    GraphStateToCameraStateAdapter(CameraStateAdapter()),
+                )
+                .config
 
         // Assert
         assertThat(cameraGraphConfig.sessionParameters[CONTROL_CAPTURE_INTENT])
@@ -659,6 +683,47 @@ class UseCaseManagerTest {
         }
     }
 
+    @Test
+    fun cameraXConfig_camera2CaptureRequestConfiguratorCalled() = runTest {
+        // Arrange.
+        initializeUseCaseThreads(this)
+        val fpsRange = Range(15, 15)
+        lateinit var resultFpsRange: Range<Int>
+        val useCaseManager =
+            createUseCaseManager(
+                cameraXConfig =
+                    CameraXConfig.Builder()
+                        .setCamera2CaptureRequestConfigurator { parameters ->
+                            parameters.forEach { (key, value) ->
+                                if (key == CONTROL_AE_TARGET_FPS_RANGE) {
+                                    @Suppress("UNCHECKED_CAST")
+                                    resultFpsRange = value as Range<Int>
+                                }
+                            }
+                        }
+                        .build()
+            )
+        val fakeUseCase =
+            FakeUseCase().apply {
+                updateSessionConfigForTesting(
+                    SessionConfig.Builder()
+                        .setTemplateType(TEMPLATE_PREVIEW)
+                        .setExpectedFrameRateRange(fpsRange)
+                        .build()
+                )
+            }
+        val sessionConfigAdapter = SessionConfigAdapter(setOf(fakeUseCase))
+
+        // Act.
+        useCaseManager.createCameraGraphConfig(
+            sessionConfigAdapter,
+            GraphStateToCameraStateAdapter(CameraStateAdapter()),
+        )
+
+        // Assert.
+        assertThat(resultFpsRange).isEqualTo(fpsRange)
+    }
+
     @OptIn(ExperimentalCamera2Interop::class)
     @Suppress("UNCHECKED_CAST", "PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     private fun createUseCaseManager(
@@ -668,6 +733,7 @@ class UseCaseManagerTest {
         templateParamsOverride: TemplateParamsOverride = NoOpTemplateParamsOverride,
         characteristicsMap: Map<CameraCharacteristics.Key<*>, Any?> =
             mapOf(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to streamConfigurationMap),
+        cameraXConfig: CameraXConfig? = null,
     ): UseCaseManager {
         val cameraId = CameraId("0")
 
@@ -692,6 +758,21 @@ class UseCaseManagerTest {
                 useCaseThreads,
                 ComboRequestListener(),
             )
+        val cameraQuirks =
+            CameraQuirks(
+                fakeCameraMetadata,
+                StreamConfigurationMapCompat(null, OutputSizesCorrector(fakeCameraMetadata, null)),
+            )
+        val configProvider =
+            CameraGraphConfigProvider(
+                callbackMap = CameraCallbackMap(),
+                requestListener = ComboRequestListener(),
+                cameraConfig = CameraConfig(cameraId),
+                cameraQuirks = cameraQuirks,
+                zslControl = ZslControlNoOpImpl(),
+                templateParamsOverride = templateParamsOverride,
+                cameraMetadata = fakeCameraMetadata,
+            )
         return UseCaseManager(
                 cameraPipe = cameraPipe,
                 cameraDevices =
@@ -700,11 +781,7 @@ class UseCaseManagerTest {
                         emptySet(),
                         mapOf(fakeCameraBackend.id to listOf(fakeCameraMetadata)),
                     ),
-                cameraMetadata = fakeCameraMetadata,
                 cameraCoordinator = CameraCoordinatorAdapter(cameraPipe, cameraPipe.cameras()),
-                callbackMap = CameraCallbackMap(),
-                requestListener = ComboRequestListener(),
-                cameraConfig = CameraConfig(cameraId),
                 builder = useCaseCameraComponentBuilder,
                 zslControl = ZslControlNoOpImpl(),
                 lowLightBoostControl = lowLightBoostControl,
@@ -716,24 +793,16 @@ class UseCaseManagerTest {
                         ComboRequestListener(),
                     ),
                 cameraStateAdapter = CameraStateAdapter(),
-                cameraQuirks =
-                    CameraQuirks(
-                        fakeCameraMetadata,
-                        StreamConfigurationMapCompat(
-                            null,
-                            OutputSizesCorrector(fakeCameraMetadata, null),
-                        ),
-                    ),
                 cameraInternal = { fakeCamera },
                 useCaseThreads = { useCaseThreads },
                 cameraInfoInternal = { fakeCamera.cameraInfoInternal },
-                templateParamsOverride = templateParamsOverride,
                 encoderProfilesProvider = FakeEncoderProfilesProvider.Builder().build(),
                 context = ApplicationProvider.getApplicationContext(),
                 cameraProperties = cameraProperties,
                 displayInfoManager =
                     DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
-                cameraXConfig = CameraXConfig.Builder().build(),
+                cameraXConfig = cameraXConfig ?: CameraXConfig.Builder().build(),
+                cameraGraphConfigProvider = configProvider,
             )
             .also { useCaseManagerList.add(it) }
     }
@@ -743,60 +812,8 @@ class UseCaseManagerTest {
         useCaseThreads = UseCaseThreads(testScope, dispatcher.asExecutor(), dispatcher)
     }
 
-    private fun createFakePreview(customDeferrableSurface: DeferrableSurface? = null) =
-        createFakeTestUseCase(
-            "Preview",
-            TEMPLATE_PREVIEW,
-            Preview::class.java,
-            customDeferrableSurface,
-        )
-
-    private fun createFakeImageCapture(customDeferrableSurface: DeferrableSurface? = null) =
-        createFakeTestUseCase(
-            "ImageCapture",
-            CameraDevice.TEMPLATE_STILL_CAPTURE,
-            ImageCapture::class.java,
-            customDeferrableSurface,
-        )
-
-    private fun createFakeImageAnalysis(customDeferrableSurface: DeferrableSurface? = null) =
-        createFakeTestUseCase(
-            "ImageAnalysis",
-            TEMPLATE_PREVIEW,
-            ImageAnalysis::class.java,
-            customDeferrableSurface,
-        )
-
-    private fun <T> createFakeTestUseCase(
-        name: String,
-        template: Int,
-        containerClass: Class<T>,
-        customDeferrableSurface: DeferrableSurface? = null,
-    ): FakeTestUseCase {
-        val deferrableSurface =
-            customDeferrableSurface ?: createTestDeferrableSurface(containerClass)
-        return FakeTestUseCase(FakeUseCaseConfig.Builder().setTargetName(name).useCaseConfig)
-            .apply {
-                setupSessionConfig(
-                    SessionConfig.Builder().also { sessionConfigBuilder ->
-                        sessionConfigBuilder.setTemplateType(template)
-                        sessionConfigBuilder.addSurface(deferrableSurface)
-                    }
-                )
-            }
-    }
-
     private fun <T> createTestDeferrableSurface(containerClass: Class<T>): TestDeferrableSurface {
         return TestDeferrableSurface().apply {
-            setContainerClass(containerClass)
-            terminationFuture.addListener({ cleanUp() }, useCaseThreads.backgroundExecutor)
-        }
-    }
-
-    private fun <T> createBlockingTestDeferrableSurface(
-        containerClass: Class<T>
-    ): BlockingTestDeferrableSurface {
-        return BlockingTestDeferrableSurface().apply {
             setContainerClass(containerClass)
             terminationFuture.addListener({ cleanUp() }, useCaseThreads.backgroundExecutor)
         }

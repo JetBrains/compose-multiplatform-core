@@ -41,17 +41,16 @@ dependencies {
     annotationProcessor(libs.nullaway)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:protolayout:protolayout"))
+    api(project(":wear:protolayout:protolayout-expression"))
     implementation(project(":wear:protolayout:protolayout-proto"))
 
     testImplementation(libs.junit)
-    testImplementation(libs.mockitoCore4)
     testImplementation(libs.testExtJunit)
-    testImplementation(libs.testExtTruth)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
-    testImplementation(libs.testRules)
     testImplementation(libs.truth)
     testImplementation("androidx.core:core-ktx:1.13.1")
+    testImplementation("org.robolectric:shadowapi:4.15")
 }
 
 androidx {

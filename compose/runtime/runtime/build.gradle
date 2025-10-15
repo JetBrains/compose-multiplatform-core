@@ -59,7 +59,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
                 api(libs.kotlinCoroutinesCore)
                 api(project(":compose:runtime:runtime-annotation"))
                 implementation("androidx.collection:collection:1.5.0")
@@ -94,7 +93,6 @@ androidXMultiplatform {
         jvmMain {
             dependsOn(nonEmulatorJvmMain)
             dependencies {
-                implementation(libs.kotlinStdlib)
             }
         }
 
@@ -110,7 +108,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(libs.testExtJunit)
@@ -121,7 +119,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependsOn(nonEmulatorJvmTest)
         }
@@ -229,6 +227,16 @@ androidXMultiplatform {
 dependencies {
     lintChecks(project(":compose:runtime:runtime-lint"))
     lintPublish(project(":compose:runtime:runtime-lint"))
+
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.9.0-beta01, this module is published as empty artifact
+        // with dependency to this androidx module.
+        // TODO: update this stable version once out
+        commonMainImplementation("org.jetbrains.compose.runtime:runtime:1.9.0-beta01") {
+            because "prevents symbols duplication"
+        }
+    }
 }
 
 androidx {

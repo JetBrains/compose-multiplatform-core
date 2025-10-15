@@ -66,6 +66,10 @@ import androidx.wear.compose.material3.samples.AppCardWithImageSample
 import androidx.wear.compose.material3.samples.CardFillContentSample
 import androidx.wear.compose.material3.samples.CardSample
 import androidx.wear.compose.material3.samples.CardWithOnLongClickSample
+import androidx.wear.compose.material3.samples.NonClickableAppCardSample
+import androidx.wear.compose.material3.samples.NonClickableCardSample
+import androidx.wear.compose.material3.samples.NonClickableOutlinedCardSample
+import androidx.wear.compose.material3.samples.NonClickableTitleCardSample
 import androidx.wear.compose.material3.samples.OutlinedAppCardSample
 import androidx.wear.compose.material3.samples.OutlinedCardSample
 import androidx.wear.compose.material3.samples.OutlinedTitleCardSample
@@ -80,6 +84,7 @@ fun CardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Card") } }
         item { CardSample() }
+        item { NonClickableCardSample() }
         item { CardWithOnLongClickSample { showOnLongClickToast(context) } }
         item { CardWithNestedImageDemo() }
         item { CardWithMultipleImagesDemo() }
@@ -93,6 +98,7 @@ fun OutlinedCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Outlined Card") } }
         item { OutlinedCardSample() }
+        item { NonClickableOutlinedCardSample() }
         item {
             OutlinedCard(onClick = { /* Do something */ }, enabled = false) {
                 Text("Disabled Outlined")
@@ -106,6 +112,7 @@ fun AppCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("App card") } }
         item { AppCardSample() }
+        item { NonClickableAppCardSample() }
         item { AppCardDisabledDemo() }
         item { AppCardWithIconSample() }
         item { AppCardWithImageSample() }
@@ -119,6 +126,7 @@ fun TitleCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Title card") } }
         item { TitleCardSample() }
+        item { NonClickableTitleCardSample() }
         item { TitleCardWithSubtitleDemo() }
         item { TitleCardWithSubtitleAndTimeSample() }
         item { TitleCardWithContentSubtitleAndTimeDemo() }

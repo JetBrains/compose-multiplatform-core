@@ -46,7 +46,7 @@ class RecyclingTest {
         context.use {
             val process = context.getOrCreateProcessTrack(id = 1, name = "process")
             val thread = process.getOrCreateThreadTrack(1, "thread")
-            thread.traceFlow("section") {}
+            thread.traceCoroutine("section") {}
         }
         assertTrue(context.isDebug)
         context.validateEachTrackHasOnePoolable()

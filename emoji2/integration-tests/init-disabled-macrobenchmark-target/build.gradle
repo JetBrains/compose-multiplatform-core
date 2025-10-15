@@ -33,7 +33,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(libs.constraintLayout, { transitive = true })
     implementation(project(":arch:core:core-runtime"))
     implementation(project(":appcompat:appcompat"))

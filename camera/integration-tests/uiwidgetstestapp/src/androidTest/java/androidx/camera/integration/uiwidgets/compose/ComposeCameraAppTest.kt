@@ -74,11 +74,7 @@ class ComposeCameraAppTest {
     @Test
     @RepeatRule.Repeat(times = 10)
     fun testPreviewViewStreamStateOnActivityLaunch() {
-        assertStreamState(
-            ComposeCameraScreen.ImageCapture,
-            PreviewView.StreamState.STREAMING,
-            androidComposeTestRule.activityRule.scenario,
-        )
+        assertExpectedScreenAndStreamState(androidComposeTestRule.activityRule.scenario)
     }
 
     // Navigating from ImageCapture to VideoCapture screen
@@ -101,35 +97,32 @@ class ComposeCameraAppTest {
                     )
             )
 
+        // Set expected ComposeCameraScreen and StreamState for testing
+        androidComposeTestRule.activityRule.scenario.onActivity {
+            it.setUpExpectedScreenAndStreamState(
+                ComposeCameraScreen.VideoCapture,
+                PreviewView.StreamState.STREAMING,
+            )
+        }
+
         // Ensure that Tab is selected after we click on it
         node.performClick().assertIsSelected()
 
         // Assert VideoCapture's PreviewView is streaming
-        assertStreamState(
-            ComposeCameraScreen.VideoCapture,
-            PreviewView.StreamState.STREAMING,
-            androidComposeTestRule.activityRule.scenario,
-        )
+        assertExpectedScreenAndStreamState(androidComposeTestRule.activityRule.scenario)
     }
 
     // Asserts that the StreamState in the ComposeCameraScreen reaches
     // expectedState within a reasonable timeout
-    private fun assertStreamState(
-        expectedScreen: ComposeCameraScreen,
-        expectedState: PreviewView.StreamState,
-        scenario: ActivityScenario<ComposeCameraActivity>,
+    private fun assertExpectedScreenAndStreamState(
+        scenario: ActivityScenario<ComposeCameraActivity>
     ) =
         runBlocking<Unit> {
             lateinit var result: Deferred<Boolean>
 
             scenario.onActivity { activity ->
                 // Make async Coroutine to wait the result, not block the test thread.
-                result = async {
-                    activity.waitForStreamState(
-                        expectedScreen = expectedScreen,
-                        expectedState = expectedState,
-                    )
-                }
+                result = async { activity.waitForExpectedScreenAndStreamState() }
             }
 
             Truth.assertThat(result.await()).isTrue()

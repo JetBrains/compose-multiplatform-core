@@ -86,7 +86,7 @@ class CameraStateExtenderTest {
     @Test
     fun extend_withNotTrackingState_returnsNulls(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
         whenever(camera.trackingState).thenReturn(ARCoreTrackingState.PAUSED)
 
         val timeMark = timeSource.markNow()
@@ -110,7 +110,7 @@ class CameraStateExtenderTest {
     @Config(maxSdk = 26)
     fun extend_ApiLevelBelow27_withIsTrackingState_returnsCorrectValues(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
         perceptionManager.setDisplayRotation(Surface.ROTATION_0, 100, 100)
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
@@ -180,7 +180,7 @@ class CameraStateExtenderTest {
     @Config(minSdk = 27)
     fun extend_ApiLevel27AndUp_withIsTrackingState_returnsCorrectValues(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
         perceptionManager.setDisplayRotation(Surface.ROTATION_0, 100, 100)
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
@@ -257,7 +257,7 @@ class CameraStateExtenderTest {
     fun extend_ApiLevelBelow27_withDisplayUnchanged_returnsNullTransformCoordinates2D(): Unit =
         runBlocking {
             // arrange
-            underTest.initialize(runtime)
+            underTest.initialize(listOf(runtime))
             val timeMark = timeSource.markNow()
             val coreState = CoreState(timeMark)
             whenever(camera.trackingState).thenReturn(ARCoreTrackingState.TRACKING)
@@ -304,7 +304,7 @@ class CameraStateExtenderTest {
     fun extend_ApiLevel27AndUp_withDisplayUnchanged_returnsNullTransformCoordinates2D(): Unit =
         runBlocking {
             // arrange
-            underTest.initialize(runtime)
+            underTest.initialize(listOf(runtime))
             val timeMark = timeSource.markNow()
             val coreState = CoreState(timeMark)
             whenever(camera.trackingState).thenReturn(ARCoreTrackingState.TRACKING)
@@ -351,7 +351,7 @@ class CameraStateExtenderTest {
     @Test
     fun extend_cameraStateMapSizeExceedsMax(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
         whenever(camera.trackingState).thenReturn(ARCoreTrackingState.PAUSED)
@@ -373,7 +373,7 @@ class CameraStateExtenderTest {
     @Test
     fun close_cleanUpData(): Unit = runBlocking {
         // arrange
-        underTest.initialize(runtime)
+        underTest.initialize(listOf(runtime))
         val timeMark = timeSource.markNow()
         val coreState = CoreState(timeMark)
         whenever(camera.trackingState).thenReturn(ARCoreTrackingState.PAUSED)

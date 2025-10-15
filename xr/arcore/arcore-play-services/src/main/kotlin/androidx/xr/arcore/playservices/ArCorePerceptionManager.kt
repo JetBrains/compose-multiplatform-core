@@ -18,6 +18,16 @@ package androidx.xr.arcore.playservices
 
 import android.view.Surface
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
+import androidx.xr.arcore.runtime.DepthMap
+import androidx.xr.arcore.runtime.Eye
+import androidx.xr.arcore.runtime.Face
+import androidx.xr.arcore.runtime.Hand
+import androidx.xr.arcore.runtime.HitResult
+import androidx.xr.arcore.runtime.PerceptionManager
+import androidx.xr.arcore.runtime.RenderViewpoint
+import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.runtime.VpsAvailabilityAvailable
 import androidx.xr.runtime.VpsAvailabilityErrorInternal
 import androidx.xr.runtime.VpsAvailabilityNetworkError
@@ -25,16 +35,6 @@ import androidx.xr.runtime.VpsAvailabilityNotAuthorized
 import androidx.xr.runtime.VpsAvailabilityResourceExhausted
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.VpsAvailabilityUnavailable
-import androidx.xr.runtime.internal.Anchor
-import androidx.xr.runtime.internal.AnchorNotTrackingException
-import androidx.xr.runtime.internal.ArDevice
-import androidx.xr.runtime.internal.DepthMap
-import androidx.xr.runtime.internal.Face
-import androidx.xr.runtime.internal.Hand
-import androidx.xr.runtime.internal.HitResult
-import androidx.xr.runtime.internal.PerceptionManager
-import androidx.xr.runtime.internal.RenderViewpoint
-import androidx.xr.runtime.internal.Trackable
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import com.google.ar.core.Frame
@@ -145,15 +145,6 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     }
 
     /**
-     * Loads an anchor from the given native pointer.
-     *
-     * This method throws [NotImplementedError] because ARCore does not support native pointers.
-     */
-    override fun loadAnchorFromNativePointer(nativePointer: Long): Anchor {
-        throw NotImplementedError("Native pointers are not supported by ARCore.")
-    }
-
-    /**
      * Unpersists an anchor with the given UUID.
      *
      * This method throws [NotImplementedError] because ARCore does not support anchor persistence.
@@ -198,6 +189,20 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val trackables: Collection<Trackable> = xrResources.trackables.values
 
     /**
+     * Returns the left eye.
+     *
+     * ARCore does not support eye tracking, so this property is always null.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val leftEye: Eye? = null
+
+    /**
+     * Returns the right eye.
+     *
+     * ARCore does not support eye tracking, so this property is always null.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val rightEye: Eye? = null
+
+    /**
      * Returns the left hand.
      *
      * ARCore does not support hand tracking, so this property is always null.
@@ -222,12 +227,12 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val earth: ArCoreEarth = xrResources.earth
 
-    /** Returns the [ArDevice] instance. */
+    /** Returns the [androidx.xr.arcore.runtime.ArDevice] instance. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val arDevice: ArCoreDevice = xrResources.arDevice
 
     /**
-     * Returns the left [RenderViewpoint] object.
+     * Returns the left [androidx.xr.arcore.runtime.RenderViewpoint] object.
      *
      * This is not available in ARCore.
      */
@@ -235,7 +240,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val leftRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the right [RenderViewpoint] object.
+     * Returns the right [androidx.xr.arcore.runtime.RenderViewpoint] object.
      *
      * This is not available in ARCore.
      */
@@ -243,7 +248,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val rightRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the mono[RenderViewpoint] object.
+     * Returns the mono[androidx.xr.arcore.runtime.RenderViewpoint] object.
      *
      * This is not currently implemented in ARCore.
      */
@@ -251,12 +256,25 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val monoRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns a list of [DepthMap] objects.
+     * Returns the left [androidx.xr.arcore.runtime.DepthMap] object.
      *
-     * This is not currently implemented in ARCore, so this property will always be an empty list.
+     * This is not available in ARCore.
      */
-    override val depthMaps: List<DepthMap>
-        get() = emptyList()
+    override val leftDepthMap: DepthMap? = null
+
+    /**
+     * Returns the right [androidx.xr.arcore.runtime.DepthMap] object.
+     *
+     * This is not available in ARCore.
+     */
+    override val rightDepthMap: DepthMap? = null
+
+    /**
+     * Returns the mono [androidx.xr.arcore.runtime.DepthMap] object.
+     *
+     * This is not available in ARCore.
+     */
+    override val monoDepthMap: DepthMap? = null
 
     /**
      * Updates the perception manager.

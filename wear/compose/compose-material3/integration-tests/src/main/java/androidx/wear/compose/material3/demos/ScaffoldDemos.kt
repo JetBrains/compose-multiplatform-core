@@ -17,18 +17,25 @@
 package androidx.wear.compose.material3.demos
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberOverscrollEffect
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
@@ -64,6 +71,7 @@ val ScaffoldDemos =
         ComposableDemo("Screen Scaffold with SLC") { ScaffoldWithSLCEdgeButtonSample() },
         ComposableDemo("Screen Scaffold Loading SLC") { ScaffoldLoadingSLCEdgeButtonSample() },
         ComposableDemo("Screen Scaffold with TLC") { ScaffoldWithTLCEdgeButtonSample() },
+        ComposableDemo("Screen Scaffold with TLC2") { ScaffoldWithTLCNavigationSample() },
         ComposableDemo("Horizontal Pager Scaffold") {
             HorizontalPagerScaffoldSample(it.navigateBack)
         },
@@ -74,7 +82,8 @@ val ScaffoldDemos =
         ComposableDemo("Vertical Pager Scaffold (Fade Out Indicator)") {
             VerticalPagerScaffoldFadeOutIndicatorDemo()
         },
-        ComposableDemo("Complex Horizontal Pager") { ComplexHorizontalPager(it.navigateBack) },
+        ComposableDemo("Complex Horizontal Pager") { ComplexHorizontalPager() },
+        ComposableDemo("Nested Pagers") { NestedPagers() },
     )
 
 @Composable
@@ -198,7 +207,7 @@ fun ScaffoldLoadingSLCEdgeButtonSample() {
 }
 
 @Composable
-fun ComplexHorizontalPager(navigateBack: () -> Unit) {
+fun ComplexHorizontalPager() {
     AppScaffold {
         val pageCount = 3
         val pagerState = PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { pageCount }
@@ -228,6 +237,55 @@ fun ComplexHorizontalPager(navigateBack: () -> Unit) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun NestedPagers() {
+    val pageCount = 3
+    val horizontalPagerState =
+        PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { pageCount }
+    val verticalPagerStates = remember {
+        Array(pageCount) { PagerState(currentPage = 0, currentPageOffsetFraction = 0f) { 5 } }
+    }
+
+    HorizontalPagerScaffold(pagerState = horizontalPagerState, modifier = Modifier.fillMaxSize()) {
+        HorizontalPager(state = horizontalPagerState) { pageIndex ->
+            VerticalPagerScaffold(pagerState = verticalPagerStates[pageIndex]) {
+                VerticalPager(state = verticalPagerStates[pageIndex]) { innerPage ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Page #$pageIndex-$innerPage")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ScaffoldWithTLCNavigationSample() {
+    var page by remember { mutableIntStateOf(-1) }
+    val listState = rememberTransformingLazyColumnState()
+    if (page < 0) {
+        ScreenScaffold(scrollState = listState, timeText = { TimeText() }) { contentPadding ->
+            TransformingLazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = contentPadding,
+            ) {
+                items(30) { Button(onClick = { page = it }, label = { Text("Item $it") }) }
+            }
+        }
+    } else {
+        Column(
+            Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            BasicText("Page $page", style = TextStyle(color = Color.White))
+            Spacer(Modifier.height(5.dp))
+            Button(onClick = { page = -1 }) { BasicText("Back") }
         }
     }
 }

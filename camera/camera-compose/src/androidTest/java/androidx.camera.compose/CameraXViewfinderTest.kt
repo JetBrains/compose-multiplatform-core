@@ -52,6 +52,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
@@ -248,6 +249,7 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
         assertThat(newSurfaceRequest).isNotNull()
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/441562610
     @Test
     fun movableContentOf_recoversAfterMove() = runViewfinderTest {
         val moveViewfinderContent = mutableStateOf(false)

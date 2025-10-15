@@ -53,6 +53,7 @@ import androidx.camera.core.impl.QuirkSettingsHolder;
 import androidx.camera.core.impl.QuirkSettingsLoader;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.ContextUtil;
+import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.internal.StreamSpecsCalculator;
 import androidx.camera.core.internal.StreamSpecsCalculatorImpl;
@@ -155,7 +156,8 @@ public final class CameraX {
 
         mRetryPolicy = new RetryPolicy.Builder(
                 mCameraXConfig.getCameraProviderInitRetryPolicy()).build();
-        mCameraPresenceProvider = new CameraPresenceProvider(mCameraExecutor);
+        mCameraPresenceProvider = new CameraPresenceProvider(mCameraExecutor,
+                CameraXExecutors.newHandlerExecutor(mSchedulerHandler));
 
         mInitInternalFuture = initInternal(context);
     }

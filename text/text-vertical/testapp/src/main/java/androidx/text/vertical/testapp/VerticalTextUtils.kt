@@ -55,7 +55,7 @@ class VerticalTextBuilder {
         val textStartOffset = result.length
         result.append(text)
 
-        rubyMap.forEach { key, ruby ->
+        rubyMap.forEach { (key, ruby) ->
             var searchOffset = textStartOffset
             var found = result.indexOf(key, searchOffset)
             while (found != -1) {
