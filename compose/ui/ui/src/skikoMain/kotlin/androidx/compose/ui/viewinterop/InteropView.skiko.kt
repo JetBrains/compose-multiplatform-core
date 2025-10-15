@@ -26,6 +26,8 @@ import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
+import androidx.compose.ui.autofill.ContentDataType.Companion.Text
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.materialize
 import androidx.compose.ui.node.ComposeUiNode.Companion.SetCompositeKeyHash
@@ -47,12 +49,10 @@ internal abstract class TypedInteropViewHolder<T : InteropView>(
     interopContainer: InteropContainer,
     group: InteropViewGroup,
     compositeKeyHashCode: CompositeKeyHashCode,
-    measurePolicy: MeasurePolicy
 ) : InteropViewHolder(
     interopContainer,
     group,
-    compositeKeyHashCode,
-    measurePolicy
+    compositeKeyHashCode
 ) {
     @Suppress("INAPPLICABLE_JVM_NAME")
     @get:JvmName("interopView")
