@@ -75,12 +75,11 @@ public object SceneManager : AutoCloseable {
     /**
      * Returns all root subspace semantics nodes of all registered scenes.
      *
-     * [SceneManager.start] should be called before attempting to get the root subspace semantics
-     * nodes. This will throw an [IllegalStateException] if the [SceneManager] is not in a running
-     * state.
+     * If the SceneManager is not currently running we assume that we are in a non-XR environment
+     * and an empty list will be returned (e.g. `setContent` was called instead of
+     * `setContentWithCompatibilityForXr`).
      */
     public fun getAllRootSubspaceSemanticsNodes(): List<SubspaceSemanticsInfo> {
-        check(isRunning) { "SceneManager is not started. Call SceneManager.start() first." }
         return registeredScenes.map { it.rootElement.compositionOwner.root.measurableLayout }
     }
 

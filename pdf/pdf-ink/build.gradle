@@ -34,14 +34,15 @@ android {
     defaultConfig {
         minSdk = 31
         compileSdk = 36
+        compileSdkExtension = 19
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 }
 
 dependencies {
-    def ink_version = "1.0.0-alpha05"
+    def ink_version = "1.0.0-alpha07"
 
-    api(libs.kotlinStdlib)
     implementation(project(":pdf:pdf-viewer-fragment"))
 
     implementation("androidx.core:core:1.13.0")
@@ -54,7 +55,7 @@ dependencies {
     implementation("androidx.ink:ink-rendering:${ink_version}")
     implementation("androidx.ink:ink-strokes:${ink_version}")
     implementation("androidx.input:input-motionprediction:1.0.0-beta05")
-    implementation("com.google.android.material:material:1.11.0")
+    implementation("com.google.android.material:material:1.12.0")
 
     testImplementation(libs.junit)
     testImplementation(libs.testRunner)
@@ -71,6 +72,8 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(project(":test:screenshot:screenshot"))
 }
 
 androidx {
@@ -78,4 +81,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Provide annotations support for PDF document using ink library"
+    addGoldenImageAssets()
 }

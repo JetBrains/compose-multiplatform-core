@@ -303,13 +303,18 @@ data class AnnotatedAppFunctions(
 
     private fun getAnnotatedAppFunctionSerializable(
         appFunctionTypeReference: AppFunctionTypeReference
-    ): AnnotatedAppFunctionSerializable {
-        val appFunctionSerializableClassDeclaration =
-            appFunctionTypeReference.selfOrItemTypeReference.resolve().declaration
-                as KSClassDeclaration
-        return AnnotatedAppFunctionSerializable(appFunctionSerializableClassDeclaration)
-            .parameterizedBy(appFunctionTypeReference.selfOrItemTypeReference.resolve().arguments)
-            .validate()
+    ): AppFunctionSerializableType {
+        val appFunctionSerializableKSType =
+            appFunctionTypeReference.selfOrItemTypeReference.resolve()
+        return AppFunctionSerializableType.create(
+            classDeclaration =
+                appFunctionSerializableKSType.declaration as? KSClassDeclaration
+                    ?: throw ProcessingException(
+                        "Only classes/interfaces should be annotated with @AppFunctionSerializable",
+                        appFunctionSerializableKSType.declaration,
+                    ),
+            typeArguments = appFunctionSerializableKSType.arguments,
+        )
     }
 
     private fun AppFunctionTypeReference.typeOrItemTypeIsAppFunctionSerializable(): Boolean {

@@ -30,6 +30,7 @@ import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.gradle.isRoot
 import androidx.build.kythe.configureProjectForKzipTasks
 import androidx.build.license.addLicensesToPublishedArtifacts
+import androidx.build.lint.ValidateLintChecks
 import androidx.build.resources.configurePublicResourcesStub
 import androidx.build.sbom.configureSbomPublishing
 import androidx.build.sbom.validateAllArchiveInputsRecognized
@@ -117,12 +118,12 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -168,7 +169,8 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                         androidXKmpExtension.agpKmpExtension,
                         androidXExtension,
                     )
-                is KotlinBasePluginWrapper ->
+                is KotlinBasePluginWrapper,
+                is KotlinBaseApiPlugin ->
                     configureWithKotlinPlugin(
                         project,
                         androidXExtension,
@@ -228,7 +230,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.validateLintVersionTestExists(androidXExtension)
             project.addTestLintK1Task(androidXExtension)
         }
-        project.disallowAccidentalAndroidDependenciesInKmpProject(androidXKmpExtension)
         TaskUpToDateValidator.setup(project, registry)
 
         project.workaroundAndroidXDependencyResolutions()
@@ -329,12 +330,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         val kotlinVersionStringProvider = androidXConfiguration.kotlinBomVersion
 
         // Resolve unspecified Kotlin versions to the target version.
+        // TODO(b/443037365): Remove when bug fixed as built-in Kotlin would handle this
         configurations.configureEach { configuration ->
             configuration.resolutionStrategy { strategy ->
                 strategy.eachDependency { details ->
                     if (
                         details.requested.group == "org.jetbrains.kotlin" &&
-                            details.requested.version == null
+                            details.requested.version.isNullOrBlank()
                     ) {
                         details.useVersion(kotlinVersionStringProvider.get())
                     }
@@ -408,7 +410,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun configureWithKotlinPlugin(
         project: Project,
         androidXExtension: AndroidXExtension,
-        plugin: KotlinBasePluginWrapper,
+        plugin: Any,
         androidXMultiplatformExtension: AndroidXMultiplatformExtension,
     ) {
         val targetsAndroid =
@@ -582,7 +584,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 (variant as HasUnitTestBuilder).enableUnitTest = false
             }
             onVariants {
-                it.configureTests()
+                it.configureTests(project.getKeystore())
                 it.configureLocalAsbSigning(project.getKeystore())
             }
         }
@@ -626,7 +628,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             AndroidComponentsExtension<*, out LibraryVariantBuilder, out LibraryVariant>,
     ) {
         androidComponents.onVariants { variant ->
-            variant.configureTests()
+            variant.configureTests(project.getKeystore())
             variant.enableMicrobenchmarkInternalDefaults(project)
             project.validateKotlinModuleFiles(
                 variant.name,
@@ -637,25 +639,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.disableStrictVersionConstraints()
         project.configureJavaCompilationWarnings(androidXExtension)
         project.setUpCheckDocsTask(androidXExtension)
-        project.enforceDeviceTestsForMultiplatform()
-    }
-
-    // Sets up android instrumented tests and includes common tests regardless of if they have
-    // been explicitly configured.
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    private fun Project.enforceDeviceTestsForMultiplatform() {
-        project.multiplatformExtension?.let {
-            val commonTestSourceSet = it.sourceSets.getByName("commonTest")
-            val androidInstrumentedTestSourceSet =
-                it.sourceSets.getByName("androidInstrumentedTest")
-            val commonTestFilesExist = commonTestSourceSet.kotlin.files.isNotEmpty()
-            if (commonTestFilesExist) {
-                androidInstrumentedTestSourceSet.dependsOn(commonTestSourceSet)
-                androidInstrumentedTestSourceSet.dependencies {
-                    implementation(getLibraryByName("testRunner"))
-                }
-            }
-        }
     }
 
     private fun KotlinSourceSet.includesSourceSet(otherName: String): Boolean =
@@ -666,6 +649,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         // https://developer.android.com/build/releases/gradle-plugin#api-level-support
         fun mapToMinAgpVersion(compileSdk: Int): String {
             return when (compileSdk) {
+                33 -> "7.2.0"
                 34 -> "8.1.1"
                 35 -> "8.6.0"
                 36 -> "8.9.1"
@@ -736,7 +720,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.addToBuildOnServer("lint")
             // Created to be consumed by docs-tip-of-tree
             project.configurations.register("androidIntermediates") {
-                it.isVisible = false
                 it.isCanBeResolved = false
                 it.attributes.attribute(
                     Usage.USAGE_ATTRIBUTE,
@@ -829,7 +812,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.addToBuildOnServer("assembleRelease")
     }
 
-    private fun HasDeviceTests.configureTests() {
+    private fun HasDeviceTests.configureTests(keystore: File) {
         deviceTests.forEach { (_, deviceTest) ->
             deviceTest.packaging.resources.apply {
                 excludeVersionFiles(this)
@@ -884,13 +867,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         libraryAndroidComponentsExtension.apply {
             finalizeDsl {
                 it.defaultConfig.aarMetadata.configure(it.compileSdk)
+                project.setUpBlankProguardFileForAarIfNeeded(it.defaultConfig)
                 it.lint.targetSdk = project.defaultAndroidConfig.targetSdk
                 it.testOptions.targetSdk = project.defaultAndroidConfig.targetSdk
                 // Replace with a public API once available, see b/360392255
                 it.buildTypes.configureEach { buildType ->
                     if (buildType.name == buildTypeForTests && !project.hasBenchmarkPlugin())
                         (buildType as TestBuildType).isDebuggable = true
-                    project.setUpBlankProguardFileForAarIfNeeded(buildType)
                 }
             }
             // Disable debug build type for Android Libraries
@@ -966,7 +949,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 sourceCompatibility = defaultTargetJavaVersion
                 targetCompatibility = defaultTargetJavaVersion
             }
-            if (!project.plugins.hasPlugin(KotlinBasePluginWrapper::class.java)) {
+            if (
+                !project.plugins.hasPlugin(KotlinBasePluginWrapper::class.java) ||
+                    !project.plugins.hasPlugin(KotlinBaseApiPlugin::class.java)
+            ) {
                 project.configureSourceJarForJava(androidXExtension.samplesProjects)
             }
         }
@@ -1138,20 +1124,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 it.animationsDisabled = true
             }
 
-        @Suppress("UnstableApiUsage") // usage of withHostTestBuilder
-        withHostTestBuilder {
-            @Suppress("DEPRECATION")
-            defaultSourceSetName = "androidUnitTest"
-        }
-
-        @Suppress("UnstableApiUsage") // usage of withDeviceTestBuilder
-        withDeviceTestBuilder {
-            @Suppress("DEPRECATION")
-            compilationName = "instrumentedTest"
-            @Suppress("DEPRECATION")
-            defaultSourceSetName = "androidInstrumentedTest"
-            sourceSetTreeName = "test"
-        }
+        withHostTestBuilder {} // enable Android host tests
+        withDeviceTestBuilder { sourceSetTreeName = "test" }
+            .configure { signing.storeFile = project.getKeystore() }
         configureTargetSdkForTests(project.defaultAndroidConfig.targetSdk)
 
         // validate that SDK versions haven't been altered during evaluation
@@ -1237,7 +1212,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         sourceSets
             .findByName("androidTest")!!
             .manifest
-            .srcFile("src/androidInstrumentedTest/AndroidManifest.xml")
+            .srcFile("src/androidDeviceTest/AndroidManifest.xml")
     }
 
     private fun Project.configureKmp() {
@@ -1448,7 +1423,7 @@ internal fun getDefaultTargetJavaVersion(
 ): JavaVersion {
     return when {
         // TODO(b/353328300): Move room-compiler-processing to Java 17 once Dagger is ready.
-        projectName != null && projectName.contains("room-compiler-processing") -> VERSION_11
+        projectName != null && projectName.contains("room3-compiler-processing") -> VERSION_11
         projectName != null && projectName.contains("desktop") -> VERSION_11
         targetName != null && (targetName == "desktop" || targetName == "jvmStubs") -> VERSION_11
         softwareType.compilationTarget == CompilationTarget.HOST -> VERSION_17
@@ -1489,13 +1464,14 @@ private fun Project.validateLintVersionTestExists(androidXExtension: AndroidXExt
         return
     }
     kotlinExtensionOrNull?.let { extension ->
-        val projectFiles = extension.sourceSets.flatMap { it.kotlin.files }
-        // if the project doesn't define a registry it doesn't make sense to test versions
-        if (projectFiles.none { it.name.contains("Registry") }) {
-            return
-        }
-        projectFiles.find { it.name == "ApiLintVersionsTest.kt" }
-            ?: throw GradleException("Lint projects should include ApiLintVersionsTest.kt")
+        val validateLintChecks =
+            tasks.register("validateLintChecks", ValidateLintChecks::class.java) { task ->
+                task.cacheEvenIfNoOutputs()
+                task.sourceDirectories.from(
+                    extension.sourceSets.flatMap { it.kotlin.sourceDirectories }
+                )
+            }
+        addToBuildOnServer(validateLintChecks)
     }
 }
 
@@ -1607,30 +1583,6 @@ fun Project.validateMultiplatformPluginHasNotBeenApplied() {
         throw GradleException(
             "The Kotlin multiplatform plugin should only be applied by the AndroidX plugin."
         )
-    }
-}
-
-/** Verifies we don't accidentially write "implementation" instead of "commonMainImplementation" */
-fun Project.disallowAccidentalAndroidDependenciesInKmpProject(
-    androidXKmpExtension: AndroidXMultiplatformExtension
-) {
-    project.afterEvaluate {
-        if (androidXKmpExtension.supportedPlatforms.isNotEmpty()) {
-            val androidConfiguration = project.configurations.findByName("implementation")
-            if (androidConfiguration != null) {
-                if (
-                    androidConfiguration.dependencies.isNotEmpty() ||
-                        androidConfiguration.dependencyConstraints.isNotEmpty()
-                ) {
-                    throw GradleException(
-                        "The 'implementation' Configuration should not be used in a " +
-                            "multiplatform project: this Configuration is declared by the " +
-                            "Android plugin rather than the kmp plugin. Did you mean " +
-                            "'commonMainImplementation'?"
-                    )
-                }
-            }
-        }
     }
 }
 

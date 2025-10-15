@@ -32,6 +32,7 @@ import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextLinearView
+import androidx.xr.scenecore.testapp.common.managers.PanelEntityManager
 import androidx.xr.scenecore.testapp.common.managers.SurfaceEntityManager
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -106,7 +107,7 @@ class PerceivedResolutionManager(
                         panelEntityManager.panelEntity!!.size.height *
                             panelEntityManager.panelEntity!!.getScale(Space.ACTIVITY)
                     mTextView?.setLine(
-                        "Panel Entity dimensions",
+                        "Panel Entity dimensions (in Activity Space units)",
                         "Width: $panelWidthInActivitySpace x Height: $panelHeightInActivitySpace",
                     )
                     mTextView?.setLine(
@@ -114,7 +115,10 @@ class PerceivedResolutionManager(
                         panelEntityManager.panelEntity!!.getPerceivedResolution().toString(),
                     )
                 } else {
-                    mTextView?.setLine("Panel Entity dimensions", "Can't Retrieve it")
+                    mTextView?.setLine(
+                        "Panel Entity dimensions (in Activity Space units)",
+                        "Can't Retrieve it",
+                    )
                     mTextView?.setLine(
                         "Panel Entity Perceived Resolution",
                         "Create Panel Entity for resolution",

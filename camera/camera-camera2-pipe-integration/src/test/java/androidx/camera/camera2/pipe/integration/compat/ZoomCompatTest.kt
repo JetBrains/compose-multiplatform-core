@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe.integration.compat
 
+import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
@@ -43,8 +44,14 @@ class ZoomCompatTest {
     @Test
     @Config(minSdk = 30)
     fun canProvideZoomCompat_whenGettingControlZoomRatioThrowsError() {
-        assertThat(ZoomCompat.Bindings.provideZoomRatio(throwingCameraProperties))
+        assertThat(ZoomCompat.Bindings.provideZoomCompat(throwingCameraProperties))
             .isInstanceOf(CropRegionZoomCompat::class.java)
+    }
+
+    @Test
+    fun canProvideZoomCompat_whenGettingActiveArraySizeReturnsNull() {
+        assertThat(ZoomCompat.Bindings.provideZoomCompat(FakeCameraProperties()))
+            .isInstanceOf(NoOpZoomCompat::class.java)
     }
 
     @Test
@@ -147,6 +154,10 @@ class ZoomCompatTest {
                         key == CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE
                 ) {
                     throw AssertionError()
+                }
+                if (key == CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) {
+                    @Suppress("UNCHECKED_CAST") // T is guaranteed to be Rect
+                    return Rect(0, 0, 4000, 3000) as T?
                 }
                 TODO("Not yet implemented")
             }

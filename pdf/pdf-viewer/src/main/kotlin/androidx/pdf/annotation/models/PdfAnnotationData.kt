@@ -31,6 +31,19 @@ import androidx.annotation.RestrictTo
 @SuppressLint("BanParcelableUsage")
 public class PdfAnnotationData(public val editId: EditId, public val annotation: PdfAnnotation) :
     Parcelable, PdfEditEntry<PdfAnnotation>(editId, annotation) {
+
+    override fun equals(other: Any?): Boolean {
+        return (other is PdfAnnotationData) &&
+            other.editId == editId &&
+            other.annotation == annotation
+    }
+
+    override fun hashCode(): Int {
+        var result = editId.hashCode()
+        result = 31 * result + annotation.hashCode()
+        return result
+    }
+
     override fun describeContents(): Int = 0
 
     /** Flatten this object in to a Parcel. */

@@ -72,22 +72,26 @@ internal class SelectionRenderer(
             it.bounds.forEach { drawBoundsOnPage(canvas, it, locationInView) }
         }
 
-        model.startBoundary.let {
-            val startLoc = it.location
-            if (startLoc.pageNum == pageNum) {
-                val pointInView =
-                    PointF(locationInView.left + startLoc.x, locationInView.top + startLoc.y)
-
-                drawHandleAtPosition(canvas, pointInView, isRight = false xor it.isRtl, currentZoom)
+        // TODO(b/441196273): Drag handles for modifying a selection are currently only supported
+        // for selections that consist exclusively of text. For mixed-content or non-text
+        // selections, the handles are disabled as this functionality is not yet supported.
+        if (model.documentSelection.containsOnlyTextSelections) {
+            model.startBoundary.let {
+                val startLoc = it.location
+                if (startLoc.pageNum == pageNum) {
+                    val pointInView =
+                        PointF(locationInView.left + startLoc.x, locationInView.top + startLoc.y)
+                    drawHandleAtPosition(canvas, pointInView, isRight = it.isRtl, currentZoom)
+                }
             }
-        }
 
-        model.endBoundary.let {
-            val endLoc = it.location
-            if (endLoc.pageNum == pageNum) {
-                val pointInView =
-                    PointF(locationInView.left + endLoc.x, locationInView.top + endLoc.y)
-                drawHandleAtPosition(canvas, pointInView, isRight = true xor it.isRtl, currentZoom)
+            model.endBoundary.let {
+                val endLoc = it.location
+                if (endLoc.pageNum == pageNum) {
+                    val pointInView =
+                        PointF(locationInView.left + endLoc.x, locationInView.top + endLoc.y)
+                    drawHandleAtPosition(canvas, pointInView, isRight = !it.isRtl, currentZoom)
+                }
             }
         }
     }

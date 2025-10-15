@@ -27,8 +27,8 @@ import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -41,11 +41,11 @@ class SpatialComposeSceneTest {
 
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
-    lateinit var mockJxrPlatformAdapter: JxrPlatformAdapter
+    lateinit var mockSceneRuntime: SceneRuntime
 
     @Before
     fun setUp() {
-        mockJxrPlatformAdapter = mock<JxrPlatformAdapter>()
+        mockSceneRuntime = mock<SceneRuntime>()
     }
 
     @Test

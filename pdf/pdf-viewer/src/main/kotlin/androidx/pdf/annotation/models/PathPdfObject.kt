@@ -28,6 +28,24 @@ public class PathPdfObject(
     public val inputs: List<PathInput>,
 ) : PdfObject {
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PathPdfObject) return false
+
+        if (brushColor != other.brushColor) return false
+        if (brushWidth != other.brushWidth) return false
+        if (inputs != other.inputs) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = brushColor
+        result = 31 * result + brushWidth.hashCode()
+        result = 31 * result + inputs.hashCode()
+        return result
+    }
+
     /** Flattens this object in to a Parcel. */
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         val inputs: List<PathInput> = inputs
@@ -70,6 +88,16 @@ public class PathPdfObject(
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @SuppressLint("BanParcelableUsage")
     public class PathInput(public val x: Float, public val y: Float) : Parcelable {
+        override fun equals(other: Any?): Boolean {
+            return (other is PathInput) && other.x == x && other.y == y
+        }
+
+        override fun hashCode(): Int {
+            var result = x.hashCode()
+            result = 31 * result + y.hashCode()
+            return result
+        }
+
         public override fun writeToParcel(parcel: Parcel, flags: Int) {
             parcel.writeFloat(x)
             parcel.writeFloat(y)

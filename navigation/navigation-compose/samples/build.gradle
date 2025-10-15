@@ -36,7 +36,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":compose:animation:animation"))

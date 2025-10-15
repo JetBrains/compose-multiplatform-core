@@ -91,7 +91,6 @@ class BasicCallControlsTest : BaseTelecomTest() {
     @LargeTest
     @Test(timeout = 10000)
     fun testBasicOutgoingCall() {
-        setUpV2Test()
         runBlocking_addCallAndSetActive(TestUtils.OUTGOING_CALL_ATTRIBUTES)
     }
 
@@ -103,7 +102,6 @@ class BasicCallControlsTest : BaseTelecomTest() {
     @LargeTest
     @Test(timeout = 10000)
     fun testBasicIncomingCall() {
-        setUpV2Test()
         runBlocking_addCallAndSetActive(TestUtils.INCOMING_CALL_ATTRIBUTES)
     }
 
@@ -115,7 +113,6 @@ class BasicCallControlsTest : BaseTelecomTest() {
     @LargeTest
     @Test(timeout = 10000)
     fun testTogglingHoldOnActiveCall() {
-        setUpV2Test()
         runBlocking_ToggleCallAsserts(TestUtils.OUTGOING_CALL_ATTRIBUTES)
     }
 
@@ -128,7 +125,6 @@ class BasicCallControlsTest : BaseTelecomTest() {
     @LargeTest
     @Test(timeout = 10000)
     fun testTogglingHoldOnActiveCall_NoHoldCapabilities() {
-        setUpV2Test()
         assertFalse(
             TestUtils.OUTGOING_NO_HOLD_CAP_CALL_ATTRIBUTES.hasSupportsSetInactiveCapability()
         )
@@ -144,7 +140,6 @@ class BasicCallControlsTest : BaseTelecomTest() {
     @LargeTest
     @Test(timeout = 10000)
     fun testRequestEndpointChange() {
-        setUpV2Test()
         runBlocking_RequestEndpointChangeAsserts()
     }
 
@@ -157,7 +152,6 @@ class BasicCallControlsTest : BaseTelecomTest() {
     @LargeTest
     @Test(timeout = 10000)
     fun testIsMuted() {
-        setUpV2Test()
         verifyMuteStateChange()
     }
 

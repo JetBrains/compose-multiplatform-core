@@ -36,7 +36,6 @@ import kotlinx.coroutines.test.TestDispatcher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
 @RunWith(AndroidJUnit4.class)
 public class RxJava3SessionTest {
     private Session mSession;
@@ -44,25 +43,30 @@ public class RxJava3SessionTest {
 
     @Test
     public void session_stateAsFlowable_returnsCoreState() {
-        createTestSessionAndRunTest(() -> {
-            TestSubscriber<CoreState> testSubscriber = new TestSubscriber<>();
+        createTestSessionAndRunTest(
+                () -> {
+                    TestSubscriber<CoreState> testSubscriber = new TestSubscriber<>();
 
-            getStateAsFlowable(mSession).subscribe(testSubscriber);
+                    getStateAsFlowable(mSession).subscribe(testSubscriber);
 
-            assertThat(testSubscriber.values().get(0)).isEqualTo(mSession.getState().getValue());
-        });
+                    assertThat(testSubscriber.values().get(0))
+                            .isEqualTo(mSession.getState().getValue());
+                });
     }
 
     private void createTestSessionAndRunTest(Runnable testBody) {
-        try (ActivityScenario<ComponentActivity> scenario = ActivityScenario.launch(
-                ComponentActivity.class)) {
-            scenario.onActivity(activity -> {
-                mTestDispatcher = StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
-                mSession = ((SessionCreateSuccess) Session.create(activity,
-                        mTestDispatcher)).getSession();
+        try (ActivityScenario<ComponentActivity> scenario =
+                ActivityScenario.launch(ComponentActivity.class)) {
+            scenario.onActivity(
+                    activity -> {
+                        mTestDispatcher =
+                                StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
+                        mSession =
+                                ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
+                                        .getSession();
 
-                testBody.run();
-            });
+                        testBody.run();
+                    });
         } catch (Exception e) {
             throw new RuntimeException("Error during ActivityScenario setup or teardown", e);
         }

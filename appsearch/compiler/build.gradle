@@ -43,14 +43,14 @@ dependencies {
     implementation(libs.autoValueAnnotations)
     implementation(libs.guava)
     implementation(libs.javapoet)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kspApi)
     implementation("androidx.room:room-compiler-processing:2.7.2")
     implementation("org.jetbrains.kotlin:kotlin-metadata-jvm:2.1.21")
 
     // For testing, add in the compiled classes from appsearch to get access to annotations.
     testImplementationAarAsJar(project(":appsearch:appsearch"))
-    testImplementation(project(":room:room-compiler-processing-testing"))
+    // TODO(b/438455972): Use ToT of compiler-processing-testing
+    testImplementation("androidx.room:room-compiler-processing-testing:2.8.0-rc02")
     testImplementation(libs.googleCompileTesting)
     testImplementation(libs.kotlinCompilerEmbeddable)
     testImplementation(libs.kotlinCompileTestingKsp)

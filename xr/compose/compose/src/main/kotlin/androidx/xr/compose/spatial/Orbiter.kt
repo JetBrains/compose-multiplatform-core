@@ -29,7 +29,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -195,11 +194,12 @@ public fun Orbiter(
 
 @Composable
 private fun Orbiter(data: OrbiterData) {
+    // TODO(b/441560422): We should use movableContentOf here to maintain state between HSM and FSM.
     // We use movableContentOf here to avoid recreating this content when the spatial capabilities
     // changes. This allows us to use the same orbiter content both in an orbiter when spatial
     // capabilities are granted and inline in a non-spatial environment in a way that retains the
     // orbiter content's internal state.
-    val content = remember(data.content) { movableContentOf(data.content) }
+    val content = remember(data.content) { data.content }
     if (
         LocalSpatialCapabilities.current.isSpatialUiEnabled ||
             currentComposer.applier is SubspaceNodeApplier

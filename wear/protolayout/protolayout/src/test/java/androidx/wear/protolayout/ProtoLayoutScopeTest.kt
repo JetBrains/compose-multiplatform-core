@@ -21,10 +21,13 @@ import android.content.Intent
 import androidx.core.os.BundleCompat
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.wear.protolayout.ProtoLayoutScope.RendererCapability.LOTTIE_COLOR_FOR_SLOT
+import androidx.wear.protolayout.ProtoLayoutScope.RendererCapability.PENDING_INTENT_ACTION
 import androidx.wear.protolayout.ResourceBuilders.AndroidImageResourceByResId
 import androidx.wear.protolayout.ResourceBuilders.AndroidLottieResourceByResId
 import androidx.wear.protolayout.ResourceBuilders.ImageResource
 import androidx.wear.protolayout.ResourceBuilders.InlineImageResource
+import androidx.wear.protolayout.expression.VersionBuilders
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -159,5 +162,27 @@ class ProtoLayoutScopeTest {
         assertThat(scope.resources).isEmpty()
         assertThat(scope.hasResources()).isFalse()
         assertThat(scope.pendingIntents.isEmpty()).isTrue()
+    }
+
+    @Test
+    public fun hasCapability_withVersionBelowMinimum_returnsFalse() {
+        val scopeWithSchema1300 =
+            ProtoLayoutScope(
+                VersionBuilders.VersionInfo.Builder().setMajor(1).setMinor(300).build()
+            )
+
+        assertThat(scopeWithSchema1300.hasCapability(LOTTIE_COLOR_FOR_SLOT)).isFalse()
+        assertThat(scopeWithSchema1300.hasCapability(PENDING_INTENT_ACTION)).isFalse()
+    }
+
+    @Test
+    public fun hasCapability_withVersionMeetsMinimum_returnsTrue() {
+        val scopeWithSchema1600 =
+            ProtoLayoutScope(
+                VersionBuilders.VersionInfo.Builder().setMajor(1).setMinor(600).build()
+            )
+
+        assertThat(scopeWithSchema1600.hasCapability(LOTTIE_COLOR_FOR_SLOT)).isTrue()
+        assertThat(scopeWithSchema1600.hasCapability(PENDING_INTENT_ACTION)).isTrue()
     }
 }

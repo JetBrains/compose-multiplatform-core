@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     lintPublish(project(":annotation:annotation-experimental-lint"))
 }
 

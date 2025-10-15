@@ -26,6 +26,7 @@ import androidx.activity.ComponentActivity;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.xr.arcore.Earth;
+import androidx.xr.arcore.SessionExtKt;
 import androidx.xr.arcore.XrResourcesManager;
 import androidx.xr.runtime.Session;
 import androidx.xr.runtime.SessionCreateSuccess;
@@ -51,32 +52,36 @@ public class RxJava3EarthTest {
 
     @Test
     public void earth_stateAsFlowable_returnsEarthState() {
-        createTestSessionAndRunTest(() -> {
-            Earth underTest = Earth.getInstance(mSession);
-            TestSubscriber<Earth.State> testSubscriber = new TestSubscriber<>();
+        createTestSessionAndRunTest(
+                () -> {
+                    Earth underTest = Earth.getInstance(mSession);
+                    TestSubscriber<Earth.State> testSubscriber = new TestSubscriber<>();
 
-            getStateAsFlowable(underTest).subscribe(testSubscriber);
+                    getStateAsFlowable(underTest).subscribe(testSubscriber);
 
-            assertThat(testSubscriber.values().get(0)).isEqualTo(Earth.State.STOPPED);
-        });
+                    assertThat(testSubscriber.values().get(0)).isEqualTo(Earth.State.STOPPED);
+                });
     }
 
     private void createTestSessionAndRunTest(Runnable testBody) {
-        try (ActivityScenario<ComponentActivity> scenario = ActivityScenario.launch(
-                ComponentActivity.class)) {
-            scenario.onActivity(activity -> {
-                mTestDispatcher = StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
-                mSession = ((SessionCreateSuccess) Session.create(activity,
-                        mTestDispatcher)).getSession();
-                mXrResourcesManager.setLifecycleManager$arcore_release(
-                        mSession.getRuntime().getLifecycleManager());
+        try (ActivityScenario<ComponentActivity> scenario =
+                ActivityScenario.launch(ComponentActivity.class)) {
+            scenario.onActivity(
+                    activity -> {
+                        mTestDispatcher =
+                                StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
+                        mSession =
+                                ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
+                                        .getSession();
+                        mXrResourcesManager.setLifecycleManager$arcore_release(
+                                SessionExtKt.getPerceptionRuntime(mSession).getLifecycleManager());
 
-                try {
-                    testBody.run();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+                        try {
+                            testBody.run();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
         } catch (Exception e) {
             throw new RuntimeException("Error during ActivityScenario setup or teardown", e);
         }

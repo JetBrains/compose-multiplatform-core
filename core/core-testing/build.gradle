@@ -34,7 +34,6 @@ dependencies {
     constraints {
         implementation(project(":core:core"))
     }
-    api(libs.kotlinStdlib)
     implementation("androidx.annotation:annotation:1.8.1")
     api(project(":core:core"))
 

@@ -58,22 +58,23 @@ public class InMemoryAnnotationEditsDraftState() : AnnotationEditsDraftState {
         Collections.synchronizedMap(HashMap())
     private val lock: ReentrantLock = ReentrantLock()
 
-    /**
-     * Retrieves a list of saved annotations for a given page number.
-     *
-     * @param pageNum The page number to retrieve edits for.
-     * @return A list of [PdfAnnotationData] objects for the specified page, or an empty list if no
-     *   edits exist.
-     */
     override fun getEdits(pageNum: Int): List<PdfAnnotationData> =
         editsByPage[pageNum]?.values?.toList() ?: emptyList()
 
-    /**
-     * Adds a new edit for the given annotation.
-     *
-     * @param annotation The [PdfAnnotation] to add.
-     * @return The [EditId] of the newly added edit.
-     */
+    override fun addEditById(id: EditId, annotation: PdfAnnotation) {
+        val pageNum = annotation.pageNum
+        val annotationData = PdfAnnotationData(id, annotation)
+
+        lock.withLock {
+            val pageEdits =
+                editsByPage.getOrPut(pageNum) {
+                    // Using LinkedHashMap to maintain insertion order for each page's annotations.
+                    Collections.synchronizedMap(LinkedHashMap())
+                }
+            pageEdits[id] = annotationData
+        }
+    }
+
     override fun addEdit(annotation: PdfAnnotation): EditId {
         val pageNum = annotation.pageNum
         val editId = createEditIdForPage(pageNum)
@@ -91,13 +92,6 @@ public class InMemoryAnnotationEditsDraftState() : AnnotationEditsDraftState {
         return editId
     }
 
-    /**
-     * Removes an edit with the specified [EditId].
-     *
-     * @param editId The ID of the edit to remove.
-     * @return The removed [PdfAnnotation].
-     * @throws NoSuchElementException if the edit with the given ID is not found.
-     */
     override fun removeEdit(editId: EditId): PdfAnnotation {
         lock.withLock {
             val pageEdits =
@@ -117,14 +111,6 @@ public class InMemoryAnnotationEditsDraftState() : AnnotationEditsDraftState {
         }
     }
 
-    /**
-     * Updates an existing edit with the specified [EditId] and new [PdfAnnotation].
-     *
-     * @param editId The ID of the edit to update.
-     * @param annotation The new [PdfAnnotation] data.
-     * @return The old [PdfAnnotation].
-     * @throws NoSuchElementException if the edit with the given ID is not found.
-     */
     override fun updateEdit(editId: EditId, annotation: PdfAnnotation): PdfAnnotation {
         lock.withLock {
             val pageEdits =
@@ -156,6 +142,11 @@ public class InMemoryAnnotationEditsDraftState() : AnnotationEditsDraftState {
                 }
             return PdfEdits(snapshot)
         }
+    }
+
+    /** Clears all annotation edits from the draft state. */
+    override fun clear() {
+        lock.withLock { editsByPage.clear() }
     }
 
     /**

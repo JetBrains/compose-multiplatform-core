@@ -41,6 +41,7 @@ public class AppSearchVersionUtil {
         public static final int U_BASE = 7;
         public static final int M2023_11 = 10;
         public static final int V_BASE = 13;
+        public static final int B_BASE = 17;
     }
     public static final long APPSEARCH_U_BASE_VERSION_CODE = 340800000;
     public static final long APPSEARCH_M2023_11_VERSION_CODE = 341113000;

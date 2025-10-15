@@ -10,14 +10,15 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$LocalDateTimeFactory` : AppFunctionSerializableFactory<LocalDateTime> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): LocalDateTime {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "androidx.appfunctions.internal.serializableproxies.AppFunctionLocalDateTime")
 
-    val year = checkNotNull(appFunctionData.getIntOrNull("year"))
-    val month = checkNotNull(appFunctionData.getIntOrNull("month"))
-    val dayOfMonth = checkNotNull(appFunctionData.getIntOrNull("dayOfMonth"))
-    val hour = checkNotNull(appFunctionData.getIntOrNull("hour"))
-    val minute = checkNotNull(appFunctionData.getIntOrNull("minute"))
-    val second = checkNotNull(appFunctionData.getIntOrNull("second"))
-    val nanoOfSecond = checkNotNull(appFunctionData.getIntOrNull("nanoOfSecond"))
+    val year = checkNotNull(appFunctionDataWithSpec.getIntOrNull("year"))
+    val month = checkNotNull(appFunctionDataWithSpec.getIntOrNull("month"))
+    val dayOfMonth = checkNotNull(appFunctionDataWithSpec.getIntOrNull("dayOfMonth"))
+    val hour = checkNotNull(appFunctionDataWithSpec.getIntOrNull("hour"))
+    val minute = checkNotNull(appFunctionDataWithSpec.getIntOrNull("minute"))
+    val second = checkNotNull(appFunctionDataWithSpec.getIntOrNull("second"))
+    val nanoOfSecond = checkNotNull(appFunctionDataWithSpec.getIntOrNull("nanoOfSecond"))
 
     val resultAppFunctionLocalDateTime = AppFunctionLocalDateTime(year, month, dayOfMonth, hour, minute, second, nanoOfSecond)
     return resultAppFunctionLocalDateTime.toLocalDateTime()
@@ -26,7 +27,7 @@ public class `$LocalDateTimeFactory` : AppFunctionSerializableFactory<LocalDateT
   override fun toAppFunctionData(appFunctionSerializable: LocalDateTime): AppFunctionData {
     val appFunctionLocalDateTime_appFunctionSerializable = AppFunctionLocalDateTime.fromLocalDateTime(appFunctionSerializable)
 
-    val builder = AppFunctionData.Builder("androidx.appfunctions.internal.serializableproxies.AppFunctionLocalDateTime")
+    val builder = getAppFunctionDataBuilder("androidx.appfunctions.internal.serializableproxies.AppFunctionLocalDateTime")
     val year = appFunctionLocalDateTime_appFunctionSerializable.year
     builder.setInt("year", year)
     val month = appFunctionLocalDateTime_appFunctionSerializable.month

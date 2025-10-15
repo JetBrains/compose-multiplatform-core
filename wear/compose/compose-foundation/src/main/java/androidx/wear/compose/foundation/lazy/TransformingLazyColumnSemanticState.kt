@@ -17,6 +17,7 @@
 package androidx.wear.compose.foundation.lazy
 
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ModifierNodeElement
@@ -33,7 +34,6 @@ import androidx.compose.ui.semantics.indexForKey
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.scrollToIndex
 import androidx.compose.ui.semantics.verticalScrollAxisRange
-import androidx.wear.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import kotlinx.coroutines.launch
 
 @Composable

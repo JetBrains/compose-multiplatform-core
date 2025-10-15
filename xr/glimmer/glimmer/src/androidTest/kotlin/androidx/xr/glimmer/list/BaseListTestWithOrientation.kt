@@ -16,8 +16,17 @@
 
 package androidx.xr.glimmer.list
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,9 +34,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsEqualTo
@@ -36,14 +49,20 @@ import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.xr.glimmer.Text
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 
 abstract class BaseListTestWithOrientation(protected val orientation: Orientation) {
 
-    @get:Rule val rule: ComposeContentTestRule = createComposeRule()
+    val testDispatcher = StandardTestDispatcher()
+    @get:Rule val rule: ComposeContentTestRule = createComposeRule(testDispatcher)
 
     val vertical: Boolean
         get() = orientation == Orientation.Vertical
@@ -54,6 +73,7 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
     internal fun TestList(
         modifier: Modifier = Modifier,
         listOrientation: Orientation = orientation,
+        userScrollEnabled: Boolean = true,
         horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
         horizontalArrangement: Arrangement.Horizontal = Arrangement.Center,
         verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
@@ -67,6 +87,7 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
         List(
             state = state,
             orientation = listOrientation,
+            userScrollEnabled = userScrollEnabled,
             horizontalAlignment = horizontalAlignment,
             horizontalArrangement = horizontalArrangement,
             verticalAlignment = verticalAlignment,
@@ -130,6 +151,21 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
             afterContentCrossAxis = crossAxis,
         )
 
+    /** The proper scroll of the list in tests. */
+    protected suspend fun ListState.scrollByAndWaitForIdle(delta: Dp) {
+        val deltaPx = with(rule.density) { delta.toPx() }
+        scrollByAndWaitForIdle(deltaPx)
+    }
+
+    /** The proper scroll of the list in tests. */
+    protected suspend fun ListState.scrollByAndWaitForIdle(delta: Float): Float {
+        var consumed = -Float.NaN
+        val job = rule.runOnIdle { scope.launch { consumed = scrollBy(delta) } }
+        job.join()
+        rule.waitForIdle()
+        return consumed
+    }
+
     private fun PaddingValues(
         beforeContent: Dp = 0.dp,
         afterContent: Dp = 0.dp,
@@ -137,14 +173,14 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
         afterContentCrossAxis: Dp = 0.dp,
     ) =
         if (vertical) {
-            androidx.compose.foundation.layout.PaddingValues(
+            PaddingValues(
                 start = beforeContentCrossAxis,
                 top = beforeContent,
                 end = afterContentCrossAxis,
                 bottom = afterContent,
             )
         } else {
-            androidx.compose.foundation.layout.PaddingValues(
+            PaddingValues(
                 start = beforeContent,
                 top = beforeContentCrossAxis,
                 end = afterContent,
@@ -159,7 +195,44 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
         }
     }
 
+    /** This helper method requests initial focus to the list so that the auto focus can work. */
+    protected fun ComposeContentTestRule.setContentWithInitialFocus(
+        modifier: Modifier = Modifier,
+        content: @Composable ColumnScope.() -> Unit,
+    ) {
+        val focusRequester = FocusRequester()
+        setContent {
+            scope = rememberCoroutineScope()
+            Column(modifier.focusRequester(focusRequester)) { content() }
+        }
+        // Request initial focus.
+        rule.runOnIdle { focusRequester.requestFocus() }
+        rule.waitForIdle()
+    }
+
     companion object {
         internal const val LIST_TEST_TAG: String = "glimmer-lazy-list"
+    }
+}
+
+@Composable
+internal fun FocusableItem(index: Int, modifier: Modifier = Modifier) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused = interactionSource.collectIsFocusedAsState().value
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            modifier
+                .testTag("item-$index")
+                .background(color = if (isFocused) Color.Red else Color.Green)
+                .border(1.dp, Color.Black)
+                .focusable(true, interactionSource),
+    ) {
+        Text(
+            text = index.toString(),
+            fontSize = 30.sp,
+            color = Color.Black,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }

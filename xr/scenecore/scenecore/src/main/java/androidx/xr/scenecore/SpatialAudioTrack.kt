@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public object SpatialAudioTrack {
     @JvmStatic
     @SpatializerConstants.SourceType
     public fun getSpatialSourceType(session: Session, track: AudioTrack): Int {
-        return session.platformAdapter.audioTrackExtensionsWrapper
+        return session.sceneRuntime.audioTrackExtensionsWrapper
             .getSpatialSourceType(track)
             .sourceTypeToJxr()
     }
@@ -52,7 +52,7 @@ public object SpatialAudioTrack {
     @JvmStatic
     public fun getPointSourceParams(session: Session, track: AudioTrack): PointSourceParams? {
         val rtAttributes =
-            session.platformAdapter.audioTrackExtensionsWrapper.getPointSourceParams(track)
+            session.sceneRuntime.audioTrackExtensionsWrapper.getPointSourceParams(track)
         return rtAttributes?.toPointSourceParams(session)
     }
 
@@ -66,7 +66,7 @@ public object SpatialAudioTrack {
     @JvmStatic
     public fun getSoundFieldAttributes(session: Session, track: AudioTrack): SoundFieldAttributes? {
         val rtAttributes =
-            session.platformAdapter.audioTrackExtensionsWrapper.getSoundFieldAttributes(track)
+            session.sceneRuntime.audioTrackExtensionsWrapper.getSoundFieldAttributes(track)
         return rtAttributes?.toSoundFieldAttributes()
     }
 
@@ -93,7 +93,7 @@ public object SpatialAudioTrack {
         track: AudioTrack,
         params: PointSourceParams,
     ) {
-        session.platformAdapter.audioTrackExtensionsWrapper.setPointSourceParams(
+        session.sceneRuntime.audioTrackExtensionsWrapper.setPointSourceParams(
             track,
             params.rtPointSourceParams,
         )
@@ -118,7 +118,7 @@ public object SpatialAudioTrackBuilder {
         builder: AudioTrack.Builder,
         params: PointSourceParams,
     ) {
-        session.platformAdapter.audioTrackExtensionsWrapper.setPointSourceParams(
+        session.sceneRuntime.audioTrackExtensionsWrapper.setPointSourceParams(
             builder,
             params.rtPointSourceParams,
         )
@@ -138,7 +138,7 @@ public object SpatialAudioTrackBuilder {
         builder: AudioTrack.Builder,
         attributes: SoundFieldAttributes,
     ) {
-        session.platformAdapter.audioTrackExtensionsWrapper.setSoundFieldAttributes(
+        session.sceneRuntime.audioTrackExtensionsWrapper.setSoundFieldAttributes(
             builder,
             attributes.rtSoundFieldAttributes,
         )

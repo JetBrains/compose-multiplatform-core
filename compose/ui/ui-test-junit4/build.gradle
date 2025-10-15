@@ -44,7 +44,6 @@ androidXMultiplatform {
             dependencies {
                 api(project(":compose:ui:ui-test"))
                 implementation("androidx.annotation:annotation:1.8.1")
-                implementation(libs.kotlinStdlib)
                 implementation(libs.kotlinCoroutinesCore)
                 implementation(libs.kotlinCoroutinesTest)
             }
@@ -83,7 +82,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:animation:animation"))

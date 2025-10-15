@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.junit)
     implementation(libs.googletest)
     androidTestImplementation(libs.testExtJunit)

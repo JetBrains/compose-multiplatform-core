@@ -70,9 +70,9 @@ android {
 }
 
 androidx {
-    name = "WebKit Test App"
+    name = "Webkit Test App"
     type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2017"
-    description = "The WebKit Support Library test application is a demonstration of the APIs provided in the androidx.webkit library."
+    description = "The Jetpack Webkit Library test application is a demonstration of the APIs provided in the androidx.webkit library."
     additionalDeviceTestApkKeys.add("chrome")
 }

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalSharedTransitionApi::class)
-
 package androidx.compose.animation
 
 import androidx.compose.animation.core.VisibilityThreshold
@@ -289,7 +287,7 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
         val (w, h) =
             if (sharedElement.state.matchIsOrHasBeenConfigured) {
                 // found match && actively animating
-                sharedElementEntry.placeHolderSize.calculateSize(
+                sharedElementEntry.placeholderSize.calculateSize(
                     requireLookaheadLayoutCoordinates().size,
                     IntSize(placeable.width, placeable.height),
                 )

@@ -28,6 +28,9 @@ import org.gradle.api.provider.ValueSourceParameters
  * them.
  */
 internal fun Project.fetchDevelocityKeysIfNeeded() {
+    // Playground users don't need Develocity set up
+    if (ProjectLayoutType.isPlayground(this)) return
+
     // We are in CI, so we should not fetch these keys
     if (System.getenv("IS_ANDROIDX_CI") != null) return
 

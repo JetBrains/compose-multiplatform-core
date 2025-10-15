@@ -21,33 +21,38 @@ import android.view.autofill.AutofillValue
 import androidx.annotation.RequiresApi
 
 @RequiresApi(Build.VERSION_CODES.O)
-internal class AndroidFillableData(private val autofillValue: AutofillValue) : FillableData {
+internal class AndroidFillableData(internal val autofillValue: AutofillValue) : FillableData {
+
+    /** The CharSequence data if the backing [AutofillValue] contains text, otherwise null. */
+    override val textValue: CharSequence?
+        get() = if (autofillValue.isText) autofillValue.textValue else null
+
+    /** The Boolean data if the backing [AutofillValue] contains a toggle value, otherwise null. */
+    override val booleanValue: Boolean?
+        @Suppress("AutoBoxing")
+        get() = if (autofillValue.isToggle) autofillValue.toggleValue else null
+
+    /** The Int data if the backing [AutofillValue] contains a list selection, otherwise null. */
+    override val listIndexValue: Int?
+        @Suppress("AutoBoxing") get() = if (autofillValue.isList) autofillValue.listValue else null
 
     /**
-     * Returns the CharSequence data if the backing [AutofillValue] contains text, otherwise returns
-     * null.
+     * Returns the list index value if it is available, otherwise returns the [defaultValue].
+     *
+     * @param defaultValue The value to return if the backing [AutofillValue] does not represent a
+     *   list selection.
+     * @return The list index if available, or [defaultValue] otherwise.
      */
-    override fun getCharSequence(): CharSequence? {
-        return if (autofillValue.isText) autofillValue.textValue else null
+    override fun getListIndexOrDefault(defaultValue: Int): Int {
+        if (autofillValue.isList) {
+            return autofillValue.listValue
+        }
+        return defaultValue
     }
 
-    /**
-     * Returns the Boolean data if the backing [AutofillValue] contains a toggle value, otherwise
-     * returns null.
-     */
-    @Suppress("AutoBoxing")
-    override fun getBool(): Boolean? {
-        return if (autofillValue.isToggle) autofillValue.toggleValue else null
-    }
-
-    /**
-     * Returns the Int data if the backing [AutofillValue] contains a list selection, otherwise
-     * returns null.
-     */
-    @Suppress("AutoBoxing")
-    override fun getInt(): Int? {
-        return if (autofillValue.isList) autofillValue.listValue else null
-    }
+    /** The Long data if the backing [AutofillValue] contains a date value, otherwise null. */
+    override val dateMillisValue: Long?
+        @Suppress("AutoBoxing") get() = if (autofillValue.isDate) autofillValue.dateValue else null
 }
 
 /**
@@ -56,13 +61,13 @@ internal class AndroidFillableData(private val autofillValue: AutofillValue) : F
  * This function is used to wrap a text value for autofill purposes. On Android, it creates an
  * [AutofillValue] that contains the provided text.
  *
- * @param charSequenceValue The text data to be used for autofill.
+ * @param textValue The text data to be used for autofill.
  * @return A [FillableData] object containing the text data, or `null` if the platform version is
  *   lower than [Build.VERSION_CODES.O].
  */
-actual fun FillableData(charSequenceValue: CharSequence): FillableData? {
+actual fun FillableData.Companion.createFromText(textValue: CharSequence): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        AndroidFillableData(AutofillValue.forText(charSequenceValue))
+        AndroidFillableData(AutofillValue.forText(textValue))
     } else null
 }
 
@@ -76,7 +81,7 @@ actual fun FillableData(charSequenceValue: CharSequence): FillableData? {
  * @return A [FillableData] object containing the boolean data, or `null` if the platform version is
  *   lower than [Build.VERSION_CODES.O].
  */
-actual fun FillableData(booleanValue: Boolean): FillableData? {
+actual fun FillableData.Companion.createFromBoolean(booleanValue: Boolean): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         AndroidFillableData(AutofillValue.forToggle(booleanValue))
     } else null
@@ -89,13 +94,55 @@ actual fun FillableData(booleanValue: Boolean): FillableData? {
  * in a dropdown menu or spinner. On Android, it creates an [AutofillValue] that represents a list
  * selection.
  *
- * @param intValue The integer data to be used for autofill, representing the index of the selected
- *   item in a list.
+ * @param listIndexValue The integer data to be used for autofill, representing the index of the
+ *   selected item in a list.
  * @return A [FillableData] object containing the integer data, or `null` if the platform version is
  *   lower than [Build.VERSION_CODES.O].
  */
-actual fun FillableData(intValue: Int): FillableData? {
+actual fun FillableData.Companion.createFromListIndex(listIndexValue: Int): FillableData? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        AndroidFillableData(AutofillValue.forList(intValue))
+        AndroidFillableData(AutofillValue.forList(listIndexValue))
+    } else null
+}
+
+/**
+ * Creates a [FillableData] instance from a [Long].
+ *
+ * This function is used to wrap a long value for autofill purposes, such as a date represented in
+ * milliseconds since the epoch. On Android, it creates an [AutofillValue] that represents a date.
+ *
+ * @param dateMillisValue The long data to be used for autofill, representing a date in
+ *   milliseconds.
+ * @return A [FillableData] object containing the long data, or `null` if the platform version is
+ *   lower than [Build.VERSION_CODES.O].
+ */
+actual fun FillableData.Companion.createFromDateMillis(dateMillisValue: Long): FillableData? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        AndroidFillableData(AutofillValue.forDate(dateMillisValue))
+    } else null
+}
+
+/**
+ * Creates a [FillableData] from the platform [AutofillValue] type.
+ *
+ * @param autofillValue The platform autofill value to create the [FillableData] from.
+ * @return A [FillableData] object containing the platform autofill data, or `null` if the platform
+ *   version is lower than [Build.VERSION_CODES.O].
+ */
+fun FillableData.Companion.createFromAutofillValue(autofillValue: AutofillValue): FillableData? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        AndroidFillableData(autofillValue)
+    } else null
+}
+
+/**
+ * Retrieves the underlying platform [AutofillValue] from the [FillableData].
+ *
+ * @return The platform [AutofillValue], or `null` if the [FillableData] is not an instance of
+ *   [AndroidFillableData] or the platform version is lower than [Build.VERSION_CODES.O].
+ */
+fun FillableData.toAutofillValue(): AutofillValue? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        (this as? AndroidFillableData)?.autofillValue
     } else null
 }

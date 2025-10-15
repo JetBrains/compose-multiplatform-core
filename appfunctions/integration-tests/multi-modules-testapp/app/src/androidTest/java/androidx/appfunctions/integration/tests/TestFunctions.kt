@@ -29,6 +29,7 @@ import androidx.appfunctions.AppFunctionStringValueConstraint
 import androidx.appfunctions.AppFunctionUriGrant
 import androidx.appfunctions.service.AppFunction
 import java.time.LocalDateTime
+import kotlinx.coroutines.delay
 
 @AppFunctionSchemaCapability
 interface AppFunctionOpenable {
@@ -345,6 +346,7 @@ class TestFunctions {
         appFunctionContext: AppFunctionContext,
         @AppFunctionIntValueConstraint(enumValues = [0, 1]) intEnum: Int,
         @AppFunctionStringValueConstraint(enumValues = ["A", "B"]) stringEnum: String,
+        intEnumSerializable: IntEnumSerializable? = null,
     ) {
         throw UnsupportedOperationException("Not implemented")
     }
@@ -467,6 +469,12 @@ class TestFunctions {
                 ),
         )
     }
+
+    @AppFunction
+    suspend fun longRunningFunction(appFunctionContext: AppFunctionContext): String {
+        delay(500)
+        return "Completed"
+    }
 }
 
 @Suppress("UNUSED_PARAMETER")
@@ -483,22 +491,53 @@ class TestFactory {
     fun isCreatedByFactory(appFunctionContext: AppFunctionContext): Boolean = createdByFactory
 }
 
-class NotesFunctions : CreateNoteAppFunction<NotesFunctions.Parameters, NotesFunctions.Response> {
+class NotesFunctions : CreateNoteAppFunction {
 
-    @AppFunction
+    /**
+     * Create a note.
+     *
+     * @param parameters The parameters.
+     * @param tag The optional tag.
+     * @return [CreateNoteAppFunction.Response] as response.
+     */
+    @AppFunction(isDescribedByKdoc = true)
     override suspend fun createNote(
         appFunctionContext: AppFunctionContext,
-        parameters: Parameters,
-    ): Response {
-        return Response(MyNote(id = "testId", title = parameters.title))
+        parameters: CreateNoteAppFunction.Parameters,
+        tag: String?,
+    ): CreateNoteAppFunction.Response {
+        return CreateNoteAppFunction.Response(
+            AppFunctionNote(id = "testId", title = parameters.title),
+            tag = tag,
+        )
+    }
+}
+
+@AppFunctionSerializable
+data class IntEnumSerializable(
+    @property:AppFunctionIntValueConstraint(enumValues = [10, 20]) val value: Int
+)
+
+class OneOfFunctions {
+    @AppFunctionSerializable
+    sealed interface OneOfSealedInterface {
+        val interfaceProperty: String
     }
 
     @AppFunctionSerializable
-    class MyNote(override val id: String, override val title: String) : AppFunctionNote
+    data class ASubclass(override val interfaceProperty: String, val str: String) :
+        OneOfSealedInterface
 
     @AppFunctionSerializable
-    class Parameters(override val title: String) : CreateNoteAppFunction.Parameters
+    data class BSubclass(override val interfaceProperty: String, val integer: Int) :
+        OneOfSealedInterface
 
     @AppFunctionSerializable
-    class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
+    data class OneOfSealedNestedSerializable(val sealedInterface: OneOfSealedInterface)
+
+    @AppFunction
+    fun oneOfFunction(
+        appFunctionContext: AppFunctionContext,
+        oneOfList: List<OneOfSealedInterface>,
+    ) = oneOfList.map { OneOfSealedNestedSerializable(sealedInterface = it) }
 }

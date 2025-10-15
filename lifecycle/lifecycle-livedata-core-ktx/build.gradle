@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
     api(project(":lifecycle:lifecycle-livedata-core"))
-    api(libs.kotlinStdlib)
 }
 
 androidx {

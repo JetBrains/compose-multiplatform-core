@@ -24,6 +24,7 @@ import androidx.annotation.RestrictTo
 import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.provider.CallingAppInfo
 import androidx.credentials.provider.ProviderCreateCredentialRequest
+import androidx.credentials.providerevents.internal.UriUtils.Companion.readFromUri
 import androidx.credentials.providerevents.signal.ProviderSignalCredentialStateRequest
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilitiesRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsRequest
@@ -80,7 +81,7 @@ public class ConversionUtils {
             request: ExportCredentialsToDeviceSetupRequest,
             context: Context,
         ): ExportCredentialsRequest {
-            val credentialsJson = UriUtils.readFromUri(request.uri, context)
+            val credentialsJson = readFromUri(request.uri, context)
             return ExportCredentialsRequest(credentialsJson)
         }
 

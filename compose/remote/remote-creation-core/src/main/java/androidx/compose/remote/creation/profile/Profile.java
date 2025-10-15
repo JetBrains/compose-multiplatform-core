@@ -16,6 +16,7 @@
 package androidx.compose.remote.creation.profile;
 
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Platform;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
@@ -42,11 +43,13 @@ import java.util.function.Supplier;
  * (e.g. validating parameters for a specific functionality) Additional features will likely be
  * represented via Profile in the future (set of valid host actions, etc.)
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Profile {
     int mApiLevel;
     int mOperationsProfiles;
     @NonNull Platform mPlatform;
-    @NonNull ProfileFactory mFactory;
+    @NonNull
+    RemoteComposeWriterFactory mFactory;
 
     @Nullable Supplier<Set<Integer>> mSupportedOperations;
 
@@ -62,7 +65,7 @@ public class Profile {
             int apiLevel,
             int operationProfiles,
             @NonNull Platform platform,
-            @NonNull ProfileFactory factory) {
+            @NonNull RemoteComposeWriterFactory factory) {
         mApiLevel = apiLevel;
         mOperationsProfiles = operationProfiles;
         mPlatform = platform;
@@ -83,7 +86,7 @@ public class Profile {
             int operationProfiles,
             @NonNull Platform platform,
             @NonNull Supplier<Set<Integer>> supportedOperations,
-            @NonNull ProfileFactory factory) {
+            @NonNull RemoteComposeWriterFactory factory) {
         mApiLevel = apiLevel;
         mOperationsProfiles = operationProfiles;
         mPlatform = platform;
@@ -135,7 +138,7 @@ public class Profile {
      *
      * @return a ProfileFactory
      */
-    public @NonNull ProfileFactory getProfileFactory() {
+    public @NonNull RemoteComposeWriterFactory getProfileFactory() {
         return mFactory;
     }
 

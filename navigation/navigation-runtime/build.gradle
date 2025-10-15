@@ -54,7 +54,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api(project(":navigation:navigation-common"))
                 api("androidx.lifecycle:lifecycle-common:2.8.7")
@@ -108,10 +107,10 @@ androidXMultiplatform {
                 api("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation("androidx.annotation:annotation:1.8.0")

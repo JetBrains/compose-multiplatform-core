@@ -22,10 +22,6 @@ android {
     namespace = "androidx.privacysandbox.sdkruntime.integration.macrobenchmark"
     targetProjectPath = ":privacysandbox:sdkruntime:integration-tests:testapp"
     experimentalProperties["android.experimental.self-instrumenting"] = true
-    defaultConfig {
-        // :internal-testutils-benchmark-macro
-        minSdk = 23
-    }
     privacySandbox {
         enable = true
     }

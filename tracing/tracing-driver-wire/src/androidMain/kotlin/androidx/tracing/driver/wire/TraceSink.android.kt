@@ -82,6 +82,10 @@ private class TraceSinkDelegate(private val context: Context, private val sink: 
         sink.enqueue(pooledPacketArray)
     }
 
+    override fun onDroppedTraceEvent() {
+        sink.onDroppedTraceEvent()
+    }
+
     override fun flush() {
         sink.flush()
     }

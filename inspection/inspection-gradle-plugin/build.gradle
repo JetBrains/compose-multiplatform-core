@@ -35,7 +35,6 @@ dependencies {
     compileOnly(findGradleKotlinDsl())
     implementation(gradleApi())
     implementation(libs.androidGradlePluginApi)
-    implementation(libs.kotlinStdlib)
     implementation(libs.protobufGradlePlugin)
     implementation(libs.shadow)
     implementation(libs.apacheAnt)

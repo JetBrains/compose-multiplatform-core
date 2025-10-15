@@ -203,7 +203,6 @@ class FakeHealthConnectClientClockTest {
         assertThat(recordsExcluding.records).hasSize(0)
     }
 
-    @Ignore // b/424868728
     @Test
     fun timeRangeFilterLocalTime_noEndTimeInstant() = runTest {
         // Given a record with a fixed time, before the clock.

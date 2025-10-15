@@ -50,6 +50,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.test.performTouchInput
@@ -996,7 +997,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
-        rule.onNodeWithTag("scalingLazyColumn").assertIsFocused()
+        // Child is the one which has items and it needs to hold the focus to perform scrolling.
+        rule.onNodeWithTag("scalingLazyColumn").onChild().assertIsFocused()
     }
 
     @Test

@@ -24,7 +24,6 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.DoNotDisturbException
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.CameraControlAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraInternalAdapter
@@ -36,6 +35,7 @@ import androidx.camera.camera2.pipe.integration.compat.CameraCompatModule
 import androidx.camera.camera2.pipe.integration.compat.EvCompCompat
 import androidx.camera.camera2.pipe.integration.compat.ZoomCompat
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.impl.ComboRequestListener
@@ -49,6 +49,7 @@ import androidx.camera.camera2.pipe.integration.impl.TorchControl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.integration.impl.VideoUsageControl
 import androidx.camera.camera2.pipe.integration.impl.ZoomControl
+import androidx.camera.camera2.pipe.integration.internal.IntrinsicZoomCalculator
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraControl
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
 import androidx.camera.core.impl.CameraControlInternal
@@ -82,6 +83,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
             EvCompControl.Bindings::class,
             FlashControl.Bindings::class,
             FocusMeteringControl.Bindings::class,
+            IntrinsicZoomCalculator.Bindings::class,
             State3AControl.Bindings::class,
             StillCaptureRequestControl.Bindings::class,
             TorchControl.Bindings::class,
@@ -132,8 +134,10 @@ public abstract class CameraModule {
         ): CameraMetadata? {
             try {
                 return cameraPipe.cameras().awaitCameraMetadata(config.cameraId)
-            } catch (exception: DoNotDisturbException) {
-                Log.error { "Failed to inject camera metadata: Do Not Disturb mode is on." }
+            } catch (_: DoNotDisturbException) {
+                Camera2Logger.error {
+                    "Failed to inject camera metadata: Do Not Disturb mode is on."
+                }
             }
             return null
         }

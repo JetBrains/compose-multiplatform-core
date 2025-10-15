@@ -37,6 +37,8 @@ class HeadLockedUIManager(
     headLockedPanelView: View,
 ) {
     private val mSession = session
+    private val mScene = session.scene
+
     private val mHeadLockedPanelView: View = headLockedPanelView
     private lateinit var mHeadLockedPanel: PanelEntity
     private val _mEnableHeadlockFlow = MutableStateFlow(true)
@@ -118,15 +120,13 @@ class HeadLockedUIManager(
     }
 
     private fun updateHeadLockedPose() {
-        if (mSession.scene.spatialUser.head != null && this.mEnableHeadlock) {
+        if (mScene.spatialUser.head != null && this.mEnableHeadlock) {
             // Since the panel is parented by the activitySpace, we need to inverse its scale
             // so that the panel stays at a fixed size in the view even when ActivitySpace scales.
-            this.mHeadLockedPanel.setScale(
-                0.5f / mSession.scene.activitySpace.getScale(Space.REAL_WORLD)
-            )
-            mSession.scene.spatialUser.head
-                ?.transformPoseTo(mUserForward, mSession.scene.activitySpace)
-                ?.let { this.mHeadLockedPanel.setPose(it) }
+            this.mHeadLockedPanel.setScale(0.5f / mScene.activitySpace.getScale(Space.REAL_WORLD))
+            mScene.spatialUser.head?.transformPoseTo(mUserForward, mScene.activitySpace)?.let {
+                this.mHeadLockedPanel.setPose(it)
+            }
         }
         mHeadLockedPanelView.postOnAnimation(this::updateHeadLockedPose)
     }

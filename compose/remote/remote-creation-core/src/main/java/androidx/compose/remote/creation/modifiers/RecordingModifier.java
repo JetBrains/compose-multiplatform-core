@@ -15,8 +15,10 @@
  */
 package androidx.compose.remote.creation.modifiers;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation;
+import androidx.compose.remote.creation.Rc;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 import androidx.compose.remote.creation.actions.Action;
 
@@ -28,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** Represent a list of modifiers */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RecordingModifier {
 
     @NonNull List<Element> mList = new ArrayList<>();
@@ -189,6 +192,16 @@ public class RecordingModifier {
     }
 
     /**
+     * Add an align by baseline modifier
+     *
+     * @return
+     */
+    public @NonNull RecordingModifier alignByBaseline() {
+        mList.add(new AlignByModifier(Rc.Layout.FIRST_BASELINE));
+        return this;
+    }
+
+    /**
      * Add a collapsible priority. Only valid within a Collapsible layout.
      *
      * @param orientation HORIZONTAL or VERTICAL
@@ -221,6 +234,20 @@ public class RecordingModifier {
      * @return
      */
     public @NonNull RecordingModifier padding(int start, int top, int end, int bottom) {
+        mList.add(new PaddingModifier(start, top, end, bottom));
+        return this;
+    }
+
+    /**
+     * Add a padding modifier
+     *
+     * @param start
+     * @param top
+     * @param end
+     * @param bottom
+     * @return
+     */
+    public @NonNull RecordingModifier padding(float start, float top, float end, float bottom) {
         mList.add(new PaddingModifier(start, top, end, bottom));
         return this;
     }
@@ -498,6 +525,7 @@ public class RecordingModifier {
         return null;
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public interface Element {
         /**
          * Write the element to the buffer

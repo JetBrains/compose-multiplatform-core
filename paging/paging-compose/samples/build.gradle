@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
     implementation("androidx.compose.foundation:foundation:1.5.0")

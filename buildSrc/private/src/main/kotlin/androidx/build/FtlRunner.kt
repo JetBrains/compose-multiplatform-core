@@ -231,8 +231,9 @@ private const val HWCOR = "HWCOR,version=27"
 private const val Q2Q = "q2q,version=31"
 
 private const val PHYSICAL_PIXEL9 = "tokay,version=34"
-private const val MEDIUM_PHONE_34 = "MediumPhone.arm,version=34"
+private const val MEDIUM_PHONE_36 = "MediumPhone.arm,version=36"
 private const val MEDIUM_PHONE_35 = "MediumPhone.arm,version=35"
+private const val MEDIUM_PHONE_34 = "MediumPhone.arm,version=34"
 private const val MEDIUM_PHONE_33 = "MediumPhone.arm,version=33"
 private const val MEDIUM_PHONE_30 = "MediumPhone.arm,version=30"
 private const val MEDIUM_PHONE_28 = "MediumPhone.arm,version=28"
@@ -245,8 +246,9 @@ private const val PIXEL2_26 = "Pixel2.arm,version=26"
 
 private val API_TO_MODEL_MAP =
     mapOf(
-        34 to MEDIUM_PHONE_34,
+        36 to MEDIUM_PHONE_36,
         35 to MEDIUM_PHONE_35,
+        34 to MEDIUM_PHONE_34,
         33 to MEDIUM_PHONE_33,
         30 to MEDIUM_PHONE_30,
         28 to MEDIUM_PHONE_28,
@@ -259,8 +261,9 @@ private val devicesToRunOn =
     listOf(
         FTL_ON_APIS_NAME to listOf(), // instead read devices via repeatable --api
         "ftlphysicalpixel9api34" to listOf(PHYSICAL_PIXEL9),
-        "ftlmediumphoneapi34" to listOf(MEDIUM_PHONE_34),
+        "ftlmediumphoneapi36" to listOf(MEDIUM_PHONE_36),
         "ftlmediumphoneapi35" to listOf(MEDIUM_PHONE_35),
+        "ftlmediumphoneapi34" to listOf(MEDIUM_PHONE_34),
         "ftlmediumphoneapi33" to listOf(MEDIUM_PHONE_33),
         "ftlmediumphoneapi30" to listOf(MEDIUM_PHONE_30),
         "ftlmediumphoneapi28" to listOf(MEDIUM_PHONE_28),

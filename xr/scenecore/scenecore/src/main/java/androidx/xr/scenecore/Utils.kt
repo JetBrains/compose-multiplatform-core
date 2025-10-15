@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,7 @@ package androidx.xr.scenecore
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilter as RtHitTestFilter
-import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
-import androidx.xr.runtime.internal.AnchorPlacement as RtAnchorPlacement
-import androidx.xr.runtime.internal.Dimensions as RtDimensions
-import androidx.xr.runtime.internal.HitTestResult as RtHitTestResult
-import androidx.xr.runtime.internal.HitTestResult.HitTestSurfaceType as RtHitTestSurfaceType
-import androidx.xr.runtime.internal.InputEvent as RtInputEvent
-import androidx.xr.runtime.internal.InputEvent.HitInfo as RtHitInfo
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.KhronosPbrMaterialSpec as RtKhronosPbrMaterialSpec
-import androidx.xr.runtime.internal.MoveEvent as RtMoveEvent
-import androidx.xr.runtime.internal.PerceivedResolutionResult as RtPerceivedResolutionResult
-import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
-import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
-import androidx.xr.runtime.internal.PlaneType as RtPlaneType
-import androidx.xr.runtime.internal.ResizeEvent as RtResizeEvent
-import androidx.xr.runtime.internal.Space as RtSpace
-import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
-import androidx.xr.runtime.internal.SpatialPointerIconType as RtSpatialPointerIconType
-import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
-import androidx.xr.runtime.internal.TextureSampler as RtTextureSampler
+import androidx.xr.arcore.Plane
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
@@ -48,6 +27,28 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.scenecore.HitTestResult.SurfaceType
 import androidx.xr.scenecore.InputEvent.HitInfo
 import androidx.xr.scenecore.ScenePose.HitTestFilter
+import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
+import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
+import androidx.xr.scenecore.runtime.Dimensions as RtDimensions
+import androidx.xr.scenecore.runtime.HitTestResult as RtHitTestResult
+import androidx.xr.scenecore.runtime.HitTestResult.HitTestSurfaceType as RtHitTestSurfaceType
+import androidx.xr.scenecore.runtime.InputEvent as RtInputEvent
+import androidx.xr.scenecore.runtime.InputEvent.HitInfo as RtHitInfo
+import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec as RtKhronosPbrMaterialSpec
+import androidx.xr.scenecore.runtime.MoveEvent as RtMoveEvent
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult as RtPerceivedResolutionResult
+import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
+import androidx.xr.scenecore.runtime.PlaneSemantic as RtPlaneSemantic
+import androidx.xr.scenecore.runtime.PlaneType as RtPlaneType
+import androidx.xr.scenecore.runtime.ResizeEvent as RtResizeEvent
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilter as RtHitTestFilter
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.Space as RtSpace
+import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.scenecore.runtime.SpatialPointerIcon as RtSpatialPointerIcon
+import androidx.xr.scenecore.runtime.SpatialPointerIconType as RtSpatialPointerIconType
+import androidx.xr.scenecore.runtime.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.scenecore.runtime.TextureSampler as RtTextureSampler
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
 import kotlin.coroutines.coroutineContext
@@ -64,42 +65,56 @@ internal class HandlerExecutor(val handler: Handler) : Executor {
     }
 }
 
-/** Extension function that converts a [androidx.xr.runtime.math.FloatSize3d] to [RtDimensions]. */
+/**
+ * Extension function that converts a [androidx.xr.runtime.math.FloatSize3d] to
+ * [androidx.xr.scenecore.runtime.Dimensions].
+ */
 internal fun FloatSize3d.toRtDimensions(): RtDimensions {
     return RtDimensions(width, height, depth)
 }
 
 /**
- * Extension function that converts a [androidx.xr.runtime.math.FloatSize2d] to [RtDimensions],
- * setting the `depth` field to 0.
+ * Extension function that converts a [androidx.xr.runtime.math.FloatSize2d] to
+ * [androidx.xr.scenecore.runtime.Dimensions], setting the `depth` field to 0.
  */
 internal fun FloatSize2d.toRtDimensions(): RtDimensions {
     return RtDimensions(width, height, 0f)
 }
 
-/** Extension function that converts a [RtDimensions] to [FloatSize3d]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.Dimensions] to [FloatSize3d].
+ */
 internal fun RtDimensions.toFloatSize3d(): FloatSize3d {
     return FloatSize3d(width, height, depth)
 }
 
-/** Extension function that converts a [RtDimensions] to [FloatSize3d]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.Dimensions] to [FloatSize3d].
+ */
 internal fun RtDimensions.toFloatSize2d(): FloatSize2d {
     return FloatSize2d(width, height)
 }
 
 /**
- * Extension function that converts a [androidx.xr.runtime.math.IntSize2d] to [RtPixelDimensions].
+ * Extension function that converts a [androidx.xr.runtime.math.IntSize2d] to
+ * [androidx.xr.scenecore.runtime.PixelDimensions].
  */
 internal fun IntSize2d.toRtPixelDimensions(): RtPixelDimensions {
     return RtPixelDimensions(width, height)
 }
 
-/** Extension function that converts a [RtPixelDimensions] to [IntSize2d]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.PixelDimensions] to
+ * [IntSize2d].
+ */
 internal fun RtPixelDimensions.toIntSize2d(): IntSize2d {
     return IntSize2d(width, height)
 }
 
-/** Extension function that converts [Int] to [JxrPlatformAdapter.planeOrientation]. */
+/**
+ * Extension function that converts [Int] to
+ * [androidx.xr.scenecore.runtime.SceneRuntime.planeOrientation].
+ */
 internal fun Int.toRtPlaneType(): RtPlaneType {
     return when (this) {
         PlaneOrientation.HORIZONTAL -> RtPlaneType.HORIZONTAL
@@ -109,7 +124,10 @@ internal fun Int.toRtPlaneType(): RtPlaneType {
     }
 }
 
-/** Extension function that converts [Int] to [JxrPlatformAdapter.PlaneSemantic]. */
+/**
+ * Extension function that converts [Int] to
+ * [androidx.xr.scenecore.runtime.SceneRuntime.PlaneSemantic].
+ */
 internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
     return when (this) {
         PlaneSemanticType.WALL -> RtPlaneSemantic.WALL
@@ -121,7 +139,10 @@ internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
     }
 }
 
-/** Extension function that converts [Space] value to [JxrPlatformAdapter.Space] value. */
+/**
+ * Extension function that converts [Space] value to
+ * [androidx.xr.scenecore.runtime.SceneRuntime.Space] value.
+ */
 internal fun Int.toRtSpace(): Int {
     return when (this) {
         Space.PARENT -> RtSpace.PARENT
@@ -131,7 +152,9 @@ internal fun Int.toRtSpace(): Int {
     }
 }
 
-/** Extension function that converts a [RtMoveEvent] to a [MoveEvent]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.MoveEvent] to a [MoveEvent].
+ */
 internal fun RtMoveEvent.toMoveEvent(entityManager: EntityManager): MoveEvent {
 
     disposedEntity?.let { entityManager.removeEntity(it) }
@@ -162,7 +185,9 @@ internal fun RtHitInfo.toHitInfo(entityManager: EntityManager): HitInfo? {
     }
 }
 
-/** Extension function that converts a [RtInputEvent] to a [InputEvent]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.InputEvent] to a [InputEvent].
+ */
 internal fun RtInputEvent.toInputEvent(entityManager: EntityManager): InputEvent {
     val hitInfos = mutableListOf<HitInfo>()
     hitInfoList.forEach { it.toHitInfo(entityManager)?.let { element -> hitInfos.add(element) } }
@@ -177,28 +202,37 @@ internal fun RtInputEvent.toInputEvent(entityManager: EntityManager): InputEvent
     )
 }
 
-/** Extension function that converts a [RtSpatialCapabilities] to a [SpatialCapabilities]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.SpatialCapabilities] to a
+ * [SpatialCapabilities].
+ */
 internal fun RtSpatialCapabilities.toSpatialCapabilities(): SpatialCapabilities {
     return SpatialCapabilities(capabilities.toSpatialCapability())
 }
 
-/** Extension function that converts a [RtSpatialVisibility] to a [SpatialVisibilityValue]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.SpatialVisibility] to a
+ * [SpatialVisibilityValue].
+ */
 @SpatialVisibilityValue
 internal fun RtSpatialVisibility.toSpatialVisibility(): Int {
     return visibility.toSpatialVisibilityValue()
 }
 
-/** Extension function that converts a [RtResizeEvent] to a [ResizeEvent]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.ResizeEvent] to a
+ * [ResizeEvent].
+ */
 internal fun RtResizeEvent.toResizeEvent(entity: Entity): ResizeEvent {
     return ResizeEvent(entity, resizeState.toResizeState(), newSize.toFloatSize3d())
 }
 
 /**
  * Extension function that converts a [Set] of [AnchorPlacement] to a [Set] of
- * [JxrPlatformAdapter.AnchorPlacement].
+ * [androidx.xr.scenecore.runtime.SceneRuntime.AnchorPlacement].
  */
 internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
-    runtime: JxrPlatformAdapter
+    sceneRuntime: SceneRuntime
 ): Set<RtAnchorPlacement> {
     val rtAnchorPlacementSet = HashSet<RtAnchorPlacement>()
     for (placement in this) {
@@ -208,11 +242,31 @@ internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
             placement.anchorablePlaneSemanticTypes.map { it.toRtPlaneSemantic() }.toMutableSet()
 
         val rtAnchorPlacement =
-            runtime.createAnchorPlacementForPlanes(planeOrientationFilter, planeSemanticFilter)
+            sceneRuntime.createAnchorPlacementForPlanes(planeOrientationFilter, planeSemanticFilter)
         rtAnchorPlacementSet.add(rtAnchorPlacement)
     }
     return rtAnchorPlacementSet
 }
+
+/** Extension function that converts an ARCore [Plane.Type] to a Scene [PlaneOrientationValue] */
+internal fun Plane.Type.toSceneCoreOrientation(): @PlaneOrientationValue Int =
+    when (this) {
+        Plane.Type.HORIZONTAL_UPWARD_FACING -> PlaneOrientation.HORIZONTAL
+        Plane.Type.HORIZONTAL_DOWNWARD_FACING -> PlaneOrientation.HORIZONTAL
+        Plane.Type.VERTICAL -> PlaneOrientation.VERTICAL
+        else -> error("Unknown plane orientation: $this")
+    }
+
+/** Extension function that converts an ARCore [Plane.Label] to a Scene [PlaneSemanticTypeValue] */
+internal fun Plane.Label.toSceneCoreSemanticType(): @PlaneSemanticTypeValue Int =
+    when (this) {
+        Plane.Label.FLOOR -> PlaneSemanticType.FLOOR
+        Plane.Label.TABLE -> PlaneSemanticType.TABLE
+        Plane.Label.WALL -> PlaneSemanticType.WALL
+        Plane.Label.CEILING -> PlaneSemanticType.CEILING
+        Plane.Label.UNKNOWN -> PlaneSemanticType.ANY
+        else -> error("Unknown semantic type: $this")
+    }
 
 /** Extension function that converts a [Int] to [MoveEvent.MoveState]. */
 @MoveEvent.MoveState
@@ -297,16 +351,19 @@ internal fun Int.toInputEventAction(): Int {
     }
 }
 
-/** Extension function that converts a [TextureSampler] to [RtTextureSampler]. */
+/**
+ * Extension function that converts a [TextureSampler] to
+ * [androidx.xr.scenecore.runtime.TextureSampler].
+ */
 internal fun TextureSampler.toRtTextureSampler(): RtTextureSampler {
     return RtTextureSampler(
-        wrapModeS,
-        wrapModeT,
-        wrapModeR,
-        minFilter,
-        magFilter,
+        wrapModeHorizontal,
+        wrapModeVertical,
+        wrapModeDepth,
+        minificationFilter,
+        magnificationFilter,
         compareMode,
-        compareFunc,
+        compareFunction,
         anisotropyLog2,
     )
 }
@@ -333,7 +390,10 @@ internal fun Int.toHitTestSurfaceType(): Int {
     }
 }
 
-/** Extension function that converts a [RtHitTestResult] to a [HitTestResult]. */
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.HitTestResult] to a
+ * [HitTestResult].
+ */
 internal fun RtHitTestResult.toHitTestResult(): HitTestResult {
     return HitTestResult(hitPosition, surfaceNormal, surfaceType.toHitTestSurfaceType(), distance)
 }
@@ -357,13 +417,33 @@ internal fun Int.toSpatialPointerIcon(): SpatialPointerIcon {
     }
 }
 
-/** Extension function that converts a [KhronosPbrMaterialSpec] to [RtKhronosPbrMaterialSpec]. */
-internal fun KhronosPbrMaterialSpec.toRtKhronosPbrMaterialSpec(): RtKhronosPbrMaterialSpec {
-    return RtKhronosPbrMaterialSpec(lightingModel, blendMode, doubleSidedMode)
+/**
+ * Extension function that converts a [AlphaMode] to
+ * [androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec].
+ */
+internal fun Int.toRtKhronosUnlitMaterialSpec(): RtKhronosPbrMaterialSpec {
+    return RtKhronosPbrMaterialSpec(
+        lightingModel = RtKhronosPbrMaterialSpec.UNLIT,
+        blendMode = this,
+        doubleSidedMode = RtKhronosPbrMaterialSpec.SINGLE_SIDED,
+    )
 }
 
 /**
- * Extension function that converts a [RtPerceivedResolutionResult] to [PerceivedResolutionResult].
+ * Extension function that converts a [AlphaMode] to
+ * [androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec].
+ */
+internal fun Int.toRtKhronosPbrMaterialSpec(): RtKhronosPbrMaterialSpec {
+    return RtKhronosPbrMaterialSpec(
+        lightingModel = RtKhronosPbrMaterialSpec.LIT,
+        blendMode = this,
+        doubleSidedMode = RtKhronosPbrMaterialSpec.SINGLE_SIDED,
+    )
+}
+
+/**
+ * Extension function that converts a [androidx.xr.scenecore.runtime.PerceivedResolutionResult] to
+ * [PerceivedResolutionResult].
  */
 internal fun RtPerceivedResolutionResult.toPerceivedResolutionResult(): PerceivedResolutionResult {
     return when (this) {

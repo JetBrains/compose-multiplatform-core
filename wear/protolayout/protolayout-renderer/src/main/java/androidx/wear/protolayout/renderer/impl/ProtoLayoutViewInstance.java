@@ -1369,6 +1369,15 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
         }
     }
 
+    /** Sets the state of interactive vs ambient display update. */
+    @RestrictTo(Scope.LIBRARY)
+    @UiThread
+    public void setAmbientModeStatus(boolean isInAmbientMode) {
+        if (mDataPipeline != null) {
+            mDataPipeline.setAmbientModeStatus(isInAmbientMode);
+        }
+    }
+
     /** Returns true if the layout element depth doesn't exceed the given {@code allowedDepth}. */
     private void checkLayoutDepth(
             LayoutElement layoutElement,

@@ -23,7 +23,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":graphics:graphics-core"))

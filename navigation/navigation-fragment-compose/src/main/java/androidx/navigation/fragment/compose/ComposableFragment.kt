@@ -80,6 +80,7 @@ public class ComposableFragment internal constructor() : Fragment() {
         @JvmStatic
         public fun ComposableFragment(fullyQualifiedName: String): ComposableFragment {
             return ComposableFragment().apply {
+                @Suppress("DEPRECATION") // bundleOf is deprecated
                 arguments = bundleOf(FULLY_QUALIFIED_NAME to fullyQualifiedName)
             }
         }

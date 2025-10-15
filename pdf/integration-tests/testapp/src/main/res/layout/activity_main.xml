@@ -45,7 +45,6 @@
         app:layout_constraintEnd_toStartOf="@+id/search_pdf_button"
         app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/fragment_container_view"
         app:strokeWidth="1dp" />
 
     <com.google.android.material.button.MaterialButton
@@ -70,6 +69,30 @@
         app:layout_constraintEnd_toStartOf="@+id/preference_button"
         app:layout_constraintStart_toEndOf="@+id/search_pdf_button"
         app:layout_constraintTop_toTopOf="@+id/launch_button"
+        app:strokeWidth="1dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/undo_pdf_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/undo_string"
+        app:layout_constraintBottom_toTopOf="@+id/launch_button"
+        app:layout_constraintEnd_toStartOf="@+id/redo_pdf_button"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:strokeWidth="1dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/redo_pdf_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="@string/redo_string"
+        app:layout_constraintBottom_toBottomOf="@+id/undo_pdf_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/undo_pdf_button"
+        app:layout_constraintTop_toTopOf="@+id/undo_pdf_button"
         app:strokeWidth="1dp" />
 
     <ImageButton

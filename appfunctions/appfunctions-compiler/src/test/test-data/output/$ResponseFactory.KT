@@ -9,9 +9,10 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$CreateNoteFunction$ResponseFactory` : AppFunctionSerializableFactory<CreateNoteFunction.Response> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): CreateNoteFunction.Response {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.CreateNoteFunction${'$'}Response")
     val createNoteFunctionDataMyNoteFactory = `$CreateNoteFunction$Data$MyNoteFactory`()
 
-    val createdNoteData = checkNotNull(appFunctionData.getAppFunctionData("createdNote"))
+    val createdNoteData = checkNotNull(appFunctionDataWithSpec.getAppFunctionData("createdNote"))
     val createdNote = createNoteFunctionDataMyNoteFactory.fromAppFunctionData(createdNoteData)
 
     val resultResponse = CreateNoteFunction.Response(createdNote)
@@ -22,7 +23,7 @@ public class `$CreateNoteFunction$ResponseFactory` : AppFunctionSerializableFact
     val response_appFunctionSerializable = appFunctionSerializable
     val createNoteFunctionDataMyNoteFactory = `$CreateNoteFunction$Data$MyNoteFactory`()
 
-    val builder = AppFunctionData.Builder("com.testdata.CreateNoteFunction${'$'}Response")
+    val builder = getAppFunctionDataBuilder("com.testdata.CreateNoteFunction${'$'}Response")
     val createdNote = response_appFunctionSerializable.createdNote
     builder.setAppFunctionData("createdNote", createNoteFunctionDataMyNoteFactory.toAppFunctionData(createdNote))
 

@@ -30,6 +30,7 @@ import androidx.wear.compose.foundation.samples.CurvedLetterSpacingSample
 import androidx.wear.compose.foundation.samples.CurvedLineHeight
 import androidx.wear.compose.foundation.samples.CurvedRowAndColumn
 import androidx.wear.compose.foundation.samples.CurvedSemanticsSample
+import androidx.wear.compose.foundation.samples.CurvedWarpingSample
 import androidx.wear.compose.foundation.samples.CurvedWeight
 import androidx.wear.compose.foundation.samples.EdgeSwipeForSwipeToDismiss
 import androidx.wear.compose.foundation.samples.ExpandableTextSample
@@ -57,6 +58,7 @@ import androidx.wear.compose.foundation.samples.TransformingLazyColumnLettersSam
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.integration.demos.common.DemoCategory
+import androidx.wear.compose.material3.demos.ArrangementsDemo
 
 // Declare the swipe to dismiss demos so that we can use this variable as the background composable
 // for the SwipeToDismissDemo itself.
@@ -99,6 +101,7 @@ val WearFoundationDemos =
     DemoCategory(
         "Foundation",
         listOf(
+            ComposableDemo("Arrangements") { ArrangementsDemo() },
             DemoCategory(
                 "Expandables",
                 listOf(
@@ -112,6 +115,8 @@ val WearFoundationDemos =
             DemoCategory(
                 "CurvedLayout",
                 listOf(
+                    ComposableDemo("Warped Text Demo") { WarpedTextDemo() },
+                    ComposableDemo("Warped Text Sample") { CurvedWarpingSample() },
                     ComposableDemo("Curved Row") { CurvedWorldDemo() },
                     ComposableDemo("Curved Row and Column") { CurvedRowAndColumn() },
                     ComposableDemo("Curved Box") { CurvedBoxDemo() },
@@ -165,6 +170,7 @@ val WearFoundationDemos =
                     DemoCategory(
                         "Demos",
                         listOf(
+                            ComposableDemo("Resolution") { RotaryResolutionDemo() },
                             ComposableDemo("Nested scroll with Pager") { NestedScrollPagerDemo() },
                             ComposableDemo("Nested scroll with Lazy Column") {
                                 NestedScrollLazyColumnDemo(false)

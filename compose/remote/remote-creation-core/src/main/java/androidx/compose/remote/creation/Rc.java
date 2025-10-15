@@ -27,6 +27,7 @@ import static androidx.compose.remote.core.operations.PathExpression.LOOP;
 import static androidx.compose.remote.core.operations.PathExpression.MONOTONIC;
 import static androidx.compose.remote.core.operations.PathExpression.POLAR;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.ConditionalOperations;
@@ -41,6 +42,7 @@ import androidx.compose.remote.core.operations.utilities.IntegerExpressionEvalua
 import androidx.compose.remote.core.operations.utilities.easing.Easing;
 
 /** Constants use in RemoteCompose */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Rc {
     /** Used in FloatExpressions */
     public static class FloatExpression {
@@ -311,7 +313,7 @@ public class Rc {
         /** cubic Easing function that just linearly interpolates */
         public static final int CUBIC_LINEAR = Easing.CUBIC_LINEAR;
 
-        /** cubic Easing function that goes bacwards and then accelerates */
+        /** cubic Easing function that goes backwards and then accelerates */
         public static final int CUBIC_ANTICIPATE = Easing.CUBIC_ANTICIPATE;
 
         /** cubic Easing function that overshoots and then goes back */
@@ -401,6 +403,8 @@ public class Rc {
 
         /** force measure every pass (not recommended) */
         public static final int MEASURE_EVERY_TIME = DrawTextAnchored.MEASURE_EVERY_TIME;
+        /** force measure every pass (not recommended) */
+        public static final int BASELINE_RELATIVE = DrawTextAnchored.BASELINE_RELATIVE;
     }
 
     /** Used in Haptic */
@@ -789,5 +793,16 @@ public class Rc {
         public static final int MONOTONIC_PATH = MONOTONIC;
         public static final int LINEAR_PATH = LINEAR;
         public static final int POLAR_PATH = POLAR;
+    }
+
+    public static class Layout {
+        public static final float FIRST_BASELINE = RemoteContext.FIRST_BASELINE;
+        public static final float LAST_BASELINE = RemoteContext.LAST_BASELINE;
+    }
+
+    public static class PathEffect {
+        public static final int PATH_DASH_TRANSLATE = 0;
+        public static final int PATH_DASH_ROTATE = 1;
+        public static final int PATH_DASH_MORPH = 2;
     }
 }

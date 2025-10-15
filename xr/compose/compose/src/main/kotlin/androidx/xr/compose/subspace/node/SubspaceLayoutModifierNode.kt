@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.node
 
+import androidx.xr.compose.subspace.layout.DelegatableSubspaceNode
 import androidx.xr.compose.subspace.layout.SubspaceMeasurable
 import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
 import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
@@ -28,7 +29,7 @@ import androidx.xr.compose.unit.VolumeConstraints
  *
  * Based on [androidx.compose.ui.node.LayoutModifierNode].
  */
-public interface SubspaceLayoutModifierNode {
+public interface SubspaceLayoutModifierNode : DelegatableSubspaceNode {
 
     /**
      * Defines the measurement and layout of the [SubspaceMeasurable] within the given
@@ -54,20 +55,5 @@ public interface SubspaceLayoutModifierNode {
  * don't trigger a recomposition. *Do not* call this from [SubspaceLayoutModifierNode.measure].
  */
 public fun SubspaceLayoutModifierNode.requestRelayout() {
-    requireCoordinator().layoutNode?.requestRelayout()
-}
-
-/**
- * Returns the [SubspaceLayoutModifierNodeCoordinator] associated with this
- * [SubspaceLayoutModifierNode].
- *
- * This is used to traverse the modifier node tree to find the correct [SubspaceLayoutCoordinates]
- * for a given [SubspaceLayoutModifierNode].
- */
-internal fun SubspaceLayoutModifierNode.requireCoordinator():
-    SubspaceLayoutModifierNodeCoordinator {
-    check(this is SubspaceModifier.Node && coordinator != null) {
-        "SubspaceLayoutModifierNode must also be a SubspaceModifier.Node and have a coordinator."
-    }
-    return coordinator
+    node.layoutNode?.requestRelayout()
 }

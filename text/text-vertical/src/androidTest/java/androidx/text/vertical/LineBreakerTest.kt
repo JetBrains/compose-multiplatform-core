@@ -17,8 +17,10 @@
 package androidx.text.vertical
 
 import android.graphics.Paint
+import android.os.Build
 import android.text.SpannableString
 import android.text.TextPaint
+import androidx.test.filters.SdkSuppress
 import androidx.text.vertical.TextOrientationSpan.TextCombineUpright
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -28,6 +30,7 @@ import org.junit.runners.JUnit4
 private const val SPAN_FLAG = SpannableString.SPAN_INCLUSIVE_EXCLUSIVE
 
 @RunWith(JUnit4::class)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
 class LineBreakerTest {
     private val PREFIX = "PREFIX_PREFIX_PREFIX"
     private val SUFFIX = "SUFFIX_SUFFIX_SUFFIX"
@@ -59,7 +62,7 @@ class LineBreakerTest {
     }
 
     @Test
-    fun `BreakLine all upright Japanese`() {
+    fun lineBreaker_AllUprightJapanese() {
         val jpText = "吾輩は猫である。"
         val text = PREFIX + jpText + SUFFIX
         val jpStart = PREFIX.length
@@ -179,7 +182,7 @@ class LineBreakerTest {
     }
 
     @Test
-    fun `BreakLine all rotate Latin`() {
+    fun lineBreaker_AllRotateLatin() {
         val enText = "Hello, world."
         val text = PREFIX + enText + SUFFIX
         val enStart = PREFIX.length
@@ -271,7 +274,7 @@ class LineBreakerTest {
     }
 
     @Test
-    fun `BreakLine all upright Latin`() {
+    fun lineBreaker_AllUprightLatin() {
         val enText = "Hello, World."
         val text = PREFIX + enText + SUFFIX
         val enStart = PREFIX.length
@@ -372,7 +375,7 @@ class LineBreakerTest {
     }
 
     @Test
-    fun `BreakLine TateChuYoko`() {
+    fun lineBreaker_TateChuYoko() {
         val jpDateText = "2024年12月25日"
         val jpStart = PREFIX.length
         val jpEnd = jpStart + jpDateText.length
@@ -458,7 +461,7 @@ class LineBreakerTest {
     }
 
     @Test
-    fun `BreakLine Ruby`() {
+    fun lineBreaker_Ruby() {
         val jpText = "吾輩は猫である。"
         val jpStart = PREFIX.length
         val jpEnd = jpStart + jpText.length

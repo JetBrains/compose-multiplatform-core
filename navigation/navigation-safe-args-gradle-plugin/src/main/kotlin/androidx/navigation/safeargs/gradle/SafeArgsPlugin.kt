@@ -45,13 +45,6 @@ abstract class SafeArgsPlugin protected constructor(private val providerFactory:
 
     private val agpBasePluginId = "com.android.base"
 
-    private val kgpPluginIds =
-        listOf(
-            "org.jetbrains.kotlin.jvm",
-            "org.jetbrains.kotlin.android",
-            "org.jetbrains.kotlin.multiplatform",
-        )
-
     @Suppress("DEPRECATION") // For BaseVariant should be replaced in later studio versions
     private fun forEachVariant(
         extension: BaseExtension,
@@ -75,10 +68,7 @@ abstract class SafeArgsPlugin protected constructor(private val providerFactory:
             isAndroidProject = true
             applySafeArgsPlugin(project)
         }
-        var isKotlinProject = false
-        kgpPluginIds.forEach { kgpPluginId ->
-            project.plugins.withId(kgpPluginId) { isKotlinProject = true }
-        }
+        val isKotlinProject = project.extensions.findByName("kotlin") != null
         project.afterEvaluate {
             if (!isAndroidProject) {
                 throw GradleException("safeargs plugin must be used with android plugin")

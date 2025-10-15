@@ -20,7 +20,9 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.benchmark.macro.ExperimentalMetricApi
-import androidx.benchmark.macro.FrameTimingMetric
+import androidx.benchmark.macro.MemoryCountersMetric
+import androidx.benchmark.macro.MemoryUsageMetric
+import androidx.benchmark.macro.Metric
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.filters.LargeTest
@@ -54,7 +56,6 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
             packageName = APP_PKG_NAME,
             metrics =
                 listOf(
-                    FrameTimingMetric(),
                     SdkSandboxCrossProcessLatencyMetric(
                         "UiLib#checkClientOpenSession",
                         "UiLib#ssvOnSessionOpened",
@@ -65,7 +66,7 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
                         "UiLib#ssvOnUiDisplayed",
                         "uiDisplay",
                     ),
-                ),
+                ) + getMemoryMetricsForTestConfigType(),
             iterations = 5,
             startupMode = StartupMode.COLD,
             setupBlock = { pressHome() },
@@ -82,7 +83,6 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
             packageName = APP_PKG_NAME,
             metrics =
                 listOf(
-                    FrameTimingMetric(),
                     SdkSandboxCrossProcessLatencyMetric(
                         "UiLib#checkClientOpenSession",
                         "UiLib#ssvOnSessionOpened",
@@ -100,7 +100,7 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
                         "UiLib#ssvOnUiDisplayed",
                         "uiDisplay",
                     ),
-                ),
+                ) + getMemoryMetricsForTestConfigType(),
             iterations = 5,
             startupMode = StartupMode.COLD,
             setupBlock = { pressHome() },
@@ -117,7 +117,6 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
             packageName = APP_PKG_NAME,
             metrics =
                 listOf(
-                    FrameTimingMetric(),
                     SdkSandboxCrossProcessLatencyMetric(
                         "UiLib#checkClientOpenSession",
                         "UiLib#ssvOnSessionOpened",
@@ -128,7 +127,7 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
                         "UiLib#ssvOnUiDisplayed",
                         "uiDisplay",
                     ),
-                ),
+                ) + getMemoryMetricsForTestConfigType(),
             iterations = 5,
             startupMode = StartupMode.COLD,
             setupBlock = { pressHome() },
@@ -145,7 +144,6 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
             packageName = APP_PKG_NAME,
             metrics =
                 listOf(
-                    FrameTimingMetric(),
                     SdkSandboxCrossProcessLatencyMetric(
                         "UiLib#adapterUpdateDelegate",
                         "UiLib#onSessionRefreshRequested",
@@ -162,7 +160,7 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
                         "UiLib#adapterSessionClose",
                         "sessionClosed",
                     ),
-                ),
+                ) + getMemoryMetricsForTestConfigType(),
             iterations = 5,
             startupMode = StartupMode.COLD,
             setupBlock = { pressHome() },
@@ -192,6 +190,32 @@ class MediationBenchmark(@Suppress("unused") private val ciTestConfigType: Strin
         configBundle.putString(MEDIATION_INTENT_EXTRA_KEY, mediationOption)
         intent?.putExtras(configBundle)
         return intent!!
+    }
+
+    @OptIn(ExperimentalMetricApi::class)
+    private fun getMemoryMetricsForTestConfigType(): List<Metric> {
+        val memoryMetricsForCompat =
+            mutableListOf(
+                MemoryUsageMetric(mode = MemoryUsageMetric.Mode.Max),
+                MemoryCountersMetric(),
+            )
+        // This will be added in local runs unless removed.
+        if (ciTestConfigType != "PRIVACY_SANDBOX_COMPAT") {
+            memoryMetricsForCompat.addAll(
+                listOf(
+                    MemoryUsageMetric(
+                        mode = MemoryUsageMetric.Mode.Max,
+                        processNameSuffix = "_sdk_sandbox",
+                        metricNameSuffix = "Sandbox",
+                    ),
+                    MemoryCountersMetric(
+                        processNameSuffix = "_sdk_sandbox",
+                        metricNameSuffix = "Sandbox",
+                    ),
+                )
+            )
+        }
+        return memoryMetricsForCompat
     }
 
     companion object {

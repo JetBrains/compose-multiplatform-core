@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ import android.util.Log
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.internal.ActivityPose as RtActivityPose
-import androidx.xr.runtime.internal.CameraViewActivityPose as RtCameraViewActivityPose
-import androidx.xr.runtime.internal.HeadActivityPose as RtHeadActivityPose
-import androidx.xr.runtime.internal.HitTestResult as RtHitTestResult
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.CameraViewScenePose as RtCameraViewScenePose
+import androidx.xr.scenecore.runtime.HeadScenePose as RtHeadScenePose
+import androidx.xr.scenecore.runtime.HitTestResult as RtHitTestResult
+import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose as RtPerceptionSpaceScenePose
+import androidx.xr.scenecore.runtime.ScenePose as RtScenePose
+import androidx.xr.scenecore.runtime.SceneRuntime
 
 /**
  * A [Pose] in the Scene graph, which can be transformed into a Pose relative to another ScenePose.
@@ -93,21 +93,21 @@ public interface ScenePose {
 }
 
 /** The BaseScenePose implements the [ScenePose] interface. */
-public abstract class BaseScenePose<out RtActivityPoseType : RtActivityPose>
-protected constructor(internal val rtActivityPose: RtActivityPoseType) : ScenePose {
+public abstract class BaseScenePose<out RtScenePoseType : RtScenePose>
+protected constructor(internal val rtScenePose: RtScenePoseType) : ScenePose {
     private companion object {
         private const val TAG = "BaseScenePose"
     }
 
     override val activitySpacePose: Pose
-        get() = rtActivityPose.activitySpacePose
+        get() = rtScenePose.activitySpacePose
 
     override fun transformPoseTo(pose: Pose, destination: ScenePose): Pose {
-        if (destination !is BaseScenePose<RtActivityPose>) {
-            Log.e(TAG, "Destination must be a subclass of BaseActivityPose!")
+        if (destination !is BaseScenePose<RtScenePose>) {
+            Log.e(TAG, "Destination must be a subclass of BaseScenePose!")
             return Pose.Identity
         }
-        return rtActivityPose.transformPoseTo(pose, destination.rtActivityPose)
+        return rtScenePose.transformPoseTo(pose, destination.rtScenePose)
     }
 
     override suspend fun hitTest(
@@ -116,7 +116,7 @@ protected constructor(internal val rtActivityPose: RtActivityPoseType) : ScenePo
         @ScenePose.HitTestFilterValue hitTestFilter: Int,
     ): HitTestResult {
         val hitTestRtFuture =
-            this.rtActivityPose.hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
+            this.rtScenePose.hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
         val deferredHitTestResult: RtHitTestResult = hitTestRtFuture.awaitSuspending()
         return deferredHitTestResult.toHitTestResult()
     }
@@ -128,24 +128,24 @@ protected constructor(internal val rtActivityPose: RtActivityPoseType) : ScenePo
 
 /** An [ScenePose] which tracks a camera view's position and view into physical space. */
 public class CameraView
-private constructor(private val rtCameraViewActivityPose: RtCameraViewActivityPose) :
-    BaseScenePose<RtCameraViewActivityPose>(rtCameraViewActivityPose) {
+private constructor(private val rtCameraViewScenePose: RtCameraViewScenePose) :
+    BaseScenePose<RtCameraViewScenePose>(rtCameraViewScenePose) {
 
     internal companion object {
-        internal fun createLeft(platformAdapter: JxrPlatformAdapter): CameraView? {
-            val cameraViewActivityPose =
-                platformAdapter.getCameraViewActivityPose(
-                    RtCameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
+        internal fun createLeft(sceneRuntime: SceneRuntime): CameraView? {
+            val cameraViewScenePose =
+                sceneRuntime.getCameraViewActivityPose(
+                    RtCameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
                 )
-            return cameraViewActivityPose?.let { CameraView(it) }
+            return cameraViewScenePose?.let { CameraView(it) }
         }
 
-        internal fun createRight(platformAdapter: JxrPlatformAdapter): CameraView? {
-            val cameraViewActivityPose =
-                platformAdapter.getCameraViewActivityPose(
-                    RtCameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE
+        internal fun createRight(sceneRuntime: SceneRuntime): CameraView? {
+            val cameraViewScenePose =
+                sceneRuntime.getCameraViewActivityPose(
+                    RtCameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE
                 )
-            return cameraViewActivityPose?.let { CameraView(it) }
+            return cameraViewScenePose?.let { CameraView(it) }
         }
     }
 
@@ -166,7 +166,7 @@ private constructor(private val rtCameraViewActivityPose: RtCameraViewActivityPo
     /** Gets the FOV for the camera. */
     public val fov: FieldOfView
         get() {
-            val rtFov = rtCameraViewActivityPose.fov
+            val rtFov = rtCameraViewScenePose.fov
             return FieldOfView(rtFov.angleLeft, rtFov.angleRight, rtFov.angleUp, rtFov.angleDown)
         }
 }
@@ -175,14 +175,14 @@ private constructor(private val rtCameraViewActivityPose: RtCameraViewActivityPo
  * Head is an [ScenePose] used to track the position of the user's head. If there is a left and
  * right camera it is calculated as the position between the two.
  */
-public class Head private constructor(rtActivityPose: RtHeadActivityPose) :
-    BaseScenePose<RtHeadActivityPose>(rtActivityPose) {
+public class Head private constructor(rtScenePose: RtHeadScenePose) :
+    BaseScenePose<RtHeadScenePose>(rtScenePose) {
 
     internal companion object {
 
         /** Factory function for creating [Head] instance. */
-        internal fun create(platformAdapter: JxrPlatformAdapter): Head? {
-            return platformAdapter.headActivityPose?.let { Head(it) }
+        internal fun create(sceneRuntime: SceneRuntime): Head? {
+            return sceneRuntime.headActivityPose?.let { Head(it) }
         }
     }
 }
@@ -191,13 +191,13 @@ public class Head private constructor(rtActivityPose: RtHeadActivityPose) :
  * PerceptionSpace is an [ScenePose] used to track the origin of the space used by ARCore for
  * Jetpack XR APIs.
  */
-public class PerceptionSpace private constructor(rtActivityPose: RtPerceptionSpaceActivityPose) :
-    BaseScenePose<RtPerceptionSpaceActivityPose>(rtActivityPose) {
+public class PerceptionSpace private constructor(rtScenePose: RtPerceptionSpaceScenePose) :
+    BaseScenePose<RtPerceptionSpaceScenePose>(rtScenePose) {
 
     internal companion object {
 
         /** Factory function for creating [PerceptionSpace] instance. */
-        internal fun create(platformAdapter: JxrPlatformAdapter): PerceptionSpace =
-            PerceptionSpace(platformAdapter.perceptionSpaceActivityPose)
+        internal fun create(sceneRuntime: SceneRuntime): PerceptionSpace =
+            PerceptionSpace(sceneRuntime.perceptionSpaceActivityPose)
     }
 }

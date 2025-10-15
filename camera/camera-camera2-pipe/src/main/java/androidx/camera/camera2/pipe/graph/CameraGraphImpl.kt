@@ -51,9 +51,9 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.StateFlow
@@ -294,6 +294,7 @@ constructor(
             frameCaptureQueue.close()
             surfaceGraph.close()
             audioRestrictionController.removeCameraGraph(this)
+            graphScope.cancel()
             Debug.traceStop()
         }
     }
@@ -314,10 +315,7 @@ constructor(
      */
     private fun <T> withSessionLockAsync(
         block: suspend CoroutineScope.() -> Deferred<T>
-    ): Deferred<T> {
-        val result = sessionLock.withTokenIn(graphScope) { coroutineScope { block() } }
-        return graphScope.async(Dispatchers.Unconfined) { result.await().await() }
-    }
+    ): Deferred<T> = sessionLock.withTokenInAsync(graphScope) { coroutineScope { block() } }
 }
 
 @CameraGraphScope
@@ -331,6 +329,29 @@ internal class SessionLock @Inject constructor() {
     internal fun <T> withTokenIn(
         scope: CoroutineScope,
         action: suspend (token: Token) -> T,
+    ): Deferred<T> =
+        asyncUndispatched(scope) {
+            // Note: It's _very_ important to suspend here (which acquireTokenAndSuspend does) to
+            // ensure the action occurs on the correct scope thread.
+            mutex.acquireTokenAndSuspend().use { token -> action(token) }
+        }
+
+    internal fun <T> withTokenInAsync(
+        scope: CoroutineScope,
+        action: suspend (token: Token) -> Deferred<T>,
+    ): Deferred<T> =
+        asyncUndispatched(scope) {
+            // Note: It's _very_ important to suspend here (which acquireTokenAndSuspend does) to
+            // ensure the action occurs on the correct scope thread.
+            val deferred = mutex.acquireTokenAndSuspend().use { token -> action(token) }
+
+            ensureActive()
+            deferred.await()
+        }
+
+    private fun <T> asyncUndispatched(
+        scope: CoroutineScope,
+        block: suspend CoroutineScope.() -> T,
     ): Deferred<T> {
         // https://github.com/Kotlin/kotlinx.coroutines/issues/1578
         // To handle `runBlocking` we need to use `job.complete()` in `result.invokeOnCompletion`.
@@ -348,7 +369,7 @@ internal class SessionLock @Inject constructor() {
                 // this will force the execution to switch to the provided scope after ensuring the
                 // lock is acquired or in the queue. This guarantees exclusion, ordering, and
                 // execution within the correct scope.
-                mutex.acquireTokenAndSuspend().use { token -> action(token) }
+                block()
             }
         result.invokeOnCompletion { childJob.complete() }
         return result

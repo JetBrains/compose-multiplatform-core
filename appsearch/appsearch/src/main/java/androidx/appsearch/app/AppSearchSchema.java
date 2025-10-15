@@ -2131,9 +2131,8 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
      */
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
-            name = Features.BLOB_STORAGE)
+            name = Features.SCHEMA_BLOB_HANDLE)
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-    @ExperimentalAppSearchApi
     public static final class BlobHandlePropertyConfig extends PropertyConfig {
         BlobHandlePropertyConfig(@NonNull PropertyConfigParcel propertyConfigParcel) {
             super(propertyConfigParcel);
@@ -2162,6 +2161,7 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
             @RequiresFeature(
                     enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
                     name = Features.SCHEMA_SET_DESCRIPTION)
+            @ExperimentalAppSearchApi
             @FlaggedApi(Flags.FLAG_ENABLE_SCHEMA_DESCRIPTION)
             @SuppressWarnings("MissingGetterMatchingBuilder") // getter defined in superclass
             public @NonNull Builder setDescription(@NonNull String description) {

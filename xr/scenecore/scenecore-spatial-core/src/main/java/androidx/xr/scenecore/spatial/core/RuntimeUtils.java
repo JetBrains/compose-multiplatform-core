@@ -17,26 +17,26 @@
 package androidx.xr.scenecore.spatial.core;
 
 import androidx.annotation.VisibleForTesting;
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
-import androidx.xr.runtime.internal.CameraViewActivityPose.Fov;
-import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.HitTestResult;
-import androidx.xr.runtime.internal.InputEvent;
-import androidx.xr.runtime.internal.InputEvent.HitInfo;
-import androidx.xr.runtime.internal.PixelDimensions;
-import androidx.xr.runtime.internal.PlaneSemantic;
-import androidx.xr.runtime.internal.PlaneType;
-import androidx.xr.runtime.internal.ResizeEvent;
-import androidx.xr.runtime.internal.SpatialCapabilities;
-import androidx.xr.runtime.internal.SpatialPointerIcon;
-import androidx.xr.runtime.internal.SpatialPointerIconType;
-import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.Plane;
+import androidx.xr.scenecore.runtime.CameraViewScenePose.Fov;
+import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.HitTestResult;
+import androidx.xr.scenecore.runtime.InputEvent;
+import androidx.xr.scenecore.runtime.InputEvent.HitInfo;
+import androidx.xr.scenecore.runtime.PixelDimensions;
+import androidx.xr.scenecore.runtime.PlaneSemantic;
+import androidx.xr.scenecore.runtime.PlaneType;
+import androidx.xr.scenecore.runtime.ResizeEvent;
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilter;
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue;
+import androidx.xr.scenecore.runtime.SpatialCapabilities;
+import androidx.xr.scenecore.runtime.SpatialPointerIcon;
+import androidx.xr.scenecore.runtime.SpatialPointerIconType;
+import androidx.xr.scenecore.runtime.SpatialVisibility;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;
@@ -146,23 +146,21 @@ final class RuntimeUtils {
      * @param xrInputEvent an {@link com.android.extensions.xr.node.InputEvent} instance to be
      *     converted.
      * @param entityManager an {@link EntityManager} instance to look up entities.
-     * @return a {@link androidx.xr.runtime.internal.InputEvent} instance representing the input
-     *     event.
+     * @return a {@link InputEvent} instance representing the input event.
      */
     static InputEvent getInputEvent(
             com.android.extensions.xr.node.@NonNull InputEvent xrInputEvent,
             @NonNull EntityManager entityManager) {
         Vector3 origin = getVector3(xrInputEvent.getOrigin());
         Vector3 direction = getVector3(xrInputEvent.getDirection());
-        HitInfo hitInfo = null;
-        HitInfo secondaryHitInfo = null;
+        // TODO: b/431250469 - Handle unregistered hitInfo nodes.
+        HitInfo hitInfo = getHitInfo(xrInputEvent.getHitInfo(), entityManager);
+        HitInfo secondaryHitInfo = getHitInfo(xrInputEvent.getSecondaryHitInfo(), entityManager);
         List<HitInfo> hitInfos = new ArrayList<>();
-        if (xrInputEvent.getHitInfo() != null) {
-            hitInfo = getHitInfo(xrInputEvent.getHitInfo(), entityManager);
+        if (hitInfo != null) {
             hitInfos.add(hitInfo);
         }
-        if (xrInputEvent.getSecondaryHitInfo() != null) {
-            secondaryHitInfo = getHitInfo(xrInputEvent.getSecondaryHitInfo(), entityManager);
+        if (secondaryHitInfo != null) {
             hitInfos.add(secondaryHitInfo);
         }
 
@@ -321,7 +319,7 @@ final class RuntimeUtils {
     /**
      * Converts to a perception FOV from a SceneCore FOV type.
      *
-     * @param fov a {@code androidx.xr.runtime.internal.CameraViewActivityPose.Fov} instance
+     * @param fov a {@code androidx.xr.runtime.internal.CameraViewScenePose.Fov} instance
      *     representing the FOV.
      */
     static androidx.xr.scenecore.impl.perception.Fov perceptionFovFromFov(Fov fov) {
@@ -427,11 +425,7 @@ final class RuntimeUtils {
                 return opacity;
             } else {
                 // When passthrough is enabled, the opacity should be greater than zero.
-                throw new IllegalArgumentException(
-                        "Passthrough is enabled, but active opacity value is "
-                                + opacity
-                                + ". Opacity should be greater than zero when Passthrough is"
-                                + " enabled.");
+                return 1.0f;
             }
         }
     }

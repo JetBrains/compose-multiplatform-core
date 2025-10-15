@@ -14,7 +14,6 @@ plugins {
 
 dependencies {
 
-    implementation(libs.kotlinStdlib)
     implementation(libs.material)
 
     implementation(project(":compose:animation:animation"))

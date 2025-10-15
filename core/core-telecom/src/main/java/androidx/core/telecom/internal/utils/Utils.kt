@@ -36,20 +36,13 @@ internal class Utils {
 
         private val defaultBuildAdapter =
             object : BuildVersionAdapter {
-                /**
-                 * Helper method that determines if the device has a build that contains the Telecom
-                 * V2 VoIP APIs. These include [TelecomManager#addCall],
-                 * android.telecom.CallControl, android.telecom.CallEventCallback but are not
-                 * limited to only those classes.
-                 */
-                override fun hasPlatformV2Apis(): Boolean {
-                    Log.i(TAG, "hasPlatformV2Apis: " + "versionSdkInt=[${VERSION.SDK_INT}]")
-                    return VERSION.SDK_INT >= 34 || VERSION.CODENAME == "UpsideDownCake"
-                }
-
                 override fun hasInvalidBuildVersion(): Boolean {
                     Log.i(TAG, "hasInvalidBuildVersion: " + "versionSdkInt=[${VERSION.SDK_INT}]")
                     return VERSION.SDK_INT < VERSION_CODES.O
+                }
+
+                override fun getCurrentSdk(): Int {
+                    return VERSION.SDK_INT
                 }
             }
         private var mBuildVersion: BuildVersionAdapter = defaultBuildAdapter
@@ -62,12 +55,21 @@ internal class Utils {
             mBuildVersion = defaultBuildAdapter
         }
 
-        fun hasPlatformV2Apis(): Boolean {
-            return mBuildVersion.hasPlatformV2Apis()
+        /**
+         * Determines if the library should use the legacy ConnectionService path based on the
+         * configuration set during [CallsManager.registerAppWithTelecom].
+         */
+        @RequiresApi(VERSION_CODES.O)
+        fun shouldUseBackwardsCompatImplementation(): Boolean {
+            return getCurrentSdk() <= CallsManager.mBackwardsCompatUpperBound
         }
 
         fun hasInvalidBuildVersion(): Boolean {
             return mBuildVersion.hasInvalidBuildVersion()
+        }
+
+        fun getCurrentSdk(): Int {
+            return mBuildVersion.getCurrentSdk()
         }
 
         fun verifyBuildVersion() {
@@ -113,17 +115,17 @@ internal class Utils {
 
         @RequiresApi(VERSION_CODES.O)
         fun remapJetpackCapsToPlatformCaps(
-            @CallsManager.Companion.Capability clientBitmapSelection: Int
+            @CallsManager.Companion.Capability clientBitmapSelection: Int,
+            useTransactionalApis: Boolean,
         ): Int {
             // start to build the PhoneAccount that will be registered via the platform API
             var platformCapabilities: Int = PhoneAccount.CAPABILITY_SELF_MANAGED
-            // append additional capabilities if the device is on a U build or above
-            if (hasPlatformV2Apis()) {
+            // Add transactional capabilities ONLY if not using the backwards compat path.
+            if (useTransactionalApis) {
                 platformCapabilities =
                     PhoneAccount.CAPABILITY_SUPPORTS_TRANSACTIONAL_OPERATIONS or
                         platformCapabilities
             }
-
             if (hasJetpackVideoCallingCapability(clientBitmapSelection)) {
                 platformCapabilities =
                     PhoneAccount.CAPABILITY_VIDEO_CALLING or

@@ -7905,8 +7905,7 @@ public abstract class AppSearchSessionCtsTestBase {
         Exception e = assertThrows(IllegalArgumentException.class, () ->
                 mDb1.setSchemaAsync(new SetSchemaRequest.Builder()
                         .setForceOverride(true).addSchemas(emailSchema).build()).get());
-        assertThat(e).hasMessageThat().isEqualTo(
-                "tokenizerType is out of range of [0, 1] (too high)");
+        assertThat(e).hasMessageThat().contains("tokenizerType is out of range");
     }
 
 

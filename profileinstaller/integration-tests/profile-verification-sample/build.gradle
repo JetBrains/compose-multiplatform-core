@@ -60,7 +60,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":profileinstaller:profileinstaller"))
 
     // These projects are not used directly but added to baseline-prof.txt to increase number of

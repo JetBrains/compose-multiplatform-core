@@ -20,7 +20,9 @@ import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 import androidx.collection.MutableIntObjectMap
-import androidx.ink.geometry.AngleRadiansFloat
+import androidx.ink.brush.color.Color as ComposeColor
+import androidx.ink.geometry.AngleDegreesFloat
+import androidx.ink.geometry.MeshFormat
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 import java.util.Collections.unmodifiableList
@@ -49,32 +51,66 @@ private constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val nativePointer: Long,
     // The [textureLayers] val below is a defensive copy of this parameter.
     textureLayers: List<TextureLayer>,
+    // The [colorFunctions] val below is a defensive copy of this parameter.
+    colorFunctions: List<ColorFunction>,
+    public val selfOverlap: SelfOverlap,
 ) {
+
     /** The textures to apply to the stroke. */
     public val textureLayers: List<TextureLayer> = unmodifiableList(textureLayers.toList())
+
+    /** The color functions to apply to the brush color. */
+    public val colorFunctions: List<ColorFunction> = unmodifiableList(colorFunctions.toList())
 
     /**
      * Creates a [BrushPaint] with the given [textureLayers].
      *
      * @param textureLayers The textures to apply to the stroke.
+     * @param colorFunctions The color functions to apply to the brush color.
+     * @param selfOverlap The self-overlap behavior to apply to this coat of the stroke.
      */
     @JvmOverloads
     public constructor(
-        textureLayers: List<TextureLayer> = emptyList()
+        textureLayers: List<TextureLayer> = emptyList(),
+        colorFunctions: List<ColorFunction> = emptyList(),
+        selfOverlap: SelfOverlap = SelfOverlap.ANY,
     ) : this(
-        BrushPaintNative.create(textureLayers.map { it.nativePointer }.toLongArray()),
+        BrushPaintNative.create(
+            textureLayers.map { it.nativePointer }.toLongArray(),
+            colorFunctions.map { it.nativePointer }.toLongArray(),
+            selfOverlap.value,
+        ),
         textureLayers,
+        colorFunctions,
+        selfOverlap,
     )
 
-    override fun equals(other: Any?): Boolean {
-        if (other !is BrushPaint) return false
-        return textureLayers == other.textureLayers
+    /** Uses this paint's color functions (if any) to transform the given brush color. */
+    public fun applyColorFunctions(color: ComposeColor): ComposeColor {
+        var transformedColor = color
+        for (colorFunction in colorFunctions) {
+            transformedColor = colorFunction.transformComposeColor(transformedColor)
+        }
+        return transformedColor
     }
 
-    override fun toString(): String = "BrushPaint(textureLayers=$textureLayers)"
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is BrushPaint) return false
+        if (this === other) return true
+        return textureLayers == other.textureLayers &&
+            colorFunctions == other.colorFunctions &&
+            selfOverlap == other.selfOverlap
+    }
+
+    override fun toString(): String =
+        "BrushPaint(textureLayers=$textureLayers, colorFunctions=$colorFunctions, selfOverlap=$selfOverlap)"
 
     override fun hashCode(): Int {
-        return textureLayers.hashCode()
+        var result = textureLayers.hashCode()
+        result = 31 * result + colorFunctions.hashCode()
+        result = 31 * result + selfOverlap.hashCode()
+        return result
     }
 
     /** Delete native BrushPaint memory. */
@@ -87,6 +123,12 @@ private constructor(
         // class constructor.
         if (nativePointer == 0L) return
         BrushPaintNative.free(nativePointer)
+    }
+
+    /** Whether the given [MeshFormat] has sufficient attributes to render this [BrushPaint]. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun isCompatibleWithMeshFormat(meshFormat: MeshFormat): Boolean {
+        return BrushPaintNative.isCompatibleWithMeshFormat(nativePointer, meshFormat.nativePointer)
     }
 
     /** Specification of how the texture should apply to the stroke. */
@@ -114,15 +156,23 @@ private constructor(
 
             /**
              * The texture will repeat according to a 2D affine transformation of vertex positions.
-             * Each copy of the texture will have the same size and shape modulo reflections.
+             * Each copy of the texture will have the same size and shape, modulo reflections.
+             *
+             * This mode does not support texture animations, so it ignores the `animationFrames`,
+             * `animationRows`, `animationColumns`, and `animationDuration` fields.
              */
             @JvmField public val TILING: TextureMapping = TextureMapping(0, "TILING")
             /**
-             * The texture will morph to "wind along the path of the stroke." The horizontal axis of
-             * texture space will lie along the width of the stroke and the vertical axis will lie
-             * along the direction of travel of the stroke at each point.
+             * This mode is intended for use with particle brush coats (i.e. with a brush tip with a
+             * nonzero particle gap). A copy of the texture (or one animation frame thereof) will be
+             * "stamped" onto each particle of the stroke, scaled or rotated appropriately to cover
+             * the whole particle.
+             *
+             * Since the whole texture (or animation frame) is always scaled to the size of each
+             * particle and positioned atop each one, this mode ignores the `origin`, `sizeUnit`,
+             * `wrapX`, `wrapY`, `sizeX`, and `sizeY` fields.
              */
-            @JvmField public val WINDING: TextureMapping = TextureMapping(1, "WINDING")
+            @JvmField public val STAMPING: TextureMapping = TextureMapping(1, "STAMPING")
         }
     }
 
@@ -419,8 +469,9 @@ private constructor(
          *   specified by [clientTextureId].
          * @param offsetX An offset into the texture, specified as fractions of the texture [sizeX].
          * @param offsetY An offset into the texture, specified as fractions of the texture [sizeY].
-         * @param rotation Angle in radians specifying the rotation of the texture. The rotation is
-         *   carried out about the center of the texture's first repetition along both axes.
+         * @param rotationDegrees Angle in degrees specifying the rotation of the texture. The
+         *   rotation is carried out about the center of the texture's first repetition along both
+         *   axes.
          * @param opacity Overall layer opacity in the range [0,1], where 0 is transparent and 1 is
          *   opaque.
          * @param animationFrames The number of animation frames in this texture, or 1 for no
@@ -458,7 +509,7 @@ private constructor(
             @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false) sizeY: Float,
             offsetX: Float = 0f,
             offsetY: Float = 0f,
-            @AngleRadiansFloat rotation: Float = 0F,
+            @AngleDegreesFloat rotationDegrees: Float = 0F,
             @FloatRange(from = 0.0, to = 1.0) opacity: Float = 1f,
             @IntRange(from = 1, to = 1 shl 24) animationFrames: Int = 1,
             @IntRange(from = 1, to = 1 shl 12) animationRows: Int = 1,
@@ -477,7 +528,7 @@ private constructor(
                 sizeY = sizeY,
                 offsetX = offsetX,
                 offsetY = offsetY,
-                rotation = rotation,
+                rotationDegrees = rotationDegrees,
                 opacity = opacity,
                 animationFrames = animationFrames,
                 animationRows = animationRows,
@@ -508,8 +559,8 @@ private constructor(
 
         public val offsetY: Float = TextureLayerNative.getOffsetY(nativePointer)
 
-        @AngleRadiansFloat
-        public val rotation: Float = TextureLayerNative.getRotationInRadians(nativePointer)
+        @AngleDegreesFloat
+        public val rotationDegrees: Float = TextureLayerNative.getRotationDegrees(nativePointer)
 
         @FloatRange(from = 0.0, to = 1.0)
         public val opacity: Float = TextureLayerNative.getOpacity(nativePointer)
@@ -559,7 +610,7 @@ private constructor(
             sizeY: Float = this.sizeY,
             offsetX: Float = this.offsetX,
             offsetY: Float = this.offsetY,
-            @AngleRadiansFloat rotation: Float = this.rotation,
+            @AngleDegreesFloat rotationDegrees: Float = this.rotationDegrees,
             @FloatRange(from = 0.0, to = 1.0) opacity: Float = this.opacity,
             @IntRange(from = 1, to = 1 shl 24) animationFrames: Int = this.animationFrames,
             @IntRange(from = 1, to = 1 shl 12) animationRows: Int = this.animationRows,
@@ -579,7 +630,7 @@ private constructor(
                     sizeY == this.sizeY &&
                     offsetX == this.offsetX &&
                     offsetY == this.offsetY &&
-                    rotation == this.rotation &&
+                    rotationDegrees == this.rotationDegrees &&
                     opacity == this.opacity &&
                     animationFrames == this.animationFrames &&
                     animationRows == this.animationRows &&
@@ -600,7 +651,7 @@ private constructor(
                 sizeY = sizeY,
                 offsetX = offsetX,
                 offsetY = offsetY,
-                rotation = rotation,
+                rotationDegrees = rotationDegrees,
                 opacity = opacity,
                 animationFrames = animationFrames,
                 animationRows = animationRows,
@@ -626,7 +677,7 @@ private constructor(
                 sizeY = this.sizeY,
                 offsetX = this.offsetX,
                 offsetY = this.offsetY,
-                rotation = this.rotation,
+                rotationDegrees = this.rotationDegrees,
                 opacity = this.opacity,
                 animationFrames = this.animationFrames,
                 animationRows = this.animationRows,
@@ -647,7 +698,7 @@ private constructor(
                 sizeY == other.sizeY &&
                 offsetX == other.offsetX &&
                 offsetY == other.offsetY &&
-                rotation == other.rotation &&
+                rotationDegrees == other.rotationDegrees &&
                 opacity == other.opacity &&
                 animationFrames == other.animationFrames &&
                 animationRows == other.animationRows &&
@@ -663,8 +714,8 @@ private constructor(
 
         override fun toString(): String =
             "BrushPaint.TextureLayer(clientTextureId=$clientTextureId, sizeX=$sizeX, " +
-                "sizeY=$sizeY, offset=[$offsetX, $offsetY], rotation=$rotation, opacity=$opacity, " +
-                "animationFrames=$animationFrames, animationRows=$animationRows, " +
+                "sizeY=$sizeY, offset=[$offsetX, $offsetY], rotationDegrees=$rotationDegrees, " +
+                "opacity=$opacity, animationFrames=$animationFrames, animationRows=$animationRows, " +
                 "animationColumns=$animationColumns, animationDurationMillis=$animationDurationMillis, " +
                 "sizeUnit=$sizeUnit, origin=$origin, mapping=$mapping, wrapX=$wrapX, wrapY=$wrapY, " +
                 "blendMode=$blendMode)"
@@ -675,7 +726,7 @@ private constructor(
             result = 31 * result + sizeY.hashCode()
             result = 31 * result + offsetX.hashCode()
             result = 31 * result + offsetY.hashCode()
-            result = 31 * result + rotation.hashCode()
+            result = 31 * result + rotationDegrees.hashCode()
             result = 31 * result + opacity.hashCode()
             result = 31 * result + animationFrames.hashCode()
             result = 31 * result + animationRows.hashCode()
@@ -719,7 +770,7 @@ private constructor(
             private var sizeY: Float,
             private var offsetX: Float = 0f,
             private var offsetY: Float = 0f,
-            @AngleRadiansFloat private var rotation: Float = 0F,
+            @AngleDegreesFloat private var rotationDegrees: Float = 0F,
             @FloatRange(from = 0.0, to = 1.0) private var opacity: Float = 1f,
             @IntRange(from = 1, to = 1 shl 24) private var animationFrames: Int = 1,
             @IntRange(from = 1, to = 1 shl 12) private var animationRows: Int = 1,
@@ -748,8 +799,8 @@ private constructor(
 
             public fun setOffsetY(offsetY: Float): Builder = apply { this.offsetY = offsetY }
 
-            public fun setRotation(@AngleRadiansFloat rotation: Float): Builder = apply {
-                this.rotation = rotation
+            public fun setRotationDegrees(@AngleDegreesFloat degrees: Float): Builder = apply {
+                rotationDegrees = degrees
             }
 
             public fun setOpacity(@FloatRange(from = 0.0, to = 1.0) opacity: Float): Builder =
@@ -798,7 +849,7 @@ private constructor(
                     sizeY = sizeY,
                     offsetX = offsetX,
                     offsetY = offsetY,
-                    rotation = rotation,
+                    rotationDegrees = rotationDegrees,
                     opacity = opacity,
                     animationFrames = animationFrames,
                     animationRows = animationRows,
@@ -858,11 +909,18 @@ private constructor(
                         BrushPaintNative.newCopyOfTextureLayer(unownedNativePointer, index)
                     )
                 },
+                List(BrushPaintNative.getColorFunctionCount(unownedNativePointer)) { index ->
+                    ColorFunction.wrapNative(
+                        BrushPaintNative.newCopyOfColorFunction(unownedNativePointer, index)
+                    )
+                },
+                BrushPaintNative.getSelfOverlap(unownedNativePointer),
             )
     }
 }
 
 /** Singleton wrapper around BrushPaint native JNI calls. */
+@OptIn(ExperimentalInkCustomBrushApi::class)
 @UsedByNative
 private object BrushPaintNative {
     init {
@@ -870,7 +928,12 @@ private object BrushPaintNative {
     }
 
     /** Create underlying native object and return reference for all subsequent native calls. */
-    @UsedByNative external fun create(textureLayerNativePointers: LongArray): Long
+    @UsedByNative
+    external fun create(
+        textureLayerNativePointers: LongArray,
+        colorFunctionNativePointers: LongArray,
+        selfOverlapInt: Int,
+    ): Long
 
     /** Release the underlying memory allocated in [create]. */
     @UsedByNative external fun free(nativePointer: Long)
@@ -882,6 +945,24 @@ private object BrushPaintNative {
      * the pointed-at native `BrushPaint`.
      */
     @UsedByNative external fun newCopyOfTextureLayer(nativePointer: Long, index: Int): Long
+
+    @UsedByNative external fun getColorFunctionCount(nativePointer: Long): Int
+
+    /**
+     * Returns a new, unowned native pointer to a copy of the color function at the given index on
+     * the pointed-at native `BrushPaint`.
+     */
+    @UsedByNative external fun newCopyOfColorFunction(nativePointer: Long, index: Int): Long
+
+    fun getSelfOverlap(nativePointer: Long) = SelfOverlap.fromInt(getSelfOverlapInt(nativePointer))
+
+    @UsedByNative external fun getSelfOverlapInt(nativePointer: Long): Int
+
+    @UsedByNative
+    external fun isCompatibleWithMeshFormat(
+        nativePointer: Long,
+        meshFormatNativePointer: Long,
+    ): Boolean
 }
 
 /** Singleton wrapper around BrushPaint.TextureLayer native JNI calls. */
@@ -899,7 +980,7 @@ private object TextureLayerNative {
         sizeY: Float,
         offsetX: Float,
         offsetY: Float,
-        rotation: Float,
+        @AngleDegreesFloat rotationDegrees: Float,
         opacity: Float,
         animationFrames: Int,
         animationRows: Int,
@@ -923,7 +1004,7 @@ private object TextureLayerNative {
 
     @UsedByNative external fun getOffsetY(nativePointer: Long): Float
 
-    @UsedByNative external fun getRotationInRadians(nativePointer: Long): Float
+    @AngleDegreesFloat @UsedByNative external fun getRotationDegrees(nativePointer: Long): Float
 
     @UsedByNative external fun getOpacity(nativePointer: Long): Float
 

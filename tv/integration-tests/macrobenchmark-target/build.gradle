@@ -41,7 +41,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.compose.runtime:runtime-tracing:1.7.3")
 

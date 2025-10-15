@@ -16,11 +16,11 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.internal.ExrImageResource as RtExrImageResource
-import androidx.xr.runtime.internal.GltfModelResource as RtGltfModelResource
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.MaterialResource as RtMaterialResource
-import androidx.xr.runtime.internal.SpatialEnvironment as RtSpatialEnvironment
+import androidx.xr.scenecore.runtime.ExrImageResource as RtExrImageResource
+import androidx.xr.scenecore.runtime.GltfModelResource as RtGltfModelResource
+import androidx.xr.scenecore.runtime.MaterialResource as RtMaterialResource
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialEnvironment as RtSpatialEnvironment
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
@@ -44,7 +44,7 @@ import org.mockito.kotlin.whenever
 @RunWith(JUnit4::class)
 class SpatialEnvironmentTest {
 
-    private var mockRuntime: JxrPlatformAdapter = mock<JxrPlatformAdapter>()
+    private var mockRuntime: SceneRuntime = mock<SceneRuntime>()
     private var mockRtEnvironment: RtSpatialEnvironment? = null
     private var environment: SpatialEnvironment? = null
 
@@ -152,22 +152,28 @@ class SpatialEnvironmentTest {
         val rtImageMock = mock<RtExrImageResource>()
         val rtModelMock = mock<RtGltfModelResource>()
         val rtMaterialMock = mock<RtMaterialResource>()
-        val rtMeshName = "meshName"
+        val rtNodeName = "nodeName"
         val rtAnimationName = "animationName"
         val rtPreference =
             RtSpatialEnvironment.SpatialEnvironmentPreference(
                 rtImageMock,
                 rtModelMock,
                 rtMaterialMock,
-                rtMeshName,
+                rtNodeName,
                 rtAnimationName,
             )
         val preference =
             SpatialEnvironment.SpatialEnvironmentPreference(
                 ExrImage(rtImageMock),
                 GltfModel(rtModelMock),
-                Material(rtMaterialMock),
-                rtMeshName,
+                object : Material {
+                    override val material = rtMaterialMock
+
+                    override fun close() {
+                        // The lifecycle of this material is managed by the SpatialEnvironment.
+                    }
+                },
+                rtNodeName,
                 rtAnimationName,
             )
 
@@ -181,19 +187,19 @@ class SpatialEnvironmentTest {
         val rtImageMock = mock<RtExrImageResource>()
         val rtModelMock = mock<RtGltfModelResource>()
         val rtMaterialMock = mock<RtMaterialResource>()
-        val rtMeshName = "meshName"
+        val rtNodeName = "nodeName"
         val rtAnimationName = "animationName"
         val rtImageMock2 = mock<RtExrImageResource>()
         val rtModelMock2 = mock<RtGltfModelResource>()
         val rtMaterialMock2 = mock<RtMaterialResource>()
-        val rtMeshName2 = "meshName2"
+        val rtNodeName2 = "nodeName2"
         val rtAnimationName2 = "animationName2"
         val rtPreference =
             RtSpatialEnvironment.SpatialEnvironmentPreference(
                 rtImageMock,
                 rtModelMock,
                 rtMaterialMock,
-                rtMeshName,
+                rtNodeName,
                 rtAnimationName,
             )
 
@@ -201,8 +207,14 @@ class SpatialEnvironmentTest {
             SpatialEnvironment.SpatialEnvironmentPreference(
                 ExrImage(rtImageMock),
                 GltfModel(rtModelMock2),
-                Material(rtMaterialMock2),
-                rtMeshName2,
+                object : Material {
+                    override val material = rtMaterialMock2
+
+                    override fun close() {
+                        // The lifecycle of this material is managed by the SpatialEnvironment.
+                    }
+                },
+                rtNodeName2,
                 rtAnimationName2,
             )
         assertThat(preferenceDiffGeometry)
@@ -214,8 +226,14 @@ class SpatialEnvironmentTest {
             SpatialEnvironment.SpatialEnvironmentPreference(
                 ExrImage(rtImageMock2),
                 GltfModel(rtModelMock),
-                Material(rtMaterialMock),
-                rtMeshName,
+                object : Material {
+                    override val material = rtMaterialMock
+
+                    override fun close() {
+                        // The lifecycle of this material is managed by the SpatialEnvironment.
+                    }
+                },
+                rtNodeName,
                 rtAnimationName,
             )
         assertThat(preferenceDiffSkybox).isNotEqualTo(rtPreference.toSpatialEnvironmentPreference())

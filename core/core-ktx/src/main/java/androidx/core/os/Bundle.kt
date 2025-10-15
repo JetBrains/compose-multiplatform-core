@@ -28,6 +28,11 @@ import java.io.Serializable
  *
  * @throws IllegalArgumentException When a value is not a supported type of [Bundle].
  */
+@Deprecated(
+    message =
+        "This method does not provide type safety at compile time. Use the platform `Bundle` " +
+            "class directly instead."
+)
 public fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle =
     Bundle(pairs.size).apply {
         for ((key, value) in pairs) {

@@ -105,6 +105,11 @@ public class SurfaceProcessorNode implements
     @MainThread
     public @NonNull Out transform(@NonNull In input) {
         Threads.checkMainThread();
+        Logger.d(TAG, "SurfaceProcessorNode Transform (Processor=" + mSurfaceProcessor
+                + "\n   inputEdge = " + input.getSurfaceEdge());
+        for (OutConfig outConfig : input.getOutConfigs()) {
+            Logger.d(TAG, "   outputConfig = " + outConfig);
+        }
         mInput = input;
         mOutput = new Out();
 
@@ -203,6 +208,7 @@ public class SurfaceProcessorNode implements
     private void createAndSendSurfaceOutput(@NonNull SurfaceEdge input,
             Map.Entry<OutConfig, SurfaceEdge> output) {
         SurfaceEdge outputEdge = output.getValue();
+        Logger.d(TAG, "     -> outputEdge = " + outputEdge);
         SurfaceOutput.CameraInputInfo cameraInputInfo = SurfaceOutput.CameraInputInfo.of(
                 input.getStreamSpec().getResolution(),
                 output.getKey().getCropRect(),

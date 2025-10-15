@@ -34,7 +34,6 @@ dependencies {
     androidTestImplementation(project(":compose:benchmark-utils"))
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinReflect)
     androidTestImplementation(libs.kotlinTestCommon)
     androidTestImplementation(libs.truth)

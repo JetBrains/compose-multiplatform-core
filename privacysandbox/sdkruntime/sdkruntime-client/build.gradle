@@ -97,7 +97,6 @@ configurations {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
     implementation("androidx.core:core-ktx:1.15.0")
 
@@ -109,7 +108,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(project(":room:room-compiler-processing-testing"))
+    // TODO(b/438455972): Use ToT of compiler-processing-testing
+    testImplementation("androidx.room:room-compiler-processing-testing:2.8.0-rc02")
 
     // TODO(b/249982004): cleanup dependencies
     androidTestImplementation(libs.testCore)

@@ -26,6 +26,9 @@ import kotlin.jvm.JvmInline
 @Immutable
 internal actual value class Strings(val value: Int) {
     actual companion object {
+        actual val defaultPaneTitlePrimary: Strings = implementedInJetBrainsFork()
+        actual val defaultPaneTitleSecondary: Strings = implementedInJetBrainsFork()
+        actual val defaultPaneTitleTertiary: Strings = implementedInJetBrainsFork()
         actual val defaultPaneExpansionDragHandleContentDescription: Strings =
             implementedInJetBrainsFork()
         actual val defaultPaneExpansionDragHandleStateDescription: Strings =
@@ -37,6 +40,14 @@ internal actual value class Strings(val value: Int) {
         actual val defaultPaneExpansionStartOffsetAnchorDescription: Strings =
             implementedInJetBrainsFork()
         actual val defaultPaneExpansionEndOffsetAnchorDescription: Strings =
+            implementedInJetBrainsFork()
+        actual val dragToResizeClickToExpandDescription: Strings = implementedInJetBrainsFork()
+        actual val dragToResizeClickToCollapseDescription: Strings = implementedInJetBrainsFork()
+        actual val dragToResizeClickToPartiallyExpandDescription: Strings =
+            implementedInJetBrainsFork()
+        actual val dragToResizeExpandedStateDescription: Strings = implementedInJetBrainsFork()
+        actual val dragToResizeCollapsedStateDescription: Strings = implementedInJetBrainsFork()
+        actual val dragToResizePartiallyExpandedStateDescription: Strings =
             implementedInJetBrainsFork()
     }
 }

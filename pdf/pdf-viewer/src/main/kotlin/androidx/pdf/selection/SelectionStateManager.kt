@@ -29,10 +29,19 @@ import androidx.core.util.forEach
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.content.PageSelection
+import androidx.pdf.content.PdfPageContent
+import androidx.pdf.content.PdfPageGotoLinkContent
+import androidx.pdf.content.PdfPageLinkContent
+import androidx.pdf.content.toViewSelection
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.selection.model.GoToLinkSelection
+import androidx.pdf.selection.model.HyperLinkSelection
+import androidx.pdf.selection.model.TextSelection
 import androidx.pdf.util.CONTENT_SELECTION_REQUEST_NAME
-import androidx.pdf.view.PageMetadataLoader
+import androidx.pdf.view.PageManager
+import androidx.pdf.view.layout.PageLayoutManager
+import kotlin.collections.firstOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -49,7 +58,8 @@ internal class SelectionStateManager(
     private val backgroundScope: CoroutineScope,
     private val handleTouchTargetSizePx: Int,
     private val errorFlow: MutableSharedFlow<Throwable>,
-    private val pageMetadataLoader: PageMetadataLoader?,
+    private val pageLayoutManager: PageLayoutManager?,
+    private val pageManager: PageManager?,
     initialSelection: SelectionModel? = null,
 ) {
     /** The current [Selection] */
@@ -101,13 +111,107 @@ internal class SelectionStateManager(
         }
     }
 
-    /** Asynchronously attempts to select the nearest block of text to [pdfPoint] */
-    fun maybeSelectWordAtPoint(pdfPoint: PdfPoint) {
+    /** Asynchronously attempts to select the nearest block of content to [pdfPoint] */
+    fun maybeSelectContentAtPoint(pdfPoint: PdfPoint) {
         _selectionUiSignalBus.tryEmit(SelectionUiSignal.ToggleActionMode(show = false))
         _selectionUiSignalBus.tryEmit(
             SelectionUiSignal.PlayHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         )
+        // Check for a link at this point.
+        pageManager?.getPageLinks(pdfPoint.pageNum)?.let { links ->
+            if (selectGoToLinkAtPoint(links.gotoLinks, pdfPoint)) return
+            if (selectExternalLinkAtPoint(links.externalLinks, pdfPoint)) return
+        }
+        // Check for a text at this point.
         updateRangeSelectionAsync(pdfPoint, pdfPoint)
+    }
+
+    /**
+     * Attempts to select a GoTo link at a specific point on the PDF page.
+     *
+     * @param goToLinks The list of available GoTo links on the page.
+     * @param pdfPoint The point to check, in PDF coordinates.
+     * @return `true` if a GoTo link was found and selected, `false` otherwise.
+     */
+    private fun selectGoToLinkAtPoint(
+        goToLinks: List<PdfPageGotoLinkContent>,
+        pdfPoint: PdfPoint,
+    ): Boolean {
+        return selectLinkAtPoint(goToLinks, pdfPoint) { goToLink, textSelection ->
+            GoToLinkSelection(
+                GoToLinkSelection.Destination(
+                    goToLink.destination.pageNumber,
+                    goToLink.destination.xCoordinate,
+                    goToLink.destination.yCoordinate,
+                    goToLink.destination.zoom,
+                ),
+                textSelection.text,
+                textSelection.bounds,
+            )
+        }
+    }
+
+    /**
+     * Attempts to select an external link at a specific point on the PDF page.
+     *
+     * @param externalLinks The list of available external links on the page.
+     * @param pdfPoint The point to check, in PDF coordinates.
+     * @return `true` if an external link was found and selected, `false` otherwise.
+     */
+    private fun selectExternalLinkAtPoint(
+        externalLinks: List<PdfPageLinkContent>,
+        pdfPoint: PdfPoint,
+    ): Boolean {
+        return selectLinkAtPoint(externalLinks, pdfPoint) { externalLink, textSelection ->
+            HyperLinkSelection(externalLink.uri, textSelection.text, textSelection.bounds)
+        }
+    }
+
+    /**
+     * A generic function to find and select a link at a given [pdfPoint].
+     *
+     * @param links The list of links to check.
+     * @param pdfPoint The point to check.
+     * @param createLinkSelection A lambda to create the appropriate `LinkSelection`.
+     * @return `true` if a link is selected, `false` otherwise.
+     */
+    private fun <T : PdfPageContent> selectLinkAtPoint(
+        links: List<T>,
+        pdfPoint: PdfPoint,
+        createLinkSelection: (T, TextSelection) -> LinkSelection,
+    ): Boolean {
+        links.forEach { link ->
+            val linkRect = link.bounds.firstOrNull { it.contains(pdfPoint.x, pdfPoint.y) }
+            linkRect?.let {
+                updateSelectionAsync(pdfPoint.pageNum..pdfPoint.pageNum) {
+                    val pageSelection =
+                        pdfDocument.getSelectionBounds(
+                            pdfPoint.pageNum,
+                            PointF(linkRect.left, (linkRect.bottom + linkRect.top) / 2),
+                            PointF(linkRect.right, (linkRect.bottom + linkRect.top) / 2),
+                        ) ?: return@updateSelectionAsync null
+
+                    val textSelection = pageSelection.toViewSelection().first() as TextSelection
+                    val documentSelection =
+                        DocumentSelection(SparseArray()).apply {
+                            selectedContents.put(
+                                pdfPoint.pageNum,
+                                listOf(createLinkSelection(link, textSelection)),
+                            )
+                        }
+
+                    val selectionBounds = documentSelection.getSelectionEndpoints()
+
+                    SelectionModel(
+                        documentSelection,
+                        UiSelectionBoundary(selectionBounds.first, false),
+                        UiSelectionBoundary(selectionBounds.second, false),
+                    )
+                }
+                return true
+            }
+        }
+        return false
     }
 
     /** Synchronously resets all state of this manager */
@@ -149,22 +253,29 @@ internal class SelectionStateManager(
      */
     fun getSelectionHandleBounds(currentZoom: Float): Pair<RectF, RectF>? {
         val currentSelection = selectionModel.value ?: return null
-        val touchTargetContentSize = handleTouchTargetSizePx / currentZoom
 
-        val start = currentSelection.startBoundary.location
-        val startTarget =
-            RectF(
-                start.x - touchTargetContentSize,
-                start.y,
-                start.x,
-                start.y + touchTargetContentSize,
-            )
+        // TODO(b/441196273): Drag handles for modifying a selection are currently only supported
+        // for selections that consist exclusively of text. For mixed-content or non-text
+        // selections, the handles are disabled as this functionality is not yet supported.
+        if (currentSelection.documentSelection.containsOnlyTextSelections) {
+            val touchTargetContentSize = handleTouchTargetSizePx / currentZoom
 
-        val end = currentSelection.endBoundary.location
-        val endTarget =
-            RectF(end.x, end.y, end.x + touchTargetContentSize, end.y + touchTargetContentSize)
+            val start = currentSelection.startBoundary.location
+            val startTarget =
+                RectF(
+                    start.x - touchTargetContentSize,
+                    start.y,
+                    start.x,
+                    start.y + touchTargetContentSize,
+                )
 
-        return Pair(startTarget, endTarget)
+            val end = currentSelection.endBoundary.location
+            val endTarget =
+                RectF(end.x, end.y, end.x + touchTargetContentSize, end.y + touchTargetContentSize)
+
+            return Pair(startTarget, endTarget)
+        }
+        return null
     }
 
     @HandlePositionDef
@@ -273,11 +384,14 @@ internal class SelectionStateManager(
     }
 
     private fun updateAllSelectionAsync(pageNum: Int) {
-        updateSelectionAsync(
-            pageNum..pageNum,
-            selectionModel.value?.documentSelection ?: DocumentSelection(SparseArray()),
-        ) {
-            listOf(pdfDocument.getSelectAllSelectionBounds(pageNum))
+        updateSelectionAsync(pageNum..pageNum) {
+            val newPageSelection =
+                pdfDocument.getSelectAllSelectionBounds(pageNum) ?: return@updateSelectionAsync null
+
+            SelectionModel.getCombinedSelectionModel(
+                selectionModel.value?.documentSelection ?: DocumentSelection(SparseArray()),
+                listOf(newPageSelection),
+            )
         }
     }
 
@@ -296,19 +410,22 @@ internal class SelectionStateManager(
         val pageRange =
             if (draggedPoint.pageNum < fixedPoint.pageNum) draggedPoint.pageNum..fixedPoint.pageNum
             else fixedPoint.pageNum..draggedPoint.pageNum
-        return updateSelectionAsync(
-            pageRange,
-            getOldSelectionBetweenPageRange(prevSelectionModel, pageRange),
-            {
+        updateSelectionAsync(pageRange) {
+            val newPageSelections =
                 if (draggedPoint.pageNum < fixedPoint.pageNum) {
-                    // Extending selection in the upwards direction
-                    getBoundsExtendingUpwards(draggedPoint, prevStart, prevEnd)
-                } else {
-                    // Extending selection in the downwards direction
-                    getBoundsExtendingDownwards(draggedPoint, prevStart, prevEnd)
-                }
-            },
-        )
+                        // Extending selection in the upwards direction
+                        getBoundsExtendingUpwards(draggedPoint, prevStart, prevEnd)
+                    } else {
+                        // Extending selection in the downwards direction
+                        getBoundsExtendingDownwards(draggedPoint, prevStart, prevEnd)
+                    }
+                    .takeIf { it.isNotEmpty() } ?: return@updateSelectionAsync null
+
+            SelectionModel.getCombinedSelectionModel(
+                getOldSelectionBetweenPageRange(prevSelectionModel, pageRange),
+                newPageSelections,
+            )
+        }
     }
 
     private suspend fun getBoundsExtendingUpwards(
@@ -317,7 +434,7 @@ internal class SelectionStateManager(
         prevEnd: PdfPoint,
     ): List<PageSelection?> {
 
-        val newPageSize = pageMetadataLoader?.getPageSize(draggedPoint.pageNum) ?: Point(0, 0)
+        val newPageSize = pageLayoutManager?.getPageSize(draggedPoint.pageNum) ?: Point(0, 0)
         // Find selection bounds for all the skipped pages
         val intermediateSelection =
             getPageSelectionsForRange(draggedPoint.pageNum + 1, prevStart.pageNum - 1)
@@ -380,7 +497,7 @@ internal class SelectionStateManager(
         draggedPoint: PdfPoint,
     ): PageSelection? {
         return if (prevStart.pageNum == prevEnd.pageNum) {
-            val prevPageSize = pageMetadataLoader?.getPageSize(prevEnd.pageNum) ?: Point(0, 0)
+            val prevPageSize = pageLayoutManager?.getPageSize(prevEnd.pageNum) ?: Point(0, 0)
             pdfDocument.getSelectionBounds(
                 prevEnd.pageNum,
                 PointF(prevStart.x, prevStart.y),
@@ -405,16 +522,17 @@ internal class SelectionStateManager(
     }
 
     private fun updateSinglePageSelection(startPoint: PdfPoint, endPoint: PdfPoint) {
-        updateSelectionAsync(
-            startPoint.pageNum..endPoint.pageNum,
-            DocumentSelection(SparseArray()),
-        ) {
-            listOf(
+        updateSelectionAsync(startPoint.pageNum..endPoint.pageNum) {
+            val newPageSelection =
                 pdfDocument.getSelectionBounds(
                     endPoint.pageNum,
                     PointF(startPoint.x, startPoint.y),
                     PointF(endPoint.x, endPoint.y),
-                )
+                ) ?: return@updateSelectionAsync null
+
+            SelectionModel.getCombinedSelectionModel(
+                DocumentSelection(SparseArray()),
+                listOf(newPageSelection),
             )
         }
     }
@@ -437,8 +555,7 @@ internal class SelectionStateManager(
 
     private fun updateSelectionAsync(
         pageRange: IntRange,
-        oldSelection: DocumentSelection,
-        getNewPageSelections: suspend () -> List<PageSelection?>,
+        getNewSelectionModel: suspend () -> SelectionModel?,
     ) {
         val prevJob = setSelectionJob
         setSelectionJob =
@@ -446,22 +563,15 @@ internal class SelectionStateManager(
                 .launch {
                     prevJob?.cancelAndJoin()
                     try {
-                        val newPageSelections = getNewPageSelections()
-                        if (newPageSelections.isNotEmpty()) {
+                        val newSelectionModel = getNewSelectionModel() ?: return@launch
 
-                            _selectionModel.update {
-                                SelectionModel.getCombinedSelectionModel(
-                                    oldSelection,
-                                    newPageSelections,
-                                )
-                            }
-                            _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
-                            // Show the action mode if the user is not actively dragging the handles
-                            if (draggingState == null) {
-                                _selectionUiSignalBus.emit(
-                                    SelectionUiSignal.ToggleActionMode(show = true)
-                                )
-                            }
+                        _selectionModel.update { newSelectionModel }
+                        _selectionUiSignalBus.tryEmit(SelectionUiSignal.Invalidate)
+                        // Show the action mode if the user is not actively dragging the handles
+                        if (draggingState == null) {
+                            _selectionUiSignalBus.emit(
+                                SelectionUiSignal.ToggleActionMode(show = true)
+                            )
                         }
                     } catch (e: DeadObjectException) {
                         val exception =

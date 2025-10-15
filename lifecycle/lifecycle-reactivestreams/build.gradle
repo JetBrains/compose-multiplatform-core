@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api("androidx.arch.core:core-common:2.2.0")
     api(project(":lifecycle:lifecycle-common"))
     api(project(":lifecycle:lifecycle-livedata"))

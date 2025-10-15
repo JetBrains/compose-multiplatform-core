@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":lifecycle:lifecycle-viewmodel"))
     implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))

@@ -33,7 +33,6 @@ dependencies {
 
     implementation(libs.androidGradlePlugin)
     implementation(libs.kotlinGradlePlugin)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinPoet)
 }
 

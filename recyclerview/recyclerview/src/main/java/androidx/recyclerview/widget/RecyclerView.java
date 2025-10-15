@@ -1706,6 +1706,7 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
      * @return The pool used to store recycled item views for reuse.
      * @see #setRecycledViewPool(RecycledViewPool)
      */
+    @SuppressWarnings("GetterSetterNullability")
     public @NonNull RecycledViewPool getRecycledViewPool() {
         return mRecycler.getRecycledViewPool();
     }

@@ -16,25 +16,7 @@
 
 package androidx.xr.scenecore
 
-import androidx.xr.runtime.internal.ActivityPose.HitTestFilter as RtHitTestFilter
-import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
-import androidx.xr.runtime.internal.AnchorPlacement as RtAnchorPlacement
-import androidx.xr.runtime.internal.Dimensions as RuntimeDimensions
-import androidx.xr.runtime.internal.Entity as RuntimeEntity
-import androidx.xr.runtime.internal.HitTestResult as RuntimeHitTestResult
-import androidx.xr.runtime.internal.InputEvent as RuntimeInputEvent
-import androidx.xr.runtime.internal.InputEvent.HitInfo as RuntimeHitInfo
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.MoveEvent as RuntimeMoveEvent
-import androidx.xr.runtime.internal.PerceivedResolutionResult as RuntimePerceivedResolutionResult
-import androidx.xr.runtime.internal.PixelDimensions as RuntimePixelDimensions
-import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
-import androidx.xr.runtime.internal.PlaneType as RtPlaneType
-import androidx.xr.runtime.internal.ResizeEvent as RuntimeResizeEvent
-import androidx.xr.runtime.internal.SpatialCapabilities as RuntimeSpatialCapabilities
-import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
-import androidx.xr.runtime.internal.SpatialVisibility as RuntimeSpatialVisibility
-import androidx.xr.runtime.internal.TextureSampler as RuntimeTextureSampler
+import androidx.xr.arcore.Plane
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Matrix4
@@ -43,6 +25,25 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ScenePose.HitTestFilter
+import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
+import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
+import androidx.xr.scenecore.runtime.Dimensions as RuntimeDimensions
+import androidx.xr.scenecore.runtime.Entity as RuntimeEntity
+import androidx.xr.scenecore.runtime.HitTestResult as RuntimeHitTestResult
+import androidx.xr.scenecore.runtime.InputEvent as RuntimeInputEvent
+import androidx.xr.scenecore.runtime.InputEvent.HitInfo as RuntimeHitInfo
+import androidx.xr.scenecore.runtime.MoveEvent as RuntimeMoveEvent
+import androidx.xr.scenecore.runtime.PerceivedResolutionResult as RuntimePerceivedResolutionResult
+import androidx.xr.scenecore.runtime.PixelDimensions as RuntimePixelDimensions
+import androidx.xr.scenecore.runtime.PlaneSemantic as RtPlaneSemantic
+import androidx.xr.scenecore.runtime.PlaneType as RtPlaneType
+import androidx.xr.scenecore.runtime.ResizeEvent as RuntimeResizeEvent
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilter as RtHitTestFilter
+import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.runtime.SpatialCapabilities as RuntimeSpatialCapabilities
+import androidx.xr.scenecore.runtime.SpatialPointerIcon as RtSpatialPointerIcon
+import androidx.xr.scenecore.runtime.SpatialVisibility as RuntimeSpatialVisibility
+import androidx.xr.scenecore.runtime.TextureSampler as RuntimeTextureSampler
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -650,7 +651,7 @@ class UtilsTest {
 
     @Test
     fun anchorPlacementToRuntimeAnchorPlacement_setsCorrectly() {
-        val mockRuntime = mock<JxrPlatformAdapter>()
+        val mockRuntime = mock<SceneRuntime>()
         val mockAnchorPlacement1 = mock<RtAnchorPlacement>()
         val mockAnchorPlacement2 = mock<RtAnchorPlacement>()
         whenever(
@@ -687,7 +688,7 @@ class UtilsTest {
 
     @Test
     fun anchorPlacementToRuntimeAnchotPlacementEmptySet_returnsEmptySet() {
-        val mockRuntime = mock<JxrPlatformAdapter>()
+        val mockRuntime = mock<SceneRuntime>()
 
         val rtPlacementSet = emptySet<AnchorPlacement>().toRtAnchorPlacement(mockRuntime)
 
@@ -695,17 +696,57 @@ class UtilsTest {
     }
 
     @Test
+    fun planeTypeToSceneCoreOrientation_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        Plane.Type.HORIZONTAL_UPWARD_FACING,
+                        Plane.Type.HORIZONTAL_DOWNWARD_FACING,
+                        Plane.Type.VERTICAL,
+                    )
+                    .map { it.toSceneCoreOrientation() }
+            )
+            .containsExactly(
+                PlaneOrientation.HORIZONTAL,
+                PlaneOrientation.HORIZONTAL,
+                PlaneOrientation.VERTICAL,
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun planeLabelToSceneCoreSemanticType_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        Plane.Label.FLOOR,
+                        Plane.Label.TABLE,
+                        Plane.Label.WALL,
+                        Plane.Label.CEILING,
+                        Plane.Label.UNKNOWN,
+                    )
+                    .map { it.toSceneCoreSemanticType() }
+            )
+            .containsExactly(
+                PlaneSemanticType.FLOOR,
+                PlaneSemanticType.TABLE,
+                PlaneSemanticType.WALL,
+                PlaneSemanticType.CEILING,
+                PlaneSemanticType.ANY,
+            )
+            .inOrder()
+    }
+
+    @Test
     fun intToTextureSampler_convertsCorrectly() {
-        val sampler: TextureSampler =
+        val sampler =
             TextureSampler(
-                TextureSampler.MinFilter.NEAREST,
-                TextureSampler.MagFilter.LINEAR,
-                TextureSampler.WrapMode.CLAMP_TO_EDGE,
-                TextureSampler.WrapMode.REPEAT,
-                TextureSampler.WrapMode.MIRRORED_REPEAT,
-                TextureSampler.CompareMode.NONE,
-                TextureSampler.CompareFunc.LE,
-                2,
+                minificationFilter = TextureSampler.MINIFICATION_FILTER_NEAREST,
+                magnificationFilter = TextureSampler.MAGNIFICATION_FILTER_LINEAR,
+                wrapModeHorizontal = TextureSampler.WRAP_MODE_CLAMP_TO_EDGE,
+                wrapModeVertical = TextureSampler.WRAP_MODE_REPEAT,
+                wrapModeDepth = TextureSampler.WRAP_MODE_MIRRORED_REPEAT,
+                compareMode = TextureSampler.COMPARE_MODE_NONE,
+                compareFunction = TextureSampler.COMPARE_FUNCTION_LESSER_OR_EQUAL,
+                anisotropyLog2 = 2,
             )
 
         val rtSampler: RuntimeTextureSampler = sampler.toRtTextureSampler()

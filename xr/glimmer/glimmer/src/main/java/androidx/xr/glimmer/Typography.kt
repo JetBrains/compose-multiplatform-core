@@ -21,7 +21,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 /**
@@ -146,7 +145,7 @@ private val TitleLarge =
         fontWeight = FontWeight(750),
         fontSize = 32.sp,
         lineHeight = 38.sp,
-        letterSpacing = 0.05.em,
+        letterSpacing = 0.sp,
         lineHeightStyle = DefaultLineHeightStyle,
     )
 
@@ -155,7 +154,7 @@ private val TitleMedium =
         fontWeight = FontWeight(750),
         fontSize = 28.sp,
         lineHeight = 32.sp,
-        letterSpacing = 0.0525.em,
+        letterSpacing = 0.sp,
         lineHeightStyle = DefaultLineHeightStyle,
     )
 
@@ -164,7 +163,7 @@ private val TitleSmall =
         fontWeight = FontWeight(750),
         fontSize = 24.sp,
         lineHeight = 32.sp,
-        letterSpacing = 0.0525.em,
+        letterSpacing = 0.sp,
         lineHeightStyle = DefaultLineHeightStyle,
     )
 
@@ -173,7 +172,7 @@ private val BodyLarge =
         fontWeight = FontWeight.W600,
         fontSize = 32.sp,
         lineHeight = 38.sp,
-        letterSpacing = 0.05.em,
+        letterSpacing = 0.sp,
         lineHeightStyle = DefaultLineHeightStyle,
     )
 
@@ -182,7 +181,7 @@ private val BodyMedium =
         fontWeight = FontWeight.W600,
         fontSize = 28.sp,
         lineHeight = 36.sp,
-        letterSpacing = 0.0425.em,
+        letterSpacing = 0.sp,
         lineHeightStyle = DefaultLineHeightStyle,
     )
 
@@ -191,7 +190,7 @@ private val BodySmall =
         fontWeight = FontWeight.W600,
         fontSize = 24.sp,
         lineHeight = 32.sp,
-        letterSpacing = 0.0525.em,
+        letterSpacing = 0.sp,
         lineHeightStyle = DefaultLineHeightStyle,
     )
 

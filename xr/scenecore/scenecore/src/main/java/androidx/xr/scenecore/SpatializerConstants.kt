@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.SpatializerConstants as RtSpatializerConstants
+import androidx.xr.scenecore.runtime.SpatializerConstants as RtSpatializerConstants
 
 /** Constants for spatialized audio. */
 public interface SpatializerConstants {
@@ -59,7 +59,7 @@ public interface SpatializerConstants {
     public annotation class SourceType
 }
 
-/** Converts the [JxrPlatformAdapter] SourceType IntDef to the SceneCore API. */
+/** Converts the [SceneRuntime] SourceType IntDef to the SceneCore API. */
 @SpatializerConstants.SourceType
 internal fun @receiver:RtSpatializerConstants.SourceType Int.sourceTypeToJxr(): Int {
     return when (this) {
@@ -75,7 +75,7 @@ internal fun @receiver:RtSpatializerConstants.SourceType Int.sourceTypeToJxr(): 
     }
 }
 
-/** Converts the [JxrPlatformAdapter] SourceType IntDef to the SceneCore API. */
+/** Converts the [SceneRuntime] SourceType IntDef to the SceneCore API. */
 @SpatializerConstants.AmbisonicsOrder
 internal fun @receiver:RtSpatializerConstants.AmbisonicsOrder Int.ambisonicsOrderToJxr(): Int {
     return when (this) {

@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":wear:wear-phone-interactions"))
 
     compileOnly(project(":annotation:annotation-sampled"))

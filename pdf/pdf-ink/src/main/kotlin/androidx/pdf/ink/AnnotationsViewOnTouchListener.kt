@@ -16,57 +16,137 @@
 
 package androidx.pdf.ink
 
+import android.content.Context
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 
 /** Routes touch events to either ink view or pdf view based on single or multi-touch gestures. */
 internal class AnnotationsViewOnTouchListener(
+    context: Context,
     private val wetStrokesViewDispatcher: TouchEventDispatcher,
     private val pdfViewDispatcher: TouchEventDispatcher,
 ) : View.OnTouchListener {
 
-    private var multiTouchTracking = false
+    private var currentDispatcher: TouchEventDispatcher? = null
+    private var isSingleTouchCommitted = false
+    private var primaryPointerId: Int = MotionEvent.INVALID_POINTER_ID
+    private var downX = 0f
+    private var downY = 0f
+    private val touchSlop: Int by lazy { ViewConfiguration.get(context).scaledTouchSlop }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                multiTouchTracking = false
-
-                // The ACTION_DOWN event is the first event of any touch event stream and needs to
-                // be intercepted by all underlying views so they can react to it.
-                wetStrokesViewDispatcher.dispatchTouchEvent(event)
-                pdfViewDispatcher.dispatchTouchEvent(event)
-            }
-            MotionEvent.ACTION_POINTER_DOWN -> {
-                multiTouchTracking = true
-
-                val cancelEvent =
-                    MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
-                wetStrokesViewDispatcher.dispatchTouchEvent(cancelEvent)
-                pdfViewDispatcher.dispatchTouchEvent(event)
-
-                cancelEvent.recycle()
-            }
+            MotionEvent.ACTION_DOWN -> handleDown(event)
+            MotionEvent.ACTION_POINTER_DOWN -> handlePointerDown(event)
+            MotionEvent.ACTION_MOVE -> handleMove(event)
+            MotionEvent.ACTION_POINTER_UP -> handlePointerUp(event)
             MotionEvent.ACTION_UP,
-            MotionEvent.ACTION_CANCEL -> {
-                if (multiTouchTracking) {
-                    pdfViewDispatcher.dispatchTouchEvent(event)
-                } else {
-                    wetStrokesViewDispatcher.dispatchTouchEvent(event)
-                }
-
-                multiTouchTracking = false // Reset for the next gesture
-            }
-            else -> {
-                if (multiTouchTracking) {
-                    pdfViewDispatcher.dispatchTouchEvent(event)
-                } else {
-                    wetStrokesViewDispatcher.dispatchTouchEvent(event)
-                }
-            }
+            MotionEvent.ACTION_CANCEL -> handleUpOrCancel(event)
         }
-        // Consume the event as it's been explicitly dispatched.
         return true
+    }
+
+    private fun handleDown(event: MotionEvent) {
+        primaryPointerId = event.getPointerId(0)
+        currentDispatcher = wetStrokesViewDispatcher
+        isSingleTouchCommitted = false
+        downX = event.x
+        downY = event.y
+        currentDispatcher?.dispatchTouchEvent(event)
+    }
+
+    private fun handlePointerDown(event: MotionEvent) {
+        if (isSingleTouchCommitted) {
+            currentDispatcher?.dispatchTouchEvent(event)
+        } else {
+            val cancelEvent = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
+            currentDispatcher?.dispatchTouchEvent(cancelEvent)
+            cancelEvent.recycle()
+
+            currentDispatcher = pdfViewDispatcher
+
+            val downEvent =
+                MotionEvent.obtain(
+                    event.downTime,
+                    event.eventTime,
+                    MotionEvent.ACTION_DOWN,
+                    event.getX(0),
+                    event.getY(0),
+                    event.metaState,
+                )
+            currentDispatcher?.dispatchTouchEvent(downEvent)
+            downEvent.recycle()
+
+            currentDispatcher?.dispatchTouchEvent(event)
+        }
+    }
+
+    private fun handleMove(event: MotionEvent) {
+        val primaryPointerIndex = event.findPointerIndex(primaryPointerId)
+        if (isSingleTouchCommitted && currentDispatcher == wetStrokesViewDispatcher) {
+            if (primaryPointerIndex != -1) {
+                val x = event.getX(primaryPointerIndex)
+                val y = event.getY(primaryPointerIndex)
+                val singlePointerMove =
+                    MotionEvent.obtain(
+                        event.downTime,
+                        event.eventTime,
+                        event.action,
+                        x,
+                        y,
+                        event.metaState,
+                    )
+                currentDispatcher?.dispatchTouchEvent(singlePointerMove)
+                singlePointerMove.recycle()
+            }
+        } else {
+            if (
+                currentDispatcher == wetStrokesViewDispatcher &&
+                    !isSingleTouchCommitted &&
+                    primaryPointerIndex != -1
+            ) {
+                val dx = event.getX(primaryPointerIndex) - downX
+                val dy = event.getY(primaryPointerIndex) - downY
+                if (dx * dx + dy * dy > touchSlop * touchSlop) {
+                    isSingleTouchCommitted = true
+                }
+            }
+            currentDispatcher?.dispatchTouchEvent(event)
+        }
+    }
+
+    private fun handlePointerUp(event: MotionEvent) {
+        val actionIndex = event.actionIndex
+        val liftedPointerId = event.getPointerId(actionIndex)
+
+        if (currentDispatcher == wetStrokesViewDispatcher && liftedPointerId == primaryPointerId) {
+            val upEvent =
+                MotionEvent.obtain(
+                    event.downTime,
+                    event.eventTime,
+                    MotionEvent.ACTION_UP,
+                    event.getX(actionIndex),
+                    event.getY(actionIndex),
+                    event.metaState,
+                )
+            currentDispatcher?.dispatchTouchEvent(upEvent)
+            upEvent.recycle()
+            resetState()
+        } else {
+            currentDispatcher?.dispatchTouchEvent(event)
+        }
+    }
+
+    private fun handleUpOrCancel(event: MotionEvent) {
+        currentDispatcher?.dispatchTouchEvent(event)
+        resetState()
+    }
+
+    private fun resetState() {
+        currentDispatcher = null
+        isSingleTouchCommitted = false
+        primaryPointerId = MotionEvent.INVALID_POINTER_ID
     }
 }
 

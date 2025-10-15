@@ -17,11 +17,11 @@
 
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.squareup.wire")
+    alias(libs.plugins.kotlinBenchmark)
 }
 
 androidXMultiplatform {
@@ -35,7 +35,6 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(project(":tracing:tracing-driver"))
-                api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api(libs.androidx.annotation)
                 implementation(libs.wireRuntime)
@@ -55,6 +54,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.truth)
+                implementation(libs.kotlinBenchmarkRuntime)
             }
         }
         jvmMain {
@@ -63,7 +63,7 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonMain)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             // Declaring this source set even though we don't really have any instrumentation tests.
             // This is because commonTest is implicitly treated as something that can be used for
             // instrumentation tests. Therefore we need to include the test runner; otherwise the
@@ -86,12 +86,31 @@ tasks.named("multiplatformSourceJar").configure {
     dependsOn(tasks.named("generateCommonMainProtos"))
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.tracing.driver.DelicateTracingApi")
+    }
+}
+
 wire {
     kotlin {
         mutableTypes = true
     }
     sourcePath {
         srcDir("src/commonMain/proto")
+    }
+}
+
+benchmark {
+    configurations {
+        // There is always a main configuration that applies to all targets.
+        named("main") {
+            warmups = 1
+        }
+    }
+    targets {
+        // Benchmarks live in the `jvmTest` sourceSet.
+        register("jvmTest")
     }
 }
 

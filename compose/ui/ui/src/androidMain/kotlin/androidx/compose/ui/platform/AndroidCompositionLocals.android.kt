@@ -28,7 +28,6 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.setValue
@@ -100,12 +99,6 @@ internal fun ProvideAndroidCompositionLocals(
 ) {
     val view = owner
     val context = view.context
-    // Make a deep copy to compare to later, since the same configuration object will be mutated
-    // as part of configuration changes
-    var configuration by remember { mutableStateOf(Configuration(context.resources.configuration)) }
-
-    owner.configurationChangeObserver = { configuration = Configuration(it) }
-
     val uriHandler = remember { AndroidUriHandler(context) }
     val viewTreeOwners =
         owner.viewTreeOwners
@@ -126,12 +119,12 @@ internal fun ProvideAndroidCompositionLocals(
         }
     }
 
-    val imageVectorCache = obtainImageVectorCache(context, configuration)
+    val imageVectorCache = obtainImageVectorCache(context, owner.configuration)
     val resourceIdCache = obtainResourceIdCache(context)
     val scrollCaptureInProgress =
         LocalScrollCaptureInProgress.current or owner.scrollCaptureInProgress
     CompositionLocalProvider(
-        LocalConfiguration provides configuration,
+        LocalConfiguration provides owner.configuration,
         LocalContext provides context,
         LocalLifecycleOwner provides viewTreeOwners.lifecycleOwner,
         LocalSavedStateRegistryOwner provides viewTreeOwners.savedStateRegistryOwner,

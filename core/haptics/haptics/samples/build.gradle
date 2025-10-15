@@ -20,7 +20,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 dependencies {
-    api(libs.kotlinStdlib)
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":core:haptics:haptics"))
 }

@@ -26,6 +26,7 @@ import androidx.camera.core.SessionConfig
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_DYNAMIC_RANGE
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_FPS_RANGE
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_IMAGE_FORMAT
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_RECORDING_QUALITY
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_VIDEO_STABILIZATION
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FPS_60
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.HDR_HLG10
@@ -63,9 +64,9 @@ import androidx.camera.core.impl.CameraInfoInternal
 @ExperimentalSessionConfig
 public abstract class GroupableFeature
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-internal constructor() {
+public constructor() {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    internal abstract val featureTypeInternal: FeatureTypeInternal
+    public abstract val featureTypeInternal: FeatureTypeInternal
 
     /**
      * The type of this feature, which will be one of the following values.
@@ -73,6 +74,7 @@ internal constructor() {
      * - [FEATURE_TYPE_FPS_RANGE]
      * - [FEATURE_TYPE_VIDEO_STABILIZATION]
      * - [FEATURE_TYPE_IMAGE_FORMAT]
+     * - [FEATURE_TYPE_RECORDING_QUALITY]
      */
     public val featureType: @FeatureType Int by lazy {
         // lazy is required here to workaround an issue of java.lang.ExceptionInInitializerError for
@@ -92,6 +94,7 @@ internal constructor() {
             FeatureTypeInternal.FPS_RANGE -> FEATURE_TYPE_FPS_RANGE
             FeatureTypeInternal.VIDEO_STABILIZATION -> FEATURE_TYPE_VIDEO_STABILIZATION
             FeatureTypeInternal.IMAGE_FORMAT -> FEATURE_TYPE_IMAGE_FORMAT
+            FeatureTypeInternal.RECORDING_QUALITY -> FEATURE_TYPE_RECORDING_QUALITY
         }
     }
 
@@ -100,6 +103,7 @@ internal constructor() {
         FEATURE_TYPE_FPS_RANGE,
         FEATURE_TYPE_VIDEO_STABILIZATION,
         FEATURE_TYPE_IMAGE_FORMAT,
+        FEATURE_TYPE_RECORDING_QUALITY,
     )
     @Target(AnnotationTarget.TYPE)
     @Retention(AnnotationRetention.SOURCE)
@@ -178,5 +182,12 @@ internal constructor() {
          * @see IMAGE_ULTRA_HDR
          */
         public const val FEATURE_TYPE_IMAGE_FORMAT: Int = 3
+
+        /**
+         * Represents the recording quality feature that can be used to select a specific quality
+         * for video recording.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val FEATURE_TYPE_RECORDING_QUALITY: Int = 4
     }
 }

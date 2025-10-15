@@ -18,6 +18,11 @@ package androidx.xr.arcore
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.testing.FakeLifecycleManager
+import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeRuntimeAnchor
+import androidx.xr.arcore.testing.FakeRuntimeAugmentedObject as FakeRuntimeObject
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
@@ -27,11 +32,6 @@ import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakeLifecycleManager
-import androidx.xr.runtime.testing.FakePerceptionManager
-import androidx.xr.runtime.testing.FakeRuntimeAnchor
-import androidx.xr.runtime.testing.FakeRuntimeAugmentedObject as FakeRuntimeObject
-import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.CoroutineStart
@@ -72,7 +72,7 @@ class AugmentedObjectTest {
         FakeLifecycleManager.TestPermissions.forEach { permission ->
             shadowApplication.grantPermissions(permission)
         }
-        FakeRuntimeFactory.hasCreatePermission = true
+        FakePerceptionRuntimeFactory.hasCreatePermission = true
         activityController.create()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
@@ -86,7 +86,7 @@ class AugmentedObjectTest {
                     )
             )
         )
-        xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
+        xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
 
         FakeRuntimeAnchor.anchorsCreatedCount = 0
     }
@@ -95,7 +95,7 @@ class AugmentedObjectTest {
     @Test
     fun subscribe_collectReturnsObject() =
         runTest(testDispatcher) {
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager = getFakePerceptionManager()
             val runtimeObject = FakeRuntimeObject()
             perceptionManager.addTrackable(runtimeObject)
             activityController.resume()
@@ -124,7 +124,7 @@ class AugmentedObjectTest {
     @Test
     fun createAnchor_usesGivenPose() {
         val runtimeObject = FakeRuntimeObject()
-        (session.runtime.perceptionManager as FakePerceptionManager).addTrackable(runtimeObject)
+        getFakePerceptionManager().addTrackable(runtimeObject)
         xrResourcesManager.syncTrackables(listOf(runtimeObject))
         val underTest = xrResourcesManager.trackablesMap.values.first() as AugmentedObject
         val pose = Pose(Vector3(1.0f, 2.0f, 3.0f), Quaternion(1.0f, 2.0f, 3.0f, 4.0f))
@@ -139,7 +139,7 @@ class AugmentedObjectTest {
     @Test
     fun createAnchor_anchorLimitReached_returnsAnchorResourcesExhaustedResult() {
         val runtimeObject = FakeRuntimeObject()
-        (session.runtime.perceptionManager as FakePerceptionManager).addTrackable(runtimeObject)
+        getFakePerceptionManager().addTrackable(runtimeObject)
         xrResourcesManager.syncTrackables(listOf(runtimeObject))
         val underTest = xrResourcesManager.trackablesMap.values.first() as AugmentedObject
 
@@ -154,7 +154,7 @@ class AugmentedObjectTest {
     @Test
     fun createAnchor_augmentedObjectTrackingDisabled_throwsIllegalStateException() {
         val runtimeObject = FakeRuntimeObject()
-        (session.runtime.perceptionManager as FakePerceptionManager).addTrackable(runtimeObject)
+        getFakePerceptionManager().addTrackable(runtimeObject)
         xrResourcesManager.syncTrackables(listOf(runtimeObject))
         val underTest = xrResourcesManager.trackablesMap.values.first() as AugmentedObject
         session.configure(Config(augmentedObjectCategories = listOf()))
@@ -208,5 +208,9 @@ class AugmentedObjectTest {
         underTest.update()
 
         assertThat(underTest.state.value.extents).isEqualTo(newExtents)
+    }
+
+    private fun getFakePerceptionManager(): FakePerceptionManager {
+        return session.perceptionRuntime.perceptionManager as FakePerceptionManager
     }
 }

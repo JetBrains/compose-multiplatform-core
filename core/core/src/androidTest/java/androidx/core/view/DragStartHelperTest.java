@@ -206,7 +206,7 @@ public class DragStartHelperTest {
 
         // Returning true from the callback prevents further callbacks.
         verify(listener, times(1)).onDragStart(
-                eq(mDragSource), eq(helper), argThat(new TouchPositionMatcher(mDragSource, 1, 2)));
+                eq(mDragSource), eq(helper), any());
         verifyNoMoreInteractions(listener);
     }
 

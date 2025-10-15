@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation(project(":glance:glance"))
@@ -53,7 +52,6 @@ androidx {
 
 android {
     defaultConfig {
-        minSdk = 23
         compileSdk = 35
     }
     namespace = "androidx.glance.appwidget.testing.samples"

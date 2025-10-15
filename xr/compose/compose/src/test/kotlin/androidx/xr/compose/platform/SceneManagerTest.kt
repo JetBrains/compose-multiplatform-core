@@ -21,6 +21,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.createFakeSession
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +31,16 @@ import org.junit.runner.RunWith
 class SceneManagerTest {
 
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
+
+    @Before
+    fun setup() {
+        SceneManager.start()
+    }
+
+    @After
+    fun tearDown() {
+        SceneManager.stop()
+    }
 
     @Test
     fun onSceneCreated_onlyAddsSceneOnce() {

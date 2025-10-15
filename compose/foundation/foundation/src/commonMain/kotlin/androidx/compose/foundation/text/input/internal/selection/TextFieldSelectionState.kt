@@ -135,10 +135,10 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 internal class TextFieldSelectionState(
     internal val textFieldState: TransformedTextFieldState,
-    private val textLayoutState: TextLayoutState,
+    internal val textLayoutState: TextLayoutState,
     private var density: Density,
-    private var enabled: Boolean,
-    private var readOnly: Boolean,
+    enabled: Boolean,
+    readOnly: Boolean,
     var isFocused: Boolean,
     private var isPassword: Boolean,
     private val toolbarRequester: ToolbarRequester,
@@ -146,8 +146,14 @@ internal class TextFieldSelectionState(
     internal val platformSelectionBehaviors: PlatformSelectionBehaviors?,
     private var clipboard: Clipboard,
 ) {
+    var enabled: Boolean = enabled
+        private set
+
+    var readOnly: Boolean = readOnly
+        private set
+
     /** [HapticFeedback] handle to perform haptic feedback. */
-    private var hapticFeedBack: HapticFeedback? = null
+    var hapticFeedBack: HapticFeedback? = null
 
     /** A handler to trigger the [TextToolbar] to be shown or hidden */
     private var textToolbarHandler: TextToolbarHandler? = null
@@ -237,7 +243,7 @@ internal class TextFieldSelectionState(
     var directDragGestureInitiator: InputType by mutableStateOf(InputType.None)
 
     /** Whether to show the cursor handle below cursor indicator when the TextField is focused. */
-    private var showCursorHandle by mutableStateOf(false)
+    var showCursorHandle by mutableStateOf(false)
 
     /**
      * Whether to show the TextToolbar according to current selection state. This is not the final
@@ -270,7 +276,7 @@ internal class TextFieldSelectionState(
      */
     private var previousRawDragOffset: Int = -1
 
-    private var pressInteraction: PressInteraction.Press? = null
+    var pressInteraction: PressInteraction.Press? = null
 
     /**
      * State of the cursor handle that includes its visibility and position.
@@ -499,22 +505,23 @@ internal class TextFieldSelectionState(
         coroutineScope {
             launch(start = CoroutineStart.UNDISPATCHED) { detectTouchMode() }
             launch(start = CoroutineStart.UNDISPATCHED) {
-                detectPressDownGesture(
-                    onDown = {
-                        markStartContentVisibleOffset()
-                        updateHandleDragging(
-                            handle =
-                                if (isStartHandle) {
-                                    Handle.SelectionStart
-                                } else {
-                                    Handle.SelectionEnd
-                                },
-                            position = getAdjustedCoordinates(getHandlePosition(isStartHandle)),
-                        )
-                    },
-                    onUp = { clearHandleDragging() },
-                )
-            }
+                    detectPressDownGesture(
+                        onDown = {
+                            markStartContentVisibleOffset()
+                            updateHandleDragging(
+                                handle =
+                                    if (isStartHandle) {
+                                        Handle.SelectionStart
+                                    } else {
+                                        Handle.SelectionEnd
+                                    },
+                                position = getAdjustedCoordinates(getHandlePosition(isStartHandle)),
+                            )
+                        },
+                        onUp = { clearHandleDragging() },
+                    )
+                }
+                .invokeOnCompletion { clearHandleDragging() }
             launch(start = CoroutineStart.UNDISPATCHED) {
                 detectSelectionHandleDragGestures(isStartHandle)
             }
@@ -566,61 +573,13 @@ internal class TextFieldSelectionState(
         interactionSource: MutableInteractionSource?,
         requestFocus: () -> Unit,
         showKeyboard: () -> Unit,
-    ) {
-        detectTapAndPress(
-            onTap = { offset ->
-                logDebug { "onTapTextField" }
-                requestFocus()
-
-                if (enabled && isFocused) {
-                    if (!readOnly) {
-                        showKeyboard()
-                        if (textFieldState.visualText.isNotEmpty()) {
-                            showCursorHandle = true
-                        }
-                    }
-
-                    // do not show any TextToolbar.
-                    updateTextToolbarState(None)
-
-                    val coercedOffset = textLayoutState.coercedInVisibleBoundsOfInputText(offset)
-
-                    placeCursorAtNearestOffset(
-                        textLayoutState.fromDecorationToTextLayout(coercedOffset)
-                    )
-                }
-            },
-            onPress = { offset ->
-                interactionSource?.let { interactionSource ->
-                    coroutineScope {
-                        launch {
-                            // Remove any old interactions if we didn't fire stop / cancel properly
-                            pressInteraction?.let { oldValue ->
-                                val interaction = PressInteraction.Cancel(oldValue)
-                                interactionSource.emit(interaction)
-                                pressInteraction = null
-                            }
-
-                            val press = PressInteraction.Press(offset)
-                            interactionSource.emit(press)
-                            pressInteraction = press
-                        }
-                        val success = tryAwaitRelease()
-                        pressInteraction?.let { pressInteraction ->
-                            val endInteraction =
-                                if (success) {
-                                    PressInteraction.Release(pressInteraction)
-                                } else {
-                                    PressInteraction.Cancel(pressInteraction)
-                                }
-                            interactionSource.emit(endInteraction)
-                        }
-                        pressInteraction = null
-                    }
-                }
-            },
+    ) =
+        this@TextFieldSelectionState.detectTextFieldTapGestures(
+            this,
+            interactionSource,
+            requestFocus,
+            showKeyboard,
         )
-    }
 
     /**
      * Calculates the valid cursor position nearest to [offset] and sets the cursor to it. Takes
@@ -635,7 +594,7 @@ internal class TextFieldSelectionState(
      *   between the two spaces.
      * @return true if the cursor moved, false if the cursor position did not need to change.
      */
-    private fun placeCursorAtNearestOffset(offset: Offset): Boolean {
+    fun placeCursorAtNearestOffset(offset: Offset): Boolean {
         val layoutResult = textLayoutState.layoutResult ?: return false
 
         // First step: calculate the proposed cursor index.
@@ -760,12 +719,12 @@ internal class TextFieldSelectionState(
      * * Single taps from any source. This is handled by [detectTextFieldTapGestures]. Only
      *   exception is the first mouse down does immediately place the cursor at the position.
      */
-    suspend fun PointerInputScope.textFieldSelectionGestures(requestFocus: () -> Unit) {
-        awaitSelectionGestures(
-            mouseSelectionObserver = TextFieldMouseSelectionObserver(requestFocus),
-            textDragObserver = TextFieldTextDragObserver(requestFocus),
+    suspend fun PointerInputScope.textFieldSelectionGestures(requestFocus: () -> Unit) =
+        this@TextFieldSelectionState.textFieldSelectionGestures(
+            this,
+            TextFieldMouseSelectionObserver(requestFocus),
+            TextFieldTextDragObserver(requestFocus),
         )
-    }
 
     private inner class TextFieldMouseSelectionObserver(private val requestFocus: () -> Unit) :
         MouseSelectionObserver {
@@ -885,7 +844,21 @@ internal class TextFieldSelectionState(
         }
 
         override fun onExtend(downPosition: Offset): Boolean {
+            val layoutResult = textLayoutState.layoutResult
+            if (!enabled || layoutResult == null || textFieldState.visualText.isEmpty()) {
+                return false
+            }
+
             logDebug { "Mouse.onExtend" }
+            isDoubleOrTripleClickOnly = false
+            requestFocus()
+            updateSelection(
+                dragPosition = downPosition,
+                adjustment = SelectionAdjustment.None,
+                layoutResult = layoutResult,
+                isStartOfSelection = false,
+            )
+
             return true
         }
 
@@ -1449,11 +1422,20 @@ internal class TextFieldSelectionState(
      * requires the selection to not be collapsed, the text field to be editable, and for it to NOT
      * be a password.
      */
-    fun canCut(): Boolean =
-        !textFieldState.visualText.selection.collapsed &&
-            editable &&
-            !isPassword &&
-            clipboard.isWriteSupported()
+    fun canShowCutMenuItem(): Boolean = isCutAllowed() && clipboard.isWriteSupported()
+
+    /**
+     * Whether the cut operation is allowed in the current state. It checks the essential
+     * conditions:
+     * - the selection must be not collapsed
+     * - the text field type is not password
+     * - the text field is editable
+     *
+     * Also, see [cutWithResult]
+     */
+    @Suppress("NOTHING_TO_INLINE")
+    inline fun isCutAllowed(): Boolean =
+        !textFieldState.visualText.selection.collapsed && editable && !isPassword
 
     /**
      * The method for cutting text.
@@ -1463,23 +1445,38 @@ internal class TextFieldSelectionState(
      * offset should be between the text before the selection, and the text after the selection.
      */
     suspend fun cut() {
-        val text = textFieldState.visualText
-        if (text.selection.collapsed) return
+        val cutValue = cutWithResult() ?: return
+        clipboard.setClipEntry(cutValue.toClipEntry())
+    }
 
-        val textToCut = AnnotatedString(text.getSelectedText().toString())
-        clipboard.setClipEntry(textToCut.toClipEntry())
-
-        textFieldState.deleteSelectedText()
+    /**
+     * The method for cutting text.
+     *
+     * It returns the text that was cut and it is expected to be copied (stored in a Clipboard).
+     * This overload covers the case when handling a 'cut' ClipboardEvent.
+     */
+    fun cutWithResult(): AnnotatedString? {
+        if (!isCutAllowed()) return null
+        val selectedText = textFieldState.visualText.getSelectedText()
+        return AnnotatedString(selectedText.toString()).also { textFieldState.deleteSelectedText() }
     }
 
     /**
      * Whether a copy operation can execute now and modify the clipboard. The copy operation
      * requires the selection to not be collapsed, and the text field to NOT be a password.
      */
-    fun canCopy(): Boolean =
-        !textFieldState.visualText.selection.collapsed &&
-            !isPassword &&
-            clipboard.isWriteSupported()
+    fun canShowCopyMenuItem(): Boolean = isCopyAllowed() && clipboard.isWriteSupported()
+
+    /**
+     * Whether the copying is allowed in the current state. It checks the essential conditions:
+     * - the selection must be not collapsed
+     * - the text field type is not password
+     *
+     * Also, see [copyWithResult]
+     */
+    @Suppress("NOTHING_TO_INLINE")
+    inline fun isCopyAllowed(): Boolean =
+        !textFieldState.visualText.selection.collapsed && !isPassword
 
     /**
      * The method for copying text.
@@ -1490,15 +1487,23 @@ internal class TextFieldSelectionState(
      * selected text.
      */
     suspend fun copy(cancelSelection: Boolean = true) {
-        val text = textFieldState.visualText
-        if (text.selection.collapsed) return
+        val valueToCopy = copyWithResult(cancelSelection) ?: return
+        clipboard.setClipEntry(valueToCopy.toClipEntry())
+    }
 
-        val textToCopy = AnnotatedString(text.getSelectedText().toString())
-        clipboard.setClipEntry(textToCopy.toClipEntry())
-
-        if (!cancelSelection) return
-
-        textFieldState.collapseSelectionToMax()
+    /**
+     * The method for copying text.
+     *
+     * It returns the text that is expected to be copied (stored in a Clipboard). This method
+     * doesn't interact with the Clipboard directly, it covers the case when handling a 'copy'
+     * ClipboardEvent.
+     */
+    internal fun copyWithResult(cancelSelection: Boolean = true): AnnotatedString? {
+        if (!isCopyAllowed()) return null
+        val selectedText = textFieldState.visualText.getSelectedText()
+        return AnnotatedString(selectedText.toString()).also {
+            if (cancelSelection) textFieldState.collapseSelectionToMax()
+        }
     }
 
     // TODO(grantapher) android ClipboardManager has a way to notify primary clip changes.
@@ -1514,13 +1519,20 @@ internal class TextFieldSelectionState(
      * This method relies on the clip entry in this [TextFieldSelectionState] to be up to date via
      * calling [updateClipboardEntry].
      */
-    fun canPaste(): Boolean {
-        if (!editable || !clipboard.isReadSupported()) return false
+    fun canShowPasteMenuItem(): Boolean {
+        if (!isPasteAllowed() || !clipboard.isReadSupported()) return false
         // if receive content is not configured, we expect at least a text item to be present
         if (clipboardPasteState.hasText) return true
         // if receive content is configured, hasClip should be enough to show the paste option
         return receiveContentConfiguration?.invoke() != null && clipboardPasteState.hasClip
     }
+
+    /**
+     * Whether 'paste' is allowed. It's allowed when the text field is editable.
+     *
+     * Also, see [onPasteEvent]
+     */
+    @Suppress("NOTHING_TO_INLINE") inline fun isPasteAllowed(): Boolean = editable
 
     suspend fun paste() {
         val receiveContentConfiguration =
@@ -1566,10 +1578,27 @@ internal class TextFieldSelectionState(
     }
 
     /**
+     * The method for pasting text.
+     *
+     * @param value - the text value to paste. It can be provided externally, for example from a
+     *   platform's ClipboardEvent.
+     *
+     * This overload doesn't interact with the Clipboard directly. It covers the case when handling
+     * a 'paste' ClipboardEvent.
+     */
+    internal fun onPasteEvent(value: AnnotatedString) {
+        if (!isPasteAllowed()) return
+        textFieldState.replaceSelectedText(
+            value.text,
+            undoBehavior = TextFieldEditUndoBehavior.NeverMerge,
+        )
+    }
+
+    /**
      * Whether a select all operation can execute now and have a meaningful effect. The select all
      * operation requires the selection to not already be selecting the entire text field.
      */
-    fun canSelectAll(): Boolean =
+    fun canShowSelectAllMenuItem(): Boolean =
         textFieldState.visualText.selection.length != textFieldState.visualText.length
 
     /**
@@ -1585,7 +1614,8 @@ internal class TextFieldSelectionState(
      * Whether autofill can execute upon this text field. The autofill action only appears when the
      * text field is editable and no text is currently selected.
      */
-    fun canAutofill(): Boolean = editable && textFieldState.visualText.selection.collapsed
+    fun canShowAutofillMenuItem(): Boolean =
+        editable && textFieldState.visualText.selection.collapsed
 
     /**
      * The method for autofilling.
@@ -1642,7 +1672,7 @@ internal class TextFieldSelectionState(
      *   end padding - a collapsed selection may be necessary context to avoid selection flickering.
      * @param isStartOfSelection Whether this is, for certain, the beginning of a selection.
      */
-    private fun updateSelection(
+    internal fun updateSelection(
         textFieldCharSequence: TextFieldCharSequence,
         startOffset: Int,
         endOffset: Int,
@@ -1716,6 +1746,92 @@ internal class TextFieldSelectionState(
 
         return result
     }
+}
+
+/** Runs platform-specific text tap gestures logic. */
+internal expect suspend fun TextFieldSelectionState.detectTextFieldTapGestures(
+    pointerInputScope: PointerInputScope,
+    interactionSource: MutableInteractionSource?,
+    requestFocus: () -> Unit,
+    showKeyboard: () -> Unit,
+)
+
+internal suspend fun TextFieldSelectionState.defaultDetectTextFieldTapGestures(
+    pointerInputScope: PointerInputScope,
+    interactionSource: MutableInteractionSource?,
+    requestFocus: () -> Unit,
+    showKeyboard: () -> Unit,
+) {
+    pointerInputScope.detectTapAndPress(
+        onTap = { offset ->
+            logDebug { "onTapTextField" }
+            requestFocus()
+
+            if (enabled && isFocused) {
+                if (!readOnly) {
+                    showKeyboard()
+                    if (textFieldState.visualText.isNotEmpty()) {
+                        showCursorHandle = true
+                    }
+                }
+
+                // do not show any TextToolbar.
+                updateTextToolbarState(None)
+
+                val coercedOffset = textLayoutState.coercedInVisibleBoundsOfInputText(offset)
+
+                placeCursorAtNearestOffset(
+                    textLayoutState.fromDecorationToTextLayout(coercedOffset)
+                )
+            }
+        },
+        onPress = { offset ->
+            interactionSource?.let { interactionSource ->
+                coroutineScope {
+                    launch {
+                        // Remove any old interactions if we didn't fire stop / cancel properly
+                        pressInteraction?.let { oldValue ->
+                            val interaction = PressInteraction.Cancel(oldValue)
+                            interactionSource.emit(interaction)
+                            pressInteraction = null
+                        }
+
+                        val press = PressInteraction.Press(offset)
+                        interactionSource.emit(press)
+                        pressInteraction = press
+                    }
+                    val success = tryAwaitRelease()
+                    pressInteraction?.let { pressInteraction ->
+                        val endInteraction =
+                            if (success) {
+                                PressInteraction.Release(pressInteraction)
+                            } else {
+                                PressInteraction.Cancel(pressInteraction)
+                            }
+                        interactionSource.emit(endInteraction)
+                    }
+                    pressInteraction = null
+                }
+            }
+        },
+    )
+}
+
+/** Runs platform-specific text selection gestures logic. */
+internal expect suspend fun TextFieldSelectionState.textFieldSelectionGestures(
+    pointerInputScope: PointerInputScope,
+    mouseSelectionObserver: MouseSelectionObserver,
+    textDragObserver: TextDragObserver,
+)
+
+internal suspend fun PointerInputScope.defaultTextFieldSelectionGestures(
+    mouseSelectionObserver: MouseSelectionObserver,
+    textDragObserver: TextDragObserver,
+) {
+    awaitSelectionGestures(
+        mouseSelectionObserver = mouseSelectionObserver,
+        textDragObserver = textDragObserver,
+    )
 }
 
 private fun TextRange.reverse() = TextRange(end, start)

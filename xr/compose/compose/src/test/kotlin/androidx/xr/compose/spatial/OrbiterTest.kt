@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,14 +49,14 @@ import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestJxrPlatformAdapter
+import androidx.xr.compose.testing.TestSceneRuntime
 import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.testing.toDp
-import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
@@ -276,12 +276,9 @@ class OrbiterTest {
     fun orbiter_inSubspace_spatialPanelParent_usesSpatialPanelSize() {
         val testMainPanelEntity = mock<RtPanelEntity>()
         val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        val testJxrPlatformAdapter =
-            TestJxrPlatformAdapter.create(fakeRuntime).apply {
-                mainPanelEntity = testMainPanelEntity
-            }
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity, testJxrPlatformAdapter)
+        val testSceneRuntime =
+            TestSceneRuntime.create(fakeRuntime).apply { mainPanelEntity = testMainPanelEntity }
+        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
 
         composeTestRule.setContentWithCompatibilityForXr {
             ApplicationSubspace {
@@ -345,12 +342,9 @@ class OrbiterTest {
     fun orbiter_inSubspace_mainPanelParent_usesMainPanelSize() {
         val testMainPanelEntity = mock<RtPanelEntity>()
         val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        val testJxrPlatformAdapter =
-            TestJxrPlatformAdapter.create(fakeRuntime).apply {
-                mainPanelEntity = testMainPanelEntity
-            }
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity, testJxrPlatformAdapter)
+        val testSceneRuntime =
+            TestSceneRuntime.create(fakeRuntime).apply { mainPanelEntity = testMainPanelEntity }
+        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
 
         composeTestRule.setContentWithCompatibilityForXr {
             ApplicationSubspace {

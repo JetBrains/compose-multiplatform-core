@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.BitmapFontData;
 import androidx.compose.remote.core.operations.BitmapTextMeasure;
@@ -26,6 +27,7 @@ import androidx.compose.remote.core.operations.ColorConstant;
 import androidx.compose.remote.core.operations.ColorExpression;
 import androidx.compose.remote.core.operations.ComponentValue;
 import androidx.compose.remote.core.operations.ConditionalOperations;
+import androidx.compose.remote.core.operations.DataDynamicListFloat;
 import androidx.compose.remote.core.operations.DataListFloat;
 import androidx.compose.remote.core.operations.DataListIds;
 import androidx.compose.remote.core.operations.DataMapIds;
@@ -70,6 +72,7 @@ import androidx.compose.remote.core.operations.MatrixSkew;
 import androidx.compose.remote.core.operations.MatrixTranslate;
 import androidx.compose.remote.core.operations.NamedVariable;
 import androidx.compose.remote.core.operations.PaintData;
+import androidx.compose.remote.core.operations.ParticlesCompare;
 import androidx.compose.remote.core.operations.ParticlesCreate;
 import androidx.compose.remote.core.operations.ParticlesLoop;
 import androidx.compose.remote.core.operations.PathAppend;
@@ -93,6 +96,7 @@ import androidx.compose.remote.core.operations.TextSubtext;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.TimeAttribute;
 import androidx.compose.remote.core.operations.TouchExpression;
+import androidx.compose.remote.core.operations.UpdateDynamicFloatList;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.WakeIn;
 import androidx.compose.remote.core.operations.layout.CanvasContent;
@@ -119,6 +123,7 @@ import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
 import androidx.compose.remote.core.operations.layout.managers.StateLayout;
 import androidx.compose.remote.core.operations.layout.managers.TextLayout;
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BackgroundModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation;
@@ -128,6 +133,7 @@ import androidx.compose.remote.core.operations.layout.modifiers.DrawContentOpera
 import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.HeightInModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.HeightModifierOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.MarqueeModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.OffsetModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.PaddingModifierOperation;
@@ -161,6 +167,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -168,6 +175,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** Provides an abstract buffer to encode/decode RemoteCompose operations */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeBuffer {
     public static final int EASING_CUBIC_STANDARD = FloatAnimation.CUBIC_STANDARD;
     public static final int EASING_CUBIC_ACCELERATE = FloatAnimation.CUBIC_ACCELERATE;
@@ -1250,6 +1258,26 @@ public class RemoteComposeBuffer {
     }
 
     /**
+     * add a dynamic float array
+     *
+     * @param id id of the array
+     * @param size size of the array
+     */
+    public void addDynamicFloatArray(int id, float size) {
+        DataDynamicListFloat.apply(mBuffer, id, size);
+    }
+
+    /**
+     * Set a value in the given DataDynamicListFloat
+     * @param id the id of the DataDynamicListFloat
+     * @param index the index of the value to modify
+     * @param value the new value
+     */
+    public void setArrayValue(int id, float index, float value) {
+        UpdateDynamicFloatList.apply(mBuffer, id, index, value);
+    }
+
+    /**
      * This creates a list of individual floats
      *
      * @param id list id
@@ -1525,6 +1553,13 @@ public class RemoteComposeBuffer {
         float b = (color & 0xff) / 255.0f;
         float a = (color >> 24 & 0xff) / 255.0f;
         BackgroundModifierOperation.apply(mBuffer, 0f, 0f, 0f, 0f, r, g, b, a, shape);
+    }
+
+    /**
+     * Add an align modifier
+     */
+    public void addModifierAlignBy(float line) {
+        AlignByModifierOperation.apply(mBuffer, line, 0);
     }
 
     /**
@@ -1842,6 +1877,7 @@ public class RemoteComposeBuffer {
      * @param fontStyle font style (0 : Normal, 1 : Italic)
      * @param fontWeight font weight (1 to 1000, normal is 400)
      * @param fontFamilyId font family or null
+     * @param flags flags for configuration, only use by color (0: Static color, 1: Color Id)
      * @param textAlign text alignment (0 : Center, 1 : Left, 2 : Right)
      * @param overflow
      * @param maxLines
@@ -1855,10 +1891,13 @@ public class RemoteComposeBuffer {
             int fontStyle,
             float fontWeight,
             int fontFamilyId,
-            int textAlign,
+            short flags,
+            short textAlign,
             int overflow,
             int maxLines) {
         mLastComponentId = getComponentId(componentId);
+        int flagsAndTextAlign = (flags << 16) | (textAlign & 0xFFFF);
+
         TextLayout.apply(
                 mBuffer,
                 mLastComponentId,
@@ -1869,7 +1908,7 @@ public class RemoteComposeBuffer {
                 fontStyle,
                 fontWeight,
                 fontFamilyId,
-                textAlign,
+                flagsAndTextAlign,
                 overflow,
                 maxLines);
     }
@@ -1920,6 +1959,28 @@ public class RemoteComposeBuffer {
     public void addParticlesLoop(
             int id, float @Nullable [] restart, float @NonNull [][] expressions) {
         ParticlesLoop.apply(mBuffer, id, restart, expressions);
+    }
+
+    /**
+     * Add a comparison of 1 or 2 particles
+     *
+     * @param id the particle engine id
+     * @param flags configuration flags
+     * @param min the min index to process
+     * @param max the max index to process
+     * @param condition apply if exp > 0
+     * @param apply1 the first result
+     * @param apply2 the second result
+     */
+    public void addParticlesComparison(
+            int id,
+            short flags,
+            float min,
+            float max,
+            float @Nullable [] condition,
+            float @Nullable [][] apply1,
+            float @Nullable [][] apply2) {
+        ParticlesCompare.apply(mBuffer, id, flags, min, max, condition, apply1, apply2);
     }
 
     /** Closes the particle engine container */
@@ -2045,6 +2106,19 @@ public class RemoteComposeBuffer {
                 BitmapData.ENCODING_INLINE,
                 (short) imageHeight,
                 data); // todo: potential npe
+        return imageId;
+    }
+
+    /**
+     * Store an image url in the buffer
+     *
+     * @param imageId the image id
+     * @param url the image url
+     * @return the image id
+     */
+    public int storeBitmapUrl(int imageId, @NonNull String url) {
+        BitmapData.apply(mBuffer, imageId, BitmapData.TYPE_PNG, (short) 1, BitmapData.ENCODING_URL,
+                (short) 1, url.getBytes(StandardCharsets.UTF_8));
         return imageId;
     }
 
@@ -2318,6 +2392,21 @@ public class RemoteComposeBuffer {
      */
     public void addDrawContentOperation() {
         DrawContentOperation.apply(mBuffer);
+    }
+
+    /**
+     * Add a layout compute modifier (either computePosition or computeMeasure modifier)
+     * @param type TYPE_POSITION or TYPE_MEASURE
+     * @param boundsId the id of the array that will contain the x/y/width/height of the component
+     * @param animateChanges true to animate when changes in the measure happen.
+     */
+    public void startLayoutCompute(int type, int boundsId, boolean animateChanges) {
+        LayoutComputeOperation.apply(mBuffer, type, boundsId, animateChanges);
+    }
+
+    /** end the definition of a layout compute modifier */
+    public void endLayoutCompute() {
+        ContainerEnd.apply(mBuffer);
     }
 
     /**

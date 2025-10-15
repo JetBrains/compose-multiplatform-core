@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:JvmName("TraceSinkUtils") // Provide a reasonable name for Java users.
+
 package androidx.tracing.driver.wire
 
 import java.io.File
@@ -33,6 +35,7 @@ private fun File.perfettoTraceFile(): File {
     return traceFile
 }
 
+@JvmOverloads
 public fun TraceSink(
     directory: File,
     sequenceId: Int,

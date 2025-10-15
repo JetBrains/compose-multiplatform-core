@@ -26,7 +26,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     baselineProfile(project(":benchmark:integration-tests:baselineprofile-library-producer"))
 }
 

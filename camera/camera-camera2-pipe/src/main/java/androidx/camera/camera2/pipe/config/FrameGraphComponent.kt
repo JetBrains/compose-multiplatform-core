@@ -29,6 +29,8 @@ import javax.inject.Qualifier
 import javax.inject.Scope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 
 @Scope internal annotation class FrameGraphScope
 
@@ -70,9 +72,13 @@ internal abstract class FrameGraphModule {
         @FrameGraphScope
         @Provides
         @FrameGraphCoroutineScope
-        fun provideFrameGraphCoroutineScope(threads: Threads): CoroutineScope {
+        fun provideFrameGraphCoroutineScope(
+            threads: Threads,
+            @CameraPipeJob cameraPipeJob: Job,
+        ): CoroutineScope {
             return CoroutineScope(
-                threads.lightweightDispatcher.plus(CoroutineName("CXCP-FrameGraph"))
+                SupervisorJob(cameraPipeJob) +
+                    threads.lightweightDispatcher.plus(CoroutineName("CXCP-FrameGraph"))
             )
         }
     }

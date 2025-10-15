@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(project(":compose:foundation:foundation"))

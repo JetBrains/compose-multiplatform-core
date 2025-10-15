@@ -19,6 +19,7 @@ package androidx.wear.compose.material3
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -204,6 +205,40 @@ class PagerScaffoldTest {
 
         // Edge Button should be visible again
         rule.onNodeWithTag(EHB_TAG + "0").captureToImage().assertContainsColor(EHB_COLOR)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun modifier_on_scaffold_works() {
+        val indicatorColor = Color.Red
+        val backgroundColor = Color.Green
+        val horizontalPagerState = PagerState { 5 }
+        rule.setContentWithTheme {
+            Box(Modifier.size(150.dp).testTag(TEST_TAG)) {
+                HorizontalPagerScaffold(
+                    pagerState = horizontalPagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    pageIndicator = {
+                        HorizontalPageIndicator(
+                            pagerState = horizontalPagerState,
+                            backgroundColor = indicatorColor,
+                        )
+                    },
+                ) {
+                    Box(Modifier.fillMaxSize().background(backgroundColor))
+                }
+
+                // Obscure the top part of the screen, to avoid detecting the indicator when it is
+                // in the wrong position (top left)
+                Box(
+                    Modifier.align(Alignment.TopCenter)
+                        .size(150.dp, 75.dp)
+                        .background(backgroundColor)
+                )
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(indicatorColor)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

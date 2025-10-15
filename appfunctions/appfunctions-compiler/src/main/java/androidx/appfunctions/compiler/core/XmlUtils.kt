@@ -76,6 +76,11 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
         for (property in allOf) {
             appendChild(property.toXmlElement(doc, "allOf"))
         }
+
+        for (dataType in oneOf) {
+            appendChild(dataType.toXmlElement(doc, "oneOf"))
+        }
+
         dataTypeReference?.let {
             appendChild(doc.createElementWithTextNode("dataTypeReference", it))
         }

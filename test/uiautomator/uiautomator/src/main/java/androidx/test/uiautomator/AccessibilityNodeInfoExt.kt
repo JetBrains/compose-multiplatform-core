@@ -106,7 +106,9 @@ public fun AccessibilityNodeInfo.takeScreenshot(): Bitmap =
  *   the specified [stableIntervalMs]. Note that this won't work with elements that change
  *   constantly, like a video player.
  * @return a [androidx.test.uiautomator.StableResult] containing the latest acquired element
- *   hierarchy and screenshot, and a flag indicating if the node was stable before timeout.
+ *   hierarchy and screenshot, and a flag indicating if the node was stable before timeout. The flag
+ *   [StableResult.isTimeout] is set to false if the node was stable before the timeout expired,
+ *   true otherwise.
  */
 @JvmOverloads
 public fun AccessibilityNodeInfo.waitForStable(

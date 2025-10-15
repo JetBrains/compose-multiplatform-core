@@ -614,5 +614,17 @@ public class Flags {
         """
                 )
                 .indented()
+
+        val EspressoUiController =
+            TestFiles.java(
+                    """
+package androidx.test.espresso;
+
+public interface UiController {
+    void loopMainThreadForAtLeast(long millisDelay);
+}
+            """
+                )
+                .indented()
     }
 }

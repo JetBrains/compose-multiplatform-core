@@ -112,10 +112,12 @@ fi
 # setup from each lint module.
 export ANDROID_HOME="$APP_HOME/../../prebuilts/fullsdk-$plat"
 # override JAVA_HOME, because CI machines have it and it points to very old JDK
-export ANDROIDX_JDK17="$APP_HOME/../../prebuilts/jdk/jdk17/$plat-$platform_suffix"
 export ANDROIDX_JDK21="$APP_HOME/../../prebuilts/jdk/jdk21/$plat-$platform_suffix"
 export JAVA_HOME=$ANDROIDX_JDK21
 export STUDIO_GRADLE_JDK=$JAVA_HOME
+
+# Creates/overwrites local.properties with sdk.dir and cmake.dir to avoid invalidating configuration cache
+$APP_HOME/development/write_sdk_path.sh
 
 # Warn developers if they try to build top level project without the full checkout
 [ ! -d "$JAVA_HOME" ] && echo "Failed to find: $JAVA_HOME

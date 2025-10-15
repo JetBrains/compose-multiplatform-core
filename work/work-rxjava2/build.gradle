@@ -38,7 +38,6 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     testImplementation(libs.truth)
     testImplementation(libs.junit)
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.mockitoCore4)
 }
 

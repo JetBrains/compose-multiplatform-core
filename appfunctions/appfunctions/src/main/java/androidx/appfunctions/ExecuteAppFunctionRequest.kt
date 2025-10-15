@@ -21,6 +21,7 @@ import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
+import androidx.appfunctions.metadata.AppFunctionMetadata
 
 /**
  * Represents a request to execute a specific app function.
@@ -47,8 +48,7 @@ constructor(
         functionParameters: AppFunctionData,
     ) : this(targetPackageName, functionIdentifier, functionParameters, useJetpackSchema = true)
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toPlatformExtensionClass():
+    internal fun toPlatformExtensionClass():
         com.android.extensions.appfunctions.ExecuteAppFunctionRequest {
         return com.android.extensions.appfunctions.ExecuteAppFunctionRequest.Builder(
                 targetPackageName,
@@ -65,8 +65,7 @@ constructor(
     }
 
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun toPlatformClass(): android.app.appfunctions.ExecuteAppFunctionRequest {
+    internal fun toPlatformClass(): android.app.appfunctions.ExecuteAppFunctionRequest {
         return android.app.appfunctions.ExecuteAppFunctionRequest.Builder(
                 targetPackageName,
                 functionIdentifier,
@@ -105,37 +104,59 @@ constructor(
         internal const val EXTRA_USE_JETPACK_SCHEMA = "androidXAppfunctionsExtraUseJetpackSchema"
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun fromPlatformExtensionClass(
-            request: com.android.extensions.appfunctions.ExecuteAppFunctionRequest
-        ): ExecuteAppFunctionRequest {
-            return ExecuteAppFunctionRequest(
+        internal fun fromPlatformExtensionClass(
+            request: com.android.extensions.appfunctions.ExecuteAppFunctionRequest,
+            functionMetadata: AppFunctionMetadata? = null,
+        ): ExecuteAppFunctionRequest =
+            ExecuteAppFunctionRequest(
                 targetPackageName = request.targetPackageName,
                 functionIdentifier = request.functionIdentifier,
                 functionParameters =
-                    AppFunctionData(
-                        request.parameters,
-                        request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
+                    createAppFunctionDataWithParameterSpec(
+                        functionMetadata,
+                        request.functionIdentifier,
+                        AppFunctionData(
+                            request.parameters,
+                            request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
+                        ),
                     ),
                 useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
             )
-        }
 
         @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun fromPlatformClass(
-            request: android.app.appfunctions.ExecuteAppFunctionRequest
-        ): ExecuteAppFunctionRequest {
-            return ExecuteAppFunctionRequest(
+        internal fun fromPlatformClass(
+            request: android.app.appfunctions.ExecuteAppFunctionRequest,
+            functionMetadata: AppFunctionMetadata? = null,
+        ): ExecuteAppFunctionRequest =
+            ExecuteAppFunctionRequest(
                 targetPackageName = request.targetPackageName,
                 functionIdentifier = request.functionIdentifier,
                 functionParameters =
-                    AppFunctionData(
-                        request.parameters,
-                        request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
+                    createAppFunctionDataWithParameterSpec(
+                        functionMetadata,
+                        request.functionIdentifier,
+                        AppFunctionData(
+                            request.parameters,
+                            request.extras.getBundle(EXTRA_PARAMETERS) ?: Bundle.EMPTY,
+                        ),
                     ),
                 useJetpackSchema = request.extras.getBoolean(EXTRA_USE_JETPACK_SCHEMA, false),
             )
-        }
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        private fun createAppFunctionDataWithParameterSpec(
+            // TODO: b/445389498 - Make function metadata non null after fixing tests.
+            functionMetadata: AppFunctionMetadata? = null,
+            functionIdentifier: String,
+            parametersAfd: AppFunctionData,
+        ): AppFunctionData =
+            if (functionMetadata != null) {
+                parametersAfd.replaceSpecWith(
+                    functionMetadata.parameters,
+                    functionMetadata.components,
+                )
+            } else {
+                parametersAfd
+            }
     }
 }

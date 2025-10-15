@@ -27,7 +27,6 @@ plugins {
 dependencies {
     api("androidx.navigation:navigation-compose:2.8.0")
     implementation(project(":compose:material:material"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinSerializationCore)
 
     androidTestImplementation(project(":compose:test-utils"))

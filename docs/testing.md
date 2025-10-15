@@ -189,8 +189,8 @@ new goldens. And re-run presubmit. Your tests should now pass!
 
 #### Running manually / debugging
 
-Screenshot tests can be run locally using pixel 2 api33 emulator. Start the
-emulator using [these](#emulator) steps.
+Screenshot tests can be run locally using medium phone API 35 emulator. Start
+the emulator using [these](#emulator) steps.
 
 Wait until the emulator is running and run the tests as you would on a regular
 device.

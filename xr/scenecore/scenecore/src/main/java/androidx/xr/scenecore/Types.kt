@@ -16,6 +16,7 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 
 /** Type of plane based on orientation i.e. Horizontal or Vertical. */
 // TODO - b/419544472 Align on a common implementation for this type in SceneCore & ARCore.
@@ -25,10 +26,11 @@ public object PlaneOrientation {
     public const val ANY: Int = 2
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @Retention(AnnotationRetention.SOURCE)
 @IntDef(PlaneOrientation.HORIZONTAL, PlaneOrientation.VERTICAL, PlaneOrientation.ANY)
 @Target(AnnotationTarget.TYPE, AnnotationTarget.PROPERTY, AnnotationTarget.VALUE_PARAMETER)
-internal annotation class PlaneOrientationValue
+public annotation class PlaneOrientationValue
 
 /** Semantic plane types. */
 // TODO - b/419544472 Align on a common implementation for this type in SceneCore & ARCore.
@@ -41,6 +43,7 @@ public object PlaneSemanticType {
     public const val ANY: Int = 4
 }
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 @Retention(AnnotationRetention.SOURCE)
 @IntDef(
     PlaneSemanticType.WALL,
@@ -50,4 +53,4 @@ public object PlaneSemanticType {
     PlaneSemanticType.ANY,
 )
 @Target(AnnotationTarget.TYPE, AnnotationTarget.PROPERTY, AnnotationTarget.VALUE_PARAMETER)
-internal annotation class PlaneSemanticTypeValue
+public annotation class PlaneSemanticTypeValue

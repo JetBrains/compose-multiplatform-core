@@ -189,8 +189,8 @@ package androidx.core.app {
   public final class MultiWindowModeChangedInfo {
     ctor public MultiWindowModeChangedInfo(boolean isInMultiWindowMode);
     ctor @RequiresApi(26) public MultiWindowModeChangedInfo(boolean isInMultiWindowMode, android.content.res.Configuration newConfig);
-    method @RequiresApi(26) public android.content.res.Configuration getNewConfig();
-    method public boolean isInMultiWindowMode();
+    method @InaccessibleFromKotlin @RequiresApi(26) public android.content.res.Configuration getNewConfig();
+    method @InaccessibleFromKotlin public boolean isInMultiWindowMode();
     property public boolean isInMultiWindowMode;
     property @RequiresApi(26) public android.content.res.Configuration newConfig;
   }
@@ -980,8 +980,8 @@ package androidx.core.app {
   public final class PictureInPictureModeChangedInfo {
     ctor public PictureInPictureModeChangedInfo(boolean isInPictureInPictureMode);
     ctor @RequiresApi(26) public PictureInPictureModeChangedInfo(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig);
-    method @RequiresApi(26) public android.content.res.Configuration getNewConfig();
-    method public boolean isInPictureInPictureMode();
+    method @InaccessibleFromKotlin @RequiresApi(26) public android.content.res.Configuration getNewConfig();
+    method @InaccessibleFromKotlin public boolean isInPictureInPictureMode();
     property public boolean isInPictureInPictureMode;
     property @RequiresApi(26) public android.content.res.Configuration newConfig;
   }
@@ -2094,10 +2094,10 @@ package androidx.core.os {
   }
 
   @RequiresApi(api=35) public final class ProfilingRequest {
-    method public android.os.CancellationSignal? getCancellationSignal();
-    method public android.os.Bundle getParams();
-    method public int getProfilingType();
-    method public String? getTag();
+    method @InaccessibleFromKotlin public android.os.CancellationSignal? getCancellationSignal();
+    method @InaccessibleFromKotlin public android.os.Bundle getParams();
+    method @InaccessibleFromKotlin public int getProfilingType();
+    method @InaccessibleFromKotlin public String? getTag();
     property public android.os.CancellationSignal? cancellationSignal;
     property public android.os.Bundle params;
     property public int profilingType;

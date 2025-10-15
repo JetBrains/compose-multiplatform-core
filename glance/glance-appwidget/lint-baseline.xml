@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.13.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0-alpha01)" variant="all" version="8.13.0-alpha01">
+<issues format="6" by="lint 9.0.0-alpha05" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha05)" variant="all" version="9.0.0-alpha05">
 
     <issue
         id="CheckResult"
@@ -71,6 +71,69 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/glance/appwidget/CoroutineBroadcastReceiverTest.kt"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/glance_colorOnSurface` is marked as private in androidx.glance:glance:1.2.0-beta01"
+        errorLine1="            android:textColor=&quot;@color/glance_colorOnSurface&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/glance_error_layout.xml"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/glance_colorSurface` is marked as private in androidx.glance:glance:1.2.0-beta01"
+        errorLine1="    &lt;solid android:color=&quot;@color/glance_colorSurface&quot;/>"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable-v31/glance_error_layout_background.xml"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/glance_colorSurface` is marked as private in androidx.glance:glance:1.2.0-beta01"
+        errorLine1="    &lt;solid android:color=&quot;@color/glance_colorSurface&quot;/>"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/glance_error_layout_background.xml"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/glance_colorWidgetBackground` is marked as private in androidx.glance:glance:1.2.0-beta01"
+        errorLine1="    &lt;solid android:color=&quot;@color/glance_colorWidgetBackground&quot; />"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable-v31/glance_loading_layout_background.xml"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/glance_colorWidgetBackground` is marked as private in androidx.glance:glance:1.2.0-beta01"
+        errorLine1="    &lt;solid android:color=&quot;@color/glance_colorWidgetBackground&quot; />"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/glance_loading_layout_background.xml"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/glance_colorPrimaryContainer` is marked as private in androidx.glance:glance:1.2.0-beta01"
+        errorLine1="            &lt;solid android:color=&quot;@color/glance_colorPrimaryContainer&quot; />"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/glance_progress_horizontal.xml"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/glance_colorPrimary` is marked as private in androidx.glance:glance:1.2.0-beta01"
+        errorLine1="                &lt;solid android:color=&quot;@color/glance_colorPrimary&quot; />"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/glance_progress_horizontal.xml"/>
     </issue>
 
     <issue

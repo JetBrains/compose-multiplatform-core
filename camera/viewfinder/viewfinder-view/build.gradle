@@ -46,7 +46,6 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
@@ -59,7 +58,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.camera.viewfinder.view"
     lint {
         enable.add("CameraXQuirksClassDetector")

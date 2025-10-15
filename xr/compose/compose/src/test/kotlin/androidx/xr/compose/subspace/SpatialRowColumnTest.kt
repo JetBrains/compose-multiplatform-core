@@ -46,6 +46,7 @@ import org.junit.runner.RunWith
 /** Tests for [SpatialRow] and [SpatialColumn]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialRowColumnTest {
+
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test

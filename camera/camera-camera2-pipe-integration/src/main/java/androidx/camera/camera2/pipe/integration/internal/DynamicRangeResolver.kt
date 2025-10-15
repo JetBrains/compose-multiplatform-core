@@ -1,11 +1,26 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package androidx.camera.camera2.pipe.integration.internal
 
 import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.compat.DynamicRangeProfilesCompat
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.UseCaseConfig
@@ -200,7 +215,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
                 combinedConstraints,
             )
         if (resolvedDynamicRange != null) {
-            Log.debug {
+            Camera2Logger.debug {
                 "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel " +
                     "from existing attached surface.\n" +
                     "$requestedDynamicRange\n->\n$resolvedDynamicRange"
@@ -218,7 +233,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
                 combinedConstraints,
             )
         if (resolvedDynamicRange != null) {
-            Log.debug {
+            Camera2Logger.debug {
                 "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel from " +
                     "concurrently bound use case." +
                     "\n$requestedDynamicRange\n->\n$resolvedDynamicRange"
@@ -238,7 +253,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
                 combinedConstraints,
             )
         ) {
-            Log.debug {
+            Camera2Logger.debug {
                 "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel to " +
                     "no compatible HDR dynamic ranges.\n$requestedDynamicRange\n" +
                     "->\n${DynamicRange.SDR}"
@@ -269,7 +284,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
             resolvedDynamicRange =
                 findSupportedHdrMatch(requestedDynamicRange, hdrDefaultRanges, combinedConstraints)
             if (resolvedDynamicRange != null) {
-                Log.debug {
+                Camera2Logger.debug {
                     "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel" +
                         "from ${
                             if ((resolvedDynamicRange == recommendedRange)) "recommended"
@@ -298,7 +313,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
                 continue
             }
             if (canResolveDynamicRange(requestedDynamicRange, candidateRange)) {
-                Log.debug {
+                Camera2Logger.debug {
                     "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel " +
                         "from validated dynamic range constraints or supported HDR dynamic " +
                         "ranges.\n$requestedDynamicRange\n->\n$candidateRange"
@@ -408,7 +423,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
         constraints: Set<DynamicRange>,
     ): Boolean {
         if (!constraints.contains(candidateRange)) {
-            Log.debug {
+            Camera2Logger.debug {
                 "DynamicRangeResolver: Candidate Dynamic range is not within constraints.\n" +
                     "Dynamic range to resolve:\n" +
                     "  $rangeToResolve\n" +

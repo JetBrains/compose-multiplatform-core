@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
 
     implementation("androidx.activity:activity-compose:1.10.1")
@@ -47,6 +46,7 @@ dependencies {
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(project(":compose:test-utils"))
+    testImplementation(project(":lifecycle:lifecycle-runtime-testing"))
 }
 
 android {
@@ -56,9 +56,6 @@ android {
     buildFeatures {
         resValues = true
         aidl = true
-    }
-    defaultConfig {
-        minSdk = 23
     }
     buildTypes.configureEach {
         stableAidl {

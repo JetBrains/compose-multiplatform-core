@@ -43,7 +43,6 @@ dependencies {
     // Manually align dependencies across debugRuntime and debugAndroidTestRuntime.
     androidTestImplementation("androidx.annotation:annotation:1.8.1")
 
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestRuntimeOnly(libs.testCore)
     androidTestRuntimeOnly(libs.testRunner)
 }

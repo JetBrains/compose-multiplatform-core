@@ -16,15 +16,13 @@
 
 package androidx.appfunctions.metadata
 
-import androidx.annotation.RestrictTo
 import androidx.appsearch.annotation.Document
 import androidx.appsearch.app.AppSearchSchema
 import com.android.extensions.appfunctions.AppFunctionManager
 
 /** A mirror Document class of [android.app.appfunctions.AppFunctionRuntimeMetadata]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Document
-public data class AppFunctionRuntimeMetadata(
+internal data class AppFunctionRuntimeMetadata(
     @Document.Id val id: String,
     @Document.Namespace val namespace: String,
     @Document.StringProperty val functionId: String,

@@ -35,6 +35,8 @@ import androidx.wear.compose.material3.samples.FadingExpandingLabelButtonSample
 import androidx.wear.compose.material3.samples.ImageCardSample
 import androidx.wear.compose.material3.samples.LevelIndicatorSample
 import androidx.wear.compose.material3.samples.ListHeaderSample
+import androidx.wear.compose.material3.samples.NonClickableImageCardSample
+import androidx.wear.compose.material3.samples.NonClickableTitleCardWithImageWithTimeAndTitleSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
 import androidx.wear.compose.material3.samples.SwipeToRevealNoPartialRevealWithScalingLazyColumnSample
@@ -46,6 +48,7 @@ import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitl
 import androidx.wear.compose.material3.samples.TransformingLazyColumnAnimationSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnExpandableCardSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnReducedMotionSample
+import androidx.wear.compose.material3.samples.TransformingLazyColumnReverseLayoutSample
 
 val WearMaterial3Demos =
     Material3DemoCategory(
@@ -140,8 +143,14 @@ val WearMaterial3Demos =
                         ComposableDemo("App Card") { AppCardDemo() },
                         ComposableDemo("Title Card") { TitleCardDemo() },
                         ComposableDemo("Base Image Card") { Centralize { ImageCardSample() } },
+                        ComposableDemo("Non Clickable Image Card") {
+                            Centralize { NonClickableImageCardSample() }
+                        },
                         ComposableDemo("Image Card") {
                             Centralize { TitleCardWithImageWithTimeAndTitleSample() }
+                        },
+                        ComposableDemo("Non Clickable Image Card") {
+                            Centralize { NonClickableTitleCardWithImageWithTimeAndTitleSample() }
                         },
                         ComposableDemo("Image Card Builder") { ImageCardBuilder() },
                     ),
@@ -256,12 +265,16 @@ val WearMaterial3Demos =
                         ComposableDemo("Animation Demo") {
                             TransformingLazyColumnAnimationSample()
                         },
+                        ComposableDemo("Reversed layout") {
+                            TransformingLazyColumnReverseLayoutSample()
+                        },
                         ComposableDemo("Reduced Motion") {
                             TransformingLazyColumnReducedMotionSample()
                         },
                     ),
                 ),
-                ComposableDemo("Text") { TextWeightDemo() },
+                ComposableDemo("Text Block") { TextBlockDemo() },
+                ComposableDemo("Text Weights") { TextWeightDemo() },
             )
             .sortedBy { it.title },
     )

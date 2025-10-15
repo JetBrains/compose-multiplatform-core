@@ -45,7 +45,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 implementation(project(":paging:paging-common"))
                 implementation(libs.kotlinTest)
             }

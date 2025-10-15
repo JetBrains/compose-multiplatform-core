@@ -32,7 +32,6 @@ plugins {
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesCore)
     api("androidx.annotation:annotation:1.8.1")
     implementation(libs.guavaListenableFuture)
@@ -53,13 +52,12 @@ dependencies {
 android {
     defaultConfig {
         minSdk = 30
+        consumerProguardFiles("proguard-rules.pro")
     }
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-
         stableAidl {
             version = 1
         }

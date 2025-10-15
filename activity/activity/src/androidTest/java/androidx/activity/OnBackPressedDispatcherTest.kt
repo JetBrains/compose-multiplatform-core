@@ -19,7 +19,7 @@ package androidx.activity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.navigationevent.DirectNavigationEventInput
-import androidx.navigationevent.testing.TestNavigationEventCallback
+import androidx.navigationevent.testing.TestNavigationEventHandler
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -473,59 +473,66 @@ class OnBackPressedHandlerTest {
                 },
             )
 
-        assertWithMessage("initial reportCount").that(reportCount).isEqualTo(0)
+        // The listener is immediately invoked with the initial state (false) by navigation event,
+        // ensuring the consumer is always in sync without a separate state query.
+        assertWithMessage("initial reportCount").that(reportCount).isEqualTo(1)
         assertWithMessage("initial reportedHasEnabledCallbacks")
             .that(reportedHasEnabledCallbacks)
             .isFalse()
 
         val callbackA = dispatcher.addCallback(enabled = false) {}
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(0)
+        // The first call to `addCallback` triggers lazy initialization of the internal dispatcher.
+        // This causes an immediate "initial state" emission with the current value (`false`).
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(1)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isFalse()
 
+        // Enabling the callback flips the overall state from false to true, causing an update.
         callbackA.isEnabled = true
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(1)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(2)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
 
+        // Adding/removing callbacks while the overall state remains `true` does not update.
         val callbackB = dispatcher.addCallback {}
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(1)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(2)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
 
         callbackA.remove()
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(1)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(2)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
 
+        // Removing the LAST enabled callback flips the state from true to false, causing an update.
         callbackB.remove()
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(2)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(3)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isFalse()
 
         dispatcher.addCallback {}
 
-        assertWithMessage("reportCount").that(reportCount).isEqualTo(3)
+        assertWithMessage("reportCount").that(reportCount).isEqualTo(4)
         assertWithMessage("reportedHasEnabledCallbacks").that(reportedHasEnabledCallbacks).isTrue()
     }
 
     @UiThreadTest
     @Test
     fun testBothCallbacksAdded() {
-        val callback1 = TestNavigationEventCallback()
-        dispatcher.eventDispatcher.addCallback(callback1)
+        val handler = TestNavigationEventHandler()
+        dispatcher.eventDispatcher.addHandler(handler)
 
-        val callback2 = CountingOnBackPressedCallback()
-        dispatcher.addCallback(callback2)
+        val callback = CountingOnBackPressedCallback()
+        dispatcher.addCallback(callback)
 
         dispatcher.onBackPressed()
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should not be incremented as the callback is not at the top")
-            .that(callback1.completedInvocations)
+            .that(handler.onBackCompletedInvocations)
             .isEqualTo(0)
         assertWithMessage("Count should be incremented after each onBackPressed")
-            .that(callback2.count)
+            .that(callback.count)
             .isEqualTo(2)
     }
 
@@ -575,7 +582,7 @@ class OnBackPressedHandlerTest {
 
         val input = DirectNavigationEventInput()
         dispatcher.eventDispatcher.addInput(input)
-        input.complete()
+        input.backCompleted()
 
         assertWithMessage("Count should be incremented after dispatchOnCompleted")
             .that(callback.count)
@@ -584,14 +591,14 @@ class OnBackPressedHandlerTest {
 
     @UiThreadTest
     @Test
-    fun testOnBackPressedDispatchesToNavigationEventCallback() {
-        val callback = TestNavigationEventCallback()
-        dispatcher.eventDispatcher.addCallback(callback)
+    fun testOnBackPressedDispatchesToNavigationEventHandler() {
+        val handler = TestNavigationEventHandler()
+        dispatcher.eventDispatcher.addHandler(handler)
 
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should be incremented after onBackPressed")
-            .that(callback.completedInvocations)
+            .that(handler.onBackCompletedInvocations)
             .isEqualTo(1)
     }
 

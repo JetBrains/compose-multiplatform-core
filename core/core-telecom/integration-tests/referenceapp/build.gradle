@@ -43,7 +43,6 @@ dependencies {
     // This is the target test package
     implementation(project(":core:core-telecom"))
     // Kotlin essentials
-    implementation(libs.kotlinStdlib)
     // -- @Serialize
     implementation(libs.kotlinSerializationCore)
     // Compose

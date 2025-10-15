@@ -264,7 +264,9 @@ class TestRouteVMFragment : Fragment() {
     override val defaultViewModelCreationExtras: CreationExtras
         get() {
             val extras = MutableCreationExtras(super.defaultViewModelCreationExtras)
-            extras[DEFAULT_ARGS_KEY] = bundleOf("test" to "value")
+            extras[DEFAULT_ARGS_KEY] =
+                @Suppress("DEPRECATION") // bundleOf is deprecated
+                bundleOf("test" to "value")
             return extras
         }
 }

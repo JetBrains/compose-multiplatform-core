@@ -30,6 +30,7 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.file.FileCollection
 import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
+import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
@@ -52,7 +53,8 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                         .getByType<KotlinMultiplatformAndroidComponentsExtension>()
                         .finalizeDsl { project.configureAndroidCommonOptions(it.lint) }
                 }
-                is KotlinBasePluginWrapper -> {
+                is KotlinBasePluginWrapper,
+                is KotlinBaseApiPlugin -> {
                     configureComposeCompilerPlugin(project)
                 }
             }
@@ -91,6 +93,12 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                 // unpublished project
                 if (ignoreListIteratorFilter.any { path.contains(it) } || !isPublished) {
                     disable.add("ListIterator")
+                }
+
+                // If the ComposeTestRuleDispatcher lint rule isn't disabled in the module's
+                // build.gradle file, it will be added to the error set.
+                if (!disable.contains("ComposeTestRuleDispatcher")) {
+                    error.add("ComposeTestRuleDispatcher")
                 }
 
                 // b/333784604 Disable ConfigurationScreenWidthHeight for wear libraries, it

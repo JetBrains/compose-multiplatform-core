@@ -39,7 +39,6 @@ android {
 dependencies {
     implementation("androidx.activity:activity:1.10.1")
     implementation(project(":fragment:fragment-ktx"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.hiltAndroid)
     ksp(libs.hiltCompiler)
 

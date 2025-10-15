@@ -11,6 +11,7 @@ import kotlin.collections.List
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$UpdateSimpleMessageParamsFactory` : AppFunctionSerializableFactory<UpdateSimpleMessageParams> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): UpdateSimpleMessageParams {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.UpdateSimpleMessageParams")
     val simpleSetFieldKotlinStringFactory = `$SimpleSetFieldFactory`<String>(
       AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java))
     val simpleSetFieldKotlinStringNullableFactory = `$SimpleSetFieldFactory`<String?>(
@@ -18,17 +19,17 @@ public class `$UpdateSimpleMessageParamsFactory` : AppFunctionSerializableFactor
     val simpleSetFieldKotlinCollectionsListComTestdataSimplemessageSimpleattachmentFactory = `$SimpleSetFieldFactory`<List<SimpleMessage.SimpleAttachment>>(
       AppFunctionSerializableFactory.TypeParameter.SerializableListTypeParameter(SimpleMessage.SimpleAttachment::class.java, `$SimpleMessage$SimpleAttachmentFactory`()))
 
-    val titleData = appFunctionData.getAppFunctionData("title")
+    val titleData = appFunctionDataWithSpec.getAppFunctionData("title")
     var title: SimpleSetField<String>? = null
     if (titleData != null) {
       title = simpleSetFieldKotlinStringFactory.fromAppFunctionData(titleData)
     }
-    val contentData = appFunctionData.getAppFunctionData("content")
+    val contentData = appFunctionDataWithSpec.getAppFunctionData("content")
     var content: SimpleSetField<String?>? = null
     if (contentData != null) {
       content = simpleSetFieldKotlinStringNullableFactory.fromAppFunctionData(contentData)
     }
-    val attachmentsData = appFunctionData.getAppFunctionData("attachments")
+    val attachmentsData = appFunctionDataWithSpec.getAppFunctionData("attachments")
     var attachments: SimpleSetField<List<SimpleMessage.SimpleAttachment>>? = null
     if (attachmentsData != null) {
       attachments = simpleSetFieldKotlinCollectionsListComTestdataSimplemessageSimpleattachmentFactory.fromAppFunctionData(attachmentsData)
@@ -47,7 +48,7 @@ public class `$UpdateSimpleMessageParamsFactory` : AppFunctionSerializableFactor
     val simpleSetFieldKotlinCollectionsListComTestdataSimplemessageSimpleattachmentFactory = `$SimpleSetFieldFactory`<List<SimpleMessage.SimpleAttachment>>(
       AppFunctionSerializableFactory.TypeParameter.SerializableListTypeParameter(SimpleMessage.SimpleAttachment::class.java, `$SimpleMessage$SimpleAttachmentFactory`()))
 
-    val builder = AppFunctionData.Builder("com.testdata.UpdateSimpleMessageParams")
+    val builder = getAppFunctionDataBuilder("com.testdata.UpdateSimpleMessageParams")
     val title = updateSimpleMessageParams_appFunctionSerializable.title
     if (title != null) {
       builder.setAppFunctionData("title", simpleSetFieldKotlinStringFactory.toAppFunctionData(title))

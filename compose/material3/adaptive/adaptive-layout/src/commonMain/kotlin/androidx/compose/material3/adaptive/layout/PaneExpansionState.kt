@@ -34,8 +34,10 @@ import androidx.compose.material3.adaptive.layout.PaneExpansionState.Companion.D
 import androidx.compose.material3.adaptive.layout.PaneExpansionState.Companion.Unspecified
 import androidx.compose.material3.adaptive.layout.internal.Strings
 import androidx.compose.material3.adaptive.layout.internal.getString
+import androidx.compose.material3.adaptive.layout.internal.getValue
 import androidx.compose.material3.adaptive.layout.internal.identityHashCode
 import androidx.compose.material3.adaptive.layout.internal.rememberPersistentlyWithKey
+import androidx.compose.material3.adaptive.layout.internal.rememberUpdatedRef
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -119,6 +121,10 @@ sealed interface PaneExpansionStateKey {
  * @param flingBehavior the fling behavior used to handle flings; by default
  *   [ScrollableDefaults.flingBehavior] will be applied.
  */
+@Deprecated(
+    "This method has been deprecated in favor of the one that accepts a consumeDragDelta.",
+    level = DeprecationLevel.HIDDEN,
+)
 @ExperimentalMaterial3AdaptiveApi
 @Composable
 fun rememberPaneExpansionState(
@@ -134,6 +140,7 @@ fun rememberPaneExpansionState(
         initialAnchoredIndex,
         anchoringAnimationSpec,
         flingBehavior,
+        PaneExpansionState.noOpConsumeDragDelta,
     )
 
 /**
@@ -153,6 +160,10 @@ fun rememberPaneExpansionState(
  * @param flingBehavior the fling behavior used to handle flings; by default
  *   [ScrollableDefaults.flingBehavior] will be applied.
  */
+@Deprecated(
+    "This method has been deprecated in favor of the one that accepts a consumeDragDelta.",
+    level = DeprecationLevel.HIDDEN,
+)
 @ExperimentalMaterial3AdaptiveApi
 @Composable
 fun rememberPaneExpansionState(
@@ -161,11 +172,98 @@ fun rememberPaneExpansionState(
     initialAnchoredIndex: Int = -1,
     anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+): PaneExpansionState =
+    rememberPaneExpansionState(
+        key,
+        anchors,
+        initialAnchoredIndex,
+        anchoringAnimationSpec,
+        flingBehavior,
+        PaneExpansionState.noOpConsumeDragDelta,
+    )
+
+/**
+ * Remembers and returns a [PaneExpansionState] associated to a given
+ * [PaneExpansionStateKeyProvider].
+ *
+ * Note that the remembered [PaneExpansionState] with all keys that have been used will be
+ * persistent through the associated pane scaffold's lifecycles.
+ *
+ * @param keyProvider the provider of [PaneExpansionStateKey]
+ * @param anchors the anchor list of the returned [PaneExpansionState]
+ * @param initialAnchoredIndex the index of the anchor that is supposed to be used during the
+ *   initial layout of the associated scaffold; it has to be a valid index of the provided [anchors]
+ *   otherwise the function throws; by default the value will be -1 and no initial anchor will be
+ *   used.
+ * @param anchoringAnimationSpec the animation spec used to perform anchoring animation; by default
+ *   it will be a spring motion.
+ * @param flingBehavior the fling behavior used to handle flings; by default
+ *   [ScrollableDefaults.flingBehavior] will be applied.
+ * @param consumeDragDelta the callback that will be called before the drag starts to change the
+ *   pane sizes; the input of the lambda will be the raw delta by user dragging, and it should
+ *   returns the remaining delta after the consumption by the callback; this can be used to
+ *   implement custom behavior like nested scrolling or combining pane expansion with other element
+ *   expansion behavior like navigation rails.
+ */
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+fun rememberPaneExpansionState(
+    keyProvider: PaneExpansionStateKeyProvider,
+    anchors: List<PaneExpansionAnchor> = emptyList(),
+    initialAnchoredIndex: Int = -1,
+    anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    consumeDragDelta: ((delta: Float) -> Float) = PaneExpansionState.noOpConsumeDragDelta,
+): PaneExpansionState =
+    rememberPaneExpansionState(
+        keyProvider.paneExpansionStateKey,
+        anchors,
+        initialAnchoredIndex,
+        anchoringAnimationSpec,
+        flingBehavior,
+        consumeDragDelta,
+    )
+
+/**
+ * Remembers and returns a [PaneExpansionState] associated to a given [PaneExpansionStateKey].
+ *
+ * Note that the remembered [PaneExpansionState] with all keys that have been used will be
+ * persistent through the associated pane scaffold's lifecycles.
+ *
+ * @param key the key of [PaneExpansionStateKey]
+ * @param anchors the anchor list of the returned [PaneExpansionState]
+ * @param initialAnchoredIndex the index of the anchor that is supposed to be used during the
+ *   initial layout of the associated scaffold; it has to be a valid index of the provided [anchors]
+ *   otherwise the function throws; by default the value will be -1 and no initial anchor will be
+ *   used.
+ * @param anchoringAnimationSpec the animation spec used to perform anchoring animation; by default
+ *   it will be a spring motion.
+ * @param flingBehavior the fling behavior used to handle flings; by default
+ *   [ScrollableDefaults.flingBehavior] will be applied.
+ * @param consumeDragDelta the callback that will be called before the drag starts to change the
+ *   pane sizes; the input of the lambda will be the raw delta by user dragging, and it should
+ *   returns the remaining delta after the consumption by the callback; this can be used to
+ *   implement custom behavior like nested scrolling or combining pane expansion with other element
+ *   expansion behavior like navigation rails.
+ */
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+@Suppress("UnnecessaryLambdaCreation") // It's necessary to stabilize the lambda parameter
+fun rememberPaneExpansionState(
+    key: PaneExpansionStateKey = PaneExpansionStateKey.Default,
+    anchors: List<PaneExpansionAnchor> = emptyList(),
+    initialAnchoredIndex: Int = -1,
+    anchoringAnimationSpec: FiniteAnimationSpec<Float> = DefaultAnchoringAnimationSpec,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    consumeDragDelta: ((Float) -> Float) = PaneExpansionState.noOpConsumeDragDelta,
 ): PaneExpansionState {
     val initialAnchor =
         remember(anchors, initialAnchoredIndex) {
             if (initialAnchoredIndex == -1) null else anchors[initialAnchoredIndex]
         }
+    // Note that this will only be updated when the current anchors change, which will serve as a
+    // fallback if the current anchor is no longer in the current anchors.
+    val initialAnchorForCurrentAnchors = remember(anchors) { initialAnchor }
     val data =
         rememberPersistentlyWithKey(
             key = key,
@@ -174,9 +272,19 @@ fun rememberPaneExpansionState(
         ) {
             PaneExpansionStateData(currentAnchor = initialAnchor)
         }
-    val expansionState = remember { PaneExpansionState(data) }
+    // Create a stable reference to the latest consumeDragDelta
+    val consumeDragDeltaRef by rememberUpdatedRef(consumeDragDelta)
+    val expansionState = remember {
+        PaneExpansionState(data) { delta -> consumeDragDeltaRef(delta) }
+    }
     LaunchedEffect(key, anchors, anchoringAnimationSpec, flingBehavior) {
-        expansionState.restore(data, anchors, anchoringAnimationSpec, flingBehavior)
+        expansionState.restore(
+            data = data,
+            anchors = anchors,
+            anchoringAnimationSpec = anchoringAnimationSpec,
+            flingBehavior = flingBehavior,
+            initialAnchorForCurrentAnchors = initialAnchorForCurrentAnchors,
+        )
     }
     return expansionState
 }
@@ -196,7 +304,7 @@ class PaneExpansionState
 internal constructor(
     // TODO(conradchen): Handle state change during dragging and settling
     data: PaneExpansionStateData = PaneExpansionStateData(),
-    anchors: List<PaneExpansionAnchor> = emptyList(),
+    @get:VisibleForTesting internal val consumeDragDelta: ((Float) -> Float) = noOpConsumeDragDelta,
 ) {
     internal val firstPaneWidth
         get() =
@@ -276,7 +384,7 @@ internal constructor(
     internal var currentMeasuredDraggingOffset = Unspecified
         private set
 
-    private var anchors: List<PaneExpansionAnchor> by mutableStateOf(anchors)
+    private var anchors: List<PaneExpansionAnchor> by mutableStateOf(emptyList())
 
     internal var measuredAnchorPositions = IndexedAnchorPositionList(0)
         private set
@@ -304,10 +412,11 @@ internal constructor(
     internal val draggableState: DraggableState =
         object : DraggableState {
             override fun dispatchRawDelta(delta: Float) {
+                val remainingDelta = consumeDragDelta(delta)
                 if (currentMeasuredDraggingOffset == Unspecified) {
                     return
                 }
-                currentDraggingOffset = (currentMeasuredDraggingOffset + delta).toInt()
+                currentDraggingOffset = (currentMeasuredDraggingOffset + remainingDelta).toInt()
             }
 
             override suspend fun drag(
@@ -391,6 +500,7 @@ internal constructor(
         anchors: List<PaneExpansionAnchor>,
         anchoringAnimationSpec: FiniteAnimationSpec<Float>,
         flingBehavior: FlingBehavior,
+        initialAnchorForCurrentAnchors: PaneExpansionAnchor?,
     ) {
         dragMutex.mutate(MutatePriority.PreventUserInput) {
             this.data = data
@@ -405,7 +515,7 @@ internal constructor(
                     )
             }
             if (!anchors.contains(currentAnchor)) {
-                currentAnchor = null
+                currentAnchor = initialAnchorForCurrentAnchors
             }
             this.anchoringAnimationSpec = anchoringAnimationSpec
             this.flingBehavior = flingBehavior
@@ -421,7 +531,7 @@ internal constructor(
         Snapshot.withoutReadObservation {
             measuredAnchorPositions = anchors.toPositions(measuredWidth, density)
             // Changes will always apply to the ongoing measurement, no need to trigger remeasuring
-            if (currentAnchor != null) {
+            if (!isDraggingOrSettling && currentAnchor != null) {
                 currentDraggingOffset = currentAnchor!!.positionIn(measuredWidth, density)
             } else if (currentDraggingOffset != Unspecified) {
                 // To re-coerce the value
@@ -523,6 +633,8 @@ internal constructor(
 
         internal val DefaultAnchoringAnimationSpec =
             spring(dampingRatio = 0.8f, stiffness = 380f, visibilityThreshold = 1f)
+
+        internal val noOpConsumeDragDelta: ((Float) -> Float) = { delta -> delta }
     }
 }
 

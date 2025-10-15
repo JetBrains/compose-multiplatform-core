@@ -25,7 +25,6 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.UnsupportedDeviceException
@@ -103,15 +102,15 @@ internal constructor(
             }
 
         if (config.handTracking != Config.HandTrackingMode.DISABLED) {
-            throw ConfigurationNotSupportedException()
+            throw UnsupportedOperationException()
         }
 
         if (config.depthEstimation != Config.DepthEstimationMode.DISABLED) {
-            throw ConfigurationNotSupportedException()
+            throw UnsupportedOperationException()
         }
 
         if (config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
-            throw ConfigurationNotSupportedException()
+            throw UnsupportedOperationException()
         }
 
         arConfig.geospatialMode =
@@ -128,7 +127,7 @@ internal constructor(
         } catch (e: ARCore1xGooglePlayServicesLocationLibraryNotLinkedException) {
             throw GooglePlayServicesLocationLibraryNotLinkedException(e)
         } catch (e: UnsupportedConfigurationException) {
-            throw ConfigurationNotSupportedException(cause = e)
+            throw UnsupportedOperationException(e)
         }
 
         this.config = config

@@ -31,6 +31,7 @@ import static androidx.camera.core.impl.utils.TransformUtils.isMirrored;
 import static androidx.camera.core.impl.utils.TransformUtils.rotateSize;
 import static androidx.camera.core.impl.utils.TransformUtils.within360;
 import static androidx.camera.core.streamsharing.DynamicRangeUtils.resolveDynamicRange;
+import static androidx.core.util.Preconditions.checkNotNull;
 import static androidx.core.util.Preconditions.checkState;
 
 import static java.util.Objects.requireNonNull;
@@ -225,14 +226,25 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
      */
     @NonNull Map<UseCase, OutConfig> getChildrenOutConfigs(
             @NonNull SurfaceEdge sharingInputEdge,
-            @ImageOutputConfig.RotationValue int parentTargetRotation, boolean isViewportSet) {
+            @ImageOutputConfig.RotationValue int parentTargetRotation, boolean isViewportSet,
+            boolean skipMirroring) {
         Map<UseCase, OutConfig> outConfigs = new HashMap<>();
         for (UseCase useCase : mChildren) {
             OutConfig outConfig = calculateOutConfig(useCase, mResolutionsMerger,
-                    mParentCamera, sharingInputEdge, parentTargetRotation, isViewportSet);
+                    mParentCamera, sharingInputEdge, parentTargetRotation, isViewportSet,
+                    skipMirroring);
+            updateVirtualCameraRotationDegrees(useCase);
+
             outConfigs.put(useCase, outConfig);
         }
+
         return outConfigs;
+    }
+
+    private void updateVirtualCameraRotationDegrees(UseCase useCase) {
+        int childRotationDegrees = getChildRotationDegrees(useCase, mParentCamera);
+        requireNonNull(mChildrenVirtualCameras.get(useCase))
+                .setRotationDegrees(childRotationDegrees);
     }
 
     /**
@@ -256,6 +268,34 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
         return selectedChildSizes;
     }
 
+    @Nullable
+    private Preview getPreviewFromChildren() {
+        for (UseCase child : mChildren) {
+            if (child instanceof Preview) {
+                return (Preview) child;
+            }
+        }
+        return null;
+    }
+
+    @NonNull DualOutConfig getChildPreviewOutConfig(
+            @NonNull SurfaceEdge primaryInputSurfaceEdge,
+            @NonNull SurfaceEdge secondaryInputSurfaceEdge,
+            @ImageOutputConfig.RotationValue int parentTargetRotation,
+            boolean isViewportSet
+    ) {
+        Preview preview = checkNotNull(getPreviewFromChildren());
+        OutConfig primaryoutConfig = calculateOutConfig(
+                preview, mResolutionsMerger,
+                mParentCamera, primaryInputSurfaceEdge, parentTargetRotation, isViewportSet,
+                /* skipMirroring */ false);
+        OutConfig secondaryOutConfig = calculateOutConfig(
+                preview, mResolutionsMerger,
+                mSecondaryParentCamera, secondaryInputSurfaceEdge, parentTargetRotation,
+                isViewportSet, /* skipMirroring */ false);
+        return DualOutConfig.of(primaryoutConfig, secondaryOutConfig);
+    }
+
     @NonNull Map<UseCase, DualOutConfig> getChildrenOutConfigs(
             @NonNull SurfaceEdge primaryInputEdge,
             @NonNull SurfaceEdge secondaryInputEdge,
@@ -267,13 +307,17 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
             OutConfig primaryOutConfig = calculateOutConfig(
                     useCase, mResolutionsMerger,
                     mParentCamera, primaryInputEdge,
-                    parentTargetRotation, isViewportSet);
+                    parentTargetRotation, isViewportSet,
+                    /* skipMirroring */ false);
             // secondary
             OutConfig secondaryOutConfig = calculateOutConfig(
                     useCase, requireNonNull(mSecondaryResolutionsMerger),
                     requireNonNull(mSecondaryParentCamera),
                     secondaryInputEdge,
-                    parentTargetRotation, isViewportSet);
+                    parentTargetRotation, isViewportSet,
+                    /* skipMirroring */ false);
+
+            updateVirtualCameraRotationDegrees(useCase);
             outConfigs.put(useCase, DualOutConfig.of(
                     primaryOutConfig, secondaryOutConfig));
         }
@@ -286,7 +330,8 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
             @NonNull CameraInternal cameraInternal,
             @Nullable SurfaceEdge cameraInputEdge,
             @ImageOutputConfig.RotationValue int parentTargetRotation,
-            boolean isViewportSet) {
+            boolean isViewportSet,
+            boolean skipMirroring) {
         // TODO: we might be able to extract parent rotation degrees from the input edge's
         //  sensor-to-buffer matrix and the mirroring bit.
         int parentRotationDegrees = cameraInternal.getCameraInfo()
@@ -302,21 +347,19 @@ class VirtualCameraAdapter implements UseCase.StateChangeCallback {
         Rect cropRectBeforeScaling = preferredChildSize.getCropRectBeforeScaling();
         Size childSizeToScale = preferredChildSize.getChildSizeToScale();
 
-        // Only use primary camera info for output surface
-        int childRotationDegrees = getChildRotationDegrees(useCase, mParentCamera);
-        requireNonNull(mChildrenVirtualCameras.get(useCase))
-                .setRotationDegrees(childRotationDegrees);
+        int childRotationDegrees = getChildRotationDegrees(useCase, cameraInternal);
         int childParentDelta = within360(cameraInputEdge.getRotationDegrees()
                 + childRotationDegrees - parentRotationDegrees);
+        // if not skipMirroring, we do the mirroring if the parent and the child disagrees.
+        boolean doMirroring = skipMirroring ? false
+                : useCase.isMirroringRequired(cameraInternal) ^ parentIsMirrored;
         return OutConfig.of(
                 getChildTargetType(useCase),
                 getChildFormat(useCase),
                 cropRectBeforeScaling,
                 rotateSize(childSizeToScale, childParentDelta),
                 childParentDelta,
-                // Only mirror if the parent and the child disagrees.
-                useCase.isMirroringRequired(cameraInternal)
-                        ^ parentIsMirrored);
+                doMirroring);
     }
 
     /**

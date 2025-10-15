@@ -34,9 +34,9 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("BanParcelableUsage")
 public class AnnotationResult(
-    public val success: List<PdfAnnotationData>,
-    public val failures: List<PdfAnnotation>,
-) : Parcelable {
+    public override val success: List<PdfAnnotationData>,
+    public override val failures: List<PdfAnnotation>,
+) : Parcelable, PdfEditResult<PdfAnnotationData, PdfAnnotation> {
 
     /** Default implementation for [Parcelable.describeContents], returning 0. */
     override fun describeContents(): Int = 0

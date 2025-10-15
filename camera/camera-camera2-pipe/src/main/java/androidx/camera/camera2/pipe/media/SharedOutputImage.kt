@@ -113,7 +113,7 @@ public interface SharedOutputImage : OutputImage {
                                 "Cannot unwrap $this as android.media.Image. Use setFinalizer" +
                                     "instead and close all outstanding references."
                             )
-                        else -> null
+                        else -> outputImage.unwrapAs(type)
                     }
                 }
             }

@@ -35,6 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick as semanticOnClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -508,7 +512,19 @@ public object AlertDialogDefaults {
             shapes = IconButtonDefaults.shapes(confirmShape),
         ) {
             Row(
-                modifier = Modifier.align(Alignment.Center).graphicsLayer { rotationZ = 45f },
+                modifier =
+                    Modifier.semantics(mergeDescendants = true) {
+                            semanticOnClick(
+                                action = {
+                                    onClick()
+                                    true
+                                }
+                            )
+                            role = Role.Button
+                        }
+                        .align(Alignment.Center)
+                        .graphicsLayer { rotationZ = 45f }
+                        .padding(10.dp),
                 content = content,
             )
         }

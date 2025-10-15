@@ -16,12 +16,12 @@
 
 package androidx.ink.authoring.internal
 
-import androidx.ink.strokes.InProgressStroke
+import androidx.ink.authoring.InkInProgressShape
 
 internal interface InProgressStrokePool {
-    fun obtain(): InProgressStroke
+    fun obtain(): InkInProgressShape
 
-    fun recycle(inProgressStroke: InProgressStroke)
+    fun recycle(inProgressStroke: InkInProgressShape)
 
     fun trimToSize(maxSize: Int)
 
@@ -32,16 +32,11 @@ internal interface InProgressStrokePool {
 
 private class InProgressStrokePoolImpl : InProgressStrokePool {
 
-    private val pool = mutableListOf<InProgressStroke>()
+    private val pool = mutableListOf<InkInProgressShape>()
 
-    override fun obtain(): InProgressStroke = pool.removeFirstOrNull() ?: InProgressStroke()
+    override fun obtain(): InkInProgressShape = pool.removeFirstOrNull() ?: InkInProgressShape()
 
-    override fun recycle(inProgressStroke: InProgressStroke) {
-        // Will be started with the actual brush when this InProgressStroke is reused, but
-        // defensively
-        // clear its data for now. This does not deallocate the space for its data, so it's ready to
-        // be
-        // reused with minimal cost compared to allocating a new one.
+    override fun recycle(inProgressStroke: InkInProgressShape) {
         inProgressStroke.clear()
         pool.add(inProgressStroke)
     }

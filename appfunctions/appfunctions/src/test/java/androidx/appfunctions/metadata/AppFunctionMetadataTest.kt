@@ -111,7 +111,6 @@ class AppFunctionMetadataTest {
                 schema = schemaMetadata,
                 parameters = parameters,
                 response = response,
-                components = components,
                 description = description,
             )
 

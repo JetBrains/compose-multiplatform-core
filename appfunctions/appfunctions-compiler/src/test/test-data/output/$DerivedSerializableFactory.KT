@@ -9,9 +9,10 @@ import javax.`annotation`.processing.Generated
 @Generated("androidx.appfunctions.compiler.AppFunctionCompiler")
 public class `$DerivedSerializableFactory` : AppFunctionSerializableFactory<DerivedSerializable> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): DerivedSerializable {
+    val appFunctionDataWithSpec = getAppFunctionDataWithSpec(appFunctionData = appFunctionData, qualifiedName = "com.testdata.DerivedSerializable")
 
-    val stringToOpen = checkNotNull(appFunctionData.getStringOrNull("stringToOpen"))
-    val age = checkNotNull(appFunctionData.getLongOrNull("age"))
+    val stringToOpen = checkNotNull(appFunctionDataWithSpec.getStringOrNull("stringToOpen"))
+    val age = checkNotNull(appFunctionDataWithSpec.getLongOrNull("age"))
 
     val resultDerivedSerializable = DerivedSerializable(stringToOpen, age)
     return resultDerivedSerializable
@@ -20,7 +21,7 @@ public class `$DerivedSerializableFactory` : AppFunctionSerializableFactory<Deri
   override fun toAppFunctionData(appFunctionSerializable: DerivedSerializable): AppFunctionData {
     val derivedSerializable_appFunctionSerializable = appFunctionSerializable
 
-    val builder = AppFunctionData.Builder("com.testdata.DerivedSerializable")
+    val builder = getAppFunctionDataBuilder("com.testdata.DerivedSerializable")
     val stringToOpen = derivedSerializable_appFunctionSerializable.stringToOpen
     builder.setString("stringToOpen", stringToOpen)
     val age = derivedSerializable_appFunctionSerializable.age

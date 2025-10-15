@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     implementation("androidx.appsearch:appsearch:1.1.0")
     kapt("androidx.appsearch:appsearch-compiler:1.1.0")

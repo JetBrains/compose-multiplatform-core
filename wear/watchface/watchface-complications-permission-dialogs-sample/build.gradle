@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
     api("androidx.fragment:fragment:1.2.0")
-    api(libs.kotlinStdlib)
 }
 
 android {

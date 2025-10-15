@@ -16,6 +16,8 @@
 
 package androidx.benchmark.macro
 
+import android.os.Build.VERSION.SDK_INT
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.perfetto.PerfettoHelper
 import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,6 +31,8 @@ class MemoryUsageMetricTest {
     @MediumTest
     @Test
     fun memoryUsageMetric_defaultConstructor() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(PerfettoHelper.isAbiSupported())
         val traceFile = createTempFileFromAsset("api31_startup_cold", ".perfetto-trace")
         val captureInfo =
@@ -61,6 +65,8 @@ class MemoryUsageMetricTest {
     @MediumTest
     @Test
     fun memoryUsageMetric_processSuffixAndMetricSuffixSpecified() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(PerfettoHelper.isAbiSupported())
         val traceFile = createTempFileFromAsset("api31_startup_cold", ".perfetto-trace")
         val captureInfo =
@@ -98,6 +104,8 @@ class MemoryUsageMetricTest {
     @MediumTest
     @Test
     fun memoryUsageMetric_metricSuffixSpecified() {
+        // Our API 23 emulators seem to be misconfigured b/438214932
+        assumeTrue(!isEmulator || SDK_INT != 23)
         assumeTrue(PerfettoHelper.isAbiSupported())
         val traceFile = createTempFileFromAsset("api31_startup_cold", ".perfetto-trace")
         val captureInfo =

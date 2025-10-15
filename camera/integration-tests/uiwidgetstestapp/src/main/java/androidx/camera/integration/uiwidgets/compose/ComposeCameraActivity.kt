@@ -36,7 +36,7 @@ class ComposeCameraActivity : ComponentActivity() {
     // Variables for testing StreamState changes in PreviewView
     private var expectedScreen: ComposeCameraScreen = ComposeCameraScreen.ImageCapture
     private var expectedStreamState: StreamState = StreamState.STREAMING
-    private var latchForState: CountDownLatch = CountDownLatch(0)
+    private var latchForState: CountDownLatch = CountDownLatch(1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,16 +56,25 @@ class ComposeCameraActivity : ComponentActivity() {
         }
     }
 
-    // Saves the expected ComposeCameraScreen and StreamState for testing PreviewView
-    // Once saved, this method waits to be notified of StreamState changes
-    // Used to assert that PreviewView is streaming within reasonable timeout
-    fun waitForStreamState(
+    /**
+     * Sets up the expected screen and stream state for monitoring.
+     *
+     * This should be set before changing the screen to ensure that the stream state can be received
+     * to match the testing settings correctly.
+     */
+    fun setUpExpectedScreenAndStreamState(
         expectedScreen: ComposeCameraScreen,
         expectedState: StreamState,
-    ): Boolean {
+    ) {
         this.expectedScreen = expectedScreen
         expectedStreamState = expectedState
         latchForState = CountDownLatch(1)
+    }
+
+    // Saves the expected ComposeCameraScreen and StreamState for testing PreviewView
+    // Once saved, this method waits to be notified of StreamState changes
+    // Used to assert that PreviewView is streaming within reasonable timeout
+    fun waitForExpectedScreenAndStreamState(): Boolean {
         return latchForState.await(LATCH_TIMEOUT, TimeUnit.MILLISECONDS)
     }
 

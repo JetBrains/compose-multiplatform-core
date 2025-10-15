@@ -10,8 +10,8 @@ package androidx.privacysandbox.sdkruntime.core {
 
   public final class LoadSdkCompatException extends java.lang.Exception {
     ctor public LoadSdkCompatException(Throwable cause, android.os.Bundle extraInfo);
-    method public android.os.Bundle getExtraInformation();
-    method public int getLoadSdkErrorCode();
+    method @InaccessibleFromKotlin public android.os.Bundle getExtraInformation();
+    method @InaccessibleFromKotlin public int getLoadSdkErrorCode();
     property public android.os.Bundle extraInformation;
     property public int loadSdkErrorCode;
     field public static final androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException.Companion Companion;
@@ -40,8 +40,8 @@ package androidx.privacysandbox.sdkruntime.core {
 
   public final class SandboxedSdkInfo {
     ctor public SandboxedSdkInfo(String name, long version);
-    method public String getName();
-    method public long getVersion();
+    method @InaccessibleFromKotlin public String getName();
+    method @InaccessibleFromKotlin public long getVersion();
     property public String name;
     property public long version;
   }
@@ -50,7 +50,7 @@ package androidx.privacysandbox.sdkruntime.core {
     ctor public SandboxedSdkProviderCompat();
     method public final void attachContext(android.content.Context context);
     method public void beforeUnloadSdk();
-    method public final android.content.Context? getContext();
+    method @InaccessibleFromKotlin public final android.content.Context? getContext();
     method @kotlin.jvm.Throws(exceptionClasses=LoadSdkCompatException::class) public abstract androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat onLoadSdk(android.os.Bundle params) throws androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException;
     property public final android.content.Context? context;
   }

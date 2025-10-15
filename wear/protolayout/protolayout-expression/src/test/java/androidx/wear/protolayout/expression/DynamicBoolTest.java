@@ -238,4 +238,12 @@ public final class DynamicBoolTest {
         assertThat(toProto.getFixed().getValue()).isTrue();
         assertThat(toProto.getFingerprint()).isEqualTo(from.getFingerprint().toProto());
     }
+
+    @Test
+    public void isInAmbientMode_hasTheCorrectKey() {
+        DynamicBool isInAmbientMode = PlatformEventSources.isInAmbientMode();
+
+        assertThat(isInAmbientMode.toDynamicBoolProto().getStateSource().getSourceKey())
+                .isEqualTo(PlatformEventSources.Keys.AMBIENT_MODE_STATUS.getKey());
+    }
 }

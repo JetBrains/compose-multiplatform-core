@@ -97,7 +97,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
             }
         }
         commonTest {
@@ -109,7 +108,7 @@ androidXMultiplatform {
                 implementation(project(":kruth:kruth"))
             }
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":sqlite:sqlite-framework"))

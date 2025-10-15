@@ -93,6 +93,7 @@ import androidx.test.screenshot.matchers.MSSIMMatcher
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -107,9 +108,9 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class SurfaceTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule val inputModeRule = nonTouchInputModeRule()
+    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
 
     @Before
     fun before() {

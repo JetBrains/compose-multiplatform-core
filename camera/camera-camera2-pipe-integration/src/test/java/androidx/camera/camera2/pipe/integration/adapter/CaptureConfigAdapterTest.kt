@@ -345,7 +345,6 @@ class CaptureConfigAdapterTest {
                 UseCaseGraphConfig(
                     graph = FakeCameraGraph(),
                     surfaceToStreamMap = mapOf(surface to StreamId(0)),
-                    cameraStateAdapter = CameraStateAdapter(),
                 ),
             cameraProperties = fakeCameraProperties,
             zslControl = ZslControlNoOpImpl(),

@@ -22,6 +22,9 @@ import androidx.appfunctions.AppFunctionManagerCompat
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -227,7 +230,23 @@ class AppFunctionTestRuleTest {
                         ExecuteAppFunctionRequest(
                             context.packageName,
                             "androidx.appfunctions.testing.TestFunctions#add",
-                            AppFunctionData.Builder("")
+                            AppFunctionData.Builder(
+                                    listOf(
+                                        AppFunctionParameterMetadata(
+                                            name = "num1",
+                                            isRequired = true,
+                                            dataType =
+                                                AppFunctionLongTypeMetadata(isNullable = false),
+                                        ),
+                                        AppFunctionParameterMetadata(
+                                            name = "num2",
+                                            isRequired = true,
+                                            dataType =
+                                                AppFunctionLongTypeMetadata(isNullable = false),
+                                        ),
+                                    ),
+                                    AppFunctionComponentsMetadata(),
+                                )
                                 .setLong("num1", 1)
                                 .setLong("num2", 2)
                                 .build(),

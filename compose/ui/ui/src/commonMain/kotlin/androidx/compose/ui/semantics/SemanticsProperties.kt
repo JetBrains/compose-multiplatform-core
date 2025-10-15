@@ -307,7 +307,13 @@ object SemanticsActions {
     /** @see SemanticsPropertyReceiver.scrollToIndex */
     val ScrollToIndex = ActionPropertyKey<(Int) -> Boolean>("ScrollToIndex")
 
-    /** @see SemanticsPropertyReceiver.onAutofillText */
+    @Suppress("unused")
+    @Deprecated(
+        message = "Use `SemanticsActions.OnFillData` instead.",
+        replaceWith =
+            ReplaceWith("OnFillData", "androidx.compose.ui.semantics.SemanticsActions.OnFillData"),
+        level = DeprecationLevel.WARNING,
+    )
     val OnAutofillText = ActionPropertyKey<(AnnotatedString) -> Boolean>("OnAutofillText")
 
     /** @see SemanticsPropertyReceiver.onFillData */
@@ -372,7 +378,11 @@ object SemanticsActions {
     val RequestFocus = ActionPropertyKey<() -> Boolean>("RequestFocus")
 
     /** @see SemanticsPropertyReceiver.customActions */
-    val CustomActions = AccessibilityKey<List<CustomAccessibilityAction>>("CustomActions")
+    val CustomActions =
+        AccessibilityKey<List<CustomAccessibilityAction>>(
+            name = "CustomActions",
+            mergePolicy = { parentValue, childValue -> parentValue.orEmpty() + childValue },
+        )
 
     /** @see SemanticsPropertyReceiver.pageUp */
     val PageUp = ActionPropertyKey<() -> Boolean>("PageUp")
@@ -1281,10 +1291,16 @@ fun SemanticsPropertyReceiver.scrollToIndex(label: String? = null, action: (Int)
  * @param label Optional label for this action.
  * @param action Action to be performed when the [SemanticsActions.OnAutofillText] is called.
  */
+@Deprecated(
+    message = "Use onFillData instead",
+    replaceWith = ReplaceWith("onFillData"),
+    level = DeprecationLevel.WARNING,
+)
 fun SemanticsPropertyReceiver.onAutofillText(
     label: String? = null,
     action: ((AnnotatedString) -> Boolean)?,
 ) {
+    @Suppress("DEPRECATION")
     this[SemanticsActions.OnAutofillText] = AccessibilityAction(label, action)
 }
 

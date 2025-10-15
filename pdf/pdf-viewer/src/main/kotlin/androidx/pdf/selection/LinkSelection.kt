@@ -21,6 +21,6 @@ package androidx.pdf.selection
  *
  * @property linkText The visible text of the selected link.
  */
-internal interface LinkSelection : Selection {
+public interface LinkSelection : Selection {
     public val linkText: CharSequence
 }

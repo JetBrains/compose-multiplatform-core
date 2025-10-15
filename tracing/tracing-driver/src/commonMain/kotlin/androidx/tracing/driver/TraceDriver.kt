@@ -17,13 +17,22 @@
 package androidx.tracing.driver
 
 /** The entry point for the tracing API. */
-public class TraceDriver(private val sink: TraceSink, private val isEnabled: Boolean = true) {
-    public val context: TraceContext =
-        if (isEnabled) {
-            TraceContext(sink = sink, isEnabled = true)
-        } else {
-            EmptyTraceContext
-        }
+public class TraceDriver(public val context: TraceContext) {
+    /**
+     * Builds an instance of [androidx.tracing.driver.TraceDriver] using the provided [TraceSink] if
+     * `isEnabled` is `true`. Otherwise you get an instance of a no-op [TraceContext].
+     */
+    public constructor(
+        sink: TraceSink,
+        isEnabled: Boolean,
+    ) : this(
+        context =
+            if (isEnabled) {
+                TraceContext(sink = sink, isEnabled = isEnabled)
+            } else {
+                EmptyTraceContext
+            }
+    )
 
     /**
      * @param id is the Process id.

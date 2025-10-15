@@ -178,7 +178,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @SuppressWarnings("unused")
 public final class ImageCapture extends UseCase {
-
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase lifetime constant] - Stays constant for the lifetime of the UseCase. Which means
     // they could be created in the constructor.
@@ -289,6 +288,11 @@ public final class ImageCapture extends UseCase {
     /** The timeout in seconds within which screen flash UI changes have to be completed. */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public static final long SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS = 3;
+
+    private static final String ERROR_MSG_SCREEN_FLASH_NOT_SET =
+            "A ScreenFlash instance is required for FLASH_MODE_SCREEN but was not found. If value"
+                    + " from PreviewView.getScreenFlash() is set to ImageCapture.setScreenFlash(),"
+                    + " ensure PreviewView.setScreenFlashWindow() is invoked first.";
 
     /**
      * When flash is required for taking a picture, a normal one shot flash will be used.
@@ -655,7 +659,7 @@ public final class ImageCapture extends UseCase {
                 && flashMode != FLASH_MODE_OFF) {
             if (flashMode == FLASH_MODE_SCREEN) {
                 if (mScreenFlashWrapper.getBaseScreenFlash() == null) {
-                    throw new IllegalArgumentException("ScreenFlash not set for FLASH_MODE_SCREEN");
+                    throw new IllegalArgumentException(ERROR_MSG_SCREEN_FLASH_NOT_SET);
                 }
 
                 if (getCamera() != null && getCameraLens() != CameraSelector.LENS_FACING_FRONT) {
@@ -1582,7 +1586,7 @@ public final class ImageCapture extends UseCase {
         checkMainThread();
         if (getFlashMode() == ImageCapture.FLASH_MODE_SCREEN
                 && mScreenFlashWrapper.getBaseScreenFlash() == null) {
-            throw new IllegalArgumentException("ScreenFlash not set for FLASH_MODE_SCREEN");
+            throw new IllegalArgumentException(ERROR_MSG_SCREEN_FLASH_NOT_SET);
         }
         Log.d(TAG, "takePictureInternal");
         CameraInternal camera = getCamera();
@@ -2578,9 +2582,7 @@ public final class ImageCapture extends UseCase {
                 if (flashMode == FLASH_MODE_SCREEN) {
                     if (getMutableConfig().retrieveOption(OPTION_SCREEN_FLASH, null)
                             == null) {
-                        throw new IllegalArgumentException(
-                                "The flash mode is not allowed to set to FLASH_MODE_SCREEN "
-                                        + "without setting ScreenFlash");
+                        throw new IllegalArgumentException(ERROR_MSG_SCREEN_FLASH_NOT_SET);
                     }
                 }
             }

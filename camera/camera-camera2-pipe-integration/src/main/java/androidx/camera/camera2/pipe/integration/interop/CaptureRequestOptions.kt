@@ -17,7 +17,7 @@ package androidx.camera.camera2.pipe.integration.interop
 
 import android.hardware.camera2.CaptureRequest
 import androidx.annotation.RestrictTo
-import androidx.camera.camera2.pipe.integration.impl.CAPTURE_REQUEST_ID_STEM
+import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.createCaptureRequestOption
 import androidx.camera.core.ExtendableBuilder
 import androidx.camera.core.impl.Config
@@ -94,7 +94,7 @@ private constructor(private val config: Config, @Suppress("UNUSED_PARAMETER") un
             @RestrictTo(RestrictTo.Scope.LIBRARY)
             public fun from(config: Config): Builder {
                 val bundleBuilder = Builder()
-                config.findOptions(CAPTURE_REQUEST_ID_STEM) {
+                config.findOptions(Camera2ImplConfig.CAPTURE_REQUEST_ID_STEM) {
                     // Erase the type of the option. Capture request options should only be
                     // set via Camera2Interop so that the type of the key and value should
                     // always match.

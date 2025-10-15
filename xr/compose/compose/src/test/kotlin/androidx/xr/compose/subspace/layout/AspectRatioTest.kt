@@ -36,6 +36,7 @@ import org.junit.runner.RunWith
 /** Tests for AspectRatio modifiers. */
 @RunWith(AndroidJUnit4::class)
 class AspectRatioTest {
+
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test

@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     api project(":appfunctions:appfunctions")
 
@@ -71,9 +70,7 @@ dependencies {
 
 android {
     compileSdk = 36
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.appfunctions.service"
 }
 

@@ -36,7 +36,7 @@ import androidx.annotation.RestrictTo
     SpatialVisibility.SPATIAL_VISIBILITY_PARTIALLY_WITHIN_FIELD_OF_VIEW,
     SpatialVisibility.SPATIAL_VISIBILITY_WITHIN_FIELD_OF_VIEW,
 )
-internal annotation class SpatialVisibilityValue
+public annotation class SpatialVisibilityValue
 
 /** Spatial Visibility states of content within the user's field of view. */
 public object SpatialVisibility {

@@ -28,7 +28,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 
 var VERBOSE = false
-const val CSV_PATH_PREFIX = "--csv="
+const val OUTPUT_PATH_PREFIX = "--out="
+const val SO_PATTERN_PREFIX = "--soPatterns="
 
 // this is a simple way to abstract the difference between the two, but should probably define
 // interfaces
@@ -41,8 +42,10 @@ internal abstract class PackageProcessor<T>(val typeLabel: String) {
 
     abstract fun printAnalysis(item: T)
 
+    abstract fun sortKey(item: T): String
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun process(files: List<File>, csvFile: File?) {
+    suspend fun process(files: List<File>, outputContext: OutputContext) {
         println("Analyzing ${files.size} ${typeLabel}s...")
         val items =
             files
@@ -59,42 +62,62 @@ internal abstract class PackageProcessor<T>(val typeLabel: String) {
                         .flowOn(Dispatchers.IO)
                 }
                 .toList()
-        if (csvFile != null) {
+                .sortedBy { sortKey(it) }
+        if (outputContext.csvFile != null) {
             println("$typeLabel parsing complete, constructing CSV...")
-            csvFile.writeText(getCsvHeader() + "\n")
-            items.forEach { csvFile.appendText(getCsvLine(it) + "\n") }
-            println("Analysis complete, CSV saved to ${csvFile.absolutePath}")
+            outputContext.csvFile.writeText(getCsvHeader() + "\n")
+            items.forEach { outputContext.csvFile.appendText(getCsvLine(it) + "\n") }
+            println("Analysis complete, CSV saved to ${outputContext.csvFile.absolutePath}")
         } else {
             println("$typeLabel parsing complete, reporting problems...")
             items.forEach { printAnalysis(it) }
         }
+        outputContext.dumpPackagePrefixInfo()
     }
 }
 
-fun main(args: Array<String>) = runBlocking {
-    val csvPath =
-        args
-            .singleOrNull { it.startsWith(CSV_PATH_PREFIX) }
-            ?.substringAfter(CSV_PATH_PREFIX)
-            ?.replaceFirst("~", System.getProperty("user.home"))
-    VERBOSE = args.contains("--verbose") || args.contains("-v")
-
-    val csvFile = if (csvPath != null) File(csvPath) else null
-
-    val pathArgs = args.filter { !it.startsWith("--") }
-
-    if (pathArgs.isEmpty()) {
-        println(
-            """
-            Expected one or more android app bundle files, or directories of bundles to be passed.
+fun usageAndDie() {
+    println(
+        """
             Report Usage:
                  java -jar <path-to-jar> [--verbose] <path-to-aab> [<path-to-aab2>...]
             CSV Usage:
-                 java -jar <path-to-jar> [--verbose] --csv=<output.csv> <path-to-aab> [<path-to-aab2>...]
+                 java -jar <path-to-jar> [--verbose] --out=<output_dir_path> --csv <path-to-aab> [<path-to-aab2>...]
+
+            When --out is passed, can also specify --mappingInfo to analyze obfuscation stats.
             """
-                .trimIndent()
+            .trimIndent()
+    )
+    exitProcess(1)
+}
+
+lateinit var outputContext: OutputContext
+
+fun main(args: Array<String>) = runBlocking {
+    outputContext =
+        OutputContext(
+            outputPath =
+                args
+                    .singleOrNull { it.startsWith(OUTPUT_PATH_PREFIX) }
+                    ?.substringAfter(OUTPUT_PATH_PREFIX)
+                    ?.replaceFirst("~", System.getProperty("user.home")),
+            csv = args.contains("--csv"),
+            dumpMappingDebug = args.contains("--mappingInfo"),
+            soMatchPatterns =
+                args
+                    .singleOrNull { it.startsWith(SO_PATTERN_PREFIX) }
+                    ?.substringAfter(SO_PATTERN_PREFIX)
+                    ?.split(",") ?: emptyList(),
         )
-        exitProcess(1)
+
+    VERBOSE = args.contains("--verbose") || args.contains("-v")
+
+    val pathArgs = args.filter { !it.startsWith("--") }
+    if (pathArgs.isEmpty()) {
+        println(
+            "Expected one or more android app bundle/apk files, or directories of bundles/apks to be passed."
+        )
+        usageAndDie()
     }
 
     val files =
@@ -108,6 +131,7 @@ fun main(args: Array<String>) = runBlocking {
                 }
             }
             .filter { it.name != ".DS_Store" }
+            .sorted()
 
     val processor =
         if (files.any { it.name.endsWith(".apk") }) {
@@ -120,6 +144,8 @@ fun main(args: Array<String>) = runBlocking {
                     AnalyzedApkInfo(ApkInfo.from(file))
 
                 override fun printAnalysis(item: AnalyzedApkInfo) = item.printAnalysis()
+
+                override fun sortKey(item: AnalyzedApkInfo): String = item.apkInfo.path
             }
         } else {
             object : PackageProcessor<AnalyzedBundleInfo>("Bundle") {
@@ -131,8 +157,10 @@ fun main(args: Array<String>) = runBlocking {
                     AnalyzedBundleInfo(BundleInfo.from(file))
 
                 override fun printAnalysis(item: AnalyzedBundleInfo) = item.printAnalysis()
+
+                override fun sortKey(item: AnalyzedBundleInfo): String = item.bundleInfo.path
             }
         }
 
-    processor.process(files, csvFile)
+    processor.process(files, outputContext)
 }

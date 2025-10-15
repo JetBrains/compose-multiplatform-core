@@ -16,7 +16,7 @@
 
 package androidx.build.testConfiguration
 
-import androidx.build.getDistributionDirectoryProperty
+import androidx.build.getDistributionDirectory
 import androidx.build.getSupportRootFolder
 import com.google.gson.GsonBuilder
 import org.gradle.api.DefaultTask
@@ -58,7 +58,7 @@ abstract class ModuleInfoGenerator : DefaultTask() {
 internal fun Project.registerOwnersServiceTasks() {
     tasks.register("zipOwnersFiles", Zip::class.java) { task ->
         task.archiveFileName.set("owners.zip")
-        task.destinationDirectory.set(getDistributionDirectoryProperty())
+        task.destinationDirectory.set(getDistributionDirectory())
         task.from(layout.projectDirectory)
         task.include("**/OWNERS")
         task.exclude("buildSrc/.gradle/**")
@@ -68,7 +68,7 @@ internal fun Project.registerOwnersServiceTasks() {
     }
 
     tasks.register(CREATE_MODULE_INFO, ModuleInfoGenerator::class.java) {
-        it.outputFile.set(getDistributionDirectoryProperty().file("module-info.json"))
+        it.outputFile.set(getDistributionDirectory().file("module-info.json"))
     }
 }
 

@@ -38,7 +38,6 @@ import java.util.concurrent.Executor
  * Provides an implementation of [SharedUiAdapter] created from a supplied Bundle which acts as a
  * proxy between the host app and the Binder provided by the UI provider.
  */
-@SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
 public object SharedUiAdapterFactory {
 
@@ -55,7 +54,6 @@ public object SharedUiAdapterFactory {
      * @throws IllegalArgumentException if `coreLibInfo` does not contain a Binder corresponding to
      *   [SharedUiAdapter]
      */
-    @SuppressLint("NullAnnotationGroup")
     @ExperimentalFeatures.SharedUiPresentationApi
     public fun createFromCoreLibInfo(coreLibInfo: Bundle): SharedUiAdapter {
         return if (

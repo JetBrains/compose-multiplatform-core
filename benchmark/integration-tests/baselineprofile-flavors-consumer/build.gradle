@@ -57,10 +57,8 @@ android {
 dependencies {
 
     // Specifying build type dependencies is part of the test
-    debugImplementation(libs.kotlinStdlib)
     debugImplementation(libs.constraintLayout)
 
-    releaseImplementation(libs.kotlinStdlib)
     releaseImplementation(libs.constraintLayout)
 }
 

@@ -23,7 +23,6 @@ import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.CameraInfoInternal
-import androidx.camera.testing.impl.AndroidUtil
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -108,14 +107,12 @@ class RecorderVideoCapabilitiesTest(
     @Test
     fun supportStandardDynamicRange() {
         assumeFalse(isSpecificSkippedDevice())
-        assumeFalse(AndroidUtil.isEmulatorAndAPI21())
         assertThat(videoCapabilities.supportedDynamicRanges).contains(SDR)
     }
 
     @Test
     fun supportedQualitiesOfSdrIsNotEmpty() {
         assumeFalse(isSpecificSkippedDevice())
-        assumeFalse(AndroidUtil.isEmulatorAndAPI21())
         assertThat(videoCapabilities.getSupportedQualities(SDR)).isNotEmpty()
     }
 

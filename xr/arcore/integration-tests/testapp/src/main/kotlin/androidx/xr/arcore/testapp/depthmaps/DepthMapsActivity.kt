@@ -164,13 +164,14 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
                 if (perceptionState != null) {
                     val depthMap =
                         when (selectedView) {
-                            ViewSelection.LEFT ->
-                                session.state.value.perceptionState!!.depthMaps[LEFT_VIEW]
+                            ViewSelection.LEFT -> session.state.value.perceptionState!!.leftDepthMap
                             ViewSelection.RIGHT ->
-                                session.state.value.perceptionState!!.depthMaps[RIGHT_VIEW]
+                                session.state.value.perceptionState!!.rightDepthMap
                         }
-                    depthTexture.updateDepthTexture(depthMap.state.value, selectedDepthMode)
-                    depthMapRenderer.drawDepth()
+                    if (depthMap != null) {
+                        depthTexture.updateDepthTexture(depthMap.state.value, selectedDepthMode)
+                        depthMapRenderer.drawDepth()
+                    }
                 }
             }
         }
@@ -196,14 +197,14 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
                             when (selectedDepthMode) {
                                 DepthMode.RAW ->
                                     when (selectedView) {
-                                        ViewSelection.LEFT -> "Left Smooth"
-                                        ViewSelection.RIGHT -> "Right Smooth"
+                                        ViewSelection.LEFT -> "Left Raw"
+                                        ViewSelection.RIGHT -> "Right Raw"
                                     }
 
                                 DepthMode.SMOOTH ->
                                     when (selectedView) {
-                                        ViewSelection.LEFT -> "Left Raw"
-                                        ViewSelection.RIGHT -> "Right Raw"
+                                        ViewSelection.LEFT -> "Left Smooth"
+                                        ViewSelection.RIGHT -> "Right Smooth"
                                     }
                             }
                         Text(
@@ -254,7 +255,5 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
 
     companion object {
         private const val TAG: String = "DepthMapActivity"
-        private const val LEFT_VIEW: Int = 0
-        private const val RIGHT_VIEW: Int = 1
     }
 }

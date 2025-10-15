@@ -35,7 +35,6 @@ dependencies {
     implementation(libs.testExtJunit)
     implementation(libs.testCore)
     implementation(libs.testRules)
-    implementation(libs.kotlinStdlib)
 }
 
 android {

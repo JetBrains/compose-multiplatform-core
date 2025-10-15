@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.compose.runtime:runtime:1.8.0")
     implementation("androidx.compose.foundation:foundation:1.8.0")
@@ -55,6 +54,6 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.compose.material3.catalog.library"
 }

@@ -172,49 +172,54 @@ class DataSynchronizationManagerTest {
 
     @Test
     fun testAddKeyUpdatesSharedPreferenceException() {
-        val syncCallback = SyncCallbackImpl()
-        registerAndVerifySyncCallback(syncCallback)
+        val syncFailureCallback = SyncFailureCallbackImpl()
+        registerAndVerifySyncFailureCallback(syncFailureCallback)
     }
 
     @Test
-    fun testUnregisterOfSyncCallback() {
-        val syncCallback = SyncCallbackImpl()
-        registerAndVerifySyncCallback(syncCallback)
+    fun testUnregisterOfSyncFailureCallback() {
+        val syncFailureCallback = SyncFailureCallbackImpl()
+        registerAndVerifySyncFailureCallback(syncFailureCallback)
 
-        dataSynchronizationManager.removeSyncCallback(syncCallback)
-        syncCallback.initializeLatch(intKey, 2)
-
-        val keyValueMap = mapOf(intKey to "stringValue")
-        dataSynchronizationManager.addKeys(keyValueMap)
-
-        val thrown = assertThrows(TimeoutException::class.java) { syncCallback.getResult(intKey) }
-    }
-
-    private fun registerAndVerifySyncCallback(syncCallback: SyncCallbackImpl) = runTest {
-        syncCallback.initializeLatch(intKey, 2)
-        dataSynchronizationManager.addSyncCallback(currentThreadExecutor, syncCallback)
+        dataSynchronizationManager.removeSyncFailureCallback(syncFailureCallback)
+        syncFailureCallback.initializeLatch(intKey, 2)
 
         val keyValueMap = mapOf(intKey to "stringValue")
         dataSynchronizationManager.addKeys(keyValueMap)
 
-        val data = syncCallback.getResult(intKey)
-
-        expect.that(data.size).isEqualTo(2)
-
-        expect.that(data[0].first).isEqualTo(SyncCallback.ERROR_ADDING_KEYS)
-        expect
-            .that(data[0].second)
-            .contains("class java.lang.String cannot be cast to class java.lang.Integer")
-
-        expect.that(data[1].first).isEqualTo(SyncCallback.ERROR_ADDING_KEYS)
-        expect
-            .that(data[1].second)
-            .contains("class java.lang.String cannot be cast to class java.lang.Integer")
+        val thrown =
+            assertThrows(TimeoutException::class.java) { syncFailureCallback.getResult(intKey) }
     }
 
-    // Implementation of [SyncCallback] for testing. It listens to failures when adding keys for
-    // synchronization and when syncing keys between SharedPreference and DataBridgeClient.
-    private class SyncCallbackImpl : SyncCallback {
+    private fun registerAndVerifySyncFailureCallback(syncFailureCallback: SyncFailureCallbackImpl) =
+        runTest {
+            syncFailureCallback.initializeLatch(intKey, 2)
+            dataSynchronizationManager.addSyncFailureCallback(
+                currentThreadExecutor,
+                syncFailureCallback,
+            )
+
+            val keyValueMap = mapOf(intKey to "stringValue")
+            dataSynchronizationManager.addKeys(keyValueMap)
+
+            val data = syncFailureCallback.getResult(intKey)
+
+            expect.that(data.size).isEqualTo(2)
+
+            expect.that(data[0].first).isEqualTo(SyncFailureCallback.ERROR_ADDING_KEYS)
+            expect
+                .that(data[0].second)
+                .contains("class java.lang.String cannot be cast to class java.lang.Integer")
+
+            expect.that(data[1].first).isEqualTo(SyncFailureCallback.ERROR_ADDING_KEYS)
+            expect
+                .that(data[1].second)
+                .contains("class java.lang.String cannot be cast to class java.lang.Integer")
+        }
+
+    // Implementation of [SyncFailureCallback] for testing. It listens to failures when adding keys
+    // for synchronization and when syncing keys between SharedPreference and DataBridgeClient.
+    private class SyncFailureCallbackImpl : SyncFailureCallback {
         private val latchMap = mutableMapOf<Key, CountDownLatch>()
         private val keySyncErrorMap = mutableMapOf<Key, MutableList<Pair<Int, String>>>()
 

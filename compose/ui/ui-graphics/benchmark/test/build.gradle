@@ -29,7 +29,6 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui"))
     androidTestImplementation(project(":compose:ui:ui-graphics"))
     androidTestImplementation(project(":compose:ui:ui-graphics:ui-graphics-benchmark"))
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
 }
@@ -37,4 +36,7 @@ dependencies {
 android {
     compileSdk = 35
     namespace = "androidx.compose.ui.graphics.benchmark.test"
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
 }

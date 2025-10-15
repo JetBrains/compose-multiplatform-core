@@ -27,6 +27,7 @@ import android.view.Display
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.integration.compat.workaround.DisplaySizeCorrector
 import androidx.camera.camera2.pipe.integration.compat.workaround.MaxPreviewSize
+import androidx.camera.core.impl.utils.ContextUtil
 import androidx.camera.core.internal.utils.SizeUtil
 
 /**
@@ -100,7 +101,9 @@ public class DisplayInfoManager private constructor(context: Context) {
             return instance
                 ?: synchronized(this) {
                     instance
-                        ?: DisplayInfoManager(context.applicationContext).also { instance = it }
+                        ?: DisplayInfoManager(ContextUtil.getApplicationContext(context)).also {
+                            instance = it
+                        }
                 }
         }
 

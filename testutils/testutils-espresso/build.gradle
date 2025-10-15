@@ -33,7 +33,6 @@ dependencies {
     api("androidx.annotation:annotation:1.8.1")
 
     implementation(libs.espressoCore)
-    implementation(libs.kotlinStdlib)
     implementation("androidx.core:core:1.2.0")
 }
 

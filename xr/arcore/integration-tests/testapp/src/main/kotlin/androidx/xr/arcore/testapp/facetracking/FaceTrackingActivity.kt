@@ -52,12 +52,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.Face
+import androidx.xr.arcore.FaceBlendShapeType
+import androidx.xr.arcore.FaceConfidenceRegion
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.FaceBlendShapeType
-import androidx.xr.runtime.FaceConfidenceRegionType
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
@@ -113,7 +113,10 @@ class FaceTrackingActivity : ComponentActivity() {
                     }
                 },
                 onSessionCalibrationRequired = { calibrationType ->
-                    if (calibrationType == RequiredCalibrationType.FACE_TRACKING) {
+                    if (
+                        calibrationType ==
+                            RequiredCalibrationType.REQUIRED_CALIBRATION_TYPE_FACE_TRACKING
+                    ) {
                         lifecycleScope.launch {
                             lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                                 setContent { CalibrationPanel() }
@@ -219,22 +222,22 @@ class FaceTrackingActivity : ComponentActivity() {
                         modifier = Modifier.padding(20.dp),
                     ) {
                         Text("Region Confidences: ")
-                        for (region in FaceConfidenceRegionType.entries) {
-                            Text(
-                                "${region.name}: ${
-                                    faceState.getConfidence(
-                                        region.ordinal
-                                    )
-                                }"
-                            )
-                        }
+                        Text(
+                            "LOWER: ${faceState.getConfidence(FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LOWER)}"
+                        )
+                        Text(
+                            "LEFT_UPPER: ${faceState.getConfidence(FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LEFT_UPPER)}"
+                        )
+                        Text(
+                            "RIGHT_UPPER: ${faceState.getConfidence(FaceConfidenceRegion.FACE_CONFIDENCE_REGION_RIGHT_UPPER)}"
+                        )
                     }
                     if (faceState.trackingState == TrackingState.TRACKING) {
                         currentExpression = parseBlendShapesToExpression(faceState)
                         Row {
                             LazyColumn(modifier = Modifier.width(350.dp)) {
-                                items(FaceBlendShapeType.entries) { shape ->
-                                    Text("${shape.name} = ${faceState.blendShapes[shape]}")
+                                items(faceState.blendShapes.keys.toList()) { shape ->
+                                    Text("$shape = ${faceState.blendShapes[shape]}")
                                 }
                             }
                             Column(modifier = Modifier.fillMaxSize()) {
@@ -273,68 +276,93 @@ class FaceTrackingActivity : ComponentActivity() {
 
         // smile
         if (
-            faceState.blendShapes[FaceBlendShapeType.LIP_CORNER_PULLER_LEFT]!! >= .3f ||
-                faceState.blendShapes[FaceBlendShapeType.LIP_CORNER_PULLER_RIGHT]!! >= .3f ||
-                faceState.blendShapes[FaceBlendShapeType.LIP_PRESSOR_LEFT]!! >= .3f ||
-                faceState.blendShapes[FaceBlendShapeType.LIP_PRESSOR_RIGHT]!! >= .3f
+            faceState.blendShapes[
+                    FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_PULLER_LEFT]!! >= .3f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_PULLER_RIGHT]!! >=
+                    .3f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PRESSOR_LEFT]!! >= .3f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_PRESSOR_RIGHT]!! >= .3f
         ) {
             return Expression.SMILE
         }
 
         // blink
         if (
-            faceState.blendShapes[FaceBlendShapeType.EYES_CLOSED_LEFT]!! == 1f &&
-                faceState.blendShapes[FaceBlendShapeType.EYES_CLOSED_RIGHT]!! == 1f
+            faceState.blendShapes[FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_CLOSED_LEFT]!! ==
+                1f &&
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_CLOSED_RIGHT]!! == 1f
         ) {
             return Expression.BLINK
         }
 
         // frown
         if (
-            faceState.blendShapes[FaceBlendShapeType.LIP_CORNER_DEPRESSOR_LEFT]!! >= .5f ||
-                faceState.blendShapes[FaceBlendShapeType.LIP_CORNER_DEPRESSOR_RIGHT]!! >= .5f ||
-                faceState.blendShapes[FaceBlendShapeType.LIP_STRETCHER_LEFT]!! >= .5f ||
-                faceState.blendShapes[FaceBlendShapeType.LIP_STRETCHER_RIGHT]!! >= .5f ||
-                faceState.blendShapes[FaceBlendShapeType.JAW_THRUST]!! >= .5f ||
-                faceState.blendShapes[FaceBlendShapeType.CHIN_RAISER_B]!! >= .7f
+            faceState.blendShapes[
+                    FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_DEPRESSOR_LEFT]!! >= .5f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_CORNER_DEPRESSOR_RIGHT]!! >=
+                    .5f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_STRETCHER_LEFT]!! >= .5f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LIP_STRETCHER_RIGHT]!! >= .5f ||
+                faceState.blendShapes[FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_THRUST]!! >=
+                    .5f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_CHIN_RAISER_BOTTOM]!! >= .7f
         ) {
             return Expression.FROWN
         }
 
         // wink
         if (
-            faceState.blendShapes[FaceBlendShapeType.EYES_CLOSED_LEFT]!! >= .6f ||
-                faceState.blendShapes[FaceBlendShapeType.EYES_CLOSED_RIGHT]!! >= .6f ||
-                faceState.blendShapes[FaceBlendShapeType.LID_TIGHTENER_LEFT]!! >= .6f ||
-                faceState.blendShapes[FaceBlendShapeType.LID_TIGHTENER_RIGHT]!! >= .6f
+            faceState.blendShapes[FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_CLOSED_LEFT]!! >=
+                .6f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_EYES_CLOSED_RIGHT]!! >= .6f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LID_TIGHTENER_LEFT]!! >= .6f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_LID_TIGHTENER_RIGHT]!! >= .6f
         ) {
             return Expression.WINK
         }
 
         // eyebrow(s) raised
         if (
-            faceState.blendShapes[FaceBlendShapeType.OUTER_BROW_RAISER_LEFT]!! >= .5f ||
-                faceState.blendShapes[FaceBlendShapeType.OUTER_BROW_RAISER_RIGHT]!! >= .5f ||
-                faceState.blendShapes[FaceBlendShapeType.INNER_BROW_RAISER_LEFT]!! >= .5f ||
-                faceState.blendShapes[FaceBlendShapeType.INNER_BROW_RAISER_RIGHT]!! >= .5f
+            faceState.blendShapes[
+                    FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_OUTER_BROW_RAISER_LEFT]!! >= .5f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_OUTER_BROW_RAISER_RIGHT]!! >=
+                    .5f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_INNER_BROW_RAISER_LEFT]!! >= .5f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_INNER_BROW_RAISER_RIGHT]!! >= .5f
         ) {
             return Expression.EYEBROW_RAISED
         }
 
         // mouth open
-        if (faceState.blendShapes[FaceBlendShapeType.JAW_DROP]!! >= .6f) {
+        if (faceState.blendShapes[FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_JAW_DROP]!! >= .6f) {
             return Expression.MOUTH_OPEN
         }
 
         // tongue out
-        if (faceState.blendShapes[FaceBlendShapeType.TONGUE_OUT]!! >= .8f) {
+        if (faceState.blendShapes[FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_TONGUE_OUT]!! >= .8f) {
             return Expression.TONGUE_OUT
         }
 
         // angry
         if (
-            faceState.blendShapes[FaceBlendShapeType.BROW_LOWERER_LEFT]!! >= .2f ||
-                faceState.blendShapes[FaceBlendShapeType.BROW_LOWERER_RIGHT]!! >= .2f
+            faceState.blendShapes[FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_BROW_LOWERER_LEFT]!! >=
+                .2f ||
+                faceState.blendShapes[
+                        FaceBlendShapeType.FACE_BLEND_SHAPE_TYPE_BROW_LOWERER_RIGHT]!! >= .2f
         ) {
             return Expression.ANGRY
         }

@@ -17,9 +17,11 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -51,6 +53,7 @@ class TransformingLazyColumnScreenshotTest(
     @TestParameter val screenSize: ScreenSize,
     @TestParameter val component: ComponentType,
     @TestParameter val isAnimated: IsAnimated,
+    @TestParameter val isReverseLayout: IsReverseLayout,
 ) {
     @get:Rule val rule = createComposeRule()
 
@@ -93,6 +96,36 @@ class TransformingLazyColumnScreenshotTest(
         scrollBy(-200f)
     }
 
+    private val ARRANGEMENT_TEST_ITEMS = 3 // Only 4 items fit in the screen
+
+    @Test
+    fun transforming_lazy_column_center_arrangement() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = ARRANGEMENT_TEST_ITEMS,
+            verticalArrangement = Arrangement.Center,
+        )
+
+    @Test
+    fun transforming_lazy_column_bottom_arrangement() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = ARRANGEMENT_TEST_ITEMS,
+            verticalArrangement = Arrangement.Bottom,
+        )
+
+    @Test
+    fun transforming_lazy_column_center_arrangement_with_spaced_by() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = ARRANGEMENT_TEST_ITEMS,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+        )
+
+    @Test
+    fun transforming_lazy_column_bottom_arrangement_with_spaced_by() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = ARRANGEMENT_TEST_ITEMS,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
+        )
+
     enum class ComponentType {
         BUTTON,
         CARD,
@@ -103,6 +136,11 @@ class TransformingLazyColumnScreenshotTest(
     enum class IsAnimated {
         ANIMATED,
         NOT_ANIMATED,
+    }
+
+    enum class IsReverseLayout {
+        REVERSE_LAYOUT,
+        NOT_REVERSE_LAYOUT,
     }
 
     data class TestContext(
@@ -169,6 +207,11 @@ class TransformingLazyColumnScreenshotTest(
     private fun verifyTransformingLazyColumnScreenshot(
         itemsCount: Int = 100,
         contentPadding: PaddingValues = PaddingValues(),
+        verticalArrangement: Arrangement.Vertical =
+            Arrangement.spacedBy(
+                4.dp,
+                alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom,
+            ),
         onIdle: suspend TransformingLazyColumnState.() -> Unit = {},
     ) {
         lateinit var state: TransformingLazyColumnState
@@ -182,7 +225,9 @@ class TransformingLazyColumnScreenshotTest(
                 TransformingLazyColumn(
                     state = state,
                     contentPadding = contentPadding,
+                    verticalArrangement = verticalArrangement,
                     modifier = Modifier.testTag(TEST_TAG),
+                    reverseLayout = reverseLayout,
                 ) {
                     with(
                         TestContext(
@@ -204,4 +249,7 @@ class TransformingLazyColumnScreenshotTest(
 
         rule.verifyScreenshot(testName, screenshotRule)
     }
+
+    private val reverseLayout
+        get() = isReverseLayout == IsReverseLayout.REVERSE_LAYOUT
 }

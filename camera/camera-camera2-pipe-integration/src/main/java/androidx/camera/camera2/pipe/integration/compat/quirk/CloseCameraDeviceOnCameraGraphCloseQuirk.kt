@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSonyDevice
 import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isXiaomiDevice
 import androidx.camera.core.impl.Quirk
 
@@ -29,7 +30,7 @@ import androidx.camera.core.impl.Quirk
  * the camera device.
  *
  * QuirkSummary
- * - Bug Id: 282871038, 369300443, 425588561, 426104225, 369291594
+ * - Bug Id: 282871038, 369300443, 425588561, 426104225, 369291594, 445897456
  * - Description: Instructs CameraPipe to close the camera device before creating a new capture
  *   session to avoid undesirable behaviors
  *
@@ -68,6 +69,10 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
                 // OplusHansManager actively "freezes" app processes, which means we cannot delay
                 // closing the camera device for any amount of time.
                 return true
+            } else if (Device.isVivoDevice()) {
+                // On Vivo devices, buggy custom modifications were added during CameraDevice.close
+                // such that it may trigger NPE if the camera device is closed too late.
+                return true
             } else if (isXiaomiProblematicDevice) {
                 // When Extensions is enabled, switching modes might cause the black screen issue.
                 // Applying this quirk when Extensions is enabled will fix it.
@@ -75,6 +80,8 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
             } else if (isSamsungProblematicDevice) {
                 // When Extensions is enabled, there might be some timing issue to cause the
                 // BindUnbindUseCasesStressTest to run fail easily. Applying this quirk will fix it.
+                return true
+            } else if (isSonyProblematicDevice) {
                 return true
             }
             return false
@@ -86,6 +93,15 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
         // Xiaomi 14 Ultra and Xiaomi 14 to apply the quirk when Extensions is enabled.
         private val isXiaomiProblematicDevice: Boolean =
             isXiaomiDevice() && arrayOf("aurora", "houji").contains(Build.DEVICE.lowercase())
+
+        private val isSonyProblematicDevice: Boolean =
+            isSonyDevice() &&
+                listOf(
+                        "XQ-DQ", // Sony Xperia 1 V (XQ-DQ72, XQ-DQ54 etc.), ref: b/445897456
+                        "SO", // Sony Xperia 1 V (SO-51D, SOG10), ref: b/445897456
+                        "A301SO", // Sony Xperia 1 V, ref: b/445897456
+                    )
+                    .any { Build.DEVICE.startsWith(it, ignoreCase = true) }
 
         // Samsung API 31 ~ 34 devices to apply the quirk when Extensions is enabled.
         private val isSamsungProblematicDevice: Boolean =

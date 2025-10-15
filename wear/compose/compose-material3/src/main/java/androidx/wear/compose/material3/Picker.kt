@@ -256,16 +256,14 @@ public fun Picker(
             readOnlyLabel()
         }
     }
-    SideEffect {
-        if (!readOnly) {
-            forceScrollWhenReadOnly = true
-        }
+    if (!readOnly) {
+        SideEffect { forceScrollWhenReadOnly = true }
     }
     // If a Picker switches to read-only during animation, the ScalingLazyColumn can be
     // out of position, so we force an instant scroll to the selected option so that it is
     // correctly lined up when the Picker is next displayed.
-    LaunchedEffect(readOnly, forceScrollWhenReadOnly) {
-        if (readOnly && forceScrollWhenReadOnly) {
+    if (readOnly && forceScrollWhenReadOnly) {
+        LaunchedEffect(Unit) {
             state.scrollToOption(state.selectedOptionIndex)
             forceScrollWhenReadOnly = false
         }

@@ -17,7 +17,6 @@
 package androidx.benchmark
 
 import android.os.Build
-import androidx.benchmark.perfetto.PerfettoHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -38,7 +37,7 @@ class DeviceInfoTest {
         InstrumentationResults.clearIdeWarningPrefix()
     }
 
-    @SdkSuppress(minSdkVersion = PerfettoHelper.MIN_SDK_VERSION)
+    @SdkSuppress(minSdkVersion = 24) // b/441743079 move back to PerfettoHelper.MIN_SDK_VERSION
     @Test
     fun misconfiguredForTracing() {
         // NOTE: tests device capability, not implementation of DeviceInfo

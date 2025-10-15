@@ -21,7 +21,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":viewpager2:viewpager2"))
     implementation("androidx.activity:activity-ktx:1.2.0")
     // TODO(b/262583150): force tracing 1.1.0 since its required by androidTest

@@ -42,7 +42,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     //@Serialize
     implementation(libs.kotlinSerializationCore)
     // Test package

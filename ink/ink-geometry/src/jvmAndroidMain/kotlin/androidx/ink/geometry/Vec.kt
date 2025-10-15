@@ -43,22 +43,22 @@ public abstract class Vec internal constructor() {
     @FloatRange(from = 0.0) public fun computeMagnitudeSquared(): Float = x * x + y * y
 
     /**
-     * The direction of the vec, represented as the angle between the positive x-axis and this vec.
-     * If either component of the vector is NaN, this returns a NaN angle; otherwise, the returned
-     * value will lie in the interval [-π, π], and will have the same sign as the vector's
+     * The angle between the positive x-axis and this vec, in the direction of the positive y-axis.
+     * If either component of the vector is NaN, this returns NaN. Otherwise, the returned value
+     * will lie in the interval [-180, 180], and will have the same sign as the vector's
      * y-component.
      *
-     * Following the behavior of `atan2`, this will return either ±0 or ±π for the zero vector,
+     * Following the behavior of `atan2`, this will return either ±0 or ±180 for the zero vector,
      * depending on the signs of the zeros.
      */
-    @FloatRange(from = -Math.PI, to = Math.PI)
-    @AngleRadiansFloat
-    public fun computeDirection(): Float = atan2(y, x)
+    @FloatRange(from = -180.0, to = 180.0)
+    @AngleDegreesFloat
+    public fun computeDirectionDegrees(): Float = Angle.radiansToDegrees(atan2(y, x))
 
     /**
      * Returns a newly allocated vector with the same direction as this one, but with a magnitude of
-     * `1`. This is equivalent to (but faster than) calling [ImmutableVec.fromDirectionAndMagnitude]
-     * with [computeDirection] and `1`.
+     * `1`. This is equivalent to (but faster than) calling
+     * [ImmutableVec.fromDirectionInDegreesAndMagnitude] with [computeDirectionDegrees] and `1`.
      *
      * In keeping with the above equivalence, this will return <±1, ±0> for the zero vector,
      * depending on the signs of the zeros.
@@ -71,7 +71,7 @@ public abstract class Vec internal constructor() {
     /**
      * Modifies [outVec] into a vector with the same direction as this one, but with a magnitude of
      * `1`. Returns [outVec]. This is equivalent to (but faster than) calling
-     * [MutableVec.fromDirectionAndMagnitude] with [computeDirection] and `1`.
+     * [MutableVec.fromDirectionInDegreesAndMagnitude] with [computeDirectionDegrees] and `1`.
      *
      * In keeping with the above equivalence, this will return <±1, ±0> for the zero vector,
      * depending on the signs of the zeros.
@@ -122,26 +122,26 @@ public abstract class Vec internal constructor() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun toImmutable(): ImmutableVec
 
     /**
-     * Returns true if the angle formed by `this` and [other] is within [angleTolerance] of 0
-     * radians or π radians (0 degrees or 180 degrees).
+     * Returns true if the angle formed by `this` and [other] is within [toleranceDegrees] of 0
+     * degrees or 180 degrees.
      */
     public fun isParallelTo(
         other: Vec,
-        @AngleRadiansFloat @FloatRange(from = 0.0) angleTolerance: Float,
+        @AngleDegreesFloat @FloatRange(from = 0.0) toleranceDegrees: Float,
     ): Boolean {
-        val absoluteAngle = absoluteAngleBetween(this, other)
-        return absoluteAngle < angleTolerance || Math.PI - absoluteAngle < angleTolerance
+        val absoluteAngle = absoluteAngleBetweenInDegrees(this, other)
+        return absoluteAngle < toleranceDegrees || 180f - absoluteAngle < toleranceDegrees
     }
 
     /**
-     * Returns true if the angle formed by `this` and [other] is within [angleTolerance] of ±π/2
-     * radians (±90 degrees).
+     * Returns true if the angle formed by `this` and [other] is within [toleranceDegrees] of ±90
+     * degrees.
      */
     public fun isPerpendicularTo(
         other: Vec,
-        @AngleRadiansFloat @FloatRange(from = 0.0) angleTolerance: Float,
+        @AngleDegreesFloat @FloatRange(from = 0.0) toleranceDegrees: Float,
     ): Boolean {
-        return abs(absoluteAngleBetween(this, other) - (Math.PI / 2)) < angleTolerance
+        return abs(absoluteAngleBetweenInDegrees(this, other) - 90f) < toleranceDegrees
     }
 
     /**
@@ -234,24 +234,25 @@ public abstract class Vec internal constructor() {
 
         /**
          * Returns the absolute angle between the given vectors. The return value will lie in the
-         * interval [0, π].
+         * interval [0, 180.0].
          */
-        @AngleRadiansFloat
-        @FloatRange(from = 0.0, to = Math.PI)
+        @AngleDegreesFloat
+        @FloatRange(from = 0.0, to = 180.0)
         @JvmStatic
-        public fun absoluteAngleBetween(lhs: Vec, rhs: Vec): Float {
-            return VecNative.absoluteAngleBetween(lhs.x, lhs.y, rhs.x, rhs.y)
+        public fun absoluteAngleBetweenInDegrees(lhs: Vec, rhs: Vec): Float {
+            return VecNative.absoluteAngleBetweenInDegrees(lhs.x, lhs.y, rhs.x, rhs.y)
         }
 
         /**
          * Returns the signed angle between the given vectors. The return value will lie in the
-         * interval (-π, π].
+         * interval (-180.0, 180.0]. A positive result indicates the angle between the first vector
+         * and the second is in the direction from the positive x-axis towards the positive y-axis.
          */
-        @AngleRadiansFloat
-        @FloatRange(from = -Math.PI, to = Math.PI, fromInclusive = false)
+        @AngleDegreesFloat
+        @FloatRange(from = -180.0, to = 180.0, fromInclusive = false)
         @JvmStatic
-        public fun signedAngleBetween(lhs: Vec, rhs: Vec): Float {
-            return VecNative.signedAngleBetween(lhs.x, lhs.y, rhs.x, rhs.y)
+        public fun signedAngleBetweenInDegrees(lhs: Vec, rhs: Vec): Float {
+            return VecNative.signedAngleBetweenInDegrees(lhs.x, lhs.y, rhs.x, rhs.y)
         }
 
         /**
@@ -281,7 +282,9 @@ internal object VecNative {
     @UsedByNative external fun populateUnitVec(vecX: Float, vecY: Float, output: MutableVec)
 
     @UsedByNative
-    external fun absoluteAngleBetween(
+    @AngleDegreesFloat
+    @FloatRange(from = 0.0, to = 180.0)
+    external fun absoluteAngleBetweenInDegrees(
         firstVecX: Float,
         firstVecY: Float,
         secondVecX: Float,
@@ -289,7 +292,9 @@ internal object VecNative {
     ): Float
 
     @UsedByNative
-    external fun signedAngleBetween(
+    @AngleDegreesFloat
+    @FloatRange(from = -180.0, to = 180.0, fromInclusive = false)
+    external fun signedAngleBetweenInDegrees(
         firstVecX: Float,
         firstVecY: Float,
         secondVecX: Float,

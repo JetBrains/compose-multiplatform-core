@@ -16,7 +16,9 @@
 
 package androidx.credentials.providerevents.exception
 
+import android.os.Bundle
 import androidx.annotation.RestrictTo
+import androidx.credentials.providerevents.internal.toJetpackGetException
 
 /** Represents an error thrown during the import flow. */
 public abstract class ImportCredentialsException
@@ -24,4 +26,44 @@ public abstract class ImportCredentialsException
 internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val type: String,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val errorMessage: String? = null,
-) : Exception(errorMessage)
+) : Exception(errorMessage) {
+    public companion object {
+        private const val EXTRA_IMPORT_CREDENTIALS_EXCEPTION_TYPE =
+            "androidx.credentials.providerevents.extra.IMPORT_CREDENTIALS_EXCEPTION_TYPE"
+        private const val EXTRA_IMPORT_CREDENTIALS_EXCEPTION_MESSAGE =
+            "androidx.credentials.providerevents.extra.IMPORT_CREDENTIALS_EXCEPTION_MESSAGE"
+
+        /**
+         * Helper method to convert the given [ex] to a parcelable [Bundle], in case the instance
+         * needs to be sent across a process. Consumers of this method should use [fromBundle] to
+         * reconstruct the class instance back from the bundle returned here.
+         */
+        @JvmStatic
+        public fun asBundle(ex: ImportCredentialsException): Bundle {
+            val bundle = Bundle()
+            bundle.putString(EXTRA_IMPORT_CREDENTIALS_EXCEPTION_TYPE, ex.type)
+            ex.errorMessage?.let {
+                bundle.putCharSequence(EXTRA_IMPORT_CREDENTIALS_EXCEPTION_MESSAGE, it)
+            }
+            return bundle
+        }
+
+        /**
+         * Helper method to convert a [Bundle] retrieved through [asBundle], back to an instance of
+         * [ImportCredentialsException].
+         *
+         * Throws [IllegalArgumentException] if the conversion fails. This means that the given
+         * [bundle] does not contain a `ImportCredentialsException`. The bundle should be
+         * constructed and retrieved from [asBundle] itself and never be created from scratch to
+         * avoid the failure.
+         */
+        @JvmStatic
+        public fun fromBundle(bundle: Bundle): ImportCredentialsException {
+            val type =
+                bundle.getString(EXTRA_IMPORT_CREDENTIALS_EXCEPTION_TYPE)
+                    ?: throw IllegalArgumentException("Bundle was missing exception type.")
+            val msg = bundle.getString(EXTRA_IMPORT_CREDENTIALS_EXCEPTION_MESSAGE)
+            return toJetpackGetException(type, msg)
+        }
+    }
+}

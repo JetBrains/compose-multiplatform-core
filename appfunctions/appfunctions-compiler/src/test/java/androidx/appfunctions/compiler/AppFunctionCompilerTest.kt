@@ -48,6 +48,26 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testNoAppFunctionDefined_generatesEmptyXmlFiles() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = emptyList(),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions.xml",
+            goldenFileName = "emptyXml_app_function.xml",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "emptyXml_app_function.xml",
+        )
+    }
+
+    @Test
     fun testSimpleFunction_genAppFunctionIds_success() {
         val report = compilationTestHelper.compileAll(sourceFileNames = listOf("SimpleFunction.KT"))
 
@@ -957,6 +977,93 @@ class AppFunctionCompilerTest {
         compilationTestHelper.assertErrorWithMessage(
             report,
             "Type com.testdata.SerializableData cannot be optional",
+        )
+    }
+
+    // One Of Serializable Tests
+
+    @Test
+    fun oneOfSerializable_oneOfSealedInterface_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/OneOfSealedInterface.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "OneOfSealedInterfaceFactory.kt",
+            "oneofserializable/\$OneOfSealedInterfaceFactory.KT",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_oneOfSealedClass_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/OneOfSealedClass.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "OneOfSealedClassFactory.kt",
+            "oneofserializable/\$OneOfSealedClassFactory.KT",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_nonSerializableSubclasses_fails() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/NonSerializableSubclasses.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            "All subclasses of OneOfSealedInterface should be annotated with @AppFunctionSerializable. Did you forget to annotate OneOfSealedInterface\$ASubclass?",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_nestedOneOfSerializableWithinSerializable_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "oneofserializable/OneOfSealedClass.KT",
+                        "oneofserializable/OneOfSealedInterface.KT",
+                        "oneofserializable/NestedOneOfSerializableWithinSerializable.KT",
+                    )
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "NestedOneOfSerializableWithinSerializableFactory.kt",
+            "oneofserializable/\$NestedOneOfSerializableWithinSerializableFactory.KT",
+        )
+    }
+
+    @Test
+    fun testOneOfSerializableFunctions_genAppFunctionInventoryXml_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "oneofserializable/OneOfSealedClass.KT",
+                        "oneofserializable/OneOfSealedInterface.KT",
+                        "oneofserializable/OneOfFunctions.KT",
+                    ),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}OneOfFunctions_AppFunctionInventory.kt",
+            goldenFileName = "oneofserializable/${'$'}OneOfFunctions_AppFunctionInventory.KT",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "oneofserializable/oneOfFunctions_app_function_dynamic_schema.xml",
         )
     }
 }

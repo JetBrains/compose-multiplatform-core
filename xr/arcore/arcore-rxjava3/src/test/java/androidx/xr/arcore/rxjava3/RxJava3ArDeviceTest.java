@@ -44,30 +44,35 @@ public class RxJava3ArDeviceTest {
 
     @Test
     public void arDevice_stateAsFlowable_returnsArDeviceState() {
-        createTestSessionAndRunTest(() -> {
-            ArDevice underTest = ArDevice.getInstance(mSession);
-            TestSubscriber<ArDevice.State> testSubscriber = new TestSubscriber<>();
+        createTestSessionAndRunTest(
+                () -> {
+                    ArDevice underTest = ArDevice.getInstance(mSession);
+                    TestSubscriber<ArDevice.State> testSubscriber = new TestSubscriber<>();
 
-            getStateAsFlowable(underTest).subscribe(testSubscriber);
+                    getStateAsFlowable(underTest).subscribe(testSubscriber);
 
-            assertThat(testSubscriber.values().get(0).getDevicePose()).isEqualTo(new Pose());
-        });
+                    assertThat(testSubscriber.values().get(0).getDevicePose())
+                            .isEqualTo(new Pose());
+                });
     }
 
     private void createTestSessionAndRunTest(Runnable testBody) {
-        try (ActivityScenario<ComponentActivity> scenario = ActivityScenario.launch(
-                ComponentActivity.class)) {
-            scenario.onActivity(activity -> {
-                mTestDispatcher = StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
-                mSession = ((SessionCreateSuccess) Session.create(activity,
-                        mTestDispatcher)).getSession();
+        try (ActivityScenario<ComponentActivity> scenario =
+                ActivityScenario.launch(ComponentActivity.class)) {
+            scenario.onActivity(
+                    activity -> {
+                        mTestDispatcher =
+                                StandardTestDispatcher(/* scheduler= */ null, /* name= */ null);
+                        mSession =
+                                ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
+                                        .getSession();
 
-                try {
-                    testBody.run();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+                        try {
+                            testBody.run();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
         } catch (Exception e) {
             throw new RuntimeException("Error during ActivityScenario setup or teardown", e);
         }

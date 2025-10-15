@@ -125,7 +125,7 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
       to one or more {@link OnBackPressedCallback} objects."""
     )
     override fun onBackPressed() {
-        onBackPressedInput.complete()
+        onBackPressedInput.backCompleted()
     }
 
     override fun setContentView(layoutResID: Int) {

@@ -305,12 +305,16 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
 
         Map<String, MediaRouteDescriptor> descriptorMap = new ArrayMap<>();
         for (MediaRouteDescriptor desc : routeDescriptors) {
-            // If duplicate ids exist, the last one survives.
-            // Aligned with MediaRouter implementation.
             if (desc == null) {
                 continue;
             }
-            descriptorMap.put(desc.getId(), desc);
+            MediaRouteDescriptor existingDescriptor = descriptorMap.get(desc.getId());
+            if (existingDescriptor == null
+                    || desc.getMaxClientVersion() >= existingDescriptor.getMaxClientVersion()) {
+                // If duplicate IDs exist, the new descriptor overrides the existing one if it
+                // supports a newer or equivalent client version.
+                descriptorMap.put(desc.getId(), desc);
+            }
         }
 
         updateStaticSessions(descriptorMap);

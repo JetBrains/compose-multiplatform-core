@@ -49,7 +49,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":navigationevent:navigationevent"))
             }
         }

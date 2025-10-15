@@ -17,6 +17,7 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly public static long constructor-impl(long);
     method @KotlinOnly public androidx.compose.ui.unit.Constraints copy(optional int minWidth, optional int maxWidth, optional int minHeight, optional int maxHeight);
     method @BytecodeOnly public static long copy-Zbe2FdA(long, int, int, int, int);
+    method @BytecodeOnly public static long copy-Zbe2FdA$default(long, int, int, int, int, int, Object!);
     method @KotlinOnly public inline androidx.compose.ui.unit.Constraints copyMaxDimensions();
     method @BytecodeOnly public static long copyMaxDimensions-msEJaDk(long);
     method @BytecodeOnly public static boolean getHasBoundedHeight-impl(long);
@@ -55,11 +56,14 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly @androidx.compose.runtime.Stable public long fixedWidth-OenEA2s(int);
     method @KotlinOnly @Deprecated @androidx.compose.runtime.Stable public androidx.compose.ui.unit.Constraints restrictConstraints(int minWidth, int maxWidth, int minHeight, int maxHeight, optional boolean prioritizeWidth);
     method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public long restrictConstraints-xF2OJ5Q(int, int, int, int, boolean);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Stable public static long restrictConstraints-xF2OJ5Q$default(androidx.compose.ui.unit.Constraints.Companion!, int, int, int, int, boolean, int, Object!);
     property public static int Infinity;
   }
 
   public final class ConstraintsKt {
-    method @InaccessibleFromJava @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.Constraints Constraints(optional int minWidth, optional int maxWidth, optional int minHeight, optional int maxHeight);
+    method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.Constraints Constraints(optional int minWidth, optional int maxWidth, optional int minHeight, optional int maxHeight);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static long Constraints(int, int, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static long Constraints$default(int, int, int, int, int, Object!);
     method @KotlinOnly public static androidx.compose.ui.unit.Constraints constrain(androidx.compose.ui.unit.Constraints, androidx.compose.ui.unit.Constraints otherConstraints);
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.IntSize constrain(androidx.compose.ui.unit.Constraints, androidx.compose.ui.unit.IntSize size);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long constrain-4WqzIAM(long, long);
@@ -72,10 +76,11 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly @androidx.compose.runtime.Stable public static boolean isSatisfiedBy-4WqzIAM(long, long);
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.Constraints offset(androidx.compose.ui.unit.Constraints, optional int horizontal, optional int vertical);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long offset-NN6Ew-U(long, int, int);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static long offset-NN6Ew-U$default(long, int, int, int, Object!);
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmDefaultWithCompatibility public interface Density extends androidx.compose.ui.unit.FontScaling {
-    method public float getDensity();
+    method @InaccessibleFromKotlin public float getDensity();
     method @KotlinOnly @androidx.compose.runtime.Stable public default int roundToPx(androidx.compose.ui.unit.Dp);
     method @KotlinOnly @androidx.compose.runtime.Stable public default int roundToPx(androidx.compose.ui.unit.TextUnit);
     method @BytecodeOnly @androidx.compose.runtime.Stable public default int roundToPx--R2X_6o(long);
@@ -102,6 +107,7 @@ package androidx.compose.ui.unit {
 
   public final class DensityKt {
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.Density Density(float density, optional float fontScale);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.Density! Density$default(float, float, int, Object!);
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Dp implements java.lang.Comparable<androidx.compose.ui.unit.Dp> {
@@ -117,7 +123,7 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly @androidx.compose.runtime.Stable public static float div-0680j_4(float, float);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static float div-u2uoSUM(float, float);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static float div-u2uoSUM(float, int);
-    method public float getValue();
+    method @InaccessibleFromKotlin public float getValue();
     method @KotlinOnly @androidx.compose.runtime.Stable public inline operator androidx.compose.ui.unit.Dp minus(androidx.compose.ui.unit.Dp other);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static float minus-5rwHm24(float, float);
     method @KotlinOnly @androidx.compose.runtime.Stable public inline operator androidx.compose.ui.unit.Dp plus(androidx.compose.ui.unit.Dp other);
@@ -215,7 +221,8 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly public static long constructor-impl(long);
     method @KotlinOnly public androidx.compose.ui.unit.DpOffset copy(optional androidx.compose.ui.unit.Dp x, optional androidx.compose.ui.unit.Dp y);
     method @BytecodeOnly public static long copy-tPigGR8(long, float, float);
-    method public long getPackedValue();
+    method @BytecodeOnly public static long copy-tPigGR8$default(long, float, float, int, Object!);
+    method @InaccessibleFromKotlin public long getPackedValue();
     method @BytecodeOnly public static float getX-D9Ej5fM(long);
     method @BytecodeOnly public static float getY-D9Ej5fM(long);
     method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.compose.ui.unit.DpOffset minus(androidx.compose.ui.unit.DpOffset other);
@@ -251,6 +258,7 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly public float component4-D9Ej5fM();
     method @KotlinOnly public androidx.compose.ui.unit.DpRect copy(optional androidx.compose.ui.unit.Dp left, optional androidx.compose.ui.unit.Dp top, optional androidx.compose.ui.unit.Dp right, optional androidx.compose.ui.unit.Dp bottom);
     method @BytecodeOnly public androidx.compose.ui.unit.DpRect copy-a9UjIt4(float, float, float, float);
+    method @BytecodeOnly public static androidx.compose.ui.unit.DpRect! copy-a9UjIt4$default(androidx.compose.ui.unit.DpRect!, float, float, float, float, int, Object!);
     method @BytecodeOnly public float getBottom-D9Ej5fM();
     method @BytecodeOnly public float getLeft-D9Ej5fM();
     method @BytecodeOnly public float getRight-D9Ej5fM();
@@ -273,6 +281,7 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly @androidx.compose.runtime.Stable public static float component2-D9Ej5fM(long);
     method @KotlinOnly public androidx.compose.ui.unit.DpSize copy(optional androidx.compose.ui.unit.Dp width, optional androidx.compose.ui.unit.Dp height);
     method @BytecodeOnly public static long copy-DwJknco(long, float, float);
+    method @BytecodeOnly public static long copy-DwJknco$default(long, float, float, int, Object!);
     method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.compose.ui.unit.DpSize div(float other);
     method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.compose.ui.unit.DpSize div(int other);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long div-Gh9hcWk(long, float);
@@ -304,7 +313,7 @@ package androidx.compose.ui.unit {
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmDefaultWithCompatibility public interface FontScaling {
-    method public float getFontScale();
+    method @InaccessibleFromKotlin public float getFontScale();
     method @KotlinOnly @androidx.compose.runtime.Stable public default androidx.compose.ui.unit.Dp toDp(androidx.compose.ui.unit.TextUnit);
     method @BytecodeOnly @androidx.compose.runtime.Stable public default float toDp-GaN1DYA(long);
     method @KotlinOnly @androidx.compose.runtime.Stable public default androidx.compose.ui.unit.TextUnit toSp(androidx.compose.ui.unit.Dp);
@@ -322,9 +331,10 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly public static long constructor-impl(long);
     method @KotlinOnly public androidx.compose.ui.unit.IntOffset copy(optional int x, optional int y);
     method @BytecodeOnly public static long copy-iSbpLlY(long, int, int);
+    method @BytecodeOnly public static long copy-iSbpLlY$default(long, int, int, int, Object!);
     method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.compose.ui.unit.IntOffset div(float operand);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long div-Bjo55l4(long, float);
-    method public long getPackedValue();
+    method @InaccessibleFromKotlin public long getPackedValue();
     method @BytecodeOnly public static int getX-impl(long);
     method @BytecodeOnly public static int getY-impl(long);
     method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.compose.ui.unit.IntOffset minus(androidx.compose.ui.unit.IntOffset other);
@@ -352,7 +362,8 @@ package androidx.compose.ui.unit {
   }
 
   public final class IntOffsetKt {
-    method @InaccessibleFromJava @androidx.compose.runtime.Stable public static inline androidx.compose.ui.unit.IntOffset IntOffset(int x, int y);
+    method @KotlinOnly @androidx.compose.runtime.Stable public static inline androidx.compose.ui.unit.IntOffset IntOffset(int x, int y);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static long IntOffset(int, int);
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.IntOffset lerp(androidx.compose.ui.unit.IntOffset start, androidx.compose.ui.unit.IntOffset stop, float fraction);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long lerp-81ZRxRo(long, long, float);
     method @KotlinOnly @androidx.compose.runtime.Stable public static operator androidx.compose.ui.geometry.Offset minus(androidx.compose.ui.geometry.Offset, androidx.compose.ui.unit.IntOffset offset);
@@ -378,28 +389,29 @@ package androidx.compose.ui.unit {
     method @KotlinOnly public boolean contains(androidx.compose.ui.unit.IntOffset offset);
     method @BytecodeOnly public boolean contains--gyyYBs(long);
     method public androidx.compose.ui.unit.IntRect copy(optional int left, optional int top, optional int right, optional int bottom);
+    method @BytecodeOnly public static androidx.compose.ui.unit.IntRect! copy$default(androidx.compose.ui.unit.IntRect!, int, int, int, int, int, Object!);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect deflate(int delta);
-    method public int getBottom();
+    method @InaccessibleFromKotlin public int getBottom();
     method @BytecodeOnly public long getBottomCenter-nOcc-ac();
     method @BytecodeOnly public long getBottomLeft-nOcc-ac();
     method @BytecodeOnly public long getBottomRight-nOcc-ac();
     method @BytecodeOnly public long getCenter-nOcc-ac();
     method @BytecodeOnly public long getCenterLeft-nOcc-ac();
     method @BytecodeOnly public long getCenterRight-nOcc-ac();
-    method public int getHeight();
-    method public int getLeft();
-    method public int getMaxDimension();
-    method public int getMinDimension();
-    method public int getRight();
+    method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public int getLeft();
+    method @InaccessibleFromKotlin public int getMaxDimension();
+    method @InaccessibleFromKotlin public int getMinDimension();
+    method @InaccessibleFromKotlin public int getRight();
     method @BytecodeOnly public long getSize-YbymL2g();
-    method public int getTop();
+    method @InaccessibleFromKotlin public int getTop();
     method @BytecodeOnly public long getTopCenter-nOcc-ac();
     method @BytecodeOnly public long getTopLeft-nOcc-ac();
     method @BytecodeOnly public long getTopRight-nOcc-ac();
-    method public int getWidth();
+    method @InaccessibleFromKotlin public int getWidth();
     method @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect inflate(int delta);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect intersect(androidx.compose.ui.unit.IntRect other);
-    method public boolean isEmpty();
+    method @InaccessibleFromKotlin public boolean isEmpty();
     method public boolean overlaps(androidx.compose.ui.unit.IntRect other);
     method @KotlinOnly @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect translate(androidx.compose.ui.unit.IntOffset offset);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect translate(int translateX, int translateY);
@@ -427,7 +439,7 @@ package androidx.compose.ui.unit {
   }
 
   public static final class IntRect.Companion {
-    method public androidx.compose.ui.unit.IntRect getZero();
+    method @InaccessibleFromKotlin public androidx.compose.ui.unit.IntRect getZero();
     property @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect Zero;
   }
 
@@ -452,7 +464,7 @@ package androidx.compose.ui.unit {
     method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.compose.ui.unit.IntSize div(int other);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long div-YEO4UFw(long, int);
     method @BytecodeOnly public static int getHeight-impl(long);
-    method public long getPackedValue();
+    method @InaccessibleFromKotlin public long getPackedValue();
     method @BytecodeOnly public static int getWidth-impl(long);
     method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.compose.ui.unit.IntSize times(int other);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long times-YEO4UFw(long, int);
@@ -469,7 +481,8 @@ package androidx.compose.ui.unit {
   }
 
   public final class IntSizeKt {
-    method @InaccessibleFromJava @androidx.compose.runtime.Stable public static inline androidx.compose.ui.unit.IntSize IntSize(int width, int height);
+    method @KotlinOnly @androidx.compose.runtime.Stable public static inline androidx.compose.ui.unit.IntSize IntSize(int width, int height);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static long IntSize(int, int);
     method @BytecodeOnly public static long getCenter-ozmzZPI(long);
     method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.IntSize roundToIntSize(androidx.compose.ui.geometry.Size);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long roundToIntSize-uvyYCjk(long);
@@ -580,6 +593,7 @@ package androidx.compose.ui.unit {
     method @BytecodeOnly @androidx.compose.runtime.Stable public static float component2-impl(long);
     method @KotlinOnly public androidx.compose.ui.unit.Velocity copy(optional float x, optional float y);
     method @BytecodeOnly public static long copy-OhffZ5M(long, float, float);
+    method @BytecodeOnly public static long copy-OhffZ5M$default(long, float, float, int, Object!);
     method @KotlinOnly @androidx.compose.runtime.Stable public operator androidx.compose.ui.unit.Velocity div(float operand);
     method @BytecodeOnly @androidx.compose.runtime.Stable public static long div-adjELrA(long, float);
     method @BytecodeOnly public static float getX-impl(long);
@@ -606,7 +620,8 @@ package androidx.compose.ui.unit {
   }
 
   public final class VelocityKt {
-    method @InaccessibleFromJava @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.Velocity Velocity(float x, float y);
+    method @KotlinOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.Velocity Velocity(float x, float y);
+    method @BytecodeOnly @androidx.compose.runtime.Stable public static long Velocity(float, float);
   }
 
 }

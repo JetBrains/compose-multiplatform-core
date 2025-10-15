@@ -27,7 +27,6 @@ import androidx.appsearch.app.AppSearchSchema.PropertyConfig.DataType;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.DeletePropagationType;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.JoinableValueType;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.TokenizerType;
-import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.safeparcel.stub.StubCreators.DocumentIndexingConfigParcelCreator;
 import androidx.appsearch.safeparcel.stub.StubCreators.EmbeddingIndexingConfigParcelCreator;
 import androidx.appsearch.safeparcel.stub.StubCreators.IntegerIndexingConfigParcelCreator;
@@ -267,7 +266,6 @@ public final class PropertyConfigParcel extends AbstractSafeParcelable {
     }
 
     /** Creates a {@link PropertyConfigParcel} for {@link AppSearchBlobHandle}. */
-    @ExperimentalAppSearchApi
     public static @NonNull PropertyConfigParcel createForBlobHandle(
             @NonNull String propertyName,
             @NonNull String description,

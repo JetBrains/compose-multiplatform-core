@@ -18,6 +18,8 @@ package androidx.appfunctions
 
 import android.content.Intent
 import android.net.Uri
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.URI_GRANT_COMPONENTS_METADATA
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.URI_GRANT_OBJECT_TYPE_METADATA
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -70,7 +72,7 @@ class AppFunctionUriGrantTest {
     @Test
     fun deserializeFromAppFunctionData_shouldSucceed() {
         val data =
-            AppFunctionData.Builder(checkNotNull(AppFunctionUriGrant::class.java.canonicalName))
+            AppFunctionData.Builder(URI_GRANT_OBJECT_TYPE_METADATA, URI_GRANT_COMPONENTS_METADATA)
                 .setAppFunctionData(
                     "uri",
                     AppFunctionData.serialize(Uri.parse("content://com.example/1"), Uri::class.java),

@@ -21,22 +21,11 @@ plugins {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "androidx.camera.integration.uiwidgets"
-        versionCode 1
-        versionName "1.0"
     }
-
-    sourceSets {
-        main.manifest.srcFile "src/main/AndroidManifest.xml"
-        main.java.srcDirs = ["src/main/java"]
-        main.java.excludes = ["**/build/**"]
-        main.java.includes = ["**/*.java"]
-        main.res.srcDirs = ["src/main/res"]
-    }
-
     buildTypes {
         release {
             minifyEnabled = true
@@ -47,12 +36,14 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    lint {
+        disable += "ComposeTestRuleDispatcher"
+    }
     namespace = "androidx.camera.integration.uiwidgets"
 }
 
 dependencies {
     // Internal library
-    implementation(libs.kotlinStdlib)
     implementation(project(":camera:camera-core"))
     implementation(project(":camera:camera-camera2"))
     implementation(project(":camera:camera-camera2-pipe-integration"))
@@ -103,7 +94,7 @@ dependencies {
     debugImplementation(libs.testCore)
     debugImplementation("androidx.fragment:fragment-testing:1.2.5")
     // Testing resource dependency for manifest
-    debugImplementation(project(":camera:camera-testing")) {
+    implementation(project(":camera:camera-testing")) {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")
     }

@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -41,7 +42,6 @@ android {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":hilt:hilt-lifecycle-viewmodel"))
     api("androidx.navigation:navigation-fragment-ktx:2.9.0")
 
@@ -69,5 +69,6 @@ androidx {
     inceptionYear = "2021"
     description = "Android Navigation Fragment Hilt Extension"
     legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 

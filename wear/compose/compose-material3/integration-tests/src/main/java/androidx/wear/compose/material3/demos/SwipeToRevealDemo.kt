@@ -759,13 +759,20 @@ fun SwipeToRevealWithTransformingLazyColumnDemo() {
     val transformationSpec = rememberTransformationSpec()
     val tlcState = rememberTransformingLazyColumnState()
     val coroutineScope = rememberCoroutineScope()
+    val messages = remember {
+        mutableStateListOf<String>().apply {
+            for (i in 1..100) {
+                add("Message #${i}")
+            }
+        }
+    }
 
     TransformingLazyColumn(
         state = tlcState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
         modifier = Modifier.background(Color.Black),
     ) {
-        items(count = 100) { index ->
+        items(items = messages, key = { it }) { message ->
             val revealState = rememberRevealState(initialValue = Covered)
 
             // SwipeToReveal is covered on scroll.
@@ -780,20 +787,23 @@ fun SwipeToRevealWithTransformingLazyColumnDemo() {
                 revealDirection = Bidirectional,
                 primaryAction = {
                     PrimaryActionButton(
-                        onClick = { /* Called when the primary action is executed. */ },
+                        onClick = { messages.remove(message) },
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
                         text = { Text("Delete") },
                     )
                 },
-                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
-                },
+                onSwipePrimaryAction = { messages.remove(message) },
                 modifier =
-                    Modifier.transformedHeight(this@items, transformationSpec).graphicsLayer {
-                        with(transformationSpec) { applyContainerTransformation(scrollProgress) }
-                        // Is needed to disable clipping.
-                        compositingStrategy = CompositingStrategy.ModulateAlpha
-                        clip = false
-                    },
+                    Modifier.transformedHeight(this@items, transformationSpec)
+                        .animateItem()
+                        .graphicsLayer {
+                            with(transformationSpec) {
+                                applyContainerTransformation(scrollProgress)
+                            }
+                            // Is needed to disable clipping.
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                            clip = false
+                        },
             ) {
                 Button(
                     {},
@@ -802,13 +812,13 @@ fun SwipeToRevealWithTransformingLazyColumnDemo() {
                         customActions =
                             listOf(
                                 CustomAccessibilityAction("Delete") {
-                                    /* Add the primary action click handler here */
+                                    messages.remove(message)
                                     true
                                 }
                             )
                     },
                 ) {
-                    Text("Item number: $index")
+                    Text("Item number: $message")
                 }
             }
         }
@@ -820,13 +830,27 @@ fun SwipeToRevealIconOnlyWithTransformingLazyColumnDemo() {
     val transformationSpec = rememberTransformationSpec()
     val tlcState = rememberTransformingLazyColumnState()
     val coroutineScope = rememberCoroutineScope()
+    val messages = remember {
+        mutableStateListOf<MessageWithSenderItem>().apply {
+            for (i in 1..100) {
+                add(
+                    MessageWithSenderItem(
+                        sender = "Sender #${i}",
+                        title = "Message #${i}",
+                        bodyText = "Body of the message",
+                        time = "13:31",
+                    )
+                )
+            }
+        }
+    }
 
     TransformingLazyColumn(
         state = tlcState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
         modifier = Modifier.background(Color.Black),
     ) {
-        items(count = 100) { index ->
+        items(items = messages, key = { it }) { message ->
             val revealState = rememberRevealState(initialValue = Covered)
 
             // SwipeToReveal is covered on scroll.
@@ -839,7 +863,7 @@ fun SwipeToRevealIconOnlyWithTransformingLazyColumnDemo() {
             SwipeToReveal(
                 primaryAction = {
                     PrimaryActionButton(
-                        onClick = { /* Called when the primary action is executed. */ },
+                        onClick = { messages.remove(message) },
                         modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
                         text = {},
@@ -855,15 +879,18 @@ fun SwipeToRevealIconOnlyWithTransformingLazyColumnDemo() {
                         contentColor = Color(0.207f, 0.148f, 0.145f),
                     )
                 },
-                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
-                },
+                onSwipePrimaryAction = { messages.remove(message) },
                 modifier =
-                    Modifier.transformedHeight(this@items, transformationSpec).graphicsLayer {
-                        with(transformationSpec) { applyContainerTransformation(scrollProgress) }
-                        // Is needed to disable clipping.
-                        compositingStrategy = CompositingStrategy.ModulateAlpha
-                        clip = false
-                    },
+                    Modifier.transformedHeight(this@items, transformationSpec)
+                        .animateItem()
+                        .graphicsLayer {
+                            with(transformationSpec) {
+                                applyContainerTransformation(scrollProgress)
+                            }
+                            // Is needed to disable clipping.
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                            clip = false
+                        },
                 revealState = revealState,
             ) {
                 TitleCard(
@@ -873,13 +900,13 @@ fun SwipeToRevealIconOnlyWithTransformingLazyColumnDemo() {
                         Spacer(Modifier.width(4.dp))
                         Text(
                             modifier = Modifier.align(Alignment.CenterVertically),
-                            text = "Sender #$index",
+                            text = message.sender,
                         )
                     },
                     subtitle = {
-                        Text("Message #$index")
-                        Text("Body of the message")
-                        Text("13:31")
+                        Text(message.title)
+                        Text(message.bodyText)
+                        Text(message.time)
                     },
                     modifier =
                         Modifier.semantics {
@@ -888,7 +915,7 @@ fun SwipeToRevealIconOnlyWithTransformingLazyColumnDemo() {
                             customActions =
                                 listOf(
                                     CustomAccessibilityAction("Delete") {
-                                        /* Add the primary action click handler here */
+                                        messages.remove(message)
                                         true
                                     },
                                     CustomAccessibilityAction("Share") {
@@ -1010,3 +1037,10 @@ fun SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo() {
 }
 
 data class MessageItem(val title: String, val body: String, val longBody: String)
+
+data class MessageWithSenderItem(
+    val sender: String,
+    val title: String,
+    val bodyText: String,
+    val time: String,
+)

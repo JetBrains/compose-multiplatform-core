@@ -183,7 +183,7 @@ private fun Project.configureComponentPublishing(
                 val stubNamespace =
                     project.group.toString().replace(':', '.') +
                         "." +
-                        project.name.toString().replace('-', '.') +
+                        project.name.replace('-', '.') +
                         ".anchor"
                 val unpackedStubAarTask =
                     tasks.register("unpackedStubAar", UnpackedStubAarTask::class.java) { aarTask ->

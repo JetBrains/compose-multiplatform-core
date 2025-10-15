@@ -109,9 +109,8 @@ public class JetpackAppSearchEnvironment implements AppSearchEnvironment {
 
     @Override
     @NonNull
-    public File getStorageInfoFile(
-            @NonNull File fileParentPath, @NonNull String storageInfoFileName) {
-        return new File(fileParentPath, storageInfoFileName);
+    public File getFile(@NonNull File fileParentPath, @NonNull String fileName) {
+        return new File(fileParentPath, fileName);
     }
 
     @Override

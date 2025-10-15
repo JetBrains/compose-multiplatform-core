@@ -30,9 +30,7 @@ plugins {
 }
 
 android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.navigation.ui"
 }
 
@@ -50,7 +48,6 @@ dependencies {
 
     androidTestImplementation(project(":internal-testutils-navigation"))
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testMonitor)

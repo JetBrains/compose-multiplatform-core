@@ -44,7 +44,7 @@ import androidx.camera.camera2.pipe.integration.impl.State3AControl
 import androidx.camera.camera2.pipe.integration.impl.TorchControl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.integration.impl.ZoomControl
-import androidx.camera.camera2.pipe.integration.internal.CameraFovInfo
+import androidx.camera.camera2.pipe.integration.internal.IntrinsicZoomCalculatorImpl
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.impl.ImageFormatConstants
@@ -168,7 +168,7 @@ object FakeCameraInfoAdapterCreator {
             fakeCameraQuirks,
             fakeEncoderProfilesProvider,
             fakeStreamConfigurationMap,
-            CameraFovInfo(cameraDevices, cameraProperties),
+            IntrinsicZoomCalculatorImpl(cameraDevices),
             NO_OP_STREAM_SPECS_CALCULATOR,
         )
     }

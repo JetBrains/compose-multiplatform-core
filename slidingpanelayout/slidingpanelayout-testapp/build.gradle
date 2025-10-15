@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     // Add dependencies here
     implementation(project(":slidingpanelayout:slidingpanelayout"))
     implementation("androidx.recyclerview:recyclerview:1.2.1")

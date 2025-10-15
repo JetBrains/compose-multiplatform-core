@@ -80,6 +80,10 @@ fun runMetalavaWithArgs(
                 // internal annotation, includes debug information and values are not constant
                 "--exclude-annotation",
                 "androidx.compose.runtime.internal.FunctionKeyMeta",
+
+                // This issue is important for stubs generation, which we don't do here.
+                "--hide",
+                "InheritChangesSignature",
             )
     val workQueue = workerExecutor.processIsolation()
     workQueue.submit(MetalavaWorkAction::class.java) { parameters ->
@@ -100,12 +104,14 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
     override fun execute() {
         val outputStream = ByteArrayOutputStream()
         var successful = false
+        // Enable Android Lint infrastructure used by Metalava to use K2 or K1 UAST (K1 support will
+        // be deprecated once all projects are switched to K2 b/385140979).
         val k2UastArg =
-            listOfNotNull(
-                // Enable Android Lint infrastructure used by Metalava to use K2 UAST
-                // (also historically known as FIR) when running Metalava for this module.
-                "--Xuse-k2-uast".takeIf { parameters.k2UastEnabled.get() }
-            )
+            if (parameters.k2UastEnabled.get()) {
+                "--Xuse-k2-uast"
+            } else {
+                "--Xuse-k1-uast"
+            }
         try {
             execOperations.javaexec {
                 // Intellij core reflects into java.util.ResourceBundle
@@ -188,6 +194,7 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
                     "HiddenSuperclass",
                     "KotlinOperator",
                     "DataClassDefinition",
+                    "TypeParameterName",
                 )
                 .joinToString(),
         )
@@ -197,7 +204,8 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
         args.add("--api-lint-allowed-acronym")
         args.add(acronym)
     }
-    val javaOnlyIssues = listOf("MissingJvmstatic", "ArrayReturn", "ValueClassDefinition")
+    val javaOnlyIssues =
+        listOf("MissingJvmstatic", "ArrayReturn", "ValueClassDefinition", "FacadeClassJvmName")
     val javaOnlyErrorLevel =
         if (targetsJavaConsumers) {
             "--error"

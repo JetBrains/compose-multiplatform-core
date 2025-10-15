@@ -17,6 +17,5 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":activity:activity"))
 }

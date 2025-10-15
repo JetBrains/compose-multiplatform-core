@@ -217,6 +217,62 @@ class Controller3AForCaptureTest {
     }
 
     @Test
+    fun testLock3AForCapture_withPartialResult_whenAFModeIsMissing() = runTest {
+        // Arrange
+        val result = controller3A.lock3AForCapture()
+        assertThat(result.isCompleted).isFalse()
+
+        // Act
+        // Simulate a partial result where AF mode is missing
+        val cameraResponse = async {
+            listener3A.sendPartialCaptureResult(
+                resultMetadata =
+                    mapOf(
+                        CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                        CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
+                        CaptureResult.CONTROL_AF_STATE to
+                            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                        CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                    )
+            )
+        }
+
+        // Assert: the result of lock3AForCapture call will not complete when a partial result
+        // without AF mode
+        cameraResponse.await()
+        assertThat(result.isCompleted).isFalse()
+    }
+
+    @Test
+    fun testLock3AForCapture_withPartialResult_when3AAreConverged() = runTest {
+        // Arrange
+        val result = controller3A.lock3AForCapture()
+        assertThat(result.isCompleted).isFalse()
+
+        // Act
+        // Simulate a partial result with all required modes and converged states
+        listener3A.sendPartialCaptureResult(
+            resultMetadata =
+                mapOf(
+                    CaptureResult.CONTROL_AF_MODE to
+                        CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
+                    CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                    CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
+                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                )
+        )
+
+        // Assert
+        val result3A = result.await()
+        assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
+
+        // We now check if the correct sequence of requests were submitted by lock3AForCapture call.
+        // There should be a request to trigger AF and AE precapture metering.
+        assertCorrectCaptureSequenceInLock3AForCapture()
+    }
+
+    @Test
     fun testLock3AForCapture_withoutAfTrigger_whenAfModeContinuousPicture() = runTest {
         val result = controller3A.lock3AForCapture(triggerAf = false)
         assertThat(result.isCompleted).isFalse()

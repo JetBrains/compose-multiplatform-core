@@ -21,7 +21,7 @@ import android.hardware.camera2.CameraMetadata
 import android.os.Build
 import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraId
-import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.core.InitializationException
 
 /**
@@ -47,7 +47,7 @@ public object CameraCompatibilityFilter {
             if (isBackwardCompatible(cameraId, cameraDevices)) {
                 backwardCompatibleCameraIds.add(cameraId)
             } else {
-                Log.debug {
+                Camera2Logger.debug {
                     "Camera $cameraId is filtered out because its capabilities " +
                         "do not contain REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE."
                 }
@@ -62,7 +62,7 @@ public object CameraCompatibilityFilter {
         // robolectric don't have REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE capability
         // by default.
         if (Build.FINGERPRINT == "robolectric") {
-            Log.debug {
+            Camera2Logger.debug {
                 "isBackwardCompatible method returns true because robolectric build detected."
             }
             return true
@@ -77,7 +77,7 @@ public object CameraCompatibilityFilter {
                 )
             }
         } catch (e: CameraAccessException) {
-            Log.error(e) { "Error while accessing metadata for cameraID: $cameraId" }
+            Camera2Logger.error(e) { "Error while accessing metadata for cameraID: $cameraId" }
             throw InitializationException(e)
         }
 

@@ -41,7 +41,7 @@ import androidx.compose.ui.graphics.Color
  */
 @Immutable
 public class Colors(
-    public val primary: Color = Color(0xFFA8C7FA),
+    public val primary: Color = Color(0xFF7CACF8),
     public val secondary: Color = Color(0xFF4C88E9),
     public val positive: Color = Color(0xFF4CE995),
     public val negative: Color = Color(0xFFF57084),

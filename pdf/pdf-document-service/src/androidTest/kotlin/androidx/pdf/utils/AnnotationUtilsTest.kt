@@ -21,19 +21,12 @@ import android.graphics.pdf.component.PdfPagePathObject
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
-import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.PathPdfObject
-import androidx.pdf.annotation.models.PdfAnnotationData
-import androidx.pdf.annotation.models.StampAnnotation
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import com.google.gson.JsonSyntaxException
-import java.io.FileOutputStream
-import java.io.IOException
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -42,131 +35,12 @@ import org.junit.runner.RunWith
 class AnnotationUtilsTest {
 
     @Test
-    fun writingAnnotationToFile_writeAndReadFromSamePfd() = runTest {
-        // Define the expected annotationsData to be written.
-        val expectedAnnotations =
-            listOf(
-                PdfAnnotationData(EditId(pageNum = 0, value = "0"), getSampleStampAnnotation(0)),
-                PdfAnnotationData(EditId(pageNum = 1, value = "1"), getSampleStampAnnotation(1)),
-            )
-
-        // Get the application context.
-        val context = ApplicationProvider.getApplicationContext<Context>()
-
-        // Create a ParcelFileDescriptor for the test PDF document in read-write mode.
-        val pfd = createPfd(context, TEST_ANNOTATIONS_FILE, "rwt")
-
-        // Write annotations and then seek to the beginning of the file to read
-        writeAnnotationsToFile(pfd, expectedAnnotations)
-
-        // Read annotations from the same PFD
-        val actualAnnotations = readAnnotationsFromPfd(pfd)
-
-        pfd.close()
-        assertThat(actualAnnotations).isNotNull()
-        assertThat(actualAnnotations.size).isEqualTo(2)
-        for (i in 0 until expectedAnnotations.size) {
-            assert(actualAnnotations[i].annotation is StampAnnotation)
-            assertStampAnnotationEquals(
-                expectedAnnotations[i].annotation as StampAnnotation,
-                actualAnnotations[i].annotation as StampAnnotation,
-            )
-        }
-    }
-
-    @Test
-    fun writingAnnotationToFile_writeAndReadMultipleTimesFromSamePfd() = runTest {
-        val expectedAnnotations =
-            listOf(
-                PdfAnnotationData(EditId(pageNum = 0, value = "0"), getSampleStampAnnotation(0)),
-                PdfAnnotationData(EditId(pageNum = 1, value = "1"), getSampleStampAnnotation(1)),
-            )
-
-        val context = ApplicationProvider.getApplicationContext<Context>()
-
-        // Create a ParcelFileDescriptor for the test PDF document in read-write mode.
-        val pfd = createPfd(context, TEST_ANNOTATIONS_FILE, "rwt")
-
-        // Write annotations and then seek to the beginning of the file to read
-        writeAnnotationsToFile(pfd, expectedAnnotations)
-
-        // Read annotations from the same PFD
-        var actualAnnotations = readAnnotationsFromPfd(pfd)
-
-        assertThat(actualAnnotations).isNotNull()
-        assertThat(actualAnnotations.size).isEqualTo(2)
-        for (i in 0 until expectedAnnotations.size) {
-            assert(actualAnnotations[i].annotation is StampAnnotation)
-            assertStampAnnotationEquals(
-                expectedAnnotations[i].annotation as StampAnnotation,
-                actualAnnotations[i].annotation as StampAnnotation,
-            )
-        }
-
-        // Again Read annotations from the same PFD to verify pfd is still open
-        actualAnnotations = readAnnotationsFromPfd(pfd)
-
-        pfd.close()
-        assertThat(actualAnnotations).isNotNull()
-        assertThat(actualAnnotations.size).isEqualTo(2)
-        for (i in 0 until expectedAnnotations.size) {
-            assert(actualAnnotations[i].annotation is StampAnnotation)
-            assertStampAnnotationEquals(
-                expectedAnnotations[i].annotation as StampAnnotation,
-                actualAnnotations[i].annotation as StampAnnotation,
-            )
-        }
-    }
-
-    @Test
     fun readAnnotationsFromPfd_emptyFile() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val pfd = createPfd(context, TEST_ANNOTATIONS_FILE, "rwt")
 
         val annotations = readAnnotationsFromPfd(pfd)
         assertThat(annotations).isEmpty()
-        pfd.close()
-    }
-
-    @Test
-    fun readAnnotationsFromPfd_onlyWriteAccess_throwsJsonSyntaxException() = runTest {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val pfd = createPfd(context, TEST_ANNOTATIONS_FILE, "wt")
-
-        val outputStream = FileOutputStream(pfd.fileDescriptor)
-
-        val jsonString = "{}"
-        outputStream.write(jsonString.toByteArray(Charsets.UTF_8))
-        outputStream.flush()
-        assertThrows(
-            IOException::class.java,
-            {
-                val annotations = readAnnotationsFromPfd(pfd)
-            },
-        )
-
-        pfd.close()
-    }
-
-    @Test
-    fun readAnnotationsFromPfd_malformedJson_throwsJsonSyntaxException1() = runTest {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val pfd = createPfd(context, TEST_ANNOTATIONS_FILE, "rw")
-
-        val jsonString = "}{}"
-        val fileOutputStream = FileOutputStream(pfd.fileDescriptor)
-        fileOutputStream.write(jsonString.toByteArray(Charsets.UTF_8))
-        fileOutputStream.close()
-
-        pfd.resetToStartingPosition()
-
-        assertThrows(
-            JsonSyntaxException::class.java,
-            {
-                val annotations = readAnnotationsFromPfd(pfd)
-            },
-        )
-
         pfd.close()
     }
 

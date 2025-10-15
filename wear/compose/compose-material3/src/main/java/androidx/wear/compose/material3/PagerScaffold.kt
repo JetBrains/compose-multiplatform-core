@@ -290,7 +290,7 @@ private fun PagerScaffoldImpl(
         }
     }
 
-    Box {
+    Box(modifier) {
         pager()
 
         AnimatedIndicator(
@@ -299,7 +299,7 @@ private fun PagerScaffoldImpl(
                     pagerState.isScrollInProgress
             },
             animationSpec = pageIndicatorAnimationSpec,
-            modifier = modifier.align(pageIndicatorAlignment),
+            modifier = Modifier.align(pageIndicatorAlignment),
             content = pageIndicator,
         )
     }

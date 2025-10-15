@@ -33,6 +33,7 @@ import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.MovableComponent
@@ -64,6 +65,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
     private var skybox: ExrImage? = null
     private var spatialEnvironmentPreference: SpatialEnvironment.SpatialEnvironmentPreference? =
         null
+    private lateinit var defaultPanelSize: FloatSize2d
 
     private fun mainPanelPixelDimensionsString(): String {
         val width = session!!.scene.mainPanelEntity.size.width
@@ -77,6 +79,15 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
 
         session = createSession(this)
         if (session == null) this.finish()
+
+        if (savedInstanceState != null) {
+            val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
+            val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
+            defaultPanelSize = FloatSize2d(width, height)
+        } else {
+            defaultPanelSize = session!!.scene.mainPanelEntity.size
+        }
+        Log.d(TAG, "defaultPanelSize: $defaultPanelSize")
 
         // Set visibility of components per mode
         componentVisibility()
@@ -93,7 +104,14 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Toolbar action
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
             setSupportActionBar(it)
-            it.setNavigationOnClickListener { this.finish() }
+            it.setNavigationOnClickListener {
+                val resultIntent = Intent()
+                resultIntent.putExtra("defaultPanelSizeWidth", defaultPanelSize.width)
+                resultIntent.putExtra("defaultPanelSizeHeight", defaultPanelSize.height)
+                setResult(RESULT_OK, resultIntent)
+
+                this.finish()
+            }
         }
 
         // Recreate button
@@ -162,10 +180,12 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     true ->
                         resizableActive =
                             session!!.scene.mainPanelEntity.addComponent(resizableComponent)
-                    false ->
-                        resizableActive.let {
+                    false -> {
+                        if (resizableActive) {
                             session!!.scene.mainPanelEntity.removeComponent(resizableComponent)
+                            resizableActive = false
                         }
+                    }
                 }
             }
         }
@@ -173,14 +193,18 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Resize to portrait in fsm
         findViewById<Button>(R.id.button_resize_in_fsm_portrait).also {
             it.setOnClickListener {
-                session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1200, 1600)
+                if (resizableActive) {
+                    session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1200, 1600)
+                }
             }
         }
 
         // Resize to landscape in fsm
         findViewById<Button>(R.id.button_resize_in_fsm_landscape).also {
             it.setOnClickListener {
-                session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1600, 1200)
+                if (resizableActive) {
+                    session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1600, 1200)
+                }
             }
         }
 
@@ -271,6 +295,12 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putFloat("defaultPanelSizeWidth", defaultPanelSize.width)
+        outState.putFloat("defaultPanelSizeHeight", defaultPanelSize.height)
     }
 
     private fun componentVisibility() {

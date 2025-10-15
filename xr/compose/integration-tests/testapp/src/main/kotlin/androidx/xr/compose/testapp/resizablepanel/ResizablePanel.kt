@@ -53,12 +53,12 @@ import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
-import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SpatialAlignment
+import androidx.xr.compose.subspace.layout.SpatialArrangement
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.height
@@ -97,10 +97,11 @@ class ResizablePanel : ComponentActivity() {
                         infiniteRepeatable(tween(10000), repeatMode = RepeatMode.Reverse),
                     label = "transition",
                 )
-        SpatialColumn {
+        SpatialColumn(verticalArrangement = SpatialArrangement.spacedBy(20.dp)) {
             SpatialRow(
                 modifier = SubspaceModifier.fillMaxWidth(),
                 alignment = SpatialAlignment.Center,
+                horizontalArrangement = SpatialArrangement.SpaceEvenly,
             ) {
                 SpatialColumn {
                     // Non-resizable panel with delayed rendering
@@ -132,7 +133,7 @@ class ResizablePanel : ComponentActivity() {
                     }
                 }
 
-                SpatialColumn() {
+                SpatialColumn {
                     // Resizable with onResize change
                     val density = LocalDensity.current
                     SpatialPanel(
@@ -178,8 +179,6 @@ class ResizablePanel : ComponentActivity() {
                     )
                 }
             }
-
-            SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
 
             // MainPanel
             SpatialRow(modifier = SubspaceModifier.fillMaxWidth()) {

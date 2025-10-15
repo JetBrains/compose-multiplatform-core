@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
     api(project(":lifecycle:lifecycle-viewmodel"))
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 }
 

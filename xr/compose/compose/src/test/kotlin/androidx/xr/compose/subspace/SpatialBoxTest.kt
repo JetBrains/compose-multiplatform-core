@@ -38,6 +38,7 @@ import org.junit.runner.RunWith
 /** Tests for [SpatialBox]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialBoxTest {
+
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test

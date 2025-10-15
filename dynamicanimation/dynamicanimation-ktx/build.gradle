@@ -30,7 +30,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":dynamicanimation:dynamicanimation"))
 
     androidTestImplementation(libs.testExtJunit)

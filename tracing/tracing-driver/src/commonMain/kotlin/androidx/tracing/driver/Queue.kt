@@ -16,14 +16,17 @@
 
 package androidx.tracing.driver
 
+import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
 
-internal const val QUEUE_CAPACITY = 64
+internal const val QUEUE_INITIAL_CAPACITY = 64
 
 /** An actual thread safe queue implementation. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class Queue<T>(capacity: Int = QUEUE_CAPACITY) {
+public class Queue<T>(capacity: Int = QUEUE_INITIAL_CAPACITY) {
     private val queue: ArrayDeque<T> = ArrayDeque(capacity)
+
+    @GuardedBy("queue") private var droppedTraceEvent: Boolean = false
 
     public fun isEmpty(): Boolean {
         return synchronized(queue) { queue.isEmpty() }
@@ -41,6 +44,13 @@ public class Queue<T>(capacity: Int = QUEUE_CAPACITY) {
     public fun addLast(value: T) {
         synchronized(queue) { queue.addLast(value) }
     }
+
+    public fun setDroppedTraceEvent(droppedTraceEvent: Boolean) {
+        synchronized(queue) { this.droppedTraceEvent = droppedTraceEvent }
+    }
+
+    public val isDroppedTraceEvent: Boolean
+        get() = synchronized(queue) { droppedTraceEvent }
 
     public fun firstOrNull(): T? {
         return synchronized(queue) { queue.firstOrNull() }

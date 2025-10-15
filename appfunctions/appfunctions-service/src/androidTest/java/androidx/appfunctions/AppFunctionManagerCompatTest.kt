@@ -905,7 +905,7 @@ class AppFunctionManagerCompatTest {
                         val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
 
                         if (status == PackageInstaller.STATUS_SUCCESS) {
-                            continuation.resume(true) {}
+                            continuation.resume(true) { cause, _, _ -> }
                         } else {
                             continuation.resumeWithException(
                                 Exception("Installation failed: $message")
