@@ -34,10 +34,12 @@ internal class UIKitInteropViewMeasurePolicy<T: UIView>(
         measurables: List<Measurable>,
         constraints: Constraints
     ): MeasureResult {
-        val targetSize = CGSizeMake(
-            constraints.maxWidth.toDp().value.toDouble(),
-            constraints.maxHeight.toDp().value.toDouble()
-        )
+        val targetSize by lazy {
+            CGSizeMake(
+                constraints.maxWidth.toDp().value.toDouble(),
+                constraints.maxHeight.toDp().value.toDouble()
+            )
+        }
 
         val measuredSize by lazy {
             interopView.systemLayoutSizeFittingSize(
