@@ -85,7 +85,6 @@ class InteropUIKitViewSizingWithConstraintsTest {
             )
         }
 
-        // RESOLVE: is this the behavior we want?
         assertEquals(DpRect(0.dp, 0.dp, 100.dp, 200.dp), rect)
     }
 
