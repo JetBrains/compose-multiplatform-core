@@ -60,7 +60,7 @@ internal class WindowComposeSceneLayer(
 
     private val windowContext = PlatformWindowContext().also {
         it.isWindowTransparent = true
-        it.setContainerSize(windowContainer.sizeInPx)
+        it.setContainerSizeFromComponent(windowContainer)
     }
 
     private val layerWindow = JDialog(parentWindow).also {
@@ -132,7 +132,6 @@ internal class WindowComposeSceneLayer(
             it.sceneBoundsInPx = boundsInPx
             it.contentComponent.size = windowContainer.size
             it.contentComponent.isFocusable = focusable
-            composeContainer.navigationEventDispatcher.addInput(it.navigationEventInput)
         }
         onDrawBoundsChanged()
 
@@ -148,10 +147,7 @@ internal class WindowComposeSceneLayer(
     override fun close() {
         super.close()
         composeContainer.detachLayer(this)
-        mediator?.let {
-            composeContainer.navigationEventDispatcher.removeInput(it.navigationEventInput)
-            it.dispose()
-        }
+        mediator?.dispose()
         mediator = null
 
         parentWindow.removeComponentListener(windowPositionListener)
@@ -165,7 +161,7 @@ internal class WindowComposeSceneLayer(
     }
 
     override fun onWindowContainerSizeChanged() {
-        windowContext.setContainerSize(windowContainer.sizeInPx)
+        windowContext.setContainerSizeFromComponent(windowContainer)
 
         // Update compose constrains based on main window size
         mediator?.sceneBoundsInPx = Rect(

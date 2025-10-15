@@ -49,10 +49,10 @@ import androidx.compose.ui.platform.DelegateRootForTestListener
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
 import androidx.compose.ui.platform.EmptyViewConfiguration
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
@@ -65,11 +65,12 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.viewinterop.SwingInteropContainer
 import androidx.compose.ui.window.WindowExceptionHandler
+import androidx.compose.ui.window.asDpOffset
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.sizeInPx
-import androidx.navigationevent.NavigationEventInput
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
@@ -140,7 +141,7 @@ internal class ComposeSceneMediator(
         semanticsOwnerListener.accessibilityControllers
     }
 
-    val navigationEventInput: DesktopNavigationEventInput = DesktopNavigationEventInput()
+    private val navigationEventInput = DesktopNavigationEventInput()
 
     private val platformComponent = DesktopPlatformComponent()
     private val textInputService = DesktopTextInputService(platformComponent)
@@ -447,8 +448,7 @@ internal class ComposeSceneMediator(
         get() {
             val pointInContainer = SwingUtilities.convertPoint(component, point, container)
             val offset = sceneBoundsInPx?.topLeft ?: Offset.Zero
-            val density = contentComponent.density
-            return Offset(pointInContainer.x.toFloat(), pointInContainer.y.toFloat()) * density.density - offset
+            return pointInContainer.asDpOffset().toOffset(contentComponent.density) - offset
         }
 
     private fun onMouseEvent(event: MouseEvent): Unit = catchExceptions {
@@ -576,12 +576,17 @@ internal class ComposeSceneMediator(
         isComponentAttached = true
         onChangeDensity()
 
+        architectureComponentsOwner.navigationEventDispatcherOwner
+            .navigationEventDispatcher.addInput(navigationEventInput)
+
         _onComponentAttached?.invoke()
         _onComponentAttached = null
     }
 
     fun onComponentDetached() {
         isComponentAttached = false
+        architectureComponentsOwner.navigationEventDispatcherOwner
+            .navigationEventDispatcher.addInput(navigationEventInput)
         scene.focusManager.releaseFocus()
     }
 

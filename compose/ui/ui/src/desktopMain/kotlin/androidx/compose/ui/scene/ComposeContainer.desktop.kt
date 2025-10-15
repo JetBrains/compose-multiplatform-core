@@ -30,10 +30,9 @@ import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.navigationevent.DesktopNavigationEventInput
 import androidx.compose.ui.platform.DisposableSaveableStateRegistry
-import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
+import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
@@ -47,7 +46,6 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.layoutDirectionFor
-import androidx.compose.ui.window.sizeInPx
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -218,7 +216,6 @@ internal class ComposeContainer(
         savedStateController.performAttach()
         savedStateController.performRestore(savedState)
         enableSavedStateHandles()
-        navigationEventDispatcher.addInput(mediator.navigationEventInput)
 
         setWindow(window)
         this.windowContainer = windowContainer
@@ -246,7 +243,6 @@ internal class ComposeContainer(
         viewModelStore.clear()
 
         _windowContainer?.removeComponentListener(windowContainerComponentListener)
-        navigationEventDispatcher.removeInput(mediator.navigationEventInput)
         mediator.dispose()
         layers.fastForEach(DesktopComposeSceneLayer::close)
     }
@@ -291,7 +287,7 @@ internal class ComposeContainer(
     private fun onWindowContainerSizeChanged() {
         if (!container.isDisplayable) return
 
-        windowContext.setContainerSize(windowContainer.sizeInPx)
+        windowContext.setContainerSizeFromComponent(windowContainer)
         mediator.onContainerSizeChanged()
         layers.fastForEach(DesktopComposeSceneLayer::onWindowContainerSizeChanged)
 
