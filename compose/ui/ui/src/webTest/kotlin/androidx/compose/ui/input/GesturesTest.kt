@@ -207,41 +207,53 @@ class GesturesTest : OnCanvasTests {
 
         dispatchEvents(
             // +1
-            TouchEvent("touchstart",
+            TouchEvent(
+                "touchstart",
                 touchEventInit(
-                changedTouches = listOf(touch1),
-                targetTouches = listOf(touch1),
-            )),
+                    changedTouches = listOf(touch1),
+                    targetTouches = listOf(touch1),
+                )
+            ),
             // +2
-            TouchEvent("touchstart",
+            TouchEvent(
+                "touchstart",
                 touchEventInit(
-                changedTouches = listOf(touch2),
-                targetTouches = listOf(touch1, touch2),
-            )),
+                    changedTouches = listOf(touch2),
+                    targetTouches = listOf(touch1, touch2),
+                )
+            ),
             // +3
-            TouchEvent("touchstart",
+            TouchEvent(
+                "touchstart",
                 touchEventInit(
                     changedTouches = listOf(touch3),
                     targetTouches = listOf(touch1, touch2, touch3),
-                )),
+                )
+            ),
             // -3
-            TouchEvent("touchend",
+            TouchEvent(
+                "touchend",
                 touchEventInit(
                     changedTouches = listOf(touch3),
                     targetTouches = listOf(touch1, touch2),
-                )),
+                )
+            ),
             // -2
-            TouchEvent("touchend",
+            TouchEvent(
+                "touchend",
                 touchEventInit(
                     changedTouches = listOf(touch2),
                     targetTouches = listOf(touch1),
-                )),
+                )
+            ),
             // -1
-            TouchEvent("touchend",
+            TouchEvent(
+                "touchend",
                 touchEventInit(
                     changedTouches = listOf(touch1),
                     targetTouches = listOf(),
-                ))
+                )
+            )
         )
 
         awaitIdle()
@@ -298,7 +310,7 @@ private fun touchEventWithChangedTouchesInit(vararg touches: Touch): TouchEventI
         cancelable: true,
         composed: true,
         changedTouches: touches,
-        targetTouches: [],
+        targetTouches: touches,
         touches: []
     })
     """
@@ -321,8 +333,8 @@ private fun touchEventWithTargetTouchesInit(vararg touches: Touch): TouchEventIn
 private fun touchEventInit(
     changedTouchesBeforeIndex: Int,
     vararg touches: Touch,
-    ): TouchEventInit = js(
-        """
+): TouchEventInit = js(
+    """
     ({
         bubbles: true,
         cancelable: true,
@@ -332,7 +344,7 @@ private fun touchEventInit(
         touches: []
     })
     """
-    )
+)
 
 @OptIn(ExperimentalJsCollectionsApi::class, ExperimentalJsExport::class)
 private fun touchEventInit(
