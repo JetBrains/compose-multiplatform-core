@@ -510,22 +510,22 @@ internal class ComposeWindow(
          * - changedTouches contains only a Touch of a changed pointer, but compose needs all pointers,
          *   therefore we take targetTouches in this case;
          */
-        val touches = if (event.targetTouches.length > event.changedTouches.length) {
-            event.targetTouches.asList()
+        val isChangedTouchPressed =
+            eventType == PointerEventType.Press || eventType == PointerEventType.Move
+        val touches = if (isChangedTouchPressed) {
+            event.targetTouches.asList().fastMap { it to true }
         } else {
-            event.changedTouches.asList()
+            event.changedTouches.asList().fastMap { it to false } + event.targetTouches.asList()
+                .fastMap { it to true }
         }
-        val pointers = touches.fastMap { touch ->
+        val pointers = touches.fastMap { (touch, pressed) ->
             ComposeScenePointer(
                 id = PointerId(touch.identifier.toLong()),
                 position = Offset(
                     x = touch.clientX - offset.x,
                     y = touch.clientY - offset.y
                 ) * density.density,
-                pressed = when (eventType) {
-                    PointerEventType.Press, PointerEventType.Move -> true
-                    else -> false
-                },
+                pressed = pressed,
                 type = PointerType.Touch,
                 pressure = touch.unsafeCast<ExtendedTouchEvent>().force.toFloat()
             )
